@@ -1,18 +1,15 @@
 package ml.methods;
 
 import Jama.Matrix;
-import ml.Model;
 import ml.data.DSIterator;
-import ml.data.DataEntry;
 import ml.data.DataSet;
 import ml.data.impl.DataSetImpl;
 import ml.data.impl.NormalizedDataSet;
 import ml.loss.L2Loss;
 import ml.loss.LossFunction;
+import ml.models.NormalizedLinearModel;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -31,14 +28,14 @@ public class LARSMethod implements MLMethod {
         }
     }
 
-    public Model fit(DataSet orig, LossFunction loss) {
+    public NormalizedLinearModel fit(DataSet orig, LossFunction loss) {
         if (loss.getClass() != L2Loss.class)
             throw new IllegalArgumentException("LASSO can not be applied to loss other than l2");
         final int featuresCount = orig.featureCount();
         final double[] betas = new double[featuresCount];
         double[] values = new double[orig.power()];
         double score = 0;
-        NormalizedDataSet learn = new NormalizedDataSet((DataSetImpl)orig);
+        NormalizedDataSet learn = orig instanceof NormalizedDataSet ? (NormalizedDataSet)orig : new NormalizedDataSet((DataSetImpl)orig);
         {
             final DSIterator it = learn.iterator();
             for (int i = 0; i < values.length; i++) {
@@ -154,38 +151,6 @@ public class LARSMethod implements MLMethod {
         final double[] means = learn.means();
         final double[] norms = learn.norms();
         final double meanTarget = learn.meanTarget();
-        return new Model() {
-            public double value(DataEntry point) {
-                double result = 0;
-                for (int i = 0; i < betas.length; i++) {
-                    if (norms[i] == 0) continue;
-                    result += (point.x(i) - means[i]) / norms[i] * betas[i];
-                }
-                return result + meanTarget;
-            }
-
-            public double learnScore() {
-                return learnScore;
-            }
-
-            public String toString() {
-                String result = "";
-                Integer[] order = new Integer[betas.length];
-                for (int k = 0; k < betas.length; k++) {
-                    order[k] = k;
-                }
-                Arrays.sort(order, new Comparator<Integer>() {
-                    public int compare(Integer a, Integer b) {
-                        return (int) Math.signum(Math.abs(betas[b]) - Math.abs(betas[a]));
-                    }
-                });
-                for (int i = 0; i < betas.length; i++) {
-                    if(betas[order[i]] == 0)
-                        continue;
-                    result += "\t" + order[i] + ": " + betas[order[i]] + "\n";
-                }
-                return result;
-            }
-        };
+        return new NormalizedLinearModel(betas, means, norms, learnScore, meanTarget);
     }
 }

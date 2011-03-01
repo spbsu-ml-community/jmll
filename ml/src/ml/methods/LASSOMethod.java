@@ -1,14 +1,10 @@
 package ml.methods;
 
-import ml.Model;
 import ml.data.DSIterator;
-import ml.data.DataEntry;
 import ml.data.DataSet;
 import ml.loss.L2Loss;
 import ml.loss.LossFunction;
-
-import java.util.Arrays;
-import java.util.Comparator;
+import ml.models.LinearModel;
 
 /**
  * User: solar
@@ -24,7 +20,7 @@ public class LASSOMethod implements MLMethod {
         this.step = step;
     }
 
-    public Model fit(DataSet learn, LossFunction loss) {
+    public LinearModel fit(DataSet learn, LossFunction loss) {
         if (loss.getClass() != L2Loss.class)
             throw new IllegalArgumentException("LASSO can not be applied to loss other than l2");
         final double[] betas = new double[learn.featureCount()];
@@ -75,38 +71,7 @@ public class LASSOMethod implements MLMethod {
                 }
             }
         }
-        final double learnScore = score;
-        return new Model() {
-            public double value(DataEntry point) {
-                double result = 0;
-                for (int i = 0; i < betas.length; i++) {
-                    result += point.x(i) * betas[i];
-                }
-                return result;
-            }
-
-            public double learnScore() {
-                return learnScore;
-            }
-
-            public String toString() {
-                String result = "";
-                Integer[] order = new Integer[betas.length];
-                for (int k = 0; k < betas.length; k++) {
-                    order[k] = k;
-                }
-                Arrays.sort(order, new Comparator<Integer>() {
-                    public int compare(Integer a, Integer b) {
-                        return (int)Math.signum(Math.abs(betas[b]) - Math.abs(betas[a]));
-                    }
-                });
-                for (int i = 0; i < betas.length; i++) {
-                    if(betas[order[i]] == 0)
-                        continue;
-                    result += "\t" + order[i] + ": " + betas[order[i]] + "\n";
-                }
-                return result;
-            }
-        };
+        return new LinearModel(betas, score);
     }
+
 }
