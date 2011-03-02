@@ -51,6 +51,16 @@ public class LinearModel implements Model {
       return result;
   }
 
+  public final int length() {
+    int result = 0;
+    for (int i = 0; i < betas.length; i++) {
+        if(betas[i] == 0)
+            continue;
+        result++;
+    }
+    return result;
+  }
+
   public final double beta(int i) {
     return betas[i];
   }
