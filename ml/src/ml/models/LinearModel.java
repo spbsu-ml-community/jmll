@@ -46,7 +46,7 @@ public class LinearModel implements Model {
       for (int i = 0; i < betas.length; i++) {
           if(betas[order[i]] == 0)
               continue;
-          result += "\t" + order[i] + ": " + betas[order[i]] + "\n";
+          result += "\t" + order[i] + ": " + betas[order[i]];
       }
       return result;
   }
