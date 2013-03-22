@@ -11,7 +11,7 @@ import java.util.List;
 * Date: 26.11.12
 * Time: 15:56
 */
-public class AdditiveModel implements Model {
+public class AdditiveModel extends Model {
   public final List<Model> models;
   public final double step;
 

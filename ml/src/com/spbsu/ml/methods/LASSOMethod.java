@@ -1,10 +1,10 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.loss.LossFunction;
 import com.spbsu.ml.models.LinearModel;
 
 /**
@@ -12,7 +12,7 @@ import com.spbsu.ml.models.LinearModel;
  * Date: 27.12.10
  * Time: 18:04
  */
-public class LASSOMethod implements MLMethod {
+public class LASSOMethod implements MLMethodOrder1 {
     private final int iterations;
     private final double step;
 
@@ -21,7 +21,7 @@ public class LASSOMethod implements MLMethod {
         this.step = step;
     }
 
-    public LinearModel fit(DataSet learn, LossFunction loss) {
+    public LinearModel fit(DataSet learn, Oracle1 loss) {
         if (loss.getClass() != L2Loss.class)
             throw new IllegalArgumentException("LASSO can not be applied to loss other than l2");
         final double[] betas = new double[learn.xdim()];

@@ -32,7 +32,7 @@ public class HWScore {
       final Boosting boosting = new Boosting(new GreedyObliviousTree(new FastRandom(), learn, grid, 6), 2000, 0.005);
       final ScoreCalcer score = new ScoreCalcer(test);
       boosting.addProgressHandler(score);
-      boosting.fit(learn, new L2Loss());
+      boosting.fit(learn, new L2Loss(learn.target()));
       System.out.println("Best score: " + score.bestScore + " reached at iteration " + score.bestIter + ". Greed size: " + grid.size());
     }
     if (args.length >= 2 && "-fit".equals(args[0])) {

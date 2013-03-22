@@ -11,7 +11,7 @@ import java.util.List;
 * Date: 29.11.12
 * Time: 5:35
 */
-public class ObliviousTree implements Model {
+public class ObliviousTree extends Model {
   private final BFGrid.BinaryFeature[] features;
   private final double[] values;
   private final double[] basedOn;

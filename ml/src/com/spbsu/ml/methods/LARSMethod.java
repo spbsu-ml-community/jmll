@@ -2,11 +2,11 @@ package com.spbsu.ml.methods;
 
 import Jama.Matrix;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.loss.LossFunction;
 import com.spbsu.ml.models.NormalizedLinearModel;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import java.util.List;
  * Date: 27.12.10
  * Time: 18:04
  */
-public class LARSMethod implements MLMethod {
+public class LARSMethod implements MLMethodOrder1 {
   private static final double E = 1e-7;
   private class Direction {
     double sign;
@@ -28,7 +28,7 @@ public class LARSMethod implements MLMethod {
     }
   }
 
-  public NormalizedLinearModel fit(DataSet orig, LossFunction loss) {
+  public NormalizedLinearModel fit(DataSet orig, Oracle1 loss) {
     if (loss.getClass() != L2Loss.class)
       throw new IllegalArgumentException("LASSO can not be applied to loss other than l2");
     final int featuresCount = orig.xdim();

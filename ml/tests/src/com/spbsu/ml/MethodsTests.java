@@ -22,8 +22,8 @@ public class MethodsTests extends GridTest {
   public void testLARS() {
     final LARSMethod boosting = new LARSMethod();
 //    boosting.addProgressHandler(modelPrinter);
-    final NormalizedLinearModel model = boosting.fit(learn, new L2Loss());
-    System.out.println(new L2Loss().value(model, validate));
+    final NormalizedLinearModel model = boosting.fit(learn, new L2Loss(learn.target()));
+    System.out.println(new L2Loss(validate.target()).value(model.value(validate)));
   }
 
   public void testGRBoost() {
@@ -44,7 +44,7 @@ public class MethodsTests extends GridTest {
     boosting.addProgressHandler(validateListener);
     boosting.addProgressHandler(qualityCalcer);
 //    boosting.addProgressHandler(modelPrinter);
-    boosting.fit(learn, new L2Loss());
+    boosting.fit(learn, new L2Loss(learn.target()));
   }
 
   public void testGRSBoost() {
@@ -65,7 +65,7 @@ public class MethodsTests extends GridTest {
     boosting.addProgressHandler(validateListener);
     boosting.addProgressHandler(qualityCalcer);
 //    boosting.addProgressHandler(modelPrinter);
-    boosting.fit(learn, new L2Loss());
+    boosting.fit(learn, new L2Loss(learn.target()));
   }
 
   public void testGTDRBoost() {
@@ -86,7 +86,7 @@ public class MethodsTests extends GridTest {
     boosting.addProgressHandler(validateListener);
     boosting.addProgressHandler(qualityCalcer);
 //    boosting.addProgressHandler(modelPrinter);
-    boosting.fit(learn, new L2Loss());
+    boosting.fit(learn, new L2Loss(learn.target()));
   }
 
   public void testOTBoost() {
@@ -107,7 +107,7 @@ public class MethodsTests extends GridTest {
     boosting.addProgressHandler(validateListener);
     boosting.addProgressHandler(qualityCalcer);
 //    boosting.addProgressHandler(modelPrinter);
-    boosting.fit(learn, new L2Loss());
+    boosting.fit(learn, new L2Loss(learn.target()));
   }
 
   private double sqr(double x) {
@@ -130,7 +130,7 @@ public class MethodsTests extends GridTest {
     boosting.addProgressHandler(modelPrinter);
     boosting.addProgressHandler(learnListener);
     boosting.addProgressHandler(validateListener);
-    boosting.fit(learn, new L2Loss());
+    boosting.fit(learn, new L2Loss(learn.target()));
   }
 
   private static class ScoreCalcer implements ProgressHandler {

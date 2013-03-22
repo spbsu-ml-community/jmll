@@ -3,12 +3,13 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.ml.Model;
+import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.stats.OrderByFeature;
 import com.spbsu.ml.data.stats.Total2Stat;
 import com.spbsu.ml.data.stats.TotalStat;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.loss.LossFunction;
 
 /**
  * User: solar
@@ -16,8 +17,8 @@ import com.spbsu.ml.loss.LossFunction;
  * Time: 22:47:15
  */
 public class BestAtomicSplitMethod extends ParallelByFeatureMethod {
-  public AtomicSplit fit(final DataSet l, final LossFunction loss, FeatureFilter filter) {
-    DataSet learn = l;
+  public AtomicSplit fit(final DataSet l, final Oracle1 loss, FeatureFilter filter) {
+    DataSetImpl learn = (DataSetImpl)l;
     assert loss.getClass() == L2Loss.class;
     double minLoss = Double.MAX_VALUE;
     AtomicSplit bestModel = new AtomicSplit(0,0,0,0,minLoss);
@@ -68,7 +69,7 @@ public class BestAtomicSplitMethod extends ParallelByFeatureMethod {
     return bestModel.isCorrect() ? bestModel : null;
   }
 
-  public class AtomicSplit implements Model {
+  public class AtomicSplit extends Model {
     int feature;
     double condition;
     double valueLeft, valueRight;

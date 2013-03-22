@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../commons/commons-lib.iml" filepath="$PROJECT_DIR$/../commons/commons-lib.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../yournews/trunk/commons/trunk/commons-lib.iml" filepath="$PROJECT_DIR$/../yournews/trunk/commons/trunk/commons-lib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../commons/trunk/commons-lib.iml" filepath="$PROJECT_DIR$/../../commons/trunk/commons-lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/libs/libs.iml" filepath="$PROJECT_DIR$/libs/libs.iml" />
       <module fileurl="file://$PROJECT_DIR$/ml/ml.iml" filepath="$PROJECT_DIR$/ml/ml.iml" />
     </modules>

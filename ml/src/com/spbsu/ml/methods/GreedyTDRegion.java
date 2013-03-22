@@ -5,12 +5,12 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Model;
+import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.Histogram;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.loss.LossFunction;
 import com.spbsu.ml.models.Region;
 import gnu.trove.TDoubleDoubleProcedure;
 import gnu.trove.TIntArrayList;
@@ -24,7 +24,7 @@ import java.util.Random;
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyTDRegion implements MLMethod {
+public class GreedyTDRegion implements MLMethodOrder1 {
   protected final BFGrid grid;
   protected final BinarizedDataSet bds;
   private double alpha = 0.3;
@@ -90,7 +90,7 @@ public class GreedyTDRegion implements MLMethod {
     }
   }
 
-  public Model fit(DataSet ds, LossFunction loss) {
+  public Model fit(DataSet ds, Oracle1 loss) {
     assert loss.getClass() == L2Loss.class;
     DataSet learn = ds;
     final List<Region.BinaryCond> conditions = new ArrayList<Region.BinaryCond>(grid.size());

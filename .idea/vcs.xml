@@ -2,7 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="svn" />
-    <mapping directory="$PROJECT_DIR$/../commons" vcs="svn" />
+    <mapping directory="$PROJECT_DIR$/../../commons/trunk" vcs="svn" />
   </component>
 </project>
 

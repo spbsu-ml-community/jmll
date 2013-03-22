@@ -5,10 +5,10 @@ import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Holder;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Model;
+import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.loss.LossFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyL1SphereRegion implements MLMethod {
+public class GreedyL1SphereRegion implements MLMethodOrder1 {
   public static final int NN_NEIGHBORHOOD = 100;
   private final Random rng;
   private final BFGrid grid;
@@ -69,7 +69,7 @@ public class GreedyL1SphereRegion implements MLMethod {
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
   ThreadPoolExecutor exec = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 100500, TimeUnit.DAYS, new ArrayBlockingQueue<Runnable>(100));
   @Override
-  public Region fit(final DataSet learn, final LossFunction loss) {
+  public Region fit(final DataSet learn, final Oracle1 loss) {
     final Holder<Region> answer = new Holder<Region>(null);
     final CountDownLatch latch = new CountDownLatch(POOL_SIZE);
     for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
@@ -94,7 +94,7 @@ public class GreedyL1SphereRegion implements MLMethod {
     return answer.getValue();
   }
 
-  public Region fitInner(DataSet ds, LossFunction loss) {
+  public Region fitInner(DataSet ds, Oracle1 loss) {
     DataSet learn = ds;
     assert loss.getClass() == L2Loss.class;
     int pointIdx = choosePointAtRandomNN(learn);
@@ -220,7 +220,7 @@ public class GreedyL1SphereRegion implements MLMethod {
     }
   }
 
-  public static class Region implements Model {
+  public static class Region extends Model {
     private final int[] features;
     private final double[] conditions;
     private final boolean[] mask;

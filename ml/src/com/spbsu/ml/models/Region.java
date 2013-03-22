@@ -11,7 +11,7 @@ import java.util.List;
 * Date: 29.11.12
 * Time: 5:35
 */
-public class Region implements Model {
+public class Region extends Model {
   private final int[] features;
   private final double[] conditions;
   private final boolean[] mask;

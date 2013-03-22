@@ -8,14 +8,14 @@ import com.spbsu.commons.math.vectors.Vec;
  * Time: 19:09
  */
 public class ChangedTarget extends DataSetImpl {
-    final DataSetImpl parent;
+  final DataSetImpl parent;
 
-    public ChangedTarget(DataSetImpl parent, Vec target) {
-        super(parent.data(), target);
-        this.parent = parent;
-    }
+  public ChangedTarget(DataSetImpl parent, Vec target) {
+    super(parent.data(), target);
+    this.parent = parent;
+  }
 
-    int[] order(int fIndex) {
-        return parent.order(fIndex);
-    }
+  public int[] order(int fIndex) {
+    return parent.order(fIndex);
+  }
 }

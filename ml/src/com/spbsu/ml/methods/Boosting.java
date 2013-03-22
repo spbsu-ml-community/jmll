@@ -3,12 +3,12 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Model;
+import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.loss.LossFunction;
 import com.spbsu.ml.models.AdditiveModel;
 
 import java.lang.ref.WeakReference;
@@ -22,34 +22,32 @@ import java.util.List;
  * Date: 21.12.2010
  * Time: 22:13:54
  */
-public class Boosting implements MLMethod {
-  MLMethod weak;
+public class Boosting implements MLMethodOrder1 {
+  MLMethodOrder1 weak;
   int iterationsCount;
   double step;
   private List<WeakReference<ProgressHandler>> progress = new ArrayList<WeakReference<ProgressHandler>>();
 
-  public Boosting(MLMethod weak, int iterationsCount, double step) {
+  public Boosting(MLMethodOrder1 weak, int iterationsCount, double step) {
     this.weak = weak;
     this.iterationsCount = iterationsCount;
     this.step = step;
   }
 
-  public Model fit(DataSet learn, LossFunction loss) {
+  public Model fit(DataSet learn, Oracle1 loss) {
     final List<Model> models = new LinkedList<Model>();
     final AdditiveModel result = new AdditiveModel(models, step);
 
     Vec point = new ArrayVec(learn.power());
 
     for (int i = 0; i < iterationsCount; i++) {
-      final Vec gradient = loss.gradient(point, learn);
-//      final DataSet gradients = DataTools.changeTarget(learn, gradient);
-      final DataSet gradients = DataTools.bootstrap(DataTools.changeTarget(learn, loss.gradient(point, learn)));
-      final L2Loss l2Loss = new L2Loss();
+      final Vec gradient = loss.gradient(point);
+      final DataSet gradients = DataTools.bootstrap(DataTools.changeTarget(learn, loss.gradient(point)));
+      final L2Loss l2Loss = new L2Loss(gradient);
       Model weakModel = weak.fit(gradients, l2Loss);
       if (weakModel == null)
         break;
-//      System.out.println("\npoint: " + VecTools.norm(point) + " grad: " + VecTools.norm(gradient));
-//            System.out.println("" + l2Loss.value(weakModel, learn));
+
       models.add(weakModel);
       final Iterator<WeakReference<ProgressHandler>> progIter = progress.iterator();
       while (progIter.hasNext()) {
@@ -61,14 +59,10 @@ public class Boosting implements MLMethod {
         else progIter.remove();
       }
       final DSIterator it = learn.iterator();
-//      int nz = 0;
       for (int t = 0; it.advance() && t < point.dim(); t++) {
         double val = weakModel.value(it.x());
-//        if (Math.abs(val) > 0)
-//          nz++;
         point.adjust(t, step * val);
       }
-//      System.out.println("\nNon zeroes: " + nz);
     }
 
     return result;

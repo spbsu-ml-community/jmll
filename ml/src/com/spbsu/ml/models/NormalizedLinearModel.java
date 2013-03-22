@@ -11,7 +11,7 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
 * Date: 01.03.11
 * Time: 22:30
 */
-public class NormalizedLinearModel implements Model {
+public class NormalizedLinearModel extends Model {
   private final Vec weights;
   DataTools.NormalizationProperties props;
 

@@ -1,8 +1,8 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.ml.Model;
+import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.loss.LossFunction;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -14,16 +14,16 @@ import java.util.concurrent.TimeUnit;
  * Date: 23.12.2010
  * Time: 16:24:43
  */
-public abstract class ParallelByFeatureMethod implements MLMethod {
+public abstract class ParallelByFeatureMethod implements MLMethodOrder1 {
   public interface FeatureFilter {
     boolean relevant(int findex);
   }
 
-  protected abstract Model fit(DataSet learn, LossFunction loss, FeatureFilter filter);
+  protected abstract Model fit(DataSet learn, Oracle1 loss, FeatureFilter filter);
 
   private final int cores = Runtime.getRuntime().availableProcessors();
   ThreadPoolExecutor executor = new ThreadPoolExecutor(cores, cores, 1, TimeUnit.DAYS, new ArrayBlockingQueue<Runnable>(cores));
-  public Model fit(final DataSet learn, final LossFunction loss) {
+  public Model fit(final DataSet learn, final Oracle1 loss) {
     final int threadsCount = Runtime.getRuntime().availableProcessors();
     final Model[] bestModels = new Model[threadsCount];
     final double[] validateScore = new double[threadsCount];
@@ -32,13 +32,13 @@ public abstract class ParallelByFeatureMethod implements MLMethod {
       final int fi = i;
       executor.execute(new Runnable() {
         public void run() {
-            Model result = fit(learn, loss, new FeatureFilter() {
+          Model result = fit(learn, loss, new FeatureFilter() {
             public boolean relevant(int featureIndex) {
               return featureIndex % threadsCount == fi;
             }
           });
           bestModels[fi] = result;
-          validateScore[fi] = loss.value(result, learn);
+          validateScore[fi] = loss.value(result.value(learn));
           latch.countDown();
         }
       });

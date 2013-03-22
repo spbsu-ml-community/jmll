@@ -4,11 +4,11 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.Histogram;
 import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.loss.LossFunction;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.TDoubleDoubleProcedure;
 import gnu.trove.TIntArrayList;
@@ -31,8 +31,9 @@ public class GreedyObliviousTree extends GreedyTDRegion {
   }
 
   @Override
-  public ObliviousTree fit(DataSet ds, LossFunction loss) {
-    assert loss instanceof L2Loss;
+  public ObliviousTree fit(DataSet ds, Oracle1 loss) {
+    if(!(loss instanceof L2Loss))
+      throw new IllegalArgumentException("L2 loss supported only");
     List<int[]> split = new ArrayList<int[]>();
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(depth);
     final Vec target = ds instanceof Bootstrap ? ((Bootstrap)ds).original().target() : ds.target();

@@ -11,7 +11,7 @@ import com.spbsu.ml.Model;
  * Date: 01.03.11
  * Time: 22:30
  */
-public class LinearModel implements Model {
+public class LinearModel extends Model {
   protected final Vec betas;
 
   public LinearModel(Vec betas) {
