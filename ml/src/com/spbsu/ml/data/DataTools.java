@@ -123,7 +123,7 @@ public class DataTools {
         break;
       case PCA:
         trans = new VecBasedMx(ds.xdim(), ds.xdim());
-        VecTools.householderLQ(covar, new VecBasedMx(ds.xdim(), ds.xdim()), trans);
+        VecTools.eigenDecomposition(covar, new VecBasedMx(ds.xdim(), ds.xdim()), trans);
         break;
       case SCALE:
         trans = new VecBasedMx(ds.xdim(), ds.xdim());
