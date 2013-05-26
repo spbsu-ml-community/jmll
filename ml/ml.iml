@@ -6,10 +6,75 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tests/src" isTestSource="true" />
     </content>
+    <content url="file://$MODULE_DIR$/../../../igorkuralenok-commons">
+      <sourceFolder url="file://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/tests/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/src" isTestSource="false" />
+    </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="libs" />
-    <orderEntry type="module" module-name="commons-lib" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/trove-2.0.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/bin/commons-logging.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/bin/junit.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/build/commons.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/org.mortbay.jetty.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/annotations.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/commons-fileupload-1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/commons-io-1.3.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/commons-logging.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/jdom-1.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/junit.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/servlet-api-2.5.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../../igorkuralenok-commons/trunk/lib/trove-src-2.0.2.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>
 

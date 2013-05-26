@@ -5,6 +5,7 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Model;
 
 import java.util.List;
+import java.util.ArrayList;
 
 /**
 * User: solar
@@ -52,5 +53,11 @@ public class ObliviousTree extends Model {
         index++;
     }
     return index;
+  }
+  public List<BFGrid.BinaryFeature> getFeatures(){
+    List<BFGrid.BinaryFeature> ret = new ArrayList<BFGrid.BinaryFeature>();
+    for(int i = 0;i < features.length;i++)
+        ret.add(features[i]);
+    return ret;
   }
 }

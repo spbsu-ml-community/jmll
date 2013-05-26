@@ -12,6 +12,9 @@ import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import gnu.trove.TDoubleDoubleProcedure;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+
 /**
  * User: solar
  * Date: 03.12.12

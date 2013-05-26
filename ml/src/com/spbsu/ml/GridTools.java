@@ -30,6 +30,12 @@ public class GridTools {
       final ArrayPermutation permutation = byFeature.orderBy(f);
       int[] order = permutation.direct();
       int[] reverse = permutation.reverse();
+      boolean haveDiffrentElements = false;
+      for(int i = 1; i < order.length;i++)
+          if(order[i] != order[0])
+              haveDiffrentElements = true;
+      if(!haveDiffrentElements)
+          continue;
       for (int i = 0; i < feature.length; i++)
         feature[i] = ds.data().get(order[i], f);
       while (borders.size() < binFactor + 1) {
@@ -41,14 +47,14 @@ public class GridTools {
           double median = feature[start + (end - start) / 2];
           int split = Math.abs(Arrays.binarySearch(feature, start, end, median));
           //noinspection StatementWithEmptyBody
-          while (--split > 0 && feature[split] == median); // look for first less then median value
-          if(feature[split] != median) split++;
+          while (--split > 0 && Math.abs(feature[split] - median) < 1e-9); // look for first less then median value
+          if(Math.abs(feature[split] - median) > 1e-9) split++;
           final double scoreLeft = Math.log(end - split) + Math.log(split - start);
           if (split > 0 && scoreLeft > bestScore) {
             bestScore = scoreLeft;
             bestSplit = split;
           }
-          while (++split < end && feature[split] == median); // first after elements with such value
+          while (++split < end && Math.abs(feature[split] - median) < 1e-9); // first after elements with such value
           final double scoreRight = Math.log(end - split) + Math.log(split - start);
           if (split < end && scoreRight > bestScore) {
             bestScore = scoreRight;
@@ -77,6 +83,7 @@ public class GridTools {
         }
       }
       rows[f] = new BFGrid.BFRow(bfCount, f, dborders.toNativeArray());
+
       bfCount += dborders.size();
     }
     return new BFGrid(rows);
