@@ -35,9 +35,64 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
     private final GreedyObliviousTree nonContinousVersion;
 
     public GreedyContinousObliviousTree(Random rng, DataSet ds, BFGrid grid, int depth) {
-        super(rng, ds, grid, 1./3, 0);
+        super(rng, ds, grid, 1. / 3, 0);
         nonContinousVersion = new GreedyObliviousTree(rng, ds, grid, depth);
         this.depth = depth;
+    }
+
+    public double[] createGradientCondition(DataSet ds, int mask, int col, int row) {
+        int n = depth + 1;
+        double cond[] = new double[(1 << depth) * n * n];
+        for (int k = 0; k < ds.data().columns(); k++) {
+            double X = (col == 0 ? 1 : ds.data().get(k, col - 1)) *
+                    (row == 0 ? 1 : ds.data().get(k, row - 1));
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < n; j++)
+                    if (i == col && j == row)
+                        cond[mask * n * n + i * n + j] += X * X;
+                    else
+                        cond[mask * n * n + i * n + j] += X * (i == 0 ? 1 : ds.data().get(k, i - 1)) *
+                                (j == 0 ? 1 : ds.data().get(k, j - 1));
+            double rightPart = X * ds.target().get(k);     //Contant part of equation
+        }
+        return cond;
+    }
+
+    public void createBoundariesCondition(DataSet ds, int mask, BFGrid.BinaryFeature feature, int featureNum) {
+        int n = depth + 1;
+        if(((mask >> featureNum) & 1) == 0)
+            return;
+        int conterMask = mask ^ (1 << (featureNum));
+        featureNum++;
+        double C = feature.condition;
+        {
+            //equal in the point 0
+            double cond[] = new double[(1 << depth) * n * n];
+            cond[mask * n * n] = 1;
+            cond[conterMask * n * n] = -1;
+            cond[mask * n * n + featureNum * n + featureNum] =  C * C;
+            cond[conterMask * n * n + featureNum * n + featureNum] = -C * C;
+
+        }
+        //linear condition
+        for (int i = 0; i < n; i++)
+            if(i != featureNum){
+                double cond[] = new double[(1 << depth) * n * n];
+                cond[mask * n * n + i * n] = cond[mask * n * n + i] = 0.5;
+                cond[conterMask * n * n + i * n] = cond[conterMask * n * n + i] = -0.5;
+                cond[mask * n * n + i * n + featureNum] = cond[mask * n * n + featureNum * n+ i] = C / 2;
+                cond[conterMask * n * n + i * n + featureNum] =
+                        cond[conterMask * n * n + featureNum * n+ i] = -C / 2;
+            }
+
+        //Quadratic condition
+        for (int i = 1; i < n; i++)
+            for (int j = 1; j < n; j++)
+                if (i != featureNum && j != featureNum) {
+                    double cond[] = new double[(1 << depth) * n * n];
+                    cond[mask * n * n + i * n + i] = C * C;
+                    cond[conterMask * n * n + i * n + i] = -C * C;
+                }
     }
 
     @Override
@@ -50,14 +105,18 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
         QuadraticFunction x= new QuadraticFunction(mxA,w,w0);*/
         List<BFGrid.BinaryFeature> features = x.getFeatures();
         double value[][] = new double[1 << features.size()][(features.size() + 1) * (features.size() + 1)];
-        /*for(int i = 0; i < features.size();i++){
-            double c = features.get(i).condition;
-        } */
-        for(int i = 0;i < ds.data().columns(); i++){
-            value[x.bin(ds.data().col(i))][features.size() * (features.size() + 1)] = ds.target().get(i);
+        int cnt[] = new int[1 << depth];
+        int n = features.size() + 1;
+        //Optimal for miss
+        for (int mask = 0; mask < 1 << depth; mask++) {
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < n; j++) {
+                    createGradientCondition(ds, mask, i, j);
+                }
+            for(int i = 0;i < features.size();i++)
+                createBoundariesCondition(ds,mask,features.get(i),i);
         }
-
-        return new ContinousObliviousTree(features,value);
+        return new ContinousObliviousTree(features, value);
     }
 
 

@@ -7,24 +7,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" readonly="true" id="b5751471-ac07-4077-949f-2d3d12827f09" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ContinousObliviousTree.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/DataToolsTest.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/DataToolsTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/GridTools.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/GridTools.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/ml.iml" afterPath="$PROJECT_DIR$/ml/ml.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ContinousObliviousTree.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ContinousObliviousTree.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <list id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
     <ignored path=".idea/workspace.xml" />
     <ignored path="ML.iws" />
-    <file path="/ContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369410695704" ignored="false" />
+    <file path="/ContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369565279875" ignored="false" />
     <file path="/BFGrid.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1368551122686" ignored="false" />
-    <file path="/GreedyContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369411363568" ignored="false" />
+    <file path="/GreedyContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1370193211945" ignored="false" />
     <file path="/fragment.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369562020845" ignored="false" />
     <file path="/GreedyObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369408222057" ignored="false" />
     <file path="/ObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369409881626" ignored="false" />
@@ -200,15 +192,49 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="MethodsTests.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="MethodsTests.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="155" column="41" selection-start="7056" selection-end="7056" vertical-scroll-proportion="0.33660132">
+            <state line="156" column="0" selection-start="7067" selection-end="7067" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="GreedyContinousObliviousTree.java" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="93" column="35" selection-start="3871" selection-end="3871" vertical-scroll-proportion="-0.43887147">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="VecTools.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/vectors/VecTools.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="411" column="46" selection-start="13926" selection-end="13926" vertical-scroll-proportion="0.0">
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="e#5537#5893#0" expanded="true" />
-                <element signature="e#5882#5883#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="MathTools.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/MathTools.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="5" column="22" selection-start="77" selection-end="77" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ContinousObliviousTree.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ContinousObliviousTree.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="42" column="42" selection-start="1586" selection-end="1586" vertical-scroll-proportion="0.0">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -230,15 +256,15 @@
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" />
         <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/DataToolsTest.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" />
-        <option value="$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/vectors/VecTools.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousTree.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ContinousObliviousTree.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java" />
         <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/GridTools.java" />
         <option value="$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/util/ArrayTools.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ContinousObliviousTree.java" />
         <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" />
+        <option value="$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/vectors/VecTools.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java" />
       </list>
     </option>
   </component>
@@ -300,6 +326,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
@@ -444,8 +471,40 @@
               <option name="myItemId" value="trunk" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="igorkuralenok-commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="igorkuralenok-commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
@@ -453,11 +512,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="ml" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="models" />
+              <option name="myItemId" value="commons" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -471,11 +526,11 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
+              <option name="myItemId" value="igorkuralenok-commons" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="ml" />
+              <option name="myItemId" value="trunk" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
@@ -483,25 +538,11 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="ml" />
+              <option name="myItemId" value="commons" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="methods" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ml" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
+              <option name="myItemId" value="math" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -513,11 +554,34 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="ml" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="igorkuralenok-commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="math" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="vectors" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
       <pane id="Favorites" />
     </panes>
   </component>
@@ -535,12 +599,12 @@
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
-    <property name="MemberChooser.showClasses" value="true" />
     <property name="FullScreen" value="false" />
+    <property name="MemberChooser.showClasses" value="true" />
     <property name="GoToClass.includeLibraries" value="false" />
-    <property name="dynamic.classpath" value="false" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
+    <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="dynamic.classpath" value="false" />
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
@@ -709,6 +773,19 @@
       <option name="PORT" value="5005" />
       <method />
     </configuration>
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <method />
+    </configuration>
     <configuration default="true" type="TestNG" factoryName="TestNG">
       <module name="" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -734,19 +811,6 @@
       <envs />
       <properties />
       <listeners />
-      <method />
-    </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
       <method />
     </configuration>
     <configuration default="true" type="Application" factoryName="Application">
@@ -928,7 +992,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-4" y="-4" width="1374" height="732" extended-state="0" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1021,70 +1085,29 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="46" column="0" selection-start="1207" selection-end="1207" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyTDRegion.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="40" column="0" selection-start="1134" selection-end="1134" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="imports" expanded="false" />
-            <element signature="e#2655#2674#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BinarizedDataSet.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="31" column="0" selection-start="810" selection-end="810" vertical-scroll-proportion="0.33333334">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/lib/trove-2.0.2.jar!/gnu/trove/HashFunctions.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="22" selection-start="379" selection-end="379" vertical-scroll-proportion="-4.44">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/lib/trove-2.0.2.jar!/gnu/trove/TIntHash.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="21" selection-start="1347" selection-end="1347" vertical-scroll-proportion="-5.64">
-          <folding />
-        </state>
+        <state line="36" column="21" selection-start="1347" selection-end="1347" vertical-scroll-proportion="-5.64" />
       </provider>
     </entry>
     <entry file="jar://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/lib/trove-2.0.2.jar!/gnu/trove/TIntObjectHashMap.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="13" selection-start="1352" selection-end="1352" vertical-scroll-proportion="-3.44">
-          <folding />
-        </state>
+        <state line="36" column="13" selection-start="1352" selection-end="1352" vertical-scroll-proportion="-3.44" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/stats/OrderByFeature.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="27" column="0" selection-start="795" selection-end="795" vertical-scroll-proportion="0.5704698">
-          <folding />
-        </state>
+        <state line="27" column="0" selection-start="795" selection-end="795" vertical-scroll-proportion="0.5704698" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/vectors/impl/ArrayVec.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="26" column="0" selection-start="569" selection-end="569" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="26" column="0" selection-start="569" selection-end="569" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/vectors/impl/IndexTransVec.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="96" column="0" selection-start="3305" selection-end="3305" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="96" column="0" selection-start="3305" selection-end="3305" vertical-scroll-proportion="0.0" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/vectors/impl/VecBasedMx.java">
@@ -1117,9 +1140,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/vectors/impl/iterators/ArrayVecNZIterator.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="29" column="0" selection-start="610" selection-end="610" vertical-scroll-proportion="0.17678571">
-          <folding />
-        </state>
+        <state line="29" column="0" selection-start="610" selection-end="610" vertical-scroll-proportion="0.17678571" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/GridTools.java">
@@ -1129,14 +1150,40 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java">
+    <entry file="file://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/MathTools.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="155" column="41" selection-start="7056" selection-end="7056" vertical-scroll-proportion="0.33660132">
+        <state line="5" column="22" selection-start="77" selection-end="77" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ContinousObliviousTree.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="42" column="42" selection-start="1586" selection-end="1586" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../igorkuralenok-commons/trunk/src/com/spbsu/commons/math/vectors/VecTools.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="411" column="46" selection-start="13926" selection-end="13926" vertical-scroll-proportion="0.0">
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#5537#5893#0" expanded="true" />
-            <element signature="e#5882#5883#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="156" column="0" selection-start="7067" selection-end="7067" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="93" column="35" selection-start="3871" selection-end="3871" vertical-scroll-proportion="-0.43887147">
+          <folding />
         </state>
       </provider>
     </entry>

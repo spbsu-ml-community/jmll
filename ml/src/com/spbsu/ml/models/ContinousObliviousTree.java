@@ -36,11 +36,11 @@ public class ContinousObliviousTree extends Model {
         double sum = 0;
         double x[] = new double[features.length + 1];
         for(int i = 0; i < features.length; i++)
-            x[i] = _x.get(i);
-        x[features.length] = 1;
+            x[i + 1] = _x.get(i);
+        x[0] = 1;
         for(int i = 0; i < features.length;i++)
             for(int j = 0;j < features.length;j++)
-                sum += x[i] * x[j];
+                sum += values[index][i + (features.length + 1) * j] * x[i] * x[j];
         return sum;
     }
 
