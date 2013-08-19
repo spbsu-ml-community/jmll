@@ -2,14 +2,9 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Converter;
 import com.spbsu.commons.math.vectors.Vec;
-import gnu.trove.TDoubleArrayList;
+import com.spbsu.ml.io.BFGridStringConverter;
 
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.Arrays;
 
 /**
  * User: solar
@@ -100,6 +95,25 @@ public class BFGrid {
     public boolean empty() {
       return bfEnd == bfStart;
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof BFRow)) return false;
+
+      BFRow bfRow = (BFRow) o;
+
+      return bfStart == bfRow.bfStart && origFIndex == bfRow.origFIndex && Arrays.equals(borders, bfRow.borders);
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = bfStart;
+      result = 31 * result + origFIndex;
+      result = 31 * result + Arrays.hashCode(borders);
+      return result;
+    }
   }
 
   public static class BinaryFeature {
@@ -128,47 +142,51 @@ public class BFGrid {
     public BFRow row() {
       return bfRow;
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof BinaryFeature)) return false;
+
+      BinaryFeature that = (BinaryFeature) o;
+
+      return bfIndex == that.bfIndex && bfRow.equals(that.bfRow);
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = bfRow.hashCode();
+      result = 31 * result + bfIndex;
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("f[%d] > %g", findex, condition);
+    }
   }
 
-  public static final Converter<BFGrid, String> CONVERTER = new Converter<BFGrid, String>() {
-    @Override
-    public BFGrid convertFrom(String source) {
-      final List<BFRow> rows = new ArrayList<BFRow>(1000);
-      final LineNumberReader reader = new LineNumberReader(new StringReader(source));
-      String line;
-      try {
-        final TDoubleArrayList borders = new TDoubleArrayList();
-        int bfIndex = 0;
-        int lineIndex = 0;
-        while ((line = reader.readLine()) != null) {
-          final StringTokenizer tok = new StringTokenizer(line, " \t");
-          borders.clear();
-          while (tok.hasMoreElements()) {
-            borders.add(Double.parseDouble(tok.nextToken()));
-          }
-          rows.add(new BFRow(bfIndex, lineIndex, borders.toNativeArray()));
-          bfIndex += borders.size();
-          lineIndex++;
-        }
-      }
-      catch (IOException ioe) { //skip
-      }
-      return new BFGrid(rows.toArray(new BFRow[rows.size()]));
-    }
+  public static final Converter<BFGrid, String> CONVERTER = new BFGridStringConverter();
 
-    @Override
-    public String convertTo(BFGrid grid) {
-      StringBuilder builder = new StringBuilder();
-      for (int rowIndex = 0; rowIndex < grid.rows.length; rowIndex++) {
-        final BFRow row = grid.row(rowIndex);
-        final int rowBfCount = row.borders.length;
-        for (int border = 0; border < rowBfCount; border++) {
-          builder.append(border > 0 ? "\t" : "");
-          builder.append(row.condition(border));
-        }
-        builder.append("\n");
-      }
-      return builder.toString();
-    }
-  };
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof BFGrid)) return false;
+
+    BFGrid bfGrid = (BFGrid) o;
+
+    return Arrays.equals(rows, bfGrid.rows);
+
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(rows);
+  }
+
+  @Override
+  public String toString() {
+    return CONVERTER.convertTo(this);
+  }
 }

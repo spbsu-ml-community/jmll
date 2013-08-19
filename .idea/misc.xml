@@ -3,6 +3,7 @@
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
   </component>
+  <component name="IdProvider" IDEtalkID="B6211CF3A091DC06A9A4BA41E1FB7D26" />
   <component name="JavadocGenerationManager">
     <option name="OUTPUT_DIRECTORY" />
     <option name="OPTION_SCOPE" value="protected" />
@@ -39,13 +40,6 @@
                 </list>
               </option>
               <option name="trunkUrl" value="http://xp-dev.com/svn/JMLL/trunk" />
-            </SvnBranchConfiguration>
-          </value>
-        </entry>
-        <entry key="$PROJECT_DIR$/../../igorkuralenok-commons">
-          <value>
-            <SvnBranchConfiguration>
-              <option name="trunkUrl" value="" />
             </SvnBranchConfiguration>
           </value>
         </entry>

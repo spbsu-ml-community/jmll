@@ -102,7 +102,7 @@ public class GreedyObliviousTree extends GreedyTDRegion {
         totals[i] /= weights[i];
       else
         totals[i] = 0;
-    return new ObliviousTree(conditions, totals, weights, currentScore);
+    return new ObliviousTree(conditions, totals, weights);
   }
 
   private class BestBFFinder implements TDoubleDoubleProcedure {

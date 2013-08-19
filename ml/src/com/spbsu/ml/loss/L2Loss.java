@@ -1,12 +1,7 @@
 package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.Model;
 import com.spbsu.ml.Oracle1;
-import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
 
 import static com.spbsu.commons.math.vectors.VecTools.*;
 
@@ -31,6 +26,6 @@ public class L2Loss implements Oracle1 {
   }
 
   public double value(Vec point) {
-    return distance(target, point);
+    return distance(target, point)/Math.sqrt(point.dim());
   }
 }

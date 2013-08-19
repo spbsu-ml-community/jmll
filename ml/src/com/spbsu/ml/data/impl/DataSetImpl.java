@@ -66,7 +66,7 @@ public class DataSetImpl extends CacheHolderImpl implements DataSet {
   public synchronized int[] order(final int featureIndex) {
     int[] result = orders.get(featureIndex);
     if (result == null) {
-      result = new int[power()];
+      result = ArrayTools.sequence(0, power());
       ArrayTools.parallelSort(data.col(featureIndex).toArray(), result);
       orders.put(featureIndex, result);
     }

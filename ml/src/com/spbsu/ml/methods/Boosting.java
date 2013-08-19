@@ -4,16 +4,12 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Model;
 import com.spbsu.ml.Oracle1;
-import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.models.AdditiveModel;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,11 +18,10 @@ import java.util.List;
  * Date: 21.12.2010
  * Time: 22:13:54
  */
-public class Boosting implements MLMethodOrder1 {
+public class Boosting extends ProgressOwner implements MLMethodOrder1 {
   MLMethodOrder1 weak;
   int iterationsCount;
   double step;
-  private List<WeakReference<ProgressHandler>> progress = new ArrayList<WeakReference<ProgressHandler>>();
 
   public Boosting(MLMethodOrder1 weak, int iterationsCount, double step) {
     this.weak = weak;
@@ -49,15 +44,7 @@ public class Boosting implements MLMethodOrder1 {
         break;
 
       models.add(weakModel);
-      final Iterator<WeakReference<ProgressHandler>> progIter = progress.iterator();
-      while (progIter.hasNext()) {
-        WeakReference<ProgressHandler> next = progIter.next();
-        final ProgressHandler progressHandler;
-        if ((progressHandler = next.get()) != null) {
-          progressHandler.progress(result);
-        }
-        else progIter.remove();
-      }
+      processProgress(result);
       final DSIterator it = learn.iterator();
       for (int t = 0; it.advance() && t < point.dim(); t++) {
         double val = weakModel.value(it.x());
@@ -66,9 +53,5 @@ public class Boosting implements MLMethodOrder1 {
     }
 
     return result;
-  }
-
-  public void addProgressHandler(ProgressHandler handler) {
-    this.progress.add(new WeakReference<ProgressHandler>(handler));
   }
 }

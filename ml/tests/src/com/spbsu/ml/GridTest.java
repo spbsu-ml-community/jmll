@@ -4,13 +4,9 @@ import com.spbsu.commons.FileTestCase;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
-import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.impl.DataSetImpl;
-import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.methods.GreedyObliviousTree;
-import com.spbsu.ml.models.ObliviousTree;
 
 import java.io.IOException;
 

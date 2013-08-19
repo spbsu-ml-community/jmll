@@ -28,4 +28,25 @@ public class AdditiveModel extends Model {
     }
     return result;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof AdditiveModel)) return false;
+
+    AdditiveModel that = (AdditiveModel) o;
+
+    return Double.compare(that.step, step) == 0 && models.equals(that.models);
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result;
+    long temp;
+    result = models.hashCode();
+    temp = Double.doubleToLongBits(step);
+    result = 31 * result + (int) (temp ^ (temp >>> 32));
+    return result;
+  }
 }
