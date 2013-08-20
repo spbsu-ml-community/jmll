@@ -22,18 +22,7 @@
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Map2BufferConverter.java" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Set2BufferConverter.java" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/StringCSFactory.java" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataSet.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataSet.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java" afterPath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/META-INF/MANIFEST.MF" afterPath="$PROJECT_DIR$/ml/src/META-INF/MANIFEST.MF" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <list id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
@@ -47,7 +36,7 @@
     <file path="/ObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376932082543" ignored="false" />
     <file path="/GridTest.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933712876" ignored="false" />
     <file path="/MethodsTests.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1373566398225" ignored="false" />
-    <file path="/Dummy.txt" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376920235111" ignored="false" />
+    <file path="/Dummy.txt" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376984054795" ignored="false" />
     <file path="/GridTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369553895590" ignored="false" />
     <file path="/ArrayTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369555048912" ignored="false" />
     <file path="/Fit.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376041459223" ignored="false" />
@@ -245,7 +234,7 @@
       <file leaf-file-name="ObliviousTreeConversionPack.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="36" column="51" selection-start="1314" selection-end="1314" vertical-scroll-proportion="0.44843048">
+            <state line="30" column="77" selection-start="1039" selection-end="1039" vertical-scroll-proportion="-0.902439">
               <folding />
             </state>
           </provider>
@@ -1351,7 +1340,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="82" y="23" width="1506" height="1114" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1364,15 +1353,15 @@
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3299595" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.31690142" sideWeight="0.9993532" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.31690142" sideWeight="0.9993532" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="CDI" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.215478" sideWeight="0.45890412" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3297414" sideWeight="0.58536583" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23835616" sideWeight="0.73742455" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.26257545" sideWeight="0.9980481" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23835616" sideWeight="0.6830986" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26257545" sideWeight="0.9980481" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -1424,7 +1413,7 @@
     <option name="WRAP_WHEN_TYPING_REACHES_RIGHT_MARGIN" value="false" />
     <option name="FORCE_NON_EMPTY_COMMENT" value="false" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="false" />
-    <option name="LAST_COMMIT_MESSAGE" value="Type conversion framework refactoring. ML models serialization." />
+    <option name="LAST_COMMIT_MESSAGE" value="CLI introduced" />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_FILES_UP_TO_DATE_BEFORE_COMMIT" value="false" />
@@ -1442,6 +1431,7 @@
     <MESSAGE value="Too many changes to describe" />
     <MESSAGE value="Type conversion framework ported" />
     <MESSAGE value="Type conversion framework refactoring. ML models serialization." />
+    <MESSAGE value="CLI introduced" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -1573,7 +1563,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="51" selection-start="1314" selection-end="1314" vertical-scroll-proportion="0.44843048">
+        <state line="30" column="77" selection-start="1039" selection-end="1039" vertical-scroll-proportion="-0.902439">
           <folding />
         </state>
       </provider>
