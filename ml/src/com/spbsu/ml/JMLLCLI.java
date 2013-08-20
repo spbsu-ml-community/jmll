@@ -1,10 +1,13 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.loss.LogLikelyhood;
 import com.spbsu.ml.methods.Boosting;
@@ -12,13 +15,15 @@ import com.spbsu.ml.methods.GreedyObliviousTree;
 import com.spbsu.ml.methods.MLMethodOrder1;
 import com.spbsu.ml.methods.ProgressOwner;
 import com.spbsu.ml.models.AdditiveModel;
+import gnu.trove.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.List;
 import java.util.Random;
 
-import static com.spbsu.commons.math.vectors.VecTools.*;
+import static com.spbsu.commons.math.vectors.VecTools.append;
+import static com.spbsu.commons.math.vectors.VecTools.scale;
 
 /**
  * User: solar
@@ -39,16 +44,29 @@ public class JMLLCLI {
     options.addOption("x", "bin-folds-count", true, "binarization precision: how many binary features inferred from real one");
     options.addOption("d", "depth", true, "tree depth");
     options.addOption("g", "grid", true, "file with already precomputed grid");
+    options.addOption("m", "model", true, "model file");
     options.addOption("v", "verbose", false, "verbose output");
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     CommandLineParser parser = new GnuParser();
     Random rnd = new FastRandom();
+    ModelsSerializationRepository serializationRepository = new ModelsSerializationRepository();
+
     try {
       final CommandLine command = parser.parse(options, args);
-      final DataSet learn = DataTools.loadFromFeaturesTxt(command.getOptionValue("f", "features.txt"));
-      final DataSet test = DataTools.loadFromFeaturesTxt(command.getOptionValue("t", "features.txt"));
+      if (command.hasOption('g'))
+        serializationRepository = serializationRepository.customizeGrid(serializationRepository.read(StreamTools.readFile(new File(command.getOptionValue('g'))), BFGrid.class));
+
+      String learnFile = command.getOptionValue("f", "features.txt");
+
+      final TIntObjectHashMap<CharSequence> metaLearn = new TIntObjectHashMap<CharSequence>();
+      final TIntObjectHashMap<CharSequence> metaTest = new TIntObjectHashMap<CharSequence>();
+      final DataSet learn = DataTools.loadFromFeaturesTxt(learnFile, metaLearn);
+      if (learnFile.endsWith(".gz"))
+        learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
+
+      final DataSet test = command.hasOption('t') ? DataTools.loadFromFeaturesTxt(command.getOptionValue('t'), metaTest) : learn;
       if (command.getArgs().length <= 0)
         throw new RuntimeException("Please provide mode to run");
       String mode = command.getArgs()[0];
@@ -82,13 +100,37 @@ public class JMLLCLI {
         final Model result = method.fit(learn, loss);
 
         System.out.println("Learn: " + loss.value(result.value(learn)) + " Test: " + metric.value(result.value(test)));
-        System.out.println(result.toString());
+
+        BFGrid grid = DataTools.grid(result);
+        serializationRepository = serializationRepository.customizeGrid(grid);
+        DataTools.writeModel(result, new File(learnFile + ".model"), serializationRepository);
+        StreamTools.writeChars(serializationRepository.write(grid),
+                               new File(learnFile + ".grid"));
+      }
+      else if ("apply".equals(mode)) {
+        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(learnFile + ".values"));
+        try {
+          Model model = DataTools.readModel(command.getOptionValue('m', "features.txt.model"), serializationRepository);
+          DSIterator it = learn.iterator();
+          int index = 0;
+          while (it.advance()) {
+            writer.append(metaLearn.get(index));
+            writer.append('\t');
+            writer.append(Double.toString(model.value(it.x())));
+            writer.append('\n');
+            index++;
+          }
+        }
+        finally {
+          writer.close();
+        }
       }
       else {
         throw new RuntimeException("Mode " + mode + " is not recognized");
       }
     } catch (Exception e) {
       HelpFormatter formatter = new HelpFormatter();
+      e.printStackTrace();
       System.err.println(e.getLocalizedMessage());
       String columns = System.getenv("COLUMNS");
 

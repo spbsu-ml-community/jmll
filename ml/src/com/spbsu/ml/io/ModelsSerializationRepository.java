@@ -17,6 +17,8 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   private static ConversionRepository conversion = new TypeConvertersCollection(new ObliviousTreeConversionPack(),
                                                                                 new AdditiveModelConversionPack(),
                                                                                 BFGrid.CONVERTER.getClass());
+  private BFGrid grid;
+
   public ModelsSerializationRepository() {
     super(conversion, CharSequence.class);
   }
@@ -30,5 +32,20 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
         return true;
       }
     }), CharSequence.class);
+  }
+
+  private ModelsSerializationRepository(ConversionRepository repository) {
+    super(repository, CharSequence.class);
+  }
+
+  public ModelsSerializationRepository customizeGrid(final BFGrid grid) {
+    return new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
+      @Override
+      public boolean accept(TypeConverter typeConverter) {
+        if (typeConverter instanceof GridEnabled)
+          ((GridEnabled) typeConverter).setGrid(grid);
+        return true;
+      }
+    }));
   }
 }

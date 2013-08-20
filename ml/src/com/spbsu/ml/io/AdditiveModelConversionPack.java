@@ -8,8 +8,7 @@ import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.ml.Model;
 import com.spbsu.ml.models.AdditiveModel;
 
-import java.text.MessageFormat;
-import java.text.ParseException;
+import java.text.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -21,6 +20,15 @@ import java.util.Locale;
  */
 public class AdditiveModelConversionPack implements ConversionPack<AdditiveModel, CharSequence> {
   private static final MessageFormat HEADER = new MessageFormat("size: {0}, step: {1}, element: {2}", Locale.US);
+  static {
+    DecimalFormat format = new DecimalFormat();
+    format.setDecimalSeparatorAlwaysShown(false);
+    format.setGroupingUsed(false);
+    format.setDecimalFormatSymbols(new DecimalFormatSymbols(Locale.US));
+    HEADER.setFormat(0, format);
+    HEADER.setFormat(1, format);
+  }
+
   public static class To implements TypeConverter<AdditiveModel, CharSequence>, ConversionDependant {
     private ConversionRepository repository;
 

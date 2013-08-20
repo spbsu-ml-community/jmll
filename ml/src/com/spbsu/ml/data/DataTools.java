@@ -1,14 +1,22 @@
 package com.spbsu.ml.data;
 
+import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.Model;
 import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.io.ModelsSerializationRepository;
+import com.spbsu.ml.models.AdditiveModel;
+import com.spbsu.ml.models.ObliviousTree;
+import gnu.trove.TIntObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.*;
@@ -21,11 +29,19 @@ import java.util.zip.GZIPInputStream;
  * Time: 19:05
  */
 public class DataTools {
-
   public static DataSet loadFromFeaturesTxt(String file) throws IOException {
-    return loadFromFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
+    return loadFromFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file), null);
   }
-  public static DataSet loadFromFeaturesTxt(Reader in) throws IOException {
+
+  public static DataSet loadFromFeaturesTxt(String file, TIntObjectHashMap<CharSequence> meta) throws IOException {
+    return loadFromFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file), meta);
+  }
+
+  public static DataSet loadFromFeaturesTxt(Reader reader) throws IOException {
+    return loadFromFeaturesTxt(reader, null);
+  }
+
+  public static DataSet loadFromFeaturesTxt(Reader in, TIntObjectHashMap<CharSequence> meta) throws IOException {
     final LineNumberReader reader = new LineNumberReader(in);
     List<double[]> set = new LinkedList<double[]>();
     List<Double> targets = new LinkedList<Double>();
@@ -33,12 +49,13 @@ public class DataTools {
     String line;
     final List<Double> featuresA = new ArrayList<Double>();
     while ((line = reader.readLine()) != null) {
+      final StringBuffer metaline = new StringBuffer();
       featuresA.clear();
       StringTokenizer tok = new StringTokenizer(line, "\t");
-      tok.nextToken();
+      metaline.append(tok.nextToken()); // group
       targets.add(Double.parseDouble(tok.nextToken()));
-      tok.nextToken();
-      tok.nextToken();
+      metaline.append("\t").append(tok.nextToken()); // item name
+      metaline.append("\t").append(tok.nextToken()); // equality class inside group
       while (tok.hasMoreTokens()) {
         featuresA.add(Double.parseDouble(tok.nextToken()));
       }
@@ -47,6 +64,8 @@ public class DataTools {
       for (int i = 0; i < featuresA.size(); i++) {
         features[i] = featuresA.get(i);
       }
+      if (meta != null)
+        meta.put(set.size(), metaline);
       set.add(features);
     }
     double[] data = new double[maxFeatures * set.size()];
@@ -74,6 +93,28 @@ public class DataTools {
 
   public static Bootstrap bootstrap(DataSet base, FastRandom random) {
     return new Bootstrap(base, random);
+  }
+
+  public static void writeModel(Model result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
+    BFGrid grid = grid(result);
+    StreamTools.writeChars(CharSequenceTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
+                           serializationRepository.write(result)), to);
+  }
+
+  public static Model readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+    final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(new FileInputStream(fileName)));
+    String line = modelReader.readLine();
+    CharSequence[] parts = CharSequenceTools.split(line, '\t');
+    Class<? extends Model> modelClazz = (Class<? extends Model>)Class.forName(parts[0].toString());
+    return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
+  }
+
+  public static BFGrid grid(Model result) {
+    if (result instanceof AdditiveModel)
+      return grid(((AdditiveModel) result).models.get(0));
+    if (result instanceof ObliviousTree)
+      return ((ObliviousTree)result).grid();
+    return null;
   }
 
   public enum NormalizationType {
@@ -149,5 +190,4 @@ public class DataTools {
     props.yVar = targetVar;
     return new DataSetImpl(newData, newTarget);
   }
-
 }

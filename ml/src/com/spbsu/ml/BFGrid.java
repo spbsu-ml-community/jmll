@@ -18,6 +18,9 @@ public class BFGrid {
 
   public BFGrid(BFRow[] rows) {
     this.rows = rows;
+    for (BFRow row : rows) {
+      row.setOwner(this);
+    }
     final BFRow lastRow = rows[rows.length - 1];
     bfCount = lastRow.bfStart + lastRow.borders.length;
     features = new BinaryFeature[bfCount];
@@ -30,7 +33,7 @@ public class BFGrid {
   }
 
   public BFRow row(int feature) {
-    return feature < rows.length ? rows[feature] : new BFRow(bfCount, feature, new double[0]);
+    return feature < rows.length ? rows[feature] : new BFRow(this, bfCount, feature, new double[0]);
   }
 
   public BinaryFeature bf(int bfIndex) {
@@ -53,13 +56,15 @@ public class BFGrid {
 
 
   public static class BFRow {
+    private BFGrid owner;
     public final int bfStart;
     public final int bfEnd;
     public final int origFIndex;
     public final double[] borders;
     public final BinaryFeature[] bfs;
 
-    public BFRow(int bfStart, int origFIndex, double[] borders) {
+    public BFRow(BFGrid owner, int bfStart, int origFIndex, double[] borders) {
+      this.owner = owner;
       this.bfStart = bfStart;
       this.bfEnd = bfStart + borders.length;
       this.origFIndex = origFIndex;
@@ -68,6 +73,10 @@ public class BFGrid {
       for (int i = 0; i < borders.length; i++) {
         bfs[i] = new BinaryFeature(this, bfStart + i, origFIndex, i, borders[i]);
       }
+    }
+
+    public BFRow(int bfStart, int origFIndex, double[] borders) {
+      this(null, bfStart, origFIndex, borders);
     }
 
     public int bin(double val) {
@@ -113,6 +122,14 @@ public class BFGrid {
       result = 31 * result + origFIndex;
       result = 31 * result + Arrays.hashCode(borders);
       return result;
+    }
+
+    public BFGrid grid() {
+      return owner;
+    }
+
+    private void setOwner(BFGrid owner) {
+      this.owner = owner;
     }
   }
 
@@ -167,7 +184,7 @@ public class BFGrid {
     }
   }
 
-  public static final Converter<BFGrid, String> CONVERTER = new BFGridStringConverter();
+  public static final Converter<BFGrid, CharSequence> CONVERTER = new BFGridStringConverter();
 
   @Override
   public boolean equals(Object o) {
@@ -187,6 +204,6 @@ public class BFGrid {
 
   @Override
   public String toString() {
-    return CONVERTER.convertTo(this);
+    return CONVERTER.convertTo(this).toString();
   }
 }

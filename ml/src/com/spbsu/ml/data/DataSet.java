@@ -16,6 +16,5 @@ public interface DataSet extends CacheHolder {
   DSIterator iterator();
 
   Mx data();
-
   Vec target();
 }

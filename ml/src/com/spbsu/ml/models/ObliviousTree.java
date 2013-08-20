@@ -94,4 +94,8 @@ public class ObliviousTree extends Model {
     result = 31 * result + Arrays.hashCode(basedOn);
     return result;
   }
+
+  public BFGrid grid() {
+    return features[0].row().grid();
+  }
 }

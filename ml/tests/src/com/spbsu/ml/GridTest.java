@@ -39,7 +39,7 @@ public class GridTest extends FileTestCase {
   public void testGrid1() throws IOException {
     final BFGrid grid = GridTools.medianGrid(learn, 32);
 //    assertEquals(624, grid.size());
-    checkResultByFile(BFGrid.CONVERTER.convertTo(grid));
+    checkResultByFile(BFGrid.CONVERTER.convertTo(grid).toString());
   }
 
   public void testBinary() throws IOException {

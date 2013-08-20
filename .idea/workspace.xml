@@ -2,86 +2,58 @@
 <project version="4">
   <component name="ArtifactsWorkspaceSettings">
     <artifacts-to-build>
-      <artifact name="hwcheck" />
+      <artifact name="ml:jar" />
     </artifacts-to-build>
   </component>
   <component name="ChangeListManager">
     <list default="true" readonly="true" id="b5751471-ac07-4077-949f-2d3d12827f09" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/ConversionDependant.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/ConversionPack.java" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/Integer2ByteBufferConverter.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/Long2ByteBufferConverter.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/String2ByteBufferConverter.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/List2ByteBufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/List2ByteBufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/Map2ByteBufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Map2ByteBufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/NioConverterTools.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/NioConverterTools.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/Vec2StringConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Vec2StringConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/signals/BinarySignal2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/signals/BinarySignal2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/signals/IntSignal2BufferCompressingConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/signals/IntSignal2BufferCompressingConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/signals/IntSignal2BufferCompressingConverter2.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/signals/IntSignal2BufferCompressingConverter2.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/signals/IntSignal2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/signals/IntSignal2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/Array2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Array2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/ArrayList2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/ArrayList2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/CharArrayCSFactory.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/CharArrayCSFactory.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/CharSequence2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/CharSequence2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/CharSequence2BufferConverterOld.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/CharSequence2BufferConverterOld.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/Double2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Double2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/HashSet2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/HashSet2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/IntArray2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/IntArray2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/Integer2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Integer2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/List2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/List2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/Long2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Long2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/LongArray2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/LongArray2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/Map2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Map2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/Set2BufferConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Set2BufferConverter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/util/StringCSFactory.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/StringCSFactory.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/AndFilter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/AndFilter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/persist/impl/BTreeMapIndex.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/persist/impl/BTreeMapIndex.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/tests/src/util/BTreeTest.java" afterPath="$PROJECT_DIR$/../../commons/trunk/tests/src/util/BTreeTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/io/BufferConverterTest.java" afterPath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/io/BufferConverterTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/text/CharSequenceTools.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/text/CharSequenceTools.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/ClassFilter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/ClassFilter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/Converter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/Converter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/io/ConverterTest.java" afterPath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/io/ConverterTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/tests/src/util/ConverterTest.java" afterPath="$PROJECT_DIR$/../../commons/trunk/tests/src/util/ConverterTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/FalseFilter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/FalseFilter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/Filter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/Filter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/vectors/impl/IndexTransVec.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/vectors/impl/IndexTransVec.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/List2CharSequenceConverter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/List2CharSequenceConverter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/NotFilter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/NotFilter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/OrFilter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/OrFilter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/persist/impl/PageFileImpl.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/persist/impl/PageFileImpl.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/io/PersistentMapTest.java" afterPath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/io/PersistentMapTest.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/persist/impl/PlainMapIndex.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/persist/impl/PlainMapIndex.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/SerializationRepository.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/SerializationRepository.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/util/TextUtil.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/util/TextUtil.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/TrueFilter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/TrueFilter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/impl/TypeConvertersCollection.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/impl/TypeConvertersCollection.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/UnvisitableFilter.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/filters/UnvisitableFilter.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Array2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/ArrayList2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/CharArrayCSFactory.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/CharSequence2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/CharSequence2BufferConverterOld.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Double2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/HashSet2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/IntArray2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Integer2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/List2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Long2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/LongArray2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Map2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Set2BufferConverter.java" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/StringCSFactory.java" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataSet.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataSet.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java" afterPath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/META-INF/MANIFEST.MF" afterPath="$PROJECT_DIR$/ml/src/META-INF/MANIFEST.MF" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/io/converters/signals" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/signals" />
     </list>
     <list id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
     <ignored path=".idea/workspace.xml" />
     <ignored path="ML.iws" />
     <file path="/ContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369565279875" ignored="false" />
-    <file path="/BFGrid.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376327957303" ignored="false" />
+    <file path="/BFGrid.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933695399" ignored="false" />
     <file path="/GreedyContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1373570643146" ignored="false" />
-    <file path="/fragment.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376328409396" ignored="false" />
+    <file path="/fragment.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376935674572" ignored="false" />
     <file path="/GreedyObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369408222057" ignored="false" />
-    <file path="/ObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376309608714" ignored="false" />
-    <file path="/GridTest.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376327443600" ignored="false" />
+    <file path="/ObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376932082543" ignored="false" />
+    <file path="/GridTest.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933712876" ignored="false" />
     <file path="/MethodsTests.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1373566398225" ignored="false" />
-    <file path="/Dummy.txt" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376920020521" ignored="false" />
+    <file path="/Dummy.txt" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376920235111" ignored="false" />
     <file path="/GridTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369553895590" ignored="false" />
     <file path="/ArrayTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369555048912" ignored="false" />
     <file path="/Fit.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376041459223" ignored="false" />
     <file path="/LogLikelyhood.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1375972559536" ignored="false" />
     <file path="/a.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376046885469" ignored="false" />
-    <file path="/JMLLCLI.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376297021263" ignored="false" />
+    <file path="/JMLLCLI.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376934015533" ignored="false" />
     <file path="/Boosting.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1375974203576" ignored="false" />
     <file path="/ProgressOwner.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1375974123102" ignored="false" />
     <file path="/TypeConvertersCollection.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376314874739" ignored="false" />
@@ -107,7 +79,7 @@
     <file path="/ReverseConverter.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376051296960" ignored="false" />
     <file path="/String2ByteBufferConverter.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376051317434" ignored="false" />
     <file path="/L2Loss.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376296432758" ignored="false" />
-    <file path="/ModelsSerializationRepository.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376327533357" ignored="false" />
+    <file path="/ModelsSerializationRepository.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933287586" ignored="false" />
     <file path="/ObliviousTreeConverter.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376304872144" ignored="false" />
     <file path="/GridEnabled.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376301153709" ignored="false" />
     <file path="/SerializationTest.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376328766052" ignored="false" />
@@ -120,6 +92,12 @@
     <file path="/TextUtil.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376317016437" ignored="false" />
     <file path="/GridConversionPack.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376327071124" ignored="false" />
     <file path="/a.dummy" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376327719198" ignored="false" />
+    <file path="/DataSet.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376927427810" ignored="false" />
+    <file path="/DataTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376932917677" ignored="false" />
+    <file path="/BFGridStringConverter.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933678853" ignored="false" />
+    <file path="/FileTestCase.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933757197" ignored="false" />
+    <file path="/AdditiveModelConversionPack.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376935284866" ignored="false" />
+    <file path="/ObliviousTreeConversionPack.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376936716293" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -186,7 +164,7 @@
         <option name="CONDITION" value="&#13;&#13;JAVA" />
         <option name="LOG_MESSAGE" value="&#13;&#13;JAVA" />
       </breakpoint>
-      <breakpoint url="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" line="83" class="com.spbsu.ml.BFGrid.BFRow" package="com.spbsu.ml">
+      <breakpoint url="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" line="92" class="com.spbsu.ml.BFGrid.BFRow" package="com.spbsu.ml">
         <option name="ENABLED" value="true" />
         <option name="LOG_ENABLED" value="false" />
         <option name="LOG_EXPRESSION_ENABLED" value="false" />
@@ -212,29 +190,24 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="SerializationTest.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/SerializationTest.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="55" column="0" selection-start="1929" selection-end="1929" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="CharSequenceTools.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/text/CharSequenceTools.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="175" column="37" selection-start="5143" selection-end="5143" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="AdditiveModelConversionPack.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="66" column="41" selection-start="2594" selection-end="2594" vertical-scroll-proportion="0.0">
+            <state line="54" column="53" selection-start="1934" selection-end="1934" vertical-scroll-proportion="0.0">
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="DecimalFormatSymbols.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/DecimalFormatSymbols.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="57" column="11" selection-start="1502" selection-end="1502" vertical-scroll-proportion="0.0">
+              <folding>
+                <element signature="e#0#26839#0" expanded="false" />
+                <element signature="imports" expanded="false" />
+                <element signature="e#25932#25950#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -242,26 +215,70 @@
       <file leaf-file-name="AdditiveModel.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="22" column="36" selection-start="456" selection-end="456" vertical-scroll-proportion="0.0">
+            <state line="13" column="13" selection-start="217" selection-end="217" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Array2BufferConverter.java" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Array2BufferConverter.java">
+      <file leaf-file-name="TypeConvertersCollection.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/impl/TypeConvertersCollection.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="21" column="58" selection-start="610" selection-end="610" vertical-scroll-proportion="0.5660377">
+            <state line="97" column="0" selection-start="3996" selection-end="3996" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ObliviousTreeConversionPack.java" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="DataTools.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="98" column="0" selection-start="3870" selection-end="3870" vertical-scroll-proportion="0.0">
+              <folding>
+                <element signature="e#1906#1914#0" expanded="true" />
+                <element signature="e#2008#2016#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ObliviousTreeConversionPack.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="85" column="0" selection-start="3257" selection-end="3257" vertical-scroll-proportion="0.0">
+            <state line="36" column="51" selection-start="1314" selection-end="1314" vertical-scroll-proportion="0.44843048">
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="NumberFormat.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/NumberFormat.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="347" column="27" selection-start="14145" selection-end="14145" vertical-scroll-proportion="0.0">
+              <folding>
+                <element signature="e#0#45507#0" expanded="false" />
+                <element signature="imports" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="DecimalFormat.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/DecimalFormat.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="1259" column="18" selection-start="55522" selection-end="55522" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="RoundingMode.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/math/RoundingMode.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="349" column="12" selection-start="15477" selection-end="15477" vertical-scroll-proportion="0.0">
+              <folding>
+                <element signature="e#0#15477#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -270,33 +287,6 @@
         <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/SerializationRepository.java">
           <provider selected="true" editor-type-id="text-editor">
             <state line="34" column="0" selection-start="1134" selection-end="1134" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="BFGrid.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="105" column="7" selection-start="2559" selection-end="2559" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="BFGridStringConverter.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="18" column="0" selection-start="359" selection-end="359" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Converter.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/Converter.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="8" column="15" selection-start="153" selection-end="153" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -312,22 +302,22 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/util/TextUtil.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io/AdditiveModelConverterPack.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io/ObliviousTreeConverterPack.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io/ObliviousTreeConversionPack.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io/AdditiveModelConversionPack.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io/GridConversionPack.java" />
-        <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io/ModelsSerializationRepository.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io/BFGridStringConverter.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java" />
         <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/Converter.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" />
         <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/SerializationTest.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" />
         <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/text/CharSequenceTools.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataSet.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" />
+        <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" />
+        <option value="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java" />
       </list>
     </option>
   </component>
@@ -342,10 +332,10 @@
     <option name="LAST_EDITED_TAB_NAME" />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="146" />
-    <option name="y" value="22" />
-    <option name="width" value="1440" />
-    <option name="height" value="815" />
+    <option name="x" value="82" />
+    <option name="y" value="23" />
+    <option name="width" value="1506" />
+    <option name="height" value="1114" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -389,8 +379,8 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
       <pane id="Scope" />
+      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -407,6 +397,150 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="trunk" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="spbsu" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="spbsu" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="models" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="spbsu" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="io" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="spbsu" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
           <PATH>
@@ -739,7 +873,7 @@
   <component name="PropertiesComponent">
     <property name="last_directory_selection" value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io" />
     <property name="GoToFile.includeJavaFiles" value="false" />
-    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.last.edited" value="Artifacts" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="OverrideImplement.combined" value="true" />
     <property name="options.splitter.main.proportions" value="0.3" />
@@ -752,12 +886,12 @@
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="restartRequiresConfirmation" value="true" />
-    <property name="MemberChooser.showClasses" value="true" />
     <property name="FullScreen" value="false" />
+    <property name="MemberChooser.showClasses" value="true" />
     <property name="GoToClass.includeLibraries" value="false" />
-    <property name="dynamic.classpath" value="false" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
+    <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="dynamic.classpath" value="false" />
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
@@ -771,6 +905,7 @@
       <recent name="$PROJECT_DIR$/ml/src/com/spbsu/ml" />
     </key>
     <key name="MoveMembersDialog.RECENTS_KEY">
+      <recent name="com.spbsu.ml.data.DataTools" />
       <recent name="com.spbsu.commons.io.StreamTools" />
       <recent name="com.spbsu.ml.models.Region" />
     </key>
@@ -789,7 +924,7 @@
       <recent name="com.spbsu" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.SerializationTest.testAdditiveModel">
+  <component name="RunManager" selected="Application.JMLLCLI">
     <configuration default="false" name="MethodsTests.testContinousObliviousTree" type="JUnit" factoryName="JUnit" temporary="true">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
       <module name="ml" />
@@ -955,6 +1090,19 @@
       <option name="PORT" value="5005" />
       <method />
     </configuration>
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <method />
+    </configuration>
     <configuration default="true" type="TestNG" factoryName="TestNG">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
       <module name="" />
@@ -981,19 +1129,6 @@
       <envs />
       <properties />
       <listeners />
-      <method />
-    </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
       <method />
     </configuration>
     <configuration default="true" type="Application" factoryName="Application">
@@ -1041,7 +1176,7 @@
       </extension>
       <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.JMLLCLI" />
       <option name="VM_PARAMETERS" value="-Xmx1g" />
-      <option name="PROGRAM_PARAMETERS" value="-f $USER_HOME$/experiments/pools/small/features.txt.gz -t $USER_HOME$/experiments/pools/small/featuresTest.txt.gz -v fit " />
+      <option name="PROGRAM_PARAMETERS" value="-f $USER_HOME$/experiments/pools/small/features.txt.gz -t $USER_HOME$/experiments/pools/small/featuresTest.txt.gz -v fit -i 100 " />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
@@ -1207,11 +1342,15 @@
       <created>1376051927106</created>
       <updated>1376051927106</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Type conversion framework refactoring. ML models serialization.">
+      <created>1376920295105</created>
+      <updated>1376920295105</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="146" y="22" width="1440" height="815" extended-state="6" />
+    <frame x="82" y="23" width="1506" height="1114" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -1225,15 +1364,15 @@
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3299595" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.31654677" sideWeight="0.9993532" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.31690142" sideWeight="0.9993532" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="CDI" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.215478" sideWeight="0.45890412" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3297414" sideWeight="0.58536583" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23888092" sideWeight="0.68345326" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26330936" sideWeight="0.9980481" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23835616" sideWeight="0.73742455" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.26257545" sideWeight="0.9980481" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -1312,55 +1451,47 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/ConversionDependant.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="7" column="17" selection-start="112" selection-end="112" vertical-scroll-proportion="0.0">
+        <state line="56" column="18" selection-start="1833" selection-end="1833" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/util/TextUtil.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="20" column="0" selection-start="428" selection-end="428" vertical-scroll-proportion="0.0">
+        <state line="206" column="47" selection-start="4910" selection-end="4910" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="40" column="46" selection-start="1327" selection-end="1327" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="41" column="22" selection-start="1218" selection-end="1234" vertical-scroll-proportion="0.0">
+        <state line="41" column="8" selection-start="1204" selection-end="1204" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="16" column="69" selection-start="582" selection-end="582" vertical-scroll-proportion="0.0">
+        <state line="112" column="114" selection-start="5504" selection-end="5504" vertical-scroll-proportion="0.0">
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#2728#2742#0" expanded="true" />
+            <element signature="e#2822#2836#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/impl/TypeConvertersCollection.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="42" column="0" selection-start="1654" selection-end="1654" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/signals/BinarySignal2BufferConverter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="18" column="22" selection-start="576" selection-end="576" vertical-scroll-proportion="0.0">
-          <folding>
-            <marker date="1376328202000" expanded="true" signature="-1:-1" placeholder="{...}" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/Converter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="15" selection-start="153" selection-end="153" vertical-scroll-proportion="0.0">
+        <state line="97" column="0" selection-start="3996" selection-end="3996" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
@@ -1372,58 +1503,77 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="18" column="0" selection-start="359" selection-end="359" vertical-scroll-proportion="0.0">
+        <state line="13" column="13" selection-start="217" selection-end="217" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java">
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/MessageFormat.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="105" column="7" selection-start="2559" selection-end="2559" vertical-scroll-proportion="0.0">
+        <state line="335" column="22" selection-start="14421" selection-end="14421" vertical-scroll-proportion="0.80418533">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/DecimalFormatSymbols.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="57" column="11" selection-start="1502" selection-end="1502" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#0#26839#0" expanded="false" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#25932#25950#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/math/RoundingMode.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="349" column="12" selection-start="15477" selection-end="15477" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#0#15477#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/DecimalFormat.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="1259" column="18" selection-start="55522" selection-end="55522" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/NumberFormat.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="347" column="27" selection-start="14145" selection-end="14145" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#0#45507#0" expanded="false" />
+            <element signature="imports" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="98" column="0" selection-start="3870" selection-end="3870" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#1906#1914#0" expanded="true" />
+            <element signature="e#2008#2016#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="54" column="53" selection-start="1934" selection-end="1934" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="85" column="0" selection-start="3257" selection-end="3257" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/SerializationTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="55" column="0" selection-start="1929" selection-end="1929" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/text/CharSequenceTools.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="175" column="37" selection-start="5143" selection-end="5143" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="66" column="41" selection-start="2594" selection-end="2594" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="22" column="36" selection-start="456" selection-end="456" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Array2BufferConverter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="21" column="58" selection-start="610" selection-end="610" vertical-scroll-proportion="0.5660377">
+        <state line="36" column="51" selection-start="1314" selection-end="1314" vertical-scroll-proportion="0.44843048">
           <folding />
         </state>
       </provider>
@@ -1434,11 +1584,12 @@
       <state key="ArtifactsStructureConfigurable.UI">
         <settings>
           <artifact-editor />
-          <last-edited>hwcheck</last-edited>
+          <last-edited>ml:jar</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
                 <option value="0.2" />
+                <option value="0.5" />
               </list>
             </option>
           </splitter-proportions>
