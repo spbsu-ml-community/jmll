@@ -36,7 +36,7 @@
     <file path="/ObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376932082543" ignored="false" />
     <file path="/GridTest.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933712876" ignored="false" />
     <file path="/MethodsTests.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1373566398225" ignored="false" />
-    <file path="/Dummy.txt" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376984054795" ignored="false" />
+    <file path="/Dummy.txt" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376984115986" ignored="false" />
     <file path="/GridTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369553895590" ignored="false" />
     <file path="/ArrayTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369555048912" ignored="false" />
     <file path="/Fit.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376041459223" ignored="false" />
@@ -210,10 +210,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="TypeConvertersCollection.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/impl/TypeConvertersCollection.java">
+      <file leaf-file-name="Array2BufferConverter.java" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Array2BufferConverter.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="97" column="0" selection-start="3996" selection-end="3996" vertical-scroll-proportion="0.0">
+            <state line="12" column="13" selection-start="252" selection-end="252" vertical-scroll-proportion="0.16719745">
               <folding />
             </state>
           </provider>
@@ -231,10 +231,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ObliviousTreeConversionPack.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="ObliviousTreeConversionPack.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="30" column="77" selection-start="1039" selection-end="1039" vertical-scroll-proportion="-0.902439">
+            <state line="101" column="62" selection-start="3974" selection-end="3974" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -1340,7 +1340,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="82" y="23" width="1506" height="1114" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1360,7 +1360,7 @@
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3297414" sideWeight="0.58536583" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23835616" sideWeight="0.6830986" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23835616" sideWeight="0.6830986" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26257545" sideWeight="0.9980481" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1441,13 +1441,6 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="56" column="18" selection-start="1833" selection-end="1833" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="206" column="47" selection-start="4910" selection-end="4910" vertical-scroll-proportion="0.0">
@@ -1563,7 +1556,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="30" column="77" selection-start="1039" selection-end="1039" vertical-scroll-proportion="-0.902439">
+        <state line="101" column="62" selection-start="3974" selection-end="3974" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Array2BufferConverter.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="12" column="13" selection-start="252" selection-end="252" vertical-scroll-proportion="0.16719745">
           <folding />
         </state>
       </provider>
