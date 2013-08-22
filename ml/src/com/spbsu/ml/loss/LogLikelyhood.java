@@ -4,8 +4,8 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Oracle1;
 
-import static com.spbsu.commons.math.vectors.VecTools.*;
-import static java.lang.Math.*;
+import static java.lang.Math.exp;
+import static java.lang.Math.log;
 
 /**
  * We use probability representation = \frac{e^x}{e^x + 1}.
@@ -27,9 +27,9 @@ public class LogLikelyhood implements Oracle1 {
       double expX = exp(point.get(i));
       double pX = expX / (1 + expX);
       if (target.get(i) > 0) // positive example
-        result.set(i, -pX);
+        result.set(i, 1 - pX);
       else // negative
-        result.set(i, pX);
+        result.set(i, -pX);
     }
     return result;
   }
@@ -37,7 +37,7 @@ public class LogLikelyhood implements Oracle1 {
   public double value(Vec point) {
     double result = 0;
     for (int i = 0; i < point.dim(); i++) {
-      double expX = point.get(i);
+      double expX = exp(point.get(i));
       double pX = expX / (1 + expX);
       if (target.get(i) > 0) // positive example
         result -= log(pX);
