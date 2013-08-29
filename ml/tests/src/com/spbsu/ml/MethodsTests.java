@@ -153,7 +153,7 @@ public class MethodsTests extends GridTest {
     public void testContinousObliviousTree() {
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
-        for (int depth = 1; depth <= 1; depth++) {
+        for (int depth = 1; depth <= 6; depth++) {
             ContinousObliviousTree tree = new GreedyContinousObliviousTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
             System.out.print("Oblivious Tree deapth = " + depth);
             scoreCalcerLearn.progress(tree);

@@ -7,7 +7,6 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.List;
 import java.util.Random;
@@ -21,35 +20,21 @@ import java.util.Random;
  */
 public class GreedyContinousObliviousTree extends GreedyTDRegion {
     private final int depth;
-    private final GreedyObliviousTree nonContinousVersion;
+    private final GreedyObliviousTree nonContinues;
+    private final int numberOfVariables;
+    private List<BFGrid.BinaryFeature> features;
 
     public GreedyContinousObliviousTree(Random rng, DataSet ds, BFGrid grid, int depth) {
         super(rng, ds, grid, 1. / 3, 0);
-        nonContinousVersion = new GreedyObliviousTree(rng, ds, grid, depth);
+        nonContinues = new GreedyObliviousTree(rng, ds, grid, depth);
+        numberOfVariables = (1 << depth) * (depth + 1) * (depth + 1);
+
         this.depth = depth;
     }
 
     int numOfBondaries;
     double[] right;
 
-    public void createGradientCondition(DataSet ds, int mask, int col, int row, Mx mx) {
-        int n = depth + 1;
-        double cond[] = new double[(1 << depth) * n * n];
-        double rightPart = 0;
-        for (int k = 0; k < ds.data().columns(); k++) {
-            double X = (col == 0 ? 1 : ds.data().get(k, col - 1)) *
-                    (row == 0 ? 1 : ds.data().get(k, row - 1));
-            for (int i = 0; i < n; i++)
-                for (int j = 0; j < n; j++)
-                    if (i == col && j == row)
-                        cond[mask * n * n + i * n + j] += X * X;
-                    else
-                        cond[mask * n * n + i * n + j] += X * (i == 0 ? 1 : ds.data().get(k, i - 1)) *
-                                (j == 0 ? 1 : ds.data().get(k, j - 1));
-            rightPart += X * ds.target().get(k);     //Contant part of equation
-        }
-        addBoundary(mx, cond, rightPart);
-    }
 
     public void addBoundary(Mx mx, double cond[], double rightPart) {
         for (int i = 0; i < cond.length; i++)
@@ -58,148 +43,144 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
         numOfBondaries++;
     }
 
-    public void createBoundariesCondition(DataSet ds, int mask, BFGrid.BinaryFeature feature, int featureNum, Mx mx) {
-        int n = depth + 1;
+    public int getIndex(int mask, int i, int j) {
+        if (i < j) {
+            int temp = i;
+            i = j;
+            j = temp;
+        }
+
+        return mask * (depth + 1) * (depth + 1) + i * (depth + 1) + j;
+    }
+
+    public void createBoundariesCondition(int mask, BFGrid.BinaryFeature feature, int featureNum, Mx mx) {
         if (((mask >> featureNum) & 1) == 0)
             return;
-        int conterMask = mask ^ (1 << (featureNum));
-        featureNum++;
         double C = feature.condition;
+        int conterMask = mask ^ (1 << featureNum);
+        featureNum++;
+        //Equal at 0 point
         {
-            //equal in the point 0
-            double cond[] = new double[(1 << depth) * n * n];
-            cond[mask * n * n] = 1;
-            cond[conterMask * n * n] = -1;
-            cond[mask * n * n + featureNum * n + featureNum] = C * C;
-            cond[conterMask * n * n + featureNum * n + featureNum] = -C * C;
+            double cond[] = new double[numberOfVariables];
+            cond[getIndex(mask, 0, 0)] = 1;
+            cond[getIndex(conterMask, 0, 0)] = -1;
+            cond[getIndex(mask, featureNum, featureNum)] = C * C;
+            cond[getIndex(conterMask, featureNum, featureNum)] = -C * C;
             addBoundary(mx, cond, 0);
         }
-        //linear condition
-        for (int i = 0; i < n; i++)
-            if (i != featureNum) {
-                double cond[] = new double[(1 << depth) * n * n];
-                cond[mask * n * n + i * n] = cond[mask * n * n + i] = 0.5;
-                cond[conterMask * n * n + i * n] = cond[conterMask * n * n + i] = -0.5;
-                cond[mask * n * n + i * n + featureNum] = cond[mask * n * n + featureNum * n + i] = C / 2;
-                cond[conterMask * n * n + i * n + featureNum] =
-                        cond[conterMask * n * n + featureNum * n + i] = -C / 2;
-                addBoundary(mx, cond, 0);
-            }
-
-        //Quadratic condition
-        for (int i = 1; i < n; i++)
-            for (int j = 1; j < n; j++)
-                if (i != featureNum && j != featureNum) {
-                    double cond[] = new double[(1 << depth) * n * n];
-                    cond[mask * n * n + i * n + i] = C * C;
-                    cond[conterMask * n * n + i * n + i] = -C * C;
+        //Quadratic boundary
+        for (int i = 1; i <= depth; i++)
+            for (int j = 1; j <= i; j++)
+                if ((i != featureNum) && (j != featureNum)) {
+                    double cond[] = new double[numberOfVariables];
+                    cond[getIndex(mask, i, j)] = 1;
+                    cond[getIndex(conterMask, i, j)] = -1;
                     addBoundary(mx, cond, 0);
                 }
+        //Linear boundary
+        for (int i = 1; i <= depth; i++)
+            if (i != featureNum) {
+                double cond[] = new double[numberOfVariables];
+                cond[getIndex(mask, 0, i)] = 1;
+                cond[getIndex(conterMask, 0, i)] = -1;
+                cond[getIndex(mask, featureNum, i)] = C;
+                cond[getIndex(conterMask, featureNum, i)] = -C;
+                addBoundary(mx, cond, 0);
+            }
     }
 
+    public void createGradientCondition(DataSet ds, int i, int j, Mx mx) {
+        double cond[][] = new double [1<<depth][numberOfVariables];
+        double R[] = new double[1<< depth];
+        for (int k = 0; k < ds.power(); k++){
+            int index = 0;
+            for (int s = 0; s < features.size(); s++) {
+                index <<= 1;
+                //System.out.println(ds.data().row(k));
+                //System.out.println(features.get(s));
+
+                if (features.get(s).value(ds.data().row(k)))
+                    index++;
+            }
+
+            double data[] = new double[depth + 1];
+            data[0] = 1;
+            for(int s = 0; s < features.size();s++)
+                data[s + 1] = ds.data().get(k,features.get(s).findex);
+
+            for(int f = 0; f <= depth;f++)
+                for(int s = 0; s <= f;s++)
+                    cond[index][getIndex(index,f,s)] += data[i] * data[j] * data[f]*data[s];
+            R[index] += data[i] * data[j] * ds.target().get(k);
+        }
+        for(int s = 0; s < 1 << depth;s++)
+            addBoundary(mx,cond[s],R[s]);
+    }
+
+    double[] solve(Mx mx, double right[]){
+        for(int i = 0; i < mx.columns();i++){
+            int mi = i;
+            for(int j = i + 1; j < mx.rows();j++)
+                if(Math.abs(mx.get(j,i)) > Math.abs(mx.get(mi,i)))
+                    mi = j;
+            for(int j = 0;j < mx.columns();j++){
+                double temp = mx.get(i,j);
+                mx.set(i,j,mx.get(mi,j));
+                mx.set(mi,j,temp);
+            }
+            if(Math.abs(mx.get(i,i)) < 1e-9)
+                continue;
+            for(int j = 0;j < mx.rows();j++)
+                if(i != j){
+                    double k = mx.get(j,i) / mx.get(i,i);
+                    for(int g = 0;g < mx.columns();g++)
+                        mx.set(j,g, mx.get(j,g)- k * mx.get(i,g));
+                    right[j] -= k * right[i];
+                }
+            //System.out.println(mx);
+            //System.out.println("");
+
+        }
+        double []ans = new double[mx.columns()];
+        int unDef = 0;
+        for(int i = 0; i < mx.columns();i++)
+            if((Math.abs(mx.get(i,i)) < 1e-9)){
+                ans[i] = 0;
+                unDef++;
+            }
+            else
+                ans[i] = right[i] / mx.get(i,i);
+        for(int i = 0; i < mx.columns();i++)
+            System.out.println(ans[i]);
+        return ans;
+
+    }
     @Override
     public ContinousObliviousTree fit(DataSet ds, Oracle1 loss) {
-        ObliviousTree x = nonContinousVersion.fit(ds, loss);
-        //No continous for a while
-        /*Mx mxA = new Mx;
-        Vec w = new Vec();
-        double w0 = 0;
-        QuadraticFunction x= new QuadraticFunction(mxA,w,w0);*/
-        List<BFGrid.BinaryFeature> features = x.getFeatures();
-        double value[][] = new double[1 << features.size()][(features.size() + 1) * (features.size() + 1)];
-        int cnt[] = new int[1 << depth];
-        int n = features.size() + 1;
-        int condFor = (2 * n * n + features.size() * (n) * (n - 1) + 1);
-        int dim = (1 << depth) * condFor / 2;
-        if (depth == 1)
-            dim = 10;
-        else if (depth == 2)
-            dim = 52;
-        Mx mx = new VecBasedMx(dim, (1 << depth) * n * n);
-        right = new double[dim];
-        Mx A = new VecBasedMx(dim, (1 << depth) * n * n);
-        Mx Q = new VecBasedMx(dim, (1 << depth) * n * n);
-        numOfBondaries = 0;
-        for (int mask = 0; mask < 1 << depth; mask++) {
-            //Optimal for miss
-            for (int i = 0; i < n; i++)
-                for (int j = 0; j < n; j++) {
-                    createGradientCondition(ds, mask, i, j, mx);
-                }
-            /*for (int i = 0; i < features.size(); i++)
-                createBoundariesCondition(ds, mask, features.get(i), i, mx);*/
-        }
+        features = nonContinues.fit(ds, loss).getFeatures();
+        int numberOfConditions = (1 << depth) * 2 *(depth  + 1)* (depth + 1);//(1 << depth) * depth * depth;// ??MAgic number;
+        Mx mx = new VecBasedMx(numberOfConditions, numberOfVariables);
+        int featureReNum[] = new int[depth];
+        right = new double[numberOfConditions];
+        for (int mask = 0; mask < 1 << depth; mask++)
+            for (int j = 0; j < depth; j++)
+                createBoundariesCondition(mask, features.get(j), j, mx);
+        for (int i = 0; i < depth + 1; i++)
+            for (int j = 0; j <= i; j++)
+               createGradientCondition(ds,  i, j, mx);
+        System.out.println(numberOfConditions + " = " + numOfBondaries);
         System.out.println(mx);
-        System.out.print("Created bounaries");
-        System.out.println(numOfBondaries + " " + right.length);
-        VecTools.householderLQ(mx, A, Q);
-        double solution[] = new double[(1 << depth) * n * n];
+        double value[] = solve(mx,right);
+        double out[][] = new double[1<<depth][(depth + 1) * (depth + 1) ];
 
-        /*System.out.print(Q.toString());
-        System.out.println("next");
-        System.out.print(mx.toString());
-        System.out.println("next");
-        System.out.print(A.toString());*/
+        for(int i = 0; i < 1 << depth;i++)
+            for(int k = 0;k <= depth;k++)
+                for(int j =0;j <= k;j++)
+                    out[i][k * (1 + depth) + j ] = value[getIndex(i,k,j)];
 
-        for (int i = (1 << depth) * n * n - 1; i >= 0; i--) {
-            solution[i] = right[i];
-            //System.out.println(right[i] + " " + Q.get(i,i));
-            for (int j = i + 1; j < (1 << depth) * n * n; j++)
-                solution[i] -= solution[j] * Q.get(i, j);
-            if (Q.get(i, i) != 0)
-                solution[i] /= Q.get(i, i);
-            else
-                solution[i] = 0;
-        }
-        for (int i = 0; i < 1 << depth; i++)
-            for (int j = 0; j < n * n; j++) {
-                value[i][j] = solution[i * n * n + j];
-                //System.out.println(i + " " + j + "=" + value[i][j]);
-            }
-        //System.out.print(B.toString());
-        return new ContinousObliviousTree(features, value);
+
+        return new ContinousObliviousTree(features, out);
     }
 
 
-   /* private class BestBFFinder implements TDoubleDoubleProcedure {
-        double score = 0;
-        int fold = 0;
-        double bestScore = Double.MAX_VALUE;
-        int bestFeature = -1;
-
-        int bfIndex = 0;
-
-        final double[] totals;
-        final double[] totalWeights;
-        final int complexity;
-
-        BestBFFinder(double[] totals, double[] totalWeights, int complexity) {
-            this.totals = totals;
-            this.totalWeights = totalWeights;
-            this.complexity = complexity;
-        }
-
-        @Override
-        public boolean execute(double weight, double sum) {
-            double rightScore = score(this.totalWeights[fold] - weight, totals[fold] - sum, complexity);
-            double leftScore = score(weight, sum, complexity);
-            score += rightScore + leftScore;
-            fold++;
-            return true;
-        }
-
-        public void advance() {
-            if (bestScore > score) {
-                bestScore = score;
-                bestFeature = bfIndex;
-            }
-            fold = 0;
-            score = 0;
-            bfIndex++;
-        }
-
-        public int bestSplit() {
-            return bestFeature;
-        }
-    } */
 }
