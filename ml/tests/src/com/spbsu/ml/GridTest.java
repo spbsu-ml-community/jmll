@@ -139,6 +139,13 @@ public class GridTest extends FileTestCase {
     assertEquals(3, bin[0]);
   }
 
+  public void testSameFeatures() {
+      final VecBasedMx data = new VecBasedMx(1, new ArrayVec(0.0, 0.5, 0.3));
+      DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));
+      final BFGrid grid = GridTools.medianGrid(ds, 32);
+      assertEquals(1, grid.size());
+  }
+
 
   @Override
   protected void setUp() throws Exception {

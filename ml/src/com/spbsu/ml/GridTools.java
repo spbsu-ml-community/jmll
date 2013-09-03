@@ -47,7 +47,8 @@ public class GridTools {
           double median = feature[start + (end - start) / 2];
           int split = Math.abs(Arrays.binarySearch(feature, start, end, median));
           //noinspection StatementWithEmptyBody
-          while (--split > 0 && Math.abs(feature[split] - median) < 1e-9); // look for first less then median value
+          while (split > 0 && Math.abs(feature[split] - median) < 1e-9) // look for first less then median value
+            split--;
           if(Math.abs(feature[split] - median) > 1e-9) split++;
           final double scoreLeft = Math.log(end - split) + Math.log(split - start);
           if (split > 0 && scoreLeft > bestScore) {
