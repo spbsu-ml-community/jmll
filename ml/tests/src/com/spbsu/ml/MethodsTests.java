@@ -6,6 +6,7 @@ import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.models.AdditiveModel;
@@ -150,16 +151,33 @@ public class MethodsTests extends GridTest {
             System.out.println();
         }
     }
+
     public void testContinousObliviousTree() {
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
-        for (int depth = 1; depth <= 4; depth++) {
+        for (int depth = 1; depth <= 6; depth++) {
             ContinousObliviousTree tree = new GreedyContinousObliviousTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
-            for(int i = 0; i < 10/*learn.target().dim()*/;i++)
-                System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
+            //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
+            // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
             System.out.print("Oblivious Tree deapth = " + depth);
             scoreCalcerLearn.progress(tree);
             scoreCalcerValidate.progress(tree);
+
+            System.out.println();
+        }
+    }
+
+    public void testDebugContinousObliviousTree() {
+        //ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
+        double[] data = {0, 1, 2};
+        double[] target = {0, 1, 2};
+
+        DataSet debug = new DataSetImpl(data, target);
+        ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", debug);
+        for (int depth = 1; depth <= 1; depth++) {
+            ContinousObliviousTree tree = new GreedyContinousObliviousTree(new FastRandom(), debug, GridTools.medianGrid(debug, 32), depth).fit(debug, new L2Loss(debug.target()));
+            System.out.print("Oblivious Tree deapth = " + depth);
+            scoreCalcerLearn.progress(tree);
             System.out.println();
         }
     }
