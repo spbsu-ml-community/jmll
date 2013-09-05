@@ -16,7 +16,6 @@ import java.util.Random;
  * User: towelenee
  * Date: 14.05.13
  * Time: 21:09
- * To change this template use File | Settings | File Templates.
  */
 public class GreedyContinousObliviousTree extends GreedyTDRegion {
     private final int depth;
@@ -28,6 +27,7 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
         super(rng, ds, grid, 1. / 3, 0);
         nonContinues = new GreedyObliviousRegressionTree(rng, ds, grid, depth);
         numberOfVariables = (1 << (depth - 1)) * (depth + 1) * (depth + 2);
+        numOfBondaries = 0;
 
         this.depth = depth;
     }
@@ -35,7 +35,7 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
     int numOfBondaries;
     double[] right;
 
-
+    //Add boundary to resulting matrix
     public void addBoundary(Mx mx, double cond[], double rightPart) {
         for (int i = 0; i < cond.length; i++)
             mx.set(numOfBondaries, i, cond[i]);
@@ -43,6 +43,7 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
         numOfBondaries++;
     }
 
+    //Make 2 demetion index 1
     public int getIndex(int mask, int i, int j) {
         if (i < j) {
             int temp = i;
@@ -53,9 +54,11 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
         return mask * (depth + 1) * (depth + 2) / 2 + i * (i + 1) / 2 + j;
     }
 
+    //Create boundary of continous between mask and mask neighbour
     public void createBoundariesCondition(int mask, BFGrid.BinaryFeature feature, int featureNum, Mx mx) {
         if (((mask >> featureNum) & 1) == 0)
             return;
+
         double C = feature.condition;
         int conterMask = mask ^ (1 << featureNum);
         featureNum++;
@@ -94,21 +97,19 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
         double R[] = new double[1 << depth];
         for (int k = 0; k < ds.power(); k++) {
             int index = 0;
-            for (int s = 0; s < features.size(); s++) {
+            //Calculating in which leaf ds[k] lays
+            for (BFGrid.BinaryFeature feature : features) {
                 index <<= 1;
-                //System.out.println(ds.data().row(k));
-                //System.out.println(features.get(s));
-
-                if (features.get(s).value(ds.data().row(k)))
+                if (feature.value(ds.data().row(k)))
                     index++;
             }
 
             double data[] = new double[depth + 1];
             data[0] = 1;
-            for (int s = 0; s < features.size(); s++) {
+            for (int s = 0; s < features.size(); s++)
                 data[s + 1] = ds.data().get(k, features.get(s).findex);
-                //System.out.print(features.get(s).findex);
-            }
+
+            //Gradient condition
 
             for (int f = 0; f <= depth; f++)
                 for (int s = 0; s <= f; s++)
@@ -119,6 +120,7 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
             addBoundary(mx, cond[s], R[s]);
     }
 
+    //Gauss Method for solving linear equation
     double[] solve(Mx mx, double right[]) {
         for (int i = 0; i < mx.columns(); i++) {
             int mi = i;
@@ -136,19 +138,14 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
             if (Math.abs(mx.get(i, i)) < 1e-9)
                 continue;
             for (int j = 0; j < mx.rows(); j++)
-                if (i != j) {
+                if (i != j && Math.abs(mx.get(j, i)) > 1e-9) {
                     double k = mx.get(j, i) / mx.get(i, i);
                     for (int g = 0; g < mx.columns(); g++)
                         mx.set(j, g, mx.get(j, g) - k * mx.get(i, g));
                     right[j] -= k * right[i];
                 }
-            //System.out.println(mx);
-            //System.out.println("");
 
         }
-        /*System.out.println("After");
-        for(int i = 0; i < mx.columns();i++)
-            System.out.println(right[i]);*/
         double[] ans = new double[mx.columns()];
         int unDef = 0, bug = 0;
         for (int i = 0; i < mx.columns(); i++)
@@ -160,39 +157,33 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
                     bug++;
             } else
                 ans[i] = right[i] / mx.get(i, i);
-        //System.out.println("undef = " + unDef + " bug " + bug);
-        //System.out.println(mx);
-        /*for(int i = 0; i < mx.columns();i++)
-            System.out.println(ans[i]);*/
+        System.out.println("undef = " + unDef + " bug " + bug);
         return ans;
 
     }
 
     @Override
     public ContinousObliviousTree fit(DataSet ds, Oracle1 loss) {
-        features = ((ObliviousTree)nonContinues.fit(ds, loss)).getFeatures();
-        int numberOfConditions = 4 * (1 << (depth - 1)) * ((depth + 1) * (depth + 2) + depth);//(1 << depth) * depth * depth;// ??MAgic number;
+        features = ((ObliviousTree) nonContinues.fit(ds, loss)).getFeatures();
+        int numberOfConditions = 8 * (1 << (depth - 1)) * ((depth + 1) * (depth + 2) + depth);
+
         Mx mx = new VecBasedMx(numberOfConditions, numberOfVariables);
-        //System.out.println(numberOfConditions);
-        //System.out.println(features.get(0).condition);
         right = new double[numberOfConditions];
+
         for (int mask = 0; mask < 1 << depth; mask++)
             for (int j = 0; j < depth; j++)
                 createBoundariesCondition(mask, features.get(j), j, mx);
+
         for (int i = 0; i < depth + 1; i++)
             for (int j = 0; j <= i; j++)
                 createGradientCondition(ds, j, i, mx);
-        //System.out.println(numberOfConditions + " = " + numOfBondaries);
-        /*System.out.println(mx);
-        for(int i = 0;i < numOfBondaries;i++)
-        System.out.println(right[i]);*/
+
         double value[] = solve(mx, right);
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
 
         for (int i = 0; i < 1 << depth; i++)
             for (int k = 0; k <= depth; k++)
                 for (int j = 0; j <= k; j++)
-                    //if(k  == 0 || j == 0)
                     out[i][k * (k + 1) / 2 + j] = value[getIndex(i, k, j)];
 
 

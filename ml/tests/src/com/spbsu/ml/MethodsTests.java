@@ -169,8 +169,8 @@ public class MethodsTests extends GridTest {
 
     public void testDebugContinousObliviousTree() {
         //ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
-        double[] data = {0, 1, 2};
-        double[] target = {0, 1, 2};
+        double[] data = {-2, -1, 0, 1, 2};
+        double[] target = {-1, 0, -1, 0, 3};
 
         DataSet debug = new DataSetImpl(data, target);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", debug);
@@ -197,7 +197,7 @@ public class MethodsTests extends GridTest {
         public void progress(Model partial) {
             if (partial instanceof AdditiveModel) {
                 final AdditiveModel additiveModel = (AdditiveModel) partial;
-                final Model increment = (Model)additiveModel.models.get(additiveModel.models.size() - 1);
+                final Model increment = (Model) additiveModel.models.get(additiveModel.models.size() - 1);
                 final DSIterator iter = ds.iterator();
                 int index = 0;
                 while (iter.advance()) {
@@ -219,7 +219,7 @@ public class MethodsTests extends GridTest {
         public void progress(Model partial) {
             if (partial instanceof AdditiveModel) {
                 final AdditiveModel model = (AdditiveModel) partial;
-                final Model increment = (Model)model.models.get(model.models.size() - 1);
+                final Model increment = (Model) model.models.get(model.models.size() - 1);
                 System.out.print("\t" + increment);
             }
         }
@@ -234,7 +234,7 @@ public class MethodsTests extends GridTest {
         public void progress(Model partial) {
             if (partial instanceof AdditiveModel) {
                 final AdditiveModel model = (AdditiveModel) partial;
-                final Model increment = (Model)model.models.get(model.models.size() - 1);
+                final Model increment = (Model) model.models.get(model.models.size() - 1);
 
                 final DSIterator iterator = learn.iterator();
                 final TDoubleIntHashMap values = new TDoubleIntHashMap();
