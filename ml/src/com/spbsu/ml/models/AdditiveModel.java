@@ -11,17 +11,17 @@ import java.util.List;
 * Date: 26.11.12
 * Time: 15:56
 */
-public class AdditiveModel extends Model {
-  public final List<Model> models;
+public class AdditiveModel<T extends Model> extends Model {
+  public final List<T> models;
   public final double step;
 
-  public AdditiveModel(List<Model> models, double step) {
+  public AdditiveModel(List<T> models, double step) {
     this.models = models;
     this.step = step;
   }
 
   public double value(Vec point) {
-    Iterator<Model> iter = models.iterator();
+    Iterator<T> iter = models.iterator();
     double result = 0;
     while (iter.hasNext()) {
       result += step * iter.next().value(point);

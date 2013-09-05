@@ -3,7 +3,6 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Model;
-import com.spbsu.ml.Oracle0;
 import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
@@ -21,17 +20,9 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  * Date: 21.12.2010
  * Time: 22:13:54
  */
-public class Boosting extends ProgressOwner implements MLMethodOrder1 {
-  protected final MLMethodOrder1 weak;
-  private final Oracle1 weakTarget;
-  int iterationsCount;
-  double step;
-
-  public Boosting(MLMethodOrder1 weak, Oracle1 weakTarget, int iterationsCount, double step) {
-    this.weak = weak;
-    this.weakTarget = weakTarget;
-    this.iterationsCount = iterationsCount;
-    this.step = step;
+public class GradientBoosting extends Boosting {
+  public GradientBoosting(MLMethodOrder1 weak, int iterationsCount, double step) {
+    super(weak, null, iterationsCount, step);
   }
 
   public Model fit(DataSet learn, Oracle1 loss, Vec start) {
@@ -39,9 +30,13 @@ public class Boosting extends ProgressOwner implements MLMethodOrder1 {
     final AdditiveModel result = new AdditiveModel(models, step);
 
     Vec point = copy(start);
+    Vec regressionStartPoint = new ArrayVec(point.dim());
 
     for (int i = 0; i < iterationsCount; i++) {
-      Model weakModel = weak.fit(learn, weakTarget, point);
+      final Vec gradient = loss.gradient(point);
+      final DataSet gradients = DataTools.bootstrap(DataTools.changeTarget(learn, loss.gradient(point)));
+      final L2Loss l2Loss = new L2Loss(gradient);
+      Model weakModel = weak.fit(gradients, l2Loss, regressionStartPoint);
       if (weakModel == null)
         break;
 
@@ -55,10 +50,5 @@ public class Boosting extends ProgressOwner implements MLMethodOrder1 {
     }
 
     return result;
-  }
-
-  @Override
-  public Model fit(DataSet learn, Oracle1 loss) {
-    return fit(learn, loss, new ArrayVec(learn.power()));
   }
 }

@@ -38,7 +38,8 @@ public class AdditiveModelConversionPack implements ConversionPack<AdditiveModel
       builder.append(HEADER.format(new Object[]{from.models.size(), from.step, from.models.size() > 0 ? from.models.get(0).getClass().getCanonicalName() : "none"}));
       builder.append("\n");
       builder.append("\n");
-      for (Model model : from.models) {
+      for (int i = 0; i < from.models.size(); i++) {
+        Model model = (Model) from.models.get(i);
         builder.append(repository.convert(model, CharSequence.class));
         builder.append("\n");
       }

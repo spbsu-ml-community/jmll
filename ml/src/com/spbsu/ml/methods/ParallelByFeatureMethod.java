@@ -1,5 +1,7 @@
 package com.spbsu.ml.methods;
 
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Model;
 import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DataSet;
@@ -21,9 +23,13 @@ public abstract class ParallelByFeatureMethod implements MLMethodOrder1 {
 
   protected abstract Model fit(DataSet learn, Oracle1 loss, FeatureFilter filter);
 
+  public Model fit(DataSet learn, Oracle1 loss) {
+    return fit(learn, loss, new ArrayVec(learn.power()));
+  }
+
   private final int cores = Runtime.getRuntime().availableProcessors();
   ThreadPoolExecutor executor = new ThreadPoolExecutor(cores, cores, 1, TimeUnit.DAYS, new ArrayBlockingQueue<Runnable>(cores));
-  public Model fit(final DataSet learn, final Oracle1 loss) {
+  public Model fit(final DataSet learn, final Oracle1 loss, Vec start) {
     final int threadsCount = Runtime.getRuntime().availableProcessors();
     final Model[] bestModels = new Model[threadsCount];
     final double[] validateScore = new double[threadsCount];

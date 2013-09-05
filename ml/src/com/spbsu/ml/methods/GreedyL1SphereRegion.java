@@ -1,6 +1,7 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Holder;
 import com.spbsu.ml.BFGrid;
@@ -68,15 +69,21 @@ public class GreedyL1SphereRegion implements MLMethodOrder1 {
 
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
   ThreadPoolExecutor exec = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 100500, TimeUnit.DAYS, new ArrayBlockingQueue<Runnable>(100));
+
   @Override
-  public Region fit(final DataSet learn, final Oracle1 loss) {
+  public Model fit(DataSet learn, Oracle1 loss) {
+    return fit(learn, loss, new ArrayVec(learn.power()));
+  }
+
+  @Override
+  public Region fit(final DataSet learn, final Oracle1 loss, final Vec start) {
     final Holder<Region> answer = new Holder<Region>(null);
     final CountDownLatch latch = new CountDownLatch(POOL_SIZE);
     for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
       exec.execute(new Runnable() {
         @Override
         public void run() {
-          final Region model = fitInner(learn, loss);
+          final Region model = fitInner(learn, loss, start);
           synchronized (answer) {
             if (answer.getValue() == null || answer.getValue().score > model.score)
               answer.setValue(model);
@@ -94,7 +101,7 @@ public class GreedyL1SphereRegion implements MLMethodOrder1 {
     return answer.getValue();
   }
 
-  public Region fitInner(DataSet ds, Oracle1 loss) {
+  public Region fitInner(DataSet ds, Oracle1 loss, Vec start) {
     DataSet learn = ds;
     assert loss.getClass() == L2Loss.class;
     int pointIdx = choosePointAtRandomNN(learn);

@@ -1,6 +1,7 @@
 package com.spbsu.ml.methods;
 
 import Jama.Matrix;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
@@ -28,7 +29,12 @@ public class LARSMethod implements MLMethodOrder1 {
     }
   }
 
-  public NormalizedLinearModel fit(DataSet orig, Oracle1 loss) {
+  @Override
+  public NormalizedLinearModel fit(DataSet learn, Oracle1 loss) {
+    return fit(learn, loss, new ArrayVec(learn.power()));
+  }
+
+  public NormalizedLinearModel fit(DataSet orig, Oracle1 loss, Vec start) {
     if (loss.getClass() != L2Loss.class)
       throw new IllegalArgumentException("LASSO can not be applied to loss other than l2");
     final int featuresCount = orig.xdim();
@@ -40,7 +46,7 @@ public class LARSMethod implements MLMethodOrder1 {
       final DSIterator it = learn.iterator();
       for (int i = 0; i < values.length; i++) {
         it.advance();
-        values[i] = it.y();
+        values[i] = it.y() - start.get(i);
       }
     }
 

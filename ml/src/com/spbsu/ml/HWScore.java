@@ -9,8 +9,8 @@ import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.methods.Boosting;
-import com.spbsu.ml.methods.GreedyObliviousTree;
+import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.GreedyObliviousRegressionTree;
 import com.spbsu.ml.models.AdditiveModel;
 import gnu.trove.TByteArrayList;
 
@@ -29,7 +29,7 @@ public class HWScore {
       final DataSet learn = transform(args[1], new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/features.txt.gz")));
       final DataSet test = transform(args[1], new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/featuresTest.txt.gz")));
       final BFGrid grid = GridTools.medianGrid(learn, 32);
-      final Boosting boosting = new Boosting(new GreedyObliviousTree(new FastRandom(), learn, grid, 6), 2000, 0.005);
+      final GradientBoosting boosting = new GradientBoosting(new GreedyObliviousRegressionTree(new FastRandom(), learn, grid, 6), 2000, 0.005);
       final ScoreCalcer score = new ScoreCalcer(test);
       boosting.addProgressHandler(score);
       boosting.fit(learn, new L2Loss(learn.target()));
@@ -78,7 +78,7 @@ public class HWScore {
       iteration++;
       if (partial instanceof AdditiveModel) {
         final AdditiveModel additiveModel = (AdditiveModel) partial;
-        final Model increment = additiveModel.models.get(additiveModel.models.size() - 1);
+        final Model increment = (Model)additiveModel.models.get(additiveModel.models.size() - 1);
         final DSIterator iter = ds.iterator();
         int index = 0;
         while (iter.advance()) {

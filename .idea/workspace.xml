@@ -7,6 +7,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" readonly="true" id="b5751471-ac07-4077-949f-2d3d12827f09" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/Aggregator.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GradientBoosting.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousClassificationTree.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/LogLikelihoodSigmoid.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/LogLikelihoodXSquare.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/MulticlassBoosting.java" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Array2BufferConverter.java" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/ArrayList2BufferConverter.java" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/CharArrayCSFactory.java" afterPath="" />
@@ -22,7 +28,29 @@
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Map2BufferConverter.java" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/Set2BufferConverter.java" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/util/StringCSFactory.java" afterPath="" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/LogLikelyhood.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/MulticlassLogLikelyhood.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousTree.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousRegressionTree.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/util/ArrayTools.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/util/ArrayTools.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BinarizedDataSet.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BinarizedDataSet.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/Boosting.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/Boosting.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/DataToolsTest.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/DataToolsTest.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java" afterPath="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyL1SphereRegion.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyL1SphereRegion.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyRegion.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyRegion.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyTDRegion.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyTDRegion.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/HWScore.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/HWScore.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/Histogram.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/Histogram.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/LARSMethod.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/LARSMethod.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/LASSOMethod.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/LASSOMethod.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/MLMethodOrder1.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/MLMethodOrder1.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/MathTools.java" afterPath="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/MathTools.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/ParallelByFeatureMethod.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/ParallelByFeatureMethod.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <list id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
@@ -30,20 +58,20 @@
     <ignored path="ML.iws" />
     <file path="/ContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369565279875" ignored="false" />
     <file path="/BFGrid.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933695399" ignored="false" />
-    <file path="/GreedyContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1373570643146" ignored="false" />
-    <file path="/fragment.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376935674572" ignored="false" />
-    <file path="/GreedyObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369408222057" ignored="false" />
+    <file path="/GreedyContinousObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1378362171761" ignored="false" />
+    <file path="/fragment.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1378299750323" ignored="false" />
+    <file path="/GreedyObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377541068085" ignored="false" />
     <file path="/ObliviousTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376932082543" ignored="false" />
     <file path="/GridTest.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933712876" ignored="false" />
-    <file path="/MethodsTests.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1373566398225" ignored="false" />
-    <file path="/Dummy.txt" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376984740845" ignored="false" />
+    <file path="/MethodsTests.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1378281621977" ignored="false" />
+    <file path="/Dummy.txt" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1378361982910" ignored="false" />
     <file path="/GridTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369553895590" ignored="false" />
-    <file path="/ArrayTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1369555048912" ignored="false" />
+    <file path="/ArrayTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377548001163" ignored="false" />
     <file path="/Fit.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376041459223" ignored="false" />
-    <file path="/LogLikelyhood.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1375972559536" ignored="false" />
+    <file path="/LogLikelyhood.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377164744141" ignored="false" />
     <file path="/a.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376046885469" ignored="false" />
-    <file path="/JMLLCLI.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376934015533" ignored="false" />
-    <file path="/Boosting.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1375974203576" ignored="false" />
+    <file path="/JMLLCLI.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1378281129198" ignored="false" />
+    <file path="/Boosting.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377545616357" ignored="false" />
     <file path="/ProgressOwner.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1375974123102" ignored="false" />
     <file path="/TypeConvertersCollection.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376314874739" ignored="false" />
     <file path="/Pair.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376045217873" ignored="false" />
@@ -82,11 +110,34 @@
     <file path="/GridConversionPack.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376327071124" ignored="false" />
     <file path="/a.dummy" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376327719198" ignored="false" />
     <file path="/DataSet.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376927427810" ignored="false" />
-    <file path="/DataTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376932917677" ignored="false" />
+    <file path="/DataTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377171827981" ignored="false" />
     <file path="/BFGridStringConverter.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933678853" ignored="false" />
     <file path="/FileTestCase.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376933757197" ignored="false" />
-    <file path="/AdditiveModelConversionPack.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376935284866" ignored="false" />
+    <file path="/AdditiveModelConversionPack.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377171915425" ignored="false" />
     <file path="/ObliviousTreeConversionPack.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1376936716293" ignored="false" />
+    <file path="/CharSequenceTest.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377100996706" ignored="false" />
+    <file path="/MulticlassModel.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377166345313" ignored="false" />
+    <file path="/AdditiveModel.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377166332857" ignored="false" />
+    <file path="/LogLikelyhoodXSquare.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377172135905" ignored="false" />
+    <file path="/HWScore.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377171815362" ignored="false" />
+    <file path="/Oracle1.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377172080004" ignored="false" />
+    <file path="/MulticlassBoosting.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377175099092" ignored="false" />
+    <file path="$PROJECT_DIR$/../../relpred/trunk/relpred/commons/src/org/spbu/jwc/ml/supervised/SeqSessionTarget.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377530124666" ignored="false" />
+    <file path="/BinarizedDataSet.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377540917030" ignored="false" />
+    <file path="/Aggregator.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377540715131" ignored="false" />
+    <file path="/Histogram.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377540792127" ignored="false" />
+    <file path="/DataToolsTest.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377540950780" ignored="false" />
+    <file path="/GreedyTDRegion.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377541606269" ignored="false" />
+    <file path="/MLMethodOrder1.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377541336610" ignored="false" />
+    <file path="/ParallelByFeatureMethod.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377541439646" ignored="false" />
+    <file path="/GreedyObliviousClassificationTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1378298915067" ignored="false" />
+    <file path="/GradientBoosting.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377545720311" ignored="false" />
+    <file path="/GreedyRegion.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377546384189" ignored="false" />
+    <file path="/LARSMethod.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377546549188" ignored="false" />
+    <file path="/LASSOMethod.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377546604380" ignored="false" />
+    <file path="/GreedyL1SphereRegion.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1377546703608" ignored="false" />
+    <file path="/GreedyObliviousRegressionTree.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1378281551313" ignored="false" />
+    <file path="/MathTools.java" changelist="b5751471-ac07-4077-949f-2d3d12827f09" time="1378286320681" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -116,8 +167,8 @@
         <option name="CONDITION_ENABLED" value="true" />
         <option name="CLASS_FILTERS_ENABLED" value="false" />
         <option name="INSTANCE_FILTERS_ENABLED" value="false" />
-        <option name="CONDITION" value="" />
-        <option name="LOG_MESSAGE" value="" />
+        <option name="CONDITION" value="&#13;&#13;JAVA" />
+        <option name="LOG_MESSAGE" value="&#13;&#13;JAVA" />
       </breakpoint>
       <breakpoint>
         <option name="NOTIFY_CAUGHT" value="true" />
@@ -133,28 +184,17 @@
         <option name="CONDITION_ENABLED" value="true" />
         <option name="CLASS_FILTERS_ENABLED" value="false" />
         <option name="INSTANCE_FILTERS_ENABLED" value="false" />
-        <option name="CONDITION" value="" />
-        <option name="LOG_MESSAGE" value="" />
-      </breakpoint>
-    </breakpoint_any>
-    <line_breakpoints default_suspend_policy="SuspendAll" default_condition_enabled="true">
-      <breakpoint url="jar://$PROJECT_DIR$/libs/Jama-1.0.2.zip!/Jama/Matrix.java" line="742" class="Jama.Matrix" package="Jama">
-        <option name="ENABLED" value="false" />
-        <option name="LOG_ENABLED" value="false" />
-        <option name="LOG_EXPRESSION_ENABLED" value="false" />
-        <option name="REMOVE_AFTER_HIT" value="false" />
-        <option name="SUSPEND_POLICY" value="SuspendAll" />
-        <option name="SUSPEND" value="true" />
-        <option name="COUNT_FILTER_ENABLED" value="false" />
-        <option name="COUNT_FILTER" value="0" />
-        <option name="CONDITION_ENABLED" value="false" />
-        <option name="CLASS_FILTERS_ENABLED" value="false" />
-        <option name="INSTANCE_FILTERS_ENABLED" value="false" />
         <option name="CONDITION" value="&#13;&#13;JAVA" />
         <option name="LOG_MESSAGE" value="&#13;&#13;JAVA" />
       </breakpoint>
-      <breakpoint url="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" line="92" class="com.spbsu.ml.BFGrid.BFRow" package="com.spbsu.ml">
-        <option name="ENABLED" value="true" />
+    </breakpoint_any>
+    <line_breakpoints default_suspend_policy="SuspendAll" default_condition_enabled="true" />
+    <ui_properties default_suspend_policy="SuspendAll" default_condition_enabled="true" />
+    <method_breakpoints>
+      <breakpoint url="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/io/PrintStream.java" line="803" class="java.io.PrintStream" package="java.io">
+        <option name="WATCH_ENTRY" value="true" />
+        <option name="WATCH_EXIT" value="true" />
+        <option name="ENABLED" value="false" />
         <option name="LOG_ENABLED" value="false" />
         <option name="LOG_EXPRESSION_ENABLED" value="false" />
         <option name="REMOVE_AFTER_HIT" value="false" />
@@ -165,11 +205,10 @@
         <option name="CONDITION_ENABLED" value="true" />
         <option name="CLASS_FILTERS_ENABLED" value="false" />
         <option name="INSTANCE_FILTERS_ENABLED" value="false" />
-        <option name="CONDITION" value="index &lt; 0&#13;&#13;JAVA" />
-        <option name="LOG_MESSAGE" value="&#13;&#13;JAVA" />
+        <option name="CONDITION" value="" />
+        <option name="LOG_MESSAGE" value="" />
       </breakpoint>
-    </line_breakpoints>
-    <ui_properties default_suspend_policy="SuspendAll" default_condition_enabled="true" />
+    </method_breakpoints>
     <breakpoint_rules />
     <ui_properties />
   </component>
@@ -179,103 +218,97 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="AdditiveModelConversionPack.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java">
+      <file leaf-file-name="GreedyObliviousClassificationTree.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousClassificationTree.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="54" column="53" selection-start="1934" selection-end="1934" vertical-scroll-proportion="0.0">
-              <folding />
+            <state line="116" column="111" selection-start="4223" selection-end="4223" vertical-scroll-proportion="0.0">
+              <folding>
+                <element signature="e#1650#1672#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DecimalFormatSymbols.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/DecimalFormatSymbols.java">
+      <file leaf-file-name="BinarizedDataSet.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BinarizedDataSet.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="57" column="11" selection-start="1502" selection-end="1502" vertical-scroll-proportion="0.0">
+            <state line="66" column="28" selection-start="2239" selection-end="2239" vertical-scroll-proportion="0.0">
               <folding>
-                <element signature="e#0#26839#0" expanded="false" />
                 <element signature="imports" expanded="false" />
-                <element signature="e#25932#25950#0" expanded="false" />
+                <element signature="e#1708#2380#0" expanded="false" />
+                <element signature="e#2371#2372#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="AdditiveModel.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java">
+      <file leaf-file-name="Aggregator.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/Aggregator.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="13" column="13" selection-start="217" selection-end="217" vertical-scroll-proportion="0.0">
+            <state line="8" column="7" selection-start="121" selection-end="121" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Array2BufferConverter.java" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Array2BufferConverter.java">
+      <file leaf-file-name="MathTools.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/MathTools.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="12" column="13" selection-start="252" selection-end="252" vertical-scroll-proportion="0.16719745">
+            <state line="94" column="37" selection-start="2799" selection-end="2799" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DataTools.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java">
+      <file leaf-file-name="MethodsTests.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="98" column="0" selection-start="3870" selection-end="3870" vertical-scroll-proportion="0.0">
-              <folding>
-                <element signature="e#1906#1914#0" expanded="true" />
-                <element signature="e#2008#2016#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ObliviousTreeConversionPack.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="101" column="62" selection-start="3974" selection-end="3974" vertical-scroll-proportion="0.0">
+            <state line="147" column="49" selection-start="6772" selection-end="6772" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="NumberFormat.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/NumberFormat.java">
+      <file leaf-file-name="JMLLCLI.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="347" column="27" selection-start="14145" selection-end="14145" vertical-scroll-proportion="0.0">
-              <folding>
-                <element signature="e#0#45507#0" expanded="false" />
-                <element signature="imports" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DecimalFormat.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/DecimalFormat.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="1259" column="18" selection-start="55522" selection-end="55522" vertical-scroll-proportion="0.0">
+            <state line="93" column="0" selection-start="4459" selection-end="4459" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="RoundingMode.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/math/RoundingMode.java">
+      <file leaf-file-name="GreedyObliviousRegressionTree.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousRegressionTree.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="349" column="12" selection-start="15477" selection-end="15477" vertical-scroll-proportion="0.0">
-              <folding>
-                <element signature="e#0#15477#0" expanded="false" />
-              </folding>
+            <state line="39" column="31" selection-start="1316" selection-end="1316" vertical-scroll-proportion="0.0">
+              <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="SerializationRepository.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/SerializationRepository.java">
+      <file leaf-file-name="GreedyContinousObliviousTree.java" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="34" column="0" selection-start="1134" selection-end="1134" vertical-scroll-proportion="0.0">
+            <state line="96" column="12" selection-start="3410" selection-end="3410" vertical-scroll-proportion="-0.122349106">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="PrintStream.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/io/PrintStream.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="696" column="0" selection-start="24400" selection-end="24400" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="GreedyTDRegion.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyTDRegion.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="98" column="15" selection-start="2673" selection-end="2673" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -291,22 +324,22 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/io/BFGridStringConverter.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/Converter.java" />
-        <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/SerializationTest.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/text/CharSequenceTools.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataSet.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/BFGridStringConverter.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java" />
-        <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GradientBoosting.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/MulticlassBoosting.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyRegion.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/LASSOMethod.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyL1SphereRegion.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/LARSMethod.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BinarizedDataSet.java" />
+        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/util/ArrayTools.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyTDRegion.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousRegressionTree.java" />
+        <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" />
+        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/MathTools.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/MBoosting.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousClassificationTree.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java" />
       </list>
     </option>
   </component>
@@ -321,10 +354,9 @@
     <option name="LAST_EDITED_TAB_NAME" />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="82" />
-    <option name="y" value="23" />
-    <option name="width" value="1506" />
-    <option name="height" value="1114" />
+    <option name="y" value="22" />
+    <option name="width" value="1598" />
+    <option name="height" value="1110" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -368,8 +400,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -496,7 +526,67 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="io" />
+              <option name="myItemId" value="methods" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="spbsu" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="loss" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="trunk" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="spbsu" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="data" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -555,102 +645,6 @@
               <option name="myItemId" value="tests" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="tests" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="spbsu" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="tests" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="spbsu" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="commons" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="tests" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="spbsu" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="commons" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="converters" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="tests" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
           </PATH>
           <PATH>
             <PATH_ELEMENT>
@@ -702,7 +696,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="text" />
+              <option name="myItemId" value="random" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -724,138 +718,14 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="system" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="commons" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="io" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="commons" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="func" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="commons" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="func" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="types" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="commons" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="func" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="types" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="impl" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="trunk" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="commons" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="func" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="converters" />
+              <option name="myItemId" value="quality" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
+      <pane id="PackagesPane" />
       <pane id="Favorites" />
     </panes>
   </component>
@@ -869,24 +739,24 @@
     <property name="MemberChooser.sorted" value="false" />
     <property name="recentsLimit" value="5" />
     <property name="options.lastSelected" value="editor.preferences.smartKeys" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/libs/commons-cli-1.2.jar!/" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../relpred/trunk" />
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="restartRequiresConfirmation" value="true" />
-    <property name="FullScreen" value="false" />
     <property name="MemberChooser.showClasses" value="true" />
+    <property name="FullScreen" value="false" />
     <property name="GoToClass.includeLibraries" value="false" />
-    <property name="options.searchVisible" value="true" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="dynamic.classpath" value="false" />
+    <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="options.searchVisible" value="true" />
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.spbsu.ml.methods" />
       <recent name="com.spbsu.ml.loss" />
       <recent name="com.spbsu.ml.models" />
-      <recent name="com.spbsu.ml.methods" />
       <recent name="com.spbsu.ml.data.impl" />
       <recent name="com.spbsu.commons.math.vectors" />
     </key>
@@ -913,30 +783,126 @@
       <recent name="com.spbsu" />
     </key>
   </component>
+  <component name="RestoreUpdateTree">
+    <UpdateInfo date="Moments ago" ActionInfo="_Update">
+      <UpdatedFiles>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Updated from server" />
+          <option name="myStatusName" value="Changed on server" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="CHANGED_ON_SERVER" />
+          <FILE-GROUP>
+            <option name="myUpdateName" value="Updated" />
+            <option name="myStatusName" value="Changed" />
+            <option name="mySupportsDeletion" value="false" />
+            <option name="myCanBeAbsent" value="false" />
+            <option name="myId" value="UPDATED" />
+            <PATH vcs="svn" revision="27">$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ContinousObliviousTree.java</PATH>
+            <PATH vcs="svn" revision="27">$PROJECT_DIR$/ml/src/com/spbsu/ml/GridTools.java</PATH>
+            <PATH vcs="svn" revision="27">$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java</PATH>
+          </FILE-GROUP>
+          <FILE-GROUP>
+            <option name="myUpdateName" value="Created" />
+            <option name="myStatusName" value="Created" />
+            <option name="mySupportsDeletion" value="false" />
+            <option name="myCanBeAbsent" value="false" />
+            <option name="myId" value="CREATED" />
+            <PATH vcs="svn" revision="61">$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/math/vectors/EigenDecompositionTest.java</PATH>
+            <PATH vcs="svn" revision="61">$PROJECT_DIR$/../../commons/trunk/tests/data/math</PATH>
+            <PATH vcs="svn" revision="61">$PROJECT_DIR$/../../commons/trunk/tests/data/math/eigenDecomposition.txt</PATH>
+          </FILE-GROUP>
+          <FILE-GROUP>
+            <option name="myUpdateName" value="Deleted" />
+            <option name="myStatusName" value="Deleted" />
+            <option name="mySupportsDeletion" value="false" />
+            <option name="myCanBeAbsent" value="true" />
+            <option name="myId" value="REMOVED_FROM_REPOSITORY" />
+          </FILE-GROUP>
+          <FILE-GROUP>
+            <option name="myUpdateName" value="Restored" />
+            <option name="myStatusName" value="Will be restored" />
+            <option name="mySupportsDeletion" value="false" />
+            <option name="myCanBeAbsent" value="false" />
+            <option name="myId" value="RESTORED" />
+          </FILE-GROUP>
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Modified" />
+          <option name="myStatusName" value="Modified" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="MODIFIED" />
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Skipped" />
+          <option name="myStatusName" value="Skipped" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="SKIPPED" />
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Merged with conflicts" />
+          <option name="myStatusName" value="Will be merged with conflicts" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="MERGED_WITH_CONFLICTS" />
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Merged with tree conflicts" />
+          <option name="myStatusName" value="Merged with tree conflicts" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="MERGED_WITH_TREE_CONFLICT" />
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Merged with property conflicts" />
+          <option name="myStatusName" value="Will be merged with property conflicts" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="MERGED_WITH_PROPERTY_CONFLICT" />
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Merged" />
+          <option name="myStatusName" value="Will be merged" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="MERGED" />
+          <PATH vcs="svn" revision="27">$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java</PATH>
+          <PATH vcs="svn" revision="27">$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java</PATH>
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Not in repository" />
+          <option name="myStatusName" value="Not in repository" />
+          <option name="mySupportsDeletion" value="true" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="UNKNOWN" />
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Locally added" />
+          <option name="myStatusName" value="Locally added" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="LOCALLY_ADDED" />
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Locally removed" />
+          <option name="myStatusName" value="Locally removed" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="LOCALLY_REMOVED" />
+        </FILE-GROUP>
+        <FILE-GROUP>
+          <option name="myUpdateName" value="Switched" />
+          <option name="myStatusName" value="Switched" />
+          <option name="mySupportsDeletion" value="false" />
+          <option name="myCanBeAbsent" value="false" />
+          <option name="myId" value="SWITCHED" />
+        </FILE-GROUP>
+      </UpdatedFiles>
+    </UpdateInfo>
+  </component>
   <component name="RunManager" selected="Application.JMLLCLI">
-    <configuration default="false" name="MethodsTests.testContinousObliviousTree" type="JUnit" factoryName="JUnit" temporary="true">
-      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-      <module name="ml" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" value="" />
-      <option name="PACKAGE_NAME" value="com.spbsu.ml" />
-      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.MethodsTests" />
-      <option name="METHOD_NAME" value="testContinousObliviousTree" />
-      <option name="TEST_OBJECT" value="method" />
-      <option name="VM_PARAMETERS" value="-Xmx1g" />
-      <option name="PARAMETERS" value="" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
-      <option name="ENV_VARIABLES" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="TEST_SEARCH_SCOPE">
-        <value defaultName="moduleWithDependencies" />
-      </option>
-      <envs />
-      <patterns />
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
     <configuration default="false" name="TypeConversionTest" type="JUnit" factoryName="JUnit" temporary="true">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
         <pattern>
@@ -1071,25 +1037,40 @@
       <ConfigurationWrapper RunnerId="Debug" />
       <method />
     </configuration>
+    <configuration default="false" name="CharSequenceTest.testXXX" type="JUnit" factoryName="JUnit" temporary="true">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+        <pattern>
+          <option name="PATTERN" value="com.spbsu.commons.text.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <module name="commons-lib" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="PACKAGE_NAME" value="com.spbsu.commons.text" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.commons.text.CharSequenceTest" />
+      <option name="METHOD_NAME" value="testXXX" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="VM_PARAMETERS" value="-Xmx1g" />
+      <option name="PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
     <configuration default="true" type="Remote" factoryName="Remote">
       <option name="USE_SOCKET_TRANSPORT" value="true" />
       <option name="SERVER_MODE" value="false" />
       <option name="SHMEM_ADDRESS" value="javadebug" />
       <option name="HOST" value="localhost" />
       <option name="PORT" value="5005" />
-      <method />
-    </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
       <method />
     </configuration>
     <configuration default="true" type="TestNG" factoryName="TestNG">
@@ -1118,6 +1099,19 @@
       <envs />
       <properties />
       <listeners />
+      <method />
+    </configuration>
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
       <method />
     </configuration>
     <configuration default="true" type="Application" factoryName="Application">
@@ -1165,7 +1159,7 @@
       </extension>
       <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.JMLLCLI" />
       <option name="VM_PARAMETERS" value="-Xmx1g" />
-      <option name="PROGRAM_PARAMETERS" value="-f $USER_HOME$/experiments/pools/small/features.txt.gz -t $USER_HOME$/experiments/pools/small/featuresTest.txt.gz -v fit -i 100 " />
+      <option name="PROGRAM_PARAMETERS" value="-f $USER_HOME$/experiments/pools/small/features.txt.gz -t $USER_HOME$/experiments/pools/small/featuresTest.txt.gz -v fit -T LL -e LL -M Boosting -W OCT -i 1000 -s 0.015" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
@@ -1238,19 +1232,19 @@
       <item index="0" class="java.lang.String" itemvalue="Application.JMLLCLI" />
       <item index="1" class="java.lang.String" itemvalue="Application.HWScore dimred" />
       <item index="2" class="java.lang.String" itemvalue="Application.HWScore fit" />
-      <item index="3" class="java.lang.String" itemvalue="JUnit.MethodsTests.testContinousObliviousTree" />
-      <item index="4" class="java.lang.String" itemvalue="JUnit.TypeConversionTest" />
-      <item index="5" class="java.lang.String" itemvalue="JUnit.SerializationTest.testObliviousTree" />
-      <item index="6" class="java.lang.String" itemvalue="JUnit.SerializationTest.testGrid" />
-      <item index="7" class="java.lang.String" itemvalue="JUnit.SerializationTest.testAdditiveModel" />
+      <item index="3" class="java.lang.String" itemvalue="JUnit.TypeConversionTest" />
+      <item index="4" class="java.lang.String" itemvalue="JUnit.SerializationTest.testObliviousTree" />
+      <item index="5" class="java.lang.String" itemvalue="JUnit.SerializationTest.testGrid" />
+      <item index="6" class="java.lang.String" itemvalue="JUnit.SerializationTest.testAdditiveModel" />
+      <item index="7" class="java.lang.String" itemvalue="JUnit.CharSequenceTest.testXXX" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="JUnit.SerializationTest.testAdditiveModel" />
-        <item index="1" class="java.lang.String" itemvalue="JUnit.SerializationTest.testGrid" />
-        <item index="2" class="java.lang.String" itemvalue="JUnit.SerializationTest.testObliviousTree" />
-        <item index="3" class="java.lang.String" itemvalue="JUnit.TypeConversionTest" />
-        <item index="4" class="java.lang.String" itemvalue="JUnit.MethodsTests.testContinousObliviousTree" />
+        <item index="0" class="java.lang.String" itemvalue="JUnit.CharSequenceTest.testXXX" />
+        <item index="1" class="java.lang.String" itemvalue="JUnit.SerializationTest.testAdditiveModel" />
+        <item index="2" class="java.lang.String" itemvalue="JUnit.SerializationTest.testGrid" />
+        <item index="3" class="java.lang.String" itemvalue="JUnit.SerializationTest.testObliviousTree" />
+        <item index="4" class="java.lang.String" itemvalue="JUnit.TypeConversionTest" />
       </list>
     </recent_temporary>
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
@@ -1335,37 +1329,41 @@
       <created>1376920295105</created>
       <updated>1376920295105</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Correct gradient for LL">
+      <created>1377164884102</created>
+      <updated>1377164884102</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="82" y="23" width="1506" height="1114" extended-state="6" />
-    <editor active="false" />
+    <frame x="0" y="22" width="1598" height="1110" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.30753767" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4446043" sideWeight="0.5929648" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3070707" sideWeight="0.5929648" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="IDEtalk Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3299595" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.31690142" sideWeight="0.9993532" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32929292" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.45050505" sideWeight="0.9993532" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="CDI" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.215478" sideWeight="0.45890412" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3297414" sideWeight="0.58536583" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23835616" sideWeight="0.6830986" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26257545" sideWeight="0.9980481" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2242268" sideWeight="0.67070705" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.18291457" sideWeight="0.9980481" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.30935252" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Module Dependencies" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32954547" sideWeight="0.5546075" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -1413,7 +1411,7 @@
     <option name="WRAP_WHEN_TYPING_REACHES_RIGHT_MARGIN" value="false" />
     <option name="FORCE_NON_EMPTY_COMMENT" value="false" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="false" />
-    <option name="LAST_COMMIT_MESSAGE" value="CLI introduced" />
+    <option name="LAST_COMMIT_MESSAGE" value="LL minimization boosting" />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_FILES_UP_TO_DATE_BEFORE_COMMIT" value="false" />
@@ -1432,138 +1430,139 @@
     <MESSAGE value="Type conversion framework ported" />
     <MESSAGE value="Type conversion framework refactoring. ML models serialization." />
     <MESSAGE value="CLI introduced" />
+    <MESSAGE value="Correct gradient for LL" />
+    <MESSAGE value="LL minimization boosting" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager />
+    <breakpoint-manager>
+      <breakpoints-dialog>
+        <breakpoints-dialog />
+      </breakpoints-dialog>
+    </breakpoint-manager>
   </component>
   <component name="antWorkspaceConfiguration">
     <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/BFGrid.java">
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/util/concurrent/ThreadPoolExecutor.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="206" column="47" selection-start="4910" selection-end="4910" vertical-scroll-proportion="0.0">
+        <state line="1144" column="0" selection-start="44322" selection-end="44358" vertical-scroll-proportion="1.2708334">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/FileTestCase.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/Boosting.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="40" column="46" selection-start="1327" selection-end="1327" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="41" column="8" selection-start="1204" selection-end="1204" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="112" column="114" selection-start="5504" selection-end="5504" vertical-scroll-proportion="0.0">
+        <state line="50" column="0" selection-start="1451" selection-end="1451" vertical-scroll-proportion="0.0">
           <folding>
-            <element signature="e#2728#2742#0" expanded="true" />
-            <element signature="e#2822#2836#0" expanded="true" />
+            <element signature="e#1084#1091#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/impl/TypeConvertersCollection.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/Histogram.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="97" column="0" selection-start="3996" selection-end="3996" vertical-scroll-proportion="0.0">
+        <state line="17" column="47" selection-start="328" selection-end="353" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/types/SerializationRepository.java">
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/lang/Math.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="34" column="0" selection-start="1134" selection-end="1134" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/AdditiveModel.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="13" selection-start="217" selection-end="217" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/MessageFormat.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="335" column="22" selection-start="14421" selection-end="14421" vertical-scroll-proportion="0.80418533">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/DecimalFormatSymbols.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="57" column="11" selection-start="1502" selection-end="1502" vertical-scroll-proportion="0.0">
+        <state line="878" column="0" selection-start="35183" selection-end="35183" vertical-scroll-proportion="0.0">
           <folding>
-            <element signature="e#0#26839#0" expanded="false" />
-            <element signature="imports" expanded="false" />
-            <element signature="e#25932#25950#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/math/RoundingMode.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="349" column="12" selection-start="15477" selection-end="15477" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#0#15477#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/DecimalFormat.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="1259" column="18" selection-start="55522" selection-end="55522" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/text/NumberFormat.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="347" column="27" selection-start="14145" selection-end="14145" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#0#45507#0" expanded="false" />
-            <element signature="imports" expanded="false" />
+            <element signature="e#0#58776#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="98" column="0" selection-start="3870" selection-end="3870" vertical-scroll-proportion="0.0">
+        <state line="59" column="0" selection-start="2502" selection-end="2502" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GradientBoosting.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="38" column="0" selection-start="1249" selection-end="1249" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_13.jdk/Contents/Home/src.zip!/java/io/PrintStream.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="696" column="0" selection-start="24400" selection-end="24400" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyTDRegion.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="98" column="15" selection-start="2673" selection-end="2673" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousRegressionTree.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="39" column="31" selection-start="1316" selection-end="1316" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="147" column="49" selection-start="6772" selection-end="6772" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/MathTools.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="94" column="37" selection-start="2799" selection-end="2799" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="93" column="0" selection-start="4459" selection-end="4459" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BinarizedDataSet.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="66" column="28" selection-start="2239" selection-end="2239" vertical-scroll-proportion="0.0">
           <folding>
-            <element signature="e#1906#1914#0" expanded="true" />
-            <element signature="e#2008#2016#0" expanded="true" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#1708#2380#0" expanded="false" />
+            <element signature="e#2371#2372#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/AdditiveModelConversionPack.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/Aggregator.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="54" column="53" selection-start="1934" selection-end="1934" vertical-scroll-proportion="0.0">
+        <state line="8" column="7" selection-start="121" selection-end="121" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyObliviousClassificationTree.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="101" column="62" selection-start="3974" selection-end="3974" vertical-scroll-proportion="0.0">
-          <folding />
+        <state line="116" column="111" selection-start="4223" selection-end="4223" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#1650#1672#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/converters/Array2BufferConverter.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyContinousObliviousTree.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="12" column="13" selection-start="252" selection-end="252" vertical-scroll-proportion="0.16719745">
+        <state line="96" column="12" selection-start="3410" selection-end="3410" vertical-scroll-proportion="-0.122349106">
           <folding />
         </state>
       </provider>

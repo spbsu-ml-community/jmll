@@ -111,7 +111,7 @@ public class DataTools {
 
   public static BFGrid grid(Model result) {
     if (result instanceof AdditiveModel)
-      return grid(((AdditiveModel) result).models.get(0));
+      return grid((Model)((AdditiveModel) result).models.get(0));
     if (result instanceof ObliviousTree)
       return ((ObliviousTree)result).grid();
     return null;

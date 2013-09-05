@@ -2,6 +2,7 @@ package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Model;
@@ -90,7 +91,12 @@ public class GreedyTDRegion implements MLMethodOrder1 {
     }
   }
 
-  public Model fit(DataSet ds, Oracle1 loss) {
+  @Override
+  public Model fit(DataSet learn, Oracle1 loss) {
+    return fit(learn, loss, new ArrayVec(learn.power()));
+  }
+
+  public Model fit(DataSet ds, Oracle1 loss, Vec start) {
     assert loss.getClass() == L2Loss.class;
     DataSet learn = ds;
     final List<Region.BinaryCond> conditions = new ArrayList<Region.BinaryCond>(grid.size());
@@ -100,7 +106,7 @@ public class GreedyTDRegion implements MLMethodOrder1 {
     double currentScore = Double.MAX_VALUE;
 
     while(true) {
-      final Histogram histogram = bds.buildHistogram(learn.target(), indices);
+      final Histogram histogram = bds.buildHistogram(learn.target(), start, indices);
       BestBFFinder finder = new BestBFFinder(total, indices.length, conditions.size() + 1);
       for (int bf = 0; bf < grid.size(); bf++, finder.advance()) {
         histogram.process(bf, finder);

@@ -22,21 +22,22 @@ import java.util.Random;
  * Date: 30.11.12
  * Time: 17:01
  */
-public class GreedyObliviousTree extends GreedyTDRegion {
+public class GreedyObliviousRegressionTree extends GreedyTDRegion {
   private final int depth;
 
-  public GreedyObliviousTree(Random rng, DataSet ds, BFGrid grid, int depth) {
+  public GreedyObliviousRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
     super(rng, ds, grid, 1./3, 0);
     this.depth = depth;
   }
 
   @Override
-  public ObliviousTree fit(DataSet ds, Oracle1 loss) {
+  public ObliviousTree fit(DataSet ds, Oracle1 loss, Vec start) {
     if(!(loss instanceof L2Loss))
       throw new IllegalArgumentException("L2 loss supported only");
     List<int[]> split = new ArrayList<int[]>();
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(depth);
     final Vec target = ds instanceof Bootstrap ? ((Bootstrap)ds).original().target() : ds.target();
+    final Vec point = VecTools.copy(start);
 
     double[] totals = new double[1 << (depth + 1)];
     double[] weights = new double[1 << (depth + 1)];
@@ -48,7 +49,7 @@ public class GreedyObliviousTree extends GreedyTDRegion {
     for (int level = 0; level < depth; level++) {
       final Histogram[] histograms = new Histogram[split.size()];
       for (int i = 0; i < histograms.length; i++) {
-        histograms[i] = bds.buildHistogram(target, split.get(i));
+        histograms[i] = bds.buildHistogram(target, point, split.get(i));
       }
       final BestBFFinder finder = new BestBFFinder(totals, weights, conditions.size() + 1);
       for (int bf = 0; bf < grid.size(); bf++, finder.advance()) {

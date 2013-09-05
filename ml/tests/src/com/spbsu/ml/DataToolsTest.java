@@ -12,9 +12,6 @@ import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import gnu.trove.TDoubleDoubleProcedure;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-
 /**
  * User: solar
  * Date: 03.12.12
@@ -35,7 +32,7 @@ public class DataToolsTest extends GridTest {
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(3, grid.size());
     BinarizedDataSet bds = new BinarizedDataSet(ds, grid);
-    final Histogram histogram = bds.buildHistogram(new ArrayVec(0, 0, 0, 0, 1, 0, 0, 1), ArrayTools.sequence(0, 8));
+    final Histogram histogram = bds.buildHistogram(new ArrayVec(0, 0, 0, 0, 1, 0, 0, 1), new ArrayVec(8), ArrayTools.sequence(0, 8));
     final double[] weights = new double[grid.size()];
     final double[] sums = new double[grid.size()];
     for (int i = 0; i < grid.size(); i++) {

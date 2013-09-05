@@ -9,11 +9,10 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.loss.LogLikelyhood;
-import com.spbsu.ml.methods.Boosting;
-import com.spbsu.ml.methods.GreedyObliviousTree;
-import com.spbsu.ml.methods.MLMethodOrder1;
-import com.spbsu.ml.methods.ProgressOwner;
+import com.spbsu.ml.loss.LogLikelihoodSigmoid;
+import com.spbsu.ml.loss.LogLikelihoodXSquare;
+import com.spbsu.ml.loss.MulticlassLogLikelyhood;
+import com.spbsu.ml.methods.*;
 import com.spbsu.ml.models.AdditiveModel;
 import gnu.trove.TIntObjectHashMap;
 import org.apache.commons.cli.*;
@@ -39,6 +38,7 @@ public class JMLLCLI {
     options.addOption("T", "target", true, "target funtion to optimize (MSE, LL, etc.)");
     options.addOption("M", "method", true, "optimization method (Boosting, etc.)");
     options.addOption("W", "weak-model", true, "weak model in case of ensemble method (CART, OT, etc.)");
+    options.addOption("e", "weak-target", true, "weak model target");
     options.addOption("i", "iterations", true, "ensemble power (iterations count)");
     options.addOption("s", "step", true, "shrinkage parameter/weight in ensemble");
     options.addOption("x", "bin-folds-count", true, "binarization precision: how many binary features inferred from real one");
@@ -140,18 +140,32 @@ public class JMLLCLI {
 
   private static MLMethodOrder1 chooseMethod(String name, CommandLine line, Random rnd, DataSet learn) {
     MLMethodOrder1 method;
-    if ("Boosting".equals(name)) {
-      method = new Boosting(chooseMethod(line.getOptionValue("W", "OT"), line, rnd, learn),
+    if ("GBoosting".equals(name)) {
+      method = new GradientBoosting(chooseMethod(line.getOptionValue("W", "ORT"), line, rnd, learn),
+                                    Integer.parseInt(line.getOptionValue("i", "1000")),
+                                    Double.parseDouble(line.getOptionValue("s", "0.01")));
+    }
+    else if ("Boosting".equals(name)) {
+      method = new Boosting(chooseMethod(line.getOptionValue("W", "ORT"), line, rnd, learn),
+                            chooseTarget(learn, line.getOptionValue("e", "MSE")),
                             Integer.parseInt(line.getOptionValue("i", "1000")),
                             Double.parseDouble(line.getOptionValue("s", "0.01")));
     }
-    else if ("OT".equals(name)) {
+    else if ("ORT".equals(name)) {
       BFGrid grid;
       if (!line.hasOption("g"))
         grid = GridTools.medianGrid(learn, Integer.parseInt(line.getOptionValue("x", "32")));
       else
         grid = BFGrid.CONVERTER.convertFrom(line.getOptionValue("g"));
-      method = new GreedyObliviousTree(rnd, learn, grid, Integer.parseInt(line.getOptionValue("d", "6")));
+      method = new GreedyObliviousRegressionTree(rnd, learn, grid, Integer.parseInt(line.getOptionValue("d", "6")));
+    }
+    else if ("OCT".equals(name)) {
+      BFGrid grid;
+      if (!line.hasOption("g"))
+        grid = GridTools.medianGrid(learn, Integer.parseInt(line.getOptionValue("x", "32")));
+      else
+        grid = BFGrid.CONVERTER.convertFrom(line.getOptionValue("g"));
+      method = new GreedyObliviousClassificationTree(rnd, learn, grid, Integer.parseInt(line.getOptionValue("d", "6")));
     }
     else throw new RuntimeException("Unknown target: " + name);
     return method;
@@ -163,7 +177,13 @@ public class JMLLCLI {
       loss = new L2Loss(learn.target());
     }
     else if ("LL".equals(target)) {
-      loss = new LogLikelyhood(learn.target());
+      loss = new LogLikelihoodSigmoid(learn.target());
+    }
+    else if ("LLX2".equals(target)) {
+      loss = new LogLikelihoodXSquare(learn.target());
+    }
+    else if ("MLL".equals(target)) {
+      loss = new MulticlassLogLikelyhood(learn.target());
     }
     else throw new RuntimeException("Unknown target: " + target);
     return loss;

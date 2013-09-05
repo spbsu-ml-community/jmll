@@ -6,6 +6,7 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.models.ContinousObliviousTree;
+import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.List;
 import java.util.Random;
@@ -19,13 +20,13 @@ import java.util.Random;
  */
 public class GreedyContinousObliviousTree extends GreedyTDRegion {
     private final int depth;
-    private final GreedyObliviousTree nonContinues;
+    private final GreedyObliviousRegressionTree nonContinues;
     private final int numberOfVariables;
     private List<BFGrid.BinaryFeature> features;
 
     public GreedyContinousObliviousTree(Random rng, DataSet ds, BFGrid grid, int depth) {
         super(rng, ds, grid, 1. / 3, 0);
-        nonContinues = new GreedyObliviousTree(rng, ds, grid, depth);
+        nonContinues = new GreedyObliviousRegressionTree(rng, ds, grid, depth);
         numberOfVariables = (1 << (depth - 1)) * (depth + 1) * (depth + 2);
 
         this.depth = depth;
@@ -169,7 +170,7 @@ public class GreedyContinousObliviousTree extends GreedyTDRegion {
 
     @Override
     public ContinousObliviousTree fit(DataSet ds, Oracle1 loss) {
-        features = nonContinues.fit(ds, loss).getFeatures();
+        features = ((ObliviousTree)nonContinues.fit(ds, loss)).getFeatures();
         int numberOfConditions = 4 * (1 << (depth - 1)) * ((depth + 1) * (depth + 2) + depth);//(1 << depth) * depth * depth;// ??MAgic number;
         Mx mx = new VecBasedMx(numberOfConditions, numberOfVariables);
         //System.out.println(numberOfConditions);

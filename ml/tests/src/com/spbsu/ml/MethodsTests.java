@@ -30,7 +30,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testGRBoost() {
-        final Boosting boosting = new Boosting(new GreedyRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -52,7 +52,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testGRSBoost() {
-        final Boosting boosting = new Boosting(new GreedyL1SphereRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyL1SphereRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -74,7 +74,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testGTDRBoost() {
-        final Boosting boosting = new Boosting(new GreedyTDRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyTDRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -96,7 +96,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testOTBoost() {
-        final Boosting boosting = new Boosting(new GreedyObliviousTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6), 2000, 0.005);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6), 2000, 0.005);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -122,7 +122,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testTreeBoost() {
-        final Boosting boosting = new Boosting(new BestAtomicSplitMethod(), 1000, 0.01);
+        final GradientBoosting boosting = new GradientBoosting(new BestAtomicSplitMethod(), 1000, 0.01);
         final ScoreCalcer learnListener = new ScoreCalcer("learn : ", learn);
         final ScoreCalcer validateListener = new ScoreCalcer(" test : ", validate);
         final ProgressHandler modelPrinter = new ProgressHandler() {
@@ -144,7 +144,7 @@ public class MethodsTests extends GridTest {
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
         for (int depth = 2; depth <= 10; depth++) {
-            ObliviousTree tree = new GreedyObliviousTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
+            ObliviousTree tree = (ObliviousTree) new GreedyObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
             System.out.print("Oblivious Tree deapth = " + depth);
             scoreCalcerLearn.progress(tree);
             scoreCalcerValidate.progress(tree);
@@ -197,7 +197,7 @@ public class MethodsTests extends GridTest {
         public void progress(Model partial) {
             if (partial instanceof AdditiveModel) {
                 final AdditiveModel additiveModel = (AdditiveModel) partial;
-                final Model increment = additiveModel.models.get(additiveModel.models.size() - 1);
+                final Model increment = (Model)additiveModel.models.get(additiveModel.models.size() - 1);
                 final DSIterator iter = ds.iterator();
                 int index = 0;
                 while (iter.advance()) {
@@ -219,7 +219,7 @@ public class MethodsTests extends GridTest {
         public void progress(Model partial) {
             if (partial instanceof AdditiveModel) {
                 final AdditiveModel model = (AdditiveModel) partial;
-                final Model increment = model.models.get(model.models.size() - 1);
+                final Model increment = (Model)model.models.get(model.models.size() - 1);
                 System.out.print("\t" + increment);
             }
         }
@@ -234,7 +234,7 @@ public class MethodsTests extends GridTest {
         public void progress(Model partial) {
             if (partial instanceof AdditiveModel) {
                 final AdditiveModel model = (AdditiveModel) partial;
-                final Model increment = model.models.get(model.models.size() - 1);
+                final Model increment = (Model)model.models.get(model.models.size() - 1);
 
                 final DSIterator iterator = learn.iterator();
                 final TDoubleIntHashMap values = new TDoubleIntHashMap();
