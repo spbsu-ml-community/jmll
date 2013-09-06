@@ -29,7 +29,8 @@ public class HWScore {
       final DataSet learn = transform(args[1], new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/features.txt.gz")));
       final DataSet test = transform(args[1], new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/featuresTest.txt.gz")));
       final BFGrid grid = GridTools.medianGrid(learn, 32);
-      final GradientBoosting boosting = new GradientBoosting(new GreedyObliviousRegressionTree(new FastRandom(), learn, grid, 6), 2000, 0.005);
+      final FastRandom rng = new FastRandom();
+      final GradientBoosting boosting = new GradientBoosting(new GreedyObliviousRegressionTree(rng, learn, grid, 6), 2000, 0.005, rng);
       final ScoreCalcer score = new ScoreCalcer(test);
       boosting.addProgressHandler(score);
       boosting.fit(learn, new L2Loss(learn.target()));

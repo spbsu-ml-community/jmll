@@ -45,6 +45,6 @@ public class LogLikelihoodSigmoid implements Oracle1 {
         result -= log(1 - pX);
     }
 
-    return result;
+    return result / point.dim();
   }
 }

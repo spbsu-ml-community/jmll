@@ -6,7 +6,6 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
-import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Model;
@@ -91,7 +90,7 @@ public class DataTools {
     return new Bootstrap(base);
   }
 
-  public static Bootstrap bootstrap(DataSet base, FastRandom random) {
+  public static Bootstrap bootstrap(DataSet base, Random random) {
     return new Bootstrap(base, random);
   }
 

@@ -2,6 +2,7 @@ package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
@@ -13,14 +14,12 @@ import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.loss.LogLikelihoodSigmoid;
 import com.spbsu.ml.models.ObliviousTree;
-import gnu.trove.TIntArrayList;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static java.lang.Math.exp;
-import static java.lang.Math.log;
+import static java.lang.Math.*;
 
 /**
  * User: solar
@@ -49,58 +48,38 @@ public class GreedyObliviousClassificationTree implements MLMethodOrder1 {
   public ObliviousTree fit(DataSet ds, Oracle1 loss, Vec point) {
     if(!(loss instanceof LogLikelihoodSigmoid))
       throw new IllegalArgumentException("Log likelihood with sigmoid probability function supported only");
-    List<int[]> split = new ArrayList<int[]>();
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(depth);
     final Vec target = ds instanceof Bootstrap ? ((Bootstrap)ds).original().target() : ds.target();
-
-    LLAggregator[] agg = new LLAggregator[0];
-    int bestSplit = -1;
-
-    split.add(ds instanceof Bootstrap ? ((Bootstrap) ds).order() : ArrayTools.sequence(0, ds.power()));
+    Leaf seed = new Leaf(point, target, VecTools.fill(new ArrayVec(point.dim()), 1.));
+    Leaf[] leaves1 = new Leaf[]{seed};
     for (int level = 0; level < depth; level++) {
-      agg = new LLAggregator[split.size()];
-      for (int i = 0; i < agg.length; i++) {
-        agg[i] = new LLAggregator();
-        this.ds.aggregate(agg[i], target, point, split.get(i));
-      }
       double[] scores = new double[grid.size()];
-      for (int i = 0; i < agg.length; i++) {
-        agg[i].score(scores);
+      for (Leaf leaf : leaves1) {
+        leaf.score(scores);
       }
-      bestSplit = ArrayTools.max(scores);
-      List<int[]> nextSplit = new ArrayList<int[]>(split.size() << 1);
-      final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
-      final byte[] bins = this.ds.bins(bestSplitBF.findex);
-      int binNo = bestSplitBF.binNo;
-      final TIntArrayList left = new TIntArrayList();
-      final TIntArrayList right = new TIntArrayList();
-      for (int s = 0; s < split.size(); s++) {
-        left.clear();
-        right.clear();
-        int[] indices = split.get(s);
-        for (int t = 0; t < indices.length; t++) {
-          final int index = indices[t];
-          if (bins[index] > binNo) {
-            right.add(index);
-          }
-          else {
-            left.add(index);
-          }
-        }
-        nextSplit.add(left.toNativeArray());
-        nextSplit.add(right.toNativeArray());
+      final int max = ArrayTools.max(scores);
+      if (max < 0)
+        throw new RuntimeException("Can not find optimal split!");
+      BFGrid.BinaryFeature bestSplit = grid.bf(max);
+      final Leaf[] nextLayer = new Leaf[1 << (level + 1)];
+      for (int i1 = 0; i1 < leaves1.length; i1++) {
+        Leaf leaf = leaves1[i1];
+        nextLayer[2 * i1] = leaf;
+        nextLayer[2 * i1 + 1] = leaf.split(bestSplit);
       }
-      conditions.add(bestSplitBF);
-      split = nextSplit;
+      conditions.add(bestSplit);
+      leaves1 = nextLayer;
     }
+    final Leaf[] leaves = leaves1;
 
-    double[] values = new double[split.size()];
-    double[] weights = new double[split.size()];
+    double[] values = new double[leaves.length];
+    double[] weights = new double[leaves.length];
     {
       for (int i = 0; i < weights.length; i++) {
-
-        values[i] = i %2 == 0 ? agg[i/2].left(bestSplit) : agg[i/2].right(bestSplit);
-        weights[i] = split.get(i).length;
+        values[i] = leaves[i].alpha();
+        if (Double.isNaN(values[i]))
+          System.out.println(leaves[i].alpha());
+        weights[i] = leaves[i].indices.length;
       }
     }
     return new ObliviousTree(conditions, values, weights);
@@ -116,9 +95,12 @@ public class GreedyObliviousClassificationTree implements MLMethodOrder1 {
   private class LLCounter {
     public int good = 0;
     public int bad = 0;
-    public int unknown = 0;
-    public double[] maclaurinLL = new double[5];
     private double alpha = Double.NaN;
+    private double maclaurinLL0;
+    private double maclaurinLL1;
+    private double maclaurinLL2;
+    private double maclaurinLL3;
+    private double maclaurinLL4;
 
     public double alpha() {
       if (good == 0 || bad == 0)
@@ -127,11 +109,11 @@ public class GreedyObliviousClassificationTree implements MLMethodOrder1 {
         return alpha;
       final double[] x = new double[3];
 
-      int cnt = MathTools.cubic(x, maclaurinLL[4], maclaurinLL[3], maclaurinLL[2], maclaurinLL[1]);
+      int cnt = MathTools.cubic(x, maclaurinLL4, maclaurinLL3, maclaurinLL2, maclaurinLL1);
       double y = 0.;
-      double bestLL = maclaurinLL[0];
+      double bestLL = maclaurinLL0;
       for (int i = 0; i < cnt; i++) {
-        if (score(x[i]) > bestLL) {
+        if (abs(x[i]) < 1 && score(x[i]) > bestLL) {
           y = x[i];
           bestLL = score(y);
         }
@@ -142,16 +124,15 @@ public class GreedyObliviousClassificationTree implements MLMethodOrder1 {
 
     private double score(double x) {
       if (good == 0 || bad == 0)
-        return maclaurinLL[0];
-      return maclaurinLL[0] - 2 * maclaurinLL[1] * x - maclaurinLL[2] * x * x;
+        return maclaurinLL0;
+      return maclaurinLL0 - 2 * maclaurinLL1 * x - maclaurinLL2 * x * x;
     }
 
     public double score() {
       double alpha = alpha();
       double x = (1 - exp(alpha))/(1 + exp(alpha));
-      return score(x);
+      return score(x) - maclaurinLL0;
     }
-
 
     public void found(double current, double target, double weight) {
       final double b = target > 0 ? 1. : -1.;
@@ -159,14 +140,14 @@ public class GreedyObliviousClassificationTree implements MLMethodOrder1 {
       final double eabPlusOne = eab + 1;
       final double eabMinusOne = eab - 1;
       double denominator = eabPlusOne;
-      maclaurinLL[0] += weight * log(eab/(1. + eab));
-      maclaurinLL[1] += weight * b/denominator;
+      maclaurinLL0 += weight * log(eab/(1. + eab));
+      maclaurinLL1 += weight * b/denominator;
       denominator *= eabPlusOne;
-      maclaurinLL[2] += weight * 2 * eab/denominator;
+      maclaurinLL2 += weight * 2 * eab/denominator;
       denominator *= eabPlusOne;
-      maclaurinLL[3] += weight * 2 * b * eab * eabMinusOne /denominator;
+      maclaurinLL3 += weight * 2 * b * eab * eabMinusOne /denominator;
       denominator *= eabPlusOne;
-      maclaurinLL[4] += weight * 2 * eab * eabMinusOne * eabMinusOne / denominator;
+      maclaurinLL4 += weight * 2 * eab * eabMinusOne * eabMinusOne / denominator;
       if (b > 0)
         good++;
       else
@@ -174,27 +155,65 @@ public class GreedyObliviousClassificationTree implements MLMethodOrder1 {
     }
 
     public void append(LLCounter counter) {
-      for (int i = 0; i < maclaurinLL.length; i++) {
-        maclaurinLL[i] += counter.maclaurinLL[i];
-      }
+      maclaurinLL0 += counter.maclaurinLL0;
+      maclaurinLL1 += counter.maclaurinLL1;
+      maclaurinLL2 += counter.maclaurinLL2;
+      maclaurinLL3 += counter.maclaurinLL3;
+      maclaurinLL4 += counter.maclaurinLL4;
       good += counter.good;
       bad += counter.bad;
-      unknown += counter.unknown;
+    }
+
+    public void substract(LLCounter counter) {
+      maclaurinLL0 -= counter.maclaurinLL0;
+      maclaurinLL1 -= counter.maclaurinLL1;
+      maclaurinLL2 -= counter.maclaurinLL2;
+      maclaurinLL3 -= counter.maclaurinLL3;
+      maclaurinLL4 -= counter.maclaurinLL4;
+      good -= counter.good;
+      bad -= counter.bad;
+    }
+
+    public int size() {
+      return good + bad;
     }
   }
 
-  private class LLAggregator implements Aggregator {
-    boolean aggregated = false;
+  public class Leaf implements Aggregator {
+    private final Vec point;
+    private final Vec target;
+    private final Vec weight;
+    private int[] indices;
     private final LLCounter[] counters = new LLCounter[grid.size() + grid.rows()];
-    private final LLCounter[] left = new LLCounter[grid.size()];
-    private final LLCounter[] right = new LLCounter[grid.size()];
-    public LLAggregator() {
+    private LLCounter total = new LLCounter();
+
+    public Leaf(Vec point, Vec target, Vec weight) {
+      this(point, target, weight, null);
+    }
+
+    public Leaf(Vec point, Vec target, Vec weight, int[] indices) {
+      this.point = point;
+      this.target = target;
+      this.weight = weight;
+      this.indices = indices != null ? indices : ds.original() instanceof Bootstrap ? ((Bootstrap) ds.original()).order() : ArrayTools.sequence(0, ds.original().power());
+      for (int i = 0; i < this.indices.length; i++) {
+        total.found(point.get(i), target.get(i), weight.get(i));
+      }
+
       for (int i = 0; i < counters.length; i++) {
         counters[i] = new LLCounter();
       }
-      for (int i = 0; i < left.length; i++) {
-        left[i] = new LLCounter();
-        right[i] = new LLCounter();
+      ds.aggregate(this, target, point, this.indices);
+    }
+
+    private Leaf(int[] points, LLCounter right, Leaf bro) {
+      point = bro.point;
+      target = bro.target;
+      weight = bro.weight;
+      this.indices = points;
+      total = right;
+      for (int i = 0; i < counters.length; i++) {
+        counters[i] = new LLCounter();
       }
     }
 
@@ -208,39 +227,65 @@ public class GreedyObliviousClassificationTree implements MLMethodOrder1 {
       return 1 + feature + (bin > 0 ? row.bf(bin - 1).bfIndex : row.bfStart - 1);
     }
 
-    private void aggregate() {
-      if (aggregated)
-        return;
+    public int score(final double[] likelihoods) {
       for (int f = 0; f < grid.rows(); f++) {
         final BFGrid.BFRow row = grid.row(f);
+        LLCounter left = new LLCounter();
+        LLCounter right = new LLCounter();
+        right.append(total);
+
         for (int b = 0; b < row.size(); b++) {
-          for (byte i = 0; i <= row.size(); i++) {
-            if (i - 1 < b)
-              left[row.bfStart + b].append(counters[bin2index(f, i)]);
-            else
-              right[row.bfStart + b].append(counters[bin2index(f, i)]);
-          }
+          left.append(counters[bin2index(f, (byte)b)]);
+          right.substract(counters[bin2index(f, (byte)b)]);
+          likelihoods[row.bfStart + b] = score(left) + score(right);
         }
       }
-      aggregated = true;
-    }
-
-    public final double left(int bf) {
-      aggregate();
-      return left[bf].alpha();
-    }
-
-    public final double right(int bf) {
-      aggregate();
-      return right[bf].alpha();
-    }
-
-    public int score(final double[] likelihoods) {
-      aggregate();
-      for (int i = 0; i < likelihoods.length; i++) {
-        likelihoods[i] += left[i].score() + right[i].score();
-      }
       return ArrayTools.max(likelihoods);
+    }
+
+    private double score(LLCounter counter) {
+      return counter.score();// /log(counter.size() + 2);
+    }
+
+    /** Splits this leaf into two right side is returned */
+    public Leaf split(BFGrid.BinaryFeature feature) {
+      LLCounter left = new LLCounter();
+      LLCounter right = new LLCounter();
+      right.append(total);
+
+      for (int b = 0; b <= feature.binNo; b++) {
+        left.append(counters[bin2index(feature.findex, (byte)b)]);
+        right.substract(counters[bin2index(feature.findex, (byte)b)]);
+      }
+
+      final int[] leftPoints = new int[left.size()];
+      final int[] rightPoints = new int[right.size()];
+      final Leaf brother = new Leaf(rightPoints, right, this);
+
+      {
+        int leftIndex = 0;
+        int rightIndex = 0;
+        byte[] bins = ds.bins(feature.findex);
+        byte splitBin = (byte)feature.binNo;
+        for (int i = 0; i < indices.length; i++) {
+          final int point = indices[i];
+          if (bins[point] > splitBin)
+            rightPoints[rightIndex++] = point;
+          else
+            leftPoints[leftIndex++] = point;
+        }
+        ds.aggregate(brother, target, point, rightPoints);
+      }
+      for (int i = 0; i < counters.length; i++) {
+        counters[i].substract(brother.counters[i]);
+      }
+      indices = leftPoints;
+      total = left;
+      return brother;
+    }
+
+    public double alpha() {
+      return total.alpha();
     }
   }
 }

@@ -17,9 +17,9 @@ import java.util.concurrent.TimeUnit;
  * Time: 21:19
  */
 public class BinarizedDataSet {
-  DataSet base;
-  BFGrid grid;
-  byte[][] bins;
+  private final DataSet base;
+  private final BFGrid grid;
+  private final byte[][] bins;
 
   public BinarizedDataSet(DataSet base, BFGrid grid) {
     this.base = base;
@@ -40,6 +40,13 @@ public class BinarizedDataSet {
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
   private final ThreadPoolExecutor exec = new ThreadPoolExecutor(0, POOL_SIZE, 1, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(10000));
 
+  public DataSet original() {
+    return base;
+  }
+
+  public BFGrid grid() {
+    return grid;
+  }
 
   public Histogram buildHistogram(final Vec target, final Vec point, final int[] indices) {
     final Histogram result = new Histogram(grid);

@@ -143,13 +143,13 @@ public class JMLLCLI {
     if ("GBoosting".equals(name)) {
       method = new GradientBoosting(chooseMethod(line.getOptionValue("W", "ORT"), line, rnd, learn),
                                     Integer.parseInt(line.getOptionValue("i", "1000")),
-                                    Double.parseDouble(line.getOptionValue("s", "0.01")));
+                                    Double.parseDouble(line.getOptionValue("s", "0.01")), rnd);
     }
     else if ("Boosting".equals(name)) {
       method = new Boosting(chooseMethod(line.getOptionValue("W", "ORT"), line, rnd, learn),
                             chooseTarget(learn, line.getOptionValue("e", "MSE")),
                             Integer.parseInt(line.getOptionValue("i", "1000")),
-                            Double.parseDouble(line.getOptionValue("s", "0.01")));
+                            Double.parseDouble(line.getOptionValue("s", "0.01")), rnd);
     }
     else if ("ORT".equals(name)) {
       BFGrid grid;
@@ -158,6 +158,14 @@ public class JMLLCLI {
       else
         grid = BFGrid.CONVERTER.convertFrom(line.getOptionValue("g"));
       method = new GreedyObliviousRegressionTree(rnd, learn, grid, Integer.parseInt(line.getOptionValue("d", "6")));
+    }
+    else if ("OCRT".equals(name)) {
+      BFGrid grid;
+      if (!line.hasOption("g"))
+        grid = GridTools.medianGrid(learn, Integer.parseInt(line.getOptionValue("x", "32")));
+      else
+        grid = BFGrid.CONVERTER.convertFrom(line.getOptionValue("g"));
+      method = new GreedyContinousObliviousRegressionTree(rnd, learn, grid, Integer.parseInt(line.getOptionValue("d", "6")));
     }
     else if ("OCT".equals(name)) {
       BFGrid grid;
