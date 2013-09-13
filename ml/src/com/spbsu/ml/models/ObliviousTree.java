@@ -59,7 +59,7 @@ public class ObliviousTree extends Model {
     }
     return index;
   }
-  public List<BFGrid.BinaryFeature> getFeatures(){
+  public List<BFGrid.BinaryFeature> features(){
     List<BFGrid.BinaryFeature> ret = new ArrayList<BFGrid.BinaryFeature>();
     for(int i = 0;i < features.length;i++)
         ret.add(features[i]);

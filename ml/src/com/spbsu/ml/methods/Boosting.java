@@ -7,6 +7,7 @@ import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.models.AdditiveModel;
 
 import java.util.LinkedList;
@@ -42,16 +43,17 @@ public class Boosting extends ProgressOwner implements MLMethodOrder1 {
     Vec point = copy(start);
 
     for (int i = 0; i < iterationsCount; i++) {
-      Model weakModel = weak.fit(DataTools.bootstrap(learn, rnd), weakTarget, point);
+      final Bootstrap sampling = DataTools.bootstrap(learn, rnd);
+      Model weakModel = weak.fit(sampling, weakTarget, point);
       if (weakModel == null)
         break;
 
       models.add(weakModel);
       processProgress(result);
       final DSIterator it = learn.iterator();
-      for (int t = 0; it.advance() && t < point.dim(); t++) {
+      while (it.advance()) {
         double val = weakModel.value(it.x());
-        point.adjust(t, step * val);
+        point.adjust(it.index(), step * val);
       }
     }
 

@@ -59,6 +59,11 @@ public class DataSetImpl extends CacheHolderImpl implements DataSet {
       public Vec x() {
         return data.row(index/step);
       }
+
+      @Override
+      public int index() {
+        return index/step;
+      }
     };
   }
 

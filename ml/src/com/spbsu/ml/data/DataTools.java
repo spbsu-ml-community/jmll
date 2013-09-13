@@ -14,13 +14,18 @@ import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.models.AdditiveModel;
+import com.spbsu.ml.models.AdditiveMultiClassModel;
+import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
+import gnu.trove.TIntArrayList;
 import gnu.trove.TIntObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.*;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
+
+import static java.lang.Math.max;
 
 /**
  * User: solar
@@ -113,7 +118,51 @@ public class DataTools {
       return grid((Model)((AdditiveModel) result).models.get(0));
     if (result instanceof ObliviousTree)
       return ((ObliviousTree)result).grid();
+    if (result instanceof AdditiveMultiClassModel)
+      return grid((Model)((AdditiveMultiClassModel) result).models.get(0));
+    if (result instanceof ObliviousMultiClassTree)
+      return ((ObliviousMultiClassTree)result).binaryClassifier().grid();
     return null;
+  }
+
+  public static int countClasses(Vec target) {
+    int classesCount = 0;
+    for (int i = 0; i < target.dim(); i++) {
+      classesCount = max((int)target.get(i) + 1, classesCount);
+    }
+    return classesCount;
+  }
+
+  public static int[] extractClass(Vec target, int classNo) {
+    final TIntArrayList points = new TIntArrayList(target.dim());
+    for (int i = 0; i < target.dim(); i++) {
+      if (target.get(i) == classNo)
+        points.add(i);
+    }
+    return points.toNativeArray();
+  }
+
+  public static DataSet normalizeClasses(DataSet learn) {
+    final DSIterator it = learn.iterator();
+    final Vec normalized = new ArrayVec(learn.power());
+    while (it.advance()) {
+      normalized.set(it.index(), normalizeRelevance(it.y()));
+    }
+    return new ChangedTarget((DataSetImpl)learn, normalized);
+  }
+
+  private static double normalizeRelevance(double y) {
+    if (y <= 0.)
+      return 0.;
+    else if (y <= 0.07)
+      return 1.;
+    else if (y <= 0.14)
+      return 2.;
+    else if (y <= 0.41)
+      return 3;
+    else
+      return 4;
+//    return 1.;
   }
 
   public enum NormalizationType {

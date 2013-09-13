@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods;
+package com.spbsu.ml.methods.trees;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -9,6 +9,7 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.Histogram;
 import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.loss.L2Loss;
+import com.spbsu.ml.methods.GreedyTDRegion;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.TDoubleDoubleProcedure;
 import gnu.trove.TIntArrayList;

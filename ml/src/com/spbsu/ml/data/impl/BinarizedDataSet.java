@@ -38,7 +38,7 @@ public class BinarizedDataSet {
   }
 
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
-  private final ThreadPoolExecutor exec = new ThreadPoolExecutor(0, POOL_SIZE, 1, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(10000));
+  private final ThreadPoolExecutor exec = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 20, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(10000));
 
   public DataSet original() {
     return base;
@@ -56,16 +56,17 @@ public class BinarizedDataSet {
 
   public void aggregate(final Aggregator aggregator, final Vec target, final Vec point, final int[] indices) {
     final CountDownLatch latch = new CountDownLatch(POOL_SIZE);
+    final int[] busy = new int[grid.rows()];
     for (int i = 0; i < POOL_SIZE; i++) {
-      final int windex = i;
       exec.execute(new Runnable() {
         @Override
         public void run() {
-          final double fsize = Math.ceil(grid.rows() / (double) POOL_SIZE);
-          for (int f = 0; f < fsize; f++) {
-            int findex = f * POOL_SIZE + windex;
-            if (findex >= grid.rows())
-              break;
+          for (int findex = 0; findex < grid.rows(); findex++) {
+            synchronized (busy) {
+              if (busy[findex] > 0)
+                continue;
+              busy[findex]++;
+            }
             final byte[] bin = bins[findex];
             if (grid.row(findex).empty())
               continue;

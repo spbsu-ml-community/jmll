@@ -9,6 +9,8 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.methods.*;
+import com.spbsu.ml.methods.trees.GreedyContinousObliviousRegressionTree;
+import com.spbsu.ml.methods.trees.GreedyObliviousRegressionTree;
 import com.spbsu.ml.models.AdditiveModel;
 import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.models.NormalizedLinearModel;

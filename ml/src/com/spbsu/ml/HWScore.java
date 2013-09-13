@@ -10,7 +10,7 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.GreedyObliviousRegressionTree;
+import com.spbsu.ml.methods.trees.GreedyObliviousRegressionTree;
 import com.spbsu.ml.models.AdditiveModel;
 import gnu.trove.TByteArrayList;
 

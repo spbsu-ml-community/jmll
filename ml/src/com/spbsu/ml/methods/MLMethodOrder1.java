@@ -11,6 +11,6 @@ import com.spbsu.ml.data.DataSet;
  * Time: 22:14:38
  */
 public interface MLMethodOrder1 {
-    Model fit(DataSet learn, Oracle1 loss);
-    Model fit(DataSet learn, Oracle1 loss, Vec start);
+  Model fit(DataSet learn, Oracle1 loss);
+  Model fit(DataSet learn, Oracle1 loss, Vec start);
 }

@@ -8,7 +8,7 @@ import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
 /**
- * We use probability representation = \frac{e^x}{e^x + 1}.
+ * We use value representation = \frac{e^x}{e^x + 1}.
  * User: solar
  * Date: 21.12.2010
  * Time: 22:37:55

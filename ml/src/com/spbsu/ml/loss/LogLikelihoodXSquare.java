@@ -8,7 +8,7 @@ import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
 /**
- * We use probability representation = e^{-(x + 1)^2}.
+ * We use value representation = e^{-(x + 1)^2}.
  * User: solar
  * Date: 21.12.2010
  * Time: 22:37:55

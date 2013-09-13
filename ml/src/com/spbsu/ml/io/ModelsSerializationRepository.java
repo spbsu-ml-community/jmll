@@ -15,7 +15,9 @@ import com.spbsu.ml.GridEnabled;
  */
 public class ModelsSerializationRepository extends SerializationRepository<CharSequence> {
   private static ConversionRepository conversion = new TypeConvertersCollection(new ObliviousTreeConversionPack(),
+                                                                                new ObliviousMultiClassTreeConversionPack(),
                                                                                 new AdditiveModelConversionPack(),
+                                                                                new AdditiveMultiClassModelConversionPack(),
                                                                                 BFGrid.CONVERTER.getClass());
   private BFGrid grid;
 

@@ -54,6 +54,10 @@ public class BFGrid {
     return rows.length;
   }
 
+  public BFRow[] allRows() {
+    return rows;
+  }
+
 
   public static class BFRow {
     private BFGrid owner;

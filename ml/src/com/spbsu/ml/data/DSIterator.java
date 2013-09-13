@@ -13,4 +13,6 @@ public interface DSIterator extends DataEntry {
   double y();
   double x(int i);
   Vec x();
+
+  int index();
 }

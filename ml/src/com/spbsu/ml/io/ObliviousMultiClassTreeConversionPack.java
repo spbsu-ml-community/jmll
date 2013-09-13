@@ -6,6 +6,7 @@ import com.spbsu.commons.text.CharSequenceReader;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.GridEnabled;
+import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ import java.util.Locale;
  * Date: 12.08.13
  * Time: 13:05
  */
-public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree, CharSequence> {
+public class ObliviousMultiClassTreeConversionPack implements ConversionPack<ObliviousMultiClassTree, CharSequence> {
   private static final MessageFormat FEATURE_LINE_PATTERN = new MessageFormat("feature: {0, number}, bin: {1, number}, condition_value: {2, number,#.#####}", Locale.US);
 
   static {
@@ -39,21 +40,24 @@ public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree
     FEATURE_LINE_PATTERN.setFormat(2, format);
   }
 
-  public static class To implements TypeConverter <ObliviousTree, CharSequence> {
+  public static class To implements TypeConverter <ObliviousMultiClassTree, CharSequence> {
     @Override
-    public CharSequence convert(ObliviousTree ot) {
+    public CharSequence convert(ObliviousMultiClassTree ot) {
+      ObliviousTree bc = ot.binaryClassifier();
       StringBuilder result = new StringBuilder();
-      for (BFGrid.BinaryFeature feature : ot.features()) {
+      for (BFGrid.BinaryFeature feature : bc.features()) {
         result.append(FEATURE_LINE_PATTERN.format(new Object[]{feature.findex, feature.binNo, feature.condition}))
               .append("\n");
       }
-      int leafsCount = 1 << ot.features().size();
+      int leafsCount = 1 << bc.features().size();
       for (int i = 0; i < leafsCount; i++) {
-        if (ot.values()[i] != 0.) {
+        if (bc.values()[i] != 0.) {
           result.append(Integer.toBinaryString(i))
-                  .append(":").append(ot.values()[i])
-                  .append(":").append(ot.based()[i])
-                  .append(" ");
+                  .append(":").append(bc.values()[i])
+                  .append(":").append(bc.based()[i]);
+          for (int c = 0; c < ot.mask(i).length; c++)
+            result.append(ot.mask(i)[c] ? "1" : "0");
+          result.append(" ");
         }
       }
       result = result.delete(result.length() - 1, result.length());
@@ -63,7 +67,7 @@ public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree
     }
   }
 
-  public static class From implements GridEnabled, TypeConverter<CharSequence, ObliviousTree> {
+  public static class From implements GridEnabled, TypeConverter<CharSequence, ObliviousMultiClassTree> {
     private BFGrid grid;
 
     public BFGrid getGrid() {
@@ -76,7 +80,7 @@ public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree
     }
 
     @Override
-    public ObliviousTree convert(CharSequence source) {
+    public ObliviousMultiClassTree convert(CharSequence source) {
       if (grid == null)
         throw new RuntimeException("Grid must be setup for serialization of oblivious trees, use SerializationRepository.customize!");
       String line;
@@ -95,14 +99,19 @@ public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree
         }
         double[] values = new double[1 << splits.size()];
         double[] based = new double[1 << splits.size()];
+        boolean[][] masks = new boolean[1 << splits.size()][];
         CharSequence[] valuesStr = CharSequenceTools.split(line, ' ');
         for (CharSequence value : valuesStr) {
           final CharSequence[] pattern2ValueBased = CharSequenceTools.split(value, ':');
           final int leafIndex = Integer.parseInt(pattern2ValueBased[0].toString(), 2);
           values[leafIndex] = Double.parseDouble(pattern2ValueBased[1].toString());
           based[leafIndex] = Double.parseDouble(pattern2ValueBased[2].toString());
+          boolean[] mask = masks[leafIndex] = new boolean[pattern2ValueBased[3].length()];
+          for (int c = 0; c < pattern2ValueBased[3].length(); c++) {
+            mask[c] = pattern2ValueBased[3].charAt(c) == '1';
+          }
         }
-        return new ObliviousTree(splits, values, based);
+        return new ObliviousMultiClassTree(splits, values, based, masks);
       } catch (IOException e) {
         throw new RuntimeException(e);
       } catch (ParseException e) {
@@ -112,12 +121,12 @@ public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree
   }
 
   @Override
-  public Class<? extends TypeConverter<ObliviousTree, CharSequence>> to() {
+  public Class<? extends TypeConverter<ObliviousMultiClassTree, CharSequence>> to() {
     return To.class;
   }
 
   @Override
-  public Class<? extends TypeConverter<CharSequence, ObliviousTree>> from() {
+  public Class<? extends TypeConverter<CharSequence, ObliviousMultiClassTree>> from() {
     return From.class;
   }
 }
