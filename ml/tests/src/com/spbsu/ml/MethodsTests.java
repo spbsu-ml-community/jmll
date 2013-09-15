@@ -127,6 +127,28 @@ public class MethodsTests extends GridTest {
         boosting.fit(learn, new L2Loss(learn.target()));
     }
 
+    public void testCOTBoost() {
+        final GradientBoosting boosting = new GradientBoosting(new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 3), 2000, 0.005, rng);
+        final ProgressHandler counter = new ProgressHandler() {
+            int index = 0;
+
+            @Override
+            public void progress(Model partial) {
+                System.out.print("\n" + index++);
+            }
+        };
+        final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn);
+        final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate);
+        final ProgressHandler modelPrinter = new ModelPrinter();
+        final ProgressHandler qualityCalcer = new QualityCalcer();
+        boosting.addProgressHandler(counter);
+        boosting.addProgressHandler(learnListener);
+        boosting.addProgressHandler(validateListener);
+        boosting.addProgressHandler(qualityCalcer);
+//    boosting.addProgressHandler(modelPrinter);
+        boosting.fit(learn, new L2Loss(learn.target()));
+    }
+
     private double sqr(double x) {
         return x * x;
     }
@@ -165,7 +187,7 @@ public class MethodsTests extends GridTest {
     public void testContinousObliviousTree() {
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
-        for (int depth = 1; depth <= 6; depth++) {
+        for (int depth = 1; depth <= 5; depth++) {
             ContinousObliviousTree tree = new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
             //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
             // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
