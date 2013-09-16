@@ -10,7 +10,6 @@ import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.Histogram;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
-import gnu.trove.TDoubleDoubleProcedure;
 
 /**
  * User: solar
@@ -35,17 +34,17 @@ public class DataToolsTest extends GridTest {
     final Histogram histogram = bds.buildHistogram(new ArrayVec(0, 0, 0, 0, 1, 0, 0, 1), new ArrayVec(8), ArrayTools.sequence(0, 8));
     final double[] weights = new double[grid.size()];
     final double[] sums = new double[grid.size()];
-    for (int i = 0; i < grid.size(); i++) {
-      final int finalI = i;
-      histogram.process(i, new TDoubleDoubleProcedure() {
-        @Override
-        public boolean execute(double weight, double sum) {
-          weights[finalI] = weight;
-          sums[finalI] = sum;
-          return true;
-        }
-      });
-    }
+    final double[] scores = new double[grid.size()];
+    histogram.score(scores, new Histogram.Judge() {
+      int index = 0;
+      @Override
+      public double score(double sum, double sum2, double weight) {
+        weights[index] = weight;
+        sums[index] = sum;
+        index++;
+        return 0;
+      }
+    });
     assertEquals(2., sums[0]);
     assertEquals(6., weights[0]);
     assertEquals(2., sums[1]);

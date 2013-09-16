@@ -311,7 +311,7 @@ public class JMLLCLI {
           assign(testValues[c], ((MultiClassModel) partial).value(test, c));
         }
       }
-      System.out.print(iteration);
+      System.out.print(iteration++);
       for (int i = 0; i < learnValues.length; i++) {
         Vec learnValue = learnValues[i];
         Vec testValue = testValues[i];

@@ -54,7 +54,8 @@ public class ObliviousMultiClassTreeConversionPack implements ConversionPack<Obl
         if (bc.values()[i] != 0.) {
           result.append(Integer.toBinaryString(i))
                   .append(":").append(bc.values()[i])
-                  .append(":").append(bc.based()[i]);
+                  .append(":").append(bc.based()[i])
+                  .append(":");
           for (int c = 0; c < ot.mask(i).length; c++)
             result.append(ot.mask(i)[c] ? "1" : "0");
           result.append(" ");

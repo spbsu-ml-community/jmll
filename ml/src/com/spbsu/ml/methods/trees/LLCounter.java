@@ -19,8 +19,11 @@ public class LLCounter {
   public volatile double maclaurinLL2;
   public volatile double maclaurinLL3;
   public volatile double maclaurinLL4;
+  private double alpha = Double.NaN;
 
   public double alpha() {
+    if (!Double.isNaN(alpha))
+      return alpha;
     if (good == 0 || bad == 0)
       return 0;
     final double[] x = new double[3];
@@ -35,7 +38,7 @@ public class LLCounter {
       }
     }
 
-    return log((1. - y) / (1. + y));
+    return alpha = log((1. - y) / (1. + y));
   }
 
   private double score(double x) {
@@ -68,6 +71,7 @@ public class LLCounter {
       good++;
     else
       bad++;
+    alpha = Double.NaN;
   }
 
   public void add(LLCounter counter) {
@@ -78,6 +82,7 @@ public class LLCounter {
     maclaurinLL4 += counter.maclaurinLL4;
     good += counter.good;
     bad += counter.bad;
+    alpha = Double.NaN;
   }
 
   public void sub(LLCounter counter) {
@@ -88,6 +93,33 @@ public class LLCounter {
     maclaurinLL4 -= counter.maclaurinLL4;
     good -= counter.good;
     bad -= counter.bad;
+    alpha = Double.NaN;
+  }
+
+  /**
+   * Combine two parts of $LL=-\sum_{\{a_c\}, b} \sum_c log(1+e^{-1^{I(b=c)}(-a-m(c)x)})$ depending on $m: C \to \{-1,1\}$
+   * actually they differs in sign of odd derivations so we need only to properly sum them :)
+   */
+  public void add(LLCounter counter, double xsign) {
+    maclaurinLL0 += counter.maclaurinLL0;
+    maclaurinLL1 += xsign * counter.maclaurinLL1;
+    maclaurinLL2 += counter.maclaurinLL2;
+    maclaurinLL3 += xsign * counter.maclaurinLL3;
+    maclaurinLL4 += counter.maclaurinLL4;
+    good += counter.good;
+    bad += counter.bad;
+    alpha = Double.NaN;
+  }
+
+  public void sub(LLCounter counter, double xsign) {
+    maclaurinLL0 -= counter.maclaurinLL0;
+    maclaurinLL1 -= xsign * counter.maclaurinLL1;
+    maclaurinLL2 -= counter.maclaurinLL2;
+    maclaurinLL3 -= xsign * counter.maclaurinLL3;
+    maclaurinLL4 -= counter.maclaurinLL4;
+    good -= counter.good;
+    bad -= counter.bad;
+    alpha = Double.NaN;
   }
 
   public int size() {

@@ -37,8 +37,8 @@ public class LogLikelihoodSigmoid implements Oracle1 {
   public double value(Vec point) {
     double result = 0;
     for (int i = 0; i < point.dim(); i++) {
-      double expX = exp(point.get(i));
-      double pX = expX / (1 + expX);
+      double expMX = exp(-point.get(i));
+      double pX = 1. / (1. + expMX);
       if (target.get(i) > 0) // positive example
         result -= log(pX);
       else // negative

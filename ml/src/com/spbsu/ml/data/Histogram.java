@@ -1,7 +1,6 @@
 package com.spbsu.ml.data;
 
 import com.spbsu.ml.BFGrid;
-import gnu.trove.TDoubleDoubleProcedure;
 
 /**
 * User: solar
@@ -10,41 +9,47 @@ import gnu.trove.TDoubleDoubleProcedure;
 */
 public class Histogram implements Aggregator {
   BFGrid grid;
+  int maxBins = 0;
+
   double[] sums;
+  double[] sums2;
   double[] weights;
 
   public Histogram(BFGrid grid) {
     this.grid = grid;
-    sums = new double[grid.size() + grid.rows()];
-    weights = new double[grid.size() + grid.rows()];
+    for (int f = 0; f < grid.rows(); f++) {
+      maxBins = Math.max(maxBins, grid.row(f).size() + 1);
+    }
+    sums = new double[maxBins * grid.rows()];
+    sums2 = new double[maxBins * grid.rows()];
+    weights = new double[maxBins * grid.rows()];
   }
 
-  public void set(int feature, int bin, double sum, double weight) {
-    if (bin > 0) {
-      final BFGrid.BinaryFeature bf = grid.row(feature).bf(bin - 1);
-      sums[bf.bfIndex] = sum;
-      weights[bf.bfIndex] = weight;
-    }
+  public interface Judge {
+    double score(double sum, double sum2, double weight);
   }
 
-  public void process(int bfeature, TDoubleDoubleProcedure procedure) {
-    final BFGrid.BinaryFeature bf = grid.bf(bfeature);
-    final BFGrid.BFRow row = bf.row();
-    double sum = 0;
-    double weight = 0;
-    for (int bfindex = bfeature; bfindex < row.bfEnd; bfindex++) {
-      sum += sums[bfindex];
-      weight += weights[bfindex];
+  public void score(double[] scores, Judge judge) {
+    for (int findex = 0; findex < grid.rows(); findex++) {
+      final BFGrid.BFRow row = grid.row(findex);
+      final int bfStart = findex * maxBins;
+      double sum = 0;
+      double sum2 = 0;
+      double weight = 0;
+      for (int bin = 0; bin < row.size(); bin++) {
+        sum += sums[bfStart + bin];
+        sum2 += sums2[bfStart + bin];
+        weight += weights[bfStart + bin];
+        scores[row.bfStart + bin] += judge.score(sum, sum2, weight);
+      }
     }
-    procedure.execute(weight, sum);
   }
 
   @Override
   public void append(int feature, byte bin, double target, double current, double weight) {
-    if (bin > 0) {
-      final BFGrid.BinaryFeature bf = grid.row(feature).bf(bin - 1);
-      sums[bf.bfIndex] += target;
-      weights[bf.bfIndex] += weight;
-    }
+    int index = feature * maxBins + bin;
+    sums[index] += target;
+    sums2[index] += target * target;
+    weights[index] += weight;
   }
 }

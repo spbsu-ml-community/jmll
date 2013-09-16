@@ -74,8 +74,6 @@ public class GreedyObliviousClassificationTree implements MLMethodOrder1 {
     {
       for (int i = 0; i < weights.length; i++) {
         values[i] = leaves[i].alpha();
-        if (Double.isNaN(values[i]))
-          System.out.println(leaves[i].alpha());
         weights[i] = leaves[i].size();
       }
     }

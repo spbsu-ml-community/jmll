@@ -29,7 +29,7 @@ public class ObliviousMultiClassTree extends MultiClassModel {
 
   @Override
   public double value(Vec x) {
-    return binaryClassifier.value(x); // TODO: fix this trash
+    throw new RuntimeException("Not supposed to be called");
   }
 
   @Override

@@ -13,10 +13,10 @@ import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.models.Region;
-import gnu.trove.TDoubleDoubleProcedure;
 import gnu.trove.TIntArrayList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -42,55 +42,6 @@ public class GreedyTDRegion implements MLMethodOrder1 {
     bds = new BinarizedDataSet(ds, grid);
   }
 
-  private class BestBFFinder implements TDoubleDoubleProcedure {
-    double bestScore = Double.MAX_VALUE;
-    double bestWeight = 0;
-    int bestFeature = -1;
-    boolean bestMask = true;
-
-    int bfIndex = 0;
-
-    final double total;
-    final double totalWeight;
-    final int complexity;
-
-    BestBFFinder(double total, double totalWeight, int complexity) {
-      this.total = total;
-      this.totalWeight = totalWeight;
-      this.complexity = complexity;
-    }
-
-    @Override
-    public boolean execute(double weight, double sum) {
-      double rightScore = score(weight, sum, complexity);
-      double leftScore = score(this.totalWeight - weight, total - sum, complexity);
-      if (rightScore < bestScore) {
-        bestScore = rightScore;
-        bestFeature = bfIndex;
-        bestMask = true;
-        bestWeight = weight;
-      }
-      if (leftScore < bestScore) {
-        bestScore = leftScore;
-        bestFeature = bfIndex;
-        bestMask = false;
-        bestWeight = this.totalWeight - weight;
-      }
-      return true;
-    }
-
-    public void advance() {
-      bfIndex++;
-    }
-
-    public Region.BinaryCond bestSplit() {
-      final Region.BinaryCond cond = new Region.BinaryCond();
-      cond.bf = grid.bf(bestFeature);
-      cond.mask = bestMask;
-      return cond;
-    }
-  }
-
   @Override
   public Model fit(DataSet learn, Oracle1 loss) {
     return fit(learn, loss, new ArrayVec(learn.power()));
@@ -102,18 +53,36 @@ public class GreedyTDRegion implements MLMethodOrder1 {
     final List<Region.BinaryCond> conditions = new ArrayList<Region.BinaryCond>(grid.size());
     final Vec target = ds instanceof Bootstrap ? ((Bootstrap) ds).original().target() : learn.target();
     int[] indices = ds instanceof Bootstrap ? ((Bootstrap) ds).order() : ArrayTools.sequence(0, ds.power());
+    double[] scores = new double[grid.size()];
+    final boolean[] masks = new boolean[grid.size()];
     double total = VecTools.sum(learn.target());
+    double totalWeight = indices.length;
     double currentScore = Double.MAX_VALUE;
 
     while(true) {
       final Histogram histogram = bds.buildHistogram(learn.target(), start, indices);
-      BestBFFinder finder = new BestBFFinder(total, indices.length, conditions.size() + 1);
-      for (int bf = 0; bf < grid.size(); bf++, finder.advance()) {
-        histogram.process(bf, finder);
-      }
-      if (finder.bestScore > currentScore)
+      final int complexity = conditions.size() + 1;
+      final double ftotal = total;
+      final double ftotalWeight = totalWeight;
+      Arrays.fill(scores, 0.);
+
+      histogram.score(scores, new Histogram.Judge() {
+        int bf = 0;
+        @Override
+        public double score(double sum, double sum2, double weight) {
+          double rightScore = GreedyTDRegion.this.score(weight, sum, complexity);
+          double leftScore = GreedyTDRegion.this.score(ftotalWeight - weight, ftotal - sum, complexity);
+          masks[bf] = rightScore < leftScore;
+          return Math.min(rightScore, leftScore);
+        }
+      });
+      int bestBF = ArrayTools.min(scores);
+      if (scores[bestBF] > currentScore)
         break;
-      final Region.BinaryCond bestSplit = finder.bestSplit();
+      final Region.BinaryCond bestSplit = new Region.BinaryCond();
+      bestSplit.bf = grid.bf(bestBF);
+      bestSplit.mask = masks[bestBF];
+
       TIntArrayList inducedIndices = new TIntArrayList(indices.length);
       byte[] bins = bds.bins(bestSplit.bf.findex);
       double totalReduce = 0;
@@ -143,7 +112,8 @@ public class GreedyTDRegion implements MLMethodOrder1 {
       }
 
       indices = inducedIndices.toNativeArray();
-      currentScore = finder.bestScore;
+      totalWeight = indices.length;
+      currentScore = scores[bestBF];
     }
 
     return new Region(conditions, total/indices.length, indices.length, currentScore);

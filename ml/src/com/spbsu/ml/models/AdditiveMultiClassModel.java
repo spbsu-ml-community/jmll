@@ -54,7 +54,7 @@ public class AdditiveMultiClassModel<T extends MultiClassModel> extends MultiCla
   public double value(Vec point, int classNo) {
     double result = 0;
     for (T model : models) {
-      result += model.value(point, classNo);
+      result += step * model.value(point, classNo);
     }
     return result;
   }

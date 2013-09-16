@@ -38,7 +38,7 @@ public class BinarizedDataSet {
   }
 
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
-  private final ThreadPoolExecutor exec = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 20, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(10000));
+  private final ThreadPoolExecutor exec = new ThreadPoolExecutor(0, POOL_SIZE, 20, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(10000));
 
   public DataSet original() {
     return base;

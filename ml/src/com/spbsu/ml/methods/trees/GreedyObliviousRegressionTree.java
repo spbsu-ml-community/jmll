@@ -11,10 +11,10 @@ import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.methods.GreedyTDRegion;
 import com.spbsu.ml.models.ObliviousTree;
-import gnu.trove.TDoubleDoubleProcedure;
 import gnu.trove.TIntArrayList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -40,63 +40,76 @@ public class GreedyObliviousRegressionTree extends GreedyTDRegion {
     final Vec target = ds instanceof Bootstrap ? ((Bootstrap)ds).original().target() : ds.target();
     final Vec point = VecTools.copy(start);
 
-    double[] totals = new double[1 << (depth + 1)];
-    double[] weights = new double[1 << (depth + 1)];
-    double currentScore = Double.MAX_VALUE;
+    double[] totals = new double[1 << depth];
+    double[] totals2 = new double[1 << depth];
+    double[] weights = new double[1 << depth];
+    double currentScore = Double.POSITIVE_INFINITY;
 
     split.add(ds instanceof Bootstrap ? ((Bootstrap) ds).order() : ArrayTools.sequence(0, ds.power()));
     totals[0] = VecTools.sum(ds.target());
+    totals2[0] = VecTools.sum2(ds.target());
     weights[0] = split.get(0).length;
+
+    final double[] scores = new double[grid.size()];
     for (int level = 0; level < depth; level++) {
-      final Histogram[] histograms = new Histogram[split.size()];
-      for (int i = 0; i < histograms.length; i++) {
-        histograms[i] = bds.buildHistogram(target, point, split.get(i));
+      final int complexity = conditions.size() + 1;
+      Arrays.fill(scores, 0.);
+      for (int i = 0; i < split.size(); i++) {
+        final Histogram h = bds.buildHistogram(target, point, split.get(i));
+        final double total = totals[i];
+        final double total2 = totals2[i];
+        final double totalWeight = weights[i];
+        h.score(scores, new Histogram.Judge() {
+          @Override
+          public double score(double sum, double sum2, double weight) {
+            double leftScore = scoreInner(sum, sum2, weight);
+            double rightScore = scoreInner((total - sum), total2 - sum2, totalWeight - weight);
+            return rightScore + leftScore;
+          }
+
+          private double scoreInner(double sum, double sum2, double weight) {
+//            return GreedyObliviousRegressionTree.this.score(weight, sum, 1);
+            if (weight > 1.) {
+              return weight / (weight - 1) / (weight - 1) * (weight * sum2 - sum * sum);
+            }
+            else return sum2;
+//            return (sum2 - (weight > MathTools.EPSILON ? sum * sum / weight : 0));
+          }
+        });
       }
-      final BestBFFinder finder = new BestBFFinder(totals, weights, conditions.size() + 1);
-      for (int bf = 0; bf < grid.size(); bf++, finder.advance()) {
-        for (int fold = 0; fold < histograms.length; fold++)
-          histograms[fold].process(bf, finder);
-      }
-      if (finder.bestScore > currentScore)
+      int bestSplit = ArrayTools.min(scores);
+      if (bestSplit < 0 || scores[bestSplit] >= currentScore)
         break;
-      final int bestSplit = finder.bestSplit();
       List<int[]> nextSplit = new ArrayList<int[]>(split.size() << 1);
       final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
       final byte[] bins = bds.bins(bestSplitBF.findex);
       int binNo = bestSplitBF.binNo;
-      final TIntArrayList left = new TIntArrayList();
+      final TIntArrayList left = new TIntArrayList(point.dim());
       final TIntArrayList right = new TIntArrayList();
+      Arrays.fill(totals, 0.);
+      Arrays.fill(totals2, 0.);
       for (int s = 0; s < split.size(); s++) {
-        double totalLeft = 0;
-        double totalRight = 0;
-        double totalWLeft = 0;
-        double totalWRight = 0;
         left.clear();
         right.clear();
+        int rightI = s * 2 + 1, leftI = s * 2;
         int[] indices = split.get(s);
         for (int t = 0; t < indices.length; t++) {
           final int index = indices[t];
-          if (bins[index] > binNo) {
-            right.add(index);
-            totalWRight++;
-            totalRight += target.get(index);
-          }
-          else {
-            left.add(index);
-            totalWLeft++;
-            totalLeft += target.get(index);
-          }
+          final double v = target.get(index);
+          final boolean isRight = bins[index] > binNo;
+          final int leaf = isRight ? rightI : leftI;
+          (isRight ? right : left).add(index);
+          totals[leaf] += v;
+          totals2[leaf] += v * v;
         }
-        totals[s * 2] = totalLeft;
-        weights[s * 2] = totalWLeft;
-        totals[s * 2 + 1] = totalRight;
-        weights[s * 2 + 1] = totalWRight;
+        weights[s * 2] = left.size();
+        weights[s * 2 + 1] = right.size();
         nextSplit.add(left.toNativeArray());
         nextSplit.add(right.toNativeArray());
       }
       conditions.add(bestSplitBF);
       split = nextSplit;
-      currentScore = finder.bestScore;
+      currentScore = scores[bestSplit];
     }
 
     for (int i = 0; i < weights.length; i++)
@@ -105,47 +118,5 @@ public class GreedyObliviousRegressionTree extends GreedyTDRegion {
       else
         totals[i] = 0;
     return new ObliviousTree(conditions, totals, weights);
-  }
-
-  private class BestBFFinder implements TDoubleDoubleProcedure {
-    double score = 0;
-    int fold = 0;
-    double bestScore = Double.MAX_VALUE;
-    int bestFeature = -1;
-
-    int bfIndex = 0;
-
-    final double[] totals;
-    final double[] totalWeights;
-    final int complexity;
-
-    BestBFFinder(double[] totals, double[] totalWeights, int complexity) {
-      this.totals = totals;
-      this.totalWeights = totalWeights;
-      this.complexity = complexity;
-    }
-
-    @Override
-    public boolean execute(double weight, double sum) {
-      double rightScore = score(this.totalWeights[fold] - weight, totals[fold] - sum, complexity);
-      double leftScore = score(weight, sum, complexity);
-      score += rightScore + leftScore;
-      fold++;
-      return true;
-    }
-
-    public void advance() {
-      if (bestScore > score) {
-        bestScore = score;
-        bestFeature = bfIndex;
-      }
-      fold = 0;
-      score = 0;
-      bfIndex++;
-    }
-
-    public int bestSplit() {
-      return bestFeature;
-    }
   }
 }
