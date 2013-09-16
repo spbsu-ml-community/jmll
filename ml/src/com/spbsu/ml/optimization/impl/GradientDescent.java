@@ -5,7 +5,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.optimization.ConvexFunction;
-import com.spbsu.ml.optimization.Optimize;
+import com.spbsu.ml.optimization.ConvexOptimize;
 import com.spbsu.ml.optimization.QuadraticFunction;
 
 import static com.spbsu.commons.math.vectors.VecTools.copy;
@@ -15,17 +15,19 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  * Date: 25.04.13
  * Time: 23:41
  */
-public class GradientDescent implements Optimize {
+public class GradientDescent implements ConvexOptimize {
     private static Logger LOG = Logger.create(GradientDescent.class);
+    private Vec x0;
+
+    public GradientDescent(Vec x0) {
+        this.x0 = x0;
+    }
 
     @Override
     public Vec optimize(ConvexFunction func, double eps) {
         boolean isQuadraticFunc = func instanceof QuadraticFunction;
-        double constStep = (func.getLk() - func.getConvexParam()) / (func.getLk() + func.getConvexParam());
 
-        Vec x0 = new ArrayVec(func.getDim());
-        for (int i = 0; i < x0.dim(); i++)
-            x0.set(i, 1);
+        double constStep = 1.0 / func.getGradLipParam();
 
         Vec x1 = copy(x0);
         Vec x2 = new ArrayVec(x0.dim());
@@ -42,7 +44,7 @@ public class GradientDescent implements Optimize {
 
             x1 = copy(x2);
             grad = func.gradient(x1);
-            distance = VecTools.norm(grad) / func.getConvexParam();
+            distance = VecTools.norm(grad) / func.getGlobalConvexParam();
             iter++;
         }
 
