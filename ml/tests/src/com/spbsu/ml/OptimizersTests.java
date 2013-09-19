@@ -7,18 +7,20 @@ import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.logging.Logger;
-import com.spbsu.ml.optimization.ConvexFunction;
 import com.spbsu.ml.optimization.ConvexOptimize;
 import com.spbsu.ml.optimization.QuadraticFunction;
 import com.spbsu.ml.optimization.TensorNetFunction;
-import com.spbsu.ml.optimization.impl.*;
+import com.spbsu.ml.optimization.impl.ALS;
+import com.spbsu.ml.optimization.impl.GradientDescent;
+import com.spbsu.ml.optimization.impl.Nesterov1;
+import com.spbsu.ml.optimization.impl.Nesterov2;
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static com.spbsu.commons.math.vectors.VecTools.*;
+import static com.spbsu.commons.math.vectors.VecTools.distance;
 
 /**
  * User: qde
@@ -26,7 +28,7 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
  * Time: 19:07
  */
 
-public class OptimizersTests extends TestCase{
+public class OptimizersTests extends TestCase {
     private static final double EPS = 1e-6;
     private static final int N = 6;
     private static final int TESTS_COUNT = 15;
@@ -51,37 +53,37 @@ public class OptimizersTests extends TestCase{
         }
     }
 
-    public void testCustomNesterovSimple() {
-        Mx mxA = new VecBasedMx(3, new ArrayVec(
-                5, 0, 0,
-                0, 15, 0,
-                0, 0, 30));
-        Vec w = new ArrayVec(-1, -1, -4);
-
-        QuadraticFunction func = new QuadraticFunction(mxA, w, 0);
-        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(3));
-        assertTrue(VecTools.distance(func.getExactExtremum(), customNesterov.optimize(func, EPS)) < EPS);
-    }
-
-    public void testAdaptiveNesterovRandom() {
-        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
-        ConvexOptimize adaptiveNesterov = new AdaptiveNesterov(new ArrayVec(func.dim()));
-        Vec expected = func.getExactExtremum();
-        Vec actual = adaptiveNesterov.optimize(func, EPS);
-
-        LOG.message("|X| = " + VecTools.norm(actual));
-        assertTrue(VecTools.distance(expected, actual) < EPS);
-    }
-
-    public void testCustomNesterovRandom() {
-        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
-        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(func.dim()));
-        Vec expected = func.getExactExtremum();
-        Vec actual = customNesterov.optimize(func, EPS);
-
-        LOG.message("|X| = " + VecTools.norm(actual));
-        assertTrue(VecTools.distance(expected, actual) < EPS);
-    }
+//    public void testCustomNesterovSimple() {
+//        Mx mxA = new VecBasedMx(3, new ArrayVec(
+//                5, 0, 0,
+//                0, 15, 0,
+//                0, 0, 30));
+//        Vec w = new ArrayVec(-1, -1, -4);
+//
+//        QuadraticFunction func = new QuadraticFunction(mxA, w, 0);
+//        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(3));
+//        assertTrue(VecTools.distance(func.getExactExtremum(), customNesterov.optimize(func, EPS)) < EPS);
+//    }
+//
+//    public void testAdaptiveNesterovRandom() {
+//        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
+//        ConvexOptimize adaptiveNesterov = new AdaptiveNesterov(new ArrayVec(func.dim()));
+//        Vec expected = func.getExactExtremum();
+//        Vec actual = adaptiveNesterov.optimize(func, EPS);
+//
+//        LOG.message("|X| = " + VecTools.norm(actual));
+//        assertTrue(VecTools.distance(expected, actual) < EPS);
+//    }
+//
+//    public void testCustomNesterovRandom() {
+//        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
+//        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(func.dim()));
+//        Vec expected = func.getExactExtremum();
+//        Vec actual = customNesterov.optimize(func, EPS);
+//
+//        LOG.message("|X| = " + VecTools.norm(actual));
+//        assertTrue(VecTools.distance(expected, actual) < EPS);
+//    }
 
     public void testNesterov1Simple() {
         Mx mxA = new VecBasedMx(3, new ArrayVec(
@@ -126,7 +128,7 @@ public class OptimizersTests extends TestCase{
     }
 
     private QuadraticFunction createRandomConvexFunc(Random rnd) {
-        Vec w =  new ArrayVec(N);
+        Vec w = new ArrayVec(N);
         Mx mxL = new VecBasedMx(N, N);
         Mx mxQ = new VecBasedMx(N, N);
         Mx mxC = new VecBasedMx(N, N);
@@ -159,14 +161,14 @@ public class OptimizersTests extends TestCase{
         int dim = 4;
 
         Mx X = new VecBasedMx(dim, new ArrayVec(4, 3, 2, 1,
-                                                8, 6, 4, 2,
-                                                12, 9, 6, 3,
-                                                16, 12, 8, 4));
+                8, 6, 4, 2,
+                12, 9, 6, 3,
+                16, 12, 8, 4));
         double c1 = 6;
         double c2 = 6;
         TensorNetFunction func = new TensorNetFunction(X, c1, c2);
 
-        Vec z0 = new ArrayVec(1,1,1,1,1,1,1,1);
+        Vec z0 = new ArrayVec(1, 1, 1, 1, 1, 1, 1, 1);
         ALS als = new ALS(z0, 1);
         Vec zMin = als.optimize(func);
 
