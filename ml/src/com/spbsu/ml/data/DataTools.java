@@ -159,9 +159,9 @@ public class DataTools {
     else if (y <= 0.14)
       return 2.;
     else if (y <= 0.41)
-      return 3;
+      return 3.;
     else
-      return 4;
+      return 4.;
 //    return 1.;
   }
 

@@ -48,7 +48,8 @@ public class LLClassificationLeaf implements BFLeaf {
     this.target = target;
     this.weight = weight;
     for (int i = 0; i < this.indices.length; i++) {
-      total.found(this.point.get(i), target.get(i), weight.get(i));
+      final int index = indices[i];
+      total.found(this.point.get(index), target.get(index), weight.get(index));
     }
     counters = new LLCounter[ds.grid().size() + ds.grid().rows()];
     for (int i = 0; i < counters.length; i++) {

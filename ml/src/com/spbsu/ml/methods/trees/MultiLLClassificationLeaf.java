@@ -1,15 +1,16 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.util.ThreadTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
-import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.lang.Math.max;
 
@@ -19,6 +20,7 @@ import static java.lang.Math.max;
  * Time: 12:23
  */
 public class MultiLLClassificationLeaf implements BFLeaf {
+  public static final double THRESHOLD = 3.;
   private final BFGrid.BFRow[] rows;
   private final LLClassificationLeaf[] folds;
   private final int size;
@@ -62,35 +64,63 @@ public class MultiLLClassificationLeaf implements BFLeaf {
     }
   }
 
+  private static ThreadPoolExecutor executor;
+  private static synchronized ThreadPoolExecutor executor(int queueSize) {
+    if (executor == null || executor.getQueue().remainingCapacity() < queueSize) {
+      executor = ThreadTools.createExecutor("MultiLLClassificationLeaf optimizer", queueSize);
+    }
+    return executor;
+  }
+
   @Override
   public int score(double[] likelihoods) {
-    Vec scores = VecTools.fill(new ArrayVec(likelihoods.length), Double.NEGATIVE_INFINITY);
+    final Vec scores = VecTools.fill(new ArrayVec(likelihoods.length), Double.NEGATIVE_INFINITY);
+    final ThreadPoolExecutor exe = executor(rows.length);
+    final CountDownLatch latch = new CountDownLatch(rows.length);
     for (int f = 0; f < rows.length; f++) {
-      LLCounter[] left = new LLCounter[classesCount];
-      LLCounter[] right = new LLCounter[classesCount];
+      final int finalF = f;
+      exe.execute(new Runnable() {
+        @Override
+        public void run() {
+          final BFGrid.BFRow row = rows[finalF];
 
-      final BFGrid.BFRow row = rows[f];
-      {
-        for (int c = 0; c < classesCount; c++) {
-          left[c] = new LLCounter();
-          right[c] = new LLCounter();
-          for (int t = 0; t < right.length; t++) {
-            right[c].add(folds[t * classesCount + c].total);
-          }
-        }
-      }
+          LLCounter[] left = new LLCounter[classesCount];
+          LLCounter[] right = new LLCounter[classesCount];
+          LLCounter[] agg = new LLCounter[classesCount * row.size()];
 
-      for (int b = 0; b < row.size(); b++) {
-        boolean[] mask = new boolean[classesCount];
-        for (int c = 0; c < classesCount; c++) {
-          for (int t = 0; t < right.length; t++) {
-            left[c].add(folds[t * classesCount + c].counter(f, (byte) b));
-            right[c].sub(folds[t* classesCount + c].counter(f, (byte) b));
+          {
+            for (int c = 0; c < classesCount; c++) {
+              left[c] = new LLCounter();
+              right[c] = new LLCounter();
+              for (int t = 0; t < right.length; t++) {
+                right[c].add(folds[t * classesCount + c].total);
+              }
+              for (int b = 0; b < row.size(); b++) {
+                agg[c * row.size() + b] = new LLCounter();
+                for (int t = 0; t < right.length; t++) {
+                  agg[c * row.size() + b].add(folds[t * classesCount + c].counter(finalF, (byte)b));
+                }
+              }
+            }
           }
+
+          for (int b = 0; b < row.size(); b++) {
+            boolean[] mask = new boolean[classesCount];
+            for (int c = 0; c < classesCount; c++) {
+              left[c].add(agg[c * row.size() + b]);
+              right[c].sub(agg[c * row.size() + b]);
+            }
+            scores.set(row.bfStart + b, max(scores.get(row.bfStart + b),
+                    optimizeMask(left, mask).score() + optimizeMask(right, mask).score()));
+          }
+          latch.countDown();
         }
-        scores.set(row.bfStart + b, max(scores.get(row.bfStart + b),
-                optimizeMaskOpt(left, mask).score() + optimizeMaskOpt(right, mask).score()));
-      }
+      });
+    }
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      //
     }
     for (int i = 0; i < likelihoods.length; i++) {
       likelihoods[i] += scores.get(i);
@@ -108,81 +138,61 @@ public class MultiLLClassificationLeaf implements BFLeaf {
   }
 
   private static LLCounter optimizeMask(LLCounter[] folds, boolean[] mask) {
-    double bestScore = 0;
-    int classesCount = mask.length;
-    Arrays.fill(mask, false);
-    final LLCounter combined = new LLCounter();
-    for (int i = 0; i < folds.length; i++) {
-      combined.add(folds[i], -1.);
-    }
-
-    int toAdd;
-    while(true) {
-      toAdd = -1;
-      for (int c = 0; c < mask.length; c++) {
-        if (mask[c]) // already in positive examples
-          continue;
-        for (int t = 0; t < classesCount; t++) {
-          final int i = t * classesCount + c;
-          combined.sub(folds[i], -1.);
-          combined.add(folds[i], 1.);
-        }
-        final double score = combined.score();
-        if (bestScore < score) {
-          bestScore = score;
-          toAdd = c;
-        }
-        for (int t = 0; t < classesCount; t++) {
-          final int i = t * classesCount + c;
-          combined.sub(folds[i], 1.);
-          combined.add(folds[i], -1.);
-        }
-      }
-      if (toAdd >= 0) {
-        mask[toAdd]  = true;
-        for (int t = 0; t < mask.length; t++) {
-          final int i = t * classesCount + toAdd;
-          combined.sub(folds[i], -1.);
-          combined.add(folds[i], 1.);
-        }
-      }
-      else break;
-    }
-    return combined;
-  }
-
-  private static LLCounter optimizeMaskOpt(LLCounter[] folds, boolean[] mask) {
-    double bestScore = 0;
-    Arrays.fill(mask, false);
     final int classesCount = mask.length;
-    final LLCounter combined = new LLCounter();
-    for (int i = 0; i < classesCount; i++) {
-      combined.add(folds[i], -1.);
+    final boolean[] confidence = new boolean[classesCount];
+    double denom = 0;
+    for (int c = 0; c < classesCount; c++) {
+      denom += folds[c].d2;
     }
-
-    int toAdd;
+    final LLCounter combined = new LLCounter();
+    for (int c = 0; c < classesCount; c++) {
+      combined.add(folds[c]);
+    }
+    for (int c = 0; c < classesCount; c++) {
+//      if (abs(folds[c].d1 * folds[c].d1/denom) > 10) {
+//        confidence[c] = true;
+//      }
+      mask[c] = folds[c].d1 > 0;
+      if (!mask[c])
+        combined.invert(folds[c], -1);
+    }
+    if (combined.good < 2) {
+//      System.out.println();
+      return combined;
+    }
+    combined.bad /= combined.good/2;
+    combined.good -= combined.bad;
+    double bestScore = combined.score();
+    int best;
     while(true) {
-      toAdd = -1;
+      best = -1;
       for (int c = 0; c < classesCount; c++) {
-        if (mask[c]) // already in positive examples
+        if (confidence[c]) // already in positive examples or definite negative
           continue;
-        combined.sub(folds[c], -1.);
-        combined.add(folds[c], 1.);
+        combined.invert(folds[c], mask[c] ? -1. : 1.);
         final double score = combined.score();
         if (bestScore < score) {
           bestScore = score;
-          toAdd = c;
+          best = c;
         }
-        combined.sub(folds[c], 1.);
-        combined.add(folds[c], -1.);
+        combined.invert(folds[c], mask[c] ? 1. : -1.);
       }
-      if (toAdd >= 0) {
-        mask[toAdd] = mask[toAdd] = true;
-        combined.sub(folds[toAdd], -1.);
-        combined.add(folds[toAdd], 1.);
+      if (best >= 0) {
+        confidence[best] = true;
+        combined.invert(folds[best], mask[best] ? -1. : 1.);
       }
       else break;
     }
+//    boolean[] fullMask = new boolean[classesCount];
+//    final double fullScore = optimizeMaskFull(folds, fullMask).score();
+//    if (fullScore - combined.score() > 0.1) {
+//      synchronized (System.class) {
+//        for (int c = 0; c < classesCount; c++) {
+//          System.out.println(abs(folds[c].d1 * folds[c].d1/denom) + " " + folds[c].d1 + " " + fullMask[c] + " " + mask[c] + " " + confidence[c]);
+//        }
+//        System.out.println();
+//      }
+//    }
     return combined;
   }
 
@@ -194,13 +204,11 @@ public class MultiLLClassificationLeaf implements BFLeaf {
   private boolean[] optimalMask;
   @Override
   public double alpha() {
-    optimalMask = new boolean[classesCount];
-    boolean[] optimalMask = new boolean[classesCount];
-    boolean[] optimalMaskOpt = new boolean[classesCount];
-    LLCounter[] classTotals = new LLCounter[folds.length];
-    for (int i = 0; i < classTotals.length; i++) {
-      classTotals[i] = folds[i].total;
-    }
+    this.optimalMask = new boolean[classesCount];
+    return optimize(this.optimalMask).alpha();
+  }
+
+  private LLCounter optimize(boolean[] mask) {
     LLCounter[] classTotalsOpt = new LLCounter[classesCount];
     for (int c = 0; c < classesCount; c++) {
       classTotalsOpt[c] = new LLCounter();
@@ -208,27 +216,7 @@ public class MultiLLClassificationLeaf implements BFLeaf {
         classTotalsOpt[c].add(folds[t * classesCount + c].total);
       }
     }
-    final double alpha1 = optimizeMask(classTotals, optimalMask).alpha();
-    final double alpha2 = optimizeMaskOpt(classTotalsOpt, optimalMaskOpt).alpha();
-    if (Math.abs(alpha1 - alpha2) > MathTools.EPSILON
-            || !Arrays.equals(optimalMask, optimalMaskOpt)) {
-      if (Math.abs(alpha1 + alpha2) < MathTools.EPSILON) {
-        for (int i = 0; i < optimalMaskOpt.length; i++) {
-          if (optimalMaskOpt[i] == optimalMask[i]) {
-            System.out.println();
-          }
-        }
-      }
-      else System.out.println();
-    }
-    double alpha = optimizeMask(classTotals, this.optimalMask).alpha();
-//    if (Math.abs(optimizeMask(classTotals, optimalMask).alpha() + optimizeMaskOpt(classTotalsOpt, optimalMaskOpt).alpha()) < MathTools.EPSILON) {
-//      for (int i = 0; i < this.optimalMask.length; i++) {
-//        this.optimalMask[i] = !this.optimalMask[i];
-//      }
-//      alpha = -alpha;
-//    }
-    return alpha;
+    return optimizeMask(classTotalsOpt, mask);
   }
 
   public boolean[] mask() {
@@ -237,4 +225,7 @@ public class MultiLLClassificationLeaf implements BFLeaf {
     return optimalMask;
   }
 
+  public double score() {
+    return optimize(new boolean[classesCount]).score();
+  }
 }

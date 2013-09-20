@@ -14,112 +14,97 @@ import static java.lang.Math.*;
 public class LLCounter {
   public volatile int good = 0;
   public volatile int bad = 0;
-  public volatile double maclaurinLL0;
-  public volatile double maclaurinLL1;
-  public volatile double maclaurinLL2;
-  public volatile double maclaurinLL3;
-  public volatile double maclaurinLL4;
-  private double alpha = Double.NaN;
+  public volatile double ll;
+  public volatile double d1;
+  public volatile double d2;
+  public volatile double d3;
+  public volatile double d4;
 
   public double alpha() {
-    if (!Double.isNaN(alpha))
-      return alpha;
+    double y = optimal();
+    return log((1. - y) / (1. + y));
+  }
+  public double optimal() {
     if (good == 0 || bad == 0)
       return 0;
     final double[] x = new double[3];
 
-    int cnt = MathTools.cubic(x, maclaurinLL4, maclaurinLL3, maclaurinLL2, maclaurinLL1);
+    int cnt = MathTools.cubic(x, d4/6, d3/2, d2, d1);
     double y = 0.;
-    double bestLL = maclaurinLL0;
+    double bestLL = 0;
     for (int i = 0; i < cnt; i++) {
-      if (abs(x[i]) < 1 && score(x[i]) > bestLL) {
+      if (abs(x[i]) >= 0.5) // skip too optimistic solutions
+        continue;
+      final double score = score(x[i]);
+      if (score > bestLL) {
         y = x[i];
-        bestLL = score(y);
+        bestLL = score;
       }
     }
 
-    return alpha = log((1. - y) / (1. + y));
+    return y;
   }
 
   private double score(double x) {
     if (good == 0 || bad == 0)
-      return maclaurinLL0;
-    return maclaurinLL0 - 2 * maclaurinLL1 * x - maclaurinLL2 * x * x;
+      return 0;
+    return d1 * x + d2 * x * x / 2 + d3 * x * x * x / 6 + d4 * x * x * x * x / 24;
+  }
+
+  public double fastScore() {
+    return -d1 * d1 / 2 / d2;
   }
 
   public double score() {
-    double alpha = alpha();
-    double x = (1 - exp(alpha))/(1 + exp(alpha));
-    return score(x) - maclaurinLL0;
+    final double R = log(size() + 2.);
+    return size() <= 1 ? 0 : score(optimal()) * R;
   }
 
   public void found(double current, double target, double weight) {
     final double b = target > 0 ? 1. : -1.;
-    final double eab = exp(current*b);
-    final double eabPlusOne = eab + 1;
-    final double eabMinusOne = eab - 1;
-    double denominator = eabPlusOne;
-    maclaurinLL0 += weight * log(eab/(1. + eab));
-    maclaurinLL1 += weight * b/denominator;
-    denominator *= eabPlusOne;
-    maclaurinLL2 += weight * 2 * eab/denominator;
-    denominator *= eabPlusOne;
-    maclaurinLL3 += weight * 2 * b * eab * eabMinusOne /denominator;
-    denominator *= eabPlusOne;
-    maclaurinLL4 += weight * 2 * eab * eabMinusOne * eabMinusOne / denominator;
+    final double a = exp(-current*b);
+    final double d1 = -2 * a * b / (1 + a);
+    final double d2 = -d1 * d1 / a;
+    final double d3 = b * d2 * (a * a + 3) / (1 + a);
+    final double d4 = 12 * d2 * (1 + a * a * a) / (1 + a) / (1 + a);
+    ll += - weight * log(1 + a);
+    this.d1 += d1;
+    this.d2 += d2;
+    this.d3 += d3;
+    this.d4 += d4;
     if (b > 0)
       good++;
     else
       bad++;
-    alpha = Double.NaN;
   }
 
   public void add(LLCounter counter) {
-    maclaurinLL0 += counter.maclaurinLL0;
-    maclaurinLL1 += counter.maclaurinLL1;
-    maclaurinLL2 += counter.maclaurinLL2;
-    maclaurinLL3 += counter.maclaurinLL3;
-    maclaurinLL4 += counter.maclaurinLL4;
+    ll += counter.ll;
+    d1 += counter.d1;
+    d2 += counter.d2;
+    d3 += counter.d3;
+    d4 += counter.d4;
     good += counter.good;
     bad += counter.bad;
-    alpha = Double.NaN;
   }
 
   public void sub(LLCounter counter) {
-    maclaurinLL0 -= counter.maclaurinLL0;
-    maclaurinLL1 -= counter.maclaurinLL1;
-    maclaurinLL2 -= counter.maclaurinLL2;
-    maclaurinLL3 -= counter.maclaurinLL3;
-    maclaurinLL4 -= counter.maclaurinLL4;
+    ll -= counter.ll;
+    d1 -= counter.d1;
+    d2 -= counter.d2;
+    d3 -= counter.d3;
+    d4 -= counter.d4;
     good -= counter.good;
     bad -= counter.bad;
-    alpha = Double.NaN;
   }
 
   /**
    * Combine two parts of $LL=-\sum_{\{a_c\}, b} \sum_c log(1+e^{-1^{I(b=c)}(-a-m(c)x)})$ depending on $m: C \to \{-1,1\}$
    * actually they differs in sign of odd derivations so we need only to properly sum them :)
    */
-  public void add(LLCounter counter, double xsign) {
-    maclaurinLL0 += counter.maclaurinLL0;
-    maclaurinLL1 += xsign * counter.maclaurinLL1;
-    maclaurinLL2 += counter.maclaurinLL2;
-    maclaurinLL3 += xsign * counter.maclaurinLL3;
-    maclaurinLL4 += counter.maclaurinLL4;
-    good += counter.good;
-    bad += counter.bad;
-    alpha = Double.NaN;
-  }
-
-  public void sub(LLCounter counter, double xsign) {
-    maclaurinLL0 -= counter.maclaurinLL0;
-    maclaurinLL1 -= xsign * counter.maclaurinLL1;
-    maclaurinLL2 -= counter.maclaurinLL2;
-    maclaurinLL3 -= xsign * counter.maclaurinLL3;
-    maclaurinLL4 -= counter.maclaurinLL4;
-    good -= counter.good;
-    bad -= counter.bad;
-    alpha = Double.NaN;
+  public void invert(LLCounter counter, double sign) {
+    d1 += sign * 2 * counter.d1;
+    d3 += sign * 2 * counter.d3;
   }
 
   public int size() {
