@@ -9,9 +9,11 @@ import com.spbsu.ml.data.Aggregator;
  * Time: 12:16
  */
 public interface BFLeaf extends Aggregator {
-  BFLeaf split(BFGrid.BinaryFeature feature);
+    BFLeaf split(BFGrid.BinaryFeature feature);
 
-  int score(double[] likelihoods);
-  int size();
-  double alpha();
+    int score(double[] likelihoods);
+
+    int size();
+
+    double alpha();
 }
