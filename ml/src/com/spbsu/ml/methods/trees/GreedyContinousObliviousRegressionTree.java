@@ -53,12 +53,24 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
         return mask * (depth + 1) * (depth + 2) / 2 + i * (i + 1) / 2 + j;
     }
 
+    void add(int[] indexes, double[] cond, Mx mx) {
+        for (int index : indexes)
+            if (Math.abs(cond[index]) > 1e-9)
+                for (int jindex : indexes) {
+                    //System.out.println(cond[index]);
+                    mx.set(index, jindex, mx.get(index, jindex) + cond[jindex] * Math.signum(cond[index]));
+                }
+
+    }
+
     //Create boundary of continous between mask and mask neighbour
     public void createBoundariesCondition(int mask, BFGrid.BinaryFeature feature, int featureNum, Mx mx) {
         if (((mask >> featureNum) & 1) == 0)
             return;
 
+
         double C = feature.condition;
+        //System.out.println(C);
         int conterMask = mask ^ (1 << featureNum);
         featureNum++;
         //Equal at 0 point
@@ -68,8 +80,13 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
             cond[getIndex(conterMask, 0, 0)] = -1;
             cond[getIndex(mask, featureNum, featureNum)] = C * C;
             cond[getIndex(conterMask, featureNum, featureNum)] = -C * C;
-            addBoundary(mx, cond, 0);
+            //addBoundary(mx, cond, 0);
+            add(new int[]{getIndex(mask, 0, 0), getIndex(conterMask, 0, 0),
+                    getIndex(mask, featureNum, featureNum), getIndex(conterMask, featureNum, featureNum)},
+                    cond, mx);
+
         }
+
         //Quadratic boundary
         for (int i = 1; i <= depth; i++)
             for (int j = 1; j <= i; j++)
@@ -77,7 +94,8 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
                     double cond[] = new double[numberOfVariables];
                     cond[getIndex(mask, i, j)] = 1;
                     cond[getIndex(conterMask, i, j)] = -1;
-                    addBoundary(mx, cond, 0);
+                    //addBoundary(mx, cond, 0);
+                    add(new int[]{getIndex(mask, i, j), getIndex(conterMask, i, j)}, cond, mx);
                 }
         //Linear boundary
         for (int i = 1; i <= depth; i++)
@@ -87,13 +105,14 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
                 cond[getIndex(conterMask, 0, i)] = -1;
                 cond[getIndex(mask, featureNum, i)] = C;
                 cond[getIndex(conterMask, featureNum, i)] = -C;
-                addBoundary(mx, cond, 0);
+                add(new int[]{getIndex(mask, 0, i), getIndex(conterMask, 0, i),
+                        getIndex(mask, featureNum, i), getIndex(conterMask, featureNum, i)}, cond, mx);
+                //addBoundary(mx, cond, 0);
             }
     }
 
-    public void createGradientCondition(DataSet ds, int i, int j, Mx mx) {
-        double cond[][] = new double[1 << depth][numberOfVariables];
-        double R[] = new double[1 << depth];
+    public void addGradientCondition(DataSet ds, int i, int j, Mx mx) {
+        //double cond[][] = new double[1 << depth][numberOfVariables];
         for (int k = 0; k < ds.power(); k++) {
             int index = 0;
             //Calculating in which leaf ds[k] lays
@@ -113,12 +132,12 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
 
             for (int f = 0; f <= depth; f++)
                 for (int s = 0; s <= f; s++)
-                    cond[index][getIndex(index, f, s)] += data[i] * data[j] * data[f] * data[s];
-            R[index] += data[i] * data[j] * ds.target().get(k);
+                    mx.set(getIndex(index, i, j), getIndex(index, f, s), mx.get(getIndex(index, i, j), getIndex(index, f, s)) + data[i] * data[j] * data[f] * data[s]);
+            right[getIndex(index, i, j)] += data[i] * data[j] * ds.target().get(k);
         }
 
-        for (int s = 0; s < 1 << depth; s++)
-            addBoundary(mx, cond[s], R[s]);
+        /*for (int s = 0; s < 1 << depth; s++)
+            addBoundary(mx, cond[s], R[s]);*/
     }
 
     //Gauss Method for solving linear equation
@@ -151,9 +170,7 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
 
         //System.out.println(mx);
         double ans[] = new double[numberOfVariables];
-        for (
-                int i = 0;
-                i < numberOfVariables; i++)
+        for (int i = 0; i < numberOfVariables; i++)
             if (p[i] == -1)
                 undef++;
             else
@@ -171,7 +188,6 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
     @Override
     public ContinousObliviousTree fit(DataSet ds, Oracle1 loss, Vec point) {
         features = ((ObliviousTree) new GreedyObliviousRegressionTree(new Random(), ds, grid, depth).fit(ds, loss)).features();
-        int numberOfConditions = 4 * (1 << (depth - 1)) * ((depth + 1) * (depth + 2) + depth);
         numOfBoundaries = 0;
         /*for(BFGrid.BinaryFeature feature:features){
             System.out.println(feature);
@@ -179,20 +195,22 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
         } */
 
 
-        Mx mx = new VecBasedMx(numberOfConditions, numberOfVariables);
-        right = new double[numberOfConditions];
+        Mx mx = new VecBasedMx(numberOfVariables, numberOfVariables);
+        right = new double[numberOfVariables];
 
         for (int mask = 0; mask < 1 << depth; mask++)
             for (int j = 0; j < depth; j++)
                 createBoundariesCondition(mask, features.get(j), j, mx);
         for (int i = 0; i < depth + 1; i++)
             for (int j = 0; j <= i; j++)
-                createGradientCondition(ds, j, i, mx);
+                addGradientCondition(ds, j, i, mx);
         //System.out.println(numberOfVariables);
+        numOfBoundaries = numberOfVariables;
 
 
         //System.out.println(mx);
-        double value[] = solve(mx, right);
+        //for (double aRight : right) System.out.println(aRight);
+        double[] value = solve(mx, right);
         //System.out.println(mx);
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
 
