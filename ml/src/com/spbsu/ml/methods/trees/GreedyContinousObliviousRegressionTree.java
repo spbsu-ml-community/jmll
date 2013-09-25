@@ -9,6 +9,9 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.methods.GreedyTDRegion;
 import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
+import com.spbsu.ml.optimization.ConvexFunction;
+import com.spbsu.ml.optimization.ConvexOptimize;
+import com.spbsu.ml.optimization.impl.Nesterov2;
 
 import java.util.List;
 import java.util.Random;
@@ -195,7 +198,7 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
     }
 
     //    boolean firstTime;
-    double calculateFine(DataSet ds, final double[] value) {
+    double calculateFine(final double[] value) {
 //        long start = System.currentTimeMillis();
         double fine = constCoef;
         for (int i = 0; i < numberOfVariables; i++)
@@ -298,69 +301,66 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
 
     }
 
+    public class Function implements ConvexFunction {
+        DataSet ds;
+
+        @Override
+        public int dim() {
+            return numberOfVariables;
+        }
+
+        @Override
+        public double getGlobalConvexParam() {
+            return 1;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public double getLocalConvexParam(Vec x) {
+            return 1;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public double getGradLipParam() {
+            return 100000;
+        }
+
+        @Override
+        public Vec gradient(Vec x) {
+            double eps = 1e-9;
+            Vec gr = new ArrayVec(numberOfVariables);
+            double value[] = x.toArray();
+            double curFine = calculateFine(value);
+            for (int i = 0; i < numberOfVariables; i++) {
+                value[i] += eps;
+                gr.set(i, (calculateFine(value) - curFine) / eps);
+                //System.out.println(gr[i]);
+                value[i] -= eps;
+
+            }
+
+            return gr;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public double value(Vec x) {
+            return calculateFine(x.toArray());
+        }
+
+        Function(DataSet ds) {
+            this.ds = ds;
+        }
+    }
+
     @Override
     public ContinousObliviousTree fit(DataSet ds, Oracle1 loss, Vec point) {
         features = ((ObliviousTree) new GreedyObliviousRegressionTree(new Random(), ds, grid, depth).fit(ds, loss)).features();
-        double step = 1000;
-        double value[] = new double[numberOfVariables];
         recalcCoef(ds);
-/*
-        for(int i= 0; i < value.length;i++)
-            System.out.println(value[i]);
-*/
-        double curFine = calculateFine(ds, value);
-        //System.exit(-1);
-        while (step > 1e-4) {
-            boolean renew = false;
-            //System.out.println(curFine + " " + step);
-            /*for(double values:value)
-                System.out.print(values + " ");
-            System.out.println();*/
-            for (int i = 0; i < numberOfVariables; i++) {
-                for (int j = -1; j <= 1; j += 2) {
-                    value[i] += j * step;
-                    double newFine = calculateFine(ds, value);
-                    if (newFine < curFine) {
-                        curFine = newFine;
-                        renew = true;
-                    } else {
-                        value[i] -= j * step;
-                    }
-                }
-
-            }
-            if (!renew)
-                step /= 2;
-
-        }
-/*
-        while (step > 1e-4) {
-            boolean renew = false;
-            //System.out.println(curFine + " " + step);
-            */
-/*for(double values:value)
-                System.out.print(values + " ");
-            System.out.println();*//*
-
-            for (int i = 0; i < numberOfVariables; i++) {
-                for (int j = -1; j <= 1; j += 2) {
-                    value[i] += j * step;
-                    double newFine = calculateFine(ds, value);
-                    if (newFine < curFine) {
-                        curFine = newFine;
-                        renew = true;
-                    } else {
-                        value[i] -= j * step;
-                    }
-                }
-
-            }
-            if (!renew)
-                step /= 2;
-
-        }
-*/
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
+
+        ConvexFunction function = new Function(ds);
+        ConvexOptimize optimize = new Nesterov2(new ArrayVec(numberOfVariables));
+        Vec x = optimize.optimize(function, 1e-5);
+        double value[] = x.toArray();
 
         for (int i = 0; i < 1 << depth; i++)
             for (int k = 0; k <= depth; k++)
