@@ -128,7 +128,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testCOTBoost() {
-        final GradientBoosting boosting = new GradientBoosting(new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 2), 2000, 0.005, rng);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 1), 2000, 0.005, rng);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -187,7 +187,7 @@ public class MethodsTests extends GridTest {
     public void testContinousObliviousTree() {
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
-        for (int depth = 1; depth <= 6; depth++) {
+        for (int depth = 1; depth <= 4; depth++) {
             ContinousObliviousTree tree = new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
             //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
             // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
