@@ -11,7 +11,7 @@ import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.optimization.ConvexFunction;
 import com.spbsu.ml.optimization.ConvexOptimize;
-import com.spbsu.ml.optimization.impl.Nesterov2;
+import com.spbsu.ml.optimization.impl.GradientDescent;
 
 import java.util.List;
 import java.util.Random;
@@ -321,7 +321,7 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
 
         @Override
         public double getGradLipParam() {
-            return 100000;
+            return 1e5;
         }
 
         @Override
@@ -332,9 +332,12 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
             double curFine = calculateFine(value);
             for (int i = 0; i < numberOfVariables; i++) {
                 value[i] += eps;
-                gr.set(i, (calculateFine(value) - curFine) / eps);
+                double X = calculateFine(value);
+                value[i] -= 2 * eps;
+                double Y = calculateFine(value);
+                gr.set(i, (4 * curFine - 3 * Y - X) / 2 / eps);
                 //System.out.println(gr[i]);
-                value[i] -= eps;
+                value[i] += eps;
 
             }
 
@@ -358,7 +361,7 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
 
         ConvexFunction function = new Function(ds);
-        ConvexOptimize optimize = new Nesterov2(new ArrayVec(numberOfVariables));
+        ConvexOptimize optimize = new GradientDescent(new ArrayVec(numberOfVariables));
         Vec x = optimize.optimize(function, 1e-5);
         double value[] = x.toArray();
 
