@@ -128,7 +128,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testCOTBoost() {
-        final GradientBoosting boosting = new GradientBoosting(new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 1), 2000, 0.005, rng);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 3), 2000, 0.005, rng);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 

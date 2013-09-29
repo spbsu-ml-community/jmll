@@ -11,7 +11,7 @@ import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.optimization.ConvexFunction;
 import com.spbsu.ml.optimization.ConvexOptimize;
-import com.spbsu.ml.optimization.impl.GradientDescent;
+import com.spbsu.ml.optimization.impl.Nesterov1;
 
 import java.util.List;
 import java.util.Random;
@@ -68,9 +68,9 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
                 double C = feature.condition;
                 int conterMask = mask ^ (1 << featureNum);
                 featureNum++;
-                double lambda = 1;
                 //Equal at 0 point
                 {
+                    double lambda = 1;
                     double cond = 0;
                     cond += value[getIndex(mask, 0, 0)] * 1;
                     cond += value[getIndex(conterMask, 0, 0)] * -1;
@@ -82,6 +82,7 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
                 for (int i = 1; i <= depth; i++)
                     for (int j = 1; j <= i; j++)
                         if ((i != featureNum) && (j != featureNum)) {
+                            double lambda = 0.1;
                             double cond = 0;
                             cond += value[getIndex(mask, i, j)] * 1;
                             cond += value[getIndex(conterMask, i, j)] * -1;
@@ -91,6 +92,7 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
                 for (int i = 1; i <= depth; i++)
                     if (i != featureNum) {
                         double cond = 0;
+                        double lambda = 0.4;
                         cond += value[getIndex(mask, 0, i)] * 1;
                         cond += value[getIndex(conterMask, 0, i)] * -1;
                         cond += value[getIndex(mask, featureNum, i)] * C;
@@ -361,8 +363,8 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
 
         ConvexFunction function = new Function(ds);
-        ConvexOptimize optimize = new GradientDescent(new ArrayVec(numberOfVariables));
-        Vec x = optimize.optimize(function, 1e-5);
+        ConvexOptimize optimize = new Nesterov1(new ArrayVec(numberOfVariables));
+        Vec x = optimize.optimize(function, 1);
         double value[] = x.toArray();
 
         for (int i = 0; i < 1 << depth; i++)
