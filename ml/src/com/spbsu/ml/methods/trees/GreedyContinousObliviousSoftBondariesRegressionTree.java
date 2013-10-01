@@ -22,12 +22,12 @@ import java.util.Random;
  * Date: 14.05.13
  * Time: 21:09
  */
-public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
+public class GreedyContinousObliviousSoftBondariesRegressionTree extends GreedyTDRegion {
     private final int depth;
     private final int numberOfVariables;
     private List<BFGrid.BinaryFeature> features;
 
-    public GreedyContinousObliviousRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
+    public GreedyContinousObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
         super(rng, ds, grid, 1. / 3, 0);
         numberOfVariables = (1 << (depth - 1)) * (depth + 1) * (depth + 2);
         this.depth = depth;
@@ -101,6 +101,54 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
                     }
             }
         return sum;
+    }
+
+    public void nameToBeAnonnced(double lambda, int[] indexs, double[] coef, double[] value, double gr[]) {
+        double cond = 0;
+        for (int i = 0; i < indexs.length; i++)
+            cond += value[indexs[i]] * coef[i];
+        for (int i = 0; i < indexs.length; i++)
+            gr[indexs[i]] += Math.exp(lambda * sqr(cond)) * lambda * 2 * coef[i] * (cond);
+    }
+
+    public void calcBoundariesFineGradient(double[] value, double gr[]) {
+        for (int mask = 0; mask < 1 << depth; mask++)
+            for (int _featureNum = 0; _featureNum < depth; _featureNum++) {
+                BFGrid.BinaryFeature feature = features.get(_featureNum);
+                int featureNum = _featureNum;
+                if (((mask >> featureNum) & 1) == 0)
+                    continue;
+
+                double C = feature.condition;
+                int conterMask = mask ^ (1 << featureNum);
+                featureNum++;
+                //Equal at 0 point
+                {
+                    double lambda = 1;
+                    int indexes[] = {getIndex(mask, 0, 0), getIndex(conterMask, 0, 0), getIndex(mask, featureNum, featureNum), getIndex(conterMask, featureNum, featureNum)};
+                    double coef[] = {1, -1, C * C, -C * C};
+                    nameToBeAnonnced(lambda, indexes, coef, value, gr);
+                }
+                //Quadratic boundary
+                for (int i = 1; i <= depth; i++)
+                    for (int j = 1; j <= i; j++)
+                        if ((i != featureNum) && (j != featureNum)) {
+                            double lambda = 0.1;
+                            double cond = 0;
+                            int indexes[] = {getIndex(mask, i, j), getIndex(conterMask, i, j)};
+                            double coef[] = {1, -1};
+                            nameToBeAnonnced(lambda, indexes, coef, value, gr);
+                        }
+                //Linear boundary
+                for (int i = 1; i <= depth; i++)
+                    if (i != featureNum) {
+                        double lambda = 0.4;
+                        int indexes[] = {getIndex(mask, 0, i), getIndex(conterMask, 0, i), getIndex(mask, featureNum, i), getIndex(conterMask, featureNum, i)};
+                        double coef[] = {1, -1, C, -C};
+
+                        nameToBeAnonnced(lambda, indexes, coef, value, gr);
+                    }
+            }
     }
 
     public void createGradientCondition(DataSet ds, int i, int j, Mx mx) {
@@ -180,23 +228,40 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
         return fit(learn, loss, new ArrayVec(learn.power()));
     }
 
-    String outputMatrix(Mx mx, double[] right) {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int g = 0; g < numOfBoundaries; g++) {
-            for (int i = 0; i < 1 << depth; i++)
-                for (int k = 0; k <= depth; k++)
-                    for (int j = 0; j <= k; j++)
-                        if (Math.abs(mx.get(g, getIndex(i, k, j))) > 1e-9) {
-                            stringBuilder.append("c[M = " + Integer.toString(i, 2) + "][" + k + "][" + j + "]*" + mx.get(g, getIndex(i, k, j)) + " +\t");
-                        }
-            stringBuilder.append("= " + right[g] + "\n");
-        }
-        return stringBuilder.toString();
+    /*  String outputMatrix(Mx mx, double[] right) {
+          StringBuilder stringBuilder = new StringBuilder();
+          for (int g = 0; g < numOfBoundaries; g++) {
+              for (int i = 0; i < 1 << depth; i++)
+                  for (int k = 0; k <= depth; k++)
+                      for (int j = 0; j <= k; j++)
+                          if (Math.abs(mx.get(g, getIndex(i, k, j))) > 1e-9) {
+                              stringBuilder.append("c[M = " + Integer.toString(i, 2) + "][" + k + "][" + j + "]*" + mx.get(g, getIndex(i, k, j)) + " +\t");
+                          }
+              stringBuilder.append("= " + right[g] + "\n");
+          }
+          return stringBuilder.toString();
 
-    }
-
+      }
+  */
     double sqr(double x) {
         return x * x;
+    }
+
+    double[] calculateFineGradient(double[] value) {
+        double gr[] = linearCoef.clone();
+        for (int index = 0; index < 1 << depth; index++)
+            for (int i = 0; i < numberOfVariables >> depth; i++)
+                for (int j = 0; j < numberOfVariables >> depth; j++)
+                    gr[index * (numberOfVariables >> depth) + i] += 2 * quadraticCoef[index][i][j] * value[index * (numberOfVariables >> depth) + j];
+        calcBoundariesFineGradient(value, gr);
+/*
+        for(int index =0 ;index < 1<<depth;index++)
+        for (int i = 0; i < numberOfVariables >> depth; i++)
+            for (int j = 0; j < numberOfVariables >> depth; j++)
+                System.out.print(quadraticCoef[index][i][j] + (j == (numberOfVariables >> depth) -1 ?  "\n" : " "));
+*/
+        return gr;
+
     }
 
     //    boolean firstTime;
@@ -328,22 +393,29 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
 
         @Override
         public Vec gradient(Vec x) {
-            double eps = 1e-9;
+            /*double eps = 1e-9;
             Vec gr = new ArrayVec(numberOfVariables);
             double value[] = x.toArray();
             double curFine = calculateFine(value);
             for (int i = 0; i < numberOfVariables; i++) {
                 value[i] += eps;
                 double X = calculateFine(value);
-                value[i] -= 2 * eps;
-                double Y = calculateFine(value);
-                gr.set(i, (4 * curFine - 3 * Y - X) / 2 / eps);
+                gr.set(i, (X - curFine) / eps);
                 //System.out.println(gr[i]);
-                value[i] += eps;
+                value[i] -= eps;
 
             }
+              */
+            double newFine[] = calculateFineGradient(x.toArray());
+            /*for (int i = 0; i < numberOfVariables; i++)
+                if (Math.abs(gr.get(i) - newFine[i]) > 1) {
+                    System.out.println(gr.get(i));
+                    System.out.println(newFine[i]);
+                    calculateFineGradient(value);
+                    System.exit(-1);
+                }*/
 
-            return gr;  //To change body of implemented methods use File | Settings | File Templates.
+            return new ArrayVec(newFine);  //To change body of implemented methods use File | Settings | File Templates.
         }
 
         @Override
@@ -363,9 +435,11 @@ public class GreedyContinousObliviousRegressionTree extends GreedyTDRegion {
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
 
         ConvexFunction function = new Function(ds);
+        //double[] starting = {0,0,0,0,1,0};
         ConvexOptimize optimize = new Nesterov1(new ArrayVec(numberOfVariables));
-        Vec x = optimize.optimize(function, 1);
+        Vec x = optimize.optimize(function, 1e-1);
         double value[] = x.toArray();
+
 
         for (int i = 0; i < 1 << depth; i++)
             for (int k = 0; k <= depth; k++)

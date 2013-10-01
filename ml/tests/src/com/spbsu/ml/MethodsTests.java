@@ -9,7 +9,7 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.methods.*;
-import com.spbsu.ml.methods.trees.GreedyContinousObliviousRegressionTree;
+import com.spbsu.ml.methods.trees.GreedyContinousObliviousSoftBondariesRegressionTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousRegressionTree;
 import com.spbsu.ml.models.AdditiveModel;
 import com.spbsu.ml.models.ContinousObliviousTree;
@@ -128,7 +128,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testCOTBoost() {
-        final GradientBoosting boosting = new GradientBoosting(new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 3), 2000, 0.005, rng);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyContinousObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 3), 2000, 0.005, rng);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -188,7 +188,7 @@ public class MethodsTests extends GridTest {
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
         for (int depth = 1; depth <= 6; depth++) {
-            ContinousObliviousTree tree = new GreedyContinousObliviousRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
+            ContinousObliviousTree tree = new GreedyContinousObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
             //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
             // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
             System.out.print("Oblivious Tree deapth = " + depth);
@@ -207,7 +207,7 @@ public class MethodsTests extends GridTest {
         DataSet debug = new DataSetImpl(data, target);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", debug);
         for (int depth = 1; depth <= 1; depth++) {
-            ContinousObliviousTree tree = new GreedyContinousObliviousRegressionTree(new FastRandom(), debug, GridTools.medianGrid(debug, 32), depth).fit(debug, new L2Loss(debug.target()));
+            ContinousObliviousTree tree = new GreedyContinousObliviousSoftBondariesRegressionTree(new FastRandom(), debug, GridTools.medianGrid(debug, 32), depth).fit(debug, new L2Loss(debug.target()));
             System.out.print("Oblivious Tree deapth = " + depth);
             scoreCalcerLearn.progress(tree);
             System.out.println();
