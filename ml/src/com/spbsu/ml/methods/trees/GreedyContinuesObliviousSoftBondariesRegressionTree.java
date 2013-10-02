@@ -12,8 +12,11 @@ import com.spbsu.ml.optimization.ConvexFunction;
 import com.spbsu.ml.optimization.ConvexOptimize;
 import com.spbsu.ml.optimization.impl.Nesterov1;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,11 +28,17 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     private final int depth;
     private final int numberOfVariables;
     private List<BFGrid.BinaryFeature> features;
+    private final GreedyObliviousRegressionTree got;
+    private final ExecutorService executor;
+    private final int numberOfVariablesByLeaf;
 
     public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
         super(rng, ds, grid, 1. / 3, 0);
-        numberOfVariables = (1 << (depth - 1)) * (depth + 1) * (depth + 2);
+        got = new GreedyObliviousRegressionTree(rng, ds, grid, depth);
+        numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
+        numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
         this.depth = depth;
+        executor = Executors.newFixedThreadPool(4);
     }
 
     //Make 2 dimension index 1
@@ -44,7 +53,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     }
 
     //Create boundary of continous between mask and mask neighbour
-    public double calcBoundariesFine(double[] value) {
+    public double calcSoftBoundariesFine(double[] value) {
         double sum = 0;
         for (int mask = 0; mask < 1 << depth; mask++)
             for (int _featureNum = 0; _featureNum < depth; _featureNum++) {
@@ -95,49 +104,57 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         double cond = 0;
         for (int i = 0; i < indexes.length; i++)
             cond += value[indexes[i]] * coef[i];
+        double lconst = Math.exp(lambda * sqr(cond)) * lambda * 2 * (cond);
         for (int i = 0; i < indexes.length; i++)
-            gr[indexes[i]] += Math.exp(lambda * sqr(cond)) * lambda * 2 * coef[i] * (cond);
+            gr[indexes[i]] += lconst * coef[i];
     }
 
-    public void calcBoundariesFineGradient(double[] value, double gr[]) {
-        for (int mask = 0; mask < 1 << depth; mask++)
+    ArrayList<double[]> gradCoef;
+    ArrayList<int[]> gradIndex;
+    ArrayList<Double> gradLambdas;
+
+    public void calcFlexibleBoundariesFineGradient(double[] value, double gr[]) {
+        for (int i = 0; i < value.length; i++)
+            nameToBeAnnounced(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value, gr);
+    }
+
+    public void precalcFlexibleBoudariesCoefs() {
+        gradCoef = new ArrayList<double[]>();
+        gradIndex = new ArrayList<int[]>();
+        gradLambdas = new ArrayList<Double>();
+        for (int mask = 0; mask < 1 << depth; mask++) {
             for (int _featureNum = 0; _featureNum < depth; _featureNum++) {
-                BFGrid.BinaryFeature feature = features.get(_featureNum);
-                int featureNum = _featureNum;
-                if (((mask >> featureNum) & 1) == 0)
-                    continue;
+                if (((mask >> _featureNum) & 1) == 0) {
 
-                double C = feature.condition;
-                int neighbourMask = mask ^ (1 << featureNum);
-                featureNum++;
-                //Equal at 0 point
-                {
-                    double lambda = 1;
-                    int indexes[] = {getIndex(mask, 0, 0), getIndex(neighbourMask, 0, 0), getIndex(mask, featureNum, featureNum), getIndex(neighbourMask, featureNum, featureNum)};
-                    double coef[] = {1, -1, C * C, -C * C};
-                    nameToBeAnnounced(lambda, indexes, coef, value, gr);
-                }
-                //Quadratic boundary
-                for (int i = 1; i <= depth; i++)
-                    for (int j = 1; j <= i; j++)
-                        if ((i != featureNum) && (j != featureNum)) {
-                            double lambda = 0.1;
-                            int indexes[] = {getIndex(mask, i, j), getIndex(neighbourMask, i, j)};
-                            double coef[] = {1, -1};
-                            nameToBeAnnounced(lambda, indexes, coef, value, gr);
-                        }
-                //Linear boundary
-                for (int i = 1; i <= depth; i++)
-                    if (i != featureNum) {
-                        double lambda = 0.4;
-                        int indexes[] = {getIndex(mask, 0, i), getIndex(neighbourMask, 0, i), getIndex(mask, featureNum, i), getIndex(neighbourMask, featureNum, i)};
-                        double coef[] = {1, -1, C, -C};
-
-                        nameToBeAnnounced(lambda, indexes, coef, value, gr);
+                    double C = features.get(_featureNum).condition;
+                    int neighbourMask = mask ^ (1 << _featureNum);
+                    int featureNum = _featureNum + 1;
+                    //Equal at 0 point
+                    {
+                        gradLambdas.add(1.);
+                        gradIndex.add(new int[]{getIndex(mask, 0, 0), getIndex(neighbourMask, 0, 0), getIndex(mask, featureNum, featureNum), getIndex(neighbourMask, featureNum, featureNum)});
+                        gradCoef.add(new double[]{1, -1, C * C, -C * C});
                     }
+                    //Quadratic boundary
+                    for (int i = 1; i <= depth; i++)
+                        for (int j = 1; j <= i; j++)
+                            if ((i != featureNum) && (j != featureNum)) {
+                                gradLambdas.add(0.1);
+                                gradIndex.add(new int[]{getIndex(mask, i, j), getIndex(neighbourMask, i, j)});
+                                gradCoef.add(new double[]{1, -1});
+                            }
+                    //Linear boundary
+                    for (int i = 1; i <= depth; i++)
+                        if (i != featureNum) {
+                            gradLambdas.add(0.4);
+                            gradIndex.add(new int[]{getIndex(mask, 0, i), getIndex(neighbourMask, 0, i), getIndex(mask, featureNum, i), getIndex(neighbourMask, featureNum, i)});
+                            gradCoef.add(new double[]{1, -1, C, -C});
+                        }
+                }
             }
-    }
+        }
 
+    }
 
     @Override
     public ContinousObliviousTree fit(DataSet learn, Oracle1 loss) {
@@ -151,10 +168,10 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     double[] calculateFineGradient(double[] value) {
         double gr[] = linearCoef.clone();
         for (int index = 0; index < 1 << depth; index++)
-            for (int i = 0; i < numberOfVariables >> depth; i++)
-                for (int j = 0; j < (numberOfVariables >> depth); j++)
-                    gr[index * (numberOfVariables >> depth) + i] += 2 * quadraticCoef[index][i][j] * value[index * (numberOfVariables >> depth) + j];
-        calcBoundariesFineGradient(value, gr);
+            for (int i = 0, iIndex = index * (numberOfVariablesByLeaf); i < numberOfVariablesByLeaf; i++, iIndex++)
+                for (int j = 0, jIndex = index * (numberOfVariablesByLeaf); j < (numberOfVariablesByLeaf); j++, jIndex++)
+                    gr[iIndex] += 2 * quadraticCoef[index][i][j] * value[jIndex];
+        calcFlexibleBoundariesFineGradient(value, gr);
         return gr;
 
     }
@@ -164,11 +181,11 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         for (int i = 0; i < numberOfVariables; i++)
             fine += linearCoef[i] * value[i];
         for (int index = 0; index < 1 << depth; index++)
-            for (int i = 0; i < numberOfVariables >> depth; i++)
-                for (int j = 0; j < numberOfVariables >> depth; j++)
-                    fine += quadraticCoef[index][i][j] * value[index * (numberOfVariables >> depth) + i] * value[index * (numberOfVariables >> depth) + j];
+            for (int i = 0; i < numberOfVariablesByLeaf; i++)
+                for (int j = 0; j < numberOfVariablesByLeaf; j++)
+                    fine += quadraticCoef[index][i][j] * value[index * (numberOfVariablesByLeaf) + i] * value[index * (numberOfVariablesByLeaf) + j];
 
-        return fine + calcBoundariesFine(value);
+        return fine + calcSoftBoundariesFine(value);
     }
 
 
@@ -177,7 +194,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     double constCoef;
 
     void calculateCoef(DataSet ds) {
-        quadraticCoef = new double[1 << depth][numberOfVariables >> depth][numberOfVariables >> depth];
+        quadraticCoef = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
         linearCoef = new double[numberOfVariables];
 
         for (int i = 0; i < ds.power(); i++) {
@@ -251,13 +268,13 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 
     @Override
     public ContinousObliviousTree fit(DataSet ds, Oracle1 loss, Vec point) {
-        features = ((ObliviousTree) new GreedyObliviousRegressionTree(new Random(), ds, grid, depth).fit(ds, loss)).features();
+        features = ((ObliviousTree) got.fit(ds, loss)).features();
         calculateCoef(ds);
+        precalcFlexibleBoudariesCoefs();
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
 
-        ConvexFunction function = new Function(ds);
         ConvexOptimize optimize = new Nesterov1(new ArrayVec(numberOfVariables));
-        Vec x = optimize.optimize(function, 1e-1);
+        Vec x = optimize.optimize(new Function(ds), 0.5);
         double value[] = x.toArray();
 
 
@@ -265,7 +282,6 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
             for (int k = 0; k <= depth; k++)
                 for (int j = 0; j <= k; j++)
                     out[i][k * (k + 1) / 2 + j] = value[getIndex(i, k, j)];
-
 
         return new ContinousObliviousTree(features, out);
     }
