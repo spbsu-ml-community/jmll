@@ -15,8 +15,6 @@ import com.spbsu.ml.optimization.impl.Nesterov1;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -29,8 +27,10 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     private final int numberOfVariables;
     private List<BFGrid.BinaryFeature> features;
     private final GreedyObliviousRegressionTree got;
-    private final ExecutorService executor;
+    //private final ExecutorService executor;
     private final int numberOfVariablesByLeaf;
+    private double regulation = 20;
+    private boolean softBoundary = true;
 
     public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
         super(rng, ds, grid, 1. / 3, 0);
@@ -38,7 +38,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
         numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
         this.depth = depth;
-        executor = Executors.newFixedThreadPool(4);
+        //executor = Executors.newFixedThreadPool(4);
     }
 
     //Make 2 dimension index 1
@@ -104,9 +104,18 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         double cond = 0;
         for (int i = 0; i < indexes.length; i++)
             cond += value[indexes[i]] * coef[i];
-        double lconst = Math.exp(lambda * sqr(cond)) * lambda * 2 * (cond);
-        for (int i = 0; i < indexes.length; i++)
-            gr[indexes[i]] += lconst * coef[i];
+        if (softBoundary) {
+            double lconst = Math.exp(lambda * sqr(cond)) * lambda * 2 * (cond);
+            for (int i = 0; i < indexes.length; i++)
+                gr[indexes[i]] += lconst * coef[i];
+        } else {
+            double eps = 0.1;
+            for (int i = 0; i < indexes.length; i++) {
+                gr[indexes[i]] -= lambda * coef[i] / (cond + eps);
+                gr[indexes[i]] += lambda * coef[i] / (eps - cond);
+            }
+
+        }
     }
 
     ArrayList<double[]> gradCoef;
@@ -167,6 +176,8 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 
     double[] calculateFineGradient(double[] value) {
         double gr[] = linearCoef.clone();
+        for (int i = 0; i < numberOfVariables; i++)
+            gr[i] += 2 * regulation * value[i];
         for (int index = 0; index < 1 << depth; index++)
             for (int i = 0, iIndex = index * (numberOfVariablesByLeaf); i < numberOfVariablesByLeaf; i++, iIndex++)
                 for (int j = 0, jIndex = index * (numberOfVariablesByLeaf); j < (numberOfVariablesByLeaf); j++, jIndex++)
@@ -177,7 +188,10 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     }
 
     double calculateFine(final double[] value) {
+        System.exit(-1);
         double fine = constCoef;
+        for (int i = 0; i < numberOfVariables; i++)
+            fine += sqr(value[i]);
         for (int i = 0; i < numberOfVariables; i++)
             fine += linearCoef[i] * value[i];
         for (int index = 0; index < 1 << depth; index++)
