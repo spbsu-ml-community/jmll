@@ -30,7 +30,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     //private final ExecutorService executor;
     private final int numberOfVariablesByLeaf;
     private double regulation = 20;
-    private boolean softBoundary = true;
+    private boolean softBoundary = false;
 
     public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
         super(rng, ds, grid, 1. / 3, 0);
@@ -39,6 +39,16 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
         this.depth = depth;
         //executor = Executors.newFixedThreadPool(4);
+    }
+
+    public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth, int regul, int soft) {
+        super(rng, ds, grid, 1. / 3, 0);
+        got = new GreedyObliviousRegressionTree(rng, ds, grid, depth);
+        regulation = regul;
+        softBoundary = (soft != 0);
+        numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
+        numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
+        this.depth = depth;
     }
 
     //Make 2 dimension index 1
@@ -123,7 +133,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     ArrayList<Double> gradLambdas;
 
     public void calcFlexibleBoundariesFineGradient(double[] value, double gr[]) {
-        for (int i = 0; i < value.length; i++)
+        for (int i = 0; i < gradCoef.size(); i++)
             nameToBeAnnounced(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value, gr);
     }
 
