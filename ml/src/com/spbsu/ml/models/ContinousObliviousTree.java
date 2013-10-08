@@ -35,27 +35,39 @@ public class ContinousObliviousTree extends Model {
         int index = bin(_x);
         double sum = 0;
         double x[] = new double[features.length + 1];
-        for(int i = 0; i < features.length; i++)
+        for (int i = 0; i < features.length; i++)
             x[i + 1] = _x.get(features[i].findex);
         x[0] = 1;
-        for(int i = 0; i <= features.length;i++)
-            for(int j = 0;j <= i;j++)
+        for (int i = 0; i <= features.length; i++)
+            for (int j = 0; j <= i; j++)
                 sum += values[index][i * (i + 1) / 2 + j] * x[i] * x[j];
         return sum;
     }
 
+    String indexToTexLetteral(int i) {
+        if (i == 0)
+            return "1";
+        else
+            return "x_{" + features[i - 1].findex + "}";
+    }
+
     @Override
     public String toString() {
-        /*StringBuilder builder = new StringBuilder();
-        builder.append(values.length).append("/").append(basedOn);
-        builder.append(" ->(");
-        for (int i = 0; i < features.length; i++) {
-            builder.append(i > 0 ? ", " : "")
-                    .append(features[i]);
+        StringBuilder builder = new StringBuilder();
+        for (int mask = 0; mask < 1 << features.length; mask++) {
+
+            for (int i = 0; i < features.length; i++)
+                builder.append("$x_{" + (features[i].findex) + "}" + (((mask >> i) & 1) == 0 ? " < " : " > ") + features[i].condition + "$  ");
+
+            builder.append("\n$");
+            for (int i = 0; i <= features.length; i++)
+                for (int j = 0; j <= i; j++) {
+                    builder.append(values[mask][i * (i + 1) / 2 + j] + " * " + indexToTexLetteral(i) + " * " + indexToTexLetteral(j) + " + ");
+                }
+
+            builder.append("$\n");
         }
-        builder.append(")");
-        return builder.toString();*/
-        return "ContinousObliviousTree toString method didn't implemented yet";
+        return builder.toString();
     }
 
     public int bin(Vec x) {

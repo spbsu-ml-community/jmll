@@ -128,7 +128,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testCOTBoost() {
-        final GradientBoosting boosting = new GradientBoosting(new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6, 10, 1), 2000, 0.01, rng);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6, 10, 1), 2000, 0.005, rng);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -196,6 +196,7 @@ public class MethodsTests extends GridTest {
             scoreCalcerValidate.progress(tree);
 
             System.out.println();
+            System.out.println(tree.toString());
         }
     }
 
