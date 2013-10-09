@@ -128,7 +128,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testCOTBoost() {
-        final GradientBoosting boosting = new GradientBoosting(new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6, 10, 1), 2000, 0.005, rng);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6), 2000, 0.01, rng);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -187,8 +187,8 @@ public class MethodsTests extends GridTest {
     public void testContinousObliviousTree() {
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(/*" On validate data Set loss = "*/"\t", validate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
-        for (int depth = 1; depth <= 6; depth++) {
-            ContinousObliviousTree tree = new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth, 10, 0).fit(learn, new L2Loss(learn.target()));
+        for (int depth = 6; depth <= 6; depth++) {
+            ContinousObliviousTree tree = new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
             //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
             // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
             System.out.print("Oblivious Tree deapth = " + depth);
@@ -196,7 +196,7 @@ public class MethodsTests extends GridTest {
             scoreCalcerValidate.progress(tree);
 
             System.out.println();
-            System.out.println(tree.toString());
+            //System.out.println(tree.toString());
         }
     }
 
@@ -226,6 +226,8 @@ public class MethodsTests extends GridTest {
             current = new ArrayVec(ds.power());
         }
 
+        double min = 1e10;
+
         @Override
         public void progress(Model partial) {
             if (partial instanceof AdditiveModel) {
@@ -243,7 +245,10 @@ public class MethodsTests extends GridTest {
                     current.set(index++, partial.value(iter.x()));
                 }
             }
-            System.out.print(message + VecTools.distance(current, ds.target()) / Math.sqrt(ds.power()));
+            double curLoss = VecTools.distance(current, ds.target()) / Math.sqrt(ds.power());
+            System.out.print(message + curLoss);
+            min = Math.min(curLoss, min);
+            System.out.print(" minimum = " + min);
         }
     }
 
