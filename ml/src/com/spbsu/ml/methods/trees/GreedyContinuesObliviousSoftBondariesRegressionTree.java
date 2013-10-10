@@ -119,13 +119,14 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 */
                     int featureNum = _featureNum + 1;
                     //Equal at 0 point
+/*
                     {
                         gradLambdas.add(constFineLambda);
                         //Point on a plane in mass center of 2 leafs
                         double[] point = new double[depth + 1];
-                        for (int i = 0; i < depth; i++)
-                            if ((numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]) != 0)
-                                point[i + 1] = (coordinateSum[mask][i] + coordinateSum[neighbourMask][i]) / (double) (numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]);
+                        //for (int i = 0; i < depth; i++)
+                            //if ((numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]) != 0)
+                                //point[i + 1] = (coordinateSum[mask][i] + coordinateSum[neighbourMask][i]) / (double) (numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]);
                         point[0] = 1;
                         point[featureNum] = C;
 
@@ -142,6 +143,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
                         gradIndex.add(index);
                         gradCoef.add(coef);
                     }
+*/
                     //Quadratic boundary
                     for (int i = 1; i <= depth; i++)
                         for (int j = 1; j <= i; j++)

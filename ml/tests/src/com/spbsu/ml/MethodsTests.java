@@ -1,8 +1,10 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
@@ -128,7 +130,7 @@ public class MethodsTests extends GridTest {
     }
 
     public void testCOTBoost() {
-        final GradientBoosting boosting = new GradientBoosting(new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6), 2000, 0.01, rng);
+        final GradientBoosting boosting = new GradientBoosting(new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 7), 2000, 0.01, rng);
         final ProgressHandler counter = new ProgressHandler() {
             int index = 0;
 
@@ -187,7 +189,7 @@ public class MethodsTests extends GridTest {
     public void testContinousObliviousTree() {
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(/*" On validate data Set loss = "*/"\t", validate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
-        for (int depth = 6; depth <= 6; depth++) {
+        for (int depth = 1; depth <= 6; depth++) {
             ContinousObliviousTree tree = new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), depth).fit(learn, new L2Loss(learn.target()));
             //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
             // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
@@ -201,34 +203,78 @@ public class MethodsTests extends GridTest {
     }
 
     //Not safe can make diffrent size for learn and test
-    public DataSet cutNonContinuesFeatures(DataSet ds) {
+    public Mx cutNonContinuesFeatures(Mx ds, boolean continues[]) {
 
         int continuesFeatures = 0;
-        boolean continues[] = new boolean[ds.xdim()];
-        for (int j = 0; j < ds.xdim(); j++)
-            for (int i = 0; i < ds.power(); i++)
-                if (Math.abs(ds.data().get(i, j)) > 1e-7 && Math.abs(ds.data().get(i, j) - 1) > 1e-7) {
+        for (int j = 0; j < ds.columns(); j++)
+            for (int i = 0; i < ds.rows(); i++)
+                if ((Math.abs(ds.get(i, j)) > 1e-7) && (Math.abs(ds.get(i, j) - 1) > 1e-7)) {
                     continues[j] = true;
                     continuesFeatures++;
                     break;
                 }
-        double data[] = new double[ds.power() * continuesFeatures];
+        int reg[] = new int[ds.columns()];
         int cnt = 0;
-        for (int i = 0; i < learn.power(); i++)
-            for (int j = 0; j < learn.xdim(); j++)
+        for (int i = 0; i < ds.columns(); i++)
+            if (continues[i])
+                reg[i] = cnt++;
+        Mx data = new VecBasedMx(ds.rows(), continuesFeatures);
+        for (int i = 0; i < ds.rows(); i++)
+            for (int j = 0; j < ds.columns(); j++)
                 if (continues[j])
-                    data[cnt++] = ds.data().get(i, j);
-        return new DataSetImpl(data, ds.target().toArray());
+                    data.set(i, reg[j], ds.get(i, j));
+        return data;
+    }
+
+    public void doPSA(DataSet[] mas) {
+        boolean continues[] = new boolean[learn.xdim()];
+        Mx learnMx = cutNonContinuesFeatures(learn.data(), continues);
+        Mx validateMx = cutNonContinuesFeatures(validate.data(), continues);
+        //System.out.println(learnMx);
+        Mx mx = VecTools.multiply(VecTools.transpose(learnMx), learnMx);
+        Mx q = new VecBasedMx(mx.columns(), mx.rows());
+        Mx sigma = new VecBasedMx(mx.columns(), mx.rows());
+        VecTools.eigenDecomposition(mx, q, sigma);
+        //System.out.println(mx);
+        //System.out.println(q);
+        learnMx = VecTools.multiply(learnMx, q);
+        validateMx = VecTools.multiply(validateMx, q);
+        int reg[] = new int[learn.xdim()], cnt = 0;
+        for (int i = 0; i < learn.xdim(); i++)
+            if (!continues[i])
+                reg[i] = cnt++;
+        Mx learnOut = new VecBasedMx(learn.power(), learn.xdim());
+        Mx validateOut = new VecBasedMx(validate.power(), validate.xdim());
+        for (int i = 0; i < learn.power(); i++) {
+            for (int j = 0; j < learnMx.columns(); j++)
+                learnOut.set(i, j, learnMx.get(i, j));
+            for (int j = 0; j < learn.xdim(); j++)
+                if (!continues[j])
+                    learnOut.set(i, reg[j] + learnMx.columns(), learn.data().get(i, j));
+        }
+        for (int i = 0; i < validate.power(); i++) {
+            for (int j = 0; j < validateMx.columns(); j++)
+                validateOut.set(i, j, validateMx.get(i, j));
+            for (int j = 0; j < validate.xdim(); j++)
+                if (!continues[j])
+                    validateOut.set(i, reg[j] + validateMx.columns(), validate.data().get(i, j));
+        }
+        mas[0] = new DataSetImpl(learnOut, learn.target());
+        mas[1] = new DataSetImpl(validateOut, validate.target());
+
 
     }
 
     //Bad Idea
-    public void testFeatureDeletingContinousObliviousTree() {
-        DataSet myLearn = cutNonContinuesFeatures(learn);
-        DataSet myValidate = cutNonContinuesFeatures(validate);
+    public void testPSAContinousObliviousTree() {
+        DataSet mas[] = new DataSet[2];
+        doPSA(mas);
+        DataSet myValidate = mas[1], myLearn = mas[0];
+        System.out.println(myLearn.data().row(0));
+        System.out.println(learn.data().row(0));
         ScoreCalcer scoreCalcerValidate = new ScoreCalcer(/*" On validate data Set loss = "*/"\t", myValidate);
         ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", myLearn);
-
+        //System.out.println(learn.data());
         for (int depth = 1; depth <= 6; depth++) {
             ContinousObliviousTree tree = new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), depth).fit(myLearn, new L2Loss(myLearn.target()));
             //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
@@ -240,6 +286,33 @@ public class MethodsTests extends GridTest {
             System.out.println();
             //System.out.println(tree.toString());
         }
+    }
+
+    public void testPSACOTboost() {
+        DataSet mas[] = new DataSet[2];
+        doPSA(mas);
+        DataSet myValidate = mas[1], myLearn = mas[0];
+
+        final GradientBoosting boosting = new GradientBoosting(new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6), 2000, 0.05, rng);
+        final ProgressHandler counter = new ProgressHandler() {
+            int index = 0;
+
+            @Override
+            public void progress(Model partial) {
+                System.out.print("\n" + index++);
+            }
+        };
+        final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", myLearn);
+        final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", myValidate);
+        final ProgressHandler modelPrinter = new ModelPrinter();
+        final ProgressHandler qualityCalcer = new QualityCalcer();
+        boosting.addProgressHandler(counter);
+        boosting.addProgressHandler(learnListener);
+        boosting.addProgressHandler(validateListener);
+        //boosting.addProgressHandler(qualityCalcer);
+//    boosting.addProgressHandler(modelPrinter);
+        boosting.fit(learn, new L2Loss(myLearn.target()));
+
     }
 
     public void testDebugContinousObliviousTree() {
