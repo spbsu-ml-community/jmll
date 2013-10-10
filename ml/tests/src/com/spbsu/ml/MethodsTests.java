@@ -200,6 +200,48 @@ public class MethodsTests extends GridTest {
         }
     }
 
+    //Not safe can make diffrent size for learn and test
+    public DataSet cutNonContinuesFeatures(DataSet ds) {
+
+        int continuesFeatures = 0;
+        boolean continues[] = new boolean[ds.xdim()];
+        for (int j = 0; j < ds.xdim(); j++)
+            for (int i = 0; i < ds.power(); i++)
+                if (Math.abs(ds.data().get(i, j)) > 1e-7 && Math.abs(ds.data().get(i, j) - 1) > 1e-7) {
+                    continues[j] = true;
+                    continuesFeatures++;
+                    break;
+                }
+        double data[] = new double[ds.power() * continuesFeatures];
+        int cnt = 0;
+        for (int i = 0; i < learn.power(); i++)
+            for (int j = 0; j < learn.xdim(); j++)
+                if (continues[j])
+                    data[cnt++] = ds.data().get(i, j);
+        return new DataSetImpl(data, ds.target().toArray());
+
+    }
+
+    //Bad Idea
+    public void testFeatureDeletingContinousObliviousTree() {
+        DataSet myLearn = cutNonContinuesFeatures(learn);
+        DataSet myValidate = cutNonContinuesFeatures(validate);
+        ScoreCalcer scoreCalcerValidate = new ScoreCalcer(/*" On validate data Set loss = "*/"\t", myValidate);
+        ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", myLearn);
+
+        for (int depth = 1; depth <= 6; depth++) {
+            ContinousObliviousTree tree = new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), depth).fit(myLearn, new L2Loss(myLearn.target()));
+            //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
+            // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
+            System.out.print("Oblivious Tree deapth = " + depth);
+            scoreCalcerLearn.progress(tree);
+            scoreCalcerValidate.progress(tree);
+
+            System.out.println();
+            //System.out.println(tree.toString());
+        }
+    }
+
     public void testDebugContinousObliviousTree() {
         //ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
         double[] data = {0, 1, 2};

@@ -29,9 +29,9 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     private final GreedyObliviousRegressionTree got;
     //private final ExecutorService executor;
     private final int numberOfVariablesByLeaf;
-    private double regulation = 50;
+    private double regulation = 10;
     private boolean softBoundary = true;
-    private final double linearFineLambda = 5, constFineLambda = 5, quadraticFineLambda = 6;
+    private final double linearFineLambda = 2, constFineLambda = 2, quadraticFineLambda = 3;
 
     public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
         super(rng, ds, grid, 1. / 3, 0);
