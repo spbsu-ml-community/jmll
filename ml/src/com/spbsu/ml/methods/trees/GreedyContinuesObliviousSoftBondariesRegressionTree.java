@@ -29,9 +29,10 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     private final GreedyObliviousRegressionTree got;
     //private final ExecutorService executor;
     private final int numberOfVariablesByLeaf;
-    private double regulation = 10;
-    private boolean softBoundary = true;
-    private final double linearFineLambda = 2, constFineLambda = 2, quadraticFineLambda = 3;
+    private final double regulationCoefficient;
+    private final boolean softBoundary;
+    private final double linearFineLambda, constFineLambda, quadraticFineLambda;
+    private final double lipshicParametr;
 
     public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
         super(rng, ds, grid, 1. / 3, 0);
@@ -39,14 +40,24 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
         numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
         this.depth = depth;
+        regulationCoefficient = 1;
+        softBoundary = true;
+        lipshicParametr = 1e5;
+        linearFineLambda = 0.1;
+        constFineLambda = quadraticFineLambda = 1;
         //executor = Executors.newFixedThreadPool(4);
     }
 
-    public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth, int regul, int soft) {
+    public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth, double regulation,
+                                                               boolean softBoundary, double constFineLambda, double linearFineLambda, double quadraticFineLambda, double lipshicParametr) {
         super(rng, ds, grid, 1. / 3, 0);
+        this.regulationCoefficient = regulation;
+        this.softBoundary = softBoundary;
+        this.linearFineLambda = linearFineLambda;
+        this.constFineLambda = constFineLambda;
+        this.quadraticFineLambda = quadraticFineLambda;
+        this.lipshicParametr = lipshicParametr;
         got = new GreedyObliviousRegressionTree(rng, ds, grid, depth);
-        regulation = regul;
-        softBoundary = (soft != 0);
         numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
         numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
         this.depth = depth;
@@ -63,19 +74,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         return mask * (depth + 1) * (depth + 2) / 2 + i * (i + 1) / 2 + j;
     }
 
-    public double transformConditionToFine(double lambda, int[] indexes, double[] coef, double[] value) {
-        double cond = 0;
-        for (int i = 0; i < indexes.length; i++)
-            cond += value[indexes[i]] * coef[i];
-        if (softBoundary) {
-            return Math.exp(lambda * sqr(cond)) - 1;
-        } else {
-            double eps = 0.1;
-            return lambda * (Math.log(cond + eps) + Math.log(eps - cond));
-
-        }
-    }
-
+    //Calculating fine for condition \sum\limits_{i = 0}^{i == indexes.length - 1} value_{indexes_{i}} * coef_{i} = 0
     public void transformConditionToFineGradient(double lambda, int[] indexes, double[] coef, double[] value, double gr[]) {
         double cond = 0;
         for (int i = 0; i < indexes.length; i++)
@@ -94,6 +93,19 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         }
     }
 
+    public double transformConditionToFine(double lambda, int[] indexes, double[] coef, double[] value) {
+        double cond = 0;
+        for (int i = 0; i < indexes.length; i++)
+            cond += value[indexes[i]] * coef[i];
+        if (softBoundary) {
+            return Math.exp(lambda * sqr(cond)) - 1;
+        } else {
+            double eps = 0.1;
+            return lambda * (Math.log(cond + eps) + Math.log(eps - cond));
+
+        }
+    }
+
     ArrayList<double[]> gradCoef;
     ArrayList<int[]> gradIndex;
     ArrayList<Double> gradLambdas;
@@ -103,7 +115,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
             transformConditionToFineGradient(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value, gr);
     }
 
-    public void precalcFlexibleBoudariesCoefs() {
+    public void precalcContinousConditions() {
         gradCoef = new ArrayList<double[]>();
         gradIndex = new ArrayList<int[]>();
         gradLambdas = new ArrayList<Double>();
@@ -119,18 +131,18 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 */
                     int featureNum = _featureNum + 1;
                     //Equal at 0 point
-/*
                     {
                         gradLambdas.add(constFineLambda);
-                        //Point on a plane in mass center of 2 leafs
+                        //Point on a plane, but in the mass center of 2 leafs
                         double[] point = new double[depth + 1];
-                        //for (int i = 0; i < depth; i++)
-                            //if ((numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]) != 0)
-                                //point[i + 1] = (coordinateSum[mask][i] + coordinateSum[neighbourMask][i]) / (double) (numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]);
+                        for (int i = 0; i < depth; i++)
+                            if ((numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]) != 0)
+                                point[i + 1] = (coordinateSum[mask][i] + coordinateSum[neighbourMask][i]) / (double) (numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]);
                         point[0] = 1;
                         point[featureNum] = C;
 
                         int cnt = 0;
+                        //Condition for equals function in a "point"
                         int index[] = new int[2 * numberOfVariablesByLeaf];
                         double coef[] = new double[2 * numberOfVariablesByLeaf];
                         for (int i = 0; i <= depth; i++)
@@ -143,8 +155,8 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
                         gradIndex.add(index);
                         gradCoef.add(coef);
                     }
-*/
                     //Quadratic boundary
+                    //All monoms must have equal coefficient in both leafs
                     for (int i = 1; i <= depth; i++)
                         for (int j = 1; j <= i; j++)
                             if ((i != featureNum) && (j != featureNum)) {
@@ -175,50 +187,52 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     }
 
     double[] calculateFineGradient(double[] value) {
-        double gr[] = linearCoef.clone();
+        double gr[] = linearMissCoefficient.clone();
+
         for (int i = 0; i < numberOfVariables; i++)
-            gr[i] += 2 * regulation * value[i];
+            gr[i] += 2 * regulationCoefficient * value[i];
+
         for (int index = 0; index < 1 << depth; index++)
             for (int i = 0, iIndex = index * (numberOfVariablesByLeaf); i < numberOfVariablesByLeaf; i++, iIndex++)
                 for (int j = 0, jIndex = index * (numberOfVariablesByLeaf); j < (numberOfVariablesByLeaf); j++, jIndex++)
-                    gr[iIndex] += 2 * quadraticCoef[index][i][j] * value[jIndex];
+                    gr[iIndex] += 2 * quadraticMissCoefficient[index][i][j] * value[jIndex];
         calcFlexibleBoundariesFineGradient(value, gr);
         return gr;
 
     }
 
+    //Not usefull debug code
     double calculateFine(final double[] value) {
         //System.exit(-1);
-        double fine = constCoef, regul = 0, bond = 0;
+        double fine = constMiss, regululation = 0, bond = 0;
         for (int i = 0; i < numberOfVariables; i++)
-            regul += sqr(value[i]);
+            regululation += regulationCoefficient * sqr(value[i]);
         for (int i = 0; i < numberOfVariables; i++)
-            fine += linearCoef[i] * value[i];
+            fine += linearMissCoefficient[i] * value[i];
         for (int index = 0; index < 1 << depth; index++)
             for (int i = 0; i < numberOfVariablesByLeaf; i++)
                 for (int j = 0; j < numberOfVariablesByLeaf; j++)
-                    fine += quadraticCoef[index][i][j] * value[index * (numberOfVariablesByLeaf) + i] * value[index * (numberOfVariablesByLeaf) + j];
+                    fine += quadraticMissCoefficient[index][i][j] * value[index * (numberOfVariablesByLeaf) + i] * value[index * (numberOfVariablesByLeaf) + j];
         for (int i = 0; i < gradCoef.size(); i++)
             bond += transformConditionToFine(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value);
 
-/*
         System.out.println("fine =" + fine);
-        System.out.println("regul =" + regul);
+        System.out.println("regul =" + regululation);
         System.out.println("bond = " + bond);
-*/
-        return fine + regul + bond;
+        return fine + regululation + bond;
     }
 
 
-    double quadraticCoef[][][];
-    double linearCoef[];
-    double constCoef;
-    double coordinateSum[][];//To calculate center
+    double quadraticMissCoefficient[][][];
+    double linearMissCoefficient[];
+    double constMiss;
+    double coordinateSum[][];
+
     int numberOfPointInLeaf[];
 
-    void calculateCoef(DataSet ds) {
-        quadraticCoef = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
-        linearCoef = new double[numberOfVariables];
+    void precalculateMissCoefficients(DataSet ds) {
+        quadraticMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
+        linearMissCoefficient = new double[numberOfVariables];
         coordinateSum = new double[1 << depth][depth];
         numberOfPointInLeaf = new int[1 << depth];
         for (int i = 0; i < ds.power(); i++) {
@@ -239,24 +253,22 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
             double f = ds.target().get(i);
             for (int x = 0; x <= depth; x++)
                 for (int y = 0; y <= x; y++) {
-                    linearCoef[getIndex(index, x, y)] -= 2 * f * data[x] * data[y];
+                    linearMissCoefficient[getIndex(index, x, y)] -= 2 * f * data[x] * data[y];
                 }
             for (int x = 0; x <= depth; x++)
                 for (int y = 0; y <= x; y++) {
                     for (int x1 = 0; x1 <= depth; x1++)
                         for (int y1 = 0; y1 <= x1; y1++) {
-                            quadraticCoef[index][getIndex(0, x, y)][getIndex(0, x1, y1)] += data[x] * data[y] * data[x1] * data[y1];
+                            quadraticMissCoefficient[index][getIndex(0, x, y)][getIndex(0, x1, y1)] += data[x] * data[y] * data[x1] * data[y1];
                         }
                 }
-            constCoef += sqr(f);
+            constMiss += sqr(f);
         }
 
 
     }
 
     public class Function implements ConvexFunction {
-        DataSet ds;
-
         @Override
         public int dim() {
             return numberOfVariables;
@@ -264,17 +276,17 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 
         @Override
         public double getGlobalConvexParam() {
-            return 1;  //To change body of implemented methods use File | Settings | File Templates.
+            return 1;
         }
 
         @Override
         public double getLocalConvexParam(Vec x) {
-            return 1;  //To change body of implemented methods use File | Settings | File Templates.
+            return 1;
         }
 
         @Override
         public double getGradLipParam() {
-            return 1e5;
+            return lipshicParametr;
         }
 
         @Override
@@ -286,10 +298,6 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         public double value(Vec x) {
             return calculateFine(x.toArray());
         }
-
-        Function(DataSet ds) {
-            this.ds = ds;
-        }
     }
 
     @Override
@@ -300,14 +308,15 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
             System.exit(-1);
         }
 
-        calculateCoef(ds);
-        precalcFlexibleBoudariesCoefs();
+        precalculateMissCoefficients(ds);
+        precalcContinousConditions();
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
-
+        //for(int i =0 ;i < linearMissCoefficient.length;i++)
+        //    System.out.println(linearMissCoefficient[i]);
         ConvexOptimize optimize = new Nesterov1(new ArrayVec(numberOfVariables));
-        Vec x = optimize.optimize(new Function(ds), 0.5);
+        Vec x = optimize.optimize(new Function(), 0.5);
         double value[] = x.toArray();
-        calculateFine(value);
+        //calculateFine(value);
 
         for (int i = 0; i < 1 << depth; i++)
             for (int k = 0; k <= depth; k++)
