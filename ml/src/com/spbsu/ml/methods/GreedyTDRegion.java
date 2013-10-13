@@ -1,7 +1,7 @@
 package com.spbsu.ml.methods;
 
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
@@ -47,82 +47,99 @@ public class GreedyTDRegion implements MLMethodOrder1 {
     return fit(learn, loss, new ArrayVec(learn.power()));
   }
 
-  public Model fit(DataSet ds, Oracle1 loss, Vec start) {
+  public Model fit(DataSet learn, Oracle1 loss, Vec start) {
     assert loss.getClass() == L2Loss.class;
-    DataSet learn = ds;
-    final List<Region.BinaryCond> conditions = new ArrayList<Region.BinaryCond>(grid.size());
-    final Vec target = ds instanceof Bootstrap ? ((Bootstrap) ds).original().target() : learn.target();
-    int[] indices = ds instanceof Bootstrap ? ((Bootstrap) ds).order() : ArrayTools.sequence(0, ds.power());
+//    learn = learn instanceof Bootstrap ? ((Bootstrap) learn).original() : learn;
+    final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(grid.size());
+    final boolean[] conditionMasks = new boolean[grid.size()];
+    final Mx data = learn instanceof Bootstrap ? ((Bootstrap) learn).original().data() : learn.data();
+    final Vec target = learn instanceof Bootstrap ? ((Bootstrap) learn).original().target() : learn.target();
+    int[] indices = learn instanceof Bootstrap ? ((Bootstrap) learn).order() : ArrayTools.sequence(0, learn.power());
     double[] scores = new double[grid.size()];
     final boolean[] masks = new boolean[grid.size()];
-    double total = VecTools.sum(learn.target());
+    TIntArrayList inducedIndices = new TIntArrayList(indices.length);
+
+    double total = 0; //VecTools.sum(learn.target());
+    double total2 = 0; //VecTools.sum2(learn.target());
+    for (int i = 0; i < indices.length; i++) {
+      final double y = target.get(indices[i]);
+      total += y;
+      total2 += y * y;
+    }
     double totalWeight = indices.length;
     double currentScore = Double.MAX_VALUE;
 
     while(true) {
-      final Histogram histogram = bds.buildHistogram(learn.target(), start, indices);
+      final Histogram histogram = bds.buildHistogram(target, start, indices);
       final int complexity = conditions.size() + 1;
       final double ftotal = total;
+      final double ftotal2 = total2;
       final double ftotalWeight = totalWeight;
       Arrays.fill(scores, 0.);
 
       histogram.score(scores, new Histogram.Judge() {
-        int bf = 0;
         @Override
-        public double score(double sum, double sum2, double weight) {
-          double rightScore = GreedyTDRegion.this.score(weight, sum, complexity);
-          double leftScore = GreedyTDRegion.this.score(ftotalWeight - weight, ftotal - sum, complexity);
-          masks[bf] = rightScore < leftScore;
-          return Math.min(rightScore, leftScore);
+        public double score(double sum, double sum2, double weight, int bf) {
+          double lScore = GreedyTDRegion.this.score(weight, sum, sum2, complexity);
+          double rScore = GreedyTDRegion.this.score(ftotalWeight - weight, ftotal - sum, ftotal2 - sum2, complexity);
+          masks[bf] = lScore > rScore;
+          return Math.min(lScore, rScore);
         }
       });
-      int bestBF = ArrayTools.min(scores);
-      if (scores[bestBF] > currentScore)
+      final int bestBFIndex = ArrayTools.min(scores);
+      BFGrid.BinaryFeature bestBF = grid.bf(bestBFIndex);
+      boolean isRight = masks[bestBFIndex];
+      if (scores[bestBFIndex] >= currentScore)
         break;
-      final Region.BinaryCond bestSplit = new Region.BinaryCond();
-      bestSplit.bf = grid.bf(bestBF);
-      bestSplit.mask = masks[bestBF];
 
-      TIntArrayList inducedIndices = new TIntArrayList(indices.length);
-      byte[] bins = bds.bins(bestSplit.bf.findex);
+      byte[] bins = bds.bins(bestBF.findex);
       double totalReduce = 0;
+      double total2Reduce = 0;
+      inducedIndices.clear();
+
       for (int t = 0; t < indices.length; t++) {
         final int index = indices[t];
-        if ((bins[index] > bestSplit.bf.binNo) == bestSplit.mask)
+        if (!((bins[index] > bestBF.binNo) ^ isRight)) {
           inducedIndices.add(index);
-        else
-          totalReduce += target.get(index);
+        }
+        else {
+          final double v = target.get(index);
+          totalReduce += v;
+          total2Reduce += v * v;
+        }
       }
       if (inducedIndices.isEmpty() || inducedIndices.size() == indices.length)
         break;
       total -= totalReduce;
-      conditions.add(bestSplit);
+      total2 -= total2Reduce;
+      conditionMasks[conditions.size()] = isRight;
+      conditions.add(bestBF);
       {
-        boolean[] mask = new boolean[learn.power()];
+        boolean[] tmpMask = new boolean[learn.power()];
         for (int t = 0; t < inducedIndices.size(); t++) {
-          mask[inducedIndices.get(t)] = true;
+          tmpMask[inducedIndices.get(t)] = true;
         }
-        final Region region = new Region(conditions, total / indices.length, indices.length, currentScore);
+        final Region region = new Region(conditions, conditionMasks, total / indices.length, indices.length, currentScore);
         for (int t = 0; t < indices.length; t++) {
           final int index = indices[t];
-          final Vec point = learn.data().row(index);
-          if (region.contains(point) != mask[index])
-            System.out.println();
+          final Vec point = data.row(index);
+          if (region.contains(point) ^ tmpMask[index])
+            System.out.println(region.contains(point));
         }
       }
 
       indices = inducedIndices.toNativeArray();
       totalWeight = indices.length;
-      currentScore = scores[bestBF];
+      currentScore = scores[bestBFIndex];
     }
 
-    return new Region(conditions, total/indices.length, indices.length, currentScore);
+    return new Region(conditions, conditionMasks, total/indices.length, indices.length, currentScore);
   }
 
-  public double score(double count, double sum, int complexity) {
-    if (count <= 0)
-      return 0;
-    final double err = -sum * sum / count;
-    return err * (1. - alpha - alpha * Math.log(2)/ Math.log(count + 1.)) * (1 - betta - betta * complexity/(1. + complexity));
+  public double score(double count, double sum, double sum2, int complexity) {
+    if (count <= 2)
+      return Double.POSITIVE_INFINITY;
+    final double err = sum2 - sum * sum / count;
+    return (err * count * count / (count - 1) / (count - 1) - sum2) * Math.pow(0.9, complexity);
   }
 }

@@ -61,7 +61,7 @@ public class GreedyObliviousRegressionTree extends GreedyTDRegion {
         final double totalWeight = weights[i];
         h.score(scores, new Histogram.Judge() {
           @Override
-          public double score(double sum, double sum2, double weight) {
+          public double score(double sum, double sum2, double weight, int bf) {
             double leftScore = scoreInner(sum, sum2, weight);
             double rightScore = scoreInner((total - sum), total2 - sum2, totalWeight - weight);
             return rightScore + leftScore;

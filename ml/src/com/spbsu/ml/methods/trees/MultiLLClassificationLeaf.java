@@ -145,22 +145,27 @@ public class MultiLLClassificationLeaf implements BFLeaf {
       denom += folds[c].d2;
     }
     final LLCounter combined = new LLCounter();
+    double maxLL = 0;
     for (int c = 0; c < classesCount; c++) {
       combined.add(folds[c]);
+      maxLL = max(folds[c].ll, maxLL);
     }
+    int bad = 0;
     for (int c = 0; c < classesCount; c++) {
 //      if (abs(folds[c].d1 * folds[c].d1/denom) > 10) {
 //        confidence[c] = true;
 //      }
       mask[c] = folds[c].d1 > 0;
-      if (!mask[c])
+      if (!mask[c]) {
+        bad += folds[c].good;
         combined.invert(folds[c], -1);
+      }
     }
     if (combined.good < 2) {
 //      System.out.println();
       return combined;
     }
-    combined.bad /= combined.good/2;
+    combined.bad = bad;
     combined.good -= combined.bad;
     double bestScore = combined.score();
     int best;
@@ -170,7 +175,7 @@ public class MultiLLClassificationLeaf implements BFLeaf {
         if (confidence[c]) // already in positive examples or definite negative
           continue;
         combined.invert(folds[c], mask[c] ? -1. : 1.);
-        final double score = combined.score();
+        final double score = combined.score();//maxLL);
         if (bestScore < score) {
           bestScore = score;
           best = c;

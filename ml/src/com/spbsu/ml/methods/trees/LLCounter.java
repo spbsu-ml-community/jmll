@@ -4,7 +4,7 @@ import com.spbsu.commons.math.MathTools;
 
 import static java.lang.Math.*;
 
-/** Key idea is to find \min_s \sum_i log \frac{1}{1 + e^{-(x_i + s})y_i}, where x_i -- current score, y_i \in \{-1,1\} -- category
+/** Key idea is to find \max_s \sum_i log \frac{1}{1 + e^{-(x_i + s})y_i}, where x_i -- current score, y_i \in \{-1,1\} -- category
  * for this we need to get solution for \sum_i \frac{y_i}{1 + e^{y_i(x_i + s}}. This equation is difficult to solve in closed form so
  * we use Taylor series approximation. For this we need to make substitution s = log(1-v) - log(1+v) so that Maclaurin series in terms of
  * v were limited.
@@ -15,6 +15,7 @@ public class LLCounter {
   public volatile int good = 0;
   public volatile int bad = 0;
   public volatile double ll;
+  public volatile double lli;
   public volatile double d1;
   public volatile double d2;
   public volatile double d3;
@@ -22,7 +23,9 @@ public class LLCounter {
 
   public double alpha() {
     double y = optimal();
-    return log((1. - y) / (1. + y));
+//    final double n = min(good, bad);
+//    final double m = max(good, bad);
+    return -log((1. - y) / (1. + y));// * (1 - log(2.)/log(n + 2.));
   }
   public double optimal() {
     if (good == 0 || bad == 0)
@@ -33,9 +36,9 @@ public class LLCounter {
     double y = 0.;
     double bestLL = 0;
     for (int i = 0; i < cnt; i++) {
-      if (abs(x[i]) >= 0.5) // skip too optimistic solutions
+      if (abs(x[i]) >= 0.8) // skip too optimistic solutions
         continue;
-      final double score = score(x[i]);
+      final double score = scoreInner(x[i]);
       if (score > bestLL) {
         y = x[i];
         bestLL = score;
@@ -45,19 +48,27 @@ public class LLCounter {
     return y;
   }
 
-  private double score(double x) {
+  private double scoreInner(double x) {
     if (good == 0 || bad == 0)
       return 0;
     return d1 * x + d2 * x * x / 2 + d3 * x * x * x / 6 + d4 * x * x * x * x / 24;
   }
 
   public double fastScore() {
-    return -d1 * d1 / 2 / d2;
+    return ll - d1 * d1 / 2 / d2;
   }
 
   public double score() {
-    final double R = log(size() + 2.);
-    return size() <= 1 ? 0 : score(optimal()) * R;
+    final double n = min(good, bad);
+    final double m = max(good, bad);
+    return score(0);//size() == 0 ? 0 : ll/size());//max(ll, lli)); // both masks in case of binary classification should be equally probable
+  }
+
+  public double score(double R ) {
+    final double optimal = optimal();
+    final double l = log((1. - optimal) / (1. + optimal));
+    R += -l*l/2. - 0.5 * log(2. * PI); // log N(0,1)
+    return scoreInner(optimal) + R; // in case of classification log prior must be _appended_ to ll
   }
 
   public void found(double current, double target, double weight) {
@@ -68,6 +79,7 @@ public class LLCounter {
     final double d3 = b * d2 * (a * a + 3) / (1 + a);
     final double d4 = 12 * d2 * (1 + a * a * a) / (1 + a) / (1 + a);
     ll += - weight * log(1 + a);
+    lli += - weight * log(1 + exp(current*b));
     this.d1 += d1;
     this.d2 += d2;
     this.d3 += d3;
@@ -80,6 +92,7 @@ public class LLCounter {
 
   public void add(LLCounter counter) {
     ll += counter.ll;
+    lli += counter.lli;
     d1 += counter.d1;
     d2 += counter.d2;
     d3 += counter.d3;
@@ -89,6 +102,7 @@ public class LLCounter {
   }
 
   public void sub(LLCounter counter) {
+    lli -= counter.lli;
     ll -= counter.ll;
     d1 -= counter.d1;
     d2 -= counter.d2;

@@ -38,7 +38,7 @@ public class DataToolsTest extends GridTest {
     histogram.score(scores, new Histogram.Judge() {
       int index = 0;
       @Override
-      public double score(double sum, double sum2, double weight) {
+      public double score(double sum, double sum2, double weight, int bf) {
         weights[index] = weight;
         sums[index] = sum;
         index++;

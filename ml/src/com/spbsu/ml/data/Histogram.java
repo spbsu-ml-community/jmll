@@ -26,7 +26,7 @@ public class Histogram implements Aggregator {
   }
 
   public interface Judge {
-    double score(double sum, double sum2, double weight);
+    double score(double sum, double sum2, double weight, int bf);
   }
 
   public void score(double[] scores, Judge judge) {
@@ -40,7 +40,7 @@ public class Histogram implements Aggregator {
         sum += sums[bfStart + bin];
         sum2 += sums2[bfStart + bin];
         weight += weights[bfStart + bin];
-        scores[row.bfStart + bin] += judge.score(sum, sum2, weight);
+        scores[row.bfStart + bin] += judge.score(sum, sum2, weight, row.bfStart + bin);
       }
     }
   }

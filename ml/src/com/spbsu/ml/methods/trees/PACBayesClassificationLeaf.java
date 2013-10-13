@@ -11,35 +11,35 @@ import com.spbsu.ml.data.impl.Bootstrap;
 * Date: 10.09.13
 * Time: 12:14
 */
-public class LLClassificationLeaf implements BFLeaf {
+public class PACBayesClassificationLeaf implements BFLeaf {
   private final Vec point;
   private final Vec target;
   private final Vec weight;
   private final BinarizedDataSet ds;
-  private int[] indices;
-  protected final LLCounter[] counters;
-  LLCounter total = new LLCounter();
+  int[] indices;
+  protected final MErrorsCounter[] counters;
+  MErrorsCounter total = new MErrorsCounter();
   private final BFGrid.BFRow[] rows;
 
-  public LLClassificationLeaf(BinarizedDataSet ds, Vec point, Vec target, Vec weight) {
+  public PACBayesClassificationLeaf(BinarizedDataSet ds, Vec point, Vec target, Vec weight) {
     this(ds, point, target, weight, ds.original() instanceof Bootstrap ? ((Bootstrap) ds.original()).order() : ArrayTools.sequence(0, ds.original().power()));
   }
 
-  public LLClassificationLeaf(BinarizedDataSet ds, int[] points, LLCounter right, LLClassificationLeaf bro) {
+  public PACBayesClassificationLeaf(BinarizedDataSet ds, int[] points, MErrorsCounter right, PACBayesClassificationLeaf bro) {
     this.ds = ds;
     point = bro.point;
     target = bro.target;
     weight = bro.weight;
     this.indices = points;
     total = right;
-    counters = new LLCounter[ds.grid().size() + ds.grid().rows()];
+    counters = new MErrorsCounter[ds.grid().size() + ds.grid().rows()];
     for (int i = 0; i < counters.length; i++) {
-      counters[i] = new LLCounter();
+      counters[i] = new MErrorsCounter();
     }
     rows = ds.grid().allRows();
   }
 
-  public LLClassificationLeaf(BinarizedDataSet ds, Vec point, Vec target, Vec weight, int[] pointIndices) {
+  public PACBayesClassificationLeaf(BinarizedDataSet ds, Vec point, Vec target, Vec weight, int[] pointIndices) {
     this.ds = ds;
     this.point = point;
     this.indices = pointIndices;
@@ -49,9 +49,9 @@ public class LLClassificationLeaf implements BFLeaf {
       final int index = indices[i];
       total.found(this.point.get(index), target.get(index), weight.get(index));
     }
-    counters = new LLCounter[ds.grid().size() + ds.grid().rows()];
+    counters = new MErrorsCounter[ds.grid().size() + ds.grid().rows()];
     for (int i = 0; i < counters.length; i++) {
-      counters[i] = new LLCounter();
+      counters[i] = new MErrorsCounter();
     }
     rows = ds.grid().allRows();
     ds.aggregate(this, target, this.point, this.indices);
@@ -62,7 +62,7 @@ public class LLClassificationLeaf implements BFLeaf {
     counter(feature, bin).found(current, target, weight);
   }
 
-  public LLCounter counter(int feature, byte bin) {
+  public MErrorsCounter counter(int feature, byte bin) {
     final BFGrid.BFRow row = rows[feature];
     return counters[1 + feature + (bin > 0 ? row.bf(bin - 1).bfIndex : row.bfStart - 1)];
   }
@@ -71,17 +71,17 @@ public class LLClassificationLeaf implements BFLeaf {
   public int score(final double[] likelihoods) {
     for (int f = 0; f < rows.length; f++) {
       final BFGrid.BFRow row = rows[f];
-      LLCounter left = new LLCounter();
-      LLCounter right = new LLCounter();
+      MErrorsCounter left = new MErrorsCounter();
+      MErrorsCounter right = new MErrorsCounter();
       right.add(total);
 
       for (int b = 0; b < row.size(); b++) {
         left.add(counter(f, (byte) b));
         right.sub(counter(f, (byte) b));
-        likelihoods[row.bfStart + b] = left.score() + right.score();
+        likelihoods[row.bfStart + b] += left.score() + right.score();
       }
     }
-    return ArrayTools.max(likelihoods);
+    return ArrayTools.min(likelihoods);
   }
 
   @Override
@@ -91,9 +91,9 @@ public class LLClassificationLeaf implements BFLeaf {
 
   /** Splits this leaf into two right side is returned */
   @Override
-  public LLClassificationLeaf split(BFGrid.BinaryFeature feature) {
-    LLCounter left = new LLCounter();
-    LLCounter right = new LLCounter();
+  public PACBayesClassificationLeaf split(BFGrid.BinaryFeature feature) {
+    MErrorsCounter left = new MErrorsCounter();
+    MErrorsCounter right = new MErrorsCounter();
     right.add(total);
 
     for (int b = 0; b <= feature.binNo; b++) {
@@ -103,7 +103,7 @@ public class LLClassificationLeaf implements BFLeaf {
 
     final int[] leftPoints = new int[left.size()];
     final int[] rightPoints = new int[right.size()];
-    final LLClassificationLeaf brother = new LLClassificationLeaf(ds, rightPoints, right, this);
+    final PACBayesClassificationLeaf brother = new PACBayesClassificationLeaf(ds, rightPoints, right, this);
 
     {
       int leftIndex = 0;

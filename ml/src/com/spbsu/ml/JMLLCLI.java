@@ -13,10 +13,7 @@ import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.*;
 import com.spbsu.ml.methods.*;
-import com.spbsu.ml.methods.trees.GreedyContinuesObliviousSoftBondariesRegressionTree;
-import com.spbsu.ml.methods.trees.GreedyObliviousClassificationTree;
-import com.spbsu.ml.methods.trees.GreedyObliviousMultiClassificationTree;
-import com.spbsu.ml.methods.trees.GreedyObliviousRegressionTree;
+import com.spbsu.ml.methods.trees.*;
 import com.spbsu.ml.models.AdditiveModel;
 import com.spbsu.ml.models.AdditiveMultiClassModel;
 import gnu.trove.TIntObjectHashMap;
@@ -188,6 +185,13 @@ public class JMLLCLI {
             else
                 grid = BFGrid.CONVERTER.convertFrom(line.getOptionValue("g"));
             method = new GreedyObliviousMultiClassificationTree(rnd, learn, grid, Integer.parseInt(line.getOptionValue("d", "6")));
+        } else if ("OPACBCT".equals(name)) {
+          BFGrid grid;
+          if (!line.hasOption("g"))
+            grid = GridTools.medianGrid(learn, Integer.parseInt(line.getOptionValue("x", "32")));
+          else
+            grid = BFGrid.CONVERTER.convertFrom(line.getOptionValue("g"));
+          method = new GreedyObliviousPACBayesClassificationTree(rnd, learn, grid, Integer.parseInt(line.getOptionValue("d", "6")));
         } else if ("OCT".equals(name)) {
             BFGrid grid;
             if (!line.hasOption("g"))
@@ -195,6 +199,13 @@ public class JMLLCLI {
             else
                 grid = BFGrid.CONVERTER.convertFrom(line.getOptionValue("g"));
             method = new GreedyObliviousClassificationTree(rnd, learn, grid, Integer.parseInt(line.getOptionValue("d", "6")));
+        } else if ("GTDR".equals(name)) {
+          BFGrid grid;
+          if (!line.hasOption("g"))
+            grid = GridTools.medianGrid(learn, Integer.parseInt(line.getOptionValue("x", "32")));
+          else
+            grid = BFGrid.CONVERTER.convertFrom(line.getOptionValue("g"));
+          method = new GreedyTDRegion(rnd, learn, grid);
         } else throw new RuntimeException("Unknown target: " + name);
         return method;
     }
@@ -211,6 +222,8 @@ public class JMLLCLI {
             loss = new FBetaSigmoid(learn.target(), 1.);
         } else if ("MLL".equals(target)) {
             loss = new MulticlassLogLikelyhood(learn.target());
+        } else if ("SCE".equals(target)) {
+          loss = new SigmoidClassificationError(learn.target());
         } else throw new RuntimeException("Unknown target: " + target);
         return loss;
     }
