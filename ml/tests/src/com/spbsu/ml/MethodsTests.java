@@ -1,8 +1,10 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
@@ -11,10 +13,7 @@ import com.spbsu.ml.loss.L2Loss;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyContinuesObliviousSoftBondariesRegressionTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousRegressionTree;
-import com.spbsu.ml.models.AdditiveModel;
-import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.models.NormalizedLinearModel;
-import com.spbsu.ml.models.ObliviousTree;
+import com.spbsu.ml.models.*;
 import gnu.trove.TDoubleDoubleHashMap;
 import gnu.trove.TDoubleIntHashMap;
 
@@ -291,6 +290,51 @@ public class MethodsTests extends GridTest {
         this.index++;
         System.out.print("\tscore:\t" + score + "\tmean:\t" + (total / this.index));
       }
+    }
+
+//    private int getIndexI(int N, int n) {
+//        int tale = n*(n+1)/2 - N - 1;
+//        return n - (int)( (Math.sqrt(8*tale + 1) - 1) / 2) - 1;
+//    }
+//
+//    private int getIndexJ(int N, int n) {
+//        return N-getN(getIndexI(N,n), 0, n);
+//    }
+
+    private int getN(int i, int j, int n) {
+        return n*(n+1)/2 - (n-i+1)*(n-i)/2 + j-i;
+//        return i*(2*n - i - 1)/2 + j;
+    }
+
+
+    public void testQuadraticRegression() {
+        double r = 3;
+        int N = 8;
+        int n = 2;
+
+        Model expectedModel = new QuadraticModel(new VecBasedMx(n, new ArrayVec(4, 0,
+                0, 3)),
+                new ArrayVec(1, 2), 0.0);
+
+        Mx data = new VecBasedMx(N, n);
+        for (int i = 0; i < N; i++) {
+            data.set(i, 0, r * Math.cos(2 * Math.PI * i / N));
+            data.set(i, 1, r * Math.sin(2 * Math.PI * i / N));
+        }
+        Vec target = new ArrayVec(N);
+        for (int i = 0; i < N; i++) {
+            target.set(i, expectedModel.value(data.row(i)));
+        }
+        DataSet ds = new DataSetImpl(data, target);
+
+        System.out.println("expected model: \n" + expectedModel.toString());
+        System.out.println("expected model values: " + expectedModel.value(ds).toString());
+
+        MLMethodOrder1 quadrRegr = new LeastSquaresQuadratic();
+        Model model = quadrRegr.fit(ds, new L2Loss(target));
+        System.out.println("actual model: \n" + model.toString());
+        System.out.println();
+        System.out.println("actual model values: " + model.value(ds).toString());
     }
   }
 }
