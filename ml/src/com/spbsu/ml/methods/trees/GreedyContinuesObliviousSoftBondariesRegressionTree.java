@@ -15,6 +15,10 @@ import com.spbsu.ml.optimization.impl.Nesterov1;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,7 +31,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     private final int numberOfVariables;
     private List<BFGrid.BinaryFeature> features;
     private final GreedyObliviousRegressionTree got;
-    //private final ExecutorService executor;
+    private ExecutorService executor;
     private final int numberOfVariablesByLeaf;
     private final double regulationCoefficient;
     private final boolean softBoundary;
@@ -61,6 +65,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
         numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
         this.depth = depth;
+        //executor = Executors.newFixedThreadPool(4);
     }
 
     //Make 2 dimension index 1
@@ -74,24 +79,33 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         return mask * (depth + 1) * (depth + 2) / 2 + i * (i + 1) / 2 + j;
     }
 
+    AtomicReferenceArray<Double> gr;
+
+    void atomicIncrement(int i, double x) {
+        double old = gr.get(i);
+        while (!gr.weakCompareAndSet(i, old, old + x))
+            old = gr.get(i);
+    }
+
     //Calculating fine for condition \sum\limits_{i = 0}^{i == indexes.length - 1} value_{indexes_{i}} * coef_{i} = 0
-    public void transformConditionToFineGradient(double lambda, int[] indexes, double[] coef, double[] value, double gr[]) {
+    public void transformConditionToFineGradient(double lambda, int[] indexes, double[] coef, double[] value) {
         double cond = 0;
         for (int i = 0; i < indexes.length; i++)
             cond += value[indexes[i]] * coef[i];
         if (softBoundary) {
             double lconst = Math.exp(lambda * sqr(cond)) * lambda * 2 * (cond);
             for (int i = 0; i < indexes.length; i++)
-                gr[indexes[i]] += lconst * coef[i];
+                atomicIncrement(indexes[i], lconst * coef[i]);
         } else {
             double eps = 0.1;
             for (int i = 0; i < indexes.length; i++) {
-                gr[indexes[i]] -= lambda * coef[i] / (cond + eps);
-                gr[indexes[i]] += lambda * coef[i] / (eps - cond);
+                atomicIncrement(indexes[i], -lambda * coef[i] / (cond + eps));
+                atomicIncrement(indexes[i], lambda * coef[i] / (eps - cond));
             }
 
         }
     }
+
 
     public double transformConditionToFine(double lambda, int[] indexes, double[] coef, double[] value) {
         double cond = 0;
@@ -110,9 +124,19 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     ArrayList<int[]> gradIndex;
     ArrayList<Double> gradLambdas;
 
-    public void calcFlexibleBoundariesFineGradient(double[] value, double gr[]) {
-        for (int i = 0; i < gradCoef.size(); i++)
-            transformConditionToFineGradient(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value, gr);
+    class myThread implements Runnable {
+        final int i;
+        final double[] value;
+
+        myThread(int contditionNum, double[] value) {
+            this.i = contditionNum;
+            this.value = value;
+        }
+
+        public void run() {
+            transformConditionToFine(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value);
+
+        }
     }
 
     public void addInPointEqualCondition(double[] point, int mask, int neighbourMask) {
@@ -211,19 +235,45 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         return x * x;
     }
 
-    double[] calculateFineGradient(double[] value) {
-        double gr[] = linearMissCoefficient.clone();
+    String serializeCondtion(int i) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\\lambda = ").append(gradLambdas.get(i));
+        sb.append(" Condition - ");
+        for (int j = 0; j < gradIndex.get(i).length; j++)
+            sb.append("c_{").append(gradIndex.get(i)[j]).append("} * ").append(gradCoef.get(i)[j]).append(" + ");
+        sb.append("= 0");
+        return sb.toString();
 
+    }
+
+    double[] calculateFineGradient(double[] value) {
+        double ans[] = linearMissCoefficient.clone();
         for (int i = 0; i < numberOfVariables; i++)
-            gr[i] += 2 * regulationCoefficient * value[i];
+            ans[i] += 2 * regulationCoefficient * value[i];
 
         //Optimize place can be optimized 2 time because matrix is semmetric
         for (int index = 0; index < 1 << depth; index++)
             for (int i = 0, iIndex = index * (numberOfVariablesByLeaf); i < numberOfVariablesByLeaf; i++, iIndex++)
                 for (int j = 0, jIndex = index * (numberOfVariablesByLeaf); j < (numberOfVariablesByLeaf); j++, jIndex++)
-                    gr[iIndex] += 2 * quadraticMissCoefficient[index][i][j] * value[jIndex];
-        calcFlexibleBoundariesFineGradient(value, gr);
-        return gr;
+                    ans[iIndex] += 2 * quadraticMissCoefficient[index][i][j] * value[jIndex];
+        executor = Executors.newFixedThreadPool(2);
+        gr = new AtomicReferenceArray<Double>(numberOfVariables);
+        for (int i = 0; i < numberOfVariables; i++)
+            gr.set(i, 0.);
+        for (int i = 0; i < gradCoef.size(); i++)
+            executor.submit(new myThread(i, value));
+        executor.shutdown();
+
+        try {
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+        for (int i = 0; i < numberOfVariables; i++)
+            ans[i] += gr.get(i);
+
+        return ans;
 
     }
 
@@ -349,7 +399,8 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
             for (int k = 0; k <= depth; k++)
                 for (int j = 0; j <= k; j++)
                     out[i][k * (k + 1) / 2 + j] = value[getIndex(i, k, j)];
-
+        //for(int i =0 ; i < gradLambdas.size();i++)
+        //    System.out.println(serializeCondtion(i));
         return new ContinousObliviousTree(features, out);
     }
 
