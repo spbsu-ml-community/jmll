@@ -115,6 +115,25 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
             transformConditionToFineGradient(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value, gr);
     }
 
+    public void addInPointEqualCondition(double[] point, int mask, int neighbourMask) {
+        gradLambdas.add(constFineLambda);
+        //Point on a plane, but in the mass center of 2 leafs
+        int cnt = 0;
+        //Condition for equals function in a "point"
+        int index[] = new int[2 * numberOfVariablesByLeaf];
+        double coef[] = new double[2 * numberOfVariablesByLeaf];
+        for (int i = 0; i <= depth; i++)
+            for (int j = 0; j <= i; j++) {
+                index[cnt] = getIndex(mask, i, j);
+                coef[cnt++] = point[i] * point[j];
+                index[cnt] = getIndex(neighbourMask, i, j);
+                coef[cnt++] = -point[i] * point[j];
+            }
+        gradIndex.add(index);
+        gradCoef.add(coef);
+
+    }
+
     public void precalcContinousConditions() {
         gradCoef = new ArrayList<double[]>();
         gradIndex = new ArrayList<int[]>();
@@ -130,34 +149,39 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
                         continue;
 */
                     int featureNum = _featureNum + 1;
-                    //Equal at 0 point
+                    //Equals at 0 points
                     {
-                        gradLambdas.add(constFineLambda);
-                        //Point on a plane, but in the mass center of 2 leafs
+
                         double[] point = new double[depth + 1];
                         for (int i = 0; i < depth; i++)
                             if ((numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]) != 0)
                                 point[i + 1] = (coordinateSum[mask][i] + coordinateSum[neighbourMask][i]) / (double) (numberOfPointInLeaf[mask] + numberOfPointInLeaf[neighbourMask]);
                         point[0] = 1;
                         point[featureNum] = C;
+                        addInPointEqualCondition(point, mask, neighbourMask);
+                        for (int i = 1; i <= depth; i++)
+                            for (int j = 1; j <= i; j++)
+                                if ((i != featureNum) && (j != featureNum)) {
+                                    point[i] += 0.01;
+                                    point[j] += 0.01;
+                                    addInPointEqualCondition(point, mask, neighbourMask);
+                                    point[i] -= 0.01;
+                                    point[j] -= 0.01;
 
-                        int cnt = 0;
-                        //Condition for equals function in a "point"
-                        int index[] = new int[2 * numberOfVariablesByLeaf];
-                        double coef[] = new double[2 * numberOfVariablesByLeaf];
-                        for (int i = 0; i <= depth; i++)
-                            for (int j = 0; j <= i; j++) {
-                                index[cnt] = getIndex(mask, i, j);
-                                coef[cnt++] = point[i] * point[j];
-                                index[cnt] = getIndex(neighbourMask, i, j);
-                                coef[cnt++] = -point[i] * point[j];
+                                }
+                        for (int i = 1; i <= depth; i++)
+                            if (i != featureNum) {
+                                point[i] += 0.01;
+                                addInPointEqualCondition(point, mask, neighbourMask);
+                                point[i] -= 0.01;
+
                             }
-                        gradIndex.add(index);
-                        gradCoef.add(coef);
+
+
                     }
                     //Quadratic boundary
                     //All monoms must have equal coefficient in both leafs
-                    for (int i = 1; i <= depth; i++)
+                    /*for (int i = 1; i <= depth; i++)
                         for (int j = 1; j <= i; j++)
                             if ((i != featureNum) && (j != featureNum)) {
                                 gradLambdas.add(quadraticFineLambda);
@@ -171,6 +195,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
                             gradIndex.add(new int[]{getIndex(mask, 0, i), getIndex(neighbourMask, 0, i), getIndex(mask, featureNum, i), getIndex(neighbourMask, featureNum, i)});
                             gradCoef.add(new double[]{1, -1, C, -C});
                         }
+                        */
                 }
             }
         }
@@ -192,6 +217,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         for (int i = 0; i < numberOfVariables; i++)
             gr[i] += 2 * regulationCoefficient * value[i];
 
+        //Optimize place can be optimized 2 time because matrix is semmetric
         for (int index = 0; index < 1 << depth; index++)
             for (int i = 0, iIndex = index * (numberOfVariablesByLeaf); i < numberOfVariablesByLeaf; i++, iIndex++)
                 for (int j = 0, jIndex = index * (numberOfVariablesByLeaf); j < (numberOfVariablesByLeaf); j++, jIndex++)
@@ -255,6 +281,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
                 for (int y = 0; y <= x; y++) {
                     linearMissCoefficient[getIndex(index, x, y)] -= 2 * f * data[x] * data[y];
                 }
+            //Optimize place can be optimized 2 time because matrix is semmetric
             for (int x = 0; x <= depth; x++)
                 for (int y = 0; y <= x; y++) {
                     for (int x1 = 0; x1 <= depth; x1++)
