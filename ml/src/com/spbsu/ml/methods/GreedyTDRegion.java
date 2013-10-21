@@ -20,12 +20,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import static java.lang.Math.pow;
+
 /**
  * User: solar
  * Date: 15.11.12
  * Time: 15:19
  */
 public class GreedyTDRegion implements MLMethodOrder1 {
+  private final Random rng;
   protected final BFGrid grid;
   protected final BinarizedDataSet bds;
   private double alpha = 0.3;
@@ -36,6 +39,7 @@ public class GreedyTDRegion implements MLMethodOrder1 {
   }
 
   public GreedyTDRegion(Random rng, DataSet ds, BFGrid grid, double alpha, double betta) {
+    this.rng = rng;
     this.grid = grid;
     this.alpha = alpha;
     this.betta = betta;
@@ -87,6 +91,8 @@ public class GreedyTDRegion implements MLMethodOrder1 {
         }
       });
       final int bestBFIndex = ArrayTools.min(scores);
+      if (bestBFIndex < 0)
+        throw new RuntimeException("Can not find optimal split!");
       BFGrid.BinaryFeature bestBF = grid.bf(bestBFIndex);
       boolean isRight = masks[bestBFIndex];
       if (scores[bestBFIndex] >= currentScore)
@@ -99,7 +105,9 @@ public class GreedyTDRegion implements MLMethodOrder1 {
 
       for (int t = 0; t < indices.length; t++) {
         final int index = indices[t];
-        if (!((bins[index] > bestBF.binNo) ^ isRight)) {
+//        if (!((bins[index] > bestBF.binNo) ^ isRight)) {
+        double diff = isRight ? bins[index] - bestBF.binNo - 1 : bestBF.binNo - bins[index];
+        if (rng.nextDouble() < pow(0.5, -diff)) {
           inducedIndices.add(index);
         }
         else {
@@ -114,19 +122,19 @@ public class GreedyTDRegion implements MLMethodOrder1 {
       total2 -= total2Reduce;
       conditionMasks[conditions.size()] = isRight;
       conditions.add(bestBF);
-      {
-        boolean[] tmpMask = new boolean[learn.power()];
-        for (int t = 0; t < inducedIndices.size(); t++) {
-          tmpMask[inducedIndices.get(t)] = true;
-        }
-        final Region region = new Region(conditions, conditionMasks, total / indices.length, indices.length, currentScore);
-        for (int t = 0; t < indices.length; t++) {
-          final int index = indices[t];
-          final Vec point = data.row(index);
-          if (region.contains(point) ^ tmpMask[index])
-            System.out.println(region.contains(point));
-        }
-      }
+//      {
+//        boolean[] tmpMask = new boolean[learn.power()];
+//        for (int t = 0; t < inducedIndices.size(); t++) {
+//          tmpMask[inducedIndices.get(t)] = true;
+//        }
+//        final Region region = new Region(conditions, conditionMasks, total / indices.length, indices.length, currentScore);
+//        for (int t = 0; t < indices.length; t++) {
+//          final int index = indices[t];
+//          final Vec point = data.row(index);
+//          if (region.contains(point) ^ tmpMask[index])
+//            System.out.println(region.contains(point));
+//        }
+//      }
 
       indices = inducedIndices.toNativeArray();
       totalWeight = indices.length;
@@ -136,10 +144,18 @@ public class GreedyTDRegion implements MLMethodOrder1 {
     return new Region(conditions, conditionMasks, total/indices.length, indices.length, currentScore);
   }
 
-  public double score(double count, double sum, double sum2, int complexity) {
-    if (count <= 2)
+  public double score(double n, double sum, double sum2, int complexity) {
+    if (n <= 2)
       return Double.POSITIVE_INFINITY;
-    final double err = sum2 - sum * sum / count;
-    return (err * count * count / (count - 1) / (count - 1) - sum2) * Math.pow(0.9, complexity);
+//    final double err = sum2 - sum * sum / n;
+//    return (err - sum2);// * pow(0.9, complexity);
+//    return (err * n * n / (n - 1) / (n - 1) - sum2);// * pow(0.99, complexity);
+    return (- sum * sum * n / (n - 1) / (n - 1));// * pow(0.99, complexity);
+//    final double mean = sum/n;
+//    final double D = sum2/n - mean * mean;
+//    final double dD = (sum2 - (2 * (n - 1) * (n - 1) - 1) * mean * mean) / (n-1)/(n-1);
+//    final double dD = (sum2 * (3*n - n*n - 1) - sum * sum/n)/n/(n-1)/(n-1);
+//    System.out.println(n + " " + D + " " + dD + " " + (sqrt(sum2/n) - (sqrt(D) + sqrt(-dD))));
+//    return n * ((sqrt(D) + sqrt(-dD)) - sqrt(sum2/n));
   }
 }

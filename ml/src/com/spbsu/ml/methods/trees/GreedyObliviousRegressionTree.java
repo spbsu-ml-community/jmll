@@ -52,7 +52,6 @@ public class GreedyObliviousRegressionTree extends GreedyTDRegion {
 
     final double[] scores = new double[grid.size()];
     for (int level = 0; level < depth; level++) {
-      final int complexity = conditions.size() + 1;
       Arrays.fill(scores, 0.);
       for (int i = 0; i < split.size(); i++) {
         final Histogram h = bds.buildHistogram(target, point, split.get(i));
@@ -67,6 +66,14 @@ public class GreedyObliviousRegressionTree extends GreedyTDRegion {
             return rightScore + leftScore;
           }
 
+//          public double scoreInner(double sum, double sum2, double n) {
+//            if (n <= 2)
+//              return sum2;
+//            final double mean = sum/n;
+//            final double D = sum2/n - mean * mean;
+//            final double dD = (sum2 - (2 * (n - 1) * (n - 1) - 1) * mean * mean) / (n-1)/(n-1);
+//            return (D - dD) * n;
+//          }
           private double scoreInner(double sum, double sum2, double weight) {
 //            return GreedyObliviousRegressionTree.this.score(weight, sum, 1);
             if (weight > 1.) {
