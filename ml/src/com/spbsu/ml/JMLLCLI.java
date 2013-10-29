@@ -1,10 +1,17 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.io.StreamTools;
+import com.spbsu.commons.math.vectors.IntBasis;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.IndexTransVec;
+import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
+import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.text.StringUtils;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
@@ -16,6 +23,7 @@ import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.*;
 import com.spbsu.ml.models.AdditiveModel;
 import com.spbsu.ml.models.AdditiveMultiClassModel;
+import gnu.trove.TIntArrayList;
 import gnu.trove.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
@@ -49,6 +57,7 @@ public class JMLLCLI {
     options.addOption("v", "verbose", false, "verbose output");
     options.addOption("r", "normalize-relevance", false, "relevance to classes");
     options.addOption("a", "forest-length", true, "forest length");
+    options.addOption("X", "cross-validation", true, "k folds CV");
   }
 
   public static void main(String[] args) throws IOException {
@@ -71,7 +80,17 @@ public class JMLLCLI {
       if (learnFile.endsWith(".gz"))
         learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
 
-      DataSet test = command.hasOption('t') ? DataTools.loadFromFeaturesTxt(command.getOptionValue('t'), metaTest) : learn;
+      DataSet test;
+      if (!command.hasOption("X")){
+        test = command.hasOption('t') ? DataTools.loadFromFeaturesTxt(command.getOptionValue('t'), metaTest) : learn;
+      }
+      else {
+        final String cvOption = command.getOptionValue('X');
+        final String[] cvOptionsSplit = StringUtils.split(cvOption, "/", 2);
+        final Pair<DataSet, DataSet> learnTest = splitCV(learn, Integer.parseInt(cvOptionsSplit[1]), new FastRandom(Integer.parseInt(cvOptionsSplit[0])));
+        learn = learnTest.first;
+        test = learnTest.second;
+      }
       if (command.getArgs().length <= 0)
         throw new RuntimeException("Please provide mode to run");
       if (command.hasOption('r'))
@@ -148,6 +167,41 @@ public class JMLLCLI {
 
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
     }
+  }
+
+  private static Pair<DataSet, DataSet> splitCV(DataSet learn, int folds, Random rnd) {
+    TIntArrayList learnIndices = new TIntArrayList();
+    TIntArrayList testIndices = new TIntArrayList();
+    for (int i = 0; i < learn.power(); i++) {
+      if (rnd.nextDouble() < 1./folds)
+        learnIndices.add(i);
+      else
+        testIndices.add(i);
+    }
+    final int[] learnIndicesArr = learnIndices.toNativeArray();
+    final int[] testIndicesArr = testIndices.toNativeArray();
+    return Pair.<DataSet,DataSet>create(
+            new DataSetImpl(
+                    new VecBasedMx(
+                            learn.xdim(),
+                            new IndexTransVec(
+                                    learn.data(),
+                                    new RowsPermutation(learnIndicesArr, learn.xdim()),
+                                    new IntBasis(learnIndicesArr.length * learn.xdim())
+                            )
+                    ),
+                    new IndexTransVec(learn.target(), new ArrayPermutation(learnIndicesArr), new IntBasis(learnIndicesArr.length))
+            ),
+            new DataSetImpl(
+                    new VecBasedMx(
+                            learn.xdim(),
+                            new IndexTransVec(
+                                    learn.data(),
+                                    new RowsPermutation(testIndicesArr, learn.xdim()),
+                                    new IntBasis(testIndicesArr.length * learn.xdim())
+                            )
+                    ),
+                    new IndexTransVec(learn.target(), new ArrayPermutation(testIndicesArr), new IntBasis(testIndicesArr.length))));
   }
 
   private static MLMethodOrder1 chooseMethod(String name, CommandLine line, Random rnd, DataSet learn) {

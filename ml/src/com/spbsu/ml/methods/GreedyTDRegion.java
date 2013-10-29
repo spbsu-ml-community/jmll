@@ -151,6 +151,7 @@ public class GreedyTDRegion implements MLMethodOrder1 {
 //    return (err - sum2);// * pow(0.9, complexity);
 //    return (err * n * n / (n - 1) / (n - 1) - sum2);// * pow(0.99, complexity);
     return (- sum * sum * n / (n - 1) / (n - 1));// * pow(0.99, complexity);
+//    return -sum * sum / log(n+2);
 //    final double mean = sum/n;
 //    final double D = sum2/n - mean * mean;
 //    final double dD = (sum2 - (2 * (n - 1) * (n - 1) - 1) * mean * mean) / (n-1)/(n-1);
