@@ -74,7 +74,9 @@ public class GreedyTDRegion implements MLMethodOrder1 {
     double currentScore = Double.MAX_VALUE;
 
     while(true) {
-      final Histogram histogram = bds.buildHistogram(target, start, indices);
+      final Histogram result = new Histogram(grid, target, start);
+      bds.aggregate(result, indices);
+      final Histogram histogram = result;
       final int complexity = conditions.size() + 1;
       final double ftotal = total;
       final double ftotal2 = total2;

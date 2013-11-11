@@ -25,8 +25,14 @@ public class MultiLLClassificationLeaf implements BFLeaf {
   private final LLClassificationLeaf[] folds;
   private final int size;
   private final int classesCount;
+  private final Vec[] point;
+  private final Vec target;
+  private final Vec weight;
 
   public MultiLLClassificationLeaf(BinarizedDataSet ds, Vec[] point, Vec target, Vec weight) {
+    this.point = point;
+    this.target = target;
+    this.weight = weight;
     classesCount = point.length;
 
     folds = new LLClassificationLeaf[classesCount * classesCount];
@@ -46,9 +52,12 @@ public class MultiLLClassificationLeaf implements BFLeaf {
     size = ds.original().power();
   }
 
-  private MultiLLClassificationLeaf(BFGrid.BFRow[] rows, LLClassificationLeaf[] folds) {
+  private MultiLLClassificationLeaf(BFGrid.BFRow[] rows, LLClassificationLeaf[] folds, Vec[] point, Vec target, Vec weight) {
     this.rows = rows;
     this.folds = folds;
+    this.point = point;
+    this.target = target;
+    this.weight = weight;
     classesCount = (int)Math.sqrt(folds.length);
     int size = 0;
     for (int i = 0; i < classesCount; i++) {
@@ -58,9 +67,10 @@ public class MultiLLClassificationLeaf implements BFLeaf {
   }
 
   @Override
-  public void append(int feature, byte bin, double target, double current, double weight) {
+  public void append(int feature, byte bin, int index) {
+    final int classId = (int) target.get(index);
     for (int c = 0; c < classesCount; c++) { // iterate over instances of this point in LL for all classes
-      folds[(int)target * classesCount + c].append(feature, bin, target == c ? 1 : -1, current, weight);
+      folds[classId * classesCount + c].append(feature, bin, index);
     }
   }
 
@@ -134,7 +144,7 @@ public class MultiLLClassificationLeaf implements BFLeaf {
     for (int i = 0; i < broLeaves.length; i++) {
       broLeaves[i] = folds[i].split(feature);
     }
-    return new MultiLLClassificationLeaf(rows, broLeaves);
+    return new MultiLLClassificationLeaf(rows, broLeaves, point, target, weight);
   }
 
   private static LLCounter optimizeMask(LLCounter[] folds, boolean[] mask) {

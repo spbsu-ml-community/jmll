@@ -1,11 +1,9 @@
 package com.spbsu.ml.data.impl;
 
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ThreadTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.Aggregator;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.Histogram;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -48,13 +46,7 @@ public class BinarizedDataSet {
     return grid;
   }
 
-  public Histogram buildHistogram(final Vec target, final Vec point, final int[] indices) {
-    final Histogram result = new Histogram(grid);
-    aggregate(result, target, point, indices);
-    return result;
-  }
-
-  public void aggregate(final Aggregator aggregator, final Vec target, final Vec point, final int[] indices) {
+  public void aggregate(final Aggregator aggregator, final int[] indices) {
     final CountDownLatch latch = new CountDownLatch(grid.rows());
     for (int findex = 0; findex < grid.rows(); findex++) {
       final int finalFIndex = findex;
@@ -65,7 +57,7 @@ public class BinarizedDataSet {
           if (!grid.row(finalFIndex).empty()) {
             for (int t = 0; t < indices.length; t++) {
               final int pindex = indices[t];
-              aggregator.append(finalFIndex, bin[pindex], target.get(pindex), point.get(pindex), 1.);
+              aggregator.append(finalFIndex, bin[pindex], pindex);
             }
           }
           latch.countDown();

@@ -1,5 +1,6 @@
 package com.spbsu.ml.data;
 
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
 
 /**
@@ -9,14 +10,18 @@ import com.spbsu.ml.BFGrid;
 */
 public class Histogram implements Aggregator {
   BFGrid grid;
+  private final Vec weight;
+  private final Vec target;
   int maxBins = 0;
 
   double[] sums;
   double[] sums2;
   double[] weights;
 
-  public Histogram(BFGrid grid) {
+  public Histogram(BFGrid grid, Vec weight, Vec target) {
     this.grid = grid;
+    this.weight = weight;
+    this.target = target;
     for (int f = 0; f < grid.rows(); f++) {
       maxBins = Math.max(maxBins, grid.row(f).size() + 1);
     }
@@ -46,10 +51,10 @@ public class Histogram implements Aggregator {
   }
 
   @Override
-  public void append(int feature, byte bin, double target, double current, double weight) {
-    int index = feature * maxBins + bin;
-    sums[index] += target;
-    sums2[index] += target * target;
-    weights[index] += weight;
+  public void append(int feature, byte bin, int index) {
+    int findex = feature * maxBins + bin;
+    sums[findex] += target.get(index);
+    sums2[findex] += target.get(index) * target.get(index);
+    weights[findex] += weight.get(index);
   }
 }

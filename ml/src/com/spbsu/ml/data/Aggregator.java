@@ -6,5 +6,5 @@ package com.spbsu.ml.data;
  * Time: 22:09
  */
 public interface Aggregator {
-  void append(int feature, byte bin, double target, double current, double weight);
+  void append(int feature, byte bin, int origDSIndex);
 }

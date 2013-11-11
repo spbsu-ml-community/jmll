@@ -31,7 +31,9 @@ public class DataToolsTest extends GridTest {
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(3, grid.size());
     BinarizedDataSet bds = new BinarizedDataSet(ds, grid);
-    final Histogram histogram = bds.buildHistogram(new ArrayVec(0, 0, 0, 0, 1, 0, 0, 1), new ArrayVec(8), ArrayTools.sequence(0, 8));
+    final Histogram result = new Histogram(grid, new ArrayVec(0, 0, 0, 0, 1, 0, 0, 1), new ArrayVec(8));
+    bds.aggregate(result, ArrayTools.sequence(0, 8));
+    final Histogram histogram = result;
     final double[] weights = new double[grid.size()];
     final double[] sums = new double[grid.size()];
     final double[] scores = new double[grid.size()];

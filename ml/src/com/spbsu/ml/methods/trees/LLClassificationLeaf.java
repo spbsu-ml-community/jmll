@@ -54,12 +54,12 @@ public class LLClassificationLeaf implements BFLeaf {
       counters[i] = new LLCounter();
     }
     rows = ds.grid().allRows();
-    ds.aggregate(this, target, this.point, this.indices);
+    ds.aggregate(this, this.indices);
   }
 
   @Override
-  public void append(int feature, byte bin, double target, double current, double weight) {
-    counter(feature, bin).found(current, target, weight);
+  public void append(int feature, byte bin, int index) {
+    counter(feature, bin).found(point.get(index), target.get(index), weight.get(index));
   }
 
   public LLCounter counter(int feature, byte bin) {
@@ -117,7 +117,7 @@ public class LLClassificationLeaf implements BFLeaf {
         else
           leftPoints[leftIndex++] = point;
       }
-      ds.aggregate(brother, target, point, rightPoints);
+      ds.aggregate(brother, rightPoints);
     }
     for (int i = 0; i < counters.length; i++) {
       counters[i].sub(brother.counters[i]);

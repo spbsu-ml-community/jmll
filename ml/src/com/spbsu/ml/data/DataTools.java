@@ -52,25 +52,33 @@ public class DataTools {
     int maxFeatures = 0;
     String line;
     final List<Double> featuresA = new ArrayList<Double>();
+    int lindex = 0;
     while ((line = reader.readLine()) != null) {
-      final StringBuffer metaline = new StringBuffer();
-      featuresA.clear();
-      StringTokenizer tok = new StringTokenizer(line, "\t");
-      metaline.append(tok.nextToken()); // group
-      targets.add(Double.parseDouble(tok.nextToken()));
-      metaline.append("\t").append(tok.nextToken()); // item name
-      metaline.append("\t").append(tok.nextToken()); // equality class inside group
-      while (tok.hasMoreTokens()) {
-        featuresA.add(Double.parseDouble(tok.nextToken()));
+      try {
+        final StringBuffer metaline = new StringBuffer();
+        featuresA.clear();
+        StringTokenizer tok = new StringTokenizer(line, "\t");
+        metaline.append(tok.nextToken()); // group
+        targets.add(Double.parseDouble(tok.nextToken()));
+        metaline.append("\t").append(tok.nextToken()); // item name
+        metaline.append("\t").append(tok.nextToken()); // equality class inside group
+        while (tok.hasMoreTokens()) {
+          featuresA.add(Double.parseDouble(tok.nextToken()));
+        }
+        maxFeatures = Math.max(maxFeatures, featuresA.size());
+        double[] features = new double[maxFeatures];
+        for (int i = 0; i < featuresA.size(); i++) {
+          features[i] = featuresA.get(i);
+        }
+        if (meta != null)
+          meta.put(set.size(), metaline);
+        set.add(features);
       }
-      maxFeatures = Math.max(maxFeatures, featuresA.size());
-      double[] features = new double[maxFeatures];
-      for (int i = 0; i < featuresA.size(); i++) {
-        features[i] = featuresA.get(i);
+      catch (Throwable th) {
+        System.out.println("Failed to parse line " + lindex + ":");
+        System.out.println(line);
       }
-      if (meta != null)
-        meta.put(set.size(), metaline);
-      set.add(features);
+      lindex++;
     }
     double[] data = new double[maxFeatures * set.size()];
     double[] target = new double[set.size()];

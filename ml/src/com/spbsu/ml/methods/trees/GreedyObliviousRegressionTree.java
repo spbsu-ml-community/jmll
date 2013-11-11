@@ -54,7 +54,9 @@ public class GreedyObliviousRegressionTree extends GreedyTDRegion {
     for (int level = 0; level < depth; level++) {
       Arrays.fill(scores, 0.);
       for (int i = 0; i < split.size(); i++) {
-        final Histogram h = bds.buildHistogram(target, point, split.get(i));
+        final Histogram result = new Histogram(grid, target, point);
+        bds.aggregate(result, split.get(i));
+        final Histogram h = result;
         final double total = totals[i];
         final double total2 = totals2[i];
         final double totalWeight = weights[i];
