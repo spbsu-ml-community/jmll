@@ -1,13 +1,11 @@
 package com.spbsu.ml.methods;
 
 import Jama.Matrix;
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
-import com.spbsu.ml.loss.L2Loss;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.NormalizedLinearModel;
 
 import java.util.ArrayList;
@@ -18,7 +16,7 @@ import java.util.List;
  * Date: 27.12.10
  * Time: 18:04
  */
-public class LARSMethod implements MLMethodOrder1 {
+public class LARSMethod implements MLMethod<L2> {
   private static final double E = 1e-7;
   private class Direction {
     double sign;
@@ -29,14 +27,7 @@ public class LARSMethod implements MLMethodOrder1 {
     }
   }
 
-  @Override
-  public NormalizedLinearModel fit(DataSet learn, Oracle1 loss) {
-    return fit(learn, loss, new ArrayVec(learn.power()));
-  }
-
-  public NormalizedLinearModel fit(DataSet orig, Oracle1 loss, Vec start) {
-    if (loss.getClass() != L2Loss.class)
-      throw new IllegalArgumentException("LASSO can not be applied to loss other than l2");
+  public NormalizedLinearModel fit(DataSet orig, L2 loss) {
     final int featuresCount = orig.xdim();
     final double[] betas = new double[featuresCount];
     double[] values = new double[orig.power()];
@@ -46,7 +37,7 @@ public class LARSMethod implements MLMethodOrder1 {
       final DSIterator it = learn.iterator();
       for (int i = 0; i < values.length; i++) {
         it.advance();
-        values[i] = it.y() - start.get(i);
+        values[i] = it.y();
       }
     }
 

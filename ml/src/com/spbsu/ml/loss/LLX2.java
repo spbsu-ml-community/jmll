@@ -13,10 +13,10 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class LogLikelihoodXSquare implements Oracle1 {
+public class LLX2 implements Oracle1 {
   private final Vec target;
 
-  public LogLikelihoodXSquare(Vec target) {
+  public LLX2(Vec target) {
     this.target = target;
   }
 
@@ -31,6 +31,11 @@ public class LogLikelihoodXSquare implements Oracle1 {
         result.set(i, 2 * x/(exp(x*x) - 1));
     }
     return result;
+  }
+
+  @Override
+  public int dim() {
+    return target.dim();
   }
 
   public double value(Vec point) {

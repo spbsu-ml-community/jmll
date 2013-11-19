@@ -13,7 +13,7 @@ import com.spbsu.commons.math.vectors.impl.VecBasedMx;
  * Time: 19:03
  */
 
-public class QuadraticFunction implements ConvexFunction{
+public class QuadraticFunction implements ConvexFunction {
     private final Mx mxA;
     private final Vec w;
     private final double w0;

@@ -58,6 +58,15 @@ public class BFGrid {
     return rows;
   }
 
+  public BFRow nonEmptyRow() {
+    BFRow result = null;
+    for (int i = 0; i < rows.length; i++) {
+      if (rows[i].size() > 0)
+        result = rows[i];
+    }
+    return result;
+  }
+
 
   public static class BFRow {
     private BFGrid owner;

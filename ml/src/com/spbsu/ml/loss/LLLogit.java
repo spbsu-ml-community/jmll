@@ -13,10 +13,10 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class LogLikelihoodSigmoid implements Oracle1 {
+public class LLLogit implements Oracle1 {
   private final Vec target;
 
-  public LogLikelihoodSigmoid(Vec target) {
+  public LLLogit(Vec target) {
     this.target = target;
   }
 
@@ -32,6 +32,11 @@ public class LogLikelihoodSigmoid implements Oracle1 {
         result.set(i, -pX);
     }
     return result;
+  }
+
+  @Override
+  public int dim() {
+    return target.dim();
   }
 
   public double value(Vec point) {

@@ -1,10 +1,11 @@
 package com.spbsu.ml.methods;
 
+import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.ml.CursorOracle;
 import com.spbsu.ml.Model;
-import com.spbsu.ml.Oracle1;
-import com.spbsu.ml.data.DSIterator;
+import com.spbsu.ml.Oracle0;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.impl.Bootstrap;
@@ -14,54 +15,40 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import static com.spbsu.commons.math.vectors.VecTools.copy;
-
 /**
- * User: solar
- * Date: 21.12.2010
- * Time: 22:13:54
- */
-public class Boosting extends ProgressOwner implements MLMethodOrder1 {
-  protected final MLMethodOrder1 weak;
-  private final Oracle1 weakTarget;
+* User: solar
+* Date: 21.12.2010
+* Time: 22:13:54
+*/
+public class Boosting<LocalLoss extends Oracle0> extends WeakListenerHolderImpl<Model> implements MLMethod<CursorOracle<LocalLoss>> {
+  protected final MLMethod<LocalLoss> weak;
   int iterationsCount;
   double step;
   protected final Random rnd;
 
-  public Boosting(MLMethodOrder1 weak, Oracle1 weakTarget, int iterationsCount, double step, Random rnd) {
+  public Boosting(MLMethod<LocalLoss> weak, int iterationsCount, double step, Random rnd) {
     this.weak = weak;
-    this.weakTarget = weakTarget;
     this.iterationsCount = iterationsCount;
     this.step = step;
     this.rnd = rnd;
   }
 
-  public Model fit(DataSet learn, Oracle1 loss, Vec start) {
+  public Model fit(DataSet learn, CursorOracle<LocalLoss> loss) {
     final List<Model> models = new LinkedList<Model>();
-    final AdditiveModel result = new AdditiveModel(models, step);
-
-    Vec point = copy(start);
+    final AdditiveModel<Model> result = new AdditiveModel<Model>(models, step);
 
     for (int i = 0; i < iterationsCount; i++) {
       final Bootstrap sampling = DataTools.bootstrap(learn, rnd);
-      Model weakModel = weak.fit(sampling, weakTarget, point);
+      Model weakModel = weak.fit(sampling, loss.local());
       if (weakModel == null)
         break;
-
+      final Vec increment = weakModel.value(learn);
+      VecTools.scale(increment, step);
+      loss.moveTo(VecTools.append(loss.cursor(), increment));
       models.add(weakModel);
-      processProgress(result);
-      final DSIterator it = learn.iterator();
-      while (it.advance()) {
-        double val = weakModel.value(it.x());
-        point.adjust(it.index(), step * val);
-      }
+      invoke(result);
     }
 
     return result;
-  }
-
-  @Override
-  public Model fit(DataSet learn, Oracle1 loss) {
-    return fit(learn, loss, new ArrayVec(learn.power()));
   }
 }

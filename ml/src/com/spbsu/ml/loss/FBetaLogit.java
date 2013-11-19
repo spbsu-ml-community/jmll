@@ -7,11 +7,11 @@ import com.spbsu.commons.math.vectors.Vec;
  * Date: 10.09.13
  * Time: 18:08
  */
-public class FBetaSigmoid extends LogLikelihoodSigmoid {
+public class FBetaLogit extends LLLogit {
   private final Vec target;
   private final double betta;
 
-  public FBetaSigmoid(Vec target, double betta) {
+  public FBetaLogit(Vec target, double betta) {
     super(target);
     this.target = target;
     this.betta = betta;
@@ -41,5 +41,10 @@ public class FBetaSigmoid extends LogLikelihoodSigmoid {
     double recall = truepositive/(0. + truepositive + falsenegative);
 
     return (1 + betta*betta) * precision * recall/(betta * betta * precision + recall);
+  }
+
+  @Override
+  public int dim() {
+    return target.dim();
   }
 }

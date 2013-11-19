@@ -8,9 +8,11 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
-import com.spbsu.ml.loss.L2Loss;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.trees.GreedyObliviousRegressionTree;
+import com.spbsu.ml.loss.GradientL2Cursor;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.SatL2;
+import com.spbsu.ml.methods.Boosting;
+import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.AdditiveModel;
 import gnu.trove.TByteArrayList;
 
@@ -30,10 +32,10 @@ public class HWScore {
       final DataSet test = transform(args[1], new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/featuresTest.txt.gz")));
       final BFGrid grid = GridTools.medianGrid(learn, 32);
       final FastRandom rng = new FastRandom();
-      final GradientBoosting boosting = new GradientBoosting(new GreedyObliviousRegressionTree(rng, learn, grid, 6), 2000, 0.005, rng);
+      final Boosting boosting = new Boosting<SatL2>(new GreedyObliviousTree<SatL2>(grid, 6), 2000, 0.005, rng);
       final ScoreCalcer score = new ScoreCalcer(test);
-      boosting.addProgressHandler(score);
-      boosting.fit(learn, new L2Loss(learn.target()));
+      boosting.addListener(score);
+      boosting.fit(learn, new GradientL2Cursor<L2>(new L2(learn.target()), SatL2.FACTORY));
       System.out.println("Best score: " + score.bestScore + " reached at iteration " + score.bestIter + ". Greed size: " + grid.size());
     }
     if (args.length >= 2 && "-fit".equals(args[0])) {
@@ -75,7 +77,7 @@ public class HWScore {
     }
 
     @Override
-    public void progress(Model partial) {
+    public void invoke(Model partial) {
       iteration++;
       if (partial instanceof AdditiveModel) {
         final AdditiveModel additiveModel = (AdditiveModel) partial;

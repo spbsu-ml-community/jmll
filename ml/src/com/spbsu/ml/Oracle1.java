@@ -9,4 +9,5 @@ import com.spbsu.commons.math.vectors.Vec;
  */
 public interface Oracle1 extends Oracle0 {
   Vec gradient(Vec x);
+  int dim();
 }

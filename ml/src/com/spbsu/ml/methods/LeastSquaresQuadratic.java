@@ -7,21 +7,13 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.ml.Model;
-import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.loss.L2Loss;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.QuadraticModel;
 
-public class LeastSquaresQuadratic implements MLMethodOrder1 {
+public class LeastSquaresQuadratic implements MLMethod<L2> {
     @Override
-    public Model fit(DataSet learn, Oracle1 loss) {
-        return fit(learn, loss, new ArrayVec(learn.power()));
-    }
-
-    @Override
-    public Model fit(DataSet learn, Oracle1 loss, Vec start) {
-        if (loss.getClass() != L2Loss.class)
-            throw new IllegalArgumentException("LSQuadratic can not be applied to loss other than l2");
+    public Model fit(DataSet learn, L2 loss) {
         final int n = learn.xdim();
 
         //Create & fill X

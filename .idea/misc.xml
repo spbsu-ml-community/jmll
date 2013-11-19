@@ -43,7 +43,7 @@
             </SvnBranchConfiguration>
           </value>
         </entry>
-        <entry key="$PROJECT_DIR$/../../igorkuralenok-commons">
+        <entry key="$PROJECT_DIR$/../../commons/trunk">
           <value>
             <SvnBranchConfiguration>
               <option name="trunkUrl" value="" />

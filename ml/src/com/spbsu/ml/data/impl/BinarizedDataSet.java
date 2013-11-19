@@ -1,12 +1,7 @@
 package com.spbsu.ml.data.impl;
 
-import com.spbsu.commons.util.ThreadTools;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.data.Aggregator;
 import com.spbsu.ml.data.DataSet;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * User: solar
@@ -21,7 +16,6 @@ public class BinarizedDataSet {
   public BinarizedDataSet(DataSet base, BFGrid grid) {
     this.base = base;
     this.grid = grid;
-    exec = ThreadTools.createExecutor("BDS Aggregator thread", grid.size());
     bins = new byte[base.xdim()][];
     for (int f = 0; f < bins.length; f++) {
       bins[f] = new byte[base.power()];
@@ -35,41 +29,12 @@ public class BinarizedDataSet {
     }
   }
 
-  public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
-  private final ThreadPoolExecutor exec;
-
   public DataSet original() {
     return base;
   }
 
   public BFGrid grid() {
     return grid;
-  }
-
-  public void aggregate(final Aggregator aggregator, final int[] indices) {
-    final CountDownLatch latch = new CountDownLatch(grid.rows());
-    for (int findex = 0; findex < grid.rows(); findex++) {
-      final int finalFIndex = findex;
-      exec.execute(new Runnable() {
-        @Override
-        public void run() {
-          final byte[] bin = bins[finalFIndex];
-          if (!grid.row(finalFIndex).empty()) {
-            for (int t = 0; t < indices.length; t++) {
-              final int pindex = indices[t];
-              aggregator.append(finalFIndex, bin[pindex], pindex);
-            }
-          }
-          latch.countDown();
-        }
-      });
-    }
-
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      // skip
-    }
   }
 
   public byte[] bins(int findex) {

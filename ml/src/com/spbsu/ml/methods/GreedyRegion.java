@@ -1,15 +1,13 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Holder;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Model;
-import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.loss.L2Loss;
+import com.spbsu.ml.loss.L2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyRegion implements MLMethodOrder1 {
+public class GreedyRegion implements MLMethod<L2> {
   public static final int NN_NEIGHBORHOOD = 1000;
   private final Random rng;
   private final BFGrid grid;
@@ -71,14 +69,14 @@ public class GreedyRegion implements MLMethodOrder1 {
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
   ThreadPoolExecutor exec = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 1, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
   @Override
-  public Region fit(final DataSet learn, final Oracle1 loss, final Vec current) {
+  public Region fit(final DataSet learn, final L2 loss) {
     final Holder<Region> answer = new Holder<Region>(null);
     final CountDownLatch latch = new CountDownLatch(POOL_SIZE);
     for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
       exec.execute(new Runnable() {
         @Override
         public void run() {
-          final Region model = fitInner(learn, loss, current);
+          final Region model = fitInner(learn, loss);
           synchronized (answer) {
             if (answer.getValue() == null || answer.getValue().score > model.score)
               answer.setValue(model);
@@ -96,14 +94,7 @@ public class GreedyRegion implements MLMethodOrder1 {
     return answer.getValue();
   }
 
-  @Override
-  public Model fit(DataSet learn, Oracle1 loss) {
-    return fit(learn, loss, new ArrayVec(learn.power()));
-  }
-
-  public Region fitInner(DataSet ds, Oracle1 loss, Vec current) {
-    DataSet learn = ds;
-    assert loss.getClass() == L2Loss.class;
+  public Region fitInner(DataSet learn, L2 loss) {
     int pointIdx = choosePointAtRandomNN(learn);
 
     byte[] folds = binarization[pointIdx];

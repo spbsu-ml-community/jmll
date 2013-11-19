@@ -1,12 +1,10 @@
 package com.spbsu.ml.methods;
 
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Model;
-import com.spbsu.ml.Oracle1;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.loss.L2Loss;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.LinearModel;
 
 /**
@@ -14,7 +12,7 @@ import com.spbsu.ml.models.LinearModel;
  * Date: 27.12.10
  * Time: 18:04
  */
-public class LASSOMethod implements MLMethodOrder1 {
+public class LASSOMethod implements MLMethod<L2> {
     private final int iterations;
     private final double step;
 
@@ -24,13 +22,7 @@ public class LASSOMethod implements MLMethodOrder1 {
     }
 
   @Override
-  public Model fit(DataSet learn, Oracle1 loss) {
-    return fit(learn, loss, new ArrayVec(learn.power()));
-  }
-
-  public LinearModel fit(DataSet learn, Oracle1 loss, Vec start) {
-        if (loss.getClass() != L2Loss.class)
-            throw new IllegalArgumentException("LASSO can not be applied to loss other than l2");
+  public Model fit(DataSet learn, L2 loss) {
         final double[] betas = new double[learn.xdim()];
 
         double[] values = new double[learn.power()];
@@ -39,7 +31,7 @@ public class LASSOMethod implements MLMethodOrder1 {
             final DSIterator it = learn.iterator();
             for (int i = 0; i < values.length; i++) {
                 it.advance();
-                values[i] = it.y() - start.get(i);
+                values[i] = it.y();
                 score += it.y() * it.y();
             }
         }

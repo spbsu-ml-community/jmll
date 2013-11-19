@@ -106,7 +106,7 @@ public class ObliviousMultiClassTreeConversionPack implements ConversionPack<Obl
           final CharSequence[] pattern2ValueBased = CharSequenceTools.split(value, ':');
           final int leafIndex = Integer.parseInt(pattern2ValueBased[0].toString(), 2);
           values[leafIndex] = Double.parseDouble(pattern2ValueBased[1].toString());
-          based[leafIndex] = Double.parseDouble(pattern2ValueBased[2].toString());
+//          based[leafIndex] = Double.parseDouble(pattern2ValueBased[2].toString());
           boolean[] mask = masks[leafIndex] = new boolean[pattern2ValueBased[3].length()];
           for (int c = 0; c < pattern2ValueBased[3].length(); c++) {
             mask[c] = pattern2ValueBased[3].charAt(c) == '1';
