@@ -8,7 +8,7 @@ import com.spbsu.commons.math.vectors.Vec;
  * Time: 18:08
  */
 public class F1Logit extends FBetaLogit {
-  public F1Logit(Vec target, double betta) {
+  public F1Logit(Vec target) {
     super(target, 1.);
   }
 }
