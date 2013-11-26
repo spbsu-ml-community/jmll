@@ -1,11 +1,15 @@
 package com.spbsu.ml.loss;
 
-import com.spbsu.commons.func.AdditiveGator;
+import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Oracle1;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.VecFunc;
+import com.spbsu.ml.func.Average;
+import com.spbsu.ml.func.VecTransform;
+import com.sun.javafx.beans.annotations.NonNull;
 
 import static com.spbsu.commons.math.vectors.VecTools.*;
 
@@ -14,29 +18,41 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class L2 implements StatBasedOracle<L2.MSEStats>, Oracle1 {
+public class L2 extends Average implements StatBasedLoss<L2.MSEStats> {
   public static final Computable<Vec, L2> FACTORY = new Computable<Vec, L2>() {
     @Override
     public L2 compute(Vec argument) {
       return new L2(argument);
     }
   };
-  protected final Vec target;
+  public final Vec target;
 
   public L2(Vec target) {
+    super(new Func[0]);
     this.target = target;
   }
 
+  @NonNull
   @Override
-  public Vec gradient(Vec point) {
-    Vec result = copy(point);
-    scale(result, -1);
-    append(result, target);
-    return result;
+  public VecFunc gradient() {
+    return new VecTransform() {
+      @Override
+      public Vec value(Vec x) {
+        Vec result = copy(x);
+        scale(result, -1);
+        append(result, target);
+        scale(result, -2);
+        return result;
+      }
+
+      @Override
+      public int xdim() {
+        return target.dim();
+      }
+    };
   }
 
-  @Override
-  public int dim() {
+  public int xdim() {
     return target.dim();
   }
 
@@ -66,14 +82,14 @@ public class L2 implements StatBasedOracle<L2.MSEStats>, Oracle1 {
     return stats.weight > MathTools.EPSILON ? (stats.sum2 - stats.sum * stats.sum / stats.weight) : stats.sum2;
   }
 
-  public double gradient(MSEStats stats) {
+  public double bestIncrement(MSEStats stats) {
     return stats.weight > MathTools.EPSILON ? stats.sum/stats.weight : 0;
   }
 
-  public static class MSEStats implements AdditiveGator<MSEStats> {
-    public double sum;
-    public double sum2;
-    public int weight;
+  public static class MSEStats implements AdditiveStatistics<MSEStats> {
+    public volatile double sum;
+    public volatile double sum2;
+    public volatile int weight;
 
     private final Vec targets;
 
@@ -82,16 +98,16 @@ public class L2 implements StatBasedOracle<L2.MSEStats>, Oracle1 {
     }
 
     @Override
-    public synchronized MSEStats remove(int index) {
+    public MSEStats remove(int index, int times) {
       final double v = targets.get(index);
-      sum -= v;
-      sum2 -= v * v;
-      weight--;
+      sum -= times * v;
+      sum2 -= times * v * v;
+      weight -= times;
       return this;
     }
 
     @Override
-    public synchronized MSEStats remove(MSEStats other) {
+    public MSEStats remove(MSEStats other) {
       sum -= other.sum;
       sum2 -= other.sum2;
       weight -= other.weight;
@@ -99,16 +115,16 @@ public class L2 implements StatBasedOracle<L2.MSEStats>, Oracle1 {
     }
 
     @Override
-    public synchronized MSEStats append(int index) {
+    public MSEStats append(int index, int times) {
       final double v = targets.get(index);
-      sum += v;
-      sum2 += v * v;
-      weight++;
+      sum += times * v;
+      sum2 += times * v * v;
+      weight += times;
       return this;
     }
 
     @Override
-    public synchronized MSEStats append(MSEStats other) {
+    public MSEStats append(MSEStats other) {
       sum += other.sum;
       sum2 += other.sum2;
       weight += other.weight;

@@ -1,77 +1,63 @@
 package com.spbsu.ml.methods;
 
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.Model;
-import com.spbsu.ml.data.DSIterator;
+import com.spbsu.ml.Func;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.LinearModel;
+
+import static com.spbsu.commons.math.vectors.VecTools.copy;
 
 /**
  * User: solar
  * Date: 27.12.10
  * Time: 18:04
  */
-public class LASSOMethod implements MLMethod<L2> {
-    private final int iterations;
-    private final double step;
+public class LASSOMethod implements Optimization<L2> {
+  private final int iterations;
+  private final double step;
 
-    public LASSOMethod(int iterations, double step) {
-        this.iterations = iterations;
-        this.step = step;
-    }
+  public LASSOMethod(int iterations, double step) {
+    this.iterations = iterations;
+    this.step = step;
+  }
 
   @Override
-  public Model fit(DataSet learn, L2 loss) {
-        final double[] betas = new double[learn.xdim()];
+  public Func fit(DataSet ds, L2 loss) {
+    final Mx learn = ds.data();
+    final Vec betas = new ArrayVec(learn.columns());
+    Vec values = copy(loss.target);
 
-        double[] values = new double[learn.power()];
-        double score = 0;
-        {
-            final DSIterator it = learn.iterator();
-            for (int i = 0; i < values.length; i++) {
-                it.advance();
-                values[i] = it.y();
-                score += it.y() * it.y();
-            }
+    for (int t = 0; t < iterations; t++) {
+      int bestDirection = 0;
+      double sign = 0;
+      {
+        double[] correlations = new double[learn.columns()];
+        for (int i = 0; i < learn.rows(); i++) {
+          for (int j = 0; j < correlations.length; j++) {
+            correlations[j] += learn.get(i, j) * values.get(i);
+          }
         }
-
-        for (int t = 0; t < iterations; t++) {
-            int bestDirection = 0;
-            double sign = 0;
-            {
-                double[] correlations = new double[learn.xdim()];
-                final DSIterator it = learn.iterator();
-                int index = 0;
-                while (it.advance()) {
-                    for (int i = 0; i < correlations.length; i++) {
-                        correlations[i] += it.x(i) * values[index];
-                    }
-                    index++;
-                }
-                double corr = Math.abs(correlations[0]);
-                for (int i = 1; i < correlations.length; i++) {
-                    final double current = Math.abs(correlations[i]);
-                    if (corr < current) {
-                        corr = current;
-                        bestDirection = i;
-                        sign = Math.signum(correlations[i]);
-                    }
-                }
-            }
-            final double signedStep = step * sign;
-            betas[bestDirection] += signedStep;
-            {
-                final DSIterator it = learn.iterator();
-                score = 0;
-                for (int i = 0; i < values.length; i++) {
-                    it.advance();
-                    values[i] -= signedStep * it.x(bestDirection);
-                    score += values[i] * values[i];
-                }
-            }
+        double corr = Math.abs(correlations[0]);
+        for (int i = 1; i < correlations.length; i++) {
+          final double current = Math.abs(correlations[i]);
+          if (corr < current) {
+            corr = current;
+            bestDirection = i;
+            sign = Math.signum(correlations[i]);
+          }
         }
-        return new LinearModel(new ArrayVec(betas));
+      }
+      final double signedStep = step * sign;
+      betas.adjust(bestDirection, signedStep);
+      {
+        for (int i = 0; i < learn.rows(); i++) {
+          values.adjust(i, -signedStep * learn.get(i, bestDirection));
+        }
+      }
     }
-
+    return new LinearModel(betas);
+  }
 }

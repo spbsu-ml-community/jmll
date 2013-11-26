@@ -8,7 +8,7 @@ import com.spbsu.commons.math.vectors.Vec;
  * Date: 21.12.2010
  * Time: 22:07:07
  */
-public interface CursorOracle<LocalLoss extends Oracle0> extends Oracle0, WeakListenerHolder<CursorOracle.CursorMoved> {
+public interface CursorOracle<LocalLoss extends Func> extends Func, WeakListenerHolder<CursorOracle.CursorMoved> {
   interface CursorMoved {
     void to(Vec v);
   }

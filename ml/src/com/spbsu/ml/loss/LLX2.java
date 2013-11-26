@@ -2,7 +2,7 @@ package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.Oracle1;
+import com.spbsu.ml.FuncStub;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -13,7 +13,7 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class LLX2 implements Oracle1 {
+public class LLX2 extends FuncStub {
   private final Vec target;
 
   public LLX2(Vec target) {
@@ -34,7 +34,7 @@ public class LLX2 implements Oracle1 {
   }
 
   @Override
-  public int dim() {
+  public int xdim() {
     return target.dim();
   }
 

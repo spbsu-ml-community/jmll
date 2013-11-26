@@ -7,7 +7,7 @@ import com.spbsu.commons.math.vectors.Vec;
  * Date: 26.12.10
  * Time: 17:26
  */
-public interface DSIterator extends DataEntry {
+public interface DSIterator {
   boolean advance();
 
   double y();

@@ -1,6 +1,6 @@
 package com.spbsu.ml.data;
 
-import com.spbsu.commons.func.AdditiveGator;
+import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.util.ThreadTools;
 import com.spbsu.ml.BFGrid;
@@ -19,11 +19,11 @@ public class Aggregate {
   private final BinarizedDataSet bds;
   int transferRowSize;
   private final BFGrid grid;
-  private final AdditiveGator[] bins;
-  private final Factory<AdditiveGator> factory;
-  private AdditiveGator total;
+  private final AdditiveStatistics[] bins;
+  private final Factory<AdditiveStatistics> factory;
+  private AdditiveStatistics total;
 
-  public Aggregate(BinarizedDataSet bds, Factory<AdditiveGator> factory, int[] points) {
+  public Aggregate(BinarizedDataSet bds, Factory<AdditiveStatistics> factory, int[] points) {
     this.bds = bds;
     this.grid = bds.grid();
     int maxRow = 0;
@@ -31,7 +31,7 @@ public class Aggregate {
       maxRow = Math.max(maxRow, grid.row(i).size()) + 1;
     }
     transferRowSize = maxRow;
-    this.bins = new AdditiveGator[transferRowSize * grid.rows()];
+    this.bins = new AdditiveStatistics[transferRowSize * grid.rows()];
     for (int i = 0; i < bins.length; i++) {
       bins[i] = factory.create();
 
@@ -40,8 +40,8 @@ public class Aggregate {
     build(points);
   }
 
-  public AdditiveGator combinatorForFeature(int bf) {
-    final AdditiveGator result = factory.create();
+  public AdditiveStatistics combinatorForFeature(int bf) {
+    final AdditiveStatistics result = factory.create();
 
     final BFGrid.BFRow row = grid.bf(bf).row();
     final int binNo = grid.bf(bf).binNo;
@@ -52,7 +52,7 @@ public class Aggregate {
     return result;
   }
 
-  public synchronized AdditiveGator total() {
+  public synchronized AdditiveStatistics total() {
     if (total == null) { // calculating total by non empty row
       total = factory.create();
       final BFGrid.BFRow row = grid.nonEmptyRow();
@@ -75,7 +75,7 @@ public class Aggregate {
     void accept(BFGrid.BinaryFeature bf, T left, T right);
   }
 
-  public <T extends AdditiveGator> void visit(SplitVisitor<T> visitor) {
+  public <T extends AdditiveStatistics> void visit(SplitVisitor<T> visitor) {
     final T total = (T)total();
 
     for (int f = 0; f < grid.rows(); f++) {
@@ -102,8 +102,28 @@ public class Aggregate {
           final byte[] bin = bds.bins(finalFIndex);
           final int offset = finalFIndex * transferRowSize;
           if (!grid.row(finalFIndex).empty()) {
-            for (int i : indices) {
-              bins[offset + bin[i]].append(i);
+//            for (int i : indices) {
+//              bins[offset + bin[i]].append(i, 1);
+//            }
+            final int length = 4 * (indices.length / 4);
+            final AdditiveStatistics[] binsLocal = bins;
+            final int[] indicesLocal = indices;
+            for (int i = 0; i < length; i+=4) {
+              final int idx1 = indicesLocal[i];
+              final int idx2 = indicesLocal[i + 1];
+              final int idx3 = indicesLocal[i + 2];
+              final int idx4 = indicesLocal[i + 3];
+              final AdditiveStatistics bin1 = binsLocal[offset + bin[idx1]];
+              final AdditiveStatistics bin2 = binsLocal[offset + bin[idx2]];
+              final AdditiveStatistics bin3 = binsLocal[offset + bin[idx3]];
+              final AdditiveStatistics bin4 = binsLocal[offset + bin[idx4]];
+              bin1.append(idx1, 1);
+              bin2.append(idx2, 1);
+              bin3.append(idx3, 1);
+              bin4.append(idx4, 1);
+            }
+            for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
+              binsLocal[offset + bin[i]].append(indicesLocal[i], 1);
             }
           }
           latch.countDown();

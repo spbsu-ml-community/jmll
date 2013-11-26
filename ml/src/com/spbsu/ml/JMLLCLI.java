@@ -2,10 +2,12 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.IntBasis;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
@@ -14,44 +16,44 @@ import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.io.ModelsSerializationRepository;
-import com.spbsu.ml.loss.GradientL2Cursor;
-import com.spbsu.ml.methods.BooBag;
-import com.spbsu.ml.methods.Boosting;
+import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.GreedyTDRegion;
-import com.spbsu.ml.methods.MLMethod;
+import com.spbsu.ml.methods.Optimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.AdditiveModel;
-import com.spbsu.ml.models.AdditiveMultiClassModel;
+import com.spbsu.ml.models.Ensemble;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
-import java.util.List;
+import java.lang.reflect.Method;
 import java.util.Random;
+import java.util.StringTokenizer;
 
-import static com.spbsu.commons.math.vectors.VecTools.*;
+import static com.spbsu.commons.math.vectors.VecTools.append;
 
 /**
  * User: solar
  * Date: 08.08.13
  * Time: 17:38
  */
+@SuppressWarnings("UnusedDeclaration")
 public class JMLLCLI {
-  public static final String DEFAULT_OPTIMIZATION_STRATEGY = "L2/SatL2/Gradient";
-  public static final String DEFAULT_OPTIMIZATION_SCHEME = "Boosting/GOT";
+  public static final String DEFAULT_TARGET = "L2";
+  public static final String DEFAULT_OPTIMIZATION_SCHEME = "GradientBoosting(local=SatL2, weak=GreedyObliviousTree(depth=6), step=0.02, iterations=1000)";
   static Options options = new Options();
 
   static {
     options.addOption("f", "learn", true, "features.txt format file used as learn");
     options.addOption("t", "test", true, "test part in features.txt format");
-    options.addOption("T", "target", true, "target function to optimize format Global/Weak/Cursor (" + DEFAULT_OPTIMIZATION_STRATEGY + ")");
+    options.addOption("T", "target", true, "target function to optimize format Global/Weak/Cursor (" + DEFAULT_TARGET + ")");
     options.addOption("M", "measure", true, "metric to test, by default equals to global optimization target");
     options.addOption("O", "optimization", true, "optimization scheme: Strong/Weak or just Strong (" + DEFAULT_OPTIMIZATION_SCHEME + ")");
     options.addOption("i", "iterations", true, "ensemble power (iterations count)");
@@ -103,29 +105,48 @@ public class JMLLCLI {
         test = DataTools.normalizeClasses(test);
 
       String mode = command.getArgs()[0];
-      if ("fit".equals(mode)) {
-        final MLMethod method = chooseMethod(command.getOptionValue("O", DEFAULT_OPTIMIZATION_SCHEME), command, rnd, learn);
-        final String strategy = command.getOptionValue("T", DEFAULT_OPTIMIZATION_STRATEGY);
-        final Oracle0 loss = chooseTarget(learn.target(), method, strategy);
-        final Oracle0 metric = targetByName(command.getOptionValue("M", StringUtils.split(strategy, "/", 3)[0])).compute(test.target());
 
-        final Action<Model> progressHandler = new ProgressPrinter(learn, test, loss, metric);
-        if (method instanceof WeakListenerHolder && command.hasOption("v")) {
-          ((WeakListenerHolder<Model>)method).addListener(progressHandler);
+      final DataSet finalLearn = learn;
+      final Factory<BFGrid> lazyGrid = new Factory<BFGrid>() {
+        BFGrid cooked;
+        @Override
+        public BFGrid create() {
+          if (cooked == null) {
+            if (!command.hasOption("g"))
+              cooked = GridTools.medianGrid(finalLearn, Integer.parseInt(command.getOptionValue("x", "32")));
+            else
+              cooked = BFGrid.CONVERTER.convertFrom(command.getOptionValue("g"));
+          }
+          return cooked;
         }
-        final Model result = method.fit(learn, loss);
+      };
 
-        System.out.println("Learn: " + loss.value(result.value(learn)) + " Test: " + metric.value(result.value(test)));
+      if ("fit".equals(mode)) {
+        final Optimization method = chooseMethod(command.getOptionValue("O", DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd);
+        final String target = command.getOptionValue("T", DEFAULT_TARGET);
+        final Func loss = targetByName(target).compute(learn.target());
+        final Func metric = targetByName(command.getOptionValue("M", target)).compute(test.target());
+
+        final Action<Func> progressHandler = new ProgressPrinter(learn, test, loss, metric);
+        if (method instanceof WeakListenerHolder && command.hasOption("v")) {
+          //noinspection unchecked
+          ((WeakListenerHolder)method).addListener(progressHandler);
+        }
+        Interval.start();
+        Interval.suspend();
+        @SuppressWarnings("unchecked")
+        final Func result = method.fit(learn, loss);
+        Interval.stopAndPrint("Total fit time:");
+        System.out.println("Learn: " + loss.value(result.value(learn.data())) + " Test: " + metric.value(result.value(test.data())));
 
         BFGrid grid = DataTools.grid(result);
         serializationRepository = serializationRepository.customizeGrid(grid);
         DataTools.writeModel(result, new File(learnFile + ".model"), serializationRepository);
-        StreamTools.writeChars(serializationRepository.write(grid),
-                new File(learnFile + ".grid"));
+        StreamTools.writeChars(serializationRepository.write(grid), new File(learnFile + ".grid"));
       } else if ("apply".equals(mode)) {
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(learnFile + ".values"));
         try {
-          Model model = DataTools.readModel(command.getOptionValue('m', "features.txt.model"), serializationRepository);
+          Func model = DataTools.readModel(command.getOptionValue('m', "features.txt.model"), serializationRepository);
           DSIterator it = learn.iterator();
           int index = 0;
           while (it.advance()) {
@@ -149,29 +170,6 @@ public class JMLLCLI {
 
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
     }
-  }
-
-  private static Oracle0 chooseTarget(Vec target, MLMethod method, String command) {
-    String[] scheme = StringUtils.split(command, "/", 3);
-    String[] defaultScheme = StringUtils.split(DEFAULT_OPTIMIZATION_SCHEME, "/", 3);
-    if (scheme.length < defaultScheme.length) {
-      String[] newScheme = new String[3];
-      System.arraycopy(scheme, 0, newScheme, 0, scheme.length);
-      System.arraycopy(defaultScheme, scheme.length, newScheme, scheme.length, defaultScheme.length - scheme.length);
-      scheme = newScheme;
-    }
-    Oracle0 result = targetByName(scheme[0]).compute(target);
-    if (method instanceof Boosting) { // need to boil down result target to cursor target
-      Computable<Vec,Oracle0> weak = targetByName(scheme[1]);
-      String cursorName = scheme[2];
-      if ("Gradient".equals(cursorName)) {
-        if (result instanceof Oracle1)
-          result = new GradientL2Cursor((Oracle1)result, weak);
-        else
-          throw new RuntimeException("Unable to start gradient based method on Oracle0 global target type");
-      }
-    }
-    return result;
   }
 
   private static Pair<DataSet, DataSet> splitCV(DataSet learn, int folds, Random rnd) {
@@ -209,52 +207,107 @@ public class JMLLCLI {
                     new IndexTransVec(learn.target(), new ArrayPermutation(testIndicesArr), new IntBasis(testIndicesArr.length))));
   }
 
-  private static MLMethod chooseMethod(String name, final CommandLine command, Random rnd, final DataSet learn) {
-    String[] scheme = StringUtils.split(name, "/", 3);
-    String[] defaultScheme = StringUtils.split(DEFAULT_OPTIMIZATION_SCHEME, "/", 3);
-    if (scheme.length < defaultScheme.length) {
-      String[] newScheme = new String[2];
-      System.arraycopy(scheme, 0, newScheme, 0, scheme.length);
-      System.arraycopy(defaultScheme, scheme.length, newScheme, scheme.length, defaultScheme.length - scheme.length);
-      scheme = newScheme;
+  private static Optimization chooseMethod(String scheme, Factory<BFGrid> grid, Random rnd) {
+    final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
+    final Factory<Optimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd);
+    String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
+    StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
+    Method[] builderMethods = factory.getClass().getMethods();
+    while (paramsTok.hasMoreTokens()) {
+      final String[] temp = StringUtils.split(paramsTok.nextToken().trim(), "=", 2);
+      final String name = temp[0].trim();
+      final String value = temp[1].trim();
+      Method setter = null;
+      for (int m = 0; m < builderMethods.length && setter == null; m++) {
+        if (builderMethods[m].getName().equalsIgnoreCase(name))
+          setter = builderMethods[m];
+      }
+      if (setter == null || setter.getParameterTypes().length > 1 || setter.getParameterTypes().length < 1) {
+        System.err.println("Can not set up parameter: " + name + " to value: " + value + ". No setter in builder.");
+        continue;
+      }
+      Class type = setter.getParameterTypes()[0];
+      try {
+        if (Integer.class.equals(type) || int.class.equals(type)) {
+          setter.invoke(factory, Integer.parseInt(value));
+        }
+        else if (Double.class.equals(type) || double.class.equals(type)) {
+          setter.invoke(factory, Double.parseDouble(value));
+        }
+        else if (String.class.equals(type)) {
+          setter.invoke(factory, value);
+        }
+        else if (Optimization.class.equals(type)) {
+          setter.invoke(factory, chooseMethod(value, grid, rnd));
+        }
+        else {
+          System.err.println("Can not set up parameter: " + name + " to value: " + value + ". Unknown parameter type: " + type + ".");
+        }
+      } catch (Exception e) {
+        throw new RuntimeException("Can not set up parameter: " + name + " to value: " + value + ".", e);
+      }
     }
-    name = scheme[0];
-    MLMethod method;
-    if ("Boosting".equals(name)) {
-      method = new Boosting(chooseMethod(scheme[1], command, rnd, learn),
-              Integer.parseInt(command.getOptionValue("i", "1000")),
-              Double.parseDouble(command.getOptionValue("s", "0.01")), rnd);
-    } else if ("BooBag".equals(name)) {
-      method = new BooBag(chooseMethod(scheme[1], command, rnd, learn),
-              Integer.parseInt(command.getOptionValue("i", "1000")),
-              Integer.parseInt(command.getOptionValue("a", "5")),
-              Double.parseDouble(command.getOptionValue("s", "0.01")), rnd);
-    } else if ("GOT".equals(name)) {
-      BFGrid grid;
-      if (!command.hasOption("g"))
-        grid = GridTools.medianGrid(learn, Integer.parseInt(command.getOptionValue("x", "32")));
-      else
-        grid = BFGrid.CONVERTER.convertFrom(command.getOptionValue("g"));
-      method = new GreedyObliviousTree(grid, Integer.parseInt(command.getOptionValue("d", "6")));
-    } else if ("GTDR".equals(name)) {
-      BFGrid grid;
-      if (!command.hasOption("g"))
-        grid = GridTools.medianGrid(learn, Integer.parseInt(command.getOptionValue("x", "32")));
-      else
-        grid = BFGrid.CONVERTER.convertFrom(command.getOptionValue("g"));
-      method = new GreedyTDRegion(rnd, learn, grid);
+    return factory.create();
+  }
+
+  private static Factory<Optimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final Random rnd) {
+    if ("GradientBoosting".equals(name)) {
+      return new Factory<Optimization>() {
+        public Optimization weak = new GreedyObliviousTree(grid.create(), 6);
+        public String lossName = "LogL2";
+        public double step = 0.005;
+        public int icount = 200;
+
+        public void step(double s) {
+          this.step = s;
+        }
+        public void iterations(int icount) {
+          this.icount = icount;
+        }
+        public void local(String lossName) {
+          this.lossName = lossName;
+        }
+        public void weak(Optimization weak) {
+          this.weak = weak;
+        }
+
+        @Override
+        public Optimization create() {
+          //noinspection unchecked
+          return new GradientBoosting(weak, targetByName(lossName), icount, step, rnd);
+        }
+      };
+    } else if ("GreedyObliviousTree".equals(name)) {
+      return new Factory<Optimization>() {
+        public int depth = 6;
+
+        public void depth(int d) {
+          this.depth = d;
+        }
+        @Override
+        public Optimization create() {
+          return new GreedyObliviousTree(grid.create(), depth);
+        }
+      };
+    } else if ("GreedyTDRegion".equals(name)) {
+      return new Factory<Optimization>() {
+        @Override
+        public Optimization create() {
+          return new GreedyTDRegion(rnd, grid.create());
+        }
+      };
     } else throw new RuntimeException("Unknown weak model: " + name);
-    return method;
   }
 
 
-  private static Computable<Vec, Oracle0> targetByName(final String name) {
+  private static Computable<Vec, Func> targetByName(final String name) {
     try {
-      Class<Oracle0> oracleClass = (Class<Oracle0>)Class.forName("com.spbsu.ml.loss." + name);
-      final Constructor<Oracle0> constructor = oracleClass.getConstructor(Vec.class);
-      return new Computable<Vec, Oracle0>() {
+      @SuppressWarnings("unchecked")
+      Class<Func> oracleClass = (Class<Func>)Class.forName("com.spbsu.ml.loss." + name);
+      final Constructor<Func> constructor = oracleClass.getConstructor(Vec.class);
+      return new Computable<Vec, Func>() {
         @Override
-        public Oracle0 compute(Vec argument) {
+        public Func compute(Vec argument) {
           try {
             return constructor.newInstance(argument);
           } catch (Exception e) {
@@ -271,12 +324,12 @@ public class JMLLCLI {
   private static class ProgressPrinter implements ProgressHandler {
     private final DataSet learn;
     private final DataSet test;
-    private final Oracle0 loss;
-    private final Oracle0 testMetric;
+    private final Func loss;
+    private final Func testMetric;
     Vec learnValues;
     Vec testValues;
 
-    public ProgressPrinter(DataSet learn, DataSet test, Oracle0 learnMetric, Oracle0 testMetric) {
+    public ProgressPrinter(DataSet learn, DataSet test, Func learnMetric, Func testMetric) {
       this.learn = learn;
       this.test = test;
       this.loss = learnMetric;
@@ -288,75 +341,24 @@ public class JMLLCLI {
     int iteration = 0;
 
     @Override
-    public void invoke(Model partial) {
-
-      if (partial instanceof AdditiveModel) {
-        final List<Model> models = ((AdditiveModel) partial).models;
-        final double step = ((AdditiveModel) partial).step;
-        final Model last = models.get(models.size() - 1);
-        append(learnValues, scale(last.value(learn), step));
-        append(testValues, scale(last.value(test), step));
+    public void invoke(Func partial) {
+//      Interval.suspend();
+      if (partial instanceof Ensemble) {
+        final Ensemble ensemble = (Ensemble) partial;
+        final double step = ensemble.wlast();
+        final Func last = ensemble.last();
+        append(learnValues, VecTools.scale(last.value(learn.data()), step));
+        append(testValues, VecTools.scale(last.value(test.data()), step));
       } else {
-        learnValues = partial.value(learn);
-        testValues = partial.value(test);
+        learnValues = partial.value(learn.data());
+        testValues = partial.value(test.data());
       }
       iteration++;
       if (iteration % 10 != 0)
         return;
-      System.out.print(iteration++);
+      System.out.print(iteration);
       System.out.println(" " + loss.value(learnValues) + "\t" + testMetric.value(testValues));
-    }
-  }
-
-  private static class MultiClassProgressPrinter implements ProgressHandler {
-    private final DataSet learn;
-    private final DataSet test;
-    private final Oracle1[] learnMetric;
-    private final Oracle1[] testMetric;
-    Vec[] learnValues;
-    Vec[] testValues;
-
-    public MultiClassProgressPrinter(DataSet learn, DataSet test, Oracle1[] learnMetric, Oracle1[] testMetric) {
-      this.learn = learn;
-      this.test = test;
-      this.learnMetric = learnMetric;
-      this.testMetric = testMetric;
-      int classesCount = DataTools.countClasses(learn.target());
-
-      learnValues = new Vec[classesCount];
-      testValues = new Vec[classesCount];
-      for (int i = 0; i < learnValues.length; i++) {
-        learnValues[i] = new ArrayVec(learn.power());
-        testValues[i] = new ArrayVec(test.power());
-      }
-    }
-
-    private int iteration = 0;
-
-    @Override
-    public void invoke(Model partial) {
-      if (partial instanceof AdditiveMultiClassModel) {
-        final List<MultiClassModel> models = ((AdditiveMultiClassModel) partial).models;
-        final double step = ((AdditiveMultiClassModel) partial).step;
-        final MultiClassModel last = models.get(models.size() - 1);
-        for (int c = 0; c < learnValues.length; c++) {
-          append(learnValues[c], scale(last.value(learn, c), step));
-          append(testValues[c], scale(last.value(test, c), step));
-        }
-      } else {
-        for (int c = 0; c < learnValues.length; c++) {
-          assign(learnValues[c], ((MultiClassModel) partial).value(learn, c));
-          assign(testValues[c], ((MultiClassModel) partial).value(test, c));
-        }
-      }
-      System.out.print(iteration++);
-      for (int i = 0; i < learnValues.length; i++) {
-        Vec learnValue = learnValues[i];
-        Vec testValue = testValues[i];
-        System.out.print("\t");
-        System.out.print(i + ": " + learnMetric[i].value(learnValue) + " " + testMetric[i].value(testValue));
-      }
-      System.out.println();
+//      Interval.resume();
     }
   }
 }

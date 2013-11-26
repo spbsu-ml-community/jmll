@@ -67,7 +67,7 @@ public class OptimizersTests extends TestCase {
 //
 //    public void testAdaptiveNesterovRandom() {
 //        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
-//        ConvexOptimize adaptiveNesterov = new AdaptiveNesterov(new ArrayVec(func.dim()));
+//        ConvexOptimize adaptiveNesterov = new AdaptiveNesterov(new ArrayVec(func.ydim()));
 //        Vec expected = func.getExactExtremum();
 //        Vec actual = adaptiveNesterov.optimize(func, EPS);
 //
@@ -77,7 +77,7 @@ public class OptimizersTests extends TestCase {
 //
 //    public void testCustomNesterovRandom() {
 //        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
-//        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(func.dim()));
+//        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(func.ydim()));
 //        Vec expected = func.getExactExtremum();
 //        Vec actual = customNesterov.optimize(func, EPS);
 //

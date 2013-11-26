@@ -4,10 +4,12 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Holder;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Model;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.StatBasedLoss;
+import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.models.Region;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyRegion implements MLMethod<L2> {
+public class GreedyRegion implements Optimization<WeightedLoss<L2>> {
   public static final int NN_NEIGHBORHOOD = 1000;
   private final Random rng;
   private final BFGrid grid;
@@ -31,9 +33,12 @@ public class GreedyRegion implements MLMethod<L2> {
   private double alpha = 10;
   private double betta = 0.00001;
 
-  public GreedyRegion(Random rng, DataSet ds, BFGrid grid) {
+  public GreedyRegion(Random rng, BFGrid grid) {
     this.rng = rng;
     this.grid = grid;
+  }
+
+  private void prepareNN(DataSet ds) {
     final int total = ds.power();
     binarization = new byte[total][];
     final DSIterator iter = ds.iterator();
@@ -69,7 +74,8 @@ public class GreedyRegion implements MLMethod<L2> {
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
   ThreadPoolExecutor exec = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 1, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
   @Override
-  public Region fit(final DataSet learn, final L2 loss) {
+  public synchronized Region fit(final DataSet learn, final WeightedLoss<L2> loss) {
+    prepareNN(learn);
     final Holder<Region> answer = new Holder<Region>(null);
     final CountDownLatch latch = new CountDownLatch(POOL_SIZE);
     for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
@@ -78,7 +84,7 @@ public class GreedyRegion implements MLMethod<L2> {
         public void run() {
           final Region model = fitInner(learn, loss);
           synchronized (answer) {
-            if (answer.getValue() == null || answer.getValue().score > model.score)
+            if (answer.getValue() == null || answer.getValue().score() > model.score())
               answer.setValue(model);
           }
           latch.countDown();
@@ -94,7 +100,7 @@ public class GreedyRegion implements MLMethod<L2> {
     return answer.getValue();
   }
 
-  public Region fitInner(DataSet learn, L2 loss) {
+  public Region fitInner(DataSet learn, StatBasedLoss loss) {
     int pointIdx = choosePointAtRandomNN(learn);
 
     byte[] folds = binarization[pointIdx];
@@ -184,7 +190,14 @@ public class GreedyRegion implements MLMethod<L2> {
         conditions.remove(worst);
       }
     }
-    return new Region(best, bestMean, bestCount, bestScore);
+    List<BFGrid.BinaryFeature> features = new ArrayList<BFGrid.BinaryFeature>();
+    boolean[] mask = new boolean[best.size()];
+    for (int i = 0; i < best.size(); i++) {
+      features.add(best.get(i).bf);
+      mask[i] = best.get(i).mask;
+    }
+
+    return new Region(features, mask, bestMean, bestCount, bestScore);
   }
 
   private double score(int total, int count, double sum, double sum2, int ccount) {
@@ -257,61 +270,6 @@ public class GreedyRegion implements MLMethod<L2> {
               .append(mask ? ">=" : "<")
               .append(bf.condition);
 
-      return builder.toString();
-    }
-  }
-
-  public static class Region extends Model {
-    private final int[] features;
-    private final double[] conditions;
-    private final boolean[] mask;
-    private final double value;
-    private final int basedOn;
-    private final double score;
-
-    public Region(final List<BinaryCond> conditions, double value, int basedOn, double bestScore) {
-      this.basedOn = basedOn;
-      this.features = new int[conditions.size()];
-      this.conditions = new double[conditions.size()];
-      this.mask = new boolean[conditions.size()];
-      this.value = value;
-      for (int i = 0; i < conditions.size(); i++) {
-        this.features[i] = conditions.get(i).bf.findex;
-        this.conditions[i] = conditions.get(i).bf.condition;
-        this.mask[i] = conditions.get(i).mask;
-      }
-      this.score = bestScore;
-    }
-
-    @Override
-    public double value(Vec x) {
-      for (int i = 0; i < features.length; i++) {
-        if ((x.get(features[i]) >= conditions[i]) != mask[i])
-          return 0.;
-      }
-      return value;
-    }
-
-    public boolean contains(Vec x) {
-      for (int i = 0; i < features.length; i++) {
-        if ((x.get(features[i]) >= conditions[i]) != mask[i])
-          return false;
-      }
-
-      return true;
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder builder = new StringBuilder();
-      builder.append(value).append("/").append(basedOn);
-      builder.append(" ->");
-      for (int i = 0; i < features.length; i++) {
-        builder.append(" ")
-               .append(features[i])
-               .append(mask[i] ? ">=" : "<")
-               .append(conditions[i]);
-      }
       return builder.toString();
     }
   }

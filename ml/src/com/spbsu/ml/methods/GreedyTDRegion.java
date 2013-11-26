@@ -1,15 +1,15 @@
 package com.spbsu.ml.methods;
 
-import com.spbsu.commons.func.AdditiveGator;
+import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
-import com.spbsu.ml.Model;
+import com.spbsu.ml.Func;
 import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.impl.Bootstrap;
-import com.spbsu.ml.loss.StatBasedOracle;
+import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.methods.trees.BFOptimizationSubset;
 import com.spbsu.ml.models.Region;
 
@@ -22,23 +22,21 @@ import java.util.Random;
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyTDRegion<O extends StatBasedOracle> implements MLMethod<O> {
+public class GreedyTDRegion<O extends StatBasedLoss> implements Optimization<O> {
   private final Random rng;
   protected final BFGrid grid;
-  protected final BinarizedDataSet bds;
 
-  public GreedyTDRegion(Random rng, DataSet ds, BFGrid grid) {
+  public GreedyTDRegion(Random rng, BFGrid grid) {
     this.rng = rng;
     this.grid = grid;
-    bds = new BinarizedDataSet(ds, grid);
   }
 
   @Override
-  public Model fit(DataSet learn, final O loss) {
+  public Func fit(DataSet learn, final O loss) {
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(100);
     final List<Boolean> mask = new ArrayList<Boolean>();
     double currentScore = Double.POSITIVE_INFINITY;
-    final AdditiveGator excluded = (AdditiveGator)loss.statsFactory().create();
+    final AdditiveStatistics excluded = (AdditiveStatistics)loss.statsFactory().create();
     BFOptimizationSubset current;
     final BinarizedDataSet bds;
     if (learn instanceof Bootstrap) {
@@ -54,9 +52,9 @@ public class GreedyTDRegion<O extends StatBasedOracle> implements MLMethod<O> {
 
     final double[] scores = new double[grid.size()];
     while (true) {
-      current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveGator>() {
+      current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
         @Override
-        public void accept(BFGrid.BinaryFeature bf, AdditiveGator left, AdditiveGator right) {
+        public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
           scores[bf.bfIndex] = loss.value(excluded) +
                   Math.min(loss.score(left) + loss.value(right),
                            loss.value(left) + loss.score(right));
@@ -67,9 +65,9 @@ public class GreedyTDRegion<O extends StatBasedOracle> implements MLMethod<O> {
         break;
       final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
       final boolean[] isRight = new boolean[1];
-      current.visitSplit(bestSplitBF, new Aggregate.SplitVisitor<AdditiveGator>() {
+      current.visitSplit(bestSplitBF, new Aggregate.SplitVisitor<AdditiveStatistics>() {
         @Override
-        public void accept(BFGrid.BinaryFeature bf, AdditiveGator left, AdditiveGator right) {
+        public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
           isRight[0] = (loss.score(left) + loss.value(right) > loss.value(left) + loss.score(right));
         }
       });
@@ -90,6 +88,6 @@ public class GreedyTDRegion<O extends StatBasedOracle> implements MLMethod<O> {
     for (int i = 0; i < masks.length; i++) {
       masks[i] = mask.get(i);
     }
-    return new Region(conditions, masks, loss.gradient(current.total()), -1, currentScore);
+    return new Region(conditions, masks, loss.bestIncrement(current.total()), -1, currentScore);
   }
 }

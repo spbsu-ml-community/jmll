@@ -3,9 +3,9 @@ package com.spbsu.ml.models;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.ml.Model;
+import com.spbsu.ml.FuncStub;
 
-public class QuadraticModel extends Model {
+public class QuadraticModel extends FuncStub {
     private Mx M;
     private Vec b;
     private double c;
@@ -16,7 +16,12 @@ public class QuadraticModel extends Model {
         this.c = c;
     }
 
-    @Override
+  @Override
+  public int xdim() {
+    return b.dim();
+  }
+
+  @Override
     public double value(Vec x) {
         return VecTools.multiply(x, VecTools.multiply(M, x)) + VecTools.multiply(x, b) + c;
     }

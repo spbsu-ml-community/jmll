@@ -2,7 +2,7 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Model;
+import com.spbsu.ml.FuncStub;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ import java.util.List;
  * Time: 20:50
  * To change this template use File | Settings | File Templates.
  */
-public class ContinousObliviousTree extends Model {
+public class ContinousObliviousTree extends FuncStub {
     private final BFGrid.BinaryFeature[] features;
     private final double[][] values;
     //private final double[] basedOn;
@@ -30,7 +30,12 @@ public class ContinousObliviousTree extends Model {
         //this.score = bestScore;
     }
 
-    @Override
+  @Override
+  public int xdim() {
+    return features[0].row().grid().size();
+  }
+
+  @Override
     public double value(Vec _x) {
         int index = bin(_x);
         double sum = 0;

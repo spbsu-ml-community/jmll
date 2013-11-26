@@ -3,8 +3,6 @@ package com.spbsu.ml.optimization.impl;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.optimization.ConvexFunction;
-import com.spbsu.ml.optimization.ConvexOptimize;
 import com.spbsu.ml.optimization.TensorNetFunction;
 
 /**
@@ -21,7 +19,7 @@ public class ALS  {
     }
 
     public Vec optimize(TensorNetFunction func) {
-        int n = func.dim();
+        int n = func.xdim();
 
         Vec u = new ArrayVec(n);
         Vec v = new ArrayVec(n);

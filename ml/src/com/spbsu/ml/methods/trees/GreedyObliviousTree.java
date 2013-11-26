@@ -1,15 +1,14 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.func.AdditiveGator;
+import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.data.impl.Bootstrap;
-import com.spbsu.ml.loss.StatBasedOracle;
-import com.spbsu.ml.methods.MLMethod;
+import com.spbsu.ml.loss.StatBasedLoss;
+import com.spbsu.ml.methods.Optimization;
 import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.ArrayList;
@@ -22,7 +21,7 @@ import java.util.ListIterator;
  * Date: 30.11.12
  * Time: 17:01
  */
-public class GreedyObliviousTree<Loss extends StatBasedOracle> implements MLMethod<Loss> {
+public class GreedyObliviousTree<Loss extends StatBasedLoss> implements Optimization<Loss> {
   private final int depth;
   private final BFGrid grid;
 
@@ -32,29 +31,22 @@ public class GreedyObliviousTree<Loss extends StatBasedOracle> implements MLMeth
   }
 
   @Override
-  public ObliviousTree fit(DataSet ds, final StatBasedOracle loss) {
+  public ObliviousTree fit(DataSet ds, final Loss loss) {
     List<BFOptimizationSubset> leaves = new ArrayList<BFOptimizationSubset>(1 << depth);
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(depth);
     double currentScore = Double.POSITIVE_INFINITY;
 
     final BinarizedDataSet bds;
-    if (ds instanceof Bootstrap) {
-      final Bootstrap bs = (Bootstrap) ds;
-      bds = bs.original().cache(Binarize.class).binarize(grid);
-      leaves.add(new BFOptimizationSubset(bds, loss, bs.order()));
-    }
-    else {
-      bds = ds.cache(Binarize.class).binarize(grid);
-      leaves.add(new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, ds.power())));
-    }
+    bds = ds.cache(Binarize.class).binarize(grid);
+    leaves.add(new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, ds.power())));
 
     final double[] scores = new double[grid.size()];
     for (int level = 0; level < depth; level++) {
       Arrays.fill(scores, 0.);
       for (BFOptimizationSubset leaf : leaves) {
-        leaf.visitAllSplits(new Aggregate.SplitVisitor<AdditiveGator>() {
+        leaf.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
           @Override
-          public void accept(BFGrid.BinaryFeature bf, AdditiveGator left, AdditiveGator right) {
+          public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
             scores[bf.bfIndex] += loss.score(left) + loss.score(right);
           }
         });
@@ -77,7 +69,7 @@ public class GreedyObliviousTree<Loss extends StatBasedOracle> implements MLMeth
     double[] step = new double[leaves.size()];
     double[] based = new double[leaves.size()];
     for (int i = 0; i < step.length; i++) {
-      step[i] = loss.gradient(leaves.get(i).total());
+      step[i] = loss.bestIncrement(leaves.get(i).total());
     }
     return new ObliviousTree(conditions, step, based);
   }

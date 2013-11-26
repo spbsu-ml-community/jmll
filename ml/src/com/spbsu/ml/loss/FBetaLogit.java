@@ -42,9 +42,4 @@ public class FBetaLogit extends LLLogit {
 
     return (1 + betta*betta) * precision * recall/(betta * betta * precision + recall);
   }
-
-  @Override
-  public int dim() {
-    return target.dim();
-  }
 }

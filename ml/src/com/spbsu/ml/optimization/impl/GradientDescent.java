@@ -31,7 +31,7 @@ public class GradientDescent implements ConvexOptimize {
 
         Vec x1 = copy(x0);
         Vec x2 = new ArrayVec(x0.dim());
-        Vec grad = func.gradient(x0);
+        Vec grad = func.gradient().value(x0);
 
         int iter = 0;
 
@@ -43,7 +43,7 @@ public class GradientDescent implements ConvexOptimize {
             }
 
             x1 = copy(x2);
-            grad = func.gradient(x1);
+            grad = func.gradient().value(x1);
             distance = VecTools.norm(grad) / func.getGlobalConvexParam();
             iter++;
         }

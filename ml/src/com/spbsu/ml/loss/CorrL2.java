@@ -13,7 +13,7 @@ public class CorrL2 extends L2 {
   }
 
   @Override
-  public double gradient(MSEStats stats) {
+  public double bestIncrement(MSEStats stats) {
     return stats.weight > 1 ? stats.sum/stats.weight : 0;
   }
 

@@ -33,7 +33,6 @@ public class ObliviousTree extends BinOptimizedModel {
     return values[index];
   }
 
-
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
@@ -105,7 +104,6 @@ public class ObliviousTree extends BinOptimizedModel {
 
   @Override
   protected double value(BinarizedDataSet bds, int pindex) {
-    int bin = 0;
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;

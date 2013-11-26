@@ -5,15 +5,13 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
-import com.spbsu.ml.loss.GradientL2Cursor;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.SatL2;
-import com.spbsu.ml.methods.Boosting;
+import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.AdditiveModel;
+import com.spbsu.ml.models.Ensemble;
 import gnu.trove.TByteArrayList;
 
 import java.io.*;
@@ -32,10 +30,10 @@ public class HWScore {
       final DataSet test = transform(args[1], new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/featuresTest.txt.gz")));
       final BFGrid grid = GridTools.medianGrid(learn, 32);
       final FastRandom rng = new FastRandom();
-      final Boosting boosting = new Boosting<SatL2>(new GreedyObliviousTree<SatL2>(grid, 6), 2000, 0.005, rng);
+      final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyObliviousTree<WeightedLoss<L2>>(grid, 6), 2000, 0.005, rng);
       final ScoreCalcer score = new ScoreCalcer(test);
       boosting.addListener(score);
-      boosting.fit(learn, new GradientL2Cursor<L2>(new L2(learn.target()), SatL2.FACTORY));
+      boosting.fit(learn, new L2(learn.target()));
       System.out.println("Best score: " + score.bestScore + " reached at iteration " + score.bestIter + ". Greed size: " + grid.size());
     }
     if (args.length >= 2 && "-fit".equals(args[0])) {
@@ -65,7 +63,7 @@ public class HWScore {
   }
 
   private static class ScoreCalcer implements ProgressHandler {
-    final Vec current;
+    private Vec current;
     private final DataSet ds;
     public double bestScore = Double.MAX_VALUE;
     public int bestIter;
@@ -77,23 +75,15 @@ public class HWScore {
     }
 
     @Override
-    public void invoke(Model partial) {
+    public void invoke(Func partial) {
       iteration++;
-      if (partial instanceof AdditiveModel) {
-        final AdditiveModel additiveModel = (AdditiveModel) partial;
-        final Model increment = (Model)additiveModel.models.get(additiveModel.models.size() - 1);
-        final DSIterator iter = ds.iterator();
-        int index = 0;
-        while (iter.advance()) {
-          current.adjust(index++, additiveModel.step * increment.value(iter.x()));
-        }
+      if (partial instanceof Ensemble) {
+        final Ensemble ensemble = (Ensemble) partial;
+        final Func increment = ensemble.models()[ensemble.size() - 1];
+        VecTools.append(current, VecTools.scale(increment.value(ds.data()), ensemble.weight(ensemble.size() - 1)));
       }
       else {
-        final DSIterator iter = ds.iterator();
-        int index = 0;
-        while (iter.advance()) {
-          current.set(index++, partial.value(iter.x()));
-        }
+        current = partial.value(ds.data());
       }
       double score = VecTools.distance(current, ds.target()) / Math.sqrt(ds.power());
       if (score <= bestScore) {

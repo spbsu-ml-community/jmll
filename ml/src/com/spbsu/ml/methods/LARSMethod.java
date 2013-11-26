@@ -1,23 +1,27 @@
 package com.spbsu.ml.methods;
 
-import Jama.Matrix;
+import com.spbsu.commons.math.MathTools;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.data.DSIterator;
+import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.NormalizedLinearModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.spbsu.commons.math.vectors.VecTools.*;
+
 /**
  * User: solar
  * Date: 27.12.10
  * Time: 18:04
  */
-public class LARSMethod implements MLMethod<L2> {
-  private static final double E = 1e-7;
+public class LARSMethod implements Optimization<L2> {
   private class Direction {
     double sign;
     int index;
@@ -27,89 +31,67 @@ public class LARSMethod implements MLMethod<L2> {
     }
   }
 
-  public NormalizedLinearModel fit(DataSet orig, L2 loss) {
-    final int featuresCount = orig.xdim();
-    final double[] betas = new double[featuresCount];
-    double[] values = new double[orig.power()];
-    final DataTools.NormalizationProperties props = new DataTools.NormalizationProperties();
-    DataSet learn = DataTools.normalize(orig, DataTools.NormalizationType.SCALE, props);
-    {
-      final DSIterator it = learn.iterator();
-      for (int i = 0; i < values.length; i++) {
-        it.advance();
-        values[i] = it.y();
-      }
-    }
+  public NormalizedLinearModel fit(DataSet origDS, L2 loss) {
+    Mx orig = origDS.data();
+    final int featuresCount = orig.columns();
+    Vec betas = new ArrayVec(featuresCount);
+    double avg = VecTools.sum(loss.target) / loss.xdim();
+    final VecTools.NormalizationProperties props = new VecTools.NormalizationProperties();
+    Mx learn = VecTools.normalize(orig, VecTools.NormalizationType.SCALE, props);
+    Vec values = new ArrayVec(orig.rows());
+    fill(values, -avg);
+    append(values, loss.target);
 
     for (int t = 0; t < featuresCount; t++) {
-      double[] correlations = new double[featuresCount];
+      Vec correlations = multiply(transpose(learn), values);
       double bestCorr;
       final List<Direction> selectedDirections = new ArrayList<Direction>(featuresCount);
       {
-        final DSIterator it = learn.iterator();
-        int index = 0;
-        while (it.advance()) {
-          for (int i = 0; i < correlations.length; i++) {
-            correlations[i] += it.x(i) * values[index];
-          }
-          index++;
-        }
-        bestCorr = Math.abs(correlations[0]);
-        selectedDirections.add(new Direction(Math.signum(correlations[0]), 0));
-        for (int i = 1; i < correlations.length; i++) {
-          final double current = Math.abs(correlations[i]);
-          final double diff = current - bestCorr;
-          if (diff > E) {
-            bestCorr = current;
-            selectedDirections.clear();
-            selectedDirections.add(new Direction(Math.signum(correlations[i]), i));
-          }
-          else if (diff < E && diff > -E) {
-            selectedDirections.add(new Direction(Math.signum(correlations[i]), i));
-          }
+        final int[] order = ArrayTools.sequence(0, correlations.dim());
+        Vec absCorr = abs(correlations);
+        ArrayTools.parallelSort(absCorr.toArray(), order);
+        bestCorr = Math.abs(correlations.get(order[0]));
+        for (int i = 0; i < correlations.dim(); i++) {
+          if (bestCorr - absCorr.get(order[i]) > MathTools.EPSILON)
+            break;
+          selectedDirections.add(new Direction(Math.signum(correlations.get(order[i])), order[i]));
         }
       }
-      final Matrix inverseCo;
+      final Mx inverseCo;
       {
-        final Matrix covariance = new Matrix(selectedDirections.size(), selectedDirections.size());
-        final DSIterator it = learn.iterator();
-        while (it.advance()) {
+        final Mx covariance = new VecBasedMx(selectedDirections.size(), selectedDirections.size());
+        for (int r = 0; r < learn.rows(); r++) {
           for (int i = 0; i < selectedDirections.size(); i++) {
             final Direction d1 = selectedDirections.get(i);
             for (int j = 0; j < selectedDirections.size(); j++) {
               final Direction d2 = selectedDirections.get(j);
-              covariance.set(i, j, covariance.get(i, j) + it.x(d1.index) * it.x(d2.index));
+              covariance.set(i, j, covariance.get(i, j) + learn.get(r, d1.index) * learn.get(r, d2.index));
             }
           }
         }
-        inverseCo = covariance.inverse();
+        inverseCo = VecTools.inverseCholesky(covariance);
       }
-      final Matrix vec1 = new Matrix(selectedDirections.size(), 1, 1);
-      double norm = Math.sqrt(vec1.transpose().times(inverseCo.times(vec1)).get(0, 0));
-      Matrix w = inverseCo.times(vec1).times(norm);
-      double[] equiangular = new double[learn.power()];
+      final Vec ones = fill(new ArrayVec(selectedDirections.size()), 1.);
+      double norm = Math.sqrt(multiply(ones, multiply(inverseCo, ones)));
+      scale(ones, norm);
+      Vec w = multiply(inverseCo, ones);
+      double[] equiangular = new double[learn.rows()];
       {
-        final DSIterator it = learn.iterator();
-        int index = 0;
-        while (it.advance()) {
+        for (int r = 0; r < learn.rows(); r++) {
           for (int i = 0; i < selectedDirections.size(); i++) {
             final Direction direction = selectedDirections.get(i);
-            equiangular[index] += direction.sign * it.x(direction.index) * w.get(i, 0);
+            equiangular[r] += direction.sign * learn.get(r, direction.index) * w.get(i);
           }
-          index++;
         }
       }
 
       double[] a = new double[featuresCount];
       {
-        final DSIterator it = learn.iterator();
-        int index = 0;
-        while (it.advance()) {
-          final double eqaComponent = equiangular[index];
+        for (int r = 0; r < learn.rows(); r++) {
+          final double eqaComponent = equiangular[r];
           for (int i = 0; i < featuresCount; i++) {
-            a[i] += it.x(i) * eqaComponent;
+            a[i] += learn.get(r, i) * eqaComponent;
           }
-          index++;
         }
       }
 
@@ -117,8 +99,8 @@ public class LARSMethod implements MLMethod<L2> {
       {
         for (final Direction direction : selectedDirections) {
           int j = direction.index;
-          final double s1 = (bestCorr - correlations[j])/(norm - a[j]);
-          final double s2 = (bestCorr + correlations[j])/(norm + a[j]);
+          final double s1 = (bestCorr - correlations.get(j))/(norm - a[j]);
+          final double s2 = (bestCorr + correlations.get(j))/(norm + a[j]);
           if (s1 > 0)
             step = Math.min(s1, step);
           if (s2 > 0)
@@ -128,19 +110,17 @@ public class LARSMethod implements MLMethod<L2> {
 
       for (final Direction direction : selectedDirections) {
         final double signedStep = step * direction.sign;
-        betas[direction.index] += signedStep;
+        betas.adjust(direction.index, signedStep);
       }
       {
-        final DSIterator it = learn.iterator();
-        for (int i = 0; i < values.length; i++) {
-          it.advance();
+        for (int r = 0; r < learn.rows(); r++) {
           for (final Direction direction : selectedDirections) {
             final double signedStep = step * direction.sign;
-            values[i] -= signedStep * it.x(direction.index);
+            values.adjust(r, -signedStep * learn.get(r, direction.index));
           }
         }
       }
     }
-    return new NormalizedLinearModel(new ArrayVec(betas), props);
+    return new NormalizedLinearModel(avg, betas, props);
   }
 }

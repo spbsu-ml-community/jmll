@@ -1,7 +1,8 @@
 package com.spbsu.ml.optimization;
 
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Oracle1;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.VecFunc;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * User: qde
@@ -9,9 +10,9 @@ import com.spbsu.ml.Oracle1;
  * Time: 19:01
  */
 
-public interface ConvexFunction extends Oracle1 {
-    public double getGlobalConvexParam();
-    public double getLocalConvexParam(Vec x);
-    public double getGradLipParam();
-    public int dim();
+public interface ConvexFunction extends Func {
+  @NotNull
+  VecFunc gradient();
+  public double getGlobalConvexParam();
+  public double getGradLipParam();
 }

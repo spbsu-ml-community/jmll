@@ -1,6 +1,7 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
+import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -10,13 +11,16 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
-import com.spbsu.ml.loss.GradientL2Cursor;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.methods.*;
+import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.GreedyRegion;
+import com.spbsu.ml.methods.GreedyTDRegion;
+import com.spbsu.ml.methods.LARSMethod;
 import com.spbsu.ml.methods.trees.GreedyContinuesObliviousSoftBondariesRegressionTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.AdditiveModel;
 import com.spbsu.ml.models.ContinousObliviousTree;
+import com.spbsu.ml.models.Ensemble;
 import com.spbsu.ml.models.NormalizedLinearModel;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.TDoubleDoubleHashMap;
@@ -42,16 +46,22 @@ public class MethodsTests extends GridTest {
     final LARSMethod lars = new LARSMethod();
 //    lars.addListener(modelPrinter);
     final NormalizedLinearModel model = lars.fit(learn, new L2(learn.target()));
-    System.out.println(new L2(validate.target()).value(model.value(validate)));
+    System.out.println(new L2(validate.target()).value(model.value(validate.data())));
   }
 
   public void testGRBoost() {
-    final Boosting<L2> boosting = new Boosting<L2>(new GreedyRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02, rng);
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn, 32)),
+            new Computable<Vec, L2>() {
+              @Override
+              public L2 compute(Vec argument) {
+                return new L2(argument);
+              }
+            }, 10000, 0.02, rng);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(Model partial) {
+      public void invoke(Func partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -64,38 +74,16 @@ public class MethodsTests extends GridTest {
     boosting.addListener(validateListener);
     boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
-    boosting.fit(learn, new GradientL2Cursor<L2>(new L2(learn.target()), L2.FACTORY));
-  }
-
-  public void testGRSBoost() {
-    final Boosting<L2> boosting = new Boosting<L2>(new GreedyL1SphereRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02, rng);
-    final Action counter = new ProgressHandler() {
-      int index = 0;
-
-      @Override
-      public void invoke(Model partial) {
-        System.out.print("\n" + index++);
-      }
-    };
-    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn);
-    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate);
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
-    boosting.addListener(counter);
-    boosting.addListener(learnListener);
-    boosting.addListener(validateListener);
-    boosting.addListener(qualityCalcer);
-//    boosting.addListener(modelPrinter);
-    boosting.fit(learn, new GradientL2Cursor<L2>(new L2(learn.target()), L2.FACTORY));
+    boosting.fit(learn, new L2(learn.target()));
   }
 
   public void testGTDRBoost() {
-    final Boosting<L2> boosting = new Boosting<L2>(new GreedyTDRegion(new FastRandom(), learn, GridTools.medianGrid(learn, 32)), 10000, 0.02, rng);
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyTDRegion<WeightedLoss<L2>>(new FastRandom(), GridTools.medianGrid(learn, 32)), 10000, 0.02, rng);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(Model partial) {
+      public void invoke(Func partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -108,16 +96,16 @@ public class MethodsTests extends GridTest {
     boosting.addListener(validateListener);
     boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
-    boosting.fit(learn, new GradientL2Cursor<L2>(new L2(learn.target()), L2.FACTORY));
+    boosting.fit(learn, new L2(learn.target()));
   }
 
   public void testOTBoost() {
-    final Boosting<L2> boosting = new Boosting<L2>(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), 2000, 0.01, rng);
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), 2000, 0.01, rng);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(Model partial) {
+      public void invoke(Func partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -130,18 +118,18 @@ public class MethodsTests extends GridTest {
     boosting.addListener(validateListener);
     //boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
-    boosting.fit(learn, new GradientL2Cursor<L2>(new L2(learn.target()), L2.FACTORY));
+    boosting.fit(learn, new L2(learn.target()));
   }
 
   public void testCOTBoost() {
-    final Boosting<L2> boosting = new Boosting<L2>(
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
             new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32),6, 10, true, 1, 0, 0, 1e5),
             2000, 0.01, rng);
-    final Action counter = new Action<Model>() {
+    final Action counter = new Action<Func>() {
       int index = 0;
 
       @Override
-      public void invoke(Model partial) {
+      public void invoke(Func partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -154,7 +142,7 @@ public class MethodsTests extends GridTest {
     boosting.addListener(validateListener);
     //boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
-    boosting.fit(learn, new GradientL2Cursor<L2>(new L2(learn.target()), L2.FACTORY));
+    boosting.fit(learn, new L2(learn.target()));
   }
 
   private double sqr(double x) {
@@ -181,7 +169,7 @@ public class MethodsTests extends GridTest {
               new FastRandom(),
               learn,
               GridTools.medianGrid(learn, 32), depth, 10, true, 1, 0.1, 1, 1e5).fit(learn, new L2(learn.target()));
-      //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
+      //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
       // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
       System.out.print("Oblivious Tree deapth = " + depth);
       scoreCalcerLearn.invoke(tree);
@@ -269,7 +257,7 @@ public class MethodsTests extends GridTest {
     //System.out.println(learn.data());
     for (int depth = 1; depth <= 6; depth++) {
       ContinousObliviousTree tree = new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), depth, 1, true, 1, 0.1, 1, 1e5).fit(myLearn, new L2(myLearn.target()));
-      //for(int i = 0; i < 10/*learn.target().dim()*/;i++)
+      //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
       // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
       System.out.print("Oblivious Tree deapth = " + depth);
       scoreCalcerLearn.invoke(tree);
@@ -295,14 +283,14 @@ public class MethodsTests extends GridTest {
         } */
 
 
-    final Boosting<L2> boosting = new Boosting<L2>(
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
             new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
             2000, 0.01, rng);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(Model partial) {
+      public void invoke(Func partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -315,7 +303,7 @@ public class MethodsTests extends GridTest {
     boosting.addListener(validateListener);
     //boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
-    boosting.fit(learn, new GradientL2Cursor<L2>(new L2(learn.target()), L2.FACTORY));
+    boosting.fit(learn, new L2(learn.target()));
   }
 
   public void testDebugContinousObliviousTree() {
@@ -348,14 +336,14 @@ public class MethodsTests extends GridTest {
     double min = 1e10;
 
     @Override
-    public void invoke(Model partial) {
-      if (partial instanceof AdditiveModel) {
-        final AdditiveModel additiveModel = (AdditiveModel) partial;
-        final Model increment = (Model) additiveModel.models.get(additiveModel.models.size() - 1);
+    public void invoke(Func partial) {
+      if (partial instanceof Ensemble) {
+        final Ensemble linear = (Ensemble) partial;
+        final Func increment = linear.last();
         final DSIterator iter = ds.iterator();
         int index = 0;
         while (iter.advance()) {
-          current.adjust(index++, additiveModel.step * increment.value(iter.x()));
+          current.adjust(index++, linear.wlast() * increment.value(iter.x()));
         }
       } else {
         final DSIterator iter = ds.iterator();
@@ -373,10 +361,10 @@ public class MethodsTests extends GridTest {
 
   private static class ModelPrinter implements ProgressHandler {
     @Override
-    public void invoke(Model partial) {
-      if (partial instanceof AdditiveModel) {
-        final AdditiveModel model = (AdditiveModel) partial;
-        final Model increment = (Model) model.models.get(model.models.size() - 1);
+    public void invoke(Func partial) {
+      if (partial instanceof Ensemble) {
+        final Ensemble model = (Ensemble) partial;
+        final Func increment = model.models()[model.size() - 1];
         System.out.print("\t" + increment);
       }
     }
@@ -388,10 +376,10 @@ public class MethodsTests extends GridTest {
     int index = 0;
 
     @Override
-    public void invoke(Model partial) {
-      if (partial instanceof AdditiveModel) {
-        final AdditiveModel model = (AdditiveModel) partial;
-        final Model increment = (Model) model.models.get(model.models.size() - 1);
+    public void invoke(Func partial) {
+      if (partial instanceof Ensemble) {
+        final Ensemble model = (Ensemble) partial;
+        final Func increment = model.models()[model.size() - 1];
 
         final DSIterator iterator = learn.iterator();
         final TDoubleIntHashMap values = new TDoubleIntHashMap();
@@ -401,7 +389,7 @@ public class MethodsTests extends GridTest {
           final double value = increment.value(iterator.x());
           values.adjustOrPutValue(value, 1, 1);
           final double ddiff = sqr(residues.get(index)) - sqr(residues.get(index) - value);
-          residues.adjust(index, -model.step * value);
+          residues.adjust(index, -model.weight(model.size() - 1) * value);
           dispersionDiff.adjustOrPutValue(value, ddiff, ddiff);
           index++;
         }

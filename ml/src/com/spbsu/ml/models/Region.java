@@ -2,7 +2,8 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Model;
+import com.spbsu.ml.BinOptimizedModel;
+import com.spbsu.ml.data.impl.BinarizedDataSet;
 
 import java.util.List;
 
@@ -11,17 +12,29 @@ import java.util.List;
 * Date: 29.11.12
 * Time: 5:35
 */
-public class Region extends Model {
+public class Region extends BinOptimizedModel {
   private final BFGrid.BinaryFeature[] features;
   private final boolean[] mask;
   private final double value;
   private final int basedOn;
+  private final double score;
 
-  public Region(final List<BFGrid.BinaryFeature> conditions, boolean[] mask, double value, int basedOn, double bestScore) {
+  public Region(final List<BFGrid.BinaryFeature> conditions, boolean[] mask, double value, int basedOn, double score) {
+    super(conditions.get(0).row().grid());
     this.basedOn = basedOn;
+    this.score = score;
     this.features = conditions.toArray(new BFGrid.BinaryFeature[conditions.size()]);
     this.mask = mask;
     this.value = value;
+  }
+
+  @Override
+  protected double value(BinarizedDataSet bds, int pindex) {
+    for (int i = 0; i < features.length; i++) {
+      if (bds.bins(features[i].findex)[pindex] > features[i].binNo ^ !mask[i])
+        return 0;
+    }
+    return value;
   }
 
   @Override
@@ -54,5 +67,9 @@ public class Region extends Model {
              .append(features[i].condition);
     }
     return builder.toString();
+  }
+
+  public double score() {
+    return score;
   }
 }

@@ -6,14 +6,17 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.random.RandomExt;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Model;
+import com.spbsu.ml.CompositeFunc;
+import com.spbsu.ml.Func;
 import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.io.ModelsSerializationRepository;
-import com.spbsu.ml.models.AdditiveModel;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.AdditiveMultiClassModel;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
@@ -107,27 +110,32 @@ public class DataTools {
     return new Bootstrap(base, random);
   }
 
-  public static void writeModel(Model result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
+  public static void writeModel(Func result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);
     StreamTools.writeChars(CharSequenceTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
                            serializationRepository.write(result)), to);
   }
 
-  public static Model readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+  public static Func readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(new FileInputStream(fileName)));
     String line = modelReader.readLine();
     CharSequence[] parts = CharSequenceTools.split(line, '\t');
-    Class<? extends Model> modelClazz = (Class<? extends Model>)Class.forName(parts[0].toString());
+    Class<? extends Func> modelClazz = (Class<? extends Func>)Class.forName(parts[0].toString());
     return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }
 
-  public static BFGrid grid(Model result) {
-    if (result instanceof AdditiveModel)
-      return grid((Model)((AdditiveModel) result).models.get(0));
+  public static BFGrid grid(Func result) {
+    if (result instanceof CompositeFunc) {
+      final CompositeFunc composite = (CompositeFunc) result;
+      BFGrid grid = grid(composite.f);
+      for (int j = 0; j < composite.g.ydim() && grid == null; j++)
+        grid = grid(composite.g.direction(j));
+      return grid;
+    }
     if (result instanceof ObliviousTree)
       return ((ObliviousTree)result).grid();
     if (result instanceof AdditiveMultiClassModel)
-      return grid((Model)((AdditiveMultiClassModel) result).models.get(0));
+      return grid((Func)((AdditiveMultiClassModel) result).models.get(0));
     if (result instanceof ObliviousMultiClassTree)
       return ((ObliviousMultiClassTree)result).binaryClassifier().grid();
     return null;
@@ -159,7 +167,7 @@ public class DataTools {
     return new ChangedTarget((DataSetImpl)learn, normalized);
   }
 
-  private static double normalizeRelevance(double y) {
+  private static <LocalLoss extends L2> double normalizeRelevance(double y) {
     if (y < 0.07)
       return 0.;
 //    else if (y < 0.14)
@@ -171,6 +179,15 @@ public class DataTools {
 //    else
 //      return 4.;
     return 1.;
+  }
+
+  public static <LocalLoss extends L2> WeightedLoss<LocalLoss> bootstrap(LocalLoss loss, RandomExt rnd) {
+    int[] poissonWeights = new int[loss.xdim()];
+    double sum = 0;
+    for (int i = 0; i < loss.xdim(); i++) {
+      sum += poissonWeights[i] = rnd.nextPoisson(1.);
+    }
+    return new WeightedLoss<LocalLoss>(loss, poissonWeights);
   }
 
   public enum NormalizationType {

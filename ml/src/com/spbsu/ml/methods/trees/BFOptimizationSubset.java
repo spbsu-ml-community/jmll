@@ -1,10 +1,10 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.func.AdditiveGator;
+import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.loss.StatBasedOracle;
+import com.spbsu.ml.loss.StatBasedLoss;
 import gnu.trove.TIntArrayList;
 
 /**
@@ -16,10 +16,10 @@ import gnu.trove.TIntArrayList;
 public class BFOptimizationSubset {
   private final BinarizedDataSet bds;
   private int[] points;
-  private final StatBasedOracle<AdditiveGator> oracle;
+  private final StatBasedLoss<AdditiveStatistics> oracle;
   private final Aggregate aggregate;
 
-  public BFOptimizationSubset(BinarizedDataSet bds, StatBasedOracle oracle, int[] points) {
+  public BFOptimizationSubset(BinarizedDataSet bds, StatBasedLoss oracle, int[] points) {
     this.bds = bds;
     this.points = points;
     this.oracle = oracle;
@@ -47,17 +47,17 @@ public class BFOptimizationSubset {
     return points.length;
   }
 
-  public void visitAllSplits(Aggregate.SplitVisitor<? extends AdditiveGator> visitor) {
+  public void visitAllSplits(Aggregate.SplitVisitor<? extends AdditiveStatistics> visitor) {
     aggregate.visit(visitor);
   }
 
-  public <T extends AdditiveGator> void visitSplit(BFGrid.BinaryFeature bf, Aggregate.SplitVisitor<T> visitor) {
+  public <T extends AdditiveStatistics> void visitSplit(BFGrid.BinaryFeature bf, Aggregate.SplitVisitor<T> visitor) {
     final T left = (T)aggregate.combinatorForFeature(bf.bfIndex);
     final T right = (T)oracle.statsFactory().create().append(aggregate.total()).remove(left);
     visitor.accept(bf, left, right);
   }
 
-  public AdditiveGator total() {
+  public AdditiveStatistics total() {
     return aggregate.total();
   }
 }

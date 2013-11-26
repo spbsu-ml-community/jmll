@@ -4,9 +4,9 @@ import com.spbsu.commons.func.types.ConversionDependant;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.TypeConverter;
+import com.spbsu.ml.VecFunc;
 import com.spbsu.commons.text.CharSequenceTools;
-import com.spbsu.ml.Model;
-import com.spbsu.ml.MultiClassModel;
+import com.spbsu.ml.Func;
 import com.spbsu.ml.models.AdditiveMultiClassModel;
 
 import java.text.DecimalFormat;
@@ -43,7 +43,7 @@ public class AdditiveMultiClassModelConversionPack implements ConversionPack<Add
       builder.append("\n");
       builder.append("\n");
       for (int i = 0; i < from.models.size(); i++) {
-        Model model = (Model) from.models.get(i);
+        Func model = (Func) from.models.get(i);
         builder.append(repository.convert(model, CharSequence.class));
         builder.append("\n");
       }
@@ -63,12 +63,12 @@ public class AdditiveMultiClassModelConversionPack implements ConversionPack<Add
     @Override
     public AdditiveMultiClassModel convert(CharSequence from) {
       CharSequence[] elements = CharSequenceTools.split(from, "\n\n");
-      List<MultiClassModel> models = new ArrayList<MultiClassModel>();
+      List<VecFunc> models = new ArrayList<VecFunc>();
       double step;
 
       try {
         Object[] parse = HEADER.parse(elements[0].toString());
-        Class<? extends MultiClassModel> elementClass = (Class<? extends MultiClassModel>) Class.forName(parse[2].toString());
+        Class<? extends VecFunc> elementClass = (Class<? extends VecFunc>) Class.forName(parse[2].toString());
         step = Double.parseDouble(parse[1].toString());
         int count = Integer.parseInt(parse[0].toString());
         for (int i = 0; i < count; i++) {

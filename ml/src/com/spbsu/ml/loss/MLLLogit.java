@@ -3,7 +3,7 @@ package com.spbsu.ml.loss;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.Oracle1;
+import com.spbsu.ml.FuncStub;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -14,7 +14,7 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class MLLLogit implements Oracle1 {
+public class MLLLogit extends FuncStub {
   private final Vec target;
   private final int classesCount;
 
@@ -38,7 +38,7 @@ public class MLLLogit implements Oracle1 {
   }
 
   @Override
-  public int dim() {
+  public int xdim() {
     return target.dim() * classesCount;
   }
 

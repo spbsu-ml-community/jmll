@@ -13,7 +13,7 @@ public class SatL2 extends L2 {
   }
 
   @Override
-  public double gradient(MSEStats stats) {
+  public double bestIncrement(MSEStats stats) {
     return stats.weight > 2 ? stats.sum/stats.weight : 0;
   }
 
