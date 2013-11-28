@@ -2,10 +2,7 @@ package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.FuncStub;
-import com.spbsu.ml.VecFunc;
-import com.spbsu.ml.func.VecTransform;
-import com.sun.javafx.beans.annotations.NonNull;
+import com.spbsu.ml.FuncC1;
 
 import static java.lang.Math.exp;
 
@@ -15,36 +12,25 @@ import static java.lang.Math.exp;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class CELogit extends FuncStub {
+public class CELogit extends FuncC1.Stub {
   private final Vec target;
 
   public CELogit(Vec target) {
     this.target = target;
   }
 
-  @NonNull
   @Override
-  public VecFunc gradient() {
-    return new VecTransform() {
-      @Override
-      public Vec vvalue(Vec x) {
-        Vec result = new ArrayVec(x.dim());
-        for (int i = 0; i < x.dim(); i++) {
-          double b = target.get(i) > 0 ? 1 : -1;
-          double a = exp(x.get(i) * b);
-          result.set(i, 2 * a * b / (1 + a) / (1 + a));
-        }
-        return result;
-      }
-
-      @Override
-      public int xdim() {
-        return target.dim();
-      }
-    };
+  public Vec gradient(Vec x) {
+    Vec result = new ArrayVec(x.dim());
+    for (int i = 0; i < x.dim(); i++) {
+      double b = target.get(i) > 0 ? 1 : -1;
+      double a = exp(x.get(i) * b);
+      result.set(i, 2 * a * b / (1 + a) / (1 + a));
+    }
+    return result;
   }
 
-  public int xdim() {
+  public int dim() {
     return target.dim();
   }
 

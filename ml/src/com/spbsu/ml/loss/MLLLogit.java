@@ -5,7 +5,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.FuncStub;
+import com.spbsu.ml.FuncC1;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -16,7 +16,7 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class MLLLogit extends FuncStub {
+public class MLLLogit extends FuncC1.Stub {
   private final Vec target;
   private final int classesCount;
 
@@ -48,10 +48,6 @@ public class MLLLogit extends FuncStub {
   }
 
   @Override
-  public int xdim() {
-    return target.dim() * (classesCount - 1);
-  }
-
   public double value(Vec point) {
     double result = 0;
     Mx mxPoint = new VecBasedMx(target.dim(), point);
@@ -69,5 +65,10 @@ public class MLLLogit extends FuncStub {
     }
 
     return exp(result / target.dim());
+  }
+
+  @Override
+  public int dim() {
+    return target.dim() * (classesCount - 1);
   }
 }

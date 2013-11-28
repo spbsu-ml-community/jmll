@@ -1,17 +1,14 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.FuncStub;
-import com.spbsu.ml.VecFunc;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.func.VecTransform;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.GreedyTDRegion;
 import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.optimization.ConvexFunction;
 import com.spbsu.ml.optimization.ConvexOptimize;
 import com.spbsu.ml.optimization.impl.Nesterov1;
@@ -344,9 +341,9 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 
   }
 
-  public class Function extends FuncStub implements ConvexFunction {
+  public class Function extends Func.Stub implements ConvexFunction {
     @Override
-    public int xdim() {
+    public int dim() {
       return numberOfVariables;
     }
 
@@ -361,15 +358,20 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     }
 
     @Override
-    public VecFunc gradient() {
-      return new VecTransform() {
+    public Trans gradient() {
+      return new Trans.Stub() {
         @Override
-        public Vec vvalue(Vec x) {
+        public Vec trans(Vec x) {
           return new ArrayVec(calculateFineGradient(x.toArray()));
         }
 
         @Override
         public int xdim() {
+          return numberOfVariables;
+        }
+
+        @Override
+        public int ydim() {
           return numberOfVariables;
         }
       };
@@ -379,15 +381,10 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     public double value(Vec x) {
       return calculateFine(x.toArray());
     }
-
-    @Override
-    public Vec value(Mx x) {
-      return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
   }
 
   public ContinousObliviousTree fit(DataSet ds, L2 loss) {
-    features = ((ObliviousTree) got.fit(ds, loss)).features();
+    features = got.fit(ds, loss).features();
     if (features.size() != depth) {
       System.out.println("Greedy oblivious tree bug");
       System.exit(-1);

@@ -2,7 +2,7 @@ package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.FuncStub;
+import com.spbsu.ml.FuncC1;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -13,14 +13,13 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class LLX2 extends FuncStub {
+public class LLX2 extends FuncC1.Stub {
   private final Vec target;
 
   public LLX2(Vec target) {
     this.target = target;
   }
 
-  @Override
   public Vec gradient(Vec point) {
     Vec result = new ArrayVec(point.dim());
     for (int i = 0; i < point.dim(); i++) {
@@ -34,7 +33,7 @@ public class LLX2 extends FuncStub {
   }
 
   @Override
-  public int xdim() {
+  public int dim() {
     return target.dim();
   }
 

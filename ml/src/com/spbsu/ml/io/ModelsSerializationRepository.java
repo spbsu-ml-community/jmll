@@ -17,7 +17,6 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   private static ConversionRepository conversion = new TypeConvertersCollection(new ObliviousTreeConversionPack(),
                                                                                 new ObliviousMultiClassTreeConversionPack(),
                                                                                 new EnsembleModelConversionPack(),
-                                                                                new AdditiveMultiClassModelConversionPack(),
                                                                                 BFGrid.CONVERTER.getClass());
   private BFGrid grid;
 

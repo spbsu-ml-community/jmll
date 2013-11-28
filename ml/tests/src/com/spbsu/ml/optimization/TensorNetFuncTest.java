@@ -21,7 +21,7 @@ public class TensorNetFuncTest extends TestCase {
         double c1 = 3.5;
         double c2 = 2.5;
         TensorNetFunction func = new TensorNetFunction(X, c1, c2);
-        double[] actualGrad = func.gradient().vvalue(new ArrayVec(0, 0, 0, 0)).toArray();
+        double[] actualGrad = func.gradient().trans(new ArrayVec(0, 0, 0, 0)).toArray();
         double[] expectedGrad = new double[] {-2*c1*(X.get(0,0) + X.get(0,1)), -2*c1*(X.get(1,0) + X.get(1,1)),
                                               -2*c2*(X.get(0,0) + X.get(1,0)), -2*c2*(X.get(0,1) + X.get(1,1))};
         for (int i = 0; i < func.xdim() * 2; i++) {
@@ -47,7 +47,7 @@ public class TensorNetFuncTest extends TestCase {
         ConvexOptimize optimize = new Nesterov2(z0);
         Vec zMin = optimize.optimize(func, EPS);
 
-        System.out.println("grad norm: " + VecTools.norm(func.gradient().vvalue(zMin)));
+        System.out.println("grad norm: " + VecTools.norm(func.gradient().trans(zMin)));
 
         Vec u = new ArrayVec(dim);
         Vec v = new ArrayVec(dim);

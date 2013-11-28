@@ -10,16 +10,18 @@ import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.RandomExt;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.CompositeFunc;
+import com.spbsu.ml.CompositeTrans;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.func.FuncJoin;
+import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
-import com.spbsu.ml.models.AdditiveMultiClassModel;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.TIntArrayList;
@@ -113,32 +115,45 @@ public class DataTools {
     return new Bootstrap(base, random);
   }
 
-  public static void writeModel(Func result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
+  public static void writeModel(Trans result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);
     StreamTools.writeChars(CharSequenceTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
                            serializationRepository.write(result)), to);
   }
 
-  public static Func readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+  public static Trans readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(new FileInputStream(fileName)));
     String line = modelReader.readLine();
     CharSequence[] parts = CharSequenceTools.split(line, '\t');
-    Class<? extends Func> modelClazz = (Class<? extends Func>)Class.forName(parts[0].toString());
+    Class<? extends Trans> modelClazz = (Class<? extends Trans>)Class.forName(parts[0].toString());
     return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }
 
-  public static BFGrid grid(Func result) {
-    if (result instanceof CompositeFunc) {
-      final CompositeFunc composite = (CompositeFunc) result;
+  public static BFGrid grid(Trans result) {
+    if (result instanceof CompositeTrans) {
+      final CompositeTrans composite = (CompositeTrans) result;
       BFGrid grid = grid(composite.f);
-      for (int j = 0; j < composite.g.ydim() && grid == null; j++)
-        grid = grid(composite.g.direction(j));
+      grid = grid == null ? grid(composite.g) : grid;
       return grid;
     }
-    if (result instanceof ObliviousTree)
+    else if (result instanceof FuncJoin) {
+      final FuncJoin join = (FuncJoin) result;
+      for (Func dir : join.dirs) {
+        final BFGrid grid = grid(dir);
+        if (grid != null)
+          return grid;
+      }
+    }
+    else if (result instanceof TransJoin) {
+      final TransJoin join = (TransJoin) result;
+      for (Trans dir : join.dirs) {
+        final BFGrid grid = grid(dir);
+        if (grid != null)
+          return grid;
+      }
+    }
+    else if (result instanceof ObliviousTree)
       return ((ObliviousTree)result).grid();
-    if (result instanceof AdditiveMultiClassModel)
-      return grid((Func)((AdditiveMultiClassModel) result).models.get(0));
     if (result instanceof ObliviousMultiClassTree)
       return ((ObliviousMultiClassTree)result).binaryClassifier().grid();
     return null;
@@ -182,6 +197,15 @@ public class DataTools {
     else
       return 4.;
 //    return 1.;
+  }
+
+
+  public static Vec value(Mx ds, Func f) {
+    Vec result = new ArrayVec(ds.rows());
+    for (int i = 0; i < ds.rows(); i++) {
+      result.set(i, f.value(ds.row(i)));
+    }
+    return result;
   }
 
   public static <LocalLoss extends StatBasedLoss> WeightedLoss<LocalLoss> bootstrap(LocalLoss loss, RandomExt rnd) {

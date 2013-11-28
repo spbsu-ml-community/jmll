@@ -10,7 +10,7 @@ import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.Ensemble;
+import com.spbsu.ml.func.Ensemble;
 import gnu.trove.TByteArrayList;
 
 import java.io.*;
@@ -74,15 +74,15 @@ public class HWScore {
     }
 
     @Override
-    public void invoke(Func partial) {
+    public void invoke(Trans partial) {
       iteration++;
       if (partial instanceof Ensemble) {
         final Ensemble ensemble = (Ensemble) partial;
-        final Func increment = ensemble.models()[ensemble.size() - 1];
-        VecTools.append(current, VecTools.scale(increment.value(ds.data()), ensemble.weight(ensemble.size() - 1)));
+        final Trans increment = ensemble.last();
+        VecTools.append(current, VecTools.scale(increment.transAll(ds.data()), ensemble.wlast()));
       }
       else {
-        current = partial.value(ds.data());
+        current = partial.transAll(ds.data());
       }
       double score = VecTools.distance(current, ds.target()) / Math.sqrt(ds.power());
       if (score <= bestScore) {

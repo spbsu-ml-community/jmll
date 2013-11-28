@@ -25,7 +25,7 @@ import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.Ensemble;
+import com.spbsu.ml.func.Ensemble;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntObjectHashMap;
 import org.apache.commons.cli.*;
@@ -54,10 +54,7 @@ public class JMLLCLI {
     options.addOption("T", "target", true, "target function to optimize format Global/Weak/Cursor (" + DEFAULT_TARGET + ")");
     options.addOption("M", "measure", true, "metric to test, by default equals to global optimization target");
     options.addOption("O", "optimization", true, "optimization scheme: Strong/Weak or just Strong (" + DEFAULT_OPTIMIZATION_SCHEME + ")");
-    options.addOption("i", "iterations", true, "ensemble power (iterations count)");
-    options.addOption("s", "step", true, "shrinkage parameter/weight in ensemble");
     options.addOption("x", "bin-folds-count", true, "binarization precision: how many binary features inferred from real one");
-    options.addOption("d", "depth", true, "tree depth");
     options.addOption("g", "grid", true, "file with already precomputed grid");
     options.addOption("m", "model", true, "model file");
     options.addOption("v", "verbose", false, "verbose output");
@@ -125,7 +122,7 @@ public class JMLLCLI {
         final Func loss = DataTools.targetByName(target).compute(learn.target());
         final Func metric = DataTools.targetByName(command.getOptionValue("M", target)).compute(test.target());
 
-        final Action<Func> progressHandler = new ProgressPrinter(learn, test, loss, metric);
+        final Action<Trans> progressHandler = new ProgressPrinter(learn, test, loss, metric);
         if (method instanceof WeakListenerHolder && command.hasOption("v")) {
           //noinspection unchecked
           ((WeakListenerHolder)method).addListener(progressHandler);
@@ -133,9 +130,9 @@ public class JMLLCLI {
         Interval.start();
         Interval.suspend();
         @SuppressWarnings("unchecked")
-        final Func result = method.fit(learn, loss);
+        final Trans result = method.fit(learn, loss);
         Interval.stopAndPrint("Total fit time:");
-        System.out.println("Learn: " + loss.value(result.value(learn.data())) + " Test: " + metric.value(result.value(test.data())));
+        System.out.println("Learn: " + loss.value(result.transAll(learn.data())) + " Test: " + metric.value(result.transAll(test.data())));
 
         BFGrid grid = DataTools.grid(result);
         serializationRepository = serializationRepository.customizeGrid(grid);
@@ -144,15 +141,18 @@ public class JMLLCLI {
       } else if ("apply".equals(mode)) {
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(learnFile + ".values"));
         try {
-          Func model = DataTools.readModel(command.getOptionValue('m', "features.txt.model"), serializationRepository);
-          DSIterator it = learn.iterator();
-          int index = 0;
-          while (it.advance()) {
-            writer.append(metaLearn.get(index));
-            writer.append('\t');
-            writer.append(Double.toString(model.value(it.x())));
-            writer.append('\n');
-            index++;
+          Trans model = DataTools.readModel(command.getOptionValue('m', "features.txt.model"), serializationRepository);
+          if (model instanceof Func) {
+            final Func func = (Func) model;
+            DSIterator it = learn.iterator();
+            int index = 0;
+            while (it.advance()) {
+              writer.append(metaLearn.get(index));
+              writer.append('\t');
+              writer.append(Double.toString(func.value(it.x())));
+              writer.append('\n');
+              index++;
+            }
           }
         } finally {
           writer.close();
@@ -319,12 +319,12 @@ public class JMLLCLI {
   private static class ProgressPrinter implements ProgressHandler {
     private final DataSet learn;
     private final DataSet test;
-    private final Func loss;
-    private final Func testMetric;
+    private final Trans loss;
+    private final Trans testMetric;
     Vec learnValues;
     Vec testValues;
 
-    public ProgressPrinter(DataSet learn, DataSet test, Func learnMetric, Func testMetric) {
+    public ProgressPrinter(DataSet learn, DataSet test, Trans learnMetric, Trans testMetric) {
       this.learn = learn;
       this.test = test;
       this.loss = learnMetric;
@@ -336,23 +336,23 @@ public class JMLLCLI {
     int iteration = 0;
 
     @Override
-    public void invoke(Func partial) {
+    public void invoke(Trans partial) {
 //      Interval.suspend();
       if (partial instanceof Ensemble) {
         final Ensemble ensemble = (Ensemble) partial;
         final double step = ensemble.wlast();
-        final Func last = ensemble.last();
-        append(learnValues, VecTools.scale(last.value(learn.data()), step));
-        append(testValues, VecTools.scale(last.value(test.data()), step));
+        final Trans last = ensemble.last();
+        append(learnValues, VecTools.scale(last.transAll(learn.data()), step));
+        append(testValues, VecTools.scale(last.transAll(test.data()), step));
       } else {
-        learnValues = partial.value(learn.data());
-        testValues = partial.value(test.data());
+        learnValues = partial.transAll(learn.data());
+        testValues = partial.transAll(test.data());
       }
       iteration++;
       if (iteration % 10 != 0)
         return;
       System.out.print(iteration);
-      System.out.println(" " + loss.value(learnValues) + "\t" + testMetric.value(testValues));
+      System.out.println(" " + loss.trans(learnValues) + "\t" + testMetric.trans(testValues));
 //      Interval.resume();
     }
   }

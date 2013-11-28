@@ -2,7 +2,7 @@ package com.spbsu.ml;
 
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.func.Linear;
-import com.spbsu.ml.models.Ensemble;
+import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.Arrays;
@@ -43,7 +43,7 @@ public class SerializationTest extends GridTest {
 
   public void testAdditiveModel() {
     ObliviousTree ot = new ObliviousTree(Arrays.asList(grid.bf(20)), new double[]{0, 1}, new double[]{10, 3});
-    Ensemble sum = new Ensemble(Arrays.<Func>asList(ot, ot, ot), 0.1);
+    Ensemble sum = new Ensemble(Arrays.<Trans>asList(ot, ot, ot), 0.1);
     ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     boolean caught = false;
     try {

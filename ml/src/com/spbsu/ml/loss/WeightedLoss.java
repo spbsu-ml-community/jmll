@@ -3,8 +3,8 @@ package com.spbsu.ml.loss;
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.FuncStub;
-import com.spbsu.ml.VecFunc;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * Date: 26.11.13
  * Time: 9:54
  */
-public class WeightedLoss<BasedOn extends StatBasedLoss> extends FuncStub implements StatBasedLoss<WeightedLoss.Stat> {
+public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub implements StatBasedLoss<WeightedLoss.Stat> {
   private final BasedOn metric;
   private final int[] weights;
 
@@ -47,19 +47,19 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends FuncStub implem
   }
 
   @Override
-  public int xdim() {
+  public int dim() {
     return metric.xdim();
   }
 
   @Nullable
   @Override
-  public VecFunc gradient() {
+  public Trans gradient() {
     return metric.gradient();
   }
 
   @Override
   public double value(Vec x) {
-    return metric.value(x);
+    return metric.trans(x).get(0);
   }
 
   public static class Stat implements AdditiveStatistics<Stat> {

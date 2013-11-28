@@ -5,33 +5,30 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * User: solar
  * Date: 21.12.2010
  * Time: 22:07:07
  */
-public interface Func extends Trans {
-  double value(Vec x);
-  int dim();
+public interface Trans {
+  int xdim();
+  int ydim();
+  @Nullable
+  Trans gradient();
+  Vec trans(Vec x);
+  Mx transAll(Mx x);
 
-  abstract class Stub extends Trans.Stub implements Func {
-    public final int ydim() {
-      return 1;
-    }
-
-    public final int xdim() {
-      return dim();
-    }
-
-    public final Vec trans(Vec x) {
-      return new ArrayVec(new double[]{value(x)});
+  abstract class Stub implements Trans {
+    public Trans gradient() {
+      return null;
     }
 
     public Mx transAll(Mx ds) {
-      Mx result = new VecBasedMx(1, new ArrayVec(ds.rows()));
+      Mx result = new VecBasedMx(ds.rows(), new ArrayVec(ds.rows() * ydim()));
       for (int i = 0; i < ds.rows(); i++) {
-        result.set(i, value(ds.row(i)));
+        VecTools.assign(result.col(i), trans(ds.row(i)));
       }
       return result;
     }

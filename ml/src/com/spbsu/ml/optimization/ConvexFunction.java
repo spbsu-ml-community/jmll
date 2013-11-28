@@ -1,7 +1,6 @@
 package com.spbsu.ml.optimization;
 
-import com.spbsu.ml.Func;
-import com.spbsu.ml.VecFunc;
+import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -10,9 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * Time: 19:01
  */
 
-public interface ConvexFunction extends Func {
+public interface ConvexFunction extends Trans {
   @NotNull
-  VecFunc gradient();
-  public double getGlobalConvexParam();
-  public double getGradLipParam();
+  double getGlobalConvexParam();
+  double getGradLipParam();
 }

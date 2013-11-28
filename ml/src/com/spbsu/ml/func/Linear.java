@@ -3,8 +3,8 @@ package com.spbsu.ml.func;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.FuncStub;
-import com.spbsu.ml.VecFunc;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * Date: 26.11.12
  * Time: 15:56
  */
-public class Linear extends FuncStub {
+public class Linear extends Func.Stub {
   public final Vec weights;
 
   public Linear(double[] weights) {
@@ -28,21 +28,25 @@ public class Linear extends FuncStub {
   }
 
   @Override
-  public int xdim() {
+  public int dim() {
     return weights.dim();
   }
 
   @Nullable
   @Override
-  public VecFunc gradient() {
-    return new VecTransform() {
+  public Trans gradient() {
+    return new Trans.Stub() {
       @Override
-      public Vec vvalue(Vec x) {
+      public Vec trans(Vec x) {
         return weights;
       }
 
       @Override
       public int xdim() {
+        return weights.dim();
+      }
+
+      public int ydim() {
         return weights.dim();
       }
     };

@@ -4,9 +4,10 @@ import com.spbsu.commons.func.types.ConversionDependant;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.TypeConverter;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.text.CharSequenceTools;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.models.Ensemble;
+import com.spbsu.ml.Trans;
+import com.spbsu.ml.func.Ensemble;
 
 import java.util.StringTokenizer;
 
@@ -26,9 +27,9 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
       builder.append("\n");
       builder.append("\n");
       for (int i = 0; i < from.size(); i++) {
-        Func model = from.models()[i];
-        builder.append(from.models()[i].getClass().getCanonicalName()).append(" ");
-        builder.append(from.weight(i)).append("\n");
+        Trans model = from.g.dirs[i];
+        builder.append(from.g.dirs[i].getClass().getCanonicalName()).append(" ");
+        builder.append(from.f.weights.get(i)).append("\n");
         builder.append(repository.convert(model, CharSequence.class));
         builder.append("\n");
       }
@@ -48,24 +49,24 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
     @Override
     public Ensemble convert(CharSequence from) {
       CharSequence[] elements = CharSequenceTools.split(from, "\n\n");
-      Func[] models;
+      Trans[] models;
       double[] weights;
 
       try {
         int count = Integer.parseInt(elements[0].toString());
-        models = new Func[count];
+        models = new Trans[count];
         weights = new double[count];
         for (int i = 0; i < count; i++) {
           final CharSequence[] lines = CharSequenceTools.split(elements[i + 1], "\n");
           StringTokenizer tok = new StringTokenizer(lines[0].toString(), " ");
-          Class<? extends Func> elementClass = (Class<? extends Func>) Class.forName(tok.nextToken());
+          Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(tok.nextToken());
           weights[i] = Double.parseDouble(tok.nextToken());
           models[i] = repository.convert(elements[i + 1].subSequence(lines[0].length(), elements[i + 1].length()), elementClass);
         }
       } catch (ClassNotFoundException e) {
         throw new RuntimeException("Element class not found!", e);
       }
-      return new Ensemble(models, weights);
+      return new Ensemble(models, new ArrayVec(weights));
     }
 
     @Override

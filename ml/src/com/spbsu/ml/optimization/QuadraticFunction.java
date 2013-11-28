@@ -5,9 +5,8 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
-import com.spbsu.ml.FuncStub;
-import com.spbsu.ml.VecFunc;
-import com.spbsu.ml.func.VecTransform;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.Nullable;
 
 
@@ -17,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * Time: 19:03
  */
 
-public class QuadraticFunction extends FuncStub implements ConvexFunction {
+public class QuadraticFunction extends Func.Stub implements ConvexFunction {
   private final Mx mxA;
   private final Vec w;
   private final double w0;
@@ -59,21 +58,26 @@ public class QuadraticFunction extends FuncStub implements ConvexFunction {
   }
 
   @Override
-  public int xdim() {
+  public int dim() {
     return dim;
   }
 
   @Nullable
   @Override
-  public VecFunc gradient() {
-    return new VecTransform() {
+  public Trans gradient() {
+    return new Trans.Stub() {
       @Override
-      public Vec vvalue(Vec x) {
+      public Vec trans(Vec x) {
         return VecTools.append(VecTools.multiply(mxA, x), w);
       }
 
       @Override
       public int xdim() {
+        return w.dim();
+      }
+
+      @Override
+      public int ydim() {
         return w.dim();
       }
     };

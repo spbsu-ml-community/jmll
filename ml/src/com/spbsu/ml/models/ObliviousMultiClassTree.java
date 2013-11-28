@@ -1,8 +1,9 @@
 package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.VecFuncStub;
+import com.spbsu.ml.Trans;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.List;
  * Date: 29.11.12
  * Time: 5:35
  */
-public class ObliviousMultiClassTree extends VecFuncStub {
+public class ObliviousMultiClassTree extends Trans.Stub {
   private final ObliviousTree binaryClassifier;
   private final boolean[][] masks;
 
@@ -35,6 +36,15 @@ public class ObliviousMultiClassTree extends VecFuncStub {
     final int bin = binaryClassifier.bin(x);
     final double v = binaryClassifier.values()[bin];
     return masks[bin][classNo] ? v : -v;
+  }
+
+  @Override
+  public Vec trans(Vec x) {
+    Vec result = new ArrayVec(ydim());
+    for (int c = 0; c < ydim(); c++) {
+      result.set(c, value(x, c));
+    }
+    return result;
   }
 
   @Override

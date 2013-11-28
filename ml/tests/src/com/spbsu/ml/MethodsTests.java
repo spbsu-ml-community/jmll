@@ -11,14 +11,14 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.func.NormalizedLinear;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyContinuesObliviousSoftBondariesRegressionTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.models.Ensemble;
-import com.spbsu.ml.models.NormalizedLinearModel;
+import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.TDoubleDoubleHashMap;
 import gnu.trove.TDoubleIntHashMap;
@@ -42,8 +42,8 @@ public class MethodsTests extends GridTest {
   public void testLARS() {
     final LARSMethod lars = new LARSMethod();
 //    lars.addListener(modelPrinter);
-    final NormalizedLinearModel model = lars.fit(learn, new L2(learn.target()));
-    System.out.println(new L2(validate.target()).value(model.value(validate.data())));
+    final NormalizedLinear model = lars.fit(learn, new L2(learn.target()));
+    System.out.println(new L2(validate.target()).value(model.transAll(validate.data())));
   }
 
   public void testGRBoost() {
@@ -58,7 +58,7 @@ public class MethodsTests extends GridTest {
       int index = 0;
 
       @Override
-      public void invoke(Func partial) {
+      public void invoke(Trans partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -80,7 +80,7 @@ public class MethodsTests extends GridTest {
       int index = 0;
 
       @Override
-      public void invoke(Func partial) {
+      public void invoke(Trans partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -102,7 +102,7 @@ public class MethodsTests extends GridTest {
       int index = 0;
 
       @Override
-      public void invoke(Func partial) {
+      public void invoke(Trans partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -122,11 +122,11 @@ public class MethodsTests extends GridTest {
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
             new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32),6, 10, true, 1, 0, 0, 1e5),
             2000, 0.01, rng);
-    final Action counter = new Action<Func>() {
+    final Action counter = new Action<Trans>() {
       int index = 0;
 
       @Override
-      public void invoke(Func partial) {
+      public void invoke(Trans partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -287,7 +287,7 @@ public class MethodsTests extends GridTest {
       int index = 0;
 
       @Override
-      public void invoke(Func partial) {
+      public void invoke(Trans partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -333,20 +333,20 @@ public class MethodsTests extends GridTest {
     double min = 1e10;
 
     @Override
-    public void invoke(Func partial) {
+    public void invoke(Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble linear = (Ensemble) partial;
-        final Func increment = linear.last();
+        final Trans increment = linear.last();
         final DSIterator iter = ds.iterator();
         int index = 0;
         while (iter.advance()) {
-          current.adjust(index++, linear.wlast() * increment.value(iter.x()));
+          current.adjust(index++, linear.wlast() * ((Func) increment).value(iter.x()));
         }
       } else {
         final DSIterator iter = ds.iterator();
         int index = 0;
         while (iter.advance()) {
-          current.set(index++, partial.value(iter.x()));
+          current.set(index++, ((Func)partial).value(iter.x()));
         }
       }
       double curLoss = VecTools.distance(current, ds.target()) / Math.sqrt(ds.power());
@@ -358,10 +358,10 @@ public class MethodsTests extends GridTest {
 
   private static class ModelPrinter implements ProgressHandler {
     @Override
-    public void invoke(Func partial) {
+    public void invoke(Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble model = (Ensemble) partial;
-        final Func increment = model.models()[model.size() - 1];
+        final Trans increment = model.last();
         System.out.print("\t" + increment);
       }
     }
@@ -373,20 +373,20 @@ public class MethodsTests extends GridTest {
     int index = 0;
 
     @Override
-    public void invoke(Func partial) {
+    public void invoke(Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble model = (Ensemble) partial;
-        final Func increment = model.models()[model.size() - 1];
+        final Trans increment = model.last();
 
         final DSIterator iterator = learn.iterator();
         final TDoubleIntHashMap values = new TDoubleIntHashMap();
         final TDoubleDoubleHashMap dispersionDiff = new TDoubleDoubleHashMap();
         int index = 0;
         while (iterator.advance()) {
-          final double value = increment.value(iterator.x());
+          final double value = ((Func) increment).value(iterator.x());
           values.adjustOrPutValue(value, 1, 1);
           final double ddiff = sqr(residues.get(index)) - sqr(residues.get(index) - value);
-          residues.adjust(index, -model.weight(model.size() - 1) * value);
+          residues.adjust(index, -model.wlast() * value);
           dispersionDiff.adjustOrPutValue(value, ddiff, ddiff);
           index++;
         }

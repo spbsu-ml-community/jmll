@@ -4,7 +4,7 @@ import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
-import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
@@ -32,7 +32,7 @@ public class GreedyTDRegion<O extends StatBasedLoss> implements Optimization<O> 
   }
 
   @Override
-  public Func fit(DataSet learn, final O loss) {
+  public Trans fit(DataSet learn, final O loss) {
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(100);
     final List<Boolean> mask = new ArrayList<Boolean>();
     double currentScore = Double.POSITIVE_INFINITY;

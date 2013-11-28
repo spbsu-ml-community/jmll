@@ -6,7 +6,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.func.VecFuncJoin;
+import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
 
 /**
@@ -24,13 +24,13 @@ public class MultiClass implements Optimization<L2> {
   }
 
   @Override
-  public VecFuncJoin fit(DataSet learn, L2 mllLogit) {
+  public FuncJoin fit(DataSet learn, L2 mllLogitGradient) {
     final Mx data = learn.data();
-    final Mx gradient = new VecBasedMx(data.rows(), mllLogit.target);
+    final Mx gradient = new VecBasedMx(data.rows(), mllLogitGradient.target);
     final Func[] models = new Func[gradient.rows()];
     for (int c = 0; c < models.length; c++) {
-      models[c] = inner.fit(learn, local.compute(gradient.row(c)));
+      models[c] = (Func)inner.fit(learn, local.compute(gradient.row(c)));
     }
-    return new VecFuncJoin(models);
+    return new FuncJoin(models);
   }
 }

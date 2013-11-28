@@ -3,10 +3,10 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.models.LinearModel;
 
 import static com.spbsu.commons.math.vectors.VecTools.copy;
 
@@ -25,7 +25,7 @@ public class LASSOMethod implements Optimization<L2> {
   }
 
   @Override
-  public Func fit(DataSet ds, L2 loss) {
+  public Trans fit(DataSet ds, L2 loss) {
     final Mx learn = ds.data();
     final Vec betas = new ArrayVec(learn.columns());
     Vec values = copy(loss.target);
@@ -58,6 +58,6 @@ public class LASSOMethod implements Optimization<L2> {
         }
       }
     }
-    return new LinearModel(betas);
+    return new Linear(betas);
   }
 }

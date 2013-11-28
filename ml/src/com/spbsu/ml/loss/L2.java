@@ -1,14 +1,10 @@
 package com.spbsu.ml.loss;
 
 import com.spbsu.commons.func.AdditiveStatistics;
-import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.VecFunc;
-import com.spbsu.ml.func.Average;
-import com.spbsu.ml.func.VecTransform;
+import com.spbsu.ml.FuncC1;
 import com.sun.javafx.beans.annotations.NonNull;
 
 import static com.spbsu.commons.math.vectors.VecTools.*;
@@ -18,41 +14,24 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class L2 extends Average implements StatBasedLoss<L2.MSEStats> {
-  public static final Computable<Vec, L2> FACTORY = new Computable<Vec, L2>() {
-    @Override
-    public L2 compute(Vec argument) {
-      return new L2(argument);
-    }
-  };
+public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats> {
   public final Vec target;
 
   public L2(Vec target) {
-    super(new Func[0]);
     this.target = target;
   }
 
   @NonNull
   @Override
-  public VecFunc gradient() {
-    return new VecTransform() {
-      @Override
-      public Vec vvalue(Vec x) {
-        Vec result = copy(x);
-        scale(result, -1);
-        append(result, target);
-        scale(result, -2);
-        return result;
-      }
-
-      @Override
-      public int xdim() {
-        return target.dim();
-      }
-    };
+  public Vec gradient(Vec x) {
+    Vec result = copy(x);
+    scale(result, -1);
+    append(result, target);
+    scale(result, -2);
+    return result;
   }
 
-  public int xdim() {
+  public int dim() {
     return target.dim();
   }
 

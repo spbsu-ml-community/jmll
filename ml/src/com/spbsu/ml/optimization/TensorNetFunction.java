@@ -3,15 +3,14 @@ package com.spbsu.ml.optimization;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.FuncStub;
-import com.spbsu.ml.VecFunc;
-import com.spbsu.ml.func.VecTransform;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 
 /**
  * User: qdeee
  * Date: 30.08.13
  */
-public class TensorNetFunction extends FuncStub implements ConvexFunction {
+public class TensorNetFunction extends Func.Stub implements ConvexFunction {
   private final Mx X;
   private final double c1;
   private final double c2;
@@ -64,10 +63,10 @@ public class TensorNetFunction extends FuncStub implements ConvexFunction {
 
 
   @Override
-  public VecFunc gradient() {
-    return new VecTransform() {
+  public Trans gradient() {
+    return new Trans.Stub() {
       @Override
-      public Vec vvalue(Vec z) {
+      public Vec trans(Vec z) {
         int n = z.dim() / 2;
 
         Vec grad = new ArrayVec(z.dim());
@@ -94,13 +93,18 @@ public class TensorNetFunction extends FuncStub implements ConvexFunction {
 
       @Override
       public int xdim() {
+        return TensorNetFunction.this.dim();
+      }
+
+      @Override
+      public int ydim() {
         return xdim();
       }
     };
   }
 
   @Override
-  public int xdim() {
+  public int dim() {
     return X.rows();
   }
 

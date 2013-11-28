@@ -3,6 +3,7 @@ package com.spbsu.ml.models;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.BinOptimizedModel;
+import com.spbsu.ml.Func;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
 import java.util.ArrayList;
@@ -14,17 +15,22 @@ import java.util.List;
  * Date: 29.11.12
  * Time: 5:35
  */
-public class ObliviousTree extends BinOptimizedModel {
+public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
   private final BFGrid.BinaryFeature[] features;
   private final double[] values;
   private final double[] basedOn;
+  private final BFGrid grid;
 
   public ObliviousTree(final List<BFGrid.BinaryFeature> features, double[] values, double[] basedOn) {
-    super(features.get(0).row().grid());
-    assert values.length == 1 << features.size();
+    grid = features.get(0).row().grid();
     this.basedOn = basedOn;
     this.features = features.toArray(new BFGrid.BinaryFeature[features.size()]);
     this.values = values;
+  }
+
+  @Override
+  public int dim() {
+    return grid.rows();
   }
 
   @Override
@@ -103,7 +109,7 @@ public class ObliviousTree extends BinOptimizedModel {
   }
 
   @Override
-  protected double value(BinarizedDataSet bds, int pindex) {
+  public double value(BinarizedDataSet bds, int pindex) {
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;

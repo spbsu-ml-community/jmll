@@ -2,9 +2,7 @@ package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.FuncStub;
-import com.spbsu.ml.func.VecTransform;
-import com.sun.javafx.beans.annotations.NonNull;
+import com.spbsu.ml.FuncC1;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -15,40 +13,28 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class LLLogit extends FuncStub {
+public class LLLogit extends FuncC1.Stub {
   private final Vec target;
 
   public LLLogit(Vec target) {
     this.target = target;
   }
 
-  @NonNull
-  @Override
-  public VecTransform gradient() {
-    return new VecTransform() {
-      @Override
-      public Vec vvalue(Vec x) {
-        Vec result = new ArrayVec(x.dim());
-        for (int i = 0; i < x.dim(); i++) {
-          double expX = exp(x.get(i));
-          double pX = expX / (1 + expX);
-          if (target.get(i) > 0) // positive example
-            result.set(i, pX - 1);
-          else // negative
-            result.set(i, pX);
-        }
-        return result;
-      }
-
-      @Override
-      public int xdim() {
-        return target.dim();
-      }
-    };
+  public Vec gradient(Vec x) {
+    Vec result = new ArrayVec(x.dim());
+    for (int i = 0; i < x.dim(); i++) {
+      double expX = exp(x.get(i));
+      double pX = expX / (1 + expX);
+      if (target.get(i) > 0) // positive example
+        result.set(i, pX - 1);
+      else // negative
+        result.set(i, pX);
+    }
+    return result;
   }
 
   @Override
-  public int xdim() {
+  public int dim() {
     return target.dim();
   }
 
@@ -58,9 +44,9 @@ public class LLLogit extends FuncStub {
       double expMX = exp(-point.get(i));
       double pX = 1. / (1. + expMX);
       if (target.get(i) > 0) // positive example
-        result -= log(pX);
+        result += log(pX);
       else // negative
-        result -= log(1 - pX);
+        result += log(1 - pX);
     }
 
     return exp(result / point.dim());
