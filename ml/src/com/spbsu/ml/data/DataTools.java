@@ -1,5 +1,6 @@
 package com.spbsu.ml.data;
 
+import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -16,6 +17,7 @@ import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.AdditiveMultiClassModel;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
@@ -25,6 +27,7 @@ import gnu.trove.TIntObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
@@ -170,24 +173,44 @@ public class DataTools {
   private static <LocalLoss extends L2> double normalizeRelevance(double y) {
     if (y < 0.07)
       return 0.;
-//    else if (y < 0.14)
-//      return 1.;
-//    else if (y < 0.41)
-//      return 2.;
-//    else if (y < 0.61)
-//      return 3.;
-//    else
-//      return 4.;
-    return 1.;
+    else if (y < 0.14)
+      return 1.;
+    else if (y < 0.41)
+      return 2.;
+    else if (y < 0.61)
+      return 3.;
+    else
+      return 4.;
+//    return 1.;
   }
 
-  public static <LocalLoss extends L2> WeightedLoss<LocalLoss> bootstrap(LocalLoss loss, RandomExt rnd) {
+  public static <LocalLoss extends StatBasedLoss> WeightedLoss<LocalLoss> bootstrap(LocalLoss loss, RandomExt rnd) {
     int[] poissonWeights = new int[loss.xdim()];
-    double sum = 0;
     for (int i = 0; i < loss.xdim(); i++) {
-      sum += poissonWeights[i] = rnd.nextPoisson(1.);
+      poissonWeights[i] = rnd.nextPoisson(1.);
     }
     return new WeightedLoss<LocalLoss>(loss, poissonWeights);
+  }
+
+  public static Computable<Vec, ? extends Func> targetByName(final String name) {
+    try {
+      @SuppressWarnings("unchecked")
+      Class<Func> oracleClass = (Class<Func>)Class.forName("com.spbsu.ml.loss." + name);
+      final Constructor<Func> constructor = oracleClass.getConstructor(Vec.class);
+      return new Computable<Vec, Func>() {
+        @Override
+        public Func compute(Vec argument) {
+          try {
+            return constructor.newInstance(argument);
+          } catch (Exception e) {
+            throw new RuntimeException("Exception during metric " + name + " initialization", e);
+          }
+        }
+      };
+    }
+    catch (Exception e) {
+      throw new RuntimeException("Unable to create requested target: " + name, e);
+    }
   }
 
   public enum NormalizationType {

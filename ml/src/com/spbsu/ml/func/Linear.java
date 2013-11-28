@@ -37,7 +37,7 @@ public class Linear extends FuncStub {
   public VecFunc gradient() {
     return new VecTransform() {
       @Override
-      public Vec value(Vec x) {
+      public Vec vvalue(Vec x) {
         return weights;
       }
 

@@ -2,7 +2,9 @@ package com.spbsu.ml.func;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Evaluator;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.VecFunc;
@@ -16,7 +18,7 @@ import java.util.List;
  * Date: 21.12.2010
  * Time: 22:07:07
  */
-public class VecFuncJoin extends VecFuncStub {
+public class VecFuncJoin extends VecFuncStub implements Func {
   private final Func[] dirs;
 
   public VecFuncJoin(int count, Computable<Integer, Func> dirs) {
@@ -63,5 +65,22 @@ public class VecFuncJoin extends VecFuncStub {
         return func.xdim();
       }
     })].xdim();
+  }
+
+  @Nullable
+  @Override
+  public VecFunc gradient() {
+    return null;
+  }
+
+  @Override
+  public Mx value(Mx ds) {
+
+    return super.value(ds);    //To change body of overridden methods use File | Settings | File Templates.
+  }
+
+  @Override
+  public double value(Vec x) {
+    return VecTools.norm(vvalue(x));
   }
 }

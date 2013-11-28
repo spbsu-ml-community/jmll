@@ -36,8 +36,8 @@ public class CompositeFunc<F extends Func, G extends VecFunc> extends FuncStub i
   public VecFunc gradient() {
     return new VecTransform() {
       @Override
-      public Vec value(Vec x) {
-        return VecTools.multiply(VecTools.transpose(g.gradient(x)), f.gradient().value(g.value(x)));
+      public Vec vvalue(Vec x) {
+        return VecTools.multiply(VecTools.transpose(g.gradient(x)), f.gradient().vvalue(g.vvalue(x)));
       }
 
       @Override
@@ -49,6 +49,6 @@ public class CompositeFunc<F extends Func, G extends VecFunc> extends FuncStub i
 
   @Override
   public double value(Vec x) {
-    return f.value(g.value(x));
+    return f.value(g.vvalue(x));
   }
 }

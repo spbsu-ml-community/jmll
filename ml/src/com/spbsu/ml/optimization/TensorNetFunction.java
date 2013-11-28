@@ -67,7 +67,7 @@ public class TensorNetFunction extends FuncStub implements ConvexFunction {
   public VecFunc gradient() {
     return new VecTransform() {
       @Override
-      public Vec value(Vec z) {
+      public Vec vvalue(Vec z) {
         int n = z.dim() / 2;
 
         Vec grad = new ArrayVec(z.dim());

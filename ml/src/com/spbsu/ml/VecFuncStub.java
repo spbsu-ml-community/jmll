@@ -5,8 +5,6 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
-import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -30,17 +28,6 @@ public abstract class VecFuncStub implements VecFunc {
     };
   }
 
-  @Override
-  public Vec value(DataSet ds, int classNo) {
-    Vec result = new ArrayVec(ds.power());
-    DSIterator dsIterator = ds.iterator();
-    int i = 0;
-    while (dsIterator.advance()){
-      result.set(i++, value(dsIterator.x(), classNo));
-    }
-    return result;
-  }
-
   @Nullable
   @Override
   public VecFunc gradient(int direction) {
@@ -50,7 +37,7 @@ public abstract class VecFuncStub implements VecFunc {
   public Mx gradient(Vec x) {
     final Mx result = new VecBasedMx(new VecBasedMx(ydim(), x.dim()));
     for (int i = 0; i < ydim(); i++) {
-      final Vec dimGrad = gradient(i).value(x);
+      final Vec dimGrad = gradient(i).vvalue(x);
       if (dimGrad == null)
         throw new RuntimeException("Gradient is not defined for function");
       VecTools.assign(result.row(i), dimGrad);
@@ -59,7 +46,7 @@ public abstract class VecFuncStub implements VecFunc {
   }
 
   @Override
-  public Vec value(Vec x) {
+  public Vec vvalue(Vec x) {
     Vec result = new ArrayVec(ydim());
     for (int i = 0; i < ydim(); i++) {
       result.set(i, value(x, i));
@@ -68,13 +55,12 @@ public abstract class VecFuncStub implements VecFunc {
   }
 
   @Override
-  public Mx value(DataSet ds) {
-    Vec result = new ArrayVec(ds.power() * ydim());
-    DSIterator dsIterator = ds.iterator();
-    int i = 0;
-    while (dsIterator.advance()){
+  public Mx value(Mx ds) {
+    Mx result = new VecBasedMx(ds.rows(), new ArrayVec(ds.rows() * ydim()));
+    for (int i = 0; i < ds.rows(); i++) {
+      final Vec row = ds.row(i);
       for (int c = 0; c < ydim(); c++) {
-        result.set(i++, value(dsIterator.x(), c));
+        result.set(c, i, value(row, c));
       }
     }
     return new VecBasedMx(ydim(), result);

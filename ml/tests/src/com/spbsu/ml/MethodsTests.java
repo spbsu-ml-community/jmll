@@ -13,10 +13,7 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.GreedyRegion;
-import com.spbsu.ml.methods.GreedyTDRegion;
-import com.spbsu.ml.methods.LARSMethod;
+import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyContinuesObliviousSoftBondariesRegressionTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.ContinousObliviousTree;
@@ -50,13 +47,13 @@ public class MethodsTests extends GridTest {
   }
 
   public void testGRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn, 32)),
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn, 32)), rng),
             new Computable<Vec, L2>() {
               @Override
               public L2 compute(Vec argument) {
                 return new L2(argument);
               }
-            }, 10000, 0.02, rng);
+            }, 10000, 0.02);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -78,7 +75,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testGTDRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyTDRegion<WeightedLoss<L2>>(new FastRandom(), GridTools.medianGrid(learn, 32)), 10000, 0.02, rng);
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyTDRegion<WeightedLoss<L2>>(new FastRandom(), GridTools.medianGrid(learn, 32)), rng), 10000, 0.02, rng);
     final Action counter = new ProgressHandler() {
       int index = 0;
 

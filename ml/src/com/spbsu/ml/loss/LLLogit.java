@@ -27,7 +27,7 @@ public class LLLogit extends FuncStub {
   public VecTransform gradient() {
     return new VecTransform() {
       @Override
-      public Vec value(Vec x) {
+      public Vec vvalue(Vec x) {
         Vec result = new ArrayVec(x.dim());
         for (int i = 0; i < x.dim(); i++) {
           double expX = exp(x.get(i));
@@ -63,6 +63,6 @@ public class LLLogit extends FuncStub {
         result -= log(1 - pX);
     }
 
-    return result / point.dim();
+    return exp(result / point.dim());
   }
 }

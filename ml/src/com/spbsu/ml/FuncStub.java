@@ -17,8 +17,8 @@ public abstract class FuncStub implements Func {
   public VecFunc gradient() {
     return new VecTransform() {
       @Override
-      public Vec value(Vec x) {
-        return gradient(x);
+      public Vec vvalue(Vec x) {
+        return FuncStub.this.gradient(x);
       }
 
       @Override

@@ -11,11 +11,11 @@ import org.jetbrains.annotations.Nullable;
  * Time: 22:07:07
  */
 public abstract class VecTransform extends VecFuncStub {
-  public abstract Vec value(Vec x);
+  public abstract Vec vvalue(Vec x);
 
   @Override
   public double value(Vec x, int direction) {
-    return value(x).get(direction);
+    return vvalue(x).get(direction);
   }
 
   @Override

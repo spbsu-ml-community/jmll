@@ -22,9 +22,8 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.io.ModelsSerializationRepository;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.GreedyTDRegion;
-import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.Ensemble;
 import gnu.trove.TIntArrayList;
@@ -32,7 +31,6 @@ import gnu.trove.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Random;
 import java.util.StringTokenizer;
@@ -124,8 +122,8 @@ public class JMLLCLI {
       if ("fit".equals(mode)) {
         final Optimization method = chooseMethod(command.getOptionValue("O", DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd);
         final String target = command.getOptionValue("T", DEFAULT_TARGET);
-        final Func loss = targetByName(target).compute(learn.target());
-        final Func metric = targetByName(command.getOptionValue("M", target)).compute(test.target());
+        final Func loss = DataTools.targetByName(target).compute(learn.target());
+        final Func metric = DataTools.targetByName(command.getOptionValue("M", target)).compute(test.target());
 
         final Action<Func> progressHandler = new ProgressPrinter(learn, test, loss, metric);
         if (method instanceof WeakListenerHolder && command.hasOption("v")) {
@@ -209,7 +207,7 @@ public class JMLLCLI {
 
   private static Optimization chooseMethod(String scheme, Factory<BFGrid> grid, Random rnd) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
-    final Factory<Optimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd);
+    final Factory<? extends Optimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd);
     String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
     StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
     Method[] builderMethods = factory.getClass().getMethods();
@@ -250,10 +248,10 @@ public class JMLLCLI {
     return factory.create();
   }
 
-  private static Factory<Optimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final Random rnd) {
+  private static Factory<? extends Optimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final Random rnd) {
     if ("GradientBoosting".equals(name)) {
       return new Factory<Optimization>() {
-        public Optimization weak = new GreedyObliviousTree(grid.create(), 6);
+        public Optimization weak = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
         public String lossName = "LogL2";
         public double step = 0.005;
         public int icount = 200;
@@ -274,7 +272,25 @@ public class JMLLCLI {
         @Override
         public Optimization create() {
           //noinspection unchecked
-          return new GradientBoosting(weak, targetByName(lossName), icount, step, rnd);
+          return new GradientBoosting(weak, DataTools.targetByName(lossName), icount, step);
+        }
+      };
+    } else if ("MultiClassSplit".equals(name)) {
+      return new Factory<MultiClass>() {
+        public Optimization inner = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
+        public String localName = "SatL2";
+
+        public void inner(Optimization i) {
+          this.inner = i;
+        }
+
+        public void local(String localName) {
+          this.localName = localName;
+        }
+
+        @Override
+        public MultiClass create() {
+          return new MultiClass(inner, (Computable<Vec, L2>)DataTools.targetByName(localName));
         }
       };
     } else if ("GreedyObliviousTree".equals(name)) {
@@ -300,27 +316,6 @@ public class JMLLCLI {
   }
 
 
-  private static Computable<Vec, Func> targetByName(final String name) {
-    try {
-      @SuppressWarnings("unchecked")
-      Class<Func> oracleClass = (Class<Func>)Class.forName("com.spbsu.ml.loss." + name);
-      final Constructor<Func> constructor = oracleClass.getConstructor(Vec.class);
-      return new Computable<Vec, Func>() {
-        @Override
-        public Func compute(Vec argument) {
-          try {
-            return constructor.newInstance(argument);
-          } catch (Exception e) {
-            throw new RuntimeException("Exception during metric " + name + " initialization", e);
-          }
-        }
-      };
-    }
-    catch (Exception e) {
-      throw new RuntimeException("Unable to create requested target: " + name, e);
-    }
-  }
-
   private static class ProgressPrinter implements ProgressHandler {
     private final DataSet learn;
     private final DataSet test;
@@ -334,8 +329,8 @@ public class JMLLCLI {
       this.test = test;
       this.loss = learnMetric;
       this.testMetric = testMetric;
-      learnValues = new ArrayVec(learn.power());
-      testValues = new ArrayVec(test.power());
+      learnValues = new ArrayVec(learnMetric.xdim());
+      testValues = new ArrayVec(testMetric.xdim());
     }
 
     int iteration = 0;

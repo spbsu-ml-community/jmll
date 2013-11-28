@@ -39,7 +39,7 @@ public class Ensemble extends CompositeFunc<Linear, VecFunc> {
   }
 
   public Func last() {
-    return g.directions()[size() - 1];
+    return g.direction(size() - 1);
   }
 
   public double wlast() {

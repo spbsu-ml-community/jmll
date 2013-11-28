@@ -364,7 +364,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     public VecFunc gradient() {
       return new VecTransform() {
         @Override
-        public Vec value(Vec x) {
+        public Vec vvalue(Vec x) {
           return new ArrayVec(calculateFineGradient(x.toArray()));
         }
 

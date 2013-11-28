@@ -8,7 +8,6 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.Ensemble;
@@ -30,7 +29,7 @@ public class HWScore {
       final DataSet test = transform(args[1], new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/featuresTest.txt.gz")));
       final BFGrid grid = GridTools.medianGrid(learn, 32);
       final FastRandom rng = new FastRandom();
-      final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyObliviousTree<WeightedLoss<L2>>(grid, 6), 2000, 0.005, rng);
+      final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyObliviousTree<L2>(grid, 6), 2000, 0.005, rng);
       final ScoreCalcer score = new ScoreCalcer(test);
       boosting.addListener(score);
       boosting.fit(learn, new L2(learn.target()));

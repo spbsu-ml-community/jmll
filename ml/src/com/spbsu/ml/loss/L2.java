@@ -37,7 +37,7 @@ public class L2 extends Average implements StatBasedLoss<L2.MSEStats> {
   public VecFunc gradient() {
     return new VecTransform() {
       @Override
-      public Vec value(Vec x) {
+      public Vec vvalue(Vec x) {
         Vec result = copy(x);
         scale(result, -1);
         append(result, target);

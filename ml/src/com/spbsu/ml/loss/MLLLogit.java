@@ -1,7 +1,9 @@
 package com.spbsu.ml.loss;
 
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.FuncStub;
 
@@ -20,39 +22,52 @@ public class MLLLogit extends FuncStub {
 
   public MLLLogit(Vec target) {
     this.target = target;
-    classesCount = ArrayTools.max(target.toArray()) + 1;
+    classesCount = (int)target.get(ArrayTools.max(target.toArray())) + 1;
   }
 
   @Override
   public Vec gradient(Vec point) {
     Vec result = new ArrayVec(point.dim());
-    for (int i = 0; i < point.dim(); i++) {
-      double expX = exp(point.get(i));
-      double pX = expX / (1 + expX);
-      if (target.get(i) > 0) // positive example
-        result.set(i, 1 - pX);
-      else // negative
-        result.set(i, -pX);
+    Mx resultMx = new VecBasedMx(target.dim(), result);
+    Mx mxPoint = new VecBasedMx(target.dim(), point);
+    for (int i = 0; i < target.dim(); i++) {
+      double sum = 0;
+      for (int c = 0; c < classesCount - 1; c++){
+        double expX = exp(mxPoint.get(c, i));
+        sum += expX;
+      }
+      final int pointClass = (int)target.get(i);
+      for (int c = 0; c < classesCount - 1; c++){
+        if (pointClass == c)
+          resultMx.adjust(c, i, -(1. + sum - exp(mxPoint.get(c, i)))/(1. + sum));
+        else
+          resultMx.adjust(c, i, exp(mxPoint.get(c, i))/ (1. + sum));
+      }
     }
     return result;
   }
 
   @Override
   public int xdim() {
-    return target.dim() * classesCount;
+    return target.dim() * (classesCount - 1);
   }
 
   public double value(Vec point) {
     double result = 0;
-    for (int i = 0; i < point.dim(); i++) {
-      double expX = exp(point.get(i));
-      double pX = expX / (1 + expX);
-      if (target.get(i) > 0) // positive example
-        result -= log(pX);
-      else // negative
-        result -= log(1 - pX);
+    Mx mxPoint = new VecBasedMx(target.dim(), point);
+    for (int i = 0; i < target.dim(); i++) {
+      double sum = 0;
+      for (int c = 0; c < classesCount - 1; c++){
+        double expX = exp(mxPoint.get(c, i));
+        sum += expX;
+      }
+      final int pointClass = (int)target.get(i);
+      if (pointClass != classesCount - 1)
+        result += log(exp(mxPoint.get(pointClass, i)) / (1. + sum));
+      else
+        result += log(1./(1. + sum));
     }
 
-    return result;
+    return exp(result / target.dim());
   }
 }

@@ -59,7 +59,7 @@ public class Nesterov1 implements ConvexOptimize {
         y.set(i, (alpha * gamma1 * v1.get(i) + gamma2 * x1.get(i)) / (gamma1 + alpha * m));
       }
 
-      grad = func.gradient().value(y);
+      grad = func.gradient().vvalue(y);
       for (int i = 0; i < n; i++) {
         x2.set(i, y.get(i) - (1.0 / L) * grad.get(i));
       }

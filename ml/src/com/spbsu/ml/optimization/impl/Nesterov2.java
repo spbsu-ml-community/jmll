@@ -41,7 +41,7 @@ public class Nesterov2 implements ConvexOptimize {
         while (distance > eps) {
 
             //f'(y[k])
-            currentGrad = func.gradient().value(y);
+            currentGrad = func.gradient().vvalue(y);
             //x[k+1] = y[k] - 1/L * f'(y[k])
             for (int i = 0; i < x0.dim(); i++) {
                 x2.set(i, y.get(i) - currentGrad.get(i) / lk);

@@ -9,7 +9,6 @@ import com.spbsu.commons.random.RandomExt;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.VecFunc;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.models.Ensemble;
@@ -24,28 +23,26 @@ import java.util.Random;
 * Time: 22:13:54
 */
 public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolderImpl<Func> implements Optimization<GlobalLoss> {
-  protected final Optimization weak;
+  protected final Optimization<L2> weak;
   private final Computable<Vec, L2> factory;
   int iterationsCount;
 
   double step;
-  protected final RandomExt rnd;
 
-  public GradientBoosting(Optimization weak, int iterationsCount, double step, Random rnd) {
+  public GradientBoosting(Optimization<L2> weak, int iterationsCount, double step, Random rnd) {
     this(weak, new Computable<Vec, L2>() {
       @Override
       public L2 compute(Vec argument) {
         return new SatL2(argument);
       }
-    }, iterationsCount, step, rnd);
+    }, iterationsCount, step);
   }
 
-  public GradientBoosting(Optimization weak, Computable<Vec, L2> factory, int iterationsCount, double step, Random rnd) {
+  public GradientBoosting(Optimization<L2> weak, Computable<Vec, L2> factory, int iterationsCount, double step) {
     this.weak = weak;
     this.factory = factory;
     this.iterationsCount = iterationsCount;
     this.step = step;
-    this.rnd = new RandomExt(rnd);
   }
 
   @Override
@@ -55,8 +52,8 @@ public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolde
     final VecFunc gradient = globalLoss.gradient();
 
     for (int t = 0; t < iterationsCount; t++) {
-      final Vec gradientValueAtCursor = gradient.value(cursor);
-      final Func localLoss = DataTools.bootstrap(factory.compute(gradientValueAtCursor), rnd);
+      final Vec gradientValueAtCursor = gradient.vvalue(cursor);
+      final L2 localLoss = factory.compute(gradientValueAtCursor);
       final Func weakModel = weak.fit(learn, localLoss);
       weakModels.add(weakModel);
       invoke(new Ensemble(weakModels, -step));

@@ -27,7 +27,7 @@ public class CELogit extends FuncStub {
   public VecFunc gradient() {
     return new VecTransform() {
       @Override
-      public Vec value(Vec x) {
+      public Vec vvalue(Vec x) {
         Vec result = new ArrayVec(x.dim());
         for (int i = 0; i < x.dim(); i++) {
           double b = target.get(i) > 0 ? 1 : -1;

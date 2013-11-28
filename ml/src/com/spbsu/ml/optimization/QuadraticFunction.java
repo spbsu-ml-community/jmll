@@ -68,7 +68,7 @@ public class QuadraticFunction extends FuncStub implements ConvexFunction {
   public VecFunc gradient() {
     return new VecTransform() {
       @Override
-      public Vec value(Vec x) {
+      public Vec vvalue(Vec x) {
         return VecTools.append(VecTools.multiply(mxA, x), w);
       }
 
