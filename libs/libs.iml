@@ -53,6 +53,12 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" exported="" name="commons" level="project" />
+    <orderEntry type="library" exported="" name="Jama-1.0.2" level="project" />
+    <orderEntry type="library" exported="" name="trove-2.0.2" level="project" />
+    <orderEntry type="library" exported="" name="commons-cli-1.2" level="project" />
+    <orderEntry type="library" exported="" name="commons-cli-1.2-sources" level="project" />
+    <orderEntry type="library" exported="" name="annotations" level="project" />
   </component>
 </module>
 
