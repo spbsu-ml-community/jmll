@@ -11,7 +11,7 @@ import com.spbsu.ml.methods.GreedyTDRegion;
 import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.optimization.ConvexFunction;
 import com.spbsu.ml.optimization.ConvexOptimize;
-import com.spbsu.ml.optimization.impl.Nesterov1;
+import com.spbsu.ml.optimization.impl.FlexStepDescent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -135,7 +135,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         }
 
         public void run() {
-            transformConditionToFine(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value);
+            transformConditionToFineGradient(gradLambdas.get(i), gradIndex.get(i), gradCoef.get(i), value);
 
         }
     }
@@ -395,7 +395,9 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
         double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
         //for(int i =0 ;i < linearMissCoefficient.length;i++)
         //    System.out.println(linearMissCoefficient[i]);
-        ConvexOptimize optimize = new Nesterov1(new ArrayVec(numberOfVariables));
+//        ConvexOptimize optimize = new MagicDescent(new ArrayVec(numberOfVariables));
+//        ConvexOptimize optimize = new GradientDescent(new ArrayVec(numberOfVariables));
+        ConvexOptimize optimize = new FlexStepDescent(new ArrayVec(numberOfVariables));
         Vec x = optimize.optimize(new Function(), 0.5);
         double value[] = x.toArray();
         //calculateFine(value);

@@ -63,13 +63,14 @@ public class GreedyExponentialObliviousTree extends GreedyContinuesObliviousSoft
             for (int index = 0; index < 1 << depth; index++)
                 for (int jindex = 0; jindex < 1 << depth; jindex++) {
                     double weight = Math.exp(-calcDistanseToRegion(index, ds.data().row(i)) - calcDistanseToRegion(jindex, ds.data().row(i)));
-                    for (int x = 0; x <= depth; x++)
-                        for (int y = 0; y <= x; y++) {
-                            for (int x1 = 0; x1 <= depth; x1++)
-                                for (int y1 = 0; y1 <= x1; y1++) {
-                                    quadraticMissCoefficient[getIndex(index, x, y)][getIndex(jindex, x1, y1)] += data[x] * data[y] * data[x1] * data[y1] * weight;
-                                }
-                        }
+                    if (weight > 1e-4)
+                        for (int x = 0; x <= depth; x++)
+                            for (int y = 0; y <= x; y++) {
+                                for (int x1 = 0; x1 <= depth; x1++)
+                                    for (int y1 = 0; y1 <= x1; y1++) {
+                                        quadraticMissCoefficient[getIndex(index, x, y)][getIndex(jindex, x1, y1)] += data[x] * data[y] * data[x1] * data[y1] * weight;
+                                    }
+                            }
                 }
             constMiss += sqr(f);
         }
