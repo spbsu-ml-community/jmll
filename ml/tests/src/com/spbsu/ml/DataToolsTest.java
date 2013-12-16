@@ -11,14 +11,6 @@ import com.spbsu.ml.data.DataTools;
  * Time: 20:28
  */
 public class DataToolsTest extends GridTest {
-  public void testBootStrap() {
-    final DataSet bootstrap = DataTools.bootstrap(learn, new FastRandom(0));
-    final Vec row = bootstrap.data().row(10);
-//    System.out.println(row.toString());
-    assertTrue(learn.data().row(7656).equals(row));
-    assertEquals(learn.target().get(7656), bootstrap.target().get(10));
-  }
-
   public void testBuildHistogram() {
 //    final VecBasedMx data = new VecBasedMx(1, new ArrayVec(0, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8));
 //    DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));

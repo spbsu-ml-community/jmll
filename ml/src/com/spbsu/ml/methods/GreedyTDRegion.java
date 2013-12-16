@@ -8,14 +8,12 @@ import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.methods.trees.BFOptimizationSubset;
 import com.spbsu.ml.models.Region;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * User: solar
@@ -23,11 +21,9 @@ import java.util.Random;
  * Time: 15:19
  */
 public class GreedyTDRegion<O extends StatBasedLoss> implements Optimization<O> {
-  private final Random rng;
   protected final BFGrid grid;
 
-  public GreedyTDRegion(Random rng, BFGrid grid) {
-    this.rng = rng;
+  public GreedyTDRegion(BFGrid grid) {
     this.grid = grid;
   }
 
@@ -38,16 +34,8 @@ public class GreedyTDRegion<O extends StatBasedLoss> implements Optimization<O> 
     double currentScore = Double.POSITIVE_INFINITY;
     final AdditiveStatistics excluded = (AdditiveStatistics)loss.statsFactory().create();
     BFOptimizationSubset current;
-    final BinarizedDataSet bds;
-    if (learn instanceof Bootstrap) {
-      final Bootstrap bs = (Bootstrap) learn;
-      bds = bs.original().cache(Binarize.class).binarize(grid);
-      current = new BFOptimizationSubset(bds, loss, bs.order());
-    }
-    else {
-      bds = learn.cache(Binarize.class).binarize(grid);
-      current = new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, learn.power()));
-    }
+    final BinarizedDataSet bds = learn.cache(Binarize.class).binarize(grid);
+    current = new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, learn.power()));
 
 
     final double[] scores = new double[grid.size()];

@@ -21,7 +21,7 @@ public class Aggregate {
   private final BFGrid grid;
   private final AdditiveStatistics[] bins;
   private final Factory<AdditiveStatistics> factory;
-  private AdditiveStatistics total;
+  private volatile AdditiveStatistics total;
 
   public Aggregate(BinarizedDataSet bds, Factory<AdditiveStatistics> factory, int[] points) {
     this.bds = bds;
@@ -52,23 +52,30 @@ public class Aggregate {
     return result;
   }
 
-  public synchronized AdditiveStatistics total() {
-    if (total == null) { // calculating total by non empty row
-      total = factory.create();
+  public AdditiveStatistics total() {
+//    if (total == null) { // calculating total by non empty row
+      AdditiveStatistics myTotal = factory.create();
       final BFGrid.BFRow row = grid.nonEmptyRow();
+      final int offset = row.origFIndex * transferRowSize;
+      final AdditiveStatistics[] myBins = bins;
       for (int b = 0; b <= row.size(); b++) {
-        total.append(bins[row.origFIndex * transferRowSize + b]);
+        myTotal.append(myBins[offset + b]);
       }
-    }
+    return myTotal;
+//      total = myTotal;
+//    }
 
-    return total;
+//    return total;
   }
+  private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Aggregator thread", -1);
 
-  public void remove(Aggregate aggregate) {
+  public void remove(final Aggregate aggregate) {
+    final AdditiveStatistics[] my = bins;
+    final AdditiveStatistics[] other = aggregate.bins;
     for (int i = 0; i < bins.length; i++) {
-      bins[i].remove(aggregate.bins[i]);
+      my[i].remove(other[i]);
     }
-    total.remove(aggregate.total());
+//    total.remove(aggregate.total());
   }
 
   public interface SplitVisitor<T> {
@@ -89,8 +96,6 @@ public class Aggregate {
       }
     }
   }
-
-  private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Aggregator thread", -1);
 
   private void build(final int[] indices) {
     final CountDownLatch latch = new CountDownLatch(grid.rows());

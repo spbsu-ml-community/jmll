@@ -15,6 +15,7 @@ public class BFGrid {
   final BFRow[] rows;
   final BinaryFeature[] features;
   final int bfCount;
+  final BFRow leastNonEmptyRow;
 
   public BFGrid(BFRow[] rows) {
     this.rows = rows;
@@ -30,6 +31,14 @@ public class BFGrid {
         rowIndex++;
       features[i] = rows[rowIndex].bf(i - rows[rowIndex].bfStart);
     }
+
+    BFRow leastNonEmptyRow = null;
+    for (int i = 0; i < rows.length; i++) {
+      if (rows[i].size() > 0) {
+        leastNonEmptyRow = leastNonEmptyRow != null ? (leastNonEmptyRow.size() > rows[i].size() ? rows[i] : leastNonEmptyRow) : rows[i];
+      }
+    }
+    this.leastNonEmptyRow = leastNonEmptyRow;
   }
 
   public BFRow row(int feature) {
@@ -59,12 +68,7 @@ public class BFGrid {
   }
 
   public BFRow nonEmptyRow() {
-    BFRow result = null;
-    for (int i = 0; i < rows.length; i++) {
-      if (rows[i].size() > 0)
-        result = rows[i];
-    }
-    return result;
+    return leastNonEmptyRow;
   }
 
 

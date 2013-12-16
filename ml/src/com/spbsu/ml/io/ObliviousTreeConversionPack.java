@@ -24,7 +24,7 @@ import java.util.Locale;
  * Time: 13:05
  */
 public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree, CharSequence> {
-  private static final MessageFormat FEATURE_LINE_PATTERN = new MessageFormat("feature: {0, number}, bin: {1, number}, condition_value: {2, number,#.#####}", Locale.US);
+  private static final MessageFormat FEATURE_LINE_PATTERN = new MessageFormat("feature: {0, number}, bin: {1, number}, ge: {2, number,#.#####}", Locale.US);
 
   static {
     DecimalFormat format = new DecimalFormat();

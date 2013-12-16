@@ -65,7 +65,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats> {
     return stats.weight > MathTools.EPSILON ? stats.sum/stats.weight : 0;
   }
 
-  public static class MSEStats implements AdditiveStatistics<MSEStats> {
+  public static class MSEStats implements AdditiveStatistics {
     public volatile double sum;
     public volatile double sum2;
     public volatile int weight;
@@ -86,7 +86,8 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats> {
     }
 
     @Override
-    public MSEStats remove(MSEStats other) {
+    public MSEStats remove(AdditiveStatistics otheras) {
+      MSEStats other = (MSEStats)otheras;
       sum -= other.sum;
       sum2 -= other.sum2;
       weight -= other.weight;
@@ -103,7 +104,8 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats> {
     }
 
     @Override
-    public MSEStats append(MSEStats other) {
+    public MSEStats append(AdditiveStatistics otheras) {
+      MSEStats other = (MSEStats)otheras;
       sum += other.sum;
       sum2 += other.sum2;
       weight += other.weight;

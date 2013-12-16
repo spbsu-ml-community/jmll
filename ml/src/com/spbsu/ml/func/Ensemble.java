@@ -69,9 +69,8 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   public Vec trans(Vec x) {
     Vec result = new ArrayVec(ydim());
     for (int i = 0; i < models.length; i++) {
-      VecTools.append(result, models[i].trans(x));
+      VecTools.append(result, VecTools.scale(models[i].trans(x), weights.get(i)));
     }
-    VecTools.scale(result, 1./models.length);
     return result;
   }
 }

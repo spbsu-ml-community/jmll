@@ -187,22 +187,20 @@ public class JMLLCLI {
                             learn.xdim(),
                             new IndexTransVec(
                                     learn.data(),
-                                    new RowsPermutation(learnIndicesArr, learn.xdim()),
-                                    new IntBasis(learnIndicesArr.length * learn.xdim())
+                                    new RowsPermutation(learnIndicesArr, learn.xdim())
                             )
                     ),
-                    new IndexTransVec(learn.target(), new ArrayPermutation(learnIndicesArr), new IntBasis(learnIndicesArr.length))
+                    new IndexTransVec(learn.target(), new ArrayPermutation(learnIndicesArr))
             ),
             new DataSetImpl(
                     new VecBasedMx(
                             learn.xdim(),
                             new IndexTransVec(
                                     learn.data(),
-                                    new RowsPermutation(testIndicesArr, learn.xdim()),
-                                    new IntBasis(testIndicesArr.length * learn.xdim())
+                                    new RowsPermutation(testIndicesArr, learn.xdim())
                             )
                     ),
-                    new IndexTransVec(learn.target(), new ArrayPermutation(testIndicesArr), new IntBasis(testIndicesArr.length))));
+                    new IndexTransVec(learn.target(), new ArrayPermutation(testIndicesArr))));
   }
 
   private static Optimization chooseMethod(String scheme, Factory<BFGrid> grid, Random rnd) {
@@ -309,7 +307,7 @@ public class JMLLCLI {
       return new Factory<Optimization>() {
         @Override
         public Optimization create() {
-          return new GreedyTDRegion(rnd, grid.create());
+          return new GreedyTDRegion(grid.create());
         }
       };
     } else throw new RuntimeException("Unknown weak model: " + name);

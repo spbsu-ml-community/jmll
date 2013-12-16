@@ -13,9 +13,9 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.CompositeTrans;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.impl.Bootstrap;
 import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.io.ModelsSerializationRepository;
@@ -103,18 +103,6 @@ public class DataTools {
     return new DataSetImpl(data, target);
   }
 
-  public static ChangedTarget changeTarget(DataSet base, Vec newTarget) {
-    return new ChangedTarget((DataSetImpl)base, newTarget);
-  }
-
-  public static Bootstrap bootstrap(DataSet base) {
-    return new Bootstrap(base);
-  }
-
-  public static Bootstrap bootstrap(DataSet base, Random random) {
-    return new Bootstrap(base, random);
-  }
-
   public static void writeModel(Trans result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);
     StreamTools.writeChars(CharSequenceTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
@@ -138,7 +126,7 @@ public class DataTools {
     }
     else if (result instanceof FuncJoin) {
       final FuncJoin join = (FuncJoin) result;
-      for (Func dir : join.dirs) {
+      for (Func dir : join.dirs()) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
@@ -147,6 +135,14 @@ public class DataTools {
     else if (result instanceof TransJoin) {
       final TransJoin join = (TransJoin) result;
       for (Trans dir : join.dirs) {
+        final BFGrid grid = grid(dir);
+        if (grid != null)
+          return grid;
+      }
+    }
+    else if (result instanceof Ensemble) {
+      final Ensemble ensemble = (Ensemble) result;
+      for (Trans dir : ensemble.models) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;

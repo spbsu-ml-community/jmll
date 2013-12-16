@@ -25,12 +25,20 @@ public interface Trans {
       return null;
     }
 
+//    public Mx transAll(Mx ds) {
+//      Mx result = new VecBasedMx(ds.rows(), new ArrayVec(ds.rows() * ydim()));
+//      for (int i = 0; i < ds.rows(); i++) {
+//        VecTools.assign(result.col(i), trans(ds.row(i)));
+//      }
+//      return result;
+//    }
+
     public Mx transAll(Mx ds) {
-      Mx result = new VecBasedMx(ds.rows(), new ArrayVec(ds.rows() * ydim()));
+      Mx result = new VecBasedMx(ydim(), new ArrayVec(ds.rows() * ydim()));
       for (int i = 0; i < ds.rows(); i++) {
-        VecTools.assign(result.col(i), trans(ds.row(i)));
+        VecTools.assign(result.row(i), trans(ds.row(i)));
       }
-      return result;
+      return VecTools.transpose(result);
     }
   }
 }

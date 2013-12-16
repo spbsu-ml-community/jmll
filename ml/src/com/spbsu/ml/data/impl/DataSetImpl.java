@@ -67,14 +67,9 @@ public class DataSetImpl extends CacheHolderImpl implements DataSet {
     };
   }
 
-  final TIntObjectHashMap<int[]> orders = new TIntObjectHashMap<int[]>();
-  public synchronized int[] order(final int featureIndex) {
-    int[] result = orders.get(featureIndex);
-    if (result == null) {
-      result = ArrayTools.sequence(0, power());
-      ArrayTools.parallelSort(data.col(featureIndex).toArray(), result);
-      orders.put(featureIndex, result);
-    }
+  public int[] order(final int featureIndex) {
+    final int[] result = ArrayTools.sequence(0, power());
+    ArrayTools.parallelSort(data.col(featureIndex).toArray(), result);
     return result;
   }
 

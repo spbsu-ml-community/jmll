@@ -62,7 +62,7 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     return metric.trans(x).get(0);
   }
 
-  public static class Stat implements AdditiveStatistics<Stat> {
+  public static class Stat implements AdditiveStatistics {
     public AdditiveStatistics inside;
     private final int[] weights;
 
@@ -79,8 +79,8 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     }
 
     @Override
-    public Stat append(Stat other) {
-      inside.append(other.inside);
+    public Stat append(AdditiveStatistics other) {
+      inside.append(((Stat) other).inside);
       return this;
     }
 
@@ -92,8 +92,8 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     }
 
     @Override
-    public Stat remove(Stat other) {
-      inside.remove(other.inside);
+    public Stat remove(AdditiveStatistics other) {
+      inside.remove(((Stat)other).inside);
       return this;
     }
   }

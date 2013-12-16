@@ -14,8 +14,8 @@ import gnu.trove.TIntObjectHashMap;
  * Time: 20:32
  * To change this template use File | Settings | File Templates.
  */
-public class OrderByFeature  implements Computable<DataSet, OrderByFeature> {
-  final TIntObjectHashMap<int[]> orders = new TIntObjectHashMap<int[]>();
+public class OrderByFeature implements Computable<DataSet, OrderByFeature> {
+  final TIntObjectHashMap<ArrayPermutation> orders = new TIntObjectHashMap<ArrayPermutation>();
   DataSetImpl set;
 
   @Override
@@ -24,7 +24,10 @@ public class OrderByFeature  implements Computable<DataSet, OrderByFeature> {
     return this;
   }
 
-  public ArrayPermutation orderBy(int features) {
-    return new ArrayPermutation(set.order(features));
+  public synchronized ArrayPermutation orderBy(int featureNo) {
+    ArrayPermutation result = orders.get(featureNo);
+    if (result == null)
+      orders.put(featureNo, result = new ArrayPermutation(set.order(featureNo)));
+    return result;
   }
 }
