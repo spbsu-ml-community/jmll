@@ -61,7 +61,7 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
           StringTokenizer tok = new StringTokenizer(lines[0].toString(), " ");
           Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(tok.nextToken());
           weights[i] = Double.parseDouble(tok.nextToken());
-          models[i] = repository.convert(elements[i + 1].subSequence(lines[0].length(), elements[i + 1].length()), elementClass);
+          models[i] = repository.convert(elements[i + 1].subSequence(lines[0].length() + 1, elements[i + 1].length()), elementClass);
         }
       } catch (ClassNotFoundException e) {
         throw new RuntimeException("Element class not found!", e);
