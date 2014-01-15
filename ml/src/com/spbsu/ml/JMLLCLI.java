@@ -5,7 +5,6 @@ import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.math.vectors.IntBasis;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
@@ -21,11 +20,11 @@ import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.func.Ensemble;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntObjectHashMap;
 import org.apache.commons.cli.*;
@@ -142,18 +141,22 @@ public class JMLLCLI {
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(learnFile + ".values"));
         try {
           Trans model = DataTools.readModel(command.getOptionValue('m', "features.txt.model"), serializationRepository);
-          if (model instanceof Func) {
-            final Func func = (Func) model;
             DSIterator it = learn.iterator();
             int index = 0;
             while (it.advance()) {
+              final CharSequence value;
+              if (model instanceof  Func) {
+                final Func func = (Func) model;
+                value = Double.toString(func.value(it.x()));
+              } else {
+                value = model.trans(it.x()).toString();
+              }
               writer.append(metaLearn.get(index));
               writer.append('\t');
-              writer.append(Double.toString(func.value(it.x())));
+              writer.append(value);
               writer.append('\n');
               index++;
             }
-          }
         } finally {
           writer.close();
         }
@@ -169,6 +172,8 @@ public class JMLLCLI {
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
     }
   }
+
+
 
   private static Pair<DataSet, DataSet> splitCV(DataSet learn, int folds, Random rnd) {
     TIntArrayList learnIndices = new TIntArrayList();
