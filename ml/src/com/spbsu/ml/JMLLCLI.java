@@ -156,7 +156,7 @@ public class JMLLCLI {
         final Trans result = method.fit(learn, loss);
         Interval.stopAndPrint("Total fit time:");
 
-        System.out.println("Learn: " + loss.value(result.transAll(learn.data())) + " Test:");
+        System.out.print("Learn: " + loss.value(result.transAll(learn.data())) + " Test:");
         for (final Trans metric : metrics) {
           System.out.print(" " + metric.trans(result.transAll(test.data())));
         }
