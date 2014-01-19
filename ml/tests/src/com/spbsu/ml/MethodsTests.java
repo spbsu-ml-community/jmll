@@ -251,6 +251,18 @@ public class MethodsTests extends GridTest {
     return data;
   }
 
+  public boolean checkEigeDecomposion(Mx mx, Mx q, Mx sigma) {
+    for (int i = 0; i < mx.rows(); i++) {
+      for (int j = 0; j < mx.columns(); j++)
+        if (Math.abs(VecTools.multiply(mx, q.row(i)).get(j) - q.get(i, j) * sigma.get(i, i)) > 1e-9) {
+          System.out.println(VecTools.multiply(mx, q.row(i)).get(j));
+          System.out.println(q.get(i, j) * sigma.get(i, i));
+          return false;
+        }
+    }
+    return true;
+  }
+
   public void doPCA(DataSet[] mas) {
     boolean continues[] = new boolean[learn.xdim()];
     Mx learnMx = cutNonContinuesFeatures(learn.data(), continues);
@@ -260,6 +272,8 @@ public class MethodsTests extends GridTest {
     Mx q = new VecBasedMx(mx.columns(), mx.rows());
     Mx sigma = new VecBasedMx(mx.columns(), mx.rows());
     VecTools.eigenDecomposition(mx, q, sigma);
+    assertTrue(checkEigeDecomposion(mx, q, sigma));
+    //System.exit(0);
     //System.out.println(mx);
     //System.out.println(q);
     learnMx = VecTools.multiply(learnMx, VecTools.transpose(q));
@@ -268,8 +282,8 @@ public class MethodsTests extends GridTest {
     for (int i = 0; i < learn.xdim(); i++)
       if (!continues[i])
         reg[i] = cnt++;
-    System.out.println(q);
-    System.exit(-1);
+    //System.out.println(q);
+    //System.exit(-1);
     Mx learnOut = new VecBasedMx(learn.power(), learn.xdim());
     Mx validateOut = new VecBasedMx(validate.power(), validate.xdim());
     for (int i = 0; i < learn.power(); i++) {
@@ -279,6 +293,8 @@ public class MethodsTests extends GridTest {
         if (!continues[j])
           learnOut.set(i, reg[j] + learnMx.columns(), learn.data().get(i, j));
     }
+    System.out.println(learnOut);
+    System.exit(0);
     for (int i = 0; i < validate.power(); i++) {
       for (int j = 0; j < validateMx.columns(); j++)
         validateOut.set(i, j, validateMx.get(i, j));
@@ -332,7 +348,7 @@ public class MethodsTests extends GridTest {
 
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
         new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
-        2000, 0.01, rng);
+        2000, 0.02, rng);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
