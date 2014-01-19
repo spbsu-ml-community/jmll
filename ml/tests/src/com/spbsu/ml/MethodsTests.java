@@ -11,14 +11,16 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.NormalizedLinear;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyContinuesObliviousSoftBondariesRegressionTree;
+import com.spbsu.ml.methods.trees.GreedyExponentialObliviousTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.TDoubleDoubleHashMap;
 import gnu.trove.TDoubleIntHashMap;
@@ -48,12 +50,12 @@ public class MethodsTests extends GridTest {
 
   public void testGRBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn, 32)), rng),
-            new Computable<Vec, L2>() {
-              @Override
-              public L2 compute(Vec argument) {
-                return new L2(argument);
-              }
-            }, 10000, 0.02);
+        new Computable<Vec, L2>() {
+          @Override
+          public L2 compute(Vec argument) {
+            return new L2(argument);
+          }
+        }, 10000, 0.02);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -97,7 +99,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testOTBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), 2000, 0.01, rng);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization<L2>(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 2000, 0.01, rng);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -115,13 +117,14 @@ public class MethodsTests extends GridTest {
     boosting.addListener(validateListener);
     //boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
-    boosting.fit(learn, new L2(learn.target()));
+    boosting.fit(learn, new SatL2(learn.target()));
   }
 
   public void testCOTBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-            new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32),6, 10, true, 1, 0, 0, 1e5),
-            2000, 0.01, rng);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
+        new BootstrapOptimization<L2>(
+            new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6, 0.6, true, 0.01, 0.01, 0.01, 1e5), rng),
+        2000, 0.0005, rng);
     final Action counter = new Action<Trans>() {
       int index = 0;
 
@@ -139,7 +142,35 @@ public class MethodsTests extends GridTest {
     boosting.addListener(validateListener);
     //boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
-    boosting.fit(learn, new L2(learn.target()));
+    boosting.fit(learn, new SatL2(learn.target()));
+  }
+
+  public void testEOTBoost() {
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
+        new BootstrapOptimization<L2>(
+            new GreedyExponentialObliviousTree(
+                new FastRandom(),
+                learn,
+                GridTools.medianGrid(learn, 32), 6), rng),
+        2000, 0.0005, rng);
+    final Action counter = new Action<Trans>() {
+      int index = 0;
+
+      @Override
+      public void invoke(Trans partial) {
+        System.out.print("\n" + index++);
+      }
+    };
+    final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", learn);
+    final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", validate);
+    final Action modelPrinter = new ModelPrinter();
+    final Action qualityCalcer = new QualityCalcer();
+    boosting.addListener(counter);
+    boosting.addListener(learnListener);
+    boosting.addListener(validateListener);
+    //boosting.addListener(qualityCalcer);
+//    boosting.addListener(modelPrinter);
+    boosting.fit(learn, new SatL2(learn.target()));
   }
 
   private double sqr(double x) {
@@ -163,9 +194,28 @@ public class MethodsTests extends GridTest {
     ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
     for (int depth = 1; depth <= 6; depth++) {
       ContinousObliviousTree tree = new GreedyContinuesObliviousSoftBondariesRegressionTree(
-              new FastRandom(),
-              learn,
-              GridTools.medianGrid(learn, 32), depth, 10, true, 1, 0.1, 1, 1e5).fit(learn, new L2(learn.target()));
+          new FastRandom(),
+          learn,
+          GridTools.medianGrid(learn, 32), depth, 10, true, 1, 0.1, 1, 1e5).fit(learn, new L2(learn.target()));
+      //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
+      // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
+      System.out.print("Oblivious Tree deapth = " + depth);
+      scoreCalcerLearn.invoke(tree);
+      scoreCalcerValidate.invoke(tree);
+
+      System.out.println();
+      //System.out.println(tree.toString());
+    }
+  }
+
+  public void testExponentialObliviousTree() {
+    ScoreCalcer scoreCalcerValidate = new ScoreCalcer(/*" On validate data Set loss = "*/"\t", validate);
+    ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
+    for (int depth = 1; depth <= 6; depth++) {
+      ContinousObliviousTree tree = new GreedyExponentialObliviousTree(
+          new FastRandom(),
+          learn,
+          GridTools.medianGrid(learn, 32), depth).fit(learn, new L2(learn.target()));
       //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
       // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
       System.out.print("Oblivious Tree deapth = " + depth);
@@ -281,8 +331,8 @@ public class MethodsTests extends GridTest {
 
 
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-            new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
-            2000, 0.01, rng);
+        new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
+        2000, 0.01, rng);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -346,7 +396,7 @@ public class MethodsTests extends GridTest {
         final DSIterator iter = ds.iterator();
         int index = 0;
         while (iter.advance()) {
-          current.set(index++, ((Func)partial).value(iter.x()));
+          current.set(index++, ((Func) partial).value(iter.x()));
         }
       }
       double curLoss = VecTools.distance(current, ds.target()) / Math.sqrt(ds.power());
@@ -417,7 +467,7 @@ public class MethodsTests extends GridTest {
           sum += v;
           sum2 += v * v;
         }
-        d += (sum2 - sum * sum /n)/n;
+        d += (sum2 - sum * sum / n) / n;
       }
       System.out.println("\t" + d / 100000);
     }
