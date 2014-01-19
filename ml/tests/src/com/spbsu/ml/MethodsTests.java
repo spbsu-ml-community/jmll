@@ -152,7 +152,7 @@ public class MethodsTests extends GridTest {
                 new FastRandom(),
                 learn,
                 GridTools.medianGrid(learn, 32), 6), rng),
-        2000, 0.0005, rng);
+        2000, 0.005, rng);
     final Action counter = new Action<Trans>() {
       int index = 0;
 

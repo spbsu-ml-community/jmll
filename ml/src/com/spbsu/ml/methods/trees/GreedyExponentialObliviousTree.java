@@ -35,7 +35,7 @@ public class GreedyExponentialObliviousTree extends GreedyContinuesObliviousSoft
       }
     }
 
-    return 5 * ans;
+    return 15 * ans;
   }
 
   void precalculateMissCoefficients(DataSet ds) {
