@@ -8,6 +8,7 @@ import com.spbsu.ml.Func;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.models.MultiClassModel;
 
 /**
  * User: solar
@@ -24,13 +25,13 @@ public class MultiClass implements Optimization<L2> {
   }
 
   @Override
-  public FuncJoin fit(DataSet learn, L2 mllLogitGradient) {
+  public MultiClassModel fit(DataSet learn, L2 mllLogitGradient) {
     final Mx data = learn.data();
     final Mx gradient = new VecBasedMx(data.rows(), mllLogitGradient.target);
     final Func[] models = new Func[gradient.rows()];
     for (int c = 0; c < models.length; c++) {
       models[c] = (Func)inner.fit(learn, local.compute(gradient.row(c)));
     }
-    return new FuncJoin(models);
+    return new MultiClassModel(models);
   }
 }

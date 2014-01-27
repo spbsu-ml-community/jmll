@@ -77,7 +77,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testGTDRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyTDRegion<WeightedLoss<L2>>(GridTools.medianGrid(learn, 32)), rng), 10000, 0.02, rng);
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyTDRegion<WeightedLoss<L2>>(GridTools.medianGrid(learn, 32)), rng), 10000, 0.02);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -99,7 +99,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testOTBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization<L2>(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 2000, 0.01, rng);
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 2000, 0.01);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -121,10 +121,9 @@ public class MethodsTests extends GridTest {
   }
 
   public void testCOTBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
-        new BootstrapOptimization<L2>(
-            new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6, 0.6, true, 0.01, 0.01, 0.01, 1e5), rng),
-        2000, 0.0005, rng);
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
+            new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32),6, 10, true, 1, 0, 0, 1e5),
+            2000, 0.01);
     final Action counter = new Action<Trans>() {
       int index = 0;
 
@@ -152,7 +151,7 @@ public class MethodsTests extends GridTest {
                 new FastRandom(),
                 learn,
                 GridTools.medianGrid(learn, 32), 6), rng),
-        2000, 0.005, rng);
+        2000, 0.005);
     final Action counter = new Action<Trans>() {
       int index = 0;
 
@@ -347,8 +346,8 @@ public class MethodsTests extends GridTest {
 
 
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-        new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
-        2000, 0.02, rng);
+            new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
+            2000, 0.01);
     final Action counter = new ProgressHandler() {
       int index = 0;
 

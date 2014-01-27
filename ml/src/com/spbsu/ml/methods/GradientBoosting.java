@@ -28,7 +28,7 @@ public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolde
 
   double step;
 
-  public GradientBoosting(Optimization<L2> weak, int iterationsCount, double step, Random rnd) {
+  public GradientBoosting(Optimization<L2> weak, int iterationsCount, double step) {
     this(weak, new Computable<Vec, L2>() {
       @Override
       public L2 compute(Vec argument) {
