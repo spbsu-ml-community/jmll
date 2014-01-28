@@ -59,6 +59,7 @@ public class JMLLCLI {
   private static final String NORMALIZE_RELEVANCE_OPTION = "r";
   private static final String FOREST_LENGTH_OPTION = "a";
   private static final String CROSS_VALIDATION_OPTION = "X";
+  private static final String OUTPUT_OPTION = "o";
 
   static Options options = new Options();
 
@@ -75,6 +76,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("normalize-relevance").withDescription("relevance to classes").create(NORMALIZE_RELEVANCE_OPTION));
     options.addOption(OptionBuilder.withLongOpt("forest-length").withDescription("forest length").hasArg().create(FOREST_LENGTH_OPTION));
     options.addOption(OptionBuilder.withLongOpt("cross-validation").withDescription("k folds CV").hasArg().create(CROSS_VALIDATION_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("out").withDescription("output file name").hasArg().create(OUTPUT_OPTION));
   }
 
   public static void main(String[] args) throws IOException {
@@ -130,6 +132,8 @@ public class JMLLCLI {
         }
       };
 
+      final String outputFile = command.hasOption(OUTPUT_OPTION) ? command.getOptionValue(OUTPUT_OPTION) : learnFile;
+
       if ("fit".equals(mode)) {
         final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd);
         final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
@@ -164,10 +168,10 @@ public class JMLLCLI {
 
         BFGrid grid = DataTools.grid(result);
         serializationRepository = serializationRepository.customizeGrid(grid);
-        DataTools.writeModel(result, new File(learnFile + ".model"), serializationRepository);
-        StreamTools.writeChars(serializationRepository.write(grid), new File(learnFile + ".grid"));
+        DataTools.writeModel(result, new File(outputFile + ".model"), serializationRepository);
+        StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".grid"));
       } else if ("apply".equals(mode)) {
-        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(learnFile + ".values"));
+        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"));
         try {
           Trans model = DataTools.readModel(command.getOptionValue(MODEL_OPTION, "features.txt.model"), serializationRepository);
           DSIterator it = learn.iterator();
