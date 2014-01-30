@@ -64,12 +64,33 @@ public class MethodsTests extends GridTest {
 
   public void testPGMFit5x5() {
     ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
-            0, 0.3, 0.3, 0, 0.4,
-            0, 0, 0.25, 0.25, 0.5,
-            0, 0, 0, 0.1, 0.9,
-            0, 0, 0.5, 0, 0.5,
-            0, 0, 0, 0, 0
+            0, 0.2, 0.3,  0.1,  0.4,
+            0, 0,   0.25, 0.25, 0.5,
+            0, 0,   0,    0.1,  0.9,
+            0, 0,   0.5,  0,    0.5,
+            0, 0,   0,    0,    0
     })));
+
+    Vec[] ds = new Vec[10000];
+    for (int i = 0; i < ds.length; i++) {
+      ds[i] = original.next(rng);
+    }
+    final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
+    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.8, 100);
+    final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
+    VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
+    assertTrue(VecTools.distance(fit.topology, original.topology) < 0.01 * fit.topology.dim());
+  }
+
+  public void testPGMFit10x10Rand() {
+    final VecBasedMx originalMx = new VecBasedMx(10, new ArrayVec(100));
+    for (int i = 0; i < originalMx.rows(); i++) {
+      for (int j = 0; j < originalMx.columns(); j++)
+        originalMx.set(i, j, rng.nextDouble() < 0.5 && j > 0 ? 1 : 0);
+      VecTools.normalizeL1(originalMx.row(i));
+    }
+    VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
+    ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(originalMx);
 
     Vec[] ds = new Vec[10000];
     for (int i = 0; i < ds.length; i++) {

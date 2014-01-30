@@ -20,7 +20,7 @@ import java.util.*;
  */
 public class ProbabilisticGraphicalModel extends Func.Stub {
   public static final double KNOWN_ROUTES_PROBABILITY = 0.999;
-  public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.000001;
+  public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.00001;
   public final Mx topology;
   private final Route[] knownRoutes;
   private double knownRoutesProBab;
@@ -119,10 +119,10 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
 
   public Vec next(FastRandom rng) {
     SparseVec<IntBasis> result = new SparseVec<IntBasis>(new IntBasis(100));
-    int next = 0;
+    int next = 1;
     int index = 0;
     do {
-      next = rng.nextSimple(topology.row(next)) + 1;
+      next = rng.nextSimple(topology.row(next - 1)) + 1;
       result.set(index++, next);
     }
     while (next < topology.rows());
