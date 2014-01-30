@@ -1,5 +1,6 @@
 package com.spbsu.ml.methods;
 
+import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -34,16 +35,16 @@ public class PGMEM implements Optimization<LLLogit> {
     for (int j = 0; j < data.rows(); j++) {
       cpds[j] = currentPGM.extractControlPoints(data.row(j));
     }
-    final ProbabilisticGraphicalModel.Route[] eroutes = new ProbabilisticGraphicalModel.Route[learn.power()];
     for (int t = 0; t < iterations; t++) {
+      final ProbabilisticGraphicalModel.Route[] eroutes = new ProbabilisticGraphicalModel.Route[learn.power()];
       { // E-step
         for (int j = 0; j < cpds.length; j++) {
           final int finalJ = j;
-          currentPGM.visit(new Action<ProbabilisticGraphicalModel.Route>() {
+          currentPGM.visit(new Filter<ProbabilisticGraphicalModel.Route>() {
             @Override
-            public void invoke(ProbabilisticGraphicalModel.Route route) {
-              if (eroutes[finalJ].probab < route.probab)
-                eroutes[finalJ] = route;
+            public boolean accept(ProbabilisticGraphicalModel.Route route) {
+              eroutes[finalJ] = route;
+              return true;
             }
           }, cpds[j]);
         }
@@ -52,6 +53,8 @@ public class PGMEM implements Optimization<LLLogit> {
       VecTools.fill(next, 1.); // adjusting parameters of Dir(next[i]) by one
       { // M-step
         for (ProbabilisticGraphicalModel.Route eroute : eroutes) {
+          if (eroute == null)
+            continue;
           byte prev = eroute.nodes[0];
           for (int i = 1; i < eroute.nodes.length; i++) {
             next.adjust(prev, prev = eroute.nodes[i], 1.);
