@@ -1,7 +1,6 @@
 package com.spbsu.ml.models;
 
 import com.spbsu.commons.filters.Filter;
-import com.spbsu.commons.func.Action;
 import com.spbsu.commons.math.vectors.IntBasis;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -20,7 +19,7 @@ import java.util.*;
  */
 public class ProbabilisticGraphicalModel extends Func.Stub {
   public static final double KNOWN_ROUTES_PROBABILITY = 0.999;
-  public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.000001;
+  public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.00001;
   public final Mx topology;
   private final Route[] knownRoutes;
   private double knownRoutesProBab;
@@ -30,6 +29,7 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
     for (int i = 0; i < topology.rows(); i++) {
       VecTools.normalizeL1(topology.row(i));
     }
+    VecTools.fill(topology.row(topology.rows() - 1), 0.);
 
     this.topology = topology;
     knownRoutesProBab = 0.;
@@ -80,7 +80,8 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
 
   /** need to change this to prefix tree which is way faster */
   public void visit(Filter<Route> act, int... controlPoints) {
-    for (int i = 0; i < knownRoutes.length; i++) {
+    final int length = knownRoutes.length;
+    for (int i = 0; i < length; i++) {
       final Route route = knownRoutes[i];
       int index = 0;
       for (int t = 0; t < route.nodes.length && index < controlPoints.length; t++) {
@@ -121,15 +122,20 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
   }
 
   public Vec next(FastRandom rng) {
-    SparseVec<IntBasis> result = new SparseVec<IntBasis>(new IntBasis(100));
-    int next = 1;
-    int index = 0;
-    do {
-      next = rng.nextSimple(topology.row(next - 1)) + 1;
-      result.set(index++, next);
+    while(true) {
+      SparseVec<IntBasis> result = new SparseVec<IntBasis>(new IntBasis(100));
+      int next = 1;
+      int index = 0;
+
+      while (index < result.dim()) {
+        next = rng.nextSimple(topology.row(next - 1)) + 1;
+        result.set(index++, next);
+        if (next == topology.columns())
+          break;
+      }
+      if (result.get(result.dim()) == 0.)
+        return result;
     }
-    while (next < topology.rows());
-    return result;
   }
 
   @Override

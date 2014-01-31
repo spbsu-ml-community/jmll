@@ -49,16 +49,7 @@ public class MethodsTests extends GridTest {
             0, 0, 1.,
             0, 0, 0
     })));
-
-    Vec[] ds = new Vec[10000];
-    for (int i = 0; i < ds.length; i++) {
-      ds[i] = original.next(rng);
-    }
-    final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
-    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.8, 100);
-    final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
-    VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
-    assertTrue(VecTools.distance(fit.topology, original.topology) < 0.01 * fit.topology.dim());
+    checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0.0, 10, 0.01);
   }
 
   public void testPGMFit5x5() {
@@ -70,19 +61,12 @@ public class MethodsTests extends GridTest {
             0, 0,   0,    0,    0
     })));
 
-    Vec[] ds = new Vec[10000];
-    for (int i = 0; i < ds.length; i++) {
-      ds[i] = original.next(rng);
-    }
-    final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
-    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.8, 100);
-    final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
-    VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
-    assertTrue(VecTools.distance(fit.topology, original.topology) < 0.01 * fit.topology.dim());
+
+    checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0., 10, 0.01);
   }
 
   public void testPGMFit5x5RandSkip() {
-    ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
+    final ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
             0, 0.2, 0.3,  0.1,  0.4,
             0, 0,   0.25, 0.25, 0.5,
             0, 0,   0,    0.1,  0.9,
@@ -90,52 +74,62 @@ public class MethodsTests extends GridTest {
             0, 0,   0,    0,    0
     })));
 
-    Vec[] ds = new Vec[10000];
-    for (int i = 0; i < ds.length; i++) {
-      ds[i] = breakV(original.next(rng));
-    }
-    final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
-    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.8, 10, rng);
-    final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
-    VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
-    System.out.println(fit.topology);
-    assertTrue(VecTools.distance(fit.topology, original.topology) < 0.01 * fit.topology.dim());
-  }
-
-  private Vec breakV(Vec next) {
-    Vec result = new SparseVec<IntBasis>(new IntBasis(next.dim()));
-    final VecIterator it = next.nonZeroes();
-    while (it.advance()) {
-      if (rng.nextDouble() > 0.8)
-        result.set(it.index(), it.value());
-    }
-    return result;
+    checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0.8, 100, 0.05);
   }
 
   public void testPGMFit10x10Rand() {
     final VecBasedMx originalMx = new VecBasedMx(10, new ArrayVec(100));
-    for (int i = 0; i < originalMx.rows(); i++) {
+    for (int i = 0; i < originalMx.rows()-1; i++) {
       for (int j = 0; j < originalMx.columns(); j++)
         originalMx.set(i, j, rng.nextDouble() < 0.5 && j > 0 ? 1 : 0);
       VecTools.normalizeL1(originalMx.row(i));
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
     ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(originalMx);
-
-    Vec[] ds = new Vec[10000];
-    for (int i = 0; i < ds.length; i++) {
-      ds[i] = original.next(rng);
-    }
-    final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
-    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.8, 100);
-    final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
-    VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
-    assertTrue(VecTools.distance(fit.topology, original.topology) < 0.01 * fit.topology.dim());
+    checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0., 10, 0.01);
   }
 
-  public void testPGMFit() {
+  private Vec breakV(Vec next, double lossProbab) {
+    Vec result = new SparseVec<IntBasis>(new IntBasis(next.dim()));
+    final VecIterator it = next.nonZeroes();
+    while (it.advance()) {
+      if (rng.nextDouble() > lossProbab)
+        result.set(it.index(), it.value());
+    }
+    return result;
+  }
 
+  private void checkRestoreFixedTopology(final ProbabilisticGraphicalModel original, PGMEM.Policy policy, double lossProbab, int iterations, double accuracy) {
+    Vec[] ds = new Vec[10000];
+    for (int i = 0; i < ds.length; i++) {
+      Vec vec;
+//      do {
+        vec = breakV(original.next(rng), lossProbab);
+//      }
+//      while (VecTools.norm(vec) < MathTools.EPSILON);
+      ds[i] = vec;
+    }
+    final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
+    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.8, iterations, rng, policy);
+    final Action<ProbabilisticGraphicalModel> listener = new Action<ProbabilisticGraphicalModel>() {
+      @Override
+      public void invoke(ProbabilisticGraphicalModel pgm) {
+        System.out.print(VecTools.distance(pgm.topology, original.topology));
+        for (int i = 0; i < pgm.topology.columns(); i++) {
+          System.out.print(" " + VecTools.distance(pgm.topology.row(i), original.topology.row(i)));
+        }
+        System.out.println();
+      }
+    };
+    pgmem.addListener(listener);
 
+    final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
+    VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
+    System.out.println(VecTools.prettyPrint(fit.topology));
+    System.out.println();
+    System.out.println(VecTools.prettyPrint(original.topology));
+
+    assertTrue(VecTools.distance(fit.topology, original.topology) < accuracy * fit.topology.dim());
   }
 
   public void testLARS() {
