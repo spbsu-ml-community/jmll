@@ -20,7 +20,7 @@ import java.util.*;
  */
 public class ProbabilisticGraphicalModel extends Func.Stub {
   public static final double KNOWN_ROUTES_PROBABILITY = 0.999;
-  public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.00001;
+  public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.000001;
   public final Mx topology;
   private final Route[] knownRoutes;
   private double knownRoutesProBab;
@@ -70,6 +70,9 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
       while(it.hasNext()) {
         if (it.next().last() != topology.rows() - 1)
           it.remove();
+      }
+      for (int i = 0; i < order.size(); i++) {
+        order.get(i).disclosedP = i;
       }
     }
     knownRoutes = order.toArray(new Route[order.size()]);
@@ -134,6 +137,10 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
     return topology.rows();
   }
 
+  public Route[] knownRoots() {
+    return knownRoutes;
+  }
+
   public static class Route {
     public byte[] nodes;
     public double probab;
@@ -167,6 +174,9 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
       return disclosedProbab;
     }
 
+    public int index() {
+      return (int)disclosedP;
+    }
     public int last() {
       return nodes[nodes.length - 1];
     }
@@ -182,6 +192,10 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
       }
       builder.append(')').append("->").append(probab);
       return builder.toString();
+    }
+
+    public int length() {
+      return nodes.length;
     }
   }
 }

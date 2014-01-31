@@ -2,10 +2,14 @@ package com.spbsu.ml.methods;
 
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.func.Action;
+import com.spbsu.commons.math.vectors.IntBasis;
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.LLLogit;
@@ -20,11 +24,17 @@ public class PGMEM implements Optimization<LLLogit> {
   private final Mx topology;
   private final int iterations;
   private double step;
+  private final FastRandom rng;
 
   public PGMEM(Mx topology, double smoothing, int iterations) {
+    this(topology, smoothing, iterations, new FastRandom());
+  }
+
+  public PGMEM(Mx topology, double smoothing, int iterations, FastRandom rng) {
     this.topology = topology;
     this.iterations = iterations;
     this.step = smoothing;
+    this.rng = rng;
   }
 
   @Override
@@ -39,14 +49,15 @@ public class PGMEM implements Optimization<LLLogit> {
       final ProbabilisticGraphicalModel.Route[] eroutes = new ProbabilisticGraphicalModel.Route[learn.power()];
       { // E-step
         for (int j = 0; j < cpds.length; j++) {
-          final int finalJ = j;
+          final Vec prob = new SparseVec<IntBasis>(new IntBasis(currentPGM.knownRoots().length));
           currentPGM.visit(new Filter<ProbabilisticGraphicalModel.Route>() {
             @Override
             public boolean accept(ProbabilisticGraphicalModel.Route route) {
-              eroutes[finalJ] = route;
-              return true;
+              prob.set(route.index(), route.probab * prior(route.length()));
+              return false;
             }
           }, cpds[j]);
+          eroutes[j] = currentPGM.knownRoots()[rng.nextSimple(prob)];
         }
       }
       final Mx next = new VecBasedMx(topology.columns(), new ArrayVec(topology.dim()));
@@ -72,5 +83,9 @@ public class PGMEM implements Optimization<LLLogit> {
       }
     }
     return currentPGM;
+  }
+
+  private double prior(int length) {
+    return Math.exp(-length*0.1);
   }
 }

@@ -2,10 +2,9 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.math.vectors.impl.VecArrayMx;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
@@ -80,6 +79,37 @@ public class MethodsTests extends GridTest {
     final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
     assertTrue(VecTools.distance(fit.topology, original.topology) < 0.01 * fit.topology.dim());
+  }
+
+  public void testPGMFit5x5RandSkip() {
+    ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
+            0, 0.2, 0.3,  0.1,  0.4,
+            0, 0,   0.25, 0.25, 0.5,
+            0, 0,   0,    0.1,  0.9,
+            0, 0,   0.5,  0,    0.5,
+            0, 0,   0,    0,    0
+    })));
+
+    Vec[] ds = new Vec[10000];
+    for (int i = 0; i < ds.length; i++) {
+      ds[i] = breakV(original.next(rng));
+    }
+    final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
+    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.8, 10, rng);
+    final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
+    VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
+    System.out.println(fit.topology);
+    assertTrue(VecTools.distance(fit.topology, original.topology) < 0.01 * fit.topology.dim());
+  }
+
+  private Vec breakV(Vec next) {
+    Vec result = new SparseVec<IntBasis>(new IntBasis(next.dim()));
+    final VecIterator it = next.nonZeroes();
+    while (it.advance()) {
+      if (rng.nextDouble() > 0.8)
+        result.set(it.index(), it.value());
+    }
+    return result;
   }
 
   public void testPGMFit10x10Rand() {
