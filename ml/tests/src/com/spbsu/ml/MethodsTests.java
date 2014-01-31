@@ -2,6 +2,7 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.SparseVec;
@@ -40,7 +41,7 @@ public class MethodsTests extends GridTest {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    rng = new FastRandom();
+    rng = new FastRandom(0);
   }
 
   public void testPGMFit3x3() {
@@ -86,7 +87,7 @@ public class MethodsTests extends GridTest {
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
     ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(originalMx);
-    checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0., 10, 0.01);
+    checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0.5, 100, 0.01);
   }
 
   private Vec breakV(Vec next, double lossProbab) {
@@ -99,7 +100,7 @@ public class MethodsTests extends GridTest {
     return result;
   }
 
-  private void checkRestoreFixedTopology(final ProbabilisticGraphicalModel original, PGMEM.Policy policy, double lossProbab, int iterations, double accuracy) {
+  private void checkRestoreFixedTopology(final ProbabilisticGraphicalModel original, Factory<PGMEM.Policy> policy, double lossProbab, int iterations, double accuracy) {
     Vec[] ds = new Vec[10000];
     for (int i = 0; i < ds.length; i++) {
       Vec vec;
