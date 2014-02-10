@@ -87,15 +87,16 @@ public class MethodsTests extends GridTest {
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
     ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(originalMx);
-    checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0.5, 100, 0.01);
+    checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0.5, 100, 0.01);
   }
 
   private Vec breakV(Vec next, double lossProbab) {
     Vec result = new SparseVec<IntBasis>(new IntBasis(next.dim()));
     final VecIterator it = next.nonZeroes();
+    int resIndex = 0;
     while (it.advance()) {
       if (rng.nextDouble() > lossProbab)
-        result.set(it.index(), it.value());
+        result.set(resIndex++, it.value());
     }
     return result;
   }
@@ -111,7 +112,7 @@ public class MethodsTests extends GridTest {
       ds[i] = vec;
     }
     final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
-    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.8, iterations, rng, policy);
+    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.2, iterations, rng, policy);
     final Action<ProbabilisticGraphicalModel> listener = new Action<ProbabilisticGraphicalModel>() {
       @Override
       public void invoke(ProbabilisticGraphicalModel pgm) {

@@ -19,7 +19,7 @@ import java.util.*;
  */
 public class ProbabilisticGraphicalModel extends Func.Stub {
   public static final double KNOWN_ROUTES_PROBABILITY = 0.999;
-  public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.00001;
+  public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.000001;
   public final Mx topology;
   private final Route[] knownRoutes;
   private double knownRoutesProBab;
