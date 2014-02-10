@@ -14,4 +14,10 @@ When you import this project please:
 
 =============================================
 
+AFTER YOU CLONE IT:
+
+'cd' to project dir and run 'git submodule update --init'
+
+=============================================
+
 Enjoy!
