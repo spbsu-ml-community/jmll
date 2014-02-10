@@ -1,20 +1,22 @@
-Java Machine Learning Library
+#Java Machine Learning Library
 
 =============================================
 
-RTFM:
+#RTFM:
 
-1. Use command line instead IDEA to checkout it in order to avoid problems with git submodule downloading
+1. Use command line instead IDEA to checkout it in order to avoid problems with git submodule downloading.
+To clone project run `git clone --recurse-submodules https://github.com/spbsu-ml-community/jmll.git`
 
-2. After clonning project 'cd' to project dir and run 'git submodule update --init'
+2. cd to the {project_dir}/commons and run `git checkout master`
 
-3. When you import this project please:
+2. When you import this project in IDEA please:
 
-    3.1. uncheck 'libs' and 'libs1' as libraries
+    2.1. uncheck `libs` and `libs1` as libraries
  
-    3.2. uncheck 'tests' and 'tests1' as modules
+    2.2. uncheck `tests` and `tests1` as modules
 
-    3.3. choose 'reuse' for '.iml' files
+    2.3. choose `reuse` for module's '.iml' file
+
 
 
 
