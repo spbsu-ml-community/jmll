@@ -7,7 +7,7 @@
 1. Use command line instead IDEA to checkout it in order to avoid problems with git submodule downloading.
 To clone project run `git clone --recurse-submodules https://github.com/spbsu-ml-community/jmll.git`
 
-2. cd to the {project_dir}/commons and run `git checkout master`
+2. cd to the {project_dir}/commons and run `git checkout master`. It will switch current branch in commons to `master`. Now if you will update JMLL project, `commons` will be updated too.
 
 2. When you import this project in IDEA please:
 
