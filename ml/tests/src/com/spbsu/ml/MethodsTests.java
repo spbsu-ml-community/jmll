@@ -25,8 +25,9 @@ import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.ProbabilisticGraphicalModel;
-import gnu.trove.TDoubleDoubleHashMap;
-import gnu.trove.TDoubleIntHashMap;
+import gnu.trove.map.hash.TDoubleDoubleHashMap;
+import gnu.trove.map.hash.TDoubleIntHashMap;
+
 
 import java.util.Random;
 

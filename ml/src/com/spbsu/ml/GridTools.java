@@ -3,9 +3,9 @@ package com.spbsu.ml;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.stats.OrderByFeature;
-import gnu.trove.TDoubleArrayList;
-import gnu.trove.TIntArrayList;
-import gnu.trove.TIntHashSet;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.Arrays;
 
@@ -83,7 +83,7 @@ public class GridTools {
           dborders.add(feature[borders.get(b) - 1]);
         }
       }
-      rows[f] = new BFGrid.BFRow(bfCount, f, dborders.toNativeArray());
+      rows[f] = new BFGrid.BFRow(bfCount, f, dborders.toArray());
 
       bfCount += dborders.size();
     }

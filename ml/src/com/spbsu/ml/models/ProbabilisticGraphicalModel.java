@@ -8,7 +8,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.Func;
-import gnu.trove.TIntArrayList;
+import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;
 
@@ -118,7 +118,7 @@ public class ProbabilisticGraphicalModel extends Func.Stub {
         break;
       toInt.add((int)next - 1);
     }
-    return toInt.toNativeArray();
+    return toInt.toArray();
   }
 
   public Vec next(FastRandom rng) {

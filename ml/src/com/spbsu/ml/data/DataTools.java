@@ -24,8 +24,9 @@ import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
-import gnu.trove.TIntArrayList;
-import gnu.trove.TIntObjectHashMap;
+
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.*;
@@ -169,7 +170,7 @@ public class DataTools {
       if (target.get(i) == classNo)
         points.add(i);
     }
-    return points.toNativeArray();
+    return points.toArray();
   }
 
   public static DataSet normalizeClasses(DataSet learn) {

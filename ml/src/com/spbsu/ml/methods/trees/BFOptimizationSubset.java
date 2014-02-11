@@ -5,7 +5,8 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
-import gnu.trove.TIntArrayList;
+import gnu.trove.list.array.TIntArrayList;
+
 
 /**
  * User: solar
@@ -37,9 +38,9 @@ public class BFOptimizationSubset {
         right.add(i);
       }
     }
-    final BFOptimizationSubset rightBro = new BFOptimizationSubset(bds, oracle, right.toNativeArray());
+    final BFOptimizationSubset rightBro = new BFOptimizationSubset(bds, oracle, right.toArray());
     aggregate.remove(rightBro.aggregate);
-    points = left.toNativeArray();
+    points = left.toArray();
     return rightBro;
   }
 

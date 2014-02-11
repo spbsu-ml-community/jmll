@@ -25,8 +25,9 @@ import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import gnu.trove.TIntArrayList;
-import gnu.trove.TIntObjectHashMap;
+
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.*;
@@ -216,8 +217,8 @@ public class JMLLCLI {
       else
         testIndices.add(i);
     }
-    final int[] learnIndicesArr = learnIndices.toNativeArray();
-    final int[] testIndicesArr = testIndices.toNativeArray();
+    final int[] learnIndicesArr = learnIndices.toArray();
+    final int[] testIndicesArr = testIndices.toArray();
     return Pair.<DataSet, DataSet>create(
         new DataSetImpl(
             new VecBasedMx(

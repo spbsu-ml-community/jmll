@@ -8,7 +8,6 @@ import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
-import gnu.trove.TIntObjectHashMap;
 
 /**
  * User: solar

@@ -12,7 +12,7 @@ import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.func.Ensemble;
-import gnu.trove.TByteArrayList;
+import gnu.trove.list.array.TByteArrayList;
 
 import java.io.*;
 import java.util.StringTokenizer;
@@ -38,7 +38,7 @@ public class HWScore {
     }
     if (args.length >= 2 && "-fit".equals(args[0])) {
       final TByteArrayList result = StreamTools.transformByExternalCommand(args[1], new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/featuresTest.txt.gz")));
-      final LineNumberReader lnr = new LineNumberReader(new InputStreamReader(new ByteArrayInputStream(result.toNativeArray())));
+      final LineNumberReader lnr = new LineNumberReader(new InputStreamReader(new ByteArrayInputStream(result.toArray())));
       final DataSet test = DataTools.loadFromFeaturesTxt(new InputStreamReader(new GZIPInputStream(HWScore.class.getClassLoader().getResourceAsStream("com/spbsu/ml/featuresTest.txt.gz")), "UTF-8"));
 
       String line;
@@ -59,7 +59,7 @@ public class HWScore {
 
   private static DataSet transform(String command, InputStream input) throws IOException {
     TByteArrayList bytes = StreamTools.transformByExternalCommand(command, input);
-    return DataTools.loadFromFeaturesTxt(new StringReader(new String(bytes.toNativeArray())));
+    return DataTools.loadFromFeaturesTxt(new StringReader(new String(bytes.toArray())));
   }
 
   private static class ScoreCalcer implements ProgressHandler {

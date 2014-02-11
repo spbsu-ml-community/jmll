@@ -3,8 +3,7 @@ package com.spbsu.ml.io;
 import com.spbsu.commons.func.Converter;
 import com.spbsu.commons.text.CharSequenceReader;
 import com.spbsu.ml.BFGrid;
-import gnu.trove.TDoubleArrayList;
-
+import gnu.trove.list.array.TDoubleArrayList;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ public class BFGridStringConverter implements Converter<BFGrid, CharSequence> {
         while (tok.hasMoreElements()) {
           borders.add(Double.parseDouble(tok.nextToken()));
         }
-        rows.add(new BFGrid.BFRow(bfIndex, lineIndex, borders.toNativeArray()));
+        rows.add(new BFGrid.BFRow(bfIndex, lineIndex, borders.toArray()));
         bfIndex += borders.size();
         lineIndex++;
       }
