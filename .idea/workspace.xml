@@ -21,11 +21,11 @@
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/dictionaries/solar.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/commons" afterPath="$PROJECT_DIR$/commons" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/commons/.gitignore.txt" afterPath="$PROJECT_DIR$/commons/.gitignore.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/ml.iml" afterPath="$PROJECT_DIR$/ml/ml.iml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <list id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
     <ignored path=".idea/workspace.xml" />
@@ -168,7 +168,7 @@
       <file leaf-file-name=".gitignore" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/.gitignore">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="30" column="1" selection-start="355" selection-end="355" vertical-scroll-proportion="0.7075472" vertical-offset="0" max-vertical-offset="1170">
+            <state line="29" column="78" selection-start="353" selection-end="353" vertical-scroll-proportion="0.6839623" vertical-offset="0" max-vertical-offset="1170">
               <folding />
             </state>
           </provider>
@@ -1216,7 +1216,11 @@
       <created>1392301939415</created>
       <updated>1392301939415</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="IDEA project settings. Please DON'T CHANGE THEM UNTIL YOU KNOW FOR SURE WHAT YOU ARE DOING">
+      <created>1392302154561</created>
+      <updated>1392302154561</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -1319,7 +1323,6 @@
     <option name="myTodoPanelSettings">
       <TodoPanelSettings />
     </option>
-    <MESSAGE value="Refactoring, performance, new regularization" />
     <MESSAGE value="more utility functions&#10;" />
     <MESSAGE value="More straightforward way for score calculation" />
     <MESSAGE value="MErrors classifier, PACBayes try 1, reformatting, Broken GreedyTDRegion fixed and enchanced." />
@@ -1344,7 +1347,8 @@
     <MESSAGE value="Performance, more aggressive prior works better" />
     <MESSAGE value="Misha've found severe trouble in synthetics generation" />
     <MESSAGE value="Mess in compositetransform dimensions fixed." />
-    <option name="LAST_COMMIT_MESSAGE" value="Mess in compositetransform dimensions fixed." />
+    <MESSAGE value="IDEA project settings. Please DON'T CHANGE THEM UNTIL YOU KNOW FOR SURE WHAT YOU ARE DOING" />
+    <option name="LAST_COMMIT_MESSAGE" value="IDEA project settings. Please DON'T CHANGE THEM UNTIL YOU KNOW FOR SURE WHAT YOU ARE DOING" />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
   </component>
   <component name="XDebuggerManager">
@@ -1637,13 +1641,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/commons/tests/src/com/spbsu/commons/math/vectors/VectorsTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="500" column="92" selection-start="16458" selection-end="16458" vertical-scroll-proportion="0.0" vertical-offset="6892" max-vertical-offset="8580">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/commons/.gitignore.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state line="30" column="1" selection-start="355" selection-end="355" vertical-scroll-proportion="0.0" vertical-offset="333" max-vertical-offset="1155">
@@ -1651,9 +1648,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/commons/tests/src/com/spbsu/commons/math/vectors/VectorsTest.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="500" column="92" selection-start="16458" selection-end="16458" vertical-scroll-proportion="0.0" vertical-offset="6892" max-vertical-offset="8580">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="30" column="1" selection-start="355" selection-end="355" vertical-scroll-proportion="0.7075472" vertical-offset="0" max-vertical-offset="1170">
+        <state line="29" column="78" selection-start="353" selection-end="353" vertical-scroll-proportion="0.6839623" vertical-offset="0" max-vertical-offset="1170">
           <folding />
         </state>
       </provider>
