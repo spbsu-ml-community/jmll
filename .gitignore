@@ -29,6 +29,7 @@ $RECYCLE.BIN/
 *.iws
 *.ipr
 #*.iml
+workspace.xml
 #.idea/
 
 ### Eclipse ###
