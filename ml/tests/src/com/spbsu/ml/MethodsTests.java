@@ -28,7 +28,6 @@ import com.spbsu.ml.models.ProbabilisticGraphicalModel;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
-
 import java.util.Random;
 
 /**
@@ -47,20 +46,20 @@ public class MethodsTests extends GridTest {
 
   public void testPGMFit3x3() {
     ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(3, new ArrayVec(new double[]{
-            0, 0.2, 0.8,
-            0, 0, 1.,
-            0, 0, 0
+      0, 0.2, 0.8,
+      0, 0, 1.,
+      0, 0, 0
     })));
     checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0.0, 10, 0.01);
   }
 
   public void testPGMFit5x5() {
     ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
-            0, 0.2, 0.3,  0.1,  0.4,
-            0, 0,   0.25, 0.25, 0.5,
-            0, 0,   0,    0.1,  0.9,
-            0, 0,   0.5,  0,    0.5,
-            0, 0,   0,    0,    0
+      0, 0.2, 0.3, 0.1, 0.4,
+      0, 0, 0.25, 0.25, 0.5,
+      0, 0, 0, 0.1, 0.9,
+      0, 0, 0.5, 0, 0.5,
+      0, 0, 0, 0, 0
     })));
 
 
@@ -69,11 +68,11 @@ public class MethodsTests extends GridTest {
 
   public void testPGMFit5x5RandSkip() {
     final ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
-            0, 0.2, 0.3,  0.1,  0.4,
-            0, 0,   0.25, 0.25, 0.5,
-            0, 0,   0,    0.1,  0.9,
-            0, 0,   0.5,  0,    0.5,
-            0, 0,   0,    0,    0
+      0, 0.2, 0.3, 0.1, 0.4,
+      0, 0, 0.25, 0.25, 0.5,
+      0, 0, 0, 0.1, 0.9,
+      0, 0, 0.5, 0, 0.5,
+      0, 0, 0, 0, 0
     })));
 
     checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0.8, 100, 0.05);
@@ -81,7 +80,7 @@ public class MethodsTests extends GridTest {
 
   public void testPGMFit10x10Rand() {
     final VecBasedMx originalMx = new VecBasedMx(10, new ArrayVec(100));
-    for (int i = 0; i < originalMx.rows()-1; i++) {
+    for (int i = 0; i < originalMx.rows() - 1; i++) {
       for (int j = 0; j < originalMx.columns(); j++)
         originalMx.set(i, j, rng.nextDouble() < 0.5 && j > 0 ? 1 : 0);
       VecTools.normalizeL1(originalMx.row(i));
@@ -107,7 +106,7 @@ public class MethodsTests extends GridTest {
     for (int i = 0; i < ds.length; i++) {
       Vec vec;
 //      do {
-        vec = breakV(original.next(rng), lossProbab);
+      vec = breakV(original.next(rng), lossProbab);
 //      }
 //      while (VecTools.norm(vec) < MathTools.EPSILON);
       ds[i] = vec;
@@ -144,12 +143,12 @@ public class MethodsTests extends GridTest {
 
   public void testGRBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn, 32)), rng),
-        new Computable<Vec, L2>() {
-          @Override
-          public L2 compute(Vec argument) {
-            return new L2(argument);
-          }
-        }, 10000, 0.02);
+      new Computable<Vec, L2>() {
+        @Override
+        public L2 compute(Vec argument) {
+          return new L2(argument);
+        }
+      }, 10000, 0.02);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -214,10 +213,35 @@ public class MethodsTests extends GridTest {
     boosting.fit(learn, new SatL2(learn.target()));
   }
 
+  public void testPCAOTBoost() {
+    DataSet mas[] = new DataSet[2];
+    doPCA(mas);
+    DataSet myValidate = mas[1], myLearn = mas[0];
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyObliviousTree(GridTools.medianGrid(myLearn, 32), 6), rng), 2000, 0.01);
+
+    final Action counter = new ProgressHandler() {
+      int index = 0;
+
+      @Override
+      public void invoke(Trans partial) {
+        System.out.print("\n" + index++);
+      }
+    };
+    final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", myLearn);
+    final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", myValidate);
+    final Action modelPrinter = new ModelPrinter();
+    final Action qualityCalcer = new QualityCalcer();
+    boosting.addListener(counter);
+    boosting.addListener(learnListener);
+    boosting.addListener(validateListener);
+    //boosting.addListener(qualityCalcer);
+//    boosting.addListener(modelPrinter);
+    boosting.fit(learn, new SatL2(myLearn.target()));
+  }
   public void testCOTBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-            new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32),6, 10, true, 1, 0, 0, 1e5),
-            2000, 0.01);
+      new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), learn, GridTools.medianGrid(learn, 32), 6, 10, true, 1, 0, 0, 1e5),
+      2000, 0.01);
     final Action counter = new Action<Trans>() {
       int index = 0;
 
@@ -240,12 +264,12 @@ public class MethodsTests extends GridTest {
 
   public void testEOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
-        new BootstrapOptimization<L2>(
-            new GreedyExponentialObliviousTree(
-                new FastRandom(),
-                learn,
-                GridTools.medianGrid(learn, 32), 6), rng),
-        2000, 0.005);
+      new BootstrapOptimization<L2>(
+        new GreedyExponentialObliviousTree(
+          new FastRandom(),
+          learn,
+          GridTools.medianGrid(learn, 32), 6), rng),
+      2000, 0.005);
     final Action counter = new Action<Trans>() {
       int index = 0;
 
@@ -287,9 +311,9 @@ public class MethodsTests extends GridTest {
     ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
     for (int depth = 1; depth <= 6; depth++) {
       ContinousObliviousTree tree = new GreedyContinuesObliviousSoftBondariesRegressionTree(
-          new FastRandom(),
-          learn,
-          GridTools.medianGrid(learn, 32), depth, 10, true, 1, 0.1, 1, 1e5).fit(learn, new L2(learn.target()));
+        new FastRandom(),
+        learn,
+        GridTools.medianGrid(learn, 32), depth, 10, true, 1, 0.1, 1, 1e5).fit(learn, new L2(learn.target()));
       //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
       // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
       System.out.print("Oblivious Tree deapth = " + depth);
@@ -306,9 +330,9 @@ public class MethodsTests extends GridTest {
     ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
     for (int depth = 1; depth <= 6; depth++) {
       ContinousObliviousTree tree = new GreedyExponentialObliviousTree(
-          new FastRandom(),
-          learn,
-          GridTools.medianGrid(learn, 32), depth).fit(learn, new L2(learn.target()));
+        new FastRandom(),
+        learn,
+        GridTools.medianGrid(learn, 32), depth).fit(learn, new L2(learn.target()));
       //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
       // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
       System.out.print("Oblivious Tree deapth = " + depth);
@@ -365,12 +389,31 @@ public class MethodsTests extends GridTest {
     Mx q = new VecBasedMx(mx.columns(), mx.rows());
     Mx sigma = new VecBasedMx(mx.columns(), mx.rows());
     VecTools.eigenDecomposition(mx, q, sigma);
-    assertTrue(checkEigeDecomposion(mx, q, sigma));
+    //assertTrue(checkEigeDecomposion(mx, q, sigma));
     //System.exit(0);
     //System.out.println(mx);
     //System.out.println(q);
     learnMx = VecTools.multiply(learnMx, VecTools.transpose(q));
     validateMx = VecTools.multiply(validateMx, q);
+    //Normalization
+    for (int i = 0; i < learnMx.columns(); i++) {
+      double max = -1e10, mn = 1e10;
+      for (int j = 0; j < learnMx.rows(); j++) {
+        max = Math.max(max, learnMx.get(j, i));
+        mn = Math.min(mn, learnMx.get(j, i));
+      }
+      for (int j = 0; j < validateMx.rows(); j++) {
+        max = Math.max(max, validateMx.get(j, i));
+        mn = Math.min(mn, validateMx.get(j, i));
+      }
+      for (int j = 0; j < learnMx.rows(); j++) {
+        learnMx.set(j, i, (learnMx.get(j, i) - mn) * (max - mn));
+      }
+      for (int j = 0; j < validateMx.rows(); j++) {
+        validateMx.set(j, i, (validateMx.get(j, i) - mn) * (max - mn));
+      }
+    }
+
     int reg[] = new int[learn.xdim()], cnt = 0;
     for (int i = 0; i < learn.xdim(); i++)
       if (!continues[i])
@@ -386,8 +429,6 @@ public class MethodsTests extends GridTest {
         if (!continues[j])
           learnOut.set(i, reg[j] + learnMx.columns(), learn.data().get(i, j));
     }
-    System.out.println(learnOut);
-    System.exit(0);
     for (int i = 0; i < validate.power(); i++) {
       for (int j = 0; j < validateMx.columns(); j++)
         validateOut.set(i, j, validateMx.get(i, j));
@@ -428,20 +469,11 @@ public class MethodsTests extends GridTest {
     DataSet mas[] = new DataSet[2];
     doPCA(mas);
     DataSet myValidate = mas[1], myLearn = mas[0];
-        /*for(int i = 0;i < myLearn.xdim();i++){
-            double mx = -1e10,mn = 1e10;
-            for(int j = 0; j < myLearn.power();j++)        {
-                mx = Math.max(mx, myLearn.data().get(j,i));
-                mn = Math.min(mn, myLearn.data().get(j, i));
-
-            }
-            System.out.println(mn + "->"  + mx);
-        } */
 
 
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-            new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
-            2000, 0.01);
+      new GreedyContinuesObliviousSoftBondariesRegressionTree(new FastRandom(), myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
+      2000, 0.01);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
