@@ -14,8 +14,11 @@ import java.util.List;
  * Idea please stop making my code yellow
  */
 public class ExponentialObliviousTree extends ContinousObliviousTree {
-  public ExponentialObliviousTree(final List<BFGrid.BinaryFeature> features, double[][] values) {
+  private final double DistCoef;
+
+  public ExponentialObliviousTree(final List<BFGrid.BinaryFeature> features, double[][] values, double _distCoef) {
     super(features, values);
+    DistCoef = _distCoef;
   }
 
   double sqr(double x) {
@@ -29,7 +32,7 @@ public class ExponentialObliviousTree extends ContinousObliviousTree {
         ans += sqr(point.get(features[i].findex) - features[i].condition);//L2
       }
     }
-    return 15 * ans;
+    return DistCoef * ans;
   }
 
   @Override
