@@ -28,7 +28,7 @@ public class GreedyTDRegion<O extends StatBasedLoss> implements Optimization<O> 
   }
 
   @Override
-  public Trans fit(DataSet learn, final O loss) {
+  public Region fit(DataSet learn, final O loss) {
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(100);
     final List<Boolean> mask = new ArrayList<Boolean>();
     double currentScore = Double.POSITIVE_INFINITY;

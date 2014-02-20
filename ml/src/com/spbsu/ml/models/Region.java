@@ -6,6 +6,7 @@ import com.spbsu.ml.BinOptimizedModel;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,6 +21,14 @@ public class Region extends Func.Stub implements BinOptimizedModel {
   private final int basedOn;
   private final double score;
   private final BFGrid grid;
+
+  public BFGrid.BinaryFeature[] getFeatures() {
+    return features.clone();
+  }
+
+  public boolean[] getMask() {
+    return mask.clone();
+  }
 
   public Region(final List<BFGrid.BinaryFeature> conditions, boolean[] mask, double value, int basedOn, double score) {
     grid = conditions.get(0).row().grid();

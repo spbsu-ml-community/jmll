@@ -46,20 +46,20 @@ public class MethodsTests extends GridTest {
 
   public void testPGMFit3x3() {
     ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(3, new ArrayVec(new double[]{
-      0, 0.2, 0.8,
-      0, 0, 1.,
-      0, 0, 0
+            0, 0.2, 0.8,
+            0, 0, 1.,
+            0, 0, 0
     })));
     checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0.0, 10, 0.01);
   }
 
   public void testPGMFit5x5() {
     ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
-      0, 0.2, 0.3, 0.1, 0.4,
-      0, 0, 0.25, 0.25, 0.5,
-      0, 0, 0, 0.1, 0.9,
-      0, 0, 0.5, 0, 0.5,
-      0, 0, 0, 0, 0
+            0, 0.2, 0.3,  0.1,  0.4,
+            0, 0,   0.25, 0.25, 0.5,
+            0, 0,   0,    0.1,  0.9,
+            0, 0,   0.5,  0,    0.5,
+            0, 0,   0,    0,    0
     })));
 
 
@@ -68,16 +68,15 @@ public class MethodsTests extends GridTest {
 
   public void testPGMFit5x5RandSkip() {
     final ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
-      0, 0.2, 0.3, 0.1, 0.4,
-      0, 0, 0.25, 0.25, 0.5,
-      0, 0, 0, 0.1, 0.9,
-      0, 0, 0.5, 0, 0.5,
-      0, 0, 0, 0, 0
+            0, 0.2, 0.3,  0.1,  0.4,
+            0, 0,   0.25, 0.25, 0.5,
+            0, 0,   0,    0.1,  0.9,
+            0, 0,   0.5,  0,    0.5,
+            0, 0,   0,    0,    0
     })));
 
     checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0.8, 100, 0.05);
   }
-
   public void testPGMFit10x10Rand() {
     final VecBasedMx originalMx = new VecBasedMx(10, new ArrayVec(100));
     for (int i = 0; i < originalMx.rows() - 1; i++) {
