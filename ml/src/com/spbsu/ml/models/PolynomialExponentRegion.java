@@ -24,7 +24,7 @@ public class PolynomialExponentRegion extends Func.Stub {
     double distanse = 0;
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(x) != mask[i])
-        distanse += Math.pow(features[i].condition - x.get(features[i].bfIndex), 2);
+        distanse += Math.pow(features[i].condition - x.get(features[i].findex), 2);
     }
     return distanse;
   }
@@ -35,10 +35,10 @@ public class PolynomialExponentRegion extends Func.Stub {
     double ans = 0;
     data[0] = 1;
     for(int i = 0; i < features.length;i++)
-      data[i + 1] = x.get(i);
+      data[i + 1] = x.get(features[i].findex);
     for(int i = 0; i <= features.length; i++)
       for(int j = 0; j <= features.length; j++)
-        ans += data[i] * data[j];
+        ans += data[i] * data[j] * value[i + j * (features.length + 1)];
     return ans * Math.exp(- distCoeffiecent * getDistanseFromRegion(x)) ;
   }
 

@@ -30,13 +30,16 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     double distanse = 0;
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(x) != mask[i])
-        distanse += Math.pow(features[i].condition - x.get(features[i].bfIndex), 2);
+        distanse += Math.pow(features[i].condition - x.get(features[i].findex), 2);
     }
     return distanse;
   }
+
   public boolean validateSolution(Mx a, Vec right, Vec sol) {
-    return VecTools.distance(VecTools.multiply(a, sol),right) < 1e-3 * right.dim();
+    System.out.println(VecTools.distance(VecTools.multiply(a, sol), right));
+    return VecTools.distance(VecTools.multiply(a, sol), right) < 1e-2 * right.dim();
   }
+
   public Vec solveLinearEquationUsingLQ(Mx mx, Vec right) {
     if (mx.rows() != mx.columns())
       throw new IllegalArgumentException("Matrix must be quadratic");
@@ -48,7 +51,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     VecTools.householderLQ(mx, l, q);
     Vec first = new ArrayVec(n);
     for (int i = 0; i < n; i++) {
-      if (Math.abs(l.get(i,i)) > 1e-5) {
+      if (Math.abs(l.get(i, i)) > 1e-5) {
         double val = right.get(i);
         for (int j = 0; j < i; j++)
           val -= first.get(j) * l.get(i, j);
@@ -56,9 +59,15 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
       } else
         first.set(i, 0);
     }
-    Vec ans = VecTools.multiply(VecTools.transpose(q), first);
-    if (!validateSolution(mx, right, ans))
-      throw new RuntimeException("Not correct work of solveLinearEquationUsingLQ");
+    //System.out.println(validateSolution(l, right, first));
+    //System.out.println(l);
+    //System.out.println(q);
+    //System.out.println(first);
+    //System.out.println(VecTools.multiply(l,first));
+    Vec ans = VecTools.multiply(q, first);
+    //System.out.println(ans);
+    //if (!validateSolution(mx, right, ans))
+    //  throw new RuntimeException("Not correct work of solveLinearEquationUsingLQ");
     return ans;
   }
 
@@ -76,9 +85,10 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
       double data[] = new double[numberOfFeatures];
       data[0] = 1;
       for (int j = 0; j < features.length; j++)
-        data[j + 1] = vec.get(j);
+        data[j + 1] = vec.get(features[j].findex);
       double f = loss.target.get(i);
       double weight = Math.exp(-getDistanseFromRegion(vec) * distCoeffiecent);
+      //System.out.println(weight);
       for (int x = 0; x < numberOfFeatures; x++)
         for (int y = 0; y < numberOfFeatures; y++)
           linear.adjust(x + y * numberOfFeatures, -data[x] * data[y] * weight * f);
@@ -88,12 +98,18 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
             for (int yy = 0; yy < numberOfFeatures; yy++)
               mx.adjust(x + y * numberOfFeatures, xx + yy * numberOfFeatures, data[x] * data[y] * data[xx] * data[yy] * weight);
     }
-    for (int i = 0; i < numberOfFeatures; i++)
+    for (int i = 0; i < matrixSize; i++)
       mx.adjust(i, i, regulationCoeffiecent);
-    for (int i = 0; i < numberOfFeatures; i++)
+    for (int i = 0; i < matrixSize; i++)
       linear.set(i, -linear.get(i));
 
+    //System.out.println(mx);
+    //System.out.println(linear);
+
     Vec result = solveLinearEquationUsingLQ(mx, linear);
+    //for(int i = 1; i < result.dim();i++)
+    //  result.set(i, 0);
+    //System.out.println(result);
     return new PolynomialExponentRegion(features, mask, result.toArray(), distCoeffiecent);
   }
 

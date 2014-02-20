@@ -24,6 +24,7 @@ import com.spbsu.ml.methods.trees.GreedyExponentialObliviousTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
+import com.spbsu.ml.models.PolynomialExponentRegion;
 import com.spbsu.ml.models.ProbabilisticGraphicalModel;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
@@ -320,7 +321,7 @@ public class MethodsTests extends GridTest {
     return data;
   }
 
-  public boolean checkEigeDecomposion(Mx mx, Mx q, Mx sigma) {
+  public boolean checkEigenDecomposion(Mx mx, Mx q, Mx sigma) {
     for (int i = 0; i < mx.rows(); i++) {
       for (int j = 0; j < mx.columns(); j++)
         if (Math.abs(VecTools.multiply(mx, q.row(i)).get(j) - q.get(i, j) * sigma.get(i, i)) > 1e-9) {
@@ -389,7 +390,6 @@ public class MethodsTests extends GridTest {
 
   }
 
-  //Bad Idea
   public void testPSAContinousObliviousTree() {
     DataSet mas[] = new DataSet[2];
     doPCA(mas);
@@ -421,7 +421,7 @@ public class MethodsTests extends GridTest {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
       new GreedyContinuesObliviousSoftBondariesRegressionTree(rng, myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
       2000, 0.006);
-    new addBoostingListeners<SatL2>(boosting, new SatL2(myLearn.target()), myLearn, validate);
+    new addBoostingListeners<SatL2>(boosting, new SatL2(myLearn.target()), myLearn, myValidate);
   }
 
   public void testDebugContinousObliviousTree() {
@@ -542,6 +542,18 @@ public class MethodsTests extends GridTest {
       }
       System.out.println("\t" + d / 100000);
     }
+  }
+  public void testGreedyPolynomialExponentRegion() {
+    PolynomialExponentRegion region = new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 0, 0).fit(learn, new L2(learn.target()));
+    ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
+    ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On learn data Set loss = ", validate);
+    scoreCalcerLearn.invoke(region);
+    scoreCalcerValidate.invoke(region);
+  }
+
+  public void testGreedyPolynomialExponentRegionBoost() {
+    GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 1, 1), 5000, 0.05);
+    new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
   }
 }
 
