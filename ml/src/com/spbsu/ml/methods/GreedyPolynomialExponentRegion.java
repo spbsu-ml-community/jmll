@@ -36,7 +36,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
   }
 
   public boolean validateSolution(Mx a, Vec right, Vec sol) {
-    System.out.println(VecTools.distance(VecTools.multiply(a, sol), right));
+    //System.out.println(VecTools.distance(VecTools.multiply(a, sol), right));
     return VecTools.distance(VecTools.multiply(a, sol), right) < 1e-2 * right.dim();
   }
 
@@ -66,8 +66,8 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     //System.out.println(VecTools.multiply(l,first));
     Vec ans = VecTools.multiply(q, first);
     //System.out.println(ans);
-    //if (!validateSolution(mx, right, ans))
-    //  throw new RuntimeException("Not correct work of solveLinearEquationUsingLQ");
+    if (!validateSolution(mx, right, ans))
+      throw new RuntimeException("Not correct work of solveLinearEquationUsingLQ");
     return ans;
   }
 
@@ -80,14 +80,20 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     int matrixSize = (features.length + 1) * (features.length + 1);
     Mx mx = new VecBasedMx(matrixSize, matrixSize);
     Vec linear = new ArrayVec(matrixSize);
+    int countIn = 0;
     for (int i = 0; i < learn.data().rows(); i++) {
       Vec vec = learn.data().row(i);
+
+      if(!region.contains(vec))
+        continue;
+
       double data[] = new double[numberOfFeatures];
       data[0] = 1;
       for (int j = 0; j < features.length; j++)
         data[j + 1] = vec.get(features[j].findex);
       double f = loss.target.get(i);
-      double weight = Math.exp(-getDistanseFromRegion(vec) * distCoeffiecent);
+      countIn++;
+      double weight = 1;// Math.exp(-getDistanseFromRegion(vec) * distCoeffiecent);
       //System.out.println(weight);
       for (int x = 0; x < numberOfFeatures; x++)
         for (int y = 0; y < numberOfFeatures; y++)
@@ -98,6 +104,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
             for (int yy = 0; yy < numberOfFeatures; yy++)
               mx.adjust(x + y * numberOfFeatures, xx + yy * numberOfFeatures, data[x] * data[y] * data[xx] * data[yy] * weight);
     }
+    //System.out.println("\n" + countIn);
     for (int i = 0; i < matrixSize; i++)
       mx.adjust(i, i, regulationCoeffiecent);
     for (int i = 0; i < matrixSize; i++)
