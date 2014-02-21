@@ -35,12 +35,12 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     return distanse;
   }
 
-  public boolean validateSolution(Mx a, Vec right, Vec sol) {
+  public static boolean validateSolution(Mx a, Vec right, Vec sol) {
     //System.out.println(VecTools.distance(VecTools.multiply(a, sol), right));
     return VecTools.distance(VecTools.multiply(a, sol), right) < 1e-2 * right.dim();
   }
 
-  public Vec solveLinearEquationUsingLQ(Mx mx, Vec right) {
+  public static Vec solveLinearEquationUsingLQ(Mx mx, Vec right) {
     if (mx.rows() != mx.columns())
       throw new IllegalArgumentException("Matrix must be quadratic");
     if (right.dim() != mx.rows())
