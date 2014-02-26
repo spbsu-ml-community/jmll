@@ -20,7 +20,7 @@ public class BinarizedDataSet {
     for (int f = 0; f < bins.length; f++) {
       bins[f] = new byte[base.power()];
     }
-    byte[] binarization = new byte[grid.size()];
+    byte[] binarization = new byte[grid.rows()];
     for (int t = 0; t < base.power(); t++) {
       grid.binarize(base.data().row(t), binarization);
       for (int f = 0; f < bins.length; f++) {
