@@ -1,0 +1,1563 @@
+<cat id="0" name="Каталог" parent_id="" rcat="-1" size="96840" type="0" url_name="cat">
+  <cat id="3" name="Общество" parent_id="0" rcat="-1" size="4832" type="0" url_name="Society">
+    <cat id="11426" name="День Победы" parent_id="3" rcat="0" size="77" type="0" url_name="Great_Patriotic_war" />
+    <cat id="958" name="Универсальное" parent_id="3" rcat="-1" size="29" type="1" url_name="General" />
+    <cat id="957" name="Прочее" parent_id="3" rcat="-1" size="17" type="2" url_name="Other" />
+    <cat id="233" name="Законы" parent_id="3" rcat="-1" size="210" type="0" url_name="Judicial">
+      <cat id="11299" name="Образцы документов" parent_id="233" rcat="0" size="55" type="10" url_name="Forms" />
+      <cat id="11032" name="Законодательство по темам" parent_id="233" rcat="0" size="198" type="10" url_name="By_Subject" />
+      <cat id="11031" name="Суды" parent_id="233" rcat="233" size="66" type="0" url_name="Courts" />
+      <cat id="11030" name="Законодательство  СНГ" parent_id="233" rcat="233" size="27" type="0" url_name="The_lows_of_CIS" />
+      <cat id="11029" name="Законодательство РФ" parent_id="233" rcat="233" size="32" type="0" url_name="The_Russian_laws" />
+    </cat>
+    <cat id="43" name="Религия" parent_id="3" rcat="-1" size="1165" type="0" url_name="Religion">
+      <cat id="1245" name="Прочее" parent_id="43" rcat="-1" size="37" type="2" url_name="Other" />
+      <cat id="735" name="Язычество" parent_id="43" rcat="-1" size="25" type="0" url_name="Paganism" />
+      <cat id="732" name="Учения и практики йоги" parent_id="43" rcat="-1" size="82" type="0" url_name="Yoga" />
+      <cat id="731" name="Индуизм" parent_id="43" rcat="-1" size="35" type="0" url_name="Hinduism" />
+      <cat id="1246" name="Универсальное" parent_id="43" rcat="-1" size="43" type="1" url_name="General" />
+      <cat id="3690" name="Атеизм" parent_id="43" rcat="-1" size="19" type="0" url_name="Atheism" />
+      <cat id="266" name="Буддизм" parent_id="43" rcat="-1" size="31" type="0" url_name="Buddhism" />
+      <cat id="265" name="Ислам" parent_id="43" rcat="-1" size="48" type="0" url_name="Islam" />
+      <cat id="264" name="Иудаизм" parent_id="43" rcat="-1" size="29" type="0" url_name="Judaism" />
+      <cat id="263" name="Христианство" parent_id="43" rcat="-1" size="828" type="0" url_name="Christianity">
+        <cat id="10693" name="Газеты и журналы" parent_id="263" rcat="263" size="69" type="0" url_name="Periodicals" />
+        <cat id="10691" name="Иные конфессии" parent_id="263" rcat="263" size="181" type="0" url_name="Other_Confessions" />
+        <cat id="10681" name="Молитвы и богослужебные тексты" parent_id="263" rcat="263" size="72" type="0" url_name="Liturgy" />
+        <cat id="10676" name="Обучение и катехизация" parent_id="263" rcat="263" size="106" type="0" url_name="Education" />
+        <cat id="10675" name="Храмы и монастыри" parent_id="263" rcat="263" size="282" type="0" url_name="Churches" />
+        <cat id="10674" name="Православие" parent_id="263" rcat="263" size="427" type="0" url_name="Orthodoxy" />
+        <cat id="10673" name="Библия" parent_id="263" rcat="263" size="38" type="0" url_name="Bible" />
+        <cat id="10672" name="Церковный календарь" parent_id="263" rcat="263" size="47" type="0" url_name="Calendar" />
+      </cat>
+    </cat>
+    <cat id="40" name="Политика" parent_id="3" rcat="-1" size="339" type="0" url_name="Politics">
+      <cat id="1182" name="Универсальное" parent_id="40" rcat="-1" size="99" type="1" url_name="General" />
+      <cat id="1181" name="Прочее" parent_id="40" rcat="-1" size="36" type="2" url_name="Other" />
+      <cat id="744" name="Выборы" parent_id="40" rcat="-1" size="36" type="0" url_name="Elections" />
+      <cat id="173" name="Партии и движения" parent_id="40" rcat="-1" size="134" type="0" url_name="Parties" />
+      <cat id="172" name="Международные отношения" parent_id="40" rcat="-1" size="35" type="0" url_name="International" />
+    </cat>
+    <cat id="39" name="НКО" parent_id="3" rcat="-1" size="1749" type="0" url_name="NGO">
+      <cat id="1053" name="Прочее" parent_id="39" rcat="-1" size="66" type="2" url_name="Other" />
+      <cat id="1054" name="Универсальное" parent_id="39" rcat="-1" size="30" type="1" url_name="General" />
+      <cat id="250" name="Землячества" parent_id="39" rcat="-1" size="147" type="0" url_name="Ethnic_Associations" />
+      <cat id="249" name="Благотворительные фонды" parent_id="39" rcat="-1" size="134" type="0" url_name="Charity" />
+      <cat id="248" name="Поддержка НКО" parent_id="39" rcat="-1" size="31" type="0" url_name="NGO_Support" />
+      <cat id="247" name="Бизнес, инфраструктура" parent_id="39" rcat="-1" size="470" type="0" url_name="Business">
+        <cat id="1150" name="Универсальное" parent_id="247" rcat="-1" size="1" type="1" url_name="General" />
+        <cat id="1149" name="Прочее" parent_id="247" rcat="-1" size="27" type="2" url_name="Other" />
+        <cat id="537" name="Поддержка предпринимательства" parent_id="247" rcat="-1" size="138" type="0" url_name="Business_Support" />
+        <cat id="519" name="Профессиональные ассоциации" parent_id="247" rcat="-1" size="131" type="0" url_name="Trade_Unions" />
+        <cat id="518" name="Защита прав потребителя" parent_id="247" rcat="-1" size="37" type="0" url_name="Customers_Rights" />
+        <cat id="517" name="Организации предпринимателей" parent_id="247" rcat="-1" size="139" type="0" url_name="Associations" />
+      </cat>
+      <cat id="246" name="Социальная жизнь" parent_id="39" rcat="-1" size="480" type="0" url_name="Social_Activities">
+        <cat id="500" name="Женщины" parent_id="246" rcat="-1" size="33" type="0" url_name="Women" />
+        <cat id="512" name="Дети, сироты" parent_id="246" rcat="-1" size="129" type="0" url_name="Orphans" />
+        <cat id="515" name="Наркомания, алкоголизм, СПИД" parent_id="246" rcat="-1" size="68" type="0" url_name="Addicts" />
+        <cat id="1117" name="прочее" parent_id="246" rcat="-1" size="19" type="2" url_name="Other" />
+        <cat id="1118" name="Универсальное" parent_id="246" rcat="-1" size="35" type="1" url_name="General" />
+        <cat id="554" name="Психологическая помощь" parent_id="246" rcat="-1" size="22" type="0" url_name="Support" />
+        <cat id="553" name="Самоуправление" parent_id="246" rcat="-1" size="17" type="0" url_name="Self-government" />
+        <cat id="525" name="Молодежь" parent_id="246" rcat="-1" size="53" type="0" url_name="Teenagers" />
+        <cat id="513" name="Одинокие, престарелые" parent_id="246" rcat="-1" size="12" type="0" url_name="Aged" />
+        <cat id="511" name="Инвалиды" parent_id="246" rcat="-1" size="120" type="0" url_name="Handicaps">
+          <cat id="11385" name="Незрячие, слабовидящие" parent_id="511" rcat="511" size="28" type="0" url_name="Blind" />
+        </cat>
+      </cat>
+      <cat id="245" name="Защита гражданских прав" parent_id="39" rcat="-1" size="347" type="0" url_name="Rights">
+        <cat id="507" name="Свобода слова, печати" parent_id="245" rcat="-1" size="21" type="0" url_name="Freedoms" />
+        <cat id="1086" name="Универсальное" parent_id="245" rcat="-1" size="22" type="1" url_name="General" />
+        <cat id="1085" name="Прочее" parent_id="245" rcat="-1" size="20" type="2" url_name="Other" />
+        <cat id="552" name="Права человека" parent_id="245" rcat="-1" size="55" type="0" url_name="Human_Rights" />
+        <cat id="505" name="Заключенные и репрессированные" parent_id="245" rcat="-1" size="19" type="0" url_name="Convicts" />
+        <cat id="503" name="Экологические организации" parent_id="245" rcat="-1" size="186" type="0" url_name="Ecology" />
+        <cat id="502" name="Aрмия" parent_id="245" rcat="-1" size="29" type="0" url_name="Army" />
+      </cat>
+      <cat id="242" name="Образование" parent_id="39" rcat="-1" size="61" type="0" url_name="Education" />
+      <cat id="241" name="Культура" parent_id="39" rcat="-1" size="90" type="0" url_name="Culture" />
+    </cat>
+    <cat id="37" name="Власть" parent_id="3" rcat="-1" size="1358" type="0" url_name="Authorities">
+      <cat id="231" name="Законодательная власть" parent_id="37" rcat="-1" size="149" type="0" url_name="Legislative" />
+      <cat id="990" name="Универсальное" parent_id="37" rcat="-1" size="45" type="1" url_name="General" />
+      <cat id="989" name="Прочее" parent_id="37" rcat="-1" size="19" type="2" url_name="Other" />
+      <cat id="232" name="Исполнительная власть" parent_id="37" rcat="-1" size="819" type="0" url_name="Executive" />
+      <cat id="38" name="Силовые структуры" parent_id="37" rcat="-1" size="361" type="0" url_name="Military">
+        <cat id="3059" name="Преступления и мошенничества" parent_id="38" rcat="-1" size="32" type="0" url_name="Criminal_News" />
+        <cat id="238" name="Армия и оборона" parent_id="38" rcat="-1" size="153" type="0" url_name="Army">
+          <cat id="10688" name="Воинская обязанность" parent_id="238" rcat="3" size="15" type="10" url_name="Military_Service" />
+        </cat>
+        <cat id="10692" name="Оружие" parent_id="38" rcat="0" size="56" type="0" url_name="Arms" />
+        <cat id="1022" name="Универсальное" parent_id="38" rcat="-1" size="4" type="1" url_name="General" />
+        <cat id="1021" name="Прочее" parent_id="38" rcat="-1" size="7" type="2" url_name="Other" />
+        <cat id="237" name="Службы порядка и спасения" parent_id="38" rcat="-1" size="42" type="0" url_name="Rescue" />
+        <cat id="236" name="Правоохранительные органы" parent_id="38" rcat="-1" size="122" type="0" url_name="Law-Enforcement" />
+      </cat>
+    </cat>
+  </cat>
+  <cat id="11068" name="Порталы" parent_id="0" rcat="30" size="774" type="0" url_name="Portals" />
+  <cat id="3579" name="Отдых" parent_id="0" rcat="-1" size="6867" type="0" url_name="Rest">
+    <cat id="2877" name="Где развлечься" parent_id="3579" rcat="-1" size="1440" type="0" url_name="Going_out">
+      <cat id="3119" name="Боулинг и бильярд" parent_id="2877" rcat="-1" size="97" type="0" url_name="Bowling" />
+      <cat id="3424" name="Афиша" parent_id="2877" rcat="-1" size="321" type="0" url_name="Poster">
+        <cat id="11314" name="Клубные афиши" parent_id="3424" rcat="145" size="35" type="0" url_name="Clubbills" />
+        <cat id="11313" name="Киноафиши" parent_id="3424" rcat="0" size="147" type="0" url_name="Showtimes" />
+        <cat id="11312" name="Театральные афиши" parent_id="3424" rcat="0" size="164" type="0" url_name="Playbills" />
+      </cat>
+      <cat id="2879" name="Универсальное" parent_id="2877" rcat="-1" size="137" type="1" url_name="General" />
+      <cat id="2878" name="Прочее" parent_id="2877" rcat="-1" size="174" type="2" url_name="Other" />
+      <cat id="11427" name="Билеты" parent_id="2877" rcat="1" size="79" type="10" url_name="Booking" />
+      <cat id="10892" name="Отдых и досуг с детьми" parent_id="2877" rcat="2877" size="100" type="0" url_name="Family_Entertainment" />
+      <cat id="10537" name="Казино" parent_id="2877" rcat="0" size="63" type="0" url_name="Casino" />
+      <cat id="10300" name="Цирки и театры зверей" parent_id="2877" rcat="0" size="34" type="0" url_name="Circus" />
+      <cat id="657" name="Парки и зоопарки" parent_id="2877" rcat="-1" size="46" type="0" url_name="Zoos" />
+      <cat id="145" name="Клубы и дискотеки" parent_id="2877" rcat="-1" size="275" type="0" url_name="Nightclubs" />
+      <cat id="92" name="Рестораны и бары" parent_id="2877" rcat="-1" size="514" type="0" url_name="Bars" />
+    </cat>
+    <cat id="3691" name="Каникулы" parent_id="3579" rcat="-1" size="432" type="0" url_name="Vacation">
+      <cat id="11456" name="Детские театры" parent_id="3691" rcat="17" size="115" type="0" url_name="Childrens_Theaters" />
+      <cat id="11455" name="Детские развлечения в городе" parent_id="3691" rcat="2877" size="100" type="0" url_name="Kids_going_out" />
+      <cat id="11454" name="Детские лагеря" parent_id="3691" rcat="3579" size="219" type="0" url_name="Camps" />
+    </cat>
+    <cat id="98" name="Хобби" parent_id="3579" rcat="-1" size="1068" type="0" url_name="Hobby">
+      <cat id="448" name="Цветоводство" parent_id="98" rcat="-1" size="170" type="0" url_name="Gardening" />
+      <cat id="465" name="Рукоделие" parent_id="98" rcat="-1" size="194" type="0" url_name="Needlework" />
+      <cat id="510" name="Универсальное" parent_id="98" rcat="-1" size="10" type="1" url_name="General" />
+      <cat id="10687" name="Оружие и военная техника" parent_id="98" rcat="0" size="49" type="0" url_name="Guns" />
+      <cat id="721" name="Моделирование" parent_id="98" rcat="-1" size="129" type="0" url_name="Modelling" />
+      <cat id="509" name="Прочее" parent_id="98" rcat="-1" size="85" type="2" url_name="Other" />
+      <cat id="454" name="Военно-исторические клубы" parent_id="98" rcat="-1" size="46" type="0" url_name="Wars" />
+      <cat id="453" name="Радиолюбители" parent_id="98" rcat="-1" size="119" type="0" url_name="Radio-fans" />
+      <cat id="451" name="Коллекционирование" parent_id="98" rcat="-1" size="274" type="0" url_name="Collecting">
+        <cat id="10563" name="Прочее" parent_id="451" rcat="451" size="56" type="0" url_name="Other" />
+        <cat id="10562" name="Антиквариат" parent_id="451" rcat="451" size="50" type="0" url_name="Antiques" />
+        <cat id="10561" name="Филателия" parent_id="451" rcat="451" size="41" type="0" url_name="Stamp_Collecting" />
+        <cat id="10560" name="Фалеристика" parent_id="451" rcat="451" size="38" type="0" url_name="Faleristics" />
+        <cat id="10559" name="Нумизматика, бонистика" parent_id="451" rcat="451" size="113" type="0" url_name="Numismatics_and_Bonistics" />
+      </cat>
+    </cat>
+    <cat id="88" name="Туризм" parent_id="3579" rcat="-1" size="4291" type="0" url_name="Travels">
+      <cat id="3150" name="Визы и паспорта" parent_id="88" rcat="-1" size="59" type="0" url_name="Visas" />
+      <cat id="398" name="Гостиницы" parent_id="88" rcat="-1" size="934" type="0" url_name="Hotels" />
+      <cat id="2013" name="Прочее" parent_id="88" rcat="-1" size="227" type="2" url_name="Other" />
+      <cat id="11206" name="Отзывы и впечатления" parent_id="88" rcat="88" size="97" type="0" url_name="Travel_reports" />
+      <cat id="2014" name="Универсальное" parent_id="88" rcat="-1" size="238" type="1" url_name="General" />
+      <cat id="10531" name="Путеводители" parent_id="88" rcat="0" size="89" type="0" url_name="Guides" />
+      <cat id="10458" name="Поиск попутчика" parent_id="88" rcat="88" size="14" type="0" url_name="Companions" />
+      <cat id="10415" name="Ж/д расписания и билеты" parent_id="88" rcat="324" size="97" type="10" url_name="Railway_Tickets" />
+      <cat id="10414" name="Авиабилеты и расписания" parent_id="88" rcat="322" size="210" type="10" url_name="Airplane_Tickets" />
+      <cat id="3700" name="Детские лагеря" parent_id="88" rcat="-1" size="103" type="0" url_name="Camps" />
+      <cat id="399" name="Туры и экскурсии" parent_id="88" rcat="-1" size="1339" type="0" url_name="Travel_Agencies">
+        <cat id="11247" name="Горнолыжные курорты" parent_id="399" rcat="0" size="162" type="0" url_name="Skiing_resort" />
+        <cat id="10986" name="Системы подбора туров" parent_id="399" rcat="399" size="54" type="0" url_name="selection" />
+        <cat id="11622" name="Туры по Украине" parent_id="399" rcat="399" size="0" type="0" url_name="Ukraine" />
+        <cat id="10444" name="Универсальные туроператоры" parent_id="399" rcat="399" size="166" type="0" url_name="Operators" />
+        <cat id="10437" name="Поездки по России" parent_id="399" rcat="399" size="213" type="0" url_name="Russia" />
+        <cat id="10432" name="Круизы" parent_id="399" rcat="399" size="140" type="0" url_name="Cruises" />
+        <cat id="10429" name="Экзотика и приключения" parent_id="399" rcat="399" size="95" type="0" url_name="Adventures" />
+        <cat id="10428" name="Курортные страны" parent_id="399" rcat="399" size="220" type="0" url_name="Resorts" />
+        <cat id="10427" name="Европа" parent_id="399" rcat="399" size="294" type="0" url_name="Europe" />
+      </cat>
+      <cat id="397" name="Санатории и пансионаты" parent_id="88" rcat="-1" size="711" type="0" url_name="Sanatoriums">
+        <cat id="10442" name="Минводы" parent_id="397" rcat="88" size="44" type="0" url_name="North_Caucasus" />
+        <cat id="10441" name="Урал, Алтай, Сибирь" parent_id="397" rcat="88" size="84" type="0" url_name="Ural_Siberia" />
+        <cat id="10440" name="Северо-запад России" parent_id="397" rcat="88" size="65" type="0" url_name="North-West" />
+        <cat id="10439" name="Отдых на море" parent_id="397" rcat="397" size="146" type="0" url_name="Seaside_Resorts" />
+        <cat id="10438" name="Подмосковье" parent_id="397" rcat="397" size="51" type="0" url_name="Moscow_Region" />
+        <cat id="10424" name="Курортные агентства и справочники" parent_id="397" rcat="397" size="149" type="0" url_name="Agencies_Web-pages" />
+      </cat>
+      <cat id="258" name="Посольства" parent_id="88" rcat="-1" size="106" type="0" url_name="Embassies_and_Consulates">
+        <cat id="4048" name="Иностранные посольства за рубежом" parent_id="258" rcat="-1" size="18" type="0" url_name="Foreign_embassies_abroad" />
+        <cat id="4044" name="Российские посольства" parent_id="258" rcat="-1" size="22" type="0" url_name="Russian_embassies" />
+        <cat id="4039" name="Зарубежные посольства" parent_id="258" rcat="-1" size="68" type="0" url_name="Foreign_embassies" />
+      </cat>
+      <cat id="89" name="Спортивный туризм" parent_id="88" rcat="-1" size="1025" type="0" url_name="Adventures">
+        <cat id="2046" name="Универсальное" parent_id="89" rcat="-1" size="226" type="1" url_name="General" />
+        <cat id="2045" name="Прочее" parent_id="89" rcat="-1" size="119" type="2" url_name="Other" />
+        <cat id="11394" name="Спелеология" parent_id="89" rcat="0" size="55" type="0" url_name="Speleology" />
+        <cat id="11198" name="Маршруты, отчеты о походах" parent_id="89" rcat="89" size="127" type="0" url_name="Reports_on_campaigns" />
+        <cat id="11178" name="Турклубы" parent_id="89" rcat="89" size="100" type="0" url_name="Tourists" />
+        <cat id="10448" name="Автостоп" parent_id="89" rcat="2045" size="15" type="0" url_name="Hitch-Hiking" />
+        <cat id="659" name="Водный туризм" parent_id="89" rcat="-1" size="93" type="0" url_name="Boating" />
+        <cat id="3665" name="Туристическое снаряжение" parent_id="89" rcat="-1" size="117" type="0" url_name="Tourist_equipment" />
+        <cat id="404" name="Альпинизм, горный туризм" parent_id="89" rcat="-1" size="95" type="0" url_name="Alpinism" />
+        <cat id="403" name="Охота и рыбалка" parent_id="89" rcat="-1" size="405" type="0" url_name="Hunting">
+          <cat id="11383" name="Снаряжение для охоты, рыбалки" parent_id="403" rcat="403" size="159" type="0" url_name="Hunters_equipment" />
+          <cat id="11381" name="Охотничьи и рыболовные туры" parent_id="403" rcat="403" size="74" type="0" url_name="Hunting_tours" />
+          <cat id="11008" name="Рыбалка" parent_id="403" rcat="403" size="297" type="0" url_name="Fishing" />
+          <cat id="11007" name="Охота" parent_id="403" rcat="403" size="167" type="0" url_name="Hunting" />
+        </cat>
+      </cat>
+    </cat>
+  </cat>
+  <cat id="3349" name="Справки" parent_id="0" rcat="-1" size="3583" type="0" url_name="Reference">
+    <cat id="3366" name="Энциклопедии" parent_id="3349" rcat="-1" size="339" type="0" url_name="Encyclopedias">
+      <cat id="11245" name="Единицы измерений" parent_id="3366" rcat="0" size="14" type="0" url_name="Measure_Units" />
+      <cat id="11294" name="Биографические справочники" parent_id="3366" rcat="0" size="33" type="0" url_name="Biographics" />
+      <cat id="11191" name="Тематические энциклопедии" parent_id="3366" rcat="0" size="274" type="0" url_name="Subject_encyclopedias" />
+      <cat id="11190" name="Медицинские энциклопедии" parent_id="3366" rcat="0" size="20" type="0" url_name="Medical_encyclopedias" />
+      <cat id="3561" name="Универсальные энциклопедии" parent_id="3366" rcat="-1" size="24" type="0" url_name="General_encyclopedias" />
+    </cat>
+    <cat id="3371" name="Афиша" parent_id="3349" rcat="-1" size="413" type="0" url_name="Poster">
+      <cat id="11302" name="Билеты" parent_id="3371" rcat="1" size="79" type="10" url_name="Booking" />
+      <cat id="11236" name="Клубные афиши" parent_id="3371" rcat="145" size="35" type="0" url_name="Clubbills" />
+      <cat id="11220" name="Справочники ресторанов и баров" parent_id="3371" rcat="2877" size="74" type="0" url_name="Restaurant_directories" />
+      <cat id="11219" name="Развлечения для  детей" parent_id="3371" rcat="2877" size="14" type="0" url_name="Kids_entertainment" />
+      <cat id="11218" name="Справочники развлечений" parent_id="3371" rcat="2877" size="70" type="0" url_name="Entertainment_directories" />
+      <cat id="11217" name="Театральные афиши" parent_id="3371" rcat="0" size="164" type="0" url_name="Playbills" />
+      <cat id="11216" name="Киноафиши" parent_id="3371" rcat="0" size="147" type="0" url_name="Showtimes" />
+    </cat>
+    <cat id="2991" name="Погода" parent_id="3349" rcat="-1" size="57" type="0" url_name="Weather" />
+    <cat id="11252" name="Интернет-каталоги" parent_id="3349" rcat="0" size="1123" type="0" url_name="Web-Directories" />
+    <cat id="11193" name="Адреса и телефоны" parent_id="3349" rcat="0" size="428" type="0" url_name="Directories" />
+    <cat id="11185" name="Программы ТВ" parent_id="3349" rcat="0" size="44" type="0" url_name="TV_Programms" />
+    <cat id="3549" name="Словари" parent_id="3349" rcat="-1" size="171" type="0" url_name="Dictionaries">
+      <cat id="11243" name="Переводчики и транслитераторы" parent_id="3549" rcat="0" size="12" type="0" url_name="Translator" />
+      <cat id="11242" name="Словари других языков" parent_id="3549" rcat="3372" size="26" type="0" url_name="Other" />
+      <cat id="11241" name="Немецкие, французские словари" parent_id="3549" rcat="3372" size="15" type="0" url_name="German,_french_dict" />
+      <cat id="11225" name="Словари терминов" parent_id="3549" rcat="0" size="95" type="0" url_name="Glossaries" />
+      <cat id="11221" name="Англо-русские словари" parent_id="3549" rcat="3372" size="18" type="0" url_name="English-Russian_dict" />
+      <cat id="3554" name="Словари русского языка" parent_id="3549" rcat="-1" size="33" type="0" url_name="Russion_dict" />
+    </cat>
+    <cat id="3504" name="Поиск людей" parent_id="3349" rcat="-1" size="42" type="0" url_name="Search_people">
+      <cat id="11397" name="Бывшие одноклассники, одногруппники" parent_id="3504" rcat="0" size="79" type="10" url_name="Classmates" />
+      <cat id="11398" name="Генеалогия" parent_id="3504" rcat="0" size="28" type="10" url_name="Genealogy" />
+    </cat>
+    <cat id="259" name="Карты" parent_id="3349" rcat="-1" size="173" type="0" url_name="Maps">
+      <cat id="11270" name="Схемы транспорта" parent_id="259" rcat="66" size="75" type="10" url_name="Transports_map" />
+    </cat>
+    <cat id="66" name="Транспорт" parent_id="3349" rcat="-1" size="1043" type="0" url_name="Transport">
+      <cat id="3373" name="Расписания транспорта" parent_id="66" rcat="-1" size="202" type="0" url_name="Boards">
+        <cat id="11229" name="Расписания автобусов" parent_id="3373" rcat="66" size="51" type="0" url_name="Bus_timetable" />
+        <cat id="11228" name="Расписания авиарейсов" parent_id="3373" rcat="66" size="107" type="0" url_name="Avia_timetable" />
+        <cat id="11227" name="Расписания поездов" parent_id="3373" rcat="66" size="87" type="0" url_name="Train_timetable" />
+      </cat>
+      <cat id="2897" name="Такси и аренда автомобиля" parent_id="66" rcat="-1" size="316" type="0" url_name="Taxi" />
+      <cat id="1661" name="Прочее" parent_id="66" rcat="-1" size="27" type="2" url_name="Other" />
+      <cat id="1662" name="Универсальное" parent_id="66" rcat="-1" size="42" type="1" url_name="General" />
+      <cat id="10949" name="Автобусы и спецтехника" parent_id="66" rcat="3182" size="283" type="10" url_name="Buses" />
+      <cat id="10948" name="Грузовые автомобили" parent_id="66" rcat="3182" size="269" type="10" url_name="Trucks" />
+      <cat id="325" name="Водный транспорт" parent_id="66" rcat="-1" size="90" type="0" url_name="Boats" />
+      <cat id="324" name="Железнодорожный транспорт" parent_id="66" rcat="-1" size="156" type="0" url_name="Railroads" />
+      <cat id="323" name="Городской транспорт" parent_id="66" rcat="-1" size="113" type="0" url_name="Urban_Transport" />
+      <cat id="322" name="Авиационный транспорт" parent_id="66" rcat="-1" size="307" type="0" url_name="Aviation">
+        <cat id="3000" name="Авиакомпании" parent_id="322" rcat="-1" size="87" type="0" url_name="Airlines" />
+        <cat id="2998" name="Универсальное" parent_id="322" rcat="-1" size="14" type="1" url_name="General" />
+        <cat id="2997" name="Прочее" parent_id="322" rcat="-1" size="45" type="2" url_name="Other" />
+        <cat id="2996" name="Заказ и продажа билетов" parent_id="322" rcat="-1" size="119" type="0" url_name="Tickets" />
+        <cat id="3001" name="Аэропорты" parent_id="322" rcat="-1" size="45" type="0" url_name="Airports" />
+      </cat>
+      <cat id="3200" name="Автобусное сообщение" parent_id="66" rcat="-1" size="43" type="0" url_name="Land_Cruisers" />
+    </cat>
+  </cat>
+  <cat id="112" name="Работа" parent_id="0" rcat="-1" size="1275" type="0" url_name="Employment">
+    <cat id="10481" name="Кадровые агентства" parent_id="112" rcat="112" size="556" type="0" url_name="Recruiting" />
+    <cat id="10482" name="Работа за рубежом" parent_id="112" rcat="112" size="58" type="0" url_name="Foreign_Employment" />
+    <cat id="10484" name="Временная и удаленная работа" parent_id="112" rcat="112" size="60" type="0" url_name="Freelance" />
+    <cat id="11595" name="Работа для студентов" parent_id="112" rcat="112" size="52" type="0" url_name="Job_for_students" />
+    <cat id="10994" name="Управление персоналом" parent_id="112" rcat="0" size="172" type="0" url_name="Staff" />
+    <cat id="10483" name="Работа для IT-специалистов" parent_id="112" rcat="112" size="39" type="0" url_name="IT_Jobs" />
+    <cat id="10480" name="Вакансии и резюме" parent_id="112" rcat="112" size="503" type="0" url_name="Jobs" />
+  </cat>
+  <cat id="99" name="Авто" parent_id="0" rcat="-1" size="3284" type="0" url_name="Automobiles">
+    <cat id="3016" name="Автомобиль и закон" parent_id="99" rcat="-1" size="33" type="0" url_name="Law" />
+    <cat id="462" name="Автолюбители" parent_id="99" rcat="-1" size="572" type="0" url_name="Automobile_Fans">
+      <cat id="11049" name="Автопутешествия" parent_id="462" rcat="89" size="18" type="0" url_name="Autotravel" />
+      <cat id="10944" name="Уличные гонки" parent_id="462" rcat="462" size="47" type="0" url_name="Streetracing" />
+      <cat id="10634" name="Старина и экзотика" parent_id="462" rcat="99" size="34" type="0" url_name="Old_cars" />
+      <cat id="10091" name="Авторазговоры" parent_id="462" rcat="99" size="130" type="0" url_name="Forums" />
+    </cat>
+    <cat id="10089" name="Автопресса" parent_id="99" rcat="99" size="99" type="0" url_name="Periodicals" />
+    <cat id="542" name="Универсальное" parent_id="99" rcat="-1" size="244" type="1" url_name="General" />
+    <cat id="541" name="Прочее" parent_id="99" rcat="-1" size="112" type="2" url_name="Other" />
+    <cat id="461" name="Продажа автомобилей" parent_id="99" rcat="-1" size="889" type="0" url_name="Purchasing">
+      <cat id="11617" name="Китайские автомобили" parent_id="461" rcat="461" size="21" type="0" url_name="Chinese" />
+      <cat id="11591" name="Грузовые автомобили" parent_id="461" rcat="3182" size="269" type="10" url_name="Trucks" />
+      <cat id="11285" name="Цены на автомобили" parent_id="461" rcat="99" size="39" type="0" url_name="Auto_price" />
+      <cat id="10919" name="Подержанные автомобили" parent_id="461" rcat="461" size="296" type="0" url_name="Used" />
+      <cat id="10525" name="Японские автомобили" parent_id="461" rcat="461" size="185" type="0" url_name="Japanese" />
+      <cat id="10524" name="Корейские автомобили" parent_id="461" rcat="461" size="93" type="0" url_name="Korean" />
+      <cat id="10522" name="Американские автомобили" parent_id="461" rcat="461" size="133" type="0" url_name="American" />
+      <cat id="10521" name="Европейские автомобили" parent_id="461" rcat="461" size="242" type="0" url_name="European" />
+      <cat id="10520" name="Автомобили ГАЗ" parent_id="461" rcat="461" size="44" type="0" url_name="GAZ" />
+      <cat id="10519" name="Автомобили ВАЗ" parent_id="461" rcat="461" size="65" type="0" url_name="VAZ" />
+    </cat>
+    <cat id="460" name="Запчасти, аксессуары" parent_id="99" rcat="-1" size="857" type="0" url_name="Parts">
+      <cat id="10191" name="Автозвук" parent_id="460" rcat="460" size="101" type="0" url_name="Audio" />
+      <cat id="10196" name="Охранные системы" parent_id="460" rcat="460" size="95" type="0" url_name="Security" />
+      <cat id="10197" name="Автохимия и автокосметика" parent_id="460" rcat="460" size="100" type="0" url_name="Chemicals" />
+      <cat id="11133" name="Интернет-магазины" parent_id="460" rcat="460" size="259" type="0" url_name="Online_shops" />
+      <cat id="10528" name="Автозапчасти" parent_id="460" rcat="460" size="322" type="0" url_name="Spare_Parts" />
+      <cat id="10195" name="Шины и диски" parent_id="460" rcat="460" size="227" type="0" url_name="Tyres" />
+    </cat>
+    <cat id="459" name="Техническое обслуживание" parent_id="99" rcat="-1" size="703" type="0" url_name="Service">
+      <cat id="10502" name="Европейские автомобили" parent_id="459" rcat="459" size="136" type="0" url_name="European_Cars" />
+      <cat id="10527" name="Установочные центры" parent_id="459" rcat="99" size="212" type="0" url_name="Extra_Equipment" />
+      <cat id="10505" name="Корейские автомобили" parent_id="459" rcat="459" size="42" type="0" url_name="Korean_Cars" />
+      <cat id="10504" name="Японские автомобили" parent_id="459" rcat="459" size="76" type="0" url_name="Japanese_Cars" />
+      <cat id="10503" name="Американские автомобили" parent_id="459" rcat="459" size="50" type="0" url_name="American_Cars" />
+      <cat id="10501" name="Автомобили ГАЗ" parent_id="459" rcat="459" size="25" type="0" url_name="GAZ" />
+      <cat id="10500" name="Автомобили ВАЗ" parent_id="459" rcat="459" size="41" type="0" url_name="VAZ" />
+      <cat id="10208" name="Тюнинг" parent_id="459" rcat="459" size="117" type="0" url_name="Tuning" />
+    </cat>
+    <cat id="458" name="Подготовка водителей" parent_id="99" rcat="-1" size="99" type="0" url_name="Training">
+      <cat id="11436" name="ПДД" parent_id="458" rcat="458" size="7" type="0" url_name="Pdd" />
+      <cat id="11435" name="Автошколы" parent_id="458" rcat="458" size="86" type="0" url_name="Autoschools" />
+    </cat>
+    <cat id="457" name="Мотоциклы" parent_id="99" rcat="-1" size="303" type="0" url_name="Motorcicles">
+      <cat id="10941" name="Продажа мотоциклов" parent_id="457" rcat="99" size="162" type="0" url_name="Purchasing" />
+      <cat id="10940" name="Мотолюбители" parent_id="457" rcat="457" size="141" type="0" url_name="Moto-fans" />
+    </cat>
+    <cat id="3238" name="Автострахование" parent_id="99" rcat="-1" size="59" type="0" url_name="Car_Insurance">
+      <cat id="11015" name="Страховые компании" parent_id="3238" rcat="341" size="216" type="10" url_name="Insurance" />
+    </cat>
+  </cat>
+  <cat id="90" name="Спорт" parent_id="0" rcat="-1" size="5066" type="0" url_name="Sports">
+    <cat id="2078" name="Универсальное" parent_id="90" rcat="-1" size="275" type="1" url_name="General" />
+    <cat id="2077" name="Прочее" parent_id="90" rcat="-1" size="122" type="2" url_name="Other" />
+    <cat id="11320" name="Спортклубы" parent_id="90" rcat="0" size="453" type="0" url_name="Sports_club" />
+    <cat id="660" name="Водный спорт" parent_id="90" rcat="-1" size="515" type="0" url_name="Water_Sports">
+      <cat id="11373" name="Виндсерфинг, кайтинг" parent_id="660" rcat="90" size="76" type="0" url_name="Windsurfing" />
+      <cat id="730" name="Дайвинг" parent_id="660" rcat="-1" size="155" type="0" url_name="Diving" />
+      <cat id="3460" name="Плавание" parent_id="660" rcat="-1" size="24" type="0" url_name="Swimming" />
+      <cat id="3247" name="Яхты" parent_id="660" rcat="-1" size="200" type="0" url_name="Yachts" />
+    </cat>
+    <cat id="10082" name="Спортивная пресса" parent_id="90" rcat="90" size="214" type="0" url_name="Sports_Media" />
+    <cat id="10081" name="Соревнования" parent_id="90" rcat="90" size="163" type="0" url_name="Events" />
+    <cat id="439" name="Конкурсы,  тотализатор" parent_id="90" rcat="-1" size="40" type="0" url_name="Totalizators" />
+    <cat id="438" name="Единоборства" parent_id="90" rcat="-1" size="632" type="0" url_name="Martial_Arts">
+      <cat id="3789" name="Каратэ" parent_id="438" rcat="-1" size="64" type="0" url_name="Karate" />
+      <cat id="3793" name="Дзю-до" parent_id="438" rcat="-1" size="25" type="0" url_name="Judo" />
+      <cat id="3792" name="Ушу" parent_id="438" rcat="-1" size="51" type="0" url_name="Wushu" />
+      <cat id="3791" name="Рукопашный бой" parent_id="438" rcat="-1" size="47" type="0" url_name="Hand-to-hand_fighting" />
+      <cat id="3790" name="Айкидо" parent_id="438" rcat="-1" size="99" type="0" url_name="Aikido" />
+      <cat id="3787" name="Универсальное" parent_id="438" rcat="-1" size="93" type="1" url_name="general" />
+      <cat id="3786" name="Прочее" parent_id="438" rcat="-1" size="217" type="2" url_name="other" />
+      <cat id="3785" name="Бокс" parent_id="438" rcat="-1" size="46" type="0" url_name="Boxing" />
+    </cat>
+    <cat id="418" name="Шахматы, шашки" parent_id="90" rcat="-1" size="96" type="0" url_name="Chess_and_Checkers">
+      <cat id="11196" name="Шахматы онлайн" parent_id="418" rcat="418" size="16" type="0" url_name="Chess_online" />
+      <cat id="10978" name="Шашки" parent_id="418" rcat="418" size="8" type="0" url_name="Checkers" />
+    </cat>
+    <cat id="417" name="Теннис" parent_id="90" rcat="-1" size="172" type="0" url_name="Tennis">
+      <cat id="3964" name="Товары для тенниса" parent_id="417" rcat="-1" size="30" type="0" url_name="Goods" />
+      <cat id="11594" name="Новости тенниса" parent_id="417" rcat="417" size="11" type="0" url_name="Tennis_news" />
+      <cat id="11419" name="Настольный теннис" parent_id="417" rcat="417" size="25" type="10" url_name="Ping_pong" />
+      <cat id="3962" name="Теннисные клубы" parent_id="417" rcat="-1" size="34" type="0" url_name="Clubs" />
+      <cat id="3960" name="Теннисисты" parent_id="417" rcat="-1" size="22" type="0" url_name="Tennis-players" />
+      <cat id="3954" name="Универсальное" parent_id="417" rcat="-1" size="44" type="1" url_name="general" />
+      <cat id="3953" name="Прочее" parent_id="417" rcat="-1" size="26" type="2" url_name="other" />
+      <cat id="3952" name="Теннисные турниры" parent_id="417" rcat="-1" size="18" type="0" url_name="Tournaments" />
+    </cat>
+    <cat id="416" name="Силовые виды спорта" parent_id="90" rcat="-1" size="166" type="0" url_name="Bodybuilding_and_Arm_Wrestling">
+      <cat id="3783" name="Спортивное питание" parent_id="416" rcat="-1" size="66" type="0" url_name="Sports_feed" />
+      <cat id="3782" name="Пауэрлифтинг" parent_id="416" rcat="-1" size="27" type="0" url_name="Ppowerlifting" />
+      <cat id="3780" name="Универсальное" parent_id="416" rcat="-1" size="22" type="1" url_name="general" />
+      <cat id="3779" name="Прочее" parent_id="416" rcat="-1" size="11" type="2" url_name="other" />
+      <cat id="3778" name="Бодибилдинг" parent_id="416" rcat="-1" size="53" type="0" url_name="Bodybuilding" />
+    </cat>
+    <cat id="412" name="Хоккей" parent_id="90" rcat="-1" size="163" type="0" url_name="Hockey">
+      <cat id="11525" name="Хоккей. Чемпионат мира" parent_id="412" rcat="412" size="16" type="0" url_name="Championship-2007" />
+    </cat>
+    <cat id="411" name="Футбол" parent_id="90" rcat="-1" size="616" type="0" url_name="Football">
+      <cat id="11623" name="Украинский футбол" parent_id="411" rcat="411" size="0" type="0" url_name="The_Ukrainian_football" />
+      <cat id="11600" name="Лига Чемпионов" parent_id="411" rcat="411" size="13" type="0" url_name="Champions_league" />
+      <cat id="11406" name="Мини-футбол" parent_id="411" rcat="411" size="34" type="0" url_name="Futsal" />
+      <cat id="11402" name="Евро 2008" parent_id="411" rcat="411" size="25" type="0" url_name="Euro08" />
+      <cat id="11210" name="Новости футбола" parent_id="411" rcat="411" size="61" type="0" url_name="Football_news" />
+      <cat id="11208" name="Российский футбол" parent_id="411" rcat="411" size="57" type="0" url_name="The_Russian_football" />
+      <cat id="11177" name="Виртуальный футбол" parent_id="411" rcat="411" size="41" type="0" url_name="Virtual_football" />
+      <cat id="11176" name="Мировой футбол" parent_id="411" rcat="411" size="66" type="0" url_name="World_football" />
+      <cat id="11174" name="Футбольные клубы" parent_id="411" rcat="411" size="277" type="0" url_name="Football_clubs" />
+    </cat>
+    <cat id="410" name="Баскетбол" parent_id="90" rcat="-1" size="86" type="0" url_name="Basketball" />
+    <cat id="408" name="Автоспорт" parent_id="90" rcat="-1" size="144" type="0" url_name="Auto_Racing">
+      <cat id="3984" name="Мотоспорт" parent_id="408" rcat="-1" size="26" type="0" url_name="Motosport" />
+      <cat id="11597" name="Уличные гонки" parent_id="408" rcat="462" size="47" type="10" url_name="Streetracing" />
+      <cat id="3990" name="Ралли" parent_id="408" rcat="-1" size="24" type="0" url_name="ralli" />
+      <cat id="3989" name="Картинг" parent_id="408" rcat="-1" size="24" type="0" url_name="Karting" />
+      <cat id="3988" name="Формула 1" parent_id="408" rcat="-1" size="36" type="0" url_name="Formula_1" />
+      <cat id="3986" name="Универсальное" parent_id="408" rcat="-1" size="21" type="1" url_name="general" />
+      <cat id="3985" name="Прочее" parent_id="408" rcat="-1" size="21" type="2" url_name="other" />
+    </cat>
+    <cat id="3441" name="Летние виды спорта" parent_id="90" rcat="-1" size="667" type="0" url_name="Summer">
+      <cat id="3194" name="Лошади и конный спорт" parent_id="3441" rcat="-1" size="134" type="0" url_name="Horses" />
+      <cat id="3193" name="Велосипеды" parent_id="3441" rcat="-1" size="188" type="0" url_name="Bikes" />
+      <cat id="3457" name="Универсальное" parent_id="3441" rcat="-1" size="33" type="1" url_name="general" />
+      <cat id="3716" name="Гольф" parent_id="3441" rcat="-1" size="25" type="0" url_name="Golf" />
+      <cat id="3720" name="Регби" parent_id="3441" rcat="-1" size="21" type="0" url_name="Rugby" />
+      <cat id="11466" name="Настольный теннис" parent_id="3441" rcat="417" size="25" type="0" url_name="Ping_pong" />
+      <cat id="11449" name="Стрельба" parent_id="3441" rcat="90" size="44" type="0" url_name="Shoot" />
+      <cat id="11416" name="Олимпиада-2008" parent_id="3441" rcat="90" size="38" type="0" url_name="Olympiad2008" />
+      <cat id="3794" name="Гимнастика" parent_id="3441" rcat="-1" size="18" type="0" url_name="Gymnastics" />
+      <cat id="3718" name="Легкая атлетика" parent_id="3441" rcat="-1" size="26" type="0" url_name="Athletics" />
+      <cat id="3717" name="Бадминтон" parent_id="3441" rcat="-1" size="20" type="0" url_name="Badminton" />
+      <cat id="3715" name="Волейбол" parent_id="3441" rcat="-1" size="53" type="0" url_name="Volleyball" />
+      <cat id="3456" name="Прочее" parent_id="3441" rcat="-1" size="94" type="2" url_name="other" />
+    </cat>
+    <cat id="3393" name="Спортивные товары" parent_id="90" rcat="-1" size="908" type="0" url_name="Shopping">
+      <cat id="11282" name="Для спорта и отдыха на воде" parent_id="3393" rcat="8" size="0" type="0" url_name="Rest_on_water" />
+      <cat id="11280" name="Прочее" parent_id="3393" rcat="90" size="81" type="0" url_name="Other" />
+      <cat id="11279" name="Спортивные магазины" parent_id="3393" rcat="3393" size="283" type="0" url_name="Sports_shops" />
+      <cat id="11278" name="Оборудование для бильярда" parent_id="3393" rcat="0" size="48" type="0" url_name="For_billiards" />
+      <cat id="11277" name="Снегоходы" parent_id="3393" rcat="0" size="60" type="0" url_name="Snowmobiles" />
+      <cat id="11276" name="Тренажеры" parent_id="3393" rcat="3393" size="167" type="0" url_name="Simulators" />
+      <cat id="11275" name="Спортивная одежда, обувь" parent_id="3393" rcat="0" size="206" type="0" url_name="Sportswear" />
+      <cat id="11274" name="Велосипеды" parent_id="3393" rcat="90" size="122" type="0" url_name="Bicycles" />
+      <cat id="11273" name="Ролики, скейтборды" parent_id="3393" rcat="90" size="18" type="0" url_name="Rollers,_skateboards" />
+      <cat id="11272" name="Лыжи, сноуборды" parent_id="3393" rcat="90" size="70" type="0" url_name="Skis,_snowboards" />
+      <cat id="11271" name="Спортивное питание" parent_id="3393" rcat="90" size="54" type="0" url_name="Sports_feed" />
+    </cat>
+    <cat id="3365" name="Зимние виды спорта" parent_id="90" rcat="-1" size="374" type="0" url_name="Winter_sport">
+      <cat id="3498" name="Хоккей с мячом" parent_id="3365" rcat="-1" size="19" type="0" url_name="Bandy" />
+      <cat id="11472" name="Олимпиада-2006" parent_id="3365" rcat="90" size="22" type="0" url_name="Turin2006" />
+      <cat id="415" name="Горные лыжи, сноуборд" parent_id="3365" rcat="-1" size="159" type="0" url_name="Mountain">
+        <cat id="11203" name="Снаряжение" parent_id="415" rcat="90" size="87" type="10" url_name="Equipment" />
+        <cat id="11202" name="Сноубордические сайты" parent_id="415" rcat="415" size="80" type="0" url_name="Snowboard" />
+        <cat id="11201" name="Горнолыжные сайты" parent_id="415" rcat="415" size="49" type="0" url_name="Alpine_skiing" />
+        <cat id="11200" name="Горнолыжные курорты" parent_id="415" rcat="0" size="165" type="10" url_name="Skiing_resort" />
+      </cat>
+      <cat id="3483" name="Фигурное катание" parent_id="3365" rcat="-1" size="78" type="0" url_name="Figure_skating" />
+      <cat id="3482" name="Беговые лыжи" parent_id="3365" rcat="-1" size="34" type="0" url_name="Skiing" />
+      <cat id="3480" name="Универсальное" parent_id="3365" rcat="-1" size="21" type="1" url_name="general" />
+      <cat id="3479" name="Прочее" parent_id="3365" rcat="-1" size="23" type="2" url_name="other" />
+      <cat id="3478" name="Биатлон" parent_id="3365" rcat="-1" size="32" type="0" url_name="Biathlon" />
+    </cat>
+    <cat id="3343" name="Экстремальный спорт" parent_id="90" rcat="-1" size="591" type="0" url_name="Extreme">
+      <cat id="11306" name="Роллерспорт, скейтбординг" parent_id="3343" rcat="90" size="87" type="0" url_name="Rollers" />
+      <cat id="11182" name="Прочее" parent_id="3343" rcat="90" size="21" type="0" url_name="Other" />
+      <cat id="11181" name="Парапланы, дельтапланы" parent_id="3343" rcat="90" size="84" type="0" url_name="Paraplan" />
+      <cat id="11180" name="Парашютный спорт" parent_id="3343" rcat="90" size="67" type="0" url_name="Parachute" />
+      <cat id="11169" name="Виндсерфинг, кайтинг" parent_id="3343" rcat="90" size="72" type="0" url_name="Windsurfing" />
+      <cat id="10640" name="Сноубординг" parent_id="3343" rcat="3365" size="79" type="0" url_name="Snowboarding" />
+      <cat id="3330" name="Пейнтбол" parent_id="3343" rcat="-1" size="122" type="0" url_name="Paintball" />
+    </cat>
+  </cat>
+  <cat id="30" name="Универсальное" parent_id="0" rcat="-1" size="2210" type="1" url_name="General" />
+  <cat id="11" name="СМИ" parent_id="0" rcat="-1" size="4417" type="0" url_name="Media">
+    <cat id="10060" name="Новости" parent_id="11" rcat="11" size="984" type="0" url_name="Online_Media" />
+    <cat id="2206" name="Универсальное" parent_id="11" rcat="-1" size="44" type="1" url_name="General" />
+    <cat id="2205" name="Прочее" parent_id="11" rcat="-1" size="357" type="2" url_name="Other" />
+    <cat id="119" name="Информационные агентства" parent_id="11" rcat="-1" size="349" type="0" url_name="News_Agencies" />
+    <cat id="118" name="Периодика" parent_id="11" rcat="-1" size="2874" type="0" url_name="Periodicals">
+      <cat id="494" name="Газеты" parent_id="118" rcat="-1" size="1077" type="0" url_name="Newspapers">
+        <cat id="11348" name="Сетевые" parent_id="494" rcat="494" size="187" type="0" url_name="Online" />
+        <cat id="11335" name="Газеты объявлений" parent_id="494" rcat="494" size="83" type="0" url_name="Advertisement" />
+        <cat id="11333" name="Специализированные" parent_id="494" rcat="0" size="269" type="0" url_name="Specialized" />
+        <cat id="11332" name="Региональные" parent_id="494" rcat="494" size="509" type="0" url_name="Regional" />
+        <cat id="11330" name="Центральные" parent_id="494" rcat="494" size="71" type="0" url_name="National" />
+      </cat>
+      <cat id="2302" name="Универсальное" parent_id="118" rcat="-1" size="33" type="1" url_name="General" />
+      <cat id="2301" name="Прочее" parent_id="118" rcat="-1" size="247" type="2" url_name="Other" />
+      <cat id="10742" name="Развлекательные издания" parent_id="118" rcat="118" size="45" type="0" url_name="Entertainment" />
+      <cat id="10740" name="Издания о музыке, кино, ТВ" parent_id="118" rcat="11" size="42" type="0" url_name="Show" />
+      <cat id="10736" name="Детские издания" parent_id="118" rcat="118" size="31" type="0" url_name="Children" />
+      <cat id="10733" name="Компьютерные издания" parent_id="118" rcat="11" size="79" type="0" url_name="Computers" />
+      <cat id="10731" name="Литературные издания" parent_id="118" rcat="118" size="55" type="0" url_name="Literature" />
+      <cat id="10728" name="Автомобильные издания" parent_id="118" rcat="118" size="61" type="0" url_name="Auto" />
+      <cat id="10727" name="Женские издания" parent_id="118" rcat="118" size="84" type="0" url_name="Female" />
+      <cat id="10726" name="Спортивные издания" parent_id="118" rcat="11" size="66" type="0" url_name="Sport" />
+      <cat id="10725" name="Деловые издания" parent_id="118" rcat="11" size="158" type="0" url_name="Business" />
+      <cat id="495" name="Журналы" parent_id="118" rcat="-1" size="1338" type="0" url_name="Magazines" />
+      <cat id="493" name="Издательские дома" parent_id="118" rcat="-1" size="153" type="0" url_name="Publishing_Houses" />
+    </cat>
+    <cat id="117" name="Телевидение" parent_id="11" rcat="-1" size="588" type="0" url_name="TV">
+      <cat id="3186" name="Программы ТВ" parent_id="117" rcat="-1" size="44" type="0" url_name="Programms" />
+      <cat id="2270" name="Универсальное" parent_id="117" rcat="-1" size="22" type="1" url_name="General" />
+      <cat id="2269" name="Прочее" parent_id="117" rcat="-1" size="157" type="2" url_name="Other" />
+      <cat id="10962" name="Спутниковое телевидение" parent_id="117" rcat="117" size="99" type="0" url_name="Satellite_TV" />
+      <cat id="490" name="Телепередачи" parent_id="117" rcat="-1" size="99" type="0" url_name="Telecasts" />
+      <cat id="489" name="Телестудии и телекомпании" parent_id="117" rcat="-1" size="249" type="0" url_name="Channels" />
+      <cat id="394" name="Телевизионные игры" parent_id="117" rcat="-1" size="20" type="0" url_name="Games" />
+    </cat>
+    <cat id="116" name="Радио" parent_id="11" rcat="-1" size="324" type="0" url_name="Radio">
+      <cat id="2238" name="Универсальное" parent_id="116" rcat="-1" size="12" type="1" url_name="General" />
+      <cat id="2237" name="Прочее" parent_id="116" rcat="-1" size="23" type="2" url_name="Other" />
+      <cat id="486" name="Радиопрограммы" parent_id="116" rcat="-1" size="23" type="0" url_name="Broadcasts" />
+      <cat id="485" name="Радиостанции" parent_id="116" rcat="-1" size="268" type="0" url_name="Stations" />
+    </cat>
+  </cat>
+  <cat id="9" name="Дом" parent_id="0" rcat="-1" size="16664" type="0" url_name="Private_Life">
+    <cat id="2866" name="Семья" parent_id="9" rcat="-1" size="2142" type="0" url_name="Family">
+      <cat id="3009" name="Брачные агентства" parent_id="2866" rcat="-1" size="24" type="0" url_name="Wedding_Agencies" />
+      <cat id="2873" name="Родителям" parent_id="2866" rcat="-1" size="1332" type="0" url_name="Parents">
+        <cat id="2890" name="Универсальное" parent_id="2873" rcat="-1" size="69" type="1" url_name="General" />
+        <cat id="2889" name="Прочее" parent_id="2873" rcat="-1" size="90" type="2" url_name="Other" />
+        <cat id="2855" name="Игрушки" parent_id="2873" rcat="-1" size="169" type="0" url_name="Toys" />
+        <cat id="10266" name="Здоровье ребенка" parent_id="2873" rcat="96" size="204" type="0" url_name="Children_Health" />
+        <cat id="10718" name="Отдых и досуг с детьми" parent_id="2873" rcat="0" size="193" type="0" url_name="Family_Entertainment" />
+        <cat id="10533" name="Раннее развитие" parent_id="2873" rcat="0" size="65" type="0" url_name="Pre-School" />
+        <cat id="10493" name="Беременность" parent_id="2873" rcat="2873" size="178" type="0" url_name="Pregnancy" />
+        <cat id="10452" name="Детские лагеря" parent_id="2873" rcat="3579" size="228" type="0" url_name="Camps" />
+        <cat id="101" name="Забота о детях" parent_id="2873" rcat="-1" size="376" type="0" url_name="Upbringning" />
+      </cat>
+      <cat id="2871" name="Универсальное" parent_id="2866" rcat="-1" size="15" type="1" url_name="General" />
+      <cat id="2870" name="Прочее" parent_id="2866" rcat="-1" size="29" type="2" url_name="Other" />
+      <cat id="2864" name="Интернет детям" parent_id="2866" rcat="-1" size="426" type="0" url_name="Children">
+        <cat id="2904" name="Универсальное" parent_id="2864" rcat="-1" size="21" type="1" url_name="General" />
+        <cat id="10257" name="Детские журналы" parent_id="2864" rcat="118" size="31" type="0" url_name="Magazines" />
+        <cat id="10259" name="Познавательные сайты" parent_id="2864" rcat="0" size="17" type="0" url_name="Educational" />
+        <cat id="10261" name="Фильмы и мультики" parent_id="2864" rcat="20" size="18" type="0" url_name="Cartoons" />
+        <cat id="11246" name="Гарри Поттер" parent_id="2864" rcat="0" size="25" type="0" url_name="Garry_Potter" />
+        <cat id="10260" name="Игровая комната" parent_id="2864" rcat="8" size="150" type="0" url_name="Games" />
+        <cat id="10256" name="Детская литература" parent_id="2864" rcat="18" size="161" type="0" url_name="Literature" />
+        <cat id="2903" name="Прочее" parent_id="2864" rcat="-1" size="31" type="2" url_name="Other" />
+      </cat>
+      <cat id="631" name="Свадьба" parent_id="2866" rcat="-1" size="251" type="0" url_name="Marriage">
+        <cat id="11157" name="Свадебные платья" parent_id="631" rcat="476" size="102" type="10" url_name="Wedding_dress" />
+      </cat>
+      <cat id="627" name="Психология отношений" parent_id="2866" rcat="-1" size="90" type="0" url_name="Relations" />
+    </cat>
+    <cat id="2865" name="Квартира и дача" parent_id="9" rcat="-1" size="3601" type="0" url_name="Housing">
+      <cat id="2868" name="Универсальное" parent_id="2865" rcat="-1" size="6" type="1" url_name="General" />
+      <cat id="2867" name="Прочее" parent_id="2865" rcat="-1" size="13" type="2" url_name="Other" />
+      <cat id="10751" name="Сантехника" parent_id="2865" rcat="355" size="191" type="0" url_name="Sanitary" />
+      <cat id="10749" name="Стройматериалы" parent_id="2865" rcat="691" size="2142" type="0" url_name="Building_Supplies" />
+      <cat id="10456" name="Ремонт" parent_id="2865" rcat="333" size="441" type="0" url_name="Repairs" />
+      <cat id="10455" name="Строительство" parent_id="2865" rcat="333" size="394" type="0" url_name="Construction" />
+      <cat id="10449" name="Дизайн интерьера" parent_id="2865" rcat="333" size="463" type="0" url_name="Designing" />
+      <cat id="466" name="Сделай сам" parent_id="2865" rcat="-1" size="57" type="0" url_name="House_Works" />
+      <cat id="332" name="Ландшафтный дизайн" parent_id="2865" rcat="-1" size="214" type="0" url_name="Architecture" />
+      <cat id="102" name="Дача и участок" parent_id="2865" rcat="-1" size="349" type="0" url_name="Cottage">
+        <cat id="11461" name="Пчеловодство" parent_id="102" rcat="0" size="39" type="0" url_name="Beekeeping" />
+        <cat id="10939" name="Советы огородникам и садоводам" parent_id="102" rcat="102" size="82" type="0" url_name="Lawns" />
+        <cat id="10465" name="Семена, саженцы" parent_id="102" rcat="102" size="77" type="0" url_name="Sapling" />
+        <cat id="10464" name="Дачная техника и инвентарь" parent_id="102" rcat="102" size="97" type="0" url_name="Sundry" />
+      </cat>
+    </cat>
+    <cat id="668" name="Все для праздника" parent_id="9" rcat="-1" size="1179" type="0" url_name="Holidays">
+      <cat id="2846" name="Универсальное" parent_id="668" rcat="-1" size="17" type="1" url_name="General" />
+      <cat id="2845" name="Прочее" parent_id="668" rcat="-1" size="89" type="2" url_name="Other" />
+      <cat id="3875" name="Фейерверки" parent_id="668" rcat="-1" size="50" type="0" url_name="Firework" />
+      <cat id="3722" name="23 февраля" parent_id="668" rcat="-1" size="502" type="0" url_name="February23">
+        <cat id="3723" name="О празднике 23 февраля" parent_id="3722" rcat="-1" size="7" type="0" url_name="About_February_23" />
+        <cat id="11476" name="Поздравления и тосты" parent_id="3722" rcat="668" size="100" type="0" url_name="Greetings" />
+        <cat id="11473" name="Подарки" parent_id="3722" rcat="3279" size="314" type="0" url_name="Gifts" />
+      </cat>
+      <cat id="739" name="Тосты и сценарии" parent_id="668" rcat="-1" size="57" type="0" url_name="Toasts" />
+      <cat id="738" name="Виртуальные открытки" parent_id="668" rcat="-1" size="84" type="0" url_name="Greetings" />
+      <cat id="736" name="Доставка цветов" parent_id="668" rcat="-1" size="179" type="0" url_name="Flowers" />
+      <cat id="3484" name="Организация праздников" parent_id="668" rcat="-1" size="378" type="0" url_name="Celebrations" />
+      <cat id="3279" name="Подарки" parent_id="668" rcat="-1" size="310" type="0" url_name="Gifts">
+        <cat id="11065" name="Предметы искусства" parent_id="3279" rcat="16" size="260" type="10" url_name="Art_for_sale" />
+      </cat>
+    </cat>
+    <cat id="350" name="Универсальное" parent_id="9" rcat="-1" size="192" type="1" url_name="General" />
+    <cat id="349" name="Прочее" parent_id="9" rcat="-1" size="18" type="2" url_name="Other" />
+    <cat id="105" name="Мода и красота" parent_id="9" rcat="-1" size="1685" type="0" url_name="Beauty">
+      <cat id="482" name="Украшения" parent_id="105" rcat="-1" size="174" type="0" url_name="Jewelry">
+        <cat id="10985" name="Ювелирная и часовая промышленность" parent_id="482" rcat="377" size="120" type="10" url_name="Manufacturers" />
+      </cat>
+      <cat id="629" name="Прически, салоны красоты" parent_id="105" rcat="-1" size="345" type="0" url_name="Hairdressing" />
+      <cat id="637" name="Прочее" parent_id="105" rcat="-1" size="124" type="2" url_name="Other" />
+      <cat id="11527" name="Пластическая хирургия" parent_id="105" rcat="9" size="117" type="0" url_name="Plastic_surgery" />
+      <cat id="742" name="Боди- и нейл-арт" parent_id="105" rcat="-1" size="112" type="0" url_name="Body_Art" />
+      <cat id="638" name="Универсальное" parent_id="105" rcat="-1" size="81" type="1" url_name="General" />
+      <cat id="630" name="Фитнес" parent_id="105" rcat="-1" size="322" type="0" url_name="Fitness">
+        <cat id="11596" name="Фитнес-клубы" parent_id="630" rcat="0" size="201" type="10" url_name="Fitness_clubs" />
+        <cat id="11321" name="Диеты" parent_id="630" rcat="9" size="87" type="10" url_name="Diets" />
+      </cat>
+      <cat id="628" name="Парфюмерия" parent_id="105" rcat="-1" size="106" type="0" url_name="Perfumery" />
+      <cat id="10109" name="Женские журналы" parent_id="105" rcat="9" size="116" type="0" url_name="Womens_Life" />
+      <cat id="481" name="Косметика" parent_id="105" rcat="-1" size="217" type="0" url_name="Make_up" />
+      <cat id="480" name="Мода и модельеры" parent_id="105" rcat="-1" size="136" type="0" url_name="Fashion" />
+    </cat>
+    <cat id="103" name="Покупки" parent_id="9" rcat="-1" size="4394" type="0" url_name="Shopping">
+      <cat id="318" name="Универсальное" parent_id="103" rcat="-1" size="183" type="1" url_name="General" />
+      <cat id="473" name="Мебель и интерьер" parent_id="103" rcat="-1" size="1229" type="0" url_name="Furniture">
+        <cat id="11066" name="Предметы искусства" parent_id="473" rcat="16" size="260" type="10" url_name="Art_for_sale" />
+        <cat id="10803" name="Светильники" parent_id="473" rcat="103" size="105" type="0" url_name="Lamps" />
+        <cat id="10765" name="Ковры, текстиль" parent_id="473" rcat="473" size="180" type="0" url_name="Carpets" />
+        <cat id="10764" name="Компьютерная мебель" parent_id="473" rcat="0" size="54" type="0" url_name="Computer_Furniture" />
+        <cat id="10762" name="Кухонная мебель" parent_id="473" rcat="473" size="286" type="0" url_name="Kitchen" />
+        <cat id="10761" name="Мягкая мебель" parent_id="473" rcat="473" size="199" type="0" url_name="Soft" />
+        <cat id="10760" name="Шкафы-купе" parent_id="473" rcat="473" size="142" type="0" url_name="Cupboards" />
+      </cat>
+      <cat id="476" name="Одежда, обувь, аксессуары" parent_id="103" rcat="-1" size="926" type="0" url_name="Clothing_footwear">
+        <cat id="11518" name="Детская одежда и обувь" parent_id="476" rcat="476" size="130" type="0" url_name="Child_Dress" />
+        <cat id="10947" name="Свадебные и вечерние платья" parent_id="476" rcat="476" size="102" type="0" url_name="Wedding_dress" />
+        <cat id="10889" name="Спортивная одежда и обувь" parent_id="476" rcat="476" size="64" type="0" url_name="Sportswear" />
+        <cat id="10491" name="Часы" parent_id="476" rcat="103" size="99" type="0" url_name="Watches" />
+        <cat id="10490" name="Галантерея" parent_id="476" rcat="476" size="112" type="0" url_name="Haberdashery" />
+        <cat id="10489" name="Белье" parent_id="476" rcat="476" size="109" type="0" url_name="Underwear" />
+        <cat id="10488" name="Обувь" parent_id="476" rcat="476" size="167" type="0" url_name="Footwear" />
+        <cat id="10487" name="Одежда" parent_id="476" rcat="476" size="431" type="0" url_name="Clothing" />
+      </cat>
+      <cat id="11363" name="Продукты и напитки" parent_id="103" rcat="95" size="310" type="10" url_name="Foods" />
+      <cat id="10775" name="Скидки, дисконтные системы" parent_id="103" rcat="0" size="41" type="10" url_name="Discount_Systems" />
+      <cat id="10753" name="Кондиционеры и обогреватели" parent_id="103" rcat="107" size="341" type="0" url_name="Conditioners_and_Heaters" />
+      <cat id="10744" name="Защита прав потребителя" parent_id="103" rcat="518" size="37" type="10" url_name="Consumers" />
+      <cat id="10711" name="Универсальные магазины" parent_id="103" rcat="0" size="127" type="0" url_name="Stores" />
+      <cat id="10534" name="Инструменты" parent_id="103" rcat="686" size="136" type="0" url_name="Tools" />
+      <cat id="475" name="Аудио-, видео- и фототехника" parent_id="103" rcat="-1" size="781" type="0" url_name="Consumer_Electronics">
+        <cat id="11090" name="Ремонт техники" parent_id="475" rcat="475" size="129" type="10" url_name="Service" />
+        <cat id="11085" name="Интернет-магазины" parent_id="475" rcat="475" size="395" type="10" url_name="Online_sales" />
+        <cat id="10759" name="Hi-Fi, High End, домашний кинотеатр" parent_id="475" rcat="475" size="151" type="0" url_name="Hi-Fi" />
+        <cat id="10468" name="Автозвук" parent_id="475" rcat="460" size="86" type="10" url_name="Car_audio" />
+        <cat id="10463" name="Фотоаппараты" parent_id="475" rcat="475" size="273" type="0" url_name="Cameras" />
+        <cat id="10462" name="Аудио-  и видеотехника" parent_id="475" rcat="475" size="471" type="0" url_name="Audio-_Video" />
+      </cat>
+      <cat id="474" name="Бытовая техника" parent_id="103" rcat="-1" size="488" type="0" url_name="Domestic_Appliances">
+        <cat id="11092" name="Продажа бытовой техники" parent_id="474" rcat="474" size="108" type="0" url_name="Shops" />
+        <cat id="11091" name="Ремонт техники" parent_id="474" rcat="474" size="51" type="0" url_name="Service" />
+        <cat id="11056" name="Интернет-магазины бытовой техники" parent_id="474" rcat="474" size="252" type="0" url_name="Online_sales" />
+        <cat id="11055" name="Производители и марки бытовой техники" parent_id="474" rcat="474" size="63" type="0" url_name="Producers" />
+        <cat id="10984" name="Оптовый рынок бытовой техники" parent_id="474" rcat="106" size="180" type="10" url_name="Wholesale" />
+      </cat>
+      <cat id="449" name="Хозтовары, бытовая химия" parent_id="103" rcat="-1" size="94" type="0" url_name="Cleaning_Agents" />
+      <cat id="317" name="Прочее" parent_id="103" rcat="-1" size="98" type="2" url_name="Other" />
+      <cat id="104" name="Бытовые услуги" parent_id="103" rcat="-1" size="535" type="0" url_name="Services">
+        <cat id="2888" name="Уборка и чистка" parent_id="104" rcat="-1" size="80" type="0" url_name="Cleaning" />
+        <cat id="2886" name="Универсальное" parent_id="104" rcat="-1" size="12" type="1" url_name="General" />
+        <cat id="2885" name="Прочее" parent_id="104" rcat="-1" size="31" type="2" url_name="Other" />
+        <cat id="10247" name="Ремонт техники" parent_id="104" rcat="103" size="86" type="0" url_name="Appliance_Repair" />
+        <cat id="4077" name="Почта" parent_id="104" rcat="-1" size="14" type="0" url_name="Postal_service" />
+        <cat id="11471" name="Ателье" parent_id="104" rcat="476" size="95" type="0" url_name="Atelers" />
+        <cat id="4078" name="Химчистки и прачечные" parent_id="104" rcat="-1" size="28" type="0" url_name="Laundries" />
+        <cat id="4076" name="Дезинфекция" parent_id="104" rcat="-1" size="31" type="0" url_name="Disinfection" />
+        <cat id="4075" name="Ритуальные услуги" parent_id="104" rcat="-1" size="38" type="0" url_name="Funeral_service" />
+        <cat id="3710" name="Подбор домашнего персонала" parent_id="104" rcat="-1" size="74" type="0" url_name="Domestic_staff" />
+      </cat>
+    </cat>
+    <cat id="97" name="Домашние животные" parent_id="9" rcat="-1" size="1168" type="0" url_name="Pets">
+      <cat id="477" name="Прочее" parent_id="97" rcat="-1" size="53" type="2" url_name="Other" />
+      <cat id="478" name="Универсальное" parent_id="97" rcat="-1" size="129" type="1" url_name="General" />
+      <cat id="11082" name="Занимательная зоология" parent_id="97" rcat="199" size="72" type="10" url_name="Entertaining_zoology" />
+      <cat id="634" name="Аквариум" parent_id="97" rcat="-1" size="109" type="0" url_name="Aquarium" />
+      <cat id="633" name="Грызуны, рептилии" parent_id="97" rcat="-1" size="76" type="0" url_name="Reptiles" />
+      <cat id="632" name="Птицы" parent_id="97" rcat="-1" size="35" type="0" url_name="Birds" />
+      <cat id="447" name="Ветеринария" parent_id="97" rcat="-1" size="120" type="0" url_name="Veterinary" />
+      <cat id="444" name="Собаки" parent_id="97" rcat="-1" size="498" type="0" url_name="Dogs">
+        <cat id="10653" name="Служебные" parent_id="444" rcat="444" size="98" type="0" url_name="Patrol" />
+        <cat id="10652" name="Овчарки и пастушьи" parent_id="444" rcat="444" size="61" type="0" url_name="Sheep_dogs" />
+        <cat id="10651" name="Охотничьи" parent_id="444" rcat="444" size="122" type="0" url_name="Hounds" />
+        <cat id="10650" name="Декоративные" parent_id="444" rcat="444" size="89" type="0" url_name="Lap-dogs" />
+      </cat>
+      <cat id="443" name="Кошки" parent_id="97" rcat="-1" size="186" type="0" url_name="Cats" />
+    </cat>
+    <cat id="96" name="Здоровье" parent_id="9" rcat="-1" size="2502" type="0" url_name="Health">
+      <cat id="10120" name="Интернет-аптеки" parent_id="96" rcat="96" size="129" type="0" url_name="Drugstores" />
+      <cat id="743" name="Здоровый образ жизни" parent_id="96" rcat="-1" size="137" type="0" url_name="Diets" />
+      <cat id="717" name="Народная и нетрадиционная медицина" parent_id="96" rcat="-1" size="325" type="0" url_name="Alternative">
+        <cat id="10665" name="Прочее" parent_id="717" rcat="717" size="23" type="0" url_name="Other" />
+        <cat id="10664" name="Восточная медицина" parent_id="717" rcat="717" size="35" type="0" url_name="Oriental_Medicine" />
+        <cat id="10662" name="Народные средства" parent_id="717" rcat="717" size="42" type="0" url_name="Folk_Medicine" />
+        <cat id="10661" name="Гомеопатия" parent_id="717" rcat="717" size="35" type="0" url_name="Homoeopathy" />
+        <cat id="10660" name="Траволечение" parent_id="717" rcat="717" size="54" type="0" url_name="Herbs" />
+        <cat id="10659" name="БАДы" parent_id="717" rcat="717" size="112" type="0" url_name="BAA" />
+      </cat>
+      <cat id="10246" name="Медицинское страхование" parent_id="96" rcat="341" size="21" type="0" url_name="Insurance" />
+      <cat id="635" name="Специализированная медпомощь" parent_id="96" rcat="-1" size="1361" type="0" url_name="Specialized_Care">
+        <cat id="10391" name="Офтальмология" parent_id="635" rcat="635" size="61" type="0" url_name="Ophthalmology" />
+        <cat id="10392" name="Здоровье ребенка" parent_id="635" rcat="96" size="204" type="0" url_name="Children" />
+        <cat id="10666" name="Неотложная помощь" parent_id="635" rcat="96" size="30" type="0" url_name="Emergency" />
+        <cat id="10656" name="Диабет" parent_id="635" rcat="635" size="37" type="0" url_name="Diabetes" />
+        <cat id="10615" name="Болезни сердца" parent_id="635" rcat="635" size="39" type="0" url_name="Cardiology" />
+        <cat id="10426" name="Кожно-венерические заболевания" parent_id="635" rcat="635" size="62" type="0" url_name="Venereal" />
+        <cat id="10425" name="Аллергология и иммунология" parent_id="635" rcat="635" size="33" type="0" url_name="Allergology" />
+        <cat id="10390" name="Онкология" parent_id="635" rcat="635" size="41" type="0" url_name="Oncology" />
+        <cat id="10389" name="Наркология" parent_id="635" rcat="635" size="45" type="0" url_name="Narcology" />
+        <cat id="10388" name="Мужское здоровье" parent_id="635" rcat="635" size="102" type="0" url_name="Male" />
+        <cat id="10387" name="Здоровье женщины" parent_id="635" rcat="635" size="156" type="0" url_name="Female" />
+        <cat id="10386" name="Стоматология" parent_id="635" rcat="635" size="344" type="0" url_name="Stomatology" />
+      </cat>
+      <cat id="10119" name="Интернет-консультации специалистов" parent_id="96" rcat="96" size="38" type="0" url_name="Online_Advise" />
+      <cat id="446" name="Универсальное" parent_id="96" rcat="-1" size="169" type="1" url_name="General" />
+      <cat id="445" name="Прочее" parent_id="96" rcat="-1" size="101" type="2" url_name="Other" />
+      <cat id="442" name="Лекарства" parent_id="96" rcat="-1" size="333" type="0" url_name="Medication">
+        <cat id="10983" name="Фармацевтический рынок" parent_id="442" rcat="79" size="258" type="10" url_name="Wholesale" />
+        <cat id="10474" name="Очки и линзы" parent_id="442" rcat="442" size="67" type="0" url_name="Spectacles" />
+      </cat>
+      <cat id="440" name="Лечебные учреждения общего профиля" parent_id="96" rcat="-1" size="201" type="0" url_name="Hospitals" />
+    </cat>
+    <cat id="95" name="Кулинария" parent_id="9" rcat="-1" size="795" type="0" url_name="Cooking">
+      <cat id="4057" name="Суши и пицца" parent_id="95" rcat="-1" size="79" type="0" url_name="Sushi_and_pizza" />
+      <cat id="10879" name="Доставка еды" parent_id="95" rcat="95" size="180" type="0" url_name="Delivery" />
+      <cat id="10856" name="Диеты" parent_id="95" rcat="9" size="87" type="0" url_name="Diets" />
+      <cat id="4055" name="Продуктовые магазины" parent_id="95" rcat="-1" size="54" type="0" url_name="Grocery_stores" />
+      <cat id="663" name="Табак" parent_id="95" rcat="-1" size="59" type="0" url_name="Tobacco" />
+      <cat id="437" name="Рецепты" parent_id="95" rcat="-1" size="243" type="0" url_name="Recipes">
+        <cat id="10870" name="Постный стол" parent_id="437" rcat="437" size="16" type="0" url_name="Fasting" />
+        <cat id="10857" name="Коктейли и напитки" parent_id="437" rcat="95" size="25" type="0" url_name="Drinks" />
+        <cat id="10855" name="Выпечка, торты" parent_id="437" rcat="437" size="22" type="0" url_name="Baking" />
+        <cat id="10854" name="Рецепты народов мира" parent_id="437" rcat="437" size="67" type="0" url_name="Ethnic" />
+      </cat>
+      <cat id="436" name="Алкогольные напитки" parent_id="95" rcat="-1" size="102" type="0" url_name="Alcohol" />
+      <cat id="435" name="Пиво" parent_id="95" rcat="-1" size="33" type="0" url_name="Beer" />
+      <cat id="434" name="Безалкогольные напитки" parent_id="95" rcat="-1" size="80" type="0" url_name="Soft_drinks" />
+      <cat id="433" name="Продукты" parent_id="95" rcat="-1" size="69" type="0" url_name="Food" />
+      <cat id="414" name="Универсальное" parent_id="95" rcat="-1" size="13" type="1" url_name="General" />
+      <cat id="413" name="Прочее" parent_id="95" rcat="-1" size="29" type="2" url_name="Other" />
+    </cat>
+  </cat>
+  <cat id="8" name="Развлечения" parent_id="0" rcat="-1" size="3944" type="0" url_name="Entertainment">
+    <cat id="12" name="Непознанное" parent_id="8" rcat="-1" size="418" type="0" url_name="Occultism">
+      <cat id="2334" name="Универсальное" parent_id="12" rcat="-1" size="49" type="1" url_name="General" />
+      <cat id="2333" name="Прочее" parent_id="12" rcat="-1" size="93" type="2" url_name="Other" />
+      <cat id="152" name="НЛО" parent_id="12" rcat="-1" size="19" type="0" url_name="UFO" />
+      <cat id="151" name="Эзотерика и магия" parent_id="12" rcat="-1" size="109" type="0" url_name="Magic" />
+      <cat id="123" name="Гадание и сонники" parent_id="12" rcat="-1" size="69" type="0" url_name="Divination">
+        <cat id="10710" name="Сонник" parent_id="123" rcat="123" size="35" type="0" url_name="Interpretations" />
+      </cat>
+      <cat id="122" name="Астрология" parent_id="12" rcat="-1" size="108" type="0" url_name="Astrology">
+        <cat id="10709" name="Гороскопы" parent_id="122" rcat="122" size="77" type="0" url_name="Horoscopes" />
+      </cat>
+    </cat>
+    <cat id="146" name="Юмор" parent_id="8" rcat="-1" size="548" type="0" url_name="Humor">
+      <cat id="3405" name="Flash мультфильмы" parent_id="146" rcat="-1" size="24" type="0" url_name="Flash_animation" />
+      <cat id="2142" name="Универсальное" parent_id="146" rcat="-1" size="128" type="1" url_name="General" />
+      <cat id="2141" name="Прочее" parent_id="146" rcat="-1" size="41" type="2" url_name="Other" />
+      <cat id="432" name="Рассказы и пародии" parent_id="146" rcat="-1" size="68" type="0" url_name="Stories" />
+      <cat id="431" name="Анекдоты" parent_id="146" rcat="-1" size="66" type="0" url_name="Jokes" />
+      <cat id="428" name="Шутки и приколы" parent_id="146" rcat="-1" size="82" type="0" url_name="Puns" />
+      <cat id="427" name="Картинки и комиксы" parent_id="146" rcat="-1" size="77" type="0" url_name="Caricatures" />
+      <cat id="426" name="Студенческий юмор и КВН" parent_id="146" rcat="-1" size="34" type="0" url_name="Student_Jokes" />
+      <cat id="3555" name="Афоризмы и изречения" parent_id="146" rcat="-1" size="39" type="0" url_name="Aphorismes" />
+      <cat id="3532" name="Флэш моб" parent_id="146" rcat="-1" size="12" type="0" url_name="Flashmob" />
+    </cat>
+    <cat id="1950" name="Универсальное" parent_id="8" rcat="-1" size="310" type="1" url_name="General" />
+    <cat id="1949" name="Прочее" parent_id="8" rcat="-1" size="105" type="2" url_name="Other" />
+    <cat id="11374" name="Развлекательные журналы" parent_id="8" rcat="118" size="45" type="0" url_name="Entertainment" />
+    <cat id="11034" name="Психологические тесты" parent_id="8" rcat="600" size="31" type="0" url_name="Psychological_tests" />
+    <cat id="10641" name="Чаты" parent_id="8" rcat="0" size="221" type="0" url_name="Chats" />
+    <cat id="421" name="Знакомства" parent_id="8" rcat="-1" size="208" type="0" url_name="Introduction_Agencies">
+      <cat id="11341" name="Как познакомиться" parent_id="421" rcat="8" size="25" type="10" url_name="Pickup" />
+      <cat id="10535" name="Брачные агентства" parent_id="421" rcat="3009" size="24" type="10" url_name="Dating_Agencies" />
+    </cat>
+    <cat id="91" name="Эротика" parent_id="8" rcat="-1" size="356" type="0" url_name="Erotica">
+      <cat id="423" name="Эротические галереи" parent_id="91" rcat="-1" size="54" type="0" url_name="Galleries" />
+      <cat id="2110" name="Универсальное" parent_id="91" rcat="-1" size="19" type="1" url_name="General" />
+      <cat id="2109" name="Прочее" parent_id="91" rcat="-1" size="57" type="2" url_name="Other" />
+      <cat id="422" name="Эротика и секс" parent_id="91" rcat="-1" size="186" type="0" url_name="Adult" />
+      <cat id="3434" name="Любовь и романтика" parent_id="91" rcat="-1" size="43" type="0" url_name="Romance" />
+    </cat>
+    <cat id="87" name="Игры" parent_id="8" rcat="-1" size="1918" type="0" url_name="Games">
+      <cat id="1981" name="Прочее" parent_id="87" rcat="-1" size="180" type="2" url_name="Other" />
+      <cat id="1982" name="Универсальное" parent_id="87" rcat="-1" size="260" type="1" url_name="General" />
+      <cat id="4070" name="Квесты" parent_id="87" rcat="-1" size="41" type="0" url_name="Quests" />
+      <cat id="4060" name="Флеш-игры" parent_id="87" rcat="-1" size="594" type="0" url_name="Flashgames">
+        <cat id="11650" name="Игры по мультфильмам" parent_id="4060" rcat="87" size="31" type="0" url_name="Cartoon_games" />
+        <cat id="11649" name="Игры для девочек" parent_id="4060" rcat="87" size="88" type="0" url_name="Games_for_girls" />
+        <cat id="11645" name="Бродилки" parent_id="4060" rcat="87" size="11" type="0" url_name="Wandering" />
+        <cat id="11643" name="Азартные" parent_id="4060" rcat="393" size="31" type="0" url_name="Gambles" />
+        <cat id="11642" name="Ролевые и стратегии" parent_id="4060" rcat="391" size="37" type="0" url_name="RPG" />
+        <cat id="11641" name="Квесты" parent_id="4060" rcat="87" size="25" type="0" url_name="Quest_game" />
+        <cat id="11640" name="Спорт" parent_id="4060" rcat="87" size="40" type="0" url_name="Sport" />
+        <cat id="11638" name="Гонки" parent_id="4060" rcat="87" size="16" type="0" url_name="Racing" />
+        <cat id="11637" name="Драки" parent_id="4060" rcat="87" size="35" type="0" url_name="Fighting" />
+        <cat id="11635" name="Стрелялки" parent_id="4060" rcat="87" size="56" type="0" url_name="Shooters" />
+        <cat id="11634" name="Аркады" parent_id="4060" rcat="87" size="135" type="0" url_name="Arcades" />
+        <cat id="11633" name="Логика" parent_id="4060" rcat="87" size="122" type="0" url_name="Logic" />
+        <cat id="11655" name="Прочее" parent_id="4060" rcat="87" size="30" type="0" url_name="Other" />
+      </cat>
+      <cat id="745" name="Симуляторы" parent_id="87" rcat="-1" size="85" type="0" url_name="Simulators">
+        <cat id="10932" name="Коды, советы" parent_id="745" rcat="745" size="2" type="10" url_name="Cheats" />
+        <cat id="10929" name="Файлы к играм" parent_id="745" rcat="745" size="9" type="10" url_name="Downloads" />
+        <cat id="10884" name="Автосимуляторы" parent_id="745" rcat="745" size="18" type="0" url_name="Racing_Simulators" />
+        <cat id="10883" name="Спортивные симуляторы" parent_id="745" rcat="745" size="33" type="0" url_name="Sport_Simulators" />
+        <cat id="10882" name="Авиасимуляторы" parent_id="745" rcat="745" size="12" type="0" url_name="Flight_Simulators" />
+      </cat>
+      <cat id="10276" name="Коды, советы" parent_id="87" rcat="87" size="43" type="0" url_name="Cheats_and_Hints_and_Codes" />
+      <cat id="10265" name="Энциклопедии игр" parent_id="87" rcat="1982" size="45" type="0" url_name="Encyclopedia" />
+      <cat id="10238" name="Файлы к играм" parent_id="87" rcat="87" size="95" type="0" url_name="Downloads" />
+      <cat id="10226" name="Компьютерные клубы" parent_id="87" rcat="87" size="10" type="0" url_name="Computer_Clubs" />
+      <cat id="393" name="Азартные игры" parent_id="87" rcat="-1" size="169" type="0" url_name="Gambles">
+        <cat id="10886" name="Преферанс" parent_id="393" rcat="393" size="11" type="0" url_name="Preference" />
+        <cat id="10931" name="Файлы к играм" parent_id="393" rcat="393" size="7" type="10" url_name="Downloads" />
+        <cat id="10888" name="Интернет казино" parent_id="393" rcat="393" size="37" type="0" url_name="Online_Casino" />
+        <cat id="10887" name="Покер" parent_id="393" rcat="393" size="61" type="0" url_name="Poker" />
+        <cat id="10885" name="Бридж" parent_id="393" rcat="393" size="17" type="0" url_name="Bridge" />
+      </cat>
+      <cat id="392" name="Логические игры" parent_id="87" rcat="-1" size="260" type="0" url_name="Puzzles">
+        <cat id="10255" name="Кроссворды" parent_id="392" rcat="392" size="23" type="0" url_name="Crosswords" />
+        <cat id="11371" name="Головоломки" parent_id="392" rcat="392" size="85" type="0" url_name="Puzzle" />
+        <cat id="11167" name="Преферанс" parent_id="392" rcat="393" size="11" type="10" url_name="Preference" />
+        <cat id="11166" name="Шахматы он-лайн" parent_id="392" rcat="418" size="16" type="10" url_name="Chess_online" />
+        <cat id="10930" name="Файлы к играм" parent_id="392" rcat="392" size="6" type="10" url_name="Downloads" />
+      </cat>
+      <cat id="391" name="Ролевые игры и стратегии" parent_id="87" rcat="-1" size="466" type="0" url_name="Strategies">
+        <cat id="11336" name="Онлайновые RPG" parent_id="391" rcat="391" size="182" type="0" url_name="MMORPG" />
+        <cat id="11162" name="Историческая реконструкция" parent_id="391" rcat="454" size="29" type="0" url_name="Historical_reconstruction" />
+        <cat id="10928" name="Файлы к играм" parent_id="391" rcat="391" size="24" type="10" url_name="Downloads" />
+        <cat id="10927" name="Коды, советы" parent_id="391" rcat="391" size="14" type="10" url_name="Cheats" />
+        <cat id="10923" name="Игровые кланы" parent_id="391" rcat="391" size="3" type="10" url_name="Clans" />
+        <cat id="10903" name="Настольные ролевые игры" parent_id="391" rcat="391" size="45" type="0" url_name="Tabletop_Roleplaying" />
+        <cat id="10902" name="Полевые игры" parent_id="391" rcat="87" size="29" type="0" url_name="Field" />
+        <cat id="10874" name="Ultima Online" parent_id="391" rcat="391" size="20" type="0" url_name="Ultima" />
+        <cat id="10873" name="Герои меча и магии" parent_id="391" rcat="391" size="6" type="0" url_name="Heroes" />
+        <cat id="10872" name="Diablo" parent_id="391" rcat="391" size="10" type="0" url_name="Diablo" />
+        <cat id="10871" name="Warcraft и Starcraft" parent_id="391" rcat="391" size="27" type="0" url_name="Warcraft" />
+        <cat id="10229" name="MUD, pbem и другие" parent_id="391" rcat="391" size="39" type="0" url_name="MUD" />
+      </cat>
+      <cat id="389" name="Аркады" parent_id="87" rcat="-1" size="363" type="0" url_name="Arcades">
+        <cat id="10926" name="Коды, советы" parent_id="389" rcat="389" size="0" type="10" url_name="Cheats" />
+        <cat id="10925" name="Файлы к играм" parent_id="389" rcat="389" size="1" type="10" url_name="Downloads" />
+      </cat>
+      <cat id="388" name="3D-шутеры" parent_id="87" rcat="-1" size="87" type="0" url_name="3D-shooters">
+        <cat id="10922" name="Коды, советы" parent_id="388" rcat="388" size="4" type="10" url_name="Cheats" />
+        <cat id="10921" name="Файлы к играм" parent_id="388" rcat="388" size="13" type="10" url_name="Downloads" />
+        <cat id="10893" name="Игровые серверы" parent_id="388" rcat="388" size="18" type="0" url_name="Gameserver" />
+        <cat id="10227" name="Игровые кланы" parent_id="388" rcat="388" size="8" type="0" url_name="Gamers_Clans" />
+      </cat>
+      <cat id="3335" name="Приставочные игры" parent_id="87" rcat="-1" size="49" type="0" url_name="Video_Games" />
+    </cat>
+  </cat>
+  <cat id="6" name="Бизнес" parent_id="0" rcat="-1" size="31664" type="0" url_name="Business">
+    <cat id="1501" name="Прочее" parent_id="6" rcat="-1" size="111" type="2" url_name="Other" />
+    <cat id="1502" name="Универсальное" parent_id="6" rcat="-1" size="476" type="1" url_name="General" />
+    <cat id="696" name="Все для офиса" parent_id="6" rcat="-1" size="1696" type="0" url_name="Office">
+      <cat id="3173" name="Обеды и вода в офис" parent_id="696" rcat="-1" size="229" type="0" url_name="Delivery" />
+      <cat id="2970" name="Уборка офиса" parent_id="696" rcat="-1" size="104" type="0" url_name="Office_Cleaning" />
+      <cat id="2685" name="Прочее" parent_id="696" rcat="-1" size="31" type="2" url_name="Other" />
+      <cat id="2654" name="Универсальное" parent_id="696" rcat="-1" size="15" type="1" url_name="General" />
+      <cat id="11429" name="Курьерские службы" parent_id="696" rcat="300" size="57" type="0" url_name="Messenger_service" />
+      <cat id="11046" name="Сейфы" parent_id="696" rcat="0" size="122" type="0" url_name="Safes" />
+      <cat id="10847" name="Автоматизация делопроизводства" parent_id="696" rcat="3160" size="61" type="10" url_name="Office_Automation" />
+      <cat id="110" name="Офисная мебель" parent_id="696" rcat="-1" size="395" type="0" url_name="Office_Furniture" />
+      <cat id="109" name="Канцтовары" parent_id="696" rcat="-1" size="147" type="0" url_name="Stationary" />
+      <cat id="108" name="Оргтехника" parent_id="696" rcat="-1" size="740" type="0" url_name="Office_Equipment">
+        <cat id="10900" name="Шредеры, ламинаторы" parent_id="108" rcat="108" size="35" type="0" url_name="Shredder" />
+        <cat id="10899" name="Расходные материалы" parent_id="108" rcat="0" size="323" type="0" url_name="Consumables" />
+        <cat id="10898" name="Презентационное оборудование" parent_id="108" rcat="108" size="84" type="0" url_name="Projectors" />
+        <cat id="10896" name="Копировальная и оргтехника" parent_id="108" rcat="108" size="206" type="0" url_name="Office_Equipment" />
+        <cat id="10876" name="Мини АТС, телефоны, факсы" parent_id="108" rcat="0" size="191" type="0" url_name="Telephones" />
+      </cat>
+    </cat>
+    <cat id="333" name="Строительство" parent_id="6" rcat="-1" size="7974" type="0" url_name="Construction">
+      <cat id="3170" name="Ремонт и отделка" parent_id="333" rcat="-1" size="491" type="0" url_name="Renovation" />
+      <cat id="3169" name="Архитектурное проектирование" parent_id="333" rcat="-1" size="270" type="0" url_name="Design" />
+      <cat id="3168" name="Жилищное строительство" parent_id="333" rcat="-1" size="206" type="0" url_name="Housing" />
+      <cat id="3166" name="Универсальное" parent_id="333" rcat="-1" size="310" type="1" url_name="General" />
+      <cat id="3165" name="Прочее" parent_id="333" rcat="-1" size="522" type="2" url_name="Other" />
+      <cat id="3164" name="Дачи и коттеджи" parent_id="333" rcat="-1" size="386" type="0" url_name="Cottages" />
+      <cat id="3135" name="Инженерные системы" parent_id="333" rcat="-1" size="2015" type="0" url_name="Infrastructure">
+        <cat id="3141" name="Коммунальное теплоснабжение" parent_id="3135" rcat="-1" size="106" type="0" url_name="Municipal__Heating" />
+        <cat id="10824" name="Водоснабжение и канализация" parent_id="3135" rcat="0" size="614" type="0" url_name="Sewerage" />
+        <cat id="10813" name="Охранно-пожарные системы" parent_id="3135" rcat="365" size="226" type="0" url_name="Fire-prevention" />
+        <cat id="10811" name="Электротехника" parent_id="3135" rcat="617" size="357" type="0" url_name="Electrical_Engineering" />
+        <cat id="107" name="Климатическое оборудование" parent_id="3135" rcat="-1" size="657" type="0" url_name="Climatic">
+          <cat id="10819" name="Кондиционирование, вентиляция" parent_id="107" rcat="107" size="395" type="0" url_name="Conditioning,_Ventilation" />
+          <cat id="10818" name="Системы отопления" parent_id="107" rcat="107" size="334" type="0" url_name="Heating_Systems" />
+        </cat>
+      </cat>
+      <cat id="686" name="Строительное оборудование" parent_id="333" rcat="-1" size="689" type="0" url_name="Building_Equipment">
+        <cat id="10805" name="Инструмент" parent_id="686" rcat="686" size="242" type="0" url_name="Tooling" />
+        <cat id="10804" name="Cтроительная техника" parent_id="686" rcat="686" size="323" type="0" url_name="Building_Technology" />
+      </cat>
+      <cat id="691" name="Стройматериалы" parent_id="333" rcat="-1" size="3461" type="0" url_name="Building_Supplies">
+        <cat id="2963" name="Лесо- и пиломатериалы" parent_id="691" rcat="-1" size="164" type="0" url_name="Timber" />
+        <cat id="11142" name="Потолки" parent_id="691" rcat="691" size="155" type="0" url_name="Ceilings" />
+        <cat id="10781" name="Панели, фасады" parent_id="691" rcat="691" size="478" type="0" url_name="Fronts" />
+        <cat id="10780" name="Кирпич, камень, песок" parent_id="691" rcat="691" size="319" type="0" url_name="Brick" />
+        <cat id="10779" name="Напольные покрытия, паркет" parent_id="691" rcat="691" size="379" type="0" url_name="Floors" />
+        <cat id="10778" name="Плитка, облицовка" parent_id="691" rcat="691" size="375" type="0" url_name="Tiles" />
+        <cat id="10774" name="Бетон, смеси" parent_id="691" rcat="691" size="408" type="0" url_name="Concrete" />
+        <cat id="10773" name="Кровля" parent_id="691" rcat="691" size="297" type="0" url_name="Roofes" />
+        <cat id="10772" name="Двери" parent_id="691" rcat="691" size="630" type="0" url_name="Doors" />
+        <cat id="10771" name="Окна, жалюзи" parent_id="691" rcat="691" size="658" type="0" url_name="Windows" />
+        <cat id="10769" name="Лаки и краски" parent_id="691" rcat="691" size="290" type="0" url_name="Dyes" />
+        <cat id="355" name="Сантехника" parent_id="691" rcat="-1" size="241" type="0" url_name="Sanitary_Engineering" />
+      </cat>
+      <cat id="10891" name="Дизайн интерьера" parent_id="333" rcat="333" size="499" type="10" url_name="Interior" />
+      <cat id="3474" name="Быстровозводимые здания" parent_id="333" rcat="-1" size="177" type="0" url_name="Bystrovozvodimye" />
+    </cat>
+    <cat id="73" name="Реклама" parent_id="6" rcat="-1" size="2391" type="0" url_name="Marketing_and_Advertising">
+      <cat id="11347" name="Статьи о рекламе и маркетинге" parent_id="73" rcat="73" size="130" type="0" url_name="Articles" />
+      <cat id="1565" name="Прочее" parent_id="73" rcat="-1" size="151" type="2" url_name="Other" />
+      <cat id="1566" name="Универсальное" parent_id="73" rcat="-1" size="89" type="1" url_name="General" />
+      <cat id="10938" name="Оборудование для презентаций" parent_id="73" rcat="108" size="84" type="10" url_name="Projectors" />
+      <cat id="10627" name="Реклама в интернете" parent_id="73" rcat="0" size="578" type="0" url_name="Internet" />
+      <cat id="703" name="Организация PR" parent_id="73" rcat="-1" size="95" type="0" url_name="PR" />
+      <cat id="3719" name="Выставочные стенды" parent_id="73" rcat="-1" size="98" type="0" url_name="Exhibition_Stand" />
+      <cat id="305" name="Организация выставок" parent_id="73" rcat="-1" size="169" type="0" url_name="Fairs" />
+      <cat id="304" name="Рекламные услуги" parent_id="73" rcat="-1" size="1389" type="0" url_name="Advertizing">
+        <cat id="11033" name="Модельные агентства" parent_id="304" rcat="73" size="39" type="0" url_name="Models" />
+        <cat id="10628" name="Печатная реклама" parent_id="304" rcat="0" size="342" type="0" url_name="Posters" />
+        <cat id="10625" name="Дизайн, разработка стиля" parent_id="304" rcat="304" size="389" type="0" url_name="Corporate_Identity" />
+        <cat id="10624" name="Наружная реклама" parent_id="304" rcat="73" size="419" type="0" url_name="Street" />
+        <cat id="10622" name="Реклама в СМИ" parent_id="304" rcat="304" size="166" type="0" url_name="Media" />
+        <cat id="10621" name="Рекламные сувениры" parent_id="304" rcat="73" size="246" type="0" url_name="Souvenirs" />
+      </cat>
+      <cat id="303" name="Услуги маркетинга" parent_id="73" rcat="-1" size="236" type="0" url_name="Marketing" />
+    </cat>
+    <cat id="72" name="Деловые услуги" parent_id="6" rcat="-1" size="4616" type="0" url_name="Corporate_Services">
+      <cat id="3160" name="Автоматизация бизнеса" parent_id="72" rcat="-1" size="855" type="0" url_name="Automation">
+        <cat id="10838" name="Автоматизация торговли" parent_id="3160" rcat="3160" size="96" type="0" url_name="Sales_Automation" />
+        <cat id="10837" name="Автоматизация таможенной деятельности" parent_id="3160" rcat="6" size="12" type="0" url_name="Customs_Automation" />
+        <cat id="10836" name="Автоматизация торгов" parent_id="3160" rcat="3160" size="35" type="0" url_name="Trading_Automation" />
+        <cat id="10835" name="Автоматизация делопроизводства" parent_id="3160" rcat="3160" size="62" type="0" url_name="Office_Automation" />
+        <cat id="10833" name="Автоматизация бухучета" parent_id="3160" rcat="3160" size="262" type="0" url_name="Accounting_Automation" />
+        <cat id="10832" name="Автоматизация банков" parent_id="3160" rcat="6" size="34" type="0" url_name="Banking_Automation" />
+        <cat id="10830" name="Системная интеграция" parent_id="3160" rcat="47" size="72" type="0" url_name="System_Integration" />
+        <cat id="10829" name="Автоматизация управления" parent_id="3160" rcat="3160" size="189" type="0" url_name="Management_Automation" />
+        <cat id="10827" name="Справочно-правовые системы" parent_id="3160" rcat="3160" size="61" type="0" url_name="Law_Assistance_Systems" />
+      </cat>
+      <cat id="3143" name="Иммиграционные услуги" parent_id="72" rcat="-1" size="101" type="0" url_name="Immigration">
+        <cat id="10823" name="Работа за рубежом" parent_id="3143" rcat="112" size="58" type="10" url_name="Foreign_Employment" />
+      </cat>
+      <cat id="298" name="Агентства деловой информации" parent_id="72" rcat="-1" size="107" type="0" url_name="Inquiry" />
+      <cat id="699" name="Организация бизнес-контактов" parent_id="72" rcat="-1" size="63" type="0" url_name="Business_Contacts" />
+      <cat id="694" name="Организация электронной торговли" parent_id="72" rcat="-1" size="38" type="0" url_name="On-line_Sales_Organization" />
+      <cat id="3707" name="Франчайзинг, готовый бизнес" parent_id="72" rcat="-1" size="63" type="0" url_name="Franchise" />
+      <cat id="1534" name="Универсальное" parent_id="72" rcat="-1" size="19" type="1" url_name="General" />
+      <cat id="300" name="Экспедирование и перевозка грузов" parent_id="72" rcat="-1" size="718" type="0" url_name="Forwarding" />
+      <cat id="299" name="Таможенные услуги" parent_id="72" rcat="-1" size="97" type="0" url_name="Customs" />
+      <cat id="296" name="Переводы" parent_id="72" rcat="-1" size="193" type="0" url_name="Translation" />
+      <cat id="295" name="Полиграфические услуги" parent_id="72" rcat="-1" size="467" type="0" url_name="Printing">
+        <cat id="11382" name="Изготовление пластиковых карт" parent_id="295" rcat="295" size="37" type="0" url_name="Cards" />
+      </cat>
+      <cat id="294" name="Охранная деятельность" parent_id="72" rcat="-1" size="158" type="0" url_name="Security">
+        <cat id="10485" name="Охранное оборудование" parent_id="294" rcat="365" size="563" type="10" url_name="Security_Equipment" />
+      </cat>
+      <cat id="292" name="Юридические услуги" parent_id="72" rcat="-1" size="903" type="0" url_name="Legal_Advice">
+        <cat id="10291" name="Лицензирование" parent_id="292" rcat="292" size="146" type="0" url_name="Licensing" />
+        <cat id="10294" name="Авторское право" parent_id="292" rcat="292" size="68" type="0" url_name="Copyright" />
+        <cat id="10881" name="Виртуальная юридическая консультация" parent_id="292" rcat="292" size="68" type="0" url_name="Online_Legal_Advise" />
+        <cat id="10418" name="Типовые формы документов" parent_id="292" rcat="0" size="33" type="0" url_name="Standard_Forms" />
+        <cat id="10299" name="Справочно-правовые системы" parent_id="292" rcat="3160" size="61" type="10" url_name="Handbooks" />
+        <cat id="10295" name="Другие юридические услуги" parent_id="292" rcat="292" size="247" type="0" url_name="Other" />
+        <cat id="10292" name="Адвокаты, нотариусы" parent_id="292" rcat="292" size="182" type="0" url_name="Lawers" />
+        <cat id="10290" name="Регистрация фирм" parent_id="292" rcat="292" size="315" type="0" url_name="Registration" />
+      </cat>
+      <cat id="1533" name="Прочее" parent_id="72" rcat="-1" size="151" type="2" url_name="Other" />
+      <cat id="111" name="Менеджмент и консалтинг" parent_id="72" rcat="-1" size="923" type="0" url_name="Managment">
+        <cat id="10993" name="Бизнес-тренинги" parent_id="111" rcat="0" size="301" type="0" url_name="Training" />
+        <cat id="10992" name="Управление проектами" parent_id="111" rcat="72" size="85" type="0" url_name="Projects" />
+        <cat id="10991" name="Консалтинг" parent_id="111" rcat="111" size="281" type="0" url_name="Consulting" />
+        <cat id="10972" name="Методы управления" parent_id="111" rcat="111" size="103" type="0" url_name="Methodology" />
+        <cat id="10968" name="Управление качеством" parent_id="111" rcat="111" size="36" type="0" url_name="Quality" />
+        <cat id="10967" name="Управление персоналом" parent_id="111" rcat="111" size="207" type="0" url_name="Staff" />
+        <cat id="10966" name="Оценочная деятельность" parent_id="111" rcat="111" size="169" type="0" url_name="Appraisal" />
+        <cat id="10965" name="Антикризисное управление" parent_id="111" rcat="6" size="19" type="0" url_name="Antirecessionary" />
+        <cat id="10964" name="Финансовый менеджмент" parent_id="111" rcat="111" size="59" type="0" url_name="Financial" />
+      </cat>
+    </cat>
+    <cat id="69" name="Финансы" parent_id="6" rcat="-1" size="2731" type="0" url_name="Finances">
+      <cat id="291" name="Аудит, бухучет" parent_id="69" rcat="-1" size="452" type="0" url_name="Audit">
+        <cat id="11069" name="Налоги" parent_id="291" rcat="6" size="99" type="10" url_name="Taxes" />
+        <cat id="10971" name="В помощь бухгалтеру" parent_id="291" rcat="291" size="105" type="0" url_name="Accounting" />
+        <cat id="10955" name="Аудиторские фирмы" parent_id="291" rcat="291" size="236" type="0" url_name="Auditors" />
+        <cat id="10845" name="Автоматизация бухучета" parent_id="291" rcat="3160" size="262" type="10" url_name="Accountancy_Automation" />
+      </cat>
+      <cat id="10104" name="Ситуация на рынке" parent_id="69" rcat="69" size="81" type="0" url_name="Markets" />
+      <cat id="11451" name="Ипотека" parent_id="69" rcat="6" size="296" type="10" url_name="Hypothec" />
+      <cat id="1725" name="Прочее" parent_id="69" rcat="-1" size="145" type="2" url_name="Other" />
+      <cat id="1726" name="Универсальное" parent_id="69" rcat="-1" size="180" type="1" url_name="General" />
+      <cat id="10996" name="Финансовый менеджмент" parent_id="69" rcat="111" size="59" type="10" url_name="Finmanagment" />
+      <cat id="10532" name="Курсы валют" parent_id="69" rcat="69" size="31" type="0" url_name="Rates" />
+      <cat id="10370" name="Налоги" parent_id="69" rcat="0" size="321" type="0" url_name="Taxes" />
+      <cat id="710" name="Реестродержатели и депозитарии" parent_id="69" rcat="-1" size="56" type="0" url_name="Registrars" />
+      <cat id="709" name="Регулирующие организации" parent_id="69" rcat="-1" size="47" type="0" url_name="Control_Organizations" />
+      <cat id="685" name="Пенсионные фонды" parent_id="69" rcat="-1" size="62" type="0" url_name="Pension_Funds" />
+      <cat id="684" name="Рынок валют (Forex)" parent_id="69" rcat="-1" size="159" type="0" url_name="FOREX" />
+      <cat id="10105" name="Инвестирование в экономику" parent_id="69" rcat="0" size="91" type="0" url_name="Investing" />
+      <cat id="10103" name="Торговые системы" parent_id="69" rcat="69" size="8" type="0" url_name="Trading" />
+      <cat id="3681" name="Оффшоры" parent_id="69" rcat="-1" size="61" type="0" url_name="Offshores" />
+      <cat id="345" name="Платежные системы" parent_id="69" rcat="-1" size="123" type="0" url_name="Payment">
+        <cat id="11329" name="Платежные системы в интернете" parent_id="345" rcat="345" size="49" type="0" url_name="Emoney" />
+      </cat>
+      <cat id="344" name="Банкротство" parent_id="69" rcat="-1" size="25" type="0" url_name="Bankruptcy" />
+      <cat id="343" name="Небанковское кредитование" parent_id="69" rcat="-1" size="178" type="0" url_name="Loans">
+        <cat id="11593" name="Лизинг" parent_id="343" rcat="69" size="93" type="10" url_name="Leasing" />
+      </cat>
+      <cat id="341" name="Страхование" parent_id="69" rcat="-1" size="250" type="0" url_name="Insurance">
+        <cat id="11439" name="Медицинское страхование" parent_id="341" rcat="341" size="21" type="10" url_name="Medical_Insurance" />
+        <cat id="11016" name="Автострахование" parent_id="341" rcat="341" size="31" type="10" url_name="Car_Insurance" />
+      </cat>
+      <cat id="340" name="Брокеры и управление активами" parent_id="69" rcat="-1" size="251" type="0" url_name="Brokers" />
+      <cat id="338" name="Организаторы торгов" parent_id="69" rcat="-1" size="37" type="0" url_name="Exchanges" />
+      <cat id="337" name="Банки" parent_id="69" rcat="-1" size="659" type="0" url_name="Banks">
+        <cat id="10846" name="Автоматизация банков" parent_id="337" rcat="6" size="34" type="10" url_name="Banks_Automation" />
+      </cat>
+    </cat>
+    <cat id="68" name="Недвижимость" parent_id="6" rcat="-1" size="1599" type="0" url_name="Realty">
+      <cat id="3679" name="Зарубежная недвижимость" parent_id="68" rcat="-1" size="213" type="0" url_name="Foreign_realty" />
+      <cat id="11452" name="Ипотека" parent_id="68" rcat="6" size="296" type="10" url_name="Hypothec" />
+      <cat id="11448" name="Загородная недвижимость" parent_id="68" rcat="6" size="438" type="0" url_name="Country_Realty" />
+      <cat id="10942" name="Аренда офисов" parent_id="68" rcat="68" size="562" type="0" url_name="Office_Rent" />
+      <cat id="10794" name="Газеты, журналы, публикации" parent_id="68" rcat="68" size="47" type="0" url_name="Periodicals" />
+      <cat id="10793" name="Недвижимость от застройщиков" parent_id="68" rcat="3168" size="166" type="0" url_name="Developers_Offers" />
+      <cat id="10784" name="Агентства недвижимости" parent_id="68" rcat="68" size="678" type="0" url_name="Realtors" />
+    </cat>
+    <cat id="7" name="Производство и поставки" parent_id="6" rcat="-1" size="13334" type="0" url_name="Production">
+      <cat id="76" name="Машиностроение" parent_id="7" rcat="-1" size="2050" type="0" url_name="Engineering">
+        <cat id="81" name="ВПК" parent_id="76" rcat="-1" size="53" type="0" url_name="Weapons" />
+        <cat id="351" name="Коммунальное машиностроение" parent_id="76" rcat="-1" size="74" type="0" url_name="Municipal" />
+        <cat id="352" name="Изделия для производств" parent_id="76" rcat="-1" size="592" type="0" url_name="Ferro-Constructions">
+          <cat id="11122" name="Запорная арматура" parent_id="352" rcat="6" size="150" type="0" url_name="Valve" />
+          <cat id="11105" name="Промышленные насосы" parent_id="352" rcat="352" size="121" type="0" url_name="Pump" />
+          <cat id="11103" name="Подшипники" parent_id="352" rcat="352" size="47" type="0" url_name="Bearing" />
+        </cat>
+        <cat id="1789" name="Прочее" parent_id="76" rcat="-1" size="101" type="2" url_name="Other" />
+        <cat id="1790" name="Универсальное" parent_id="76" rcat="-1" size="48" type="1" url_name="General" />
+        <cat id="650" name="Авиастроение" parent_id="76" rcat="-1" size="96" type="0" url_name="Aircrafts" />
+        <cat id="3686" name="Судостроение" parent_id="76" rcat="-1" size="98" type="0" url_name="Shipbuilding" />
+        <cat id="360" name="Энергетическое машиностроение" parent_id="76" rcat="-1" size="56" type="0" url_name="Power" />
+        <cat id="356" name="Сельскохозяйственное машиностроение" parent_id="76" rcat="-1" size="138" type="0" url_name="Agricultural" />
+        <cat id="348" name="Автозаводы" parent_id="76" rcat="-1" size="904" type="0" url_name="Motorcar_Factories">
+          <cat id="3185" name="Запчасти и агрегаты" parent_id="348" rcat="-1" size="443" type="0" url_name="Spares" />
+          <cat id="3183" name="Универсальное" parent_id="348" rcat="-1" size="49" type="1" url_name="General" />
+          <cat id="3182" name="Прочее" parent_id="348" rcat="-1" size="423" type="2" url_name="Other" />
+          <cat id="3181" name="Легковые автомобили" parent_id="348" rcat="-1" size="50" type="0" url_name="Cars" />
+          <cat id="11093" name="Продажа автобусов" parent_id="348" rcat="348" size="151" type="0" url_name="Buses" />
+          <cat id="10916" name="Грузовики" parent_id="348" rcat="3182" size="269" type="0" url_name="Trucks" />
+          <cat id="10860" name="Автоспецтехника" parent_id="348" rcat="3182" size="235" type="0" url_name="Special_Technics" />
+        </cat>
+      </cat>
+      <cat id="80" name="Предметы потребления" parent_id="7" rcat="-1" size="2884" type="0" url_name="Consumables">
+        <cat id="3006" name="Косметика и парфюмерия" parent_id="80" rcat="-1" size="118" type="0" url_name="Cosmetics" />
+        <cat id="2962" name="Производство и поставка мебели" parent_id="80" rcat="-1" size="559" type="0" url_name="Furniture">
+          <cat id="11128" name="Мебельная фурнитура" parent_id="2962" rcat="2962" size="82" type="0" url_name="Furniture" />
+        </cat>
+        <cat id="376" name="Швейная промышленность" parent_id="80" rcat="-1" size="548" type="0" url_name="Garment">
+          <cat id="11129" name="Спецодежда и униформа" parent_id="376" rcat="376" size="149" type="0" url_name="Working_Clothes" />
+        </cat>
+        <cat id="1885" name="Прочее" parent_id="80" rcat="-1" size="386" type="2" url_name="Other" />
+        <cat id="1886" name="Универсальное" parent_id="80" rcat="-1" size="23" type="1" url_name="General" />
+        <cat id="10917" name="Поставка сантехники" parent_id="80" rcat="355" size="241" type="0" url_name="Sanitary_Engineering" />
+        <cat id="700" name="Издательства" parent_id="80" rcat="-1" size="290" type="0" url_name="Publishing" />
+        <cat id="377" name="Ювелирная и часовая промышленность" parent_id="80" rcat="-1" size="120" type="0" url_name="Jewelry" />
+        <cat id="375" name="Текстильная промышленность" parent_id="80" rcat="-1" size="192" type="0" url_name="Textiles" />
+        <cat id="374" name="Стекло, фарфор, фаянс" parent_id="80" rcat="-1" size="86" type="0" url_name="Glass" />
+        <cat id="372" name="Обувная промышленность" parent_id="80" rcat="-1" size="155" type="0" url_name="Footwear" />
+        <cat id="371" name="Кожевенная и меховая промышленность" parent_id="80" rcat="-1" size="88" type="0" url_name="Leather" />
+        <cat id="106" name="Поставка бытовой техники" parent_id="80" rcat="-1" size="180" type="0" url_name="Household_Appliances" />
+      </cat>
+      <cat id="1758" name="Универсальное" parent_id="7" rcat="-1" size="230" type="1" url_name="General" />
+      <cat id="1757" name="Прочее" parent_id="7" rcat="-1" size="170" type="2" url_name="Other" />
+      <cat id="363" name="Электроника и электротехника" parent_id="7" rcat="-1" size="1876" type="0" url_name="Electronics">
+        <cat id="617" name="Электротехника" parent_id="363" rcat="-1" size="928" type="0" url_name="Electrical_Engineering">
+          <cat id="11400" name="Светотехника" parent_id="617" rcat="617" size="224" type="0" url_name="Lighting_engineering" />
+          <cat id="11399" name="Электростанции, генераторы, ИБП" parent_id="617" rcat="617" size="203" type="0" url_name="Generators" />
+          <cat id="10866" name="Электромонтажные изделия" parent_id="617" rcat="617" size="221" type="0" url_name="Electrical_Equipment" />
+          <cat id="10864" name="Электродвигатели" parent_id="617" rcat="617" size="114" type="0" url_name="Electric_Motor" />
+          <cat id="10863" name="Кабели, провода" parent_id="617" rcat="617" size="232" type="0" url_name="Cables" />
+        </cat>
+        <cat id="620" name="Электронные компоненты" parent_id="363" rcat="-1" size="254" type="0" url_name="Components" />
+        <cat id="2493" name="Прочее" parent_id="363" rcat="-1" size="90" type="2" url_name="Other" />
+        <cat id="2462" name="Универсальное" parent_id="363" rcat="-1" size="64" type="1" url_name="General" />
+        <cat id="728" name="Измерительные приборы" parent_id="363" rcat="-1" size="422" type="0" url_name="Controlling" />
+        <cat id="619" name="АСУ ТП,  промэлектроника" parent_id="363" rcat="-1" size="208" type="0" url_name="Automation" />
+      </cat>
+      <cat id="82" name="Агропром" parent_id="7" rcat="-1" size="1212" type="0" url_name="Food">
+        <cat id="140" name="Безалкогольные напитки" parent_id="82" rcat="-1" size="107" type="0" url_name="Soft_Drinks" />
+        <cat id="1917" name="Прочее" parent_id="82" rcat="-1" size="139" type="2" url_name="Other" />
+        <cat id="1918" name="Универсальное" parent_id="82" rcat="-1" size="113" type="1" url_name="General" />
+        <cat id="719" name="Бакалея" parent_id="82" rcat="-1" size="127" type="0" url_name="Groceries" />
+        <cat id="385" name="Хлебобулочные, кондитерские изделия" parent_id="82" rcat="-1" size="183" type="0" url_name="Bakery" />
+        <cat id="384" name="Плодоовощная промышленность" parent_id="82" rcat="-1" size="57" type="0" url_name="Greens" />
+        <cat id="383" name="Рыбная промышленность" parent_id="82" rcat="-1" size="96" type="0" url_name="Fish" />
+        <cat id="380" name="Ликеро-водочная промышленность" parent_id="82" rcat="-1" size="125" type="0" url_name="Liqueurs" />
+        <cat id="138" name="Мясомолочная промышленность" parent_id="82" rcat="-1" size="202" type="0" url_name="Meat" />
+        <cat id="67" name="Сельское хозяйство" parent_id="82" rcat="-1" size="162" type="0" url_name="Agriculture" />
+      </cat>
+      <cat id="79" name="Химическая промышленность" parent_id="7" rcat="-1" size="837" type="0" url_name="Chemical_Industry">
+        <cat id="2557" name="Прочее" parent_id="79" rcat="-1" size="118" type="2" url_name="Other" />
+        <cat id="2526" name="Универсальное" parent_id="79" rcat="-1" size="29" type="1" url_name="General" />
+        <cat id="643" name="Нефте- и химпродукты" parent_id="79" rcat="-1" size="379" type="0" url_name="Chemicals">
+          <cat id="11120" name="Масла и смазки" parent_id="643" rcat="643" size="104" type="0" url_name="Oil" />
+        </cat>
+        <cat id="645" name="Фармацевтика и фитопродукты" parent_id="79" rcat="-1" size="258" type="0" url_name="Pharmaceutics" />
+        <cat id="368" name="Ц-Б производства" parent_id="79" rcat="-1" size="56" type="0" url_name="Paper" />
+      </cat>
+      <cat id="77" name="Оборудование" parent_id="7" rcat="-1" size="3724" type="0" url_name="Equipment">
+        <cat id="3310" name="Станки" parent_id="77" rcat="-1" size="438" type="0" url_name="Lathes">
+          <cat id="11132" name="Инструмент, оснастка" parent_id="3310" rcat="3310" size="134" type="0" url_name="Tool" />
+          <cat id="11131" name="Металлообрабатывающее оборудование" parent_id="3310" rcat="3310" size="99" type="0" url_name="Metal-Working" />
+          <cat id="11130" name="Деревообрабатывающее оборудование" parent_id="3310" rcat="3310" size="129" type="0" url_name="Woodworking" />
+        </cat>
+        <cat id="3020" name="Оборудование для АЗС и автосервиса" parent_id="77" rcat="-1" size="166" type="0" url_name="Gas_Stations" />
+        <cat id="3019" name="Оборудование для баров, дискотек" parent_id="77" rcat="-1" size="187" type="0" url_name="Disco" />
+        <cat id="2984" name="Сварочное оборудование" parent_id="77" rcat="-1" size="118" type="0" url_name="Welding" />
+        <cat id="3563" name="Складское оборудование" parent_id="77" rcat="-1" size="249" type="0" url_name="Landing_equipment" />
+        <cat id="11116" name="Лабораторное оборудование" parent_id="77" rcat="77" size="145" type="0" url_name="labware" />
+        <cat id="1821" name="Прочее" parent_id="77" rcat="-1" size="600" type="2" url_name="Other" />
+        <cat id="1822" name="Универсальное" parent_id="77" rcat="-1" size="73" type="1" url_name="General" />
+        <cat id="365" name="Охранное оборудование" parent_id="77" rcat="-1" size="563" type="0" url_name="Security">
+          <cat id="11047" name="Сейфы" parent_id="365" rcat="0" size="122" type="10" url_name="Safes" />
+        </cat>
+        <cat id="364" name="Медицинская техника" parent_id="77" rcat="-1" size="469" type="0" url_name="Medical" />
+        <cat id="359" name="Торговое оборудование" parent_id="77" rcat="-1" size="377" type="0" url_name="Trading" />
+        <cat id="354" name="Полиграфическое оборудование" parent_id="77" rcat="-1" size="96" type="0" url_name="Printing" />
+        <cat id="353" name="Пищевое оборудование" parent_id="77" rcat="-1" size="221" type="0" url_name="Food_Industry" />
+        <cat id="3232" name="Упаковка и тара" parent_id="77" rcat="-1" size="337" type="0" url_name="Packaging">
+          <cat id="11061" name="Производство упаковки" parent_id="3232" rcat="3232" size="234" type="0" url_name="Manufacture_of_packing" />
+          <cat id="11060" name="Упаковочное оборудование" parent_id="3232" rcat="3232" size="118" type="0" url_name="Packing_equipment" />
+        </cat>
+      </cat>
+      <cat id="75" name="Металлургия" parent_id="7" rcat="-1" size="557" type="0" url_name="Metallurgy">
+        <cat id="2589" name="Прочее" parent_id="75" rcat="-1" size="41" type="2" url_name="Other" />
+        <cat id="2558" name="Универсальное" parent_id="75" rcat="-1" size="112" type="1" url_name="General" />
+        <cat id="648" name="Цветная металлургия" parent_id="75" rcat="-1" size="81" type="0" url_name="Non-Ferrous" />
+        <cat id="646" name="Черная металлургия" parent_id="75" rcat="-1" size="334" type="0" url_name="Ferrous" />
+      </cat>
+      <cat id="65" name="Энергетика" parent_id="7" rcat="-1" size="520" type="0" url_name="Energy">
+        <cat id="3155" name="Нефтегазовое оборудование" parent_id="65" rcat="-1" size="135" type="0" url_name="Oil_Equipment" />
+        <cat id="1630" name="Универсальное" parent_id="65" rcat="-1" size="28" type="1" url_name="General" />
+        <cat id="1629" name="Прочее" parent_id="65" rcat="-1" size="51" type="2" url_name="Other" />
+        <cat id="642" name="Угольное топливо" parent_id="65" rcat="-1" size="27" type="0" url_name="Coal" />
+        <cat id="479" name="Энергоснабжение" parent_id="65" rcat="-1" size="91" type="0" url_name="Power_Supply" />
+        <cat id="450" name="Электростанции" parent_id="65" rcat="-1" size="26" type="0" url_name="Power_Stations" />
+        <cat id="316" name="Нефтепродукты и газ" parent_id="65" rcat="-1" size="169" type="0" url_name="Oil_Products" />
+      </cat>
+    </cat>
+  </cat>
+  <cat id="4" name="Компьютеры" parent_id="0" rcat="-1" size="9108" type="0" url_name="Computers">
+    <cat id="1278" name="Универсальное" parent_id="4" rcat="-1" size="258" type="1" url_name="General" />
+    <cat id="1277" name="Прочее" parent_id="4" rcat="-1" size="31" type="2" url_name="Other" />
+    <cat id="679" name="Интерфейс" parent_id="4" rcat="-1" size="367" type="0" url_name="Multimedia">
+      <cat id="3190" name="Видеомонтаж" parent_id="679" rcat="-1" size="47" type="0" url_name="Montage" />
+      <cat id="3188" name="Анимация" parent_id="679" rcat="-1" size="22" type="0" url_name="Animation" />
+      <cat id="281" name="Графика, 3D" parent_id="679" rcat="-1" size="107" type="0" url_name="3D" />
+      <cat id="2621" name="Прочее" parent_id="679" rcat="-1" size="51" type="2" url_name="Other" />
+      <cat id="2590" name="Универсальное" parent_id="679" rcat="-1" size="12" type="1" url_name="General" />
+      <cat id="683" name="Экранные заставки" parent_id="679" rcat="-1" size="15" type="0" url_name="Screensavers" />
+      <cat id="682" name="Обои" parent_id="679" rcat="-1" size="99" type="0" url_name="Wallpapers" />
+      <cat id="3189" name="Звук" parent_id="679" rcat="-1" size="25" type="0" url_name="Sound" />
+    </cat>
+    <cat id="636" name="Hardware" parent_id="4" rcat="-1" size="1881" type="0" url_name="Hardware">
+      <cat id="11447" name="Компьютерная помощь" parent_id="636" rcat="636" size="387" type="0" url_name="Computer_service" />
+      <cat id="10961" name="Компьютерные барахолки" parent_id="636" rcat="636" size="16" type="0" url_name="Second_Hand" />
+      <cat id="10959" name="КПК" parent_id="636" rcat="636" size="146" type="0" url_name="MiniComputers" />
+      <cat id="10619" name="Сетевое оборудование" parent_id="636" rcat="0" size="295" type="10" url_name="Network_Equipment" />
+      <cat id="10617" name="Серверы" parent_id="636" rcat="4" size="146" type="0" url_name="Servers" />
+      <cat id="10516" name="Видеокарты" parent_id="636" rcat="636" size="44" type="0" url_name="Video_cards" />
+      <cat id="10515" name="Модемы" parent_id="636" rcat="636" size="22" type="0" url_name="Modems" />
+      <cat id="10514" name="Сканеры" parent_id="636" rcat="636" size="82" type="0" url_name="Scanners" />
+      <cat id="10513" name="Мониторы" parent_id="636" rcat="636" size="135" type="0" url_name="Monitors" />
+      <cat id="10512" name="Принтеры" parent_id="636" rcat="636" size="159" type="0" url_name="Printers" />
+      <cat id="10511" name="Расходные материалы" parent_id="636" rcat="636" size="205" type="0" url_name="Consumables" />
+      <cat id="10510" name="Десктопы" parent_id="636" rcat="636" size="718" type="0" url_name="hardware" />
+      <cat id="10507" name="Ноутбуки" parent_id="636" rcat="636" size="533" type="0" url_name="Notebooks" />
+      <cat id="10074" name="Техническая документация" parent_id="636" rcat="636" size="21" type="0" url_name="Documentation" />
+      <cat id="10073" name="Драйверы" parent_id="636" rcat="636" size="45" type="0" url_name="Drivers" />
+    </cat>
+    <cat id="311" name="Мобильная связь" parent_id="4" rcat="-1" size="872" type="0" url_name="Mobile">
+      <cat id="3142" name="GPS" parent_id="311" rcat="-1" size="90" type="0" url_name="GPS" />
+      <cat id="2814" name="Универсальное" parent_id="311" rcat="-1" size="49" type="1" url_name="General" />
+      <cat id="2813" name="Прочее" parent_id="311" rcat="-1" size="64" type="2" url_name="Other" />
+      <cat id="11431" name="Игры для телефонов" parent_id="311" rcat="311" size="61" type="0" url_name="Java_games" />
+      <cat id="11040" name="Рации и радиосвязь" parent_id="311" rcat="4" size="107" type="0" url_name="transmitters" />
+      <cat id="10954" name="Отправка SMS" parent_id="311" rcat="315" size="28" type="0" url_name="SMS" />
+      <cat id="10517" name="Мелодии и логотипы" parent_id="311" rcat="311" size="79" type="0" url_name="Logos" />
+      <cat id="671" name="Сотовые телефоны" parent_id="311" rcat="-1" size="474" type="0" url_name="Cellular">
+        <cat id="10982" name="Оптовые поставки телефонов" parent_id="671" rcat="671" size="60" type="0" url_name="Wholesale" />
+        <cat id="11602" name="Ремонт телефонов" parent_id="671" rcat="671" size="18" type="0" url_name="11602" />
+        <cat id="11601" name="Запчасти и аксессуары" parent_id="671" rcat="671" size="32" type="0" url_name="Spare_parts" />
+        <cat id="11522" name="Обзоры и отзывы" parent_id="671" rcat="671" size="84" type="0" url_name="Reviews" />
+        <cat id="11039" name="Интернет-магазины телефонов" parent_id="671" rcat="671" size="133" type="0" url_name="online_sales" />
+        <cat id="10958" name="Телефоны  б.у." parent_id="671" rcat="671" size="28" type="0" url_name="used" />
+      </cat>
+      <cat id="312" name="Пейджинговая связь" parent_id="311" rcat="-1" size="5" type="0" url_name="Pagers" />
+      <cat id="3239" name="Сотовые операторы" parent_id="311" rcat="-1" size="118" type="0" url_name="Operators" />
+    </cat>
+    <cat id="51" name="Безопасность" parent_id="4" rcat="-1" size="174" type="0" url_name="Security">
+      <cat id="11424" name="Защита от спама" parent_id="51" rcat="0" size="15" type="0" url_name="Antispam" />
+      <cat id="1437" name="Прочее" parent_id="51" rcat="-1" size="22" type="2" url_name="Other" />
+      <cat id="1438" name="Универсальное" parent_id="51" rcat="-1" size="55" type="1" url_name="General" />
+      <cat id="287" name="Защита от взлома" parent_id="51" rcat="-1" size="37" type="0" url_name="Hacking" />
+      <cat id="177" name="Криптография" parent_id="51" rcat="-1" size="21" type="0" url_name="Cryptography" />
+      <cat id="176" name="Вирусы и антивирусы" parent_id="51" rcat="-1" size="30" type="0" url_name="Viruses" />
+    </cat>
+    <cat id="49" name="Программы" parent_id="4" rcat="-1" size="1672" type="0" url_name="Software">
+      <cat id="3078" name="Разработчики софта" parent_id="49" rcat="-1" size="214" type="0" url_name="Programming" />
+      <cat id="3015" name="Софт" parent_id="49" rcat="-1" size="1107" type="0" url_name="Soft">
+        <cat id="3111" name="Архивы программ" parent_id="3015" rcat="-1" size="77" type="0" url_name="Download" />
+        <cat id="3067" name="Игры" parent_id="3015" rcat="-1" size="210" type="0" url_name="Games">
+          <cat id="10607" name="Универсальное" parent_id="3067" rcat="1982" size="67" type="0" url_name="General" />
+          <cat id="10606" name="Симуляторы" parent_id="3067" rcat="745" size="24" type="0" url_name="Simulators" />
+          <cat id="10604" name="Азартные игры" parent_id="3067" rcat="393" size="13" type="0" url_name="Gambles" />
+          <cat id="10603" name="Интеллектуальные игры и головоломки" parent_id="3067" rcat="392" size="9" type="0" url_name="Puzzles" />
+          <cat id="10602" name="Ролевые и стратегические игры" parent_id="3067" rcat="391" size="72" type="0" url_name="Strategic_games" />
+          <cat id="10601" name="Квесты и аркады" parent_id="3067" rcat="389" size="1" type="0" url_name="Arcades" />
+          <cat id="10600" name="Quake и Counter-Strike" parent_id="3067" rcat="388" size="33" type="0" url_name="Quake" />
+        </cat>
+        <cat id="3054" name="Программирование" parent_id="3015" rcat="-1" size="140" type="0" url_name="Development">
+          <cat id="10587" name="Скрипты" parent_id="3054" rcat="0" size="17" type="0" url_name="Scripts" />
+          <cat id="10586" name="Веб-программирование" parent_id="3054" rcat="0" size="76" type="0" url_name="Web_Programming" />
+          <cat id="10585" name="Средства разработки" parent_id="3054" rcat="0" size="57" type="0" url_name="Development_Tools" />
+        </cat>
+        <cat id="3049" name="Графика и звук" parent_id="3015" rcat="-1" size="40" type="0" url_name="Graphics">
+          <cat id="10584" name="Прочее" parent_id="3049" rcat="0" size="11" type="0" url_name="Other" />
+          <cat id="10583" name="Проигрыватели звука" parent_id="3049" rcat="0" size="12" type="0" url_name="Sound_Players" />
+          <cat id="10582" name="Графические программы" parent_id="3049" rcat="679" size="17" type="0" url_name="Graphics" />
+        </cat>
+        <cat id="3044" name="Софт для интернета" parent_id="3015" rcat="-1" size="116" type="0" url_name="Internet">
+          <cat id="10581" name="Прочее" parent_id="3044" rcat="5" size="39" type="0" url_name="Other" />
+          <cat id="10579" name="Браузеры" parent_id="3044" rcat="0" size="22" type="0" url_name="Browsers" />
+          <cat id="10577" name="Утилиты для интернета" parent_id="3044" rcat="0" size="34" type="0" url_name="Web_Utilities" />
+          <cat id="10576" name="Интернет-пейджеры" parent_id="3044" rcat="5" size="27" type="0" url_name="Internet_messengers" />
+        </cat>
+        <cat id="3033" name="Обучение" parent_id="3015" rcat="-1" size="87" type="0" url_name="Training">
+          <cat id="10567" name="Иностранные языки" parent_id="3033" rcat="0" size="29" type="0" url_name="Foreign_Languages" />
+          <cat id="10569" name="Прочее" parent_id="3033" rcat="0" size="58" type="0" url_name="Other" />
+        </cat>
+        <cat id="3021" name="Хобби" parent_id="3015" rcat="-1" size="52" type="0" url_name="Hobbies">
+          <cat id="10599" name="Спорт" parent_id="3021" rcat="90" size="22" type="0" url_name="Sports" />
+          <cat id="10565" name="Прочее" parent_id="3021" rcat="0" size="24" type="0" url_name="Other" />
+          <cat id="10564" name="Радиолюбители" parent_id="3021" rcat="0" size="7" type="0" url_name="Radio-fans" />
+        </cat>
+        <cat id="10548" name="Безопасность" parent_id="3015" rcat="51" size="71" type="0" url_name="Security" />
+        <cat id="3038" name="Мой компьютер" parent_id="3015" rcat="-1" size="278" type="0" url_name="My_computer">
+          <cat id="10588" name="Шрифты" parent_id="3038" rcat="0" size="30" type="0" url_name="Fonts" />
+          <cat id="10575" name="Прочее" parent_id="3038" rcat="0" size="12" type="0" url_name="Other" />
+          <cat id="10574" name="Русификаторы" parent_id="3038" rcat="4" size="19" type="0" url_name="Russification" />
+          <cat id="10573" name="Обои" parent_id="3038" rcat="0" size="99" type="0" url_name="Wallpapers" />
+          <cat id="10572" name="Системные компоненты" parent_id="3038" rcat="0" size="20" type="0" url_name="Operating_Systems" />
+          <cat id="10570" name="Драйверы" parent_id="3038" rcat="0" size="45" type="0" url_name="Drivers" />
+          <cat id="530" name="Утилиты" parent_id="3038" rcat="-1" size="65" type="0" url_name="Utilities" />
+        </cat>
+      </cat>
+      <cat id="277" name="Языки программирования" parent_id="49" rcat="-1" size="162" type="0" url_name="Programming_Languages">
+        <cat id="11526" name="Java" parent_id="277" rcat="277" size="14" type="0" url_name="Java" />
+        <cat id="10613" name="Visual Basic" parent_id="277" rcat="277" size="17" type="0" url_name="Visual_Basic" />
+        <cat id="10612" name="Perl" parent_id="277" rcat="277" size="21" type="0" url_name="Perl" />
+        <cat id="10611" name="JavaScript" parent_id="277" rcat="277" size="14" type="0" url_name="JavaScript" />
+        <cat id="10610" name="Паскаль и Delphi" parent_id="277" rcat="277" size="40" type="0" url_name="Delphi" />
+        <cat id="10609" name="C/C++" parent_id="277" rcat="277" size="23" type="0" url_name="C" />
+        <cat id="10608" name="PHP" parent_id="277" rcat="277" size="33" type="0" url_name="PHP" />
+      </cat>
+      <cat id="1373" name="Прочее" parent_id="49" rcat="-1" size="48" type="2" url_name="Other" />
+      <cat id="1374" name="Универсальное" parent_id="49" rcat="-1" size="58" type="1" url_name="General" />
+      <cat id="278" name="Базы данных" parent_id="49" rcat="-1" size="55" type="0" url_name="Database" />
+      <cat id="50" name="Операционные системы" parent_id="49" rcat="-1" size="160" type="0" url_name="Systems">
+        <cat id="2979" name="OS/2" parent_id="50" rcat="-1" size="8" type="0" url_name="OS_2" />
+        <cat id="1406" name="Универсальное" parent_id="50" rcat="-1" size="8" type="1" url_name="General" />
+        <cat id="1405" name="Прочее" parent_id="50" rcat="-1" size="13" type="2" url_name="Other" />
+        <cat id="716" name="BeOS" parent_id="50" rcat="-1" size="1" type="0" url_name="BeOS" />
+        <cat id="521" name="Клоны Unix" parent_id="50" rcat="-1" size="91" type="0" url_name="Unix" />
+        <cat id="520" name="Windows" parent_id="50" rcat="-1" size="41" type="0" url_name="Windows" />
+      </cat>
+    </cat>
+    <cat id="47" name="Сети и связь" parent_id="4" rcat="-1" size="1152" type="0" url_name="Networking">
+      <cat id="1342" name="Универсальное" parent_id="47" rcat="-1" size="192" type="1" url_name="General" />
+      <cat id="1341" name="Прочее" parent_id="47" rcat="-1" size="62" type="2" url_name="Other" />
+      <cat id="10852" name="Устройство сетей" parent_id="47" rcat="47" size="416" type="0" url_name="Networks_Building" />
+      <cat id="10851" name="Системные интеграторы" parent_id="47" rcat="47" size="219" type="0" url_name="Integrators" />
+      <cat id="10723" name="Телефонная связь" parent_id="47" rcat="54" size="382" type="10" url_name="Telephoning" />
+      <cat id="678" name="Коммуникационное оборудование" parent_id="47" rcat="-1" size="505" type="0" url_name="Communication_Equipment" />
+    </cat>
+    <cat id="5" name="Интернет" parent_id="4" rcat="-1" size="3897" type="0" url_name="Internet">
+      <cat id="54" name="Доступ в интернет" parent_id="5" rcat="-1" size="987" type="0" url_name="Providing">
+        <cat id="10279" name="IP-телефония" parent_id="54" rcat="54" size="208" type="0" url_name="IP_telephoning" />
+        <cat id="10618" name="Спутниковый интернет" parent_id="54" rcat="54" size="76" type="0" url_name="Satellite_Internet" />
+        <cat id="10281" name="Городские и домашние сети" parent_id="54" rcat="54" size="52" type="0" url_name="Home_Networks" />
+        <cat id="10278" name="Провайдеры" parent_id="54" rcat="54" size="845" type="0" url_name="Providers" />
+      </cat>
+      <cat id="56" name="Электронная почта" parent_id="5" rcat="-1" size="46" type="0" url_name="Email" />
+      <cat id="59" name="Баннерные сети" parent_id="5" rcat="-1" size="87" type="0" url_name="Banners_Networks" />
+      <cat id="2895" name="Универсальное" parent_id="5" rcat="-1" size="77" type="1" url_name="General" />
+      <cat id="2894" name="Прочее" parent_id="5" rcat="-1" size="172" type="2" url_name="Other" />
+      <cat id="2893" name="Создание сайтов" parent_id="5" rcat="-1" size="1643" type="0" url_name="Web_Development">
+        <cat id="280" name="Веб-программирование" parent_id="2893" rcat="-1" size="183" type="0" url_name="Web_Programming" />
+        <cat id="2907" name="Универсальное" parent_id="2893" rcat="-1" size="109" type="1" url_name="General" />
+        <cat id="2906" name="Прочее" parent_id="2893" rcat="-1" size="54" type="2" url_name="Other" />
+        <cat id="11263" name="Справочники HTML и CSS" parent_id="2893" rcat="2893" size="35" type="0" url_name="html" />
+        <cat id="11261" name="Формат RSS" parent_id="2893" rcat="2893" size="9" type="0" url_name="rss" />
+        <cat id="4071" name="Продвижение сайтов" parent_id="2893" rcat="-1" size="179" type="0" url_name="SEO" />
+        <cat id="680" name="Скрипты" parent_id="2893" rcat="-1" size="19" type="0" url_name="Scripts" />
+        <cat id="23" name="Web-дизайн" parent_id="2893" rcat="-1" size="1171" type="0" url_name="Design" />
+      </cat>
+      <cat id="601" name="Хостинги" parent_id="5" rcat="-1" size="409" type="0" url_name="Hosting">
+        <cat id="57" name="Хостинг форумов, чатов" parent_id="601" rcat="-1" size="30" type="0" url_name="Forums_Hosting" />
+        <cat id="2398" name="Универсальное" parent_id="601" rcat="-1" size="8" type="1" url_name="General" />
+        <cat id="2397" name="Прочее" parent_id="601" rcat="-1" size="27" type="2" url_name="Other" />
+        <cat id="11388" name="Платные хостинги" parent_id="601" rcat="55" size="168" type="0" url_name="Paid_hostings" />
+        <cat id="11387" name="Бесплатные хостинги" parent_id="601" rcat="55" size="33" type="0" url_name="Free_hostings" />
+        <cat id="3973" name="Видеохостинги" parent_id="601" rcat="-1" size="31" type="0" url_name="videohosting" />
+        <cat id="3970" name="Хостинг фотоальбомов" parent_id="601" rcat="-1" size="25" type="0" url_name="photoalbum_hosting" />
+        <cat id="3674" name="Сервисы для блоггеров" parent_id="601" rcat="-1" size="85" type="0" url_name="Blogs" />
+      </cat>
+      <cat id="315" name="Отправка сообщений" parent_id="5" rcat="-1" size="39" type="0" url_name="Messaging" />
+      <cat id="11620" name="Аватары" parent_id="5" rcat="0" size="15" type="0" url_name="Avatars" />
+      <cat id="289" name="Поисковые системы" parent_id="5" rcat="-1" size="85" type="0" url_name="Search_Engines" />
+      <cat id="288" name="Каталоги" parent_id="5" rcat="-1" size="194" type="0" url_name="Catalogues" />
+      <cat id="3471" name="Сайты для КПК" parent_id="5" rcat="-1" size="108" type="0" url_name="pda">
+        <cat id="11414" name="Новости (для КПК)" parent_id="3471" rcat="3471" size="40" type="0" url_name="News_for_pda" />
+        <cat id="11411" name="Справки (для КПК)" parent_id="3471" rcat="3471" size="22" type="0" url_name="Information_for_pda" />
+        <cat id="11409" name="Информационные каналы" parent_id="3471" rcat="3471" size="2" type="0" url_name="Channels_for_pda" />
+        <cat id="11408" name="Интернет-сервисы (для КПК)" parent_id="3471" rcat="3471" size="9" type="0" url_name="Services_for_pda" />
+      </cat>
+      <cat id="58" name="Счетчики и рейтинги" parent_id="5" rcat="-1" size="100" type="0" url_name="Ratings" />
+      <cat id="24" name="Интернет-кафе" parent_id="5" rcat="-1" size="22" type="0" url_name="Internet-Cafes" />
+    </cat>
+  </cat>
+  <cat id="2" name="Учеба" parent_id="0" rcat="-1" size="9116" type="0" url_name="Science">
+    <cat id="2898" name="Учебные материалы" parent_id="2" rcat="-1" size="1155" type="0" url_name="Publications">
+      <cat id="2900" name="Универсальное" parent_id="2898" rcat="-1" size="44" type="1" url_name="General" />
+      <cat id="2899" name="Прочее" parent_id="2898" rcat="-1" size="143" type="2" url_name="Other" />
+      <cat id="10526" name="Уроки и тесты онлайн" parent_id="2898" rcat="2" size="300" type="0" url_name="Testing" />
+      <cat id="10252" name="Научные публикации" parent_id="2898" rcat="3281" size="575" type="0" url_name="Papers" />
+      <cat id="34" name="Рефераты" parent_id="2898" rcat="-1" size="119" type="0" url_name="Essays" />
+    </cat>
+    <cat id="669" name="Прочее" parent_id="2" rcat="-1" size="16" type="2" url_name="Other" />
+    <cat id="670" name="Универсальное" parent_id="2" rcat="-1" size="108" type="1" url_name="General" />
+    <cat id="3281" name="Науки" parent_id="2" rcat="-1" size="4053" type="0" url_name="Sciences">
+      <cat id="31" name="Учреждения управления и информации" parent_id="3281" rcat="-1" size="543" type="0" url_name="Administration">
+        <cat id="894" name="Универсальное" parent_id="31" rcat="-1" size="4" type="1" url_name="General" />
+        <cat id="893" name="Прочее" parent_id="31" rcat="-1" size="47" type="2" url_name="Other" />
+        <cat id="652" name="Экспертиза и патентование" parent_id="31" rcat="-1" size="126" type="0" url_name="Patenting" />
+        <cat id="228" name="Научные библиотеки" parent_id="31" rcat="-1" size="177" type="0" url_name="Libraries_1" />
+        <cat id="227" name="ЦНИТ и ЦИТ" parent_id="31" rcat="-1" size="45" type="0" url_name="Info_Technology" />
+        <cat id="226" name="Росинформ и отделения, ЦНТИ" parent_id="31" rcat="-1" size="12" type="0" url_name="Information_Centers" />
+        <cat id="223" name="Крупные объединения, ассоциации" parent_id="31" rcat="-1" size="28" type="0" url_name="Associations" />
+        <cat id="167" name="Академии наук и отделения" parent_id="31" rcat="-1" size="59" type="0" url_name="Academies" />
+        <cat id="3336" name="Интернет-центры вузов" parent_id="31" rcat="-1" size="13" type="0" url_name="Internet_centers" />
+        <cat id="32" name="Фонды, стипендии, гранты" parent_id="31" rcat="-1" size="39" type="0" url_name="Grants" />
+      </cat>
+      <cat id="10086" name="Конференции и семинары" parent_id="3281" rcat="3281" size="68" type="0" url_name="Events" />
+      <cat id="11081" name="Научно-популярные журналы" parent_id="3281" rcat="3284" size="25" type="0" url_name="Popular_periodical" />
+      <cat id="600" name="Гуманитарные науки" parent_id="3281" rcat="-1" size="1378" type="0" url_name="Humanities">
+        <cat id="862" name="Универсальные" parent_id="600" rcat="-1" size="39" type="1" url_name="General" />
+        <cat id="861" name="Прочее" parent_id="600" rcat="-1" size="40" type="2" url_name="Other" />
+        <cat id="219" name="Экономика, менеджмент" parent_id="600" rcat="-1" size="210" type="0" url_name="Economics">
+          <cat id="11113" name="Маркетинг" parent_id="219" rcat="73" size="9" type="0" url_name="Marketing" />
+          <cat id="11111" name="Экономические вузы" parent_id="219" rcat="179" size="146" type="10" url_name="Economic" />
+          <cat id="11110" name="Менеджмент" parent_id="219" rcat="111" size="93" type="0" url_name="Management" />
+          <cat id="11109" name="Экономика и финансы" parent_id="219" rcat="219" size="55" type="0" url_name="Economics" />
+          <cat id="11108" name="Научные центры" parent_id="219" rcat="219" size="29" type="0" url_name="Centers" />
+        </cat>
+        <cat id="218" name="Философия" parent_id="600" rcat="-1" size="72" type="0" url_name="Philosophy" />
+        <cat id="217" name="Филология" parent_id="600" rcat="-1" size="140" type="0" url_name="Philology">
+          <cat id="11053" name="Литературоведение" parent_id="217" rcat="217" size="47" type="0" url_name="Study_of_literature" />
+          <cat id="11054" name="Языкознание" parent_id="217" rcat="217" size="39" type="0" url_name="Linguistics" />
+          <cat id="11052" name="Русский язык" parent_id="217" rcat="217" size="21" type="0" url_name="Russian_language" />
+        </cat>
+        <cat id="216" name="Социология и политология" parent_id="600" rcat="-1" size="106" type="0" url_name="Sociology" />
+        <cat id="215" name="Психология, педагогика" parent_id="600" rcat="-1" size="297" type="0" url_name="Psychology">
+          <cat id="11038" name="Популярная психология" parent_id="215" rcat="215" size="68" type="0" url_name="Popular_psychology" />
+          <cat id="11037" name="Академическая психология" parent_id="215" rcat="215" size="54" type="0" url_name="Academical_psychology" />
+          <cat id="11035" name="Психологические центры" parent_id="215" rcat="215" size="57" type="0" url_name="Psychological_centers" />
+        </cat>
+        <cat id="214" name="История" parent_id="600" rcat="-1" size="522" type="0" url_name="History">
+          <cat id="3261" name="Универсальное" parent_id="214" rcat="-1" size="86" type="1" url_name="General" />
+          <cat id="651" name="Этнография и история народов" parent_id="214" rcat="-1" size="69" type="0" url_name="Ethnography" />
+          <cat id="11064" name="История России" parent_id="214" rcat="214" size="143" type="0" url_name="History_of_Russia" />
+          <cat id="11062" name="Генеалогия" parent_id="214" rcat="0" size="32" type="0" url_name="Genealogy" />
+          <cat id="3262" name="Прочее" parent_id="214" rcat="-1" size="43" type="2" url_name="Other" />
+          <cat id="3260" name="Археология" parent_id="214" rcat="-1" size="30" type="0" url_name="Archaeology" />
+          <cat id="3259" name="Военная история" parent_id="214" rcat="-1" size="150" type="0" url_name="Military_history" />
+          <cat id="3258" name="Новая и новейшая история" parent_id="214" rcat="-1" size="58" type="0" url_name="Modern_history" />
+          <cat id="3257" name="Средние века" parent_id="214" rcat="-1" size="41" type="0" url_name="Medieval_history" />
+          <cat id="3256" name="Древний мир" parent_id="214" rcat="-1" size="41" type="0" url_name="Ancient_history" />
+        </cat>
+      </cat>
+      <cat id="10085" name="Научная периодика" parent_id="3281" rcat="3281" size="118" type="0" url_name="Journals" />
+      <cat id="3284" name="Универсальное" parent_id="3281" rcat="-1" size="127" type="1" url_name="general" />
+      <cat id="3283" name="Прочее" parent_id="3281" rcat="-1" size="9" type="2" url_name="other" />
+      <cat id="28" name="Естественные науки" parent_id="3281" rcat="-1" size="1738" type="0" url_name="Natural">
+        <cat id="257" name="Краеведение" parent_id="28" rcat="-1" size="172" type="0" url_name="Local_Lore" />
+        <cat id="798" name="Универсальные" parent_id="28" rcat="-1" size="32" type="1" url_name="General" />
+        <cat id="797" name="Прочее" parent_id="28" rcat="-1" size="38" type="2" url_name="Other" />
+        <cat id="205" name="Науки о Земле" parent_id="28" rcat="-1" size="230" type="0" url_name="Earth" />
+        <cat id="204" name="Астрономия" parent_id="28" rcat="-1" size="100" type="0" url_name="Astronomy">
+          <cat id="11071" name="Академическая астрономия" parent_id="204" rcat="204" size="34" type="0" url_name="Academic_astronomy" />
+          <cat id="11070" name="Занимательная астрономия" parent_id="204" rcat="204" size="58" type="0" url_name="Entertaining_astronomy" />
+        </cat>
+        <cat id="203" name="Математика" parent_id="28" rcat="-1" size="106" type="0" url_name="Mathematics" />
+        <cat id="202" name="Химия" parent_id="28" rcat="-1" size="112" type="0" url_name="Chemistry" />
+        <cat id="201" name="Физика" parent_id="28" rcat="-1" size="219" type="0" url_name="Physics" />
+        <cat id="200" name="Медицина" parent_id="28" rcat="-1" size="459" type="0" url_name="Medicine" />
+        <cat id="199" name="Биология" parent_id="28" rcat="-1" size="340" type="0" url_name="Biology">
+          <cat id="11078" name="Экология" parent_id="199" rcat="199" size="78" type="0" url_name="Ecology" />
+          <cat id="11077" name="Занимательная биология" parent_id="199" rcat="199" size="77" type="0" url_name="Entertaining_biology" />
+          <cat id="11076" name="Зоология, ботаника" parent_id="199" rcat="199" size="66" type="0" url_name="Zoology" />
+          <cat id="11075" name="Общая биология" parent_id="199" rcat="199" size="65" type="0" url_name="General_biology" />
+        </cat>
+      </cat>
+      <cat id="14" name="Технические науки" parent_id="3281" rcat="-1" size="341" type="0" url_name="Engineering">
+        <cat id="829" name="Прочее" parent_id="14" rcat="-1" size="49" type="2" url_name="Other" />
+        <cat id="830" name="Универсальное" parent_id="14" rcat="-1" size="19" type="1" url_name="General" />
+        <cat id="211" name="Высокие технологии" parent_id="14" rcat="-1" size="26" type="0" url_name="High-tech" />
+        <cat id="210" name="Информатика" parent_id="14" rcat="-1" size="111" type="0" url_name="Information" />
+        <cat id="209" name="Вычислительная техника и электроника" parent_id="14" rcat="-1" size="50" type="0" url_name="Computers" />
+        <cat id="208" name="Авиация и космонавтика" parent_id="14" rcat="-1" size="91" type="0" url_name="Aviation" />
+      </cat>
+    </cat>
+    <cat id="27" name="Курсы" parent_id="2" rcat="-1" size="1515" type="0" url_name="Advanced_Training">
+      <cat id="3007" name="Обучение за рубежом" parent_id="27" rcat="-1" size="161" type="0" url_name="Education_Abroad" />
+      <cat id="10997" name="Бизнес-тренинги" parent_id="27" rcat="0" size="301" type="10" url_name="Training" />
+      <cat id="10509" name="Дистанционное образование" parent_id="27" rcat="2" size="78" type="0" url_name="Distance" />
+      <cat id="766" name="Универсальное" parent_id="27" rcat="-1" size="69" type="1" url_name="General" />
+      <cat id="765" name="Прочее" parent_id="27" rcat="-1" size="161" type="2" url_name="Other" />
+      <cat id="196" name="Повышение квалификации" parent_id="27" rcat="-1" size="273" type="0" url_name="Continuing" />
+      <cat id="195" name="Компьютерные курсы" parent_id="27" rcat="-1" size="181" type="0" url_name="Computers" />
+      <cat id="194" name="Иностранные языки" parent_id="27" rcat="-1" size="467" type="0" url_name="Languages">
+        <cat id="11023" name="Уроки других иностранных языков" parent_id="194" rcat="194" size="30" type="0" url_name="Other_lessons" />
+        <cat id="11019" name="Софт для изучения языков" parent_id="194" rcat="194" size="29" type="0" url_name="Soft" />
+        <cat id="11018" name="Уроки английского языка" parent_id="194" rcat="194" size="32" type="0" url_name="English_lessons" />
+        <cat id="11017" name="Языковые школы и курсы" parent_id="194" rcat="194" size="263" type="0" url_name="Language_schools" />
+      </cat>
+      <cat id="193" name="Бизнес-образование" parent_id="27" rcat="-1" size="316" type="0" url_name="Business" />
+    </cat>
+    <cat id="26" name="Среднее образование" parent_id="2" rcat="-1" size="2192" type="0" url_name="Secondary_Education">
+      <cat id="3235" name="Учительская" parent_id="26" rcat="-1" size="146" type="0" url_name="For_teachers" />
+      <cat id="11380" name="ЕГЭ" parent_id="26" rcat="2" size="59" type="0" url_name="Centralized_testing" />
+      <cat id="734" name="Универсальное" parent_id="26" rcat="-1" size="86" type="1" url_name="General" />
+      <cat id="733" name="Прочее" parent_id="26" rcat="-1" size="91" type="2" url_name="Other" />
+      <cat id="188" name="Колледжи, техникумы" parent_id="26" rcat="-1" size="298" type="0" url_name="Specialized" />
+      <cat id="187" name="Школы" parent_id="26" rcat="-1" size="697" type="0" url_name="Schools">
+        <cat id="11425" name="Физико-математические школы" parent_id="187" rcat="187" size="42" type="0" url_name="Math_schools" />
+        <cat id="11117" name="Частные школы" parent_id="187" rcat="187" size="125" type="0" url_name="Private_schools" />
+      </cat>
+      <cat id="186" name="Раннее развитие" parent_id="26" rcat="-1" size="189" type="0" url_name="Pre-School">
+        <cat id="11420" name="Детские сады" parent_id="186" rcat="0" size="110" type="10" url_name="Kindergartens" />
+      </cat>
+      <cat id="161" name="Внешкольная работа" parent_id="26" rcat="-1" size="219" type="0" url_name="Extra" />
+      <cat id="3236" name="Школьные предметы" parent_id="26" rcat="-1" size="525" type="0" url_name="Subjects">
+        <cat id="11586" name="История" parent_id="3236" rcat="214" size="200" type="0" url_name="History" />
+        <cat id="11013" name="Химия, биология" parent_id="3236" rcat="2" size="118" type="0" url_name="Chemistry" />
+        <cat id="11012" name="Русский, литература" parent_id="3236" rcat="26" size="31" type="0" url_name="Literature" />
+        <cat id="11011" name="Физика, астрономия" parent_id="3236" rcat="2" size="103" type="0" url_name="Physics" />
+        <cat id="11010" name="Математика" parent_id="3236" rcat="2" size="54" type="0" url_name="Maths" />
+      </cat>
+      <cat id="3234" name="Школьные олимпиады" parent_id="26" rcat="-1" size="43" type="0" url_name="Contests">
+        <cat id="11140" name="Олимпиады по математике" parent_id="3234" rcat="3234" size="14" type="0" url_name="Math" />
+        <cat id="11136" name="Олимпиады по информатике" parent_id="3234" rcat="3234" size="13" type="0" url_name="Informatika" />
+      </cat>
+    </cat>
+    <cat id="25" name="Высшее образование" parent_id="2" rcat="-1" size="1958" type="0" url_name="Higher_Education">
+      <cat id="11209" name="Выпускники" parent_id="25" rcat="0" size="76" type="0" url_name="Graduates" />
+      <cat id="702" name="Универсальное" parent_id="25" rcat="-1" size="75" type="1" url_name="General" />
+      <cat id="701" name="Прочее" parent_id="25" rcat="-1" size="148" type="2" url_name="Other" />
+      <cat id="3673" name="Вузы культуры и искусств" parent_id="25" rcat="-1" size="41" type="0" url_name="Arts" />
+      <cat id="10032" name="Частные вузы" parent_id="25" rcat="25" size="246" type="0" url_name="Private" />
+      <cat id="183" name="Студенческая жизнь" parent_id="25" rcat="-1" size="220" type="0" url_name="Students" />
+      <cat id="182" name="Медицинские вузы" parent_id="25" rcat="-1" size="89" type="0" url_name="Medical" />
+      <cat id="181" name="Технические вузы" parent_id="25" rcat="-1" size="416" type="0" url_name="Sciences" />
+      <cat id="180" name="Педагогические вузы" parent_id="25" rcat="-1" size="84" type="0" url_name="Teachers_Training" />
+      <cat id="179" name="Гуманитарные вузы" parent_id="25" rcat="-1" size="426" type="0" url_name="Humanities" />
+      <cat id="178" name="Университеты" parent_id="25" rcat="-1" size="368" type="0" url_name="Universities" />
+      <cat id="3215" name="Абитуриентам" parent_id="25" rcat="-1" size="88" type="0" url_name="Entrants">
+        <cat id="11384" name="ЕГЭ" parent_id="3215" rcat="2" size="59" type="10" url_name="Centralized_testing" />
+      </cat>
+    </cat>
+  </cat>
+  <cat id="1" name="Культура" parent_id="0" rcat="-1" size="12597" type="0" url_name="Culture">
+    <cat id="661" name="Танец" parent_id="1" rcat="-1" size="479" type="0" url_name="Dance">
+      <cat id="11367" name="Американский стиль" parent_id="661" rcat="661" size="21" type="0" url_name="Swing" />
+      <cat id="11372" name="Балет" parent_id="661" rcat="17" size="59" type="10" url_name="Ballet" />
+      <cat id="11370" name="Школы танцев" parent_id="661" rcat="661" size="295" type="0" url_name="Schools" />
+      <cat id="11369" name="Латиноамериканские танцы" parent_id="661" rcat="661" size="70" type="0" url_name="Latina" />
+      <cat id="11368" name="Восточные танцы" parent_id="661" rcat="661" size="62" type="0" url_name="East_dances" />
+      <cat id="11366" name="Спортивные бальные танцы" parent_id="661" rcat="661" size="98" type="0" url_name="Dancesport" />
+      <cat id="11359" name="Клубные танцы" parent_id="661" rcat="661" size="81" type="0" url_name="Club_dance" />
+    </cat>
+    <cat id="62" name="Универсальное" parent_id="1" rcat="-1" size="266" type="1" url_name="General" />
+    <cat id="61" name="Прочее" parent_id="1" rcat="-1" size="58" type="2" url_name="Other" />
+    <cat id="21" name="Фотография" parent_id="1" rcat="-1" size="1232" type="0" url_name="Photography">
+      <cat id="3520" name="Прочее" parent_id="21" rcat="-1" size="77" type="2" url_name="other" />
+      <cat id="3514" name="Теория фотографии" parent_id="21" rcat="-1" size="83" type="0" url_name="The_theory_of_a_photo" />
+      <cat id="10620" name="Фотоаппараты" parent_id="21" rcat="475" size="273" type="10" url_name="Cameras" />
+      <cat id="3521" name="Универсальное" parent_id="21" rcat="-1" size="23" type="1" url_name="general" />
+      <cat id="3518" name="Страницы фотографов" parent_id="21" rcat="-1" size="250" type="0" url_name="Photographers" />
+      <cat id="3513" name="Фотостудии и агентства" parent_id="21" rcat="-1" size="232" type="0" url_name="Photographic_studioes" />
+      <cat id="3512" name="Фотолаборатории" parent_id="21" rcat="-1" size="63" type="0" url_name="Photolaboratory" />
+      <cat id="3511" name="Художественное фото" parent_id="21" rcat="-1" size="184" type="0" url_name="Photoart" />
+      <cat id="3510" name="Фотолюбители" parent_id="21" rcat="-1" size="138" type="0" url_name="Amateur_photographer" />
+      <cat id="260" name="Фото стран и городов" parent_id="21" rcat="-1" size="252" type="0" url_name="City_photo" />
+    </cat>
+    <cat id="20" name="Кино" parent_id="1" rcat="-1" size="1857" type="0" url_name="Movies">
+      <cat id="3201" name="Актеры и режиссеры" parent_id="20" rcat="-1" size="554" type="0" url_name="Actors" />
+      <cat id="3202" name="Сайты кинофильмов" parent_id="20" rcat="-1" size="276" type="0" url_name="Movies">
+        <cat id="11433" name="Звездные войны" parent_id="3202" rcat="1" size="13" type="10" url_name="Star_wars" />
+        <cat id="11324" name="Властелин колец" parent_id="3202" rcat="1" size="23" type="10" url_name="Lotr" />
+      </cat>
+      <cat id="3187" name="Кинотеатры" parent_id="20" rcat="-1" size="191" type="0" url_name="Cinema" />
+      <cat id="253" name="Прочее" parent_id="20" rcat="-1" size="94" type="2" url_name="Other" />
+      <cat id="11430" name="Кинофестивали" parent_id="20" rcat="20" size="41" type="0" url_name="Festival" />
+      <cat id="11323" name="Киноафиши" parent_id="20" rcat="0" size="147" type="0" url_name="Showtimes" />
+      <cat id="10915" name="Обзоры и рецензии" parent_id="20" rcat="20" size="60" type="0" url_name="Films_review" />
+      <cat id="254" name="Универсальное" parent_id="20" rcat="-1" size="39" type="1" url_name="General" />
+      <cat id="171" name="Журналы и порталы о кино" parent_id="20" rcat="-1" size="118" type="0" url_name="Portals" />
+      <cat id="170" name="Мультфильмы" parent_id="20" rcat="-1" size="185" type="0" url_name="Animation">
+        <cat id="11145" name="Симпсоны" parent_id="170" rcat="170" size="7" type="0" url_name="Simpsons" />
+        <cat id="11143" name="Аниме и манга" parent_id="170" rcat="170" size="73" type="0" url_name="Anime" />
+      </cat>
+      <cat id="169" name="Кинопроизводство и прокат" parent_id="20" rcat="-1" size="103" type="0" url_name="Filmmaking" />
+      <cat id="168" name="Продажа фильмов" parent_id="20" rcat="-1" size="109" type="0" url_name="Videos" />
+      <cat id="3213" name="Сериалы" parent_id="20" rcat="-1" size="129" type="0" url_name="Soaps" />
+    </cat>
+    <cat id="19" name="Музыка" parent_id="1" rcat="-1" size="4256" type="0" url_name="Music">
+      <cat id="3120" name="Саундтреки" parent_id="19" rcat="-1" size="7" type="0" url_name="SoundTrack" />
+      <cat id="3109" name="Шансон" parent_id="19" rcat="-1" size="97" type="0" url_name="Chanson" />
+      <cat id="3548" name="Гитара" parent_id="19" rcat="-1" size="99" type="0" url_name="Guitar" />
+      <cat id="656" name="Джаз и блюз" parent_id="19" rcat="-1" size="115" type="0" url_name="Jazz" />
+      <cat id="11340" name="Советская музыка" parent_id="19" rcat="19" size="50" type="0" url_name="Soviet_music" />
+      <cat id="11044" name="Магазины аудио CD" parent_id="19" rcat="1" size="111" type="0" url_name="CD_shops" />
+      <cat id="726" name="Хард-рок и &quot;металл&quot;" parent_id="19" rcat="-1" size="400" type="0" url_name="Metall" />
+      <cat id="725" name="Электронная музыка" parent_id="19" rcat="-1" size="172" type="0" url_name="Electronic" />
+      <cat id="724" name="Рэп и хип-хоп" parent_id="19" rcat="-1" size="157" type="0" url_name="Rap">
+        <cat id="10861" name="Граффити" parent_id="724" rcat="1" size="49" type="10" url_name="Graffiti" />
+      </cat>
+      <cat id="723" name="Альтернативные стили" parent_id="19" rcat="-1" size="81" type="0" url_name="Alternative" />
+      <cat id="722" name="Рок-музыка" parent_id="19" rcat="-1" size="1035" type="0" url_name="Rock" />
+      <cat id="3680" name="Звукозапись, продюсеры, агентства" parent_id="19" rcat="-1" size="145" type="0" url_name="Showbiz" />
+      <cat id="10057" name="Скачать музыку" parent_id="19" rcat="19" size="249" type="0" url_name="Mp3" />
+      <cat id="3428" name="Музыкальные инструменты" parent_id="19" rcat="-1" size="158" type="0" url_name="Musical_instruments" />
+      <cat id="222" name="Универсальное" parent_id="19" rcat="-1" size="321" type="1" url_name="General" />
+      <cat id="221" name="Прочее" parent_id="19" rcat="-1" size="199" type="2" url_name="Other" />
+      <cat id="174" name="Этническая и фолк музыка" parent_id="19" rcat="-1" size="215" type="0" url_name="Folk" />
+      <cat id="165" name="Поп-музыка" parent_id="19" rcat="-1" size="796" type="0" url_name="Pop">
+        <cat id="11445" name="Фабрика звезд" parent_id="165" rcat="165" size="24" type="0" url_name="Star_Factory" />
+      </cat>
+      <cat id="164" name="Авторская песня" parent_id="19" rcat="-1" size="167" type="0" url_name="Bards" />
+      <cat id="163" name="Классическая музыка" parent_id="19" rcat="-1" size="287" type="0" url_name="Classical" />
+    </cat>
+    <cat id="18" name="Литература" parent_id="1" rcat="-1" size="2205" type="0" url_name="Literature">
+      <cat id="3195" name="Детская литература" parent_id="18" rcat="-1" size="100" type="0" url_name="Infantile" />
+      <cat id="3171" name="Непризнанные авторы" parent_id="18" rcat="-1" size="237" type="0" url_name="Unacknowledged" />
+      <cat id="190" name="Универсальное" parent_id="18" rcat="-1" size="148" type="1" url_name="General" />
+      <cat id="3689" name="Книжные магазины" parent_id="18" rcat="-1" size="182" type="0" url_name="Bookstore" />
+      <cat id="3688" name="Электронные библиотеки" parent_id="18" rcat="-1" size="144" type="0" url_name="Online_Libraries" />
+      <cat id="10113" name="Литературные издания" parent_id="18" rcat="18" size="77" type="0" url_name="Journals" />
+      <cat id="729" name="Зарубежная проза" parent_id="18" rcat="-1" size="124" type="0" url_name="Foreign_Prose" />
+      <cat id="655" name="Мифы, фольклор" parent_id="18" rcat="-1" size="61" type="0" url_name="Tales" />
+      <cat id="654" name="Детективы и триллеры" parent_id="18" rcat="-1" size="49" type="0" url_name="Detective" />
+      <cat id="653" name="Зарубежная поэзия" parent_id="18" rcat="-1" size="63" type="0" url_name="Foreign_Poetry" />
+      <cat id="189" name="Прочее" parent_id="18" rcat="-1" size="97" type="2" url_name="Other" />
+      <cat id="160" name="Фантастика и фэнтези" parent_id="18" rcat="-1" size="270" type="0" url_name="Fantasy" />
+      <cat id="159" name="Мемуары и публицистика" parent_id="18" rcat="-1" size="51" type="0" url_name="Memoirs" />
+      <cat id="156" name="Русская проза" parent_id="18" rcat="-1" size="276" type="0" url_name="Russian_Prose" />
+      <cat id="155" name="Русская поэзия" parent_id="18" rcat="-1" size="301" type="0" url_name="Russian_Poetry" />
+      <cat id="141" name="Государственные  библиотеки" parent_id="18" rcat="-1" size="270" type="0" url_name="Libraries" />
+    </cat>
+    <cat id="17" name="Театры" parent_id="1" rcat="-1" size="1039" type="0" url_name="Theaters">
+      <cat id="3118" name="Мюзиклы" parent_id="17" rcat="-1" size="54" type="0" url_name="Musicals" />
+      <cat id="2948" name="Кукольные театры" parent_id="17" rcat="-1" size="60" type="0" url_name="Puppet" />
+      <cat id="3656" name="Цирки и театры зверей" parent_id="17" rcat="-1" size="52" type="0" url_name="Circus" />
+      <cat id="3687" name="Билеты в театры, на концерты" parent_id="17" rcat="-1" size="70" type="0" url_name="Booking" />
+      <cat id="158" name="Универсальное" parent_id="17" rcat="-1" size="45" type="1" url_name="General" />
+      <cat id="157" name="Прочее" parent_id="17" rcat="-1" size="101" type="2" url_name="Other" />
+      <cat id="154" name="Драматические театры" parent_id="17" rcat="-1" size="516" type="0" url_name="Dramatic" />
+      <cat id="153" name="Музыкальные театры" parent_id="17" rcat="-1" size="164" type="0" url_name="Musical" />
+    </cat>
+    <cat id="16" name="Изобразительные искусства" parent_id="1" rcat="-1" size="1269" type="0" url_name="Art">
+      <cat id="3129" name="Граффити" parent_id="16" rcat="-1" size="49" type="0" url_name="Graffiti" />
+      <cat id="11632" name="Виртуальные галереи" parent_id="16" rcat="16" size="222" type="0" url_name="Galleries" />
+      <cat id="11067" name="Продажа предметов искусства" parent_id="16" rcat="16" size="260" type="0" url_name="Art_for_sale" />
+      <cat id="175" name="Декоративно-прикладное искусство" parent_id="16" rcat="-1" size="210" type="0" url_name="Folk_Art" />
+      <cat id="150" name="Скульптура" parent_id="16" rcat="-1" size="60" type="0" url_name="Sculpture" />
+      <cat id="149" name="Графика и гравюра" parent_id="16" rcat="-1" size="181" type="0" url_name="Drawing" />
+      <cat id="148" name="Живопись" parent_id="16" rcat="-1" size="589" type="0" url_name="Art">
+        <cat id="11631" name="Художники и объединения" parent_id="148" rcat="148" size="315" type="0" url_name="Painters" />
+        <cat id="11619" name="Иконопись" parent_id="148" rcat="148" size="25" type="0" url_name="icon" />
+      </cat>
+      <cat id="147" name="Архитектура" parent_id="16" rcat="-1" size="136" type="0" url_name="Architecture" />
+      <cat id="126" name="Универсальное" parent_id="16" rcat="-1" size="127" type="1" url_name="General" />
+      <cat id="125" name="Прочее" parent_id="16" rcat="-1" size="116" type="2" url_name="Other" />
+    </cat>
+    <cat id="15" name="Музеи" parent_id="1" rcat="-1" size="572" type="0" url_name="Organizations">
+      <cat id="3492" name="Дома-музеи" parent_id="15" rcat="-1" size="68" type="0" url_name="Memorial_museum" />
+      <cat id="3495" name="Музеи науки и техники" parent_id="15" rcat="-1" size="41" type="0" url_name="Science_museum" />
+      <cat id="3497" name="Военно-исторические музеи" parent_id="15" rcat="-1" size="35" type="0" url_name="War_museums" />
+      <cat id="3494" name="Дворцово-парковые ансамбли" parent_id="15" rcat="-1" size="28" type="0" url_name="Palaces" />
+      <cat id="3493" name="Краеведческие, этнографические музеи" parent_id="15" rcat="-1" size="101" type="0" url_name="Museum_of_regional" />
+      <cat id="143" name="Историко-архитектурные музеи" parent_id="15" rcat="-1" size="51" type="0" url_name="Museums" />
+      <cat id="142" name="Музеи и галереи искусств" parent_id="15" rcat="-1" size="171" type="0" url_name="Galleries" />
+      <cat id="94" name="Универсальное" parent_id="15" rcat="-1" size="42" type="1" url_name="General" />
+      <cat id="93" name="Прочее" parent_id="15" rcat="-1" size="50" type="2" url_name="Other" />
+    </cat>
+  </cat>
+</cat>

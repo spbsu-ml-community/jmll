@@ -9,12 +9,14 @@ import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.RandomExt;
 import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.commons.xml.JDOMUtil;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.CompositeTrans;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.data.impl.HierDS;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
@@ -25,8 +27,11 @@ import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 
+import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import org.jdom.Element;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.*;
@@ -104,6 +109,78 @@ public class DataTools {
     return new DataSetImpl(data, target);
   }
 
+  public static void convertCatalogXmlToTree(File catalogXml, File out) throws IOException {
+    TIntIntHashMap id2parentId = new TIntIntHashMap();
+    TIntObjectHashMap<Element> id2node = new TIntObjectHashMap<Element>();
+
+    Element catalog = JDOMUtil.loadXML(catalogXml).getChild("cat");
+    List<Element> items  = catalog.getChildren();
+    for (Element item : items) {
+      try {
+        int id = Integer.parseInt(item.getAttributeValue("id"));
+        if (id != 0) {
+          int parentId = Integer.parseInt(item.getAttributeValue("parent_id"));
+          id2parentId.put(id, parentId);
+        }
+        id2node.put(id, item);
+      }
+      catch (NumberFormatException e) {
+        System.out.println(item.getAttributes().toString());
+      }
+    }
+
+    for (TIntObjectIterator<Element> iter = id2node.iterator(); iter.hasNext(); ) {
+      iter.advance();
+      int id = iter.key();
+      if (id != 0) {
+        try {
+          int parentId = id2parentId.get(id);//Integer.parseInt(iter.value().getAttributeValue("parent_id"));
+          Element element = iter.value();
+          Element parentElement = id2node.get(parentId);
+          if (parentElement != null)
+            parentElement.addContent(element.detach());
+          else  {
+            iter.remove();
+            System.out.println("id = " + id + ", unknown parent's id= " + parentId);
+          }
+        } catch (NumberFormatException e) {
+          System.out.println(iter.value().toString());
+        }
+      }
+    }
+    JDOMUtil.flushXML(id2node.get(0), out);
+  }
+
+  public static void saveHierarchicalStructure(HierDS ds, String outFile) throws IOException{
+    HierDS.CategoryNode root = ds.getRoot();
+    Element catalog = traverseSave(root, 0);
+    JDOMUtil.flushXML(catalog, new File(outFile));
+  }
+
+  private static Element traverseSave(HierDS.CategoryNode node, int depth) {
+    Element element = new Element("cat" + depth);
+    element.setAttribute("id", String.valueOf(node.getCategoryId()));
+    element.setAttribute("size", String.valueOf(node.getInnerDS() == null? 0 : node.getInnerDS().power()));
+    for (HierDS.CategoryNode child : node.getChildren()) {
+      element.addContent(traverseSave(child, depth + 1));
+    }
+    return element;
+  }
+
+  public static HierDS loadHierarchicalStructure(String hierarchyXml) throws IOException{
+    Element catalog = JDOMUtil.loadXML(new File(hierarchyXml));
+    HierDS.CategoryNode root = traverseLoad(catalog, null);
+    return new HierDS(root);
+  }
+
+  private static HierDS.CategoryNode traverseLoad(Element element, HierDS.CategoryNode parentNode) {
+    int id = Integer.parseInt(element.getAttributeValue("id"));
+    HierDS.CategoryNode node = new HierDS.CategoryNode(id, parentNode);
+    for (Element child : (List<Element>)element.getChildren())
+      node.addChild(traverseLoad(child, node));
+    return node;
+  }
+
   public static void writeModel(Trans result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);
     StreamTools.writeChars(CharSequenceTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
@@ -162,6 +239,15 @@ public class DataTools {
       classesCount = max((int)target.get(i) + 1, classesCount);
     }
     return classesCount;
+  }
+
+  public static int classEntriesCount(Vec target, int classNo) {
+    int result = 0;
+    for (int i = 0; i < target.dim(); i++) {
+      if ((int)target.get(i) == classNo)
+        result++;
+    }
+    return result;
   }
 
   public static int[] extractClass(Vec target, int classNo) {
