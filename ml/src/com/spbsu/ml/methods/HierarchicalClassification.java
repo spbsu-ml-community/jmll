@@ -5,8 +5,12 @@ import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.impl.ChangedTarget;
+import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.impl.HierDS;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
@@ -15,12 +19,20 @@ import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.HierarchicalModel;
 import com.spbsu.ml.models.MultiClassModel;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.set.hash.TIntHashSet;
+import sun.launcher.resources.launcher;
+
+import java.util.LinkedHashSet;
 
 /**
  * User: qdeee
  * Date: 06.02.14
  */
-public class HierarchicalClassification implements Optimization<L2>{
+public class HierarchicalClassification implements Optimization{
   private int weakIters;
   private double weakStep;
 
@@ -30,7 +42,7 @@ public class HierarchicalClassification implements Optimization<L2>{
   }
 
   @Override
-  public Trans fit(DataSet learn, L2 loss) {
+  public Trans fit(DataSet learn, Func loss) {
     HierDS treeStructure = ((HierDS) learn);
 
     HierDS.CategoryNode node = treeStructure.getRoot();
@@ -57,14 +69,35 @@ public class HierarchicalClassification implements Optimization<L2>{
     }
   }
 
+  private static Vec normalizeTarget(Vec target, TIntList labels) {
+    int currentClass = 0;
+    Vec result = new ArrayVec(target.dim());
+    TIntIntHashMap map = new TIntIntHashMap();
+    for (int i = 0; i < target.dim(); i++) {
+      int oldTarget = (int) target.get(i);
+      if (!map.containsKey(oldTarget)) {
+        map.put(oldTarget, currentClass++);
+        labels.add(oldTarget);
+      }
+      result.set(i, map.get(oldTarget));
+    }
+    return result;
+  }
+
   private HierarchicalModel traverseFit2(HierDS.CategoryNode node) {
-    DataSet ds = node.getInnerDS();
+    DataSetImpl ds = (DataSetImpl) node.getInnerDS();
     Func[] resultModels;
+    TIntList labels;
     if (ds == null) {
       resultModels = new Func[1];
       resultModels[0] = new MaxConstFunc();
+      labels = new TIntArrayList();
+      labels.add(node.getCategoryId());
     }
     else {
+      labels = new TIntArrayList();
+      Vec target = normalizeTarget(ds.target(), labels);
+      ds = new ChangedTarget(ds, target);
       BFGrid grid = GridTools.medianGrid(ds, 32);
       final int catId = node.getCategoryId();
       GradientBoosting<MLLLogit> boosting = new GradientBoosting<MLLLogit>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), new Computable<Vec, L2>() {
@@ -82,7 +115,7 @@ public class HierarchicalClassification implements Optimization<L2>{
         }
       };
       boosting.addListener(counter);
-      System.out.println("Boosting at node " + node.getCategoryId() + " is started, DS size=" + node.getInnerDS().power());
+      System.out.println("Boosting at node " + node.getCategoryId() + " is started, DS size=" + ds.power());
       Ensemble<MultiClassModel> ensemble = (Ensemble<MultiClassModel>) boosting.fit(ds, new MLLLogit(ds.target()));
       Trans[] mcModels = ensemble.models;
 
@@ -98,7 +131,7 @@ public class HierarchicalClassification implements Optimization<L2>{
         resultModels[i] = new FuncEnsemble(allModels[i], VecTools.fill(new ArrayVec(ensemble.size()), weakStep));
       }
     }
-    HierarchicalModel hierModel = new HierarchicalModel(resultModels, node.getNonEmptyLabels());
+    HierarchicalModel hierModel = new HierarchicalModel(resultModels, labels);
     for (HierDS.CategoryNode child : node.getChildren()) {
       if (child.isLeaf())
         continue;

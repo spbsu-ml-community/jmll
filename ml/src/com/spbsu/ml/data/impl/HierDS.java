@@ -4,7 +4,6 @@ import com.spbsu.commons.func.CacheHolder;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
@@ -25,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Math.min;
+import static java.lang.Math.signum;
 
 /**
  * User: qdeee
@@ -81,7 +81,7 @@ public class HierDS implements DataSet {
         ),
         new IndexTransVec(learn.target(), new ArrayPermutation(perm))
     );
-    root.fillDS(transformedDS.data(), id2offset, id2size);
+    root.fillDS(transformedDS, id2offset, id2size);
   }
 
   public HierDS getPrunedCopy(int minEntries) {
@@ -95,6 +95,9 @@ public class HierDS implements DataSet {
     }
     else {
       System.out.println("DataSet of category #" + node.categoryId + " (" + node.innerDS.power() + " entries):");
+//      for (DSIterator iter = node.innerDS.iterator(); iter.advance(); ) {
+//        System.out.println("y = " + iter.y() + ", x[0] = " + iter.x(0) + ", x[1] = " + iter.x(1));
+//      }
       for (CategoryNode child : node.children) {
         traversePrint(child);
       }
@@ -144,23 +147,13 @@ public class HierDS implements DataSet {
       this.children.add(node);
     }
 
-    public TIntList getNonEmptyLabels() {
-      TIntList labels = new TIntArrayList(children.size() + 1);
-      for (CategoryNode child : children) {
-        labels.add(child.categoryId);
-      }
-      if (DataTools.countClasses(innerDS.target()) == labels.size() + 1)
-        labels.add(categoryId);
-      return labels;
-    }
-
     private CategoryNode getPrunedCopy(int minEntries) {
       if (isLeaf())
         return new CategoryNode(categoryId, null);
 
       CategoryNode newNode = new CategoryNode(categoryId, null);
       int bigChilds = 0;
-      int lastClassSize = DataTools.classEntriesCount(innerDS.target(), children.size());
+      int lastClassSize = DataTools.classEntriesCount(innerDS.target(), categoryId);
 
       for (CategoryNode child : children) {
         if (child.innerDS.power() >= minEntries) {
@@ -201,7 +194,6 @@ public class HierDS implements DataSet {
       TDoubleList target = new TDoubleLinkedList();
 
       int currentIndex = 0;
-      int currentClass = 0;
       for (CategoryNode child : children) {
         if (child.innerDS.power() < minEntries) {
           for (int i = 0; i < child.innerDS.power(); i++) {
@@ -211,9 +203,8 @@ public class HierDS implements DataSet {
         else {
           for (int i = 0; i < child.innerDS.power(); i++) {
             indexes.add(currentIndex++);
-            target.add(currentClass);
+            target.add(child.categoryId);
           }
-          currentClass++;
         }
       }
 
@@ -222,7 +213,7 @@ public class HierDS implements DataSet {
       }
       if (lastClassIndexes.size() >= minEntries) {
         indexes.addAll(lastClassIndexes);
-        target.fill(target.size(), target.size() + lastClassIndexes.size(), currentClass);
+        target.fill(target.size(), target.size() + lastClassIndexes.size(), categoryId);
       }
 
       Mx data = new VecBasedMx(
@@ -235,31 +226,29 @@ public class HierDS implements DataSet {
       return new DataSetImpl(data, new ArrayVec(target.toArray()));
     }
 
-    private int fillDS(Mx fullData, TIntIntHashMap id2offset, TIntIntHashMap id2size) {
+    //return offset
+    private int fillDS(DataSet ds, TIntIntHashMap id2offset, TIntIntHashMap id2size) {
       int nodeSize = id2size.get(categoryId);
       if (isLeaf()) {
         int offset = id2offset.get(categoryId); //0 if not found
-        Mx data = fullData.sub(offset, 0, nodeSize, fullData.columns());
-        Vec target = VecTools.fill(new ArrayVec(nodeSize), 0.0);
+        Mx data = ds.data().sub(offset, 0, nodeSize, ds.data().columns());
+        Vec target = ds.target().sub(offset, nodeSize);
         innerDS = new DataSetImpl(data, target);
         return nodeSize > 0? offset : Integer.MAX_VALUE;
       }
       else {
         int offset = nodeSize > 0? id2offset.get(categoryId) : Integer.MAX_VALUE;
-        TDoubleList target = new TDoubleLinkedList();
-        int currentClass = 0;
+        int totalSize = 0;
         for (CategoryNode child : children) {
-          int childOffset = child.fillDS(fullData, id2offset, id2size);
-          int childSize = child.innerDS.power();
-          target.fill(target.size(), target.size() + childSize, currentClass++);
+          int childOffset = child.fillDS(ds, id2offset, id2size);
+          totalSize += child.innerDS.power();
           offset = min(offset, childOffset);
         }
-        target.fill(target.size(), target.size() + nodeSize, currentClass);
-
-        Mx data = offset < Integer.MAX_VALUE ? fullData.sub(offset, 0, target.size(), fullData.columns())
-                                             : new VecBasedMx(0, 0);
-        innerDS = new DataSetImpl(data, new ArrayVec(target.toArray()));
-        return target.size() > 0? offset : Integer.MAX_VALUE;
+        totalSize += nodeSize;
+        Mx data = ds.data().sub(offset, 0, totalSize, ds.data().columns());
+        Vec target = ds.target().sub(offset, totalSize);
+        innerDS = new DataSetImpl(data, target);
+        return offset; //if innerDS.power() == 0 then Integer.MAX_VALUE will be returned
       }
     }
 

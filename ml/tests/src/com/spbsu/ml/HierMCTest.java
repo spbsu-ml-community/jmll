@@ -43,7 +43,7 @@ public class HierMCTest{
   @Ignore
   public static class Base {
     protected static HierDS hier;
-    protected static int minEntries = 10;
+    protected static int minEntries = 3;
     protected static int iters = 1;
 
     protected static void defaultLoad(String hierXml, String featuresTxt) throws IOException {
@@ -62,6 +62,7 @@ public class HierMCTest{
       HierDS prunedTree = hier.getPrunedCopy(minEntries);
       HierDS.traversePrint(prunedTree.getRoot());
     }
+
 
     @Test
     public void fitting() {
@@ -108,6 +109,11 @@ public class HierMCTest{
       DataSet features = loadRegressionAsMC(FEATURES, depth, new TDoubleArrayList());
       VecTools.append(features.target(), VecTools.fill(new ArrayVec(features.power()), (1 << depth) - 1));
       hier.fill(features);
+    }
+
+    @Test
+    public void pruning() {
+      super.pruning();
     }
 
     private static HierDS prepareHierStructForRegression(int depth) throws IOException {
