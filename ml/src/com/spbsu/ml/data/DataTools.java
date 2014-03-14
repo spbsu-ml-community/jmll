@@ -16,7 +16,7 @@ import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
-import com.spbsu.ml.data.impl.HierDS;
+import com.spbsu.ml.data.impl.Hierarchy;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
@@ -151,31 +151,31 @@ public class DataTools {
     JDOMUtil.flushXML(id2node.get(0), out);
   }
 
-  public static void saveHierarchicalStructure(HierDS ds, String outFile) throws IOException{
-    HierDS.CategoryNode root = ds.getRoot();
+  public static void saveHierarchicalStructure(Hierarchy ds, String outFile) throws IOException{
+    Hierarchy.CategoryNode root = ds.getRoot();
     Element catalog = traverseSave(root, 0);
     JDOMUtil.flushXML(catalog, new File(outFile));
   }
 
-  private static Element traverseSave(HierDS.CategoryNode node, int depth) {
+  private static Element traverseSave(Hierarchy.CategoryNode node, int depth) {
     Element element = new Element("cat" + depth);
     element.setAttribute("id", String.valueOf(node.getCategoryId()));
     element.setAttribute("size", String.valueOf(node.getInnerDS() == null? 0 : node.getInnerDS().power()));
-    for (HierDS.CategoryNode child : node.getChildren()) {
+    for (Hierarchy.CategoryNode child : node.getChildren()) {
       element.addContent(traverseSave(child, depth + 1));
     }
     return element;
   }
 
-  public static HierDS loadHierarchicalStructure(String hierarchyXml) throws IOException{
+  public static Hierarchy loadHierarchicalStructure(String hierarchyXml) throws IOException{
     Element catalog = JDOMUtil.loadXML(new File(hierarchyXml));
-    HierDS.CategoryNode root = traverseLoad(catalog, null);
-    return new HierDS(root);
+    Hierarchy.CategoryNode root = traverseLoad(catalog, null);
+    return new Hierarchy(root);
   }
 
-  private static HierDS.CategoryNode traverseLoad(Element element, HierDS.CategoryNode parentNode) {
+  private static Hierarchy.CategoryNode traverseLoad(Element element, Hierarchy.CategoryNode parentNode) {
     int id = Integer.parseInt(element.getAttributeValue("id"));
-    HierDS.CategoryNode node = new HierDS.CategoryNode(id, parentNode);
+    Hierarchy.CategoryNode node = new Hierarchy.CategoryNode(id, parentNode);
     for (Element child : (List<Element>)element.getChildren())
       node.addChild(traverseLoad(child, node));
     return node;

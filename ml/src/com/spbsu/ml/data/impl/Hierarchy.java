@@ -1,7 +1,5 @@
 package com.spbsu.ml.data.impl;
 
-import com.spbsu.commons.func.CacheHolder;
-import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
@@ -9,7 +7,7 @@ import com.spbsu.commons.math.vectors.impl.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
-import com.spbsu.ml.data.DSIterator;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import gnu.trove.list.TDoubleList;
@@ -30,11 +28,10 @@ import static java.lang.Math.signum;
  * User: qdeee
  * Date: 21.02.14
  */
-public class HierDS implements DataSet {
-  private DataSet transformedDS;
+public class Hierarchy {
   private CategoryNode root;
 
-  public HierDS(HierDS.CategoryNode treeRoot) {
+  public Hierarchy(Hierarchy.CategoryNode treeRoot) {
     this.root = treeRoot;
   }
 
@@ -72,7 +69,7 @@ public class HierDS implements DataSet {
 
     int[] perm = idxs.toArray();
 
-    transformedDS = new DataSetImpl(
+    DataSet transformedDS = new DataSetImpl(
         new VecBasedMx(
             learn.xdim(),
             new IndexTransVec(learn.data(),
@@ -84,9 +81,32 @@ public class HierDS implements DataSet {
     root.fillDS(transformedDS, id2offset, id2size);
   }
 
-  public HierDS getPrunedCopy(int minEntries) {
+  public Hierarchy getPrunedCopy(int minEntries) {
     CategoryNode newRoot = root.getPrunedCopy(minEntries);
-    return new HierDS(newRoot);
+    return new Hierarchy(newRoot);
+  }
+
+  public static TIntIntHashMap getTargetMapping(CategoryNode from, CategoryNode to) {
+    TIntIntHashMap map = new TIntIntHashMap();
+    traverseCreateMapping(from, to, map);
+    return map;
+  }
+
+  private static void traverseCreateMapping(CategoryNode from , CategoryNode to, TIntIntHashMap map) {
+    map.put(from.categoryId, to.categoryId);
+    for (CategoryNode fromChild : from.children) {
+      boolean hasEqualChild = false;
+      for (CategoryNode toChild : to.children) {
+        if (fromChild.categoryId == toChild.categoryId) {
+          traverseCreateMapping(fromChild, toChild, map);
+          hasEqualChild = true;
+          break;
+        }
+      }
+      if (!hasEqualChild) {
+        traverseCreateMapping(fromChild, to, map);
+      }
+    }
   }
 
   public static void traversePrint(CategoryNode node) {
@@ -98,9 +118,9 @@ public class HierDS implements DataSet {
 //      for (DSIterator iter = node.innerDS.iterator(); iter.advance(); ) {
 //        System.out.println("y = " + iter.y() + ", x[0] = " + iter.x(0) + ", x[1] = " + iter.x(1));
 //      }
-      for (CategoryNode child : node.children) {
-        traversePrint(child);
-      }
+    }
+    for (CategoryNode child : node.children) {
+      traversePrint(child);
     }
   }
 
@@ -116,6 +136,14 @@ public class HierDS implements DataSet {
     }
     order.add(node.categoryId);
     return order;
+  }
+
+  public int nodesCount(CategoryNode node) {
+    int result = 0;
+    for (CategoryNode child : node.children) {
+      result += nodesCount(child);
+    }
+    return result + 1;
   }
 
   public CategoryNode getRoot() {
@@ -154,7 +182,6 @@ public class HierDS implements DataSet {
       CategoryNode newNode = new CategoryNode(categoryId, null);
       int bigChilds = 0;
       int lastClassSize = DataTools.classEntriesCount(innerDS.target(), categoryId);
-
       for (CategoryNode child : children) {
         if (child.innerDS.power() >= minEntries) {
           CategoryNode newChild = child.getPrunedCopy(minEntries);
@@ -238,18 +265,36 @@ public class HierDS implements DataSet {
       }
       else {
         int offset = nodeSize > 0? id2offset.get(categoryId) : Integer.MAX_VALUE;
-        int totalSize = 0;
+        TDoubleList target = new TDoubleLinkedList();
         for (CategoryNode child : children) {
           int childOffset = child.fillDS(ds, id2offset, id2size);
-          totalSize += child.innerDS.power();
           offset = min(offset, childOffset);
+          target.fill(target.size(), target.size() + child.innerDS.power(), child.categoryId);
         }
-        totalSize += nodeSize;
-        Mx data = ds.data().sub(offset, 0, totalSize, ds.data().columns());
-        Vec target = ds.target().sub(offset, totalSize);
-        innerDS = new DataSetImpl(data, target);
+        target.fill(target.size(), target.size() + nodeSize, categoryId);
+        Mx data = ds.data().sub(offset, 0, target.size(), ds.data().columns());
+        innerDS = new DataSetImpl(data, new ArrayVec(target.toArray()));
         return offset; //if innerDS.power() == 0 then Integer.MAX_VALUE will be returned
       }
+    }
+
+    public Vec normalizeTarget(TIntList labels) {
+      if (innerDS == null)
+        return null;
+
+      Vec oldTarget = innerDS.target();
+      int currentClass = 0;
+      Vec result = new ArrayVec(oldTarget.dim());
+      TIntIntHashMap map = new TIntIntHashMap();
+      for (int i = 0; i < oldTarget.dim(); i++) {
+        int oldTargetVal = (int) oldTarget.get(i);
+        if (!map.containsKey(oldTargetVal)) {
+          map.put(oldTargetVal, currentClass++);
+          labels.add(oldTargetVal);
+        }
+        result.set(i, map.get(oldTargetVal));
+      }
+      return result;
     }
 
     public DataSet getInnerDS() {
@@ -259,29 +304,5 @@ public class HierDS implements DataSet {
     public boolean isLeaf() {
       return children.size() == 0;
     }
-  }
-
-  public <CH extends CacheHolder, R> R cache(Class<? extends Computable<CH, R>> type) {
-    return transformedDS.cache(type);
-  }
-
-  public int power() {
-    return transformedDS.power();
-  }
-
-  public int xdim() {
-    return transformedDS.xdim();
-  }
-
-  public DSIterator iterator() {
-    return transformedDS.iterator();
-  }
-
-  public Mx data() {
-    return transformedDS.data();
-  }
-
-  public Vec target() {
-    return transformedDS.target();
   }
 }

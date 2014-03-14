@@ -3,25 +3,18 @@ package com.spbsu.ml.models;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
-import com.spbsu.ml.func.TransJoin;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * User: qdeee
  * Date: 06.02.14
  */
 public class HierarchicalModel extends MultiClassModel {
-  TIntObjectHashMap<HierarchicalModel> children = new TIntObjectHashMap<HierarchicalModel>();
   TIntList classLabels = new TIntArrayList();
+  TIntObjectHashMap<HierarchicalModel> label2childrenModel = new TIntObjectHashMap<HierarchicalModel>();
 
   public HierarchicalModel(Func[] dirs, TIntList classLabels) {
     super(dirs);
@@ -33,17 +26,17 @@ public class HierarchicalModel extends MultiClassModel {
   }
 
   public void addChildren(HierarchicalModel child, int catId) {
-    children.put(catId, child);
+    label2childrenModel.put(catId, child);
   }
 
   public boolean isLeaf() {
-    return children.size() == 0;
+    return label2childrenModel.size() == 0;
   }
 
   public int bestClass(Vec x) {
     int c = super.bestClass(x);
     int label = classLabels.get(c);
-    return children.containsKey(label)? children.get(label).bestClass(x) : label;
+    return label2childrenModel.containsKey(label)? label2childrenModel.get(label).bestClass(x) : label;
   }
 
   public Vec bestClassAll(Mx data) {
@@ -52,9 +45,5 @@ public class HierarchicalModel extends MultiClassModel {
       result.set(i, bestClass(data.row(i)));
     }
     return result;
-  }
-
-  public Vec probs(Vec x) {
-    return null;
   }
 }
