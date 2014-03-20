@@ -15,14 +15,16 @@ import com.spbsu.ml.optimization.ConvexOptimize;
 public class Nesterov1 implements ConvexOptimize {
   private static Logger LOG = Logger.create(Nesterov1.class);
 
-  private Vec x0;
+  private final Vec x0;
+  private final double eps;
 
-  public Nesterov1(Vec x0) {
+  public Nesterov1(Vec x0, double eps) {
     this.x0 = x0;
+    this.eps = eps;
   }
 
   @Override
-  public Vec optimize(ConvexFunction func, double eps) {
+  public Vec optimize(ConvexFunction func) {
     final int n = func.xdim();
     double alpha;
     double L = func.getGradLipParam();

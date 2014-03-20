@@ -5,6 +5,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * User: qdeee
@@ -62,6 +63,7 @@ public class TensorNetFunction extends Func.Stub implements ConvexFunction {
   }
 
 
+  @NotNull
   @Override
   public Trans gradient() {
     return new Trans.Stub() {
@@ -126,5 +128,10 @@ public class TensorNetFunction extends Func.Stub implements ConvexFunction {
 
   public Mx getX() {
     return X;
+  }
+
+  @Override
+  public Vec gradient(final Vec x) {
+    return gradient().trans(x);
   }
 }

@@ -7,6 +7,7 @@ import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 
@@ -62,7 +63,7 @@ public class QuadraticFunction extends Func.Stub implements ConvexFunction {
     return dim;
   }
 
-  @Nullable
+  @NotNull
   @Override
   public Trans gradient() {
     return new Trans.Stub() {
@@ -127,5 +128,10 @@ public class QuadraticFunction extends Func.Stub implements ConvexFunction {
   @Override
   public double getGlobalConvexParam() {
     return m;
+  }
+
+  @Override
+  public Vec gradient(final Vec x) {
+    return gradient().trans(x);
   }
 }

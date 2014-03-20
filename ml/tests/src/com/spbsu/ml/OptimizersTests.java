@@ -39,16 +39,16 @@ public class OptimizersTests extends TestCase {
         Vec x0 = new ArrayVec(N);
 
         List<ConvexOptimize> algs = new ArrayList<ConvexOptimize>();
-        algs.add(new Nesterov1(x0));
-        algs.add(new Nesterov2(x0));
+        algs.add(new Nesterov1(x0, EPS));
+        algs.add(new Nesterov2(x0, EPS));
 //        algs.add(new CustomNesterov(x0));
 //        algs.add(new AdaptiveNesterov(x0));
-        algs.add(new GradientDescent(x0));
+        algs.add(new GradientDescent(x0, EPS));
 
         for (int k = 0; k < TESTS_COUNT; k++) {
             QuadraticFunction func = createRandomConvexFunc(new FastRandom(k));
             for (ConvexOptimize method : algs) {
-                assertTrue(method.getClass().toString(), VecTools.distance(func.getExactExtremum(), method.optimize(func, EPS)) < EPS);
+                assertTrue(method.getClass().toString(), VecTools.distance(func.getExactExtremum(), method.optimize(func)) < EPS);
             }
         }
     }
@@ -93,8 +93,8 @@ public class OptimizersTests extends TestCase {
         Vec w = new ArrayVec(-1, -1, -4);
 
         QuadraticFunction func = new QuadraticFunction(mxA, w, 0);
-        ConvexOptimize nesterov1 = new Nesterov1(new ArrayVec(3));
-        assertTrue(VecTools.distance(func.getExactExtremum(), nesterov1.optimize(func, EPS)) < EPS);
+        ConvexOptimize nesterov1 = new Nesterov1(new ArrayVec(3), EPS);
+        assertTrue(VecTools.distance(func.getExactExtremum(), nesterov1.optimize(func)) < EPS);
     }
 
     public void testNesterov2Simple() {
@@ -105,15 +105,15 @@ public class OptimizersTests extends TestCase {
         Vec w = new ArrayVec(-1, -1, -4);
 
         QuadraticFunction func = new QuadraticFunction(mxA, w, 0);
-        ConvexOptimize nesterov2 = new Nesterov2(new ArrayVec(3));
-        assertTrue(VecTools.distance(func.getExactExtremum(), nesterov2.optimize(func, EPS)) < EPS);
+        ConvexOptimize nesterov2 = new Nesterov2(new ArrayVec(3), EPS);
+        assertTrue(VecTools.distance(func.getExactExtremum(), nesterov2.optimize(func)) < EPS);
     }
 
     public void testNesterov2Random() {
         QuadraticFunction func = createRandomConvexFunc(new FastRandom());
-        ConvexOptimize nesterov2 = new Nesterov2(new ArrayVec(N));
+        ConvexOptimize nesterov2 = new Nesterov2(new ArrayVec(N), EPS);
         Vec expected = func.getExactExtremum();
-        Vec actual = nesterov2.optimize(func, EPS);
+        Vec actual = nesterov2.optimize(func);
 
         LOG.message("|X| = " + VecTools.norm(actual));
         assertTrue(VecTools.distance(expected, actual) < EPS);
