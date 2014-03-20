@@ -146,7 +146,7 @@ public class JMLLCLI {
             metrics[i] = DataTools.targetByName(metricNames[i]).compute(test.target());
           }
         } else {
-          metrics[0] = loss;
+          metrics[0] = DataTools.targetByName(target).compute(test.target());
         }
 
         final Action<Trans> progressHandler = new ProgressPrinter(learn, test, loss, metrics);
