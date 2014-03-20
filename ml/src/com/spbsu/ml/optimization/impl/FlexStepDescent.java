@@ -17,10 +17,12 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  */
 public class FlexStepDescent implements ConvexOptimize {
     private static Logger LOG = Logger.create(FlexStepDescent.class);
-    private Vec x0;
+    private final Vec x0;
+    private final double eps;
 
-    public FlexStepDescent(Vec x0) {
+    public FlexStepDescent(Vec x0, double eps) {
         this.x0 = x0;
+        this.eps = eps;
     }
 
     Vec addXtoCY(Vec x, Vec y, double c) {
@@ -31,7 +33,7 @@ public class FlexStepDescent implements ConvexOptimize {
     }
 
     @Override
-    public Vec optimize(ConvexFunction func, double eps) {
+    public Vec optimize(ConvexFunction func) {
         Vec x1 = copy(x0);
         Vec grad = func.gradient().trans(x0);
         double distance = 1;

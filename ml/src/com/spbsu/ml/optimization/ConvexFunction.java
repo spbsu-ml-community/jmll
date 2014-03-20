@@ -1,6 +1,7 @@
 package com.spbsu.ml.optimization;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * Time: 19:01
  */
 
-public interface ConvexFunction extends Trans {
+public interface ConvexFunction extends FuncC1{
     @NotNull
     double getGlobalConvexParam();
 

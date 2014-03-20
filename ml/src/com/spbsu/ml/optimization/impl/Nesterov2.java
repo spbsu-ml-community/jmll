@@ -16,13 +16,15 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
 
 public class Nesterov2 implements ConvexOptimize {
   private static Logger LOG = Logger.create(Nesterov2.class);
-  private Vec x0;
+  private final Vec x0;
+  private final double eps;
 
-  public Nesterov2(Vec x0) {
+  public Nesterov2(Vec x0, double eps) {
     this.x0 = x0;
+    this.eps = eps;
   }
 
-  public Vec optimize(ConvexFunction func, double eps) {
+  public Vec optimize(ConvexFunction func) {
     double m = func.getGlobalConvexParam();
     double lk = func.getGradLipParam();
 

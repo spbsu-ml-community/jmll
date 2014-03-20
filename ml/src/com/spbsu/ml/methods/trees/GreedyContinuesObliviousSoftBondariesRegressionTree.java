@@ -12,6 +12,7 @@ import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.optimization.ConvexFunction;
 import com.spbsu.ml.optimization.ConvexOptimize;
 import com.spbsu.ml.optimization.impl.Nesterov1;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -329,6 +330,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
       return lipshicParametr;
     }
 
+    @NotNull
     @Override
     public Trans gradient() {
       return new Trans.Stub() {
@@ -353,6 +355,11 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     public double value(Vec x) {
       return calculateFine(x.toArray());
     }
+
+    @Override
+    public Vec gradient(final Vec x) {
+      return gradient().trans(x);
+    }
   }
 
   public ContinousObliviousTree fit(DataSet ds, L2 loss) {
@@ -367,8 +374,8 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
     //for(int i =0 ;i < linearMissCoefficient.length;i++)
     //    System.out.println(linearMissCoefficient[i]);
-    ConvexOptimize optimize = new Nesterov1(new ArrayVec(numberOfVariables));
-    Vec x = optimize.optimize(new Function(), 0.5);
+    ConvexOptimize optimize = new Nesterov1(new ArrayVec(numberOfVariables), 0.5);
+    Vec x = optimize.optimize(new Function());
     double[] value = x.toArray();
     //calculateFine(value);
 

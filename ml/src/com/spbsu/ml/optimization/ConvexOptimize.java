@@ -8,6 +8,5 @@ import com.spbsu.commons.math.vectors.Vec;
  * Time: 18:58
  */
 
-public interface ConvexOptimize {
-    public Vec optimize(ConvexFunction func, double eps);
+public interface ConvexOptimize extends Optimize<ConvexFunction>{
 }
