@@ -248,9 +248,10 @@ public class JMLLCLI {
     StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
     Method[] builderMethods = factory.getClass().getMethods();
     while (paramsTok.hasMoreTokens()) {
-      final String[] temp = StringUtils.split(paramsTok.nextToken().trim(), "=", 2);
-      final String name = temp[0].trim();
-      final String value = temp[1].trim();
+      final String param = paramsTok.nextToken();
+      final int splitPos = param.indexOf('=');
+      final String name = param.substring(0, splitPos).trim();
+      final String value = param.substring(splitPos + 1, param.length()).trim();
       Method setter = null;
       for (int m = 0; m < builderMethods.length && setter == null; m++) {
         if (builderMethods[m].getName().equalsIgnoreCase(name))
