@@ -3,17 +3,12 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.FuncC1;
-import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
-import com.spbsu.ml.optimization.ConvexFunction;
-import com.spbsu.ml.optimization.ConvexOptimize;
 import com.spbsu.ml.optimization.Optimize;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
-import java.util.Collection;
 import java.util.Random;
 
 /**

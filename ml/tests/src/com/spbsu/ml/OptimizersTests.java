@@ -7,8 +7,9 @@ import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.logging.Logger;
-import com.spbsu.ml.optimization.ConvexOptimize;
-import com.spbsu.ml.optimization.QuadraticFunction;
+import com.spbsu.ml.optimization.FuncConvex;
+import com.spbsu.ml.optimization.Optimize;
+import com.spbsu.ml.optimization.PDQuadraticFunction;
 import com.spbsu.ml.optimization.TensorNetFunction;
 import com.spbsu.ml.optimization.impl.ALS;
 import com.spbsu.ml.optimization.impl.GradientDescent;
@@ -38,7 +39,7 @@ public class OptimizersTests extends TestCase {
     public void testAllMethodsRandom() {
         Vec x0 = new ArrayVec(N);
 
-        List<ConvexOptimize> algs = new ArrayList<ConvexOptimize>();
+        List<Optimize<FuncConvex>> algs = new ArrayList<Optimize<FuncConvex>>();
         algs.add(new Nesterov1(x0, EPS));
         algs.add(new Nesterov2(x0, EPS));
 //        algs.add(new CustomNesterov(x0));
@@ -46,9 +47,9 @@ public class OptimizersTests extends TestCase {
         algs.add(new GradientDescent(x0, EPS));
 
         for (int k = 0; k < TESTS_COUNT; k++) {
-            QuadraticFunction func = createRandomConvexFunc(new FastRandom(k));
-            for (ConvexOptimize method : algs) {
-                assertTrue(method.getClass().toString(), VecTools.distance(func.getExactExtremum(), method.optimize(func)) < EPS);
+            PDQuadraticFunction func = createRandomConvexFunc(new FastRandom(k));
+            for (Optimize<FuncConvex> method : algs) {
+                assertTrue(method.getClass().toString(), VecTools.distance(func.getExactExtremumForPositiveDef(), method.optimize(func)) < EPS);
             }
         }
     }
@@ -60,15 +61,15 @@ public class OptimizersTests extends TestCase {
 //                0, 0, 30));
 //        Vec w = new ArrayVec(-1, -1, -4);
 //
-//        QuadraticFunction func = new QuadraticFunction(mxA, w, 0);
+//        PDQuadraticFunction func = new PDQuadraticFunction(mxA, w, 0);
 //        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(3));
-//        assertTrue(VecTools.distance(func.getExactExtremum(), customNesterov.optimize(func, EPS)) < EPS);
+//        assertTrue(VecTools.distance(func.getExactExtremumForPositiveDef(), customNesterov.optimize(func, EPS)) < EPS);
 //    }
 //
 //    public void testAdaptiveNesterovRandom() {
-//        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
+//        PDQuadraticFunction func = createRandomConvexFunc(new FastRandom());
 //        ConvexOptimize adaptiveNesterov = new AdaptiveNesterov(new ArrayVec(func.ydim()));
-//        Vec expected = func.getExactExtremum();
+//        Vec expected = func.getExactExtremumForPositiveDef();
 //        Vec actual = adaptiveNesterov.optimize(func, EPS);
 //
 //        LOG.message("|X| = " + VecTools.norm(actual));
@@ -76,9 +77,9 @@ public class OptimizersTests extends TestCase {
 //    }
 //
 //    public void testCustomNesterovRandom() {
-//        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
+//        PDQuadraticFunction func = createRandomConvexFunc(new FastRandom());
 //        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(func.ydim()));
-//        Vec expected = func.getExactExtremum();
+//        Vec expected = func.getExactExtremumForPositiveDef();
 //        Vec actual = customNesterov.optimize(func, EPS);
 //
 //        LOG.message("|X| = " + VecTools.norm(actual));
@@ -92,9 +93,9 @@ public class OptimizersTests extends TestCase {
                 0, 0, 30));
         Vec w = new ArrayVec(-1, -1, -4);
 
-        QuadraticFunction func = new QuadraticFunction(mxA, w, 0);
-        ConvexOptimize nesterov1 = new Nesterov1(new ArrayVec(3), EPS);
-        assertTrue(VecTools.distance(func.getExactExtremum(), nesterov1.optimize(func)) < EPS);
+        PDQuadraticFunction func = new PDQuadraticFunction(mxA, w, 0);
+      Optimize<FuncConvex> nesterov1 = new Nesterov1(new ArrayVec(3), EPS);
+        assertTrue(VecTools.distance(func.getExactExtremumForPositiveDef(), nesterov1.optimize(func)) < EPS);
     }
 
     public void testNesterov2Simple() {
@@ -104,15 +105,15 @@ public class OptimizersTests extends TestCase {
                 0, 0, 30));
         Vec w = new ArrayVec(-1, -1, -4);
 
-        QuadraticFunction func = new QuadraticFunction(mxA, w, 0);
-        ConvexOptimize nesterov2 = new Nesterov2(new ArrayVec(3), EPS);
-        assertTrue(VecTools.distance(func.getExactExtremum(), nesterov2.optimize(func)) < EPS);
+        PDQuadraticFunction func = new PDQuadraticFunction(mxA, w, 0);
+        Optimize<FuncConvex> nesterov2 = new Nesterov2(new ArrayVec(3), EPS);
+        assertTrue(VecTools.distance(func.getExactExtremumForPositiveDef(), nesterov2.optimize(func)) < EPS);
     }
 
     public void testNesterov2Random() {
-        QuadraticFunction func = createRandomConvexFunc(new FastRandom());
-        ConvexOptimize nesterov2 = new Nesterov2(new ArrayVec(N), EPS);
-        Vec expected = func.getExactExtremum();
+        PDQuadraticFunction func = createRandomConvexFunc(new FastRandom());
+        Optimize<FuncConvex> nesterov2 = new Nesterov2(new ArrayVec(N), EPS);
+        Vec expected = func.getExactExtremumForPositiveDef();
         Vec actual = nesterov2.optimize(func);
 
         LOG.message("|X| = " + VecTools.norm(actual));
@@ -123,11 +124,11 @@ public class OptimizersTests extends TestCase {
         Mx mxA = new VecBasedMx(2, new ArrayVec(
                 2, 1,
                 1, 2));
-        QuadraticFunction func = new QuadraticFunction(mxA, new ArrayVec(-1, -11), 0);
-        assertTrue(distance(func.getExactExtremum(), new ArrayVec(-3, 7)) < 1e-5);
+        PDQuadraticFunction func = new PDQuadraticFunction(mxA, new ArrayVec(-1, -11), 0);
+        assertTrue(distance(func.getExactExtremumForPositiveDef(), new ArrayVec(-3, 7)) < 1e-5);
     }
 
-    private QuadraticFunction createRandomConvexFunc(Random rnd) {
+    private PDQuadraticFunction createRandomConvexFunc(Random rnd) {
         Vec w = new ArrayVec(N);
         Mx mxL = new VecBasedMx(N, N);
         Mx mxQ = new VecBasedMx(N, N);
@@ -154,7 +155,7 @@ public class OptimizersTests extends TestCase {
         for (int i = 0; i < w.dim(); i++) {
             w.set(i, rnd.nextGaussian());
         }
-        return new QuadraticFunction(mxA, w, 0);
+        return new PDQuadraticFunction(mxA, w, 0);
     }
 
     public void testALS() throws Exception {

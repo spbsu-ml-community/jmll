@@ -3,8 +3,8 @@ package com.spbsu.ml.optimization.impl;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.logging.Logger;
-import com.spbsu.ml.optimization.ConvexFunction;
-import com.spbsu.ml.optimization.ConvexOptimize;
+import com.spbsu.ml.optimization.FuncConvex;
+import com.spbsu.ml.optimization.Optimize;
 
 import static com.spbsu.commons.math.vectors.VecTools.copy;
 
@@ -15,7 +15,7 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  * Time: 21:21
  * Idea please stop making my code yellow
  */
-public class FlexStepDescent implements ConvexOptimize {
+public class FlexStepDescent implements Optimize<FuncConvex> {
     private static Logger LOG = Logger.create(FlexStepDescent.class);
     private final Vec x0;
     private final double eps;
@@ -33,7 +33,7 @@ public class FlexStepDescent implements ConvexOptimize {
     }
 
     @Override
-    public Vec optimize(ConvexFunction func) {
+    public Vec optimize(FuncConvex func) {
         Vec x1 = copy(x0);
         Vec grad = func.gradient().trans(x0);
         double distance = 1;

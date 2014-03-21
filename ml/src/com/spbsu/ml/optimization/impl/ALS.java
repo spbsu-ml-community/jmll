@@ -3,13 +3,14 @@ package com.spbsu.ml.optimization.impl;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.ml.optimization.Optimize;
 import com.spbsu.ml.optimization.TensorNetFunction;
 
 /**
  * User: qdeee
  * Date: 09.09.13
  */
-public class ALS  {
+public class ALS implements Optimize<TensorNetFunction>{
     private Vec x0;
     private int iterCount;
 
@@ -18,6 +19,7 @@ public class ALS  {
         this.iterCount = iterCount;
     }
 
+    @Override
     public Vec optimize(TensorNetFunction func) {
         int n = func.xdim();
 

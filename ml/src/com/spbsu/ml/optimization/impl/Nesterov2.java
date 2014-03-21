@@ -3,8 +3,8 @@ package com.spbsu.ml.optimization.impl;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.logging.Logger;
-import com.spbsu.ml.optimization.ConvexFunction;
-import com.spbsu.ml.optimization.ConvexOptimize;
+import com.spbsu.ml.optimization.FuncConvex;
+import com.spbsu.ml.optimization.Optimize;
 
 import static com.spbsu.commons.math.vectors.VecTools.copy;
 
@@ -14,7 +14,7 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  * Time: 19:05
  */
 
-public class Nesterov2 implements ConvexOptimize {
+public class Nesterov2 implements Optimize<FuncConvex> {
   private static Logger LOG = Logger.create(Nesterov2.class);
   private final Vec x0;
   private final double eps;
@@ -24,7 +24,7 @@ public class Nesterov2 implements ConvexOptimize {
     this.eps = eps;
   }
 
-  public Vec optimize(ConvexFunction func) {
+  public Vec optimize(FuncConvex func) {
     double m = func.getGlobalConvexParam();
     double lk = func.getGradLipParam();
 

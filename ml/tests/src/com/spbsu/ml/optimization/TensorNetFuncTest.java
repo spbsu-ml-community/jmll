@@ -44,7 +44,7 @@ public class TensorNetFuncTest extends TestCase {
     System.out.println("global convex : " + func.getGlobalConvexParam());
     System.out.println("lip : " + func.getGradLipParam());
 
-    ConvexOptimize optimize = new Nesterov2(z0, EPS);
+    Optimize<FuncConvex> optimize = new Nesterov2(z0, EPS);
     Vec zMin = optimize.optimize(func);
 
     System.out.println("grad norm: " + VecTools.norm(func.gradient().trans(zMin)));
@@ -74,7 +74,7 @@ public class TensorNetFuncTest extends TestCase {
             16, 12, 8, 4));
 
     Vec z0 = new ArrayVec(1,1,1,1,1,1,1,1);
-    ConvexOptimize nesterov = new Nesterov2(z0, EPS);
+    Optimize<FuncConvex> nesterov = new Nesterov2(z0, EPS);
 
     Vec u = new ArrayVec(dim);
     Vec v = new ArrayVec(dim);
@@ -85,7 +85,7 @@ public class TensorNetFuncTest extends TestCase {
 
     for (double c1 = 0.005; c1 < 10; c1+=0.005) {
       for (double c2 = 0.005; c2 < 10; c2+=0.005) {
-        ConvexFunction func = new TensorNetFunction(X, c1, c2);
+        FuncConvex func = new TensorNetFunction(X, c1, c2);
         Vec zMin = nesterov.optimize(func);
 
         for (int i = 0; i < dim; i++) {
