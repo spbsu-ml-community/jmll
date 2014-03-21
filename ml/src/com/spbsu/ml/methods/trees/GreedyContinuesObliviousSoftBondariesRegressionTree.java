@@ -3,14 +3,13 @@ package com.spbsu.ml.methods.trees;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.GreedyTDRegion;
 import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.optimization.ConvexFunction;
-import com.spbsu.ml.optimization.ConvexOptimize;
+import com.spbsu.ml.optimization.FuncConvex;
+import com.spbsu.ml.optimization.Optimize;
 import com.spbsu.ml.optimization.impl.Nesterov1;
 import org.jetbrains.annotations.NotNull;
 
@@ -314,7 +313,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 
   }
 
-  public class Function extends Func.Stub implements ConvexFunction {
+  public class Function extends FuncConvex.Stub {
     @Override
     public int dim() {
       return numberOfVariables;
@@ -374,7 +373,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
     //for(int i =0 ;i < linearMissCoefficient.length;i++)
     //    System.out.println(linearMissCoefficient[i]);
-    ConvexOptimize optimize = new Nesterov1(new ArrayVec(numberOfVariables), 0.5);
+    Optimize<FuncConvex> optimize = new Nesterov1(new ArrayVec(numberOfVariables), 0.5);
     Vec x = optimize.optimize(new Function());
     double[] value = x.toArray();
     //calculateFine(value);

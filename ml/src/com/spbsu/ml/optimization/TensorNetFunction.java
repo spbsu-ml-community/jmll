@@ -3,7 +3,6 @@ package com.spbsu.ml.optimization;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * User: qdeee
  * Date: 30.08.13
  */
-public class TensorNetFunction extends Func.Stub implements ConvexFunction {
+public class TensorNetFunction extends FuncConvex.Stub {
   private final Mx X;
   private final double c1;
   private final double c2;
@@ -52,6 +51,7 @@ public class TensorNetFunction extends Func.Stub implements ConvexFunction {
 //        m = getLocalConvexParam(new ArrayVec(2 * X.rows()));
   }
 
+  @NotNull
   @Override
   public double getGlobalConvexParam() {
     return m;

@@ -4,6 +4,7 @@ import com.spbsu.commons.math.vectors.IntBasis;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.ml.FuncC1;
 
@@ -32,7 +33,7 @@ public class FactorizationMachineModel extends FuncC1.Stub {
 
   @Override
   public Vec gradient(final Vec x) {
-    return null;
+    return new ArrayVec(x.dim());
   }
 
   @Override

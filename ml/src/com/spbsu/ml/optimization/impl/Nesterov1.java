@@ -4,15 +4,15 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.logging.Logger;
-import com.spbsu.ml.optimization.ConvexFunction;
-import com.spbsu.ml.optimization.ConvexOptimize;
+import com.spbsu.ml.optimization.FuncConvex;
+import com.spbsu.ml.optimization.Optimize;
 
 /**
  * User: qde
  * Date: 06.09.13
  * Time: 16:45
  */
-public class Nesterov1 implements ConvexOptimize {
+public class Nesterov1 implements Optimize<FuncConvex> {
   private static Logger LOG = Logger.create(Nesterov1.class);
 
   private final Vec x0;
@@ -24,7 +24,7 @@ public class Nesterov1 implements ConvexOptimize {
   }
 
   @Override
-  public Vec optimize(ConvexFunction func) {
+  public Vec optimize(FuncConvex func) {
     final int n = func.xdim();
     double alpha;
     double L = func.getGradLipParam();
