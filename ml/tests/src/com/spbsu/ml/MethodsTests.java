@@ -29,7 +29,10 @@ import com.spbsu.ml.models.ProbabilisticGraphicalModel;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Random;
+import java.util.Scanner;
 
 /**
  * User: solar
@@ -216,7 +219,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testOTBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 2000, 0.02);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 2000, 0.01);
     new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
   }
 
@@ -231,15 +234,14 @@ public class MethodsTests extends GridTest {
   public void testCOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
       new BootstrapOptimization(new GreedyContinuesObliviousSoftBondariesRegressionTree(rng, learn, GridTools.medianGrid(learn, 32), 6, 10, true, 1, 0, 0, 1e5), rng), 2000, 0.01);
+    new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
   }
 
   public void testEOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
-      new BootstrapOptimization(
+
         new GreedyExponentialObliviousTree(
-          rng,
-          learn,
-          GridTools.medianGrid(learn, 32), 6, 25), rng), 2000, 0.01);
+          GridTools.medianGrid(learn, 32), 6, 2500), 2000, 0.04);
     new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
   }
 
@@ -283,8 +285,6 @@ public class MethodsTests extends GridTest {
     ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
     for (int depth = 1; depth <= 6; depth++) {
       ContinousObliviousTree tree = new GreedyExponentialObliviousTree(
-        rng,
-        learn,
         GridTools.medianGrid(learn, 32), depth, 15).fit(learn, new L2(learn.target()));
       //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
       // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
@@ -333,6 +333,26 @@ public class MethodsTests extends GridTest {
     return true;
   }
 
+  public Mx LQInverse(Mx mx) {
+    if (mx.rows() != mx.columns())
+      throw new IllegalArgumentException("Matrix must be square");
+    Mx l = new VecBasedMx(mx.rows(), mx.columns());
+    Mx q = new VecBasedMx(mx.rows(), mx.columns());
+    Mx mxCopy = new VecBasedMx(mx);
+
+    VecTools.householderLQ(mx, l, q);
+
+    Mx lq = VecTools.multiply(l, q);
+    for (int i = 0; i < mx.rows(); i++)
+      for (int j = 0; j < mx.rows(); j++)
+        //if(Math.abs(mxCopy.get(i,j) - lq.get(i,j)) > 1e-3)
+        System.out.println(mxCopy.get(i, j) - lq.get(i, j));
+    Mx ans = VecTools.multiply(VecTools.transpose(q), VecTools.inverseLTriangle(l));
+    System.out.println("1 = " + VecTools.multiply(mx, l));
+    System.exit(0);
+    return ans;
+  }
+
   public void doPCA(DataSet[] mas) {
     boolean continues[] = new boolean[learn.xdim()];
     Mx learnMx = cutNonContinuesFeatures(learn.data(), continues);
@@ -343,8 +363,17 @@ public class MethodsTests extends GridTest {
     VecTools.eigenDecomposition(mx, q, sigma);
     //assertTrue(checkEigeDecomposion(mx, q, sigma));
     //System.exit(0);
-    learnMx = VecTools.multiply(learnMx, q);
-    validateMx = VecTools.multiply(validateMx, q);
+    //q = LQInverse(q);
+    for (int i = 0; i < learnMx.rows(); i++) {
+      Vec nw = GreedyPolynomialExponentRegion.solveLinearEquationUsingLQ(q, learnMx.row(i));
+      for (int j = 0; j < learnMx.columns(); j++)
+        learnMx.set(i, j, nw.get(j));
+    }
+    for (int i = 0; i < validateMx.rows(); i++) {
+      Vec nw = GreedyPolynomialExponentRegion.solveLinearEquationUsingLQ(q, validateMx.row(i));
+      for (int j = 0; j < validateMx.columns(); j++)
+        validateMx.set(i, j, nw.get(j));
+    }
     //Normalization
     for (int i = 0; i < learnMx.columns(); i++) {
       double max = -1e10, mn = 1e10;
@@ -364,28 +393,32 @@ public class MethodsTests extends GridTest {
       }
     }
 
-    int reg[] = new int[learn.xdim()], cnt = 0;
+    int reg[] = new int[learn.xdim()], cnt = learnMx.columns(), cntCont = 0;
+    //continues = new boolean[learn.xdim()];
     for (int i = 0; i < learn.xdim(); i++)
       if (!continues[i])
         reg[i] = cnt++;
+      else
+        reg[i] = cntCont++;
     Mx learnOut = new VecBasedMx(learn.power(), learn.xdim());
     Mx validateOut = new VecBasedMx(validate.power(), validate.xdim());
-    for (int i = 0; i < learn.power(); i++) {
-      for (int j = 0; j < learnMx.columns(); j++)
-        learnOut.set(i, j, learnMx.get(i, j));
+    for (int i = 0; i < learn.power(); i++)
       for (int j = 0; j < learn.xdim(); j++)
-        if (!continues[j])
-          learnOut.set(i, reg[j] + learnMx.columns(), learn.data().get(i, j));
-    }
+        if(!continues[j])
+          learnOut.set(i, reg[j], learn.data().get(i, j));
+        else
+          learnOut.set(i, reg[j], learnMx.get(i, reg[j]));
     for (int i = 0; i < validate.power(); i++) {
-      for (int j = 0; j < validateMx.columns(); j++)
-        validateOut.set(i, j, validateMx.get(i, j));
       for (int j = 0; j < validate.xdim(); j++)
-        if (!continues[j])
-          validateOut.set(i, reg[j] + validateMx.columns(), validate.data().get(i, j));
+        if(!continues[j])
+          validateOut.set(i, reg[j], validate.data().get(i, j));
+        else
+          validateOut.set(i, reg[j], validateMx.get(i, reg[j]));
     }
     mas[0] = new DataSetImpl(learnOut, learn.target());
     mas[1] = new DataSetImpl(validateOut, validate.target());
+    //mas[0] = learn;
+    //mas[1] = validate;
 
 
   }
@@ -420,7 +453,7 @@ public class MethodsTests extends GridTest {
 
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
       new GreedyContinuesObliviousSoftBondariesRegressionTree(rng, myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
-      2000, 0.006);
+      2000, 0.1);
     new addBoostingListeners<SatL2>(boosting, new SatL2(myLearn.target()), myLearn, myValidate);
   }
 
@@ -438,6 +471,48 @@ public class MethodsTests extends GridTest {
       System.out.println(tree.toString());
       System.out.println();
     }
+  }
+
+  public void testObliviousTreeFail() throws FileNotFoundException {
+    int depth = 6;
+    Scanner scanner = new Scanner(new File("badloss.txt"));
+    Vec vec = new ArrayVec(learn.power());
+    System.out.println(learn.power());
+    for (int i = 0; i < learn.power(); i++)
+      vec.set(i, Double.parseDouble(scanner.next()));
+    ObliviousTree tree = (ObliviousTree) new GreedyObliviousTree<L2>(GridTools.medianGrid(learn, 32), depth).fit(learn, new L2(vec));
+    System.out.println(tree);
+  }
+
+  public void testLQDecompositionFail() throws FileNotFoundException {
+    Scanner scanner = new Scanner(new File("badMx.txt"));
+    int n = scanner.nextInt();
+    Mx mx = new VecBasedMx(n, n);
+    Mx l = new VecBasedMx(n, n);
+    Mx q = new VecBasedMx(n, n);
+    double eps = 1e-3;
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++)
+        mx.set(i, j, Double.parseDouble(scanner.next()));
+    VecTools.householderLQ(mx, l, q);
+    for (int i = 0; i < n; i++)
+      for (int j = i + 1; j < n; j++)
+        if (Math.abs(l.get(i, j)) > eps)
+          System.out.println("Bad L = " + l.get(i, j));
+    Mx qq = VecTools.multiply(q, VecTools.transpose(q));
+    Mx lq = VecTools.multiply(l, VecTools.transpose(q));
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++) {
+        if (i != j && Math.abs(qq.get(i, j)) > eps)
+          System.out.println("Bad Q = " + q.get(i, j));
+        if (i == j && Math.abs(qq.get(i, j) - 1) > eps)
+          System.out.println("Bad Q = " + q.get(i, j));
+      }
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++)
+        if (Math.abs(lq.get(i, j) - mx.get(i, j)) > eps)
+          System.out.println("Bad LQ, diff = " + (lq.get(i, j) - mx.get(i, j)));
+
   }
 
   private static class ScoreCalcer implements ProgressHandler {
@@ -552,7 +627,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testGreedyPolynomialExponentRegionBoost() {
-    GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 1, 1), 5000, 0.05);
+    GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 1, 2500), 5000, 0.05);
     new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
   }
 }
