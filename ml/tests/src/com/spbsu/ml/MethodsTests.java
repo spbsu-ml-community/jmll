@@ -239,9 +239,9 @@ public class MethodsTests extends GridTest {
 
   public void testEOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
-
+      new BootstrapOptimization<L2>(
         new GreedyExponentialObliviousTree(
-          GridTools.medianGrid(learn, 32), 6, 2500), 2000, 0.04);
+          GridTools.medianGrid(learn, 32), 6, 2500), rng), 2000, 0.04);
     new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
   }
 
@@ -280,12 +280,39 @@ public class MethodsTests extends GridTest {
     }
   }
 
+  public void testJB() {
+    for (int j = 0; j < learn.data().columns(); j++) {
+      double mean = 0;
+      double mc2 = 0, mc3 = 0, mc4 = 0;
+      for (int i = 0; i < learn.power(); i++)
+        mean += learn.data().get(i, j);
+      mean /= learn.power();
+      for (int i = 0; i < learn.power(); i++) {
+        mc2 += Math.pow(learn.data().get(i, j) - mean, 2);
+        mc3 += Math.pow(learn.data().get(i, j) - mean, 3);
+        mc4 += Math.pow(learn.data().get(i, j) - mean, 4);
+      }
+      if(mc2 != 0) {
+        mc2 /= learn.power();
+        mc3 /= learn.power();
+        mc4 /= learn.power();
+        System.out.println(mean);
+        System.out.println(mc2);
+        System.out.println(mc3);
+        System.out.println(mc4);
+        double K = mc4 / Math.pow(mc2, 2);
+        double S = mc3 / Math.pow(mc2, 1.5);
+        System.out.println(j + "= " + learn.power() * (S * S + 0.25 * Math.pow(K - 3, 2)) / 6.0);
+      }
+    }
+  }
+
   public void testExponentialObliviousTree() {
     ScoreCalcer scoreCalcerValidate = new ScoreCalcer(/*" On validate data Set loss = "*/"\t", validate);
     ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
     for (int depth = 1; depth <= 6; depth++) {
       ContinousObliviousTree tree = new GreedyExponentialObliviousTree(
-        GridTools.medianGrid(learn, 32), depth, 15).fit(learn, new L2(learn.target()));
+        GridTools.medianGrid(learn, 32), depth, 15).fit(learn, new WeightedLoss<L2>(new L2(learn.target())));
       //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
       // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
       System.out.print("Oblivious Tree deapth = " + depth);
@@ -352,7 +379,23 @@ public class MethodsTests extends GridTest {
     System.exit(0);
     return ans;
   }
+  /*Mx calculateCoovMatrix(Mx data){
+    Mx res = new VecBasedMx(data.columns(), data.columns());
+    double mean[] = new double[data.columns()];
+    for (int j = 0; j < data.columns(); j++) {
+      for (int i = 0; i < data.rows(); i++)
+        mean[j] += data.get(i, j);
+      mean[j] /= data.rows();
+    }
+    for (int i = 0; i < data.columns(); i++)
+      for (int j = 0; j < data.columns(); j++)
+      {
+        double cov = 0;
+        for (int k = 0; k < data.rows(); k++)
+          cov += (data.get(k, i) - mean[i]) * (data.get(k, j) - mean[j]);
 
+      }
+  }*/
   public void doPCA(DataSet[] mas) {
     boolean continues[] = new boolean[learn.xdim()];
     Mx learnMx = cutNonContinuesFeatures(learn.data(), continues);
@@ -475,12 +518,12 @@ public class MethodsTests extends GridTest {
 
   public void testObliviousTreeFail() throws FileNotFoundException {
     int depth = 6;
-    Scanner scanner = new Scanner(new File("badloss.txt"));
+    Scanner scanner = new Scanner(new File("./ml/tests/data/badMx.txt"));
     Vec vec = new ArrayVec(learn.power());
     System.out.println(learn.power());
     for (int i = 0; i < learn.power(); i++)
       vec.set(i, Double.parseDouble(scanner.next()));
-    ObliviousTree tree = (ObliviousTree) new GreedyObliviousTree<L2>(GridTools.medianGrid(learn, 32), depth).fit(learn, new L2(vec));
+    ObliviousTree tree = (ObliviousTree) new GreedyObliviousTree(GridTools.medianGrid(learn, 32), depth).fit(learn, new L2(vec));
     System.out.println(tree);
   }
 
@@ -619,7 +662,7 @@ public class MethodsTests extends GridTest {
     }
   }
   public void testGreedyPolynomialExponentRegion() {
-    PolynomialExponentRegion region = new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 0, 0).fit(learn, new L2(learn.target()));
+    PolynomialExponentRegion region = new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 0, 0).fit(learn, new WeightedLoss<L2>(new L2(learn.target())));
     ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
     ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On learn data Set loss = ", validate);
     scoreCalcerLearn.invoke(region);
@@ -627,7 +670,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testGreedyPolynomialExponentRegionBoost() {
-    GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 1, 2500), 5000, 0.05);
+    GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization<L2>(new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 1, 2500), rng), 5000, 0.05);
     new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
   }
 }

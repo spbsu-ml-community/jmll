@@ -7,18 +7,35 @@ import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+
 /**
  * User: solar
  * Date: 26.11.13
  * Time: 9:54
  */
 public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub implements StatBasedLoss<WeightedLoss.Stat> {
+  public BasedOn getMetric() {
+    return metric;
+  }
+
   private final BasedOn metric;
+
+  public int[] getWeights() {
+    return weights;
+  }
+
   private final int[] weights;
 
   public WeightedLoss(BasedOn metric, int[] weights) {
     this.metric = metric;
     this.weights = weights;
+  }
+  public WeightedLoss(BasedOn metric) {
+    this.metric = metric;
+    weights = new int[metric.dim()];
+    Arrays.fill(weights, 1);
   }
 
   @Override

@@ -8,6 +8,7 @@ import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.PolynomialExponentRegion;
 import com.spbsu.ml.models.Region;
 
@@ -18,7 +19,7 @@ import java.io.PrintWriter;
 /**
  * Created by towelenee on 20.02.14.
  */
-public class GreedyPolynomialExponentRegion implements Optimization<L2> {
+public class GreedyPolynomialExponentRegion implements Optimization< WeightedLoss<L2> > {
   private final GreedyTDRegion greedyTDRegion;
   private BFGrid.BinaryFeature[] features;
   private boolean[] mask;
@@ -98,13 +99,13 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
   }
 
   @Override
-  public PolynomialExponentRegion fit(DataSet learn, L2 loss) {
+  public PolynomialExponentRegion fit(DataSet learn, WeightedLoss<L2> loss) {
     Region base = greedyTDRegion.fit(learn, loss);
     features = base.getFeatures();
     mask = base.getMask();
     double baseMse = 0;
     for (int i = 0; i < learn.power(); i++)
-      baseMse += sqr(base.value(learn.data().row(i)) - loss.target.get(i));
+      baseMse += sqr(base.value(learn.data().row(i)) - loss.getMetric().target.get(i)) * loss.getWeights()[i];
     System.out.println("\nBase_MSE = " + baseMse);
 
     int numberOfFeatures = features.length + 1;
@@ -123,10 +124,10 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
       data[0] = 1;
       for (int j = 0; j < features.length; j++)
         data[j + 1] = vec.get(features[j].findex);
-      double f = loss.target.get(i);
+      double f = loss.getMetric().target.get(i);
       sum += f;
       countIn++;
-      double weight = 1;// Math.exp(-getDistanseFromRegion(vec) * distCoeffiecent);
+      double weight = loss.getWeights()[i];// Math.exp(-getDistanseFromRegion(vec) * distCoeffiecent);
       //System.out.println(weight);
       for (int x = 0; x < numberOfFeatures; x++)
         for (int y = 0; y < numberOfFeatures; y++)
@@ -154,7 +155,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     PolynomialExponentRegion ret = new PolynomialExponentRegion(features, mask, result.toArray(), distCoeffiecent);
     double mse = 0;
     for (int i = 0; i < learn.power(); i++)
-      mse += sqr(ret.value(learn.data().row(i)) - loss.target.get(i));
+      mse += sqr(ret.value(learn.data().row(i)) - loss.getMetric().target.get(i)) * loss.getWeights()[i];
     System.out.println("mse = " + mse);
     return ret;
   }

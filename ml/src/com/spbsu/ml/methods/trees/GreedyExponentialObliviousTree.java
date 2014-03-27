@@ -7,6 +7,7 @@ import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.GreedyPolynomialExponentRegion;
 import com.spbsu.ml.methods.Optimization;
 import com.spbsu.ml.models.ExponentialObliviousTree;
@@ -24,7 +25,7 @@ import java.util.List;
     *Idea please stop making my code yellow
 */
 
-public class GreedyExponentialObliviousTree implements Optimization<L2> {
+public class GreedyExponentialObliviousTree implements Optimization<WeightedLoss<L2> > {
 
   private final int numberOfVariablesByLeaf;
   private final int numberOfVariables;
@@ -32,11 +33,11 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
   private double[][] linearMissCoefficient;
   private final double DistCoef;
   private final int depth;
-  private final GreedyObliviousTree<L2> got;
+  private final GreedyObliviousTree<WeightedLoss<L2>> got;
   private List<BFGrid.BinaryFeature> features;
 
   public GreedyExponentialObliviousTree(BFGrid grid, int depth, double distCoef) {
-    got = new GreedyObliviousTree(grid, depth);
+    got = new GreedyObliviousTree<WeightedLoss<L2>>(grid, depth);
     DistCoef = distCoef;
     this.depth = depth;
     numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
@@ -69,7 +70,7 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
     return DistCoef * ans;
   }
 
-  void precalculateMissCoefficients(DataSet ds, final L2 loss) {
+  void precalculateMissCoefficients(DataSet ds, final WeightedLoss<L2> loss) {
     quadraticMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
     linearMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf];
     for (int i = 0; i < ds.power(); i++) {
@@ -86,8 +87,8 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
       }
       //if(index == 1)
       //  System.out.println(features.get(0).condition);
-      double f = loss.target.get(i);
-      double weight = 1; //Math.exp(-calcDistanseToRegion(index, ds.data().row(i)));
+      double f = loss.getMetric().target.get(i);
+      double weight = loss.getWeights()[i]; //Math.exp(-calcDistanseToRegion(index, ds.data().row(i)));
       //System.out.println(weight);
       for (int x = 0; x <= depth; x++)
         for (int y = 0; y <= x; y++) {
@@ -103,12 +104,12 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
 
 
   @Override
-  public ExponentialObliviousTree fit(DataSet ds, final L2 loss) {
+  public ExponentialObliviousTree fit(DataSet ds, final WeightedLoss<L2> loss) {
     ObliviousTree base = got.fit(ds, loss);
     features = base.features();
     double baseMse = 0;
     for (int i = 0; i < ds.power(); i++)
-      baseMse += sqr(base.value(ds.data().row(i)) - loss.target.get(i));
+      baseMse += sqr(base.value(ds.data().row(i)) - loss.getMetric().target.get(i));
     System.out.println("\nBase_MSE = " + baseMse);
 
     if (features.size() != depth) {
@@ -116,7 +117,7 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
       try {
         PrintWriter printWriter = new PrintWriter(new File("badloss.txt"));
         for(int i = 0; i < ds.power(); i++)
-          printWriter.println(loss.target.get(i));
+          printWriter.println(loss.getMetric().target.get(i));
         printWriter.close();
       } catch (FileNotFoundException e) {
         e.printStackTrace();
@@ -153,7 +154,7 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
     ExponentialObliviousTree ret = new ExponentialObliviousTree(features, out, DistCoef);
     double mse = 0;
     for (int i = 0; i < ds.power(); i++)
-      mse += sqr(ret.value(ds.data().row(i)) - loss.target.get(i));
+      mse += sqr(ret.value(ds.data().row(i)) - loss.getMetric().target.get(i));
     System.out.println("MSE = " + mse);
     /*if (mse > baseMse + 1e-5)
       try {
