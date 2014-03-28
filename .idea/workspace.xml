@@ -7,11 +7,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b5751471-ac07-4077-949f-2d3d12827f09" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/trees/GreedyExponentialObliviousTree.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/trees/GreedyExponentialObliviousTree.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyPolynomialExponentRegion.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GreedyPolynomialExponentRegion.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/ToweleneesTests.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/commons" afterPath="$PROJECT_DIR$/commons" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/VecTools.java" afterPath="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/VecTools.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/WeightedLoss.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/WeightedLoss.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/commons/tests/data/math/badMx.txt" afterPath="$PROJECT_DIR$/commons/tests/data/math/badMx.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <list id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
@@ -87,9 +87,9 @@
       <file leaf-file-name="MethodsTests.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="300" column="34" selection-start="11571" selection-end="11571" vertical-scroll-proportion="6.964286" vertical-offset="0" max-vertical-offset="4575">
+            <state line="357" column="0" selection-start="13350" selection-end="13350" vertical-scroll-proportion="4.482143" vertical-offset="2245" max-vertical-offset="4845">
               <folding>
-                <element signature="e#9141#9148#0" expanded="true" />
+                <element signature="e#9063#9070#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -1164,7 +1164,7 @@
       <changelist id="b5751471-ac07-4077-949f-2d3d12827f09" name="Default" comment="" />
       <created>1293371229320</created>
       <updated>1293371229320</updated>
-      <workItem from="1395648791711" duration="24699000" />
+      <workItem from="1395648791711" duration="25235000" />
     </task>
     <task id="LOCAL-00001" summary="trash">
       <changelist id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
@@ -1311,7 +1311,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="24699000" />
+    <option name="totallyTimeSpent" value="25235000" />
   </component>
   <component name="TodoView" selected-index="4">
     <todo-panel id="selected-file">
@@ -1791,9 +1791,9 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="300" column="34" selection-start="11571" selection-end="11571" vertical-scroll-proportion="6.964286" vertical-offset="0" max-vertical-offset="4575">
+        <state line="357" column="0" selection-start="13350" selection-end="13350" vertical-scroll-proportion="4.482143" vertical-offset="2245" max-vertical-offset="4845">
           <folding>
-            <element signature="e#9141#9148#0" expanded="true" />
+            <element signature="e#9063#9070#0" expanded="true" />
           </folding>
         </state>
       </provider>
