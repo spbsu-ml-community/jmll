@@ -107,7 +107,6 @@ public class FMTrainingWorkaround implements Optimization {
       modelStr.append(reader.readLine());
       modelStr.append("\n");
       modelStr.append(reader.readLine());
-      System.out.println(modelStr.toString());
       ModelsSerializationRepository serializationRepository = new ModelsSerializationRepository();
       final FMModel read = serializationRepository.read(modelStr, FMModel.class);
       return read;
