@@ -3,6 +3,7 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.optimization.Optimize;
@@ -34,7 +35,7 @@ public class StochasticGradientDescent implements Optimize<FuncEnsemble<FuncC1>>
     }
 
     int iter = 0;
-    TIntList indices = new TIntArrayList(sumFuncs.size());
+    TIntList indices = new TIntArrayList(ArrayTools.sequence(0, sumFuncs.size()));
     while (iter++ < iterations) {
       indices.shuffle(rand);
       for (int i = 0; i < indices.size(); i++) {
