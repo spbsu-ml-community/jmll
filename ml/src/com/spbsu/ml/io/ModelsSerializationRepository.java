@@ -18,6 +18,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
                                                                                 new ObliviousMultiClassTreeConversionPack(),
                                                                                 new EnsembleModelConversionPack(),
                                                                                 new TransJoinConversionPack(),
+                                                                                new FactorizationMachinesConversionPack(),
                                                                                 BFGrid.CONVERTER.getClass());
   private BFGrid grid;
 

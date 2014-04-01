@@ -29,6 +29,7 @@ import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -167,10 +168,12 @@ public class JMLLCLI {
         }
         System.out.println();
 
-        BFGrid grid = DataTools.grid(result);
-        serializationRepository = serializationRepository.customizeGrid(grid);
+        @Nullable BFGrid grid = DataTools.grid(result);
+        if (grid != null) {
+          serializationRepository = serializationRepository.customizeGrid(grid);
+          StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".grid"));
+        }
         DataTools.writeModel(result, new File(outputFile + ".model"), serializationRepository);
-        StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".grid"));
       } else if ("apply".equals(mode)) {
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"));
         try {
@@ -349,7 +352,36 @@ public class JMLLCLI {
           return new GreedyTDRegion(grid.create());
         }
       };
-    } else throw new RuntimeException("Unknown weak model: " + name);
+    } else if ("FMWorkaround".equals(name)) {
+      return new Factory<Optimization>() {
+        public String task = "-r";
+        public String dim = "1,1,8";
+        public String iters = "1000";
+        public String others = "";
+
+        public void task(final String task) {
+          this.task = task;
+        }
+
+        public void dim(final String dim) {
+          this.dim = dim;
+        }
+
+        public void iters(final String iters) {
+          this.iters = iters;
+        }
+
+        public void others(final String others) {
+          this.others = others;
+        }
+
+        @Override
+        public Optimization create() {
+          return new FMTrainingWorkaround(task, dim, iters, others);
+        }
+      };
+    }
+    else throw new RuntimeException("Unknown weak model: " + name);
   }
 
 

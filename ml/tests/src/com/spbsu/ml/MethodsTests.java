@@ -29,10 +29,17 @@ import com.spbsu.ml.models.ProbabilisticGraphicalModel;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Random;
 import java.util.Scanner;
+
+import static com.spbsu.commons.math.MathTools.sqr;
 
 /**
  * User: solar
@@ -335,5 +342,11 @@ public class MethodsTests extends GridTest {
       System.out.println("\t" + d / 100000);
     }
   }
+  
+  public void testFMRun() {
+    FMTrainingWorkaround fm = new FMTrainingWorkaround("r", "1,1,8", "10");
+    fm.fit(learn, null);
+  }
 }
+
 

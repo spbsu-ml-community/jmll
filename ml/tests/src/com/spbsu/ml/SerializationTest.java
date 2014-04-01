@@ -1,8 +1,11 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.models.FMModel;
 import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.Arrays;
@@ -57,4 +60,21 @@ public class SerializationTest extends GridTest {
     assertEquals(sum, serialization.read(serialization.write(sum), Linear.class));
   }
 
+  public void testFMModel() {
+    final FMModel model = new FMModel(
+        new VecBasedMx(
+            3,
+            new ArrayVec(
+                1, 2, 4,
+                0, -2.1, 3
+            )
+        ),
+        new ArrayVec(
+            0.1, 0.2, 0.3
+        ),
+        0.5
+    );
+    ModelsSerializationRepository serialization = new ModelsSerializationRepository();
+    assertEquals(model, serialization.read(serialization.write(model), FMModel.class));
+  }
 }
