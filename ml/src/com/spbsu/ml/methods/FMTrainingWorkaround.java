@@ -65,8 +65,6 @@ public class FMTrainingWorkaround implements Optimization {
           others
       };
       final String cmd = StringUtils.concatWithDelimeter(" ", params);
-      System.out.println("Working Directory = " +
-          System.getProperty("user.dir"));
       final Process exec = Runtime.getRuntime().exec(cmd);
       final LineNumberReader reader = new LineNumberReader(new InputStreamReader(exec.getInputStream()));
       final OutputStreamWriter writer = new OutputStreamWriter(exec.getOutputStream());
