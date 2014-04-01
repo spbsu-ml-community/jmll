@@ -18,8 +18,8 @@ import java.io.*;
  * Date: 24.03.14
  */
 public class FMTrainingWorkaround implements Optimization {
-  private final static String LIBFM_PATH = "libfm";
 
+  private final static String LIBFM_PATH = System.getProperty("user.dir") + "/libfm";
   private String task;
   private String dim; // e.g, "1/1/8"
   private String iters;
@@ -65,6 +65,8 @@ public class FMTrainingWorkaround implements Optimization {
           others
       };
       final String cmd = StringUtils.concatWithDelimeter(" ", params);
+      System.out.println("Working Directory = " +
+          System.getProperty("user.dir"));
       final Process exec = Runtime.getRuntime().exec(cmd);
       final LineNumberReader reader = new LineNumberReader(new InputStreamReader(exec.getInputStream()));
       final OutputStreamWriter writer = new OutputStreamWriter(exec.getOutputStream());
