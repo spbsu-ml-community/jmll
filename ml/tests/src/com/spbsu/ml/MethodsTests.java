@@ -100,6 +100,18 @@ public class MethodsTests extends GridTest {
     checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0.5, 100, 0.01);
   }
 
+  public void testPGMFit10x10FreqBasedPriorRand() {
+    final VecBasedMx originalMx = new VecBasedMx(10, new ArrayVec(100));
+    for (int i = 0; i < originalMx.rows() - 1; i++) {
+      for (int j = 0; j < originalMx.columns(); j++)
+        originalMx.set(i, j, rng.nextDouble() < 0.5 && j > 0 ? 1 : 0);
+      VecTools.normalizeL1(originalMx.row(i));
+    }
+    VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
+    ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(originalMx);
+    checkRestoreFixedTopology(original, PGMEM.FREQ_DENSITY_PRIOR_PATH, 0.5, 100, 0.01);
+  }
+
   private Vec breakV(Vec next, double lossProbab) {
     Vec result = new SparseVec<IntBasis>(new IntBasis(next.dim()));
     final VecIterator it = next.nonZeroes();
@@ -111,7 +123,7 @@ public class MethodsTests extends GridTest {
     return result;
   }
 
-  private void checkRestoreFixedTopology(final ProbabilisticGraphicalModel original, Factory<PGMEM.Policy> policy, double lossProbab, int iterations, double accuracy) {
+  private void checkRestoreFixedTopology(final ProbabilisticGraphicalModel original, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, double lossProbab, int iterations, double accuracy) {
     Vec[] ds = new Vec[10000];
     for (int i = 0; i < ds.length; i++) {
       Vec vec;

@@ -2,6 +2,7 @@ package com.spbsu.ml.methods;
 
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.func.Action;
+import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.MathTools;
@@ -16,6 +17,7 @@ import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.models.ProbabilisticGraphicalModel;
+import gnu.trove.map.hash.TIntDoubleHashMap;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -37,9 +39,9 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
     }
   }
 
-  public static final Factory<Policy> MOST_PROBABLE_PATH = new Factory<Policy>() {
+  public static final Computable<ProbabilisticGraphicalModel, Policy> MOST_PROBABLE_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
     @Override
-    public Policy create() {
+    public Policy compute(ProbabilisticGraphicalModel argument) {
       return new Policy() {
         public boolean accept(ProbabilisticGraphicalModel.Route route) {
           weights.set(route.index(), 1);
@@ -49,9 +51,9 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
     }
   };
 
-  public static final Factory<Policy> LAPLACE_PRIOR_PATH = new Factory<Policy>() {
+  public static final Computable<ProbabilisticGraphicalModel, Policy> LAPLACE_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
     @Override
-    public Policy create() {
+    public Policy compute(ProbabilisticGraphicalModel argument) {
       return new Policy() {
         @Override
         public boolean accept(ProbabilisticGraphicalModel.Route route) {
@@ -65,7 +67,35 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
     }
   };
 
-  private final Factory<Policy> policy;
+  public static final Computable<ProbabilisticGraphicalModel, Policy> FREQ_DENSITY_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
+    @Override
+    public Policy compute(ProbabilisticGraphicalModel argument) {
+      final Vec freqs = new SparseVec<IntBasis>(new IntBasis(10000));
+      for (ProbabilisticGraphicalModel.Route r : argument.knownRoots()){
+        if (r.length() < freqs.dim())
+          freqs.adjust(r.length(), r.probab);
+      }
+      final double unknownWeight = 1 - VecTools.norm1(freqs);
+      final int knownRootsCount = argument.knownRoots().length;
+
+      return new Policy() {
+        @Override
+        public boolean accept(ProbabilisticGraphicalModel.Route route) {
+          final double prior = freqs.get(route.length());
+          if (prior > 0)
+            weights.add(route.index(), route.probab * prior);
+          else
+            weights.add(route.index(), route.probab * unknownWeight / knownRootsCount);
+          return false;
+        }
+        private double prior(int length) {
+          return Math.exp(-length);
+        }
+      };
+    }
+  };
+
+  private final Computable<ProbabilisticGraphicalModel, Policy> policy;
   private final Mx topology;
   private final int iterations;
   private double step;
@@ -75,7 +105,7 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
     this(topology, smoothing, iterations, new FastRandom(), MOST_PROBABLE_PATH);
   }
 
-  public PGMEM(Mx topology, double smoothing, int iterations, FastRandom rng, Factory<Policy> policy) {
+  public PGMEM(Mx topology, double smoothing, int iterations, FastRandom rng, Computable<ProbabilisticGraphicalModel, Policy> policy) {
     this.policy = policy;
     this.topology = topology;
     this.iterations = iterations;
@@ -102,7 +132,7 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
           executor.execute(new Runnable() {
             @Override
             public void run() {
-              final Policy policy = PGMEM.this.policy.create();
+              final Policy policy = PGMEM.this.policy.compute(finalCurrentPGM);
               finalCurrentPGM.visit(policy, cpds[finalJ]);
               if (VecTools.norm(policy.weights()) > 0)
                 eroutes[finalJ] = finalCurrentPGM.knownRoots()[rng.nextSimple(policy.weights())];
