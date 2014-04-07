@@ -4,6 +4,7 @@ import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.SparseVec;
@@ -116,7 +117,13 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
         }
       }
       final Mx next = new VecBasedMx(topology.columns(), new ArrayVec(topology.dim()));
-      VecTools.fill(next, 1.); // adjusting parameters of Dir(next[i]) by one
+      { // adjusting parameters of Dir(next[i]) by one only if this way is possible
+        final MxIterator it = topology.nonZeroes();
+        while (it.advance()) {
+          if (it.value() > MathTools.EPSILON)
+            next.adjust(it.index(), 1.);
+        }
+      }
       { // M-step
         for (ProbabilisticGraphicalModel.Route eroute : eroutes) {
           if (eroute == null)

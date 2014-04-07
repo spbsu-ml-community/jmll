@@ -269,17 +269,17 @@ public class DataTools {
   }
 
   private static <LocalLoss extends L2> double normalizeRelevance(double y) {
-    if (y < 0.07)
+    if (y <= 0.0)
       return 0.;
-    else if (y < 0.14)
-      return 1.;
-    else if (y < 0.41)
-      return 2.;
-    else if (y < 0.61)
-      return 3.;
-    else
-      return 4.;
-//    return 1.;
+//    else if (y < 0.14)
+//      return 1.;
+//    else if (y < 0.41)
+//      return 2.;
+//    else if (y < 0.61)
+//      return 3.;
+//    else
+//      return 4.;
+    return 1.;
   }
 
 
