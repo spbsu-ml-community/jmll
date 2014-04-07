@@ -10,7 +10,7 @@ import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.impl.Hierarchy;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.loss.HierLoss;
+import com.spbsu.ml.loss.hier.HierLoss;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.loss.SatL2;
@@ -19,7 +19,6 @@ import com.spbsu.ml.models.HierarchicalModel;
 import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TIntIntHashMap;
 
 /**
  * User: qdeee
