@@ -14,10 +14,14 @@ public class MCMicroF1Score extends HierLoss {
 
   public MCMicroF1Score(final Hierarchy unfilledHierarchy, final DataSet dataSet, final int minEntries) {
     super(unfilledHierarchy, dataSet, minEntries);
+    precision = new MCMicroPrecision(this, target);
+    recall = new MCMicroRecall(this, target);
   }
 
   public MCMicroF1Score(final HierLoss learningLoss, final Vec testTarget) {
     super(learningLoss, testTarget);
+    precision = new MCMicroPrecision(this, target);
+    recall = new MCMicroRecall(this, target);
   }
 
   @Override

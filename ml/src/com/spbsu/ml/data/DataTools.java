@@ -109,78 +109,6 @@ public class DataTools {
     return new DataSetImpl(data, target);
   }
 
-  public static void convertCatalogXmlToTree(File catalogXml, File out) throws IOException {
-    TIntIntHashMap id2parentId = new TIntIntHashMap();
-    TIntObjectHashMap<Element> id2node = new TIntObjectHashMap<Element>();
-
-    Element catalog = JDOMUtil.loadXML(catalogXml).getChild("cat");
-    List<Element> items  = catalog.getChildren();
-    for (Element item : items) {
-      try {
-        int id = Integer.parseInt(item.getAttributeValue("id"));
-        if (id != 0) {
-          int parentId = Integer.parseInt(item.getAttributeValue("parent_id"));
-          id2parentId.put(id, parentId);
-        }
-        id2node.put(id, item);
-      }
-      catch (NumberFormatException e) {
-        System.out.println(item.getAttributes().toString());
-      }
-    }
-
-    for (TIntObjectIterator<Element> iter = id2node.iterator(); iter.hasNext(); ) {
-      iter.advance();
-      int id = iter.key();
-      if (id != 0) {
-        try {
-          int parentId = id2parentId.get(id);//Integer.parseInt(iter.value().getAttributeValue("parent_id"));
-          Element element = iter.value();
-          Element parentElement = id2node.get(parentId);
-          if (parentElement != null)
-            parentElement.addContent(element.detach());
-          else  {
-            iter.remove();
-            System.out.println("id = " + id + ", unknown parent's id= " + parentId);
-          }
-        } catch (NumberFormatException e) {
-          System.out.println(iter.value().toString());
-        }
-      }
-    }
-    JDOMUtil.flushXML(id2node.get(0), out);
-  }
-
-  public static void saveHierarchicalStructure(Hierarchy ds, String outFile) throws IOException{
-    Hierarchy.CategoryNode root = ds.getRoot();
-    Element catalog = traverseSave(root, 0);
-    JDOMUtil.flushXML(catalog, new File(outFile));
-  }
-
-  private static Element traverseSave(Hierarchy.CategoryNode node, int depth) {
-    Element element = new Element("cat" + depth);
-    element.setAttribute("id", String.valueOf(node.getCategoryId()));
-    element.setAttribute("size", String.valueOf(node.getInnerDS() == null? 0 : node.getInnerDS().power()));
-    for (Hierarchy.CategoryNode child : node.getChildren()) {
-      element.addContent(traverseSave(child, depth + 1));
-    }
-    return element;
-  }
-
-  public static Hierarchy loadHierarchicalStructure(String hierarchyXml) throws IOException{
-    Element catalog = JDOMUtil.loadXML(new File(hierarchyXml));
-    Hierarchy.CategoryNode root = traverseLoad(catalog, null);
-    return new Hierarchy(root);
-  }
-
-  private static Hierarchy.CategoryNode traverseLoad(Element element, Hierarchy.CategoryNode parentNode) {
-    int id = Integer.parseInt(element.getAttributeValue("id"));
-    Hierarchy.CategoryNode node = new Hierarchy.CategoryNode(id, parentNode);
-    for (Element child : (List<Element>)element.getChildren())
-      node.addChild(traverseLoad(child, node));
-    return node;
-  }
-
   public static void writeModel(Trans result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);
     StreamTools.writeChars(CharSequenceTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
@@ -393,4 +321,5 @@ public class DataTools {
     props.yVar = targetVar;
     return new DataSetImpl(newData, newTarget);
   }
+
 }

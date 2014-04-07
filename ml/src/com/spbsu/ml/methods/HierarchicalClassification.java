@@ -27,65 +27,42 @@ import gnu.trove.list.array.TIntArrayList;
 public class HierarchicalClassification implements Optimization<HierLoss>{
   private int weakIters;
   private double weakStep;
-  private int minEntries;
-
-  public HierarchicalClassification(int weakIters, double weakStep, int minEntries) {
-    this.weakIters = weakIters;
-    this.weakStep = weakStep;
-    this.minEntries = minEntries;
-  }
+  private BFGrid grid;
 
   public HierarchicalClassification(int weakIters, double weakStep) {
-    this(weakIters, weakStep, 10);
+    this.weakIters = weakIters;
+    this.weakStep = weakStep;
   }
 
   @Override
   public Trans fit(DataSet learn, HierLoss hierLoss) {
+    grid = GridTools.medianGrid(learn, 32);
     HierarchicalModel model = traverseFit(hierLoss.getHierRoot());
     return model;
   }
 
-  private class MaxConstFunc extends Func.Stub {
-    @Override
-    public double value(Vec x) {
-      return Double.MAX_VALUE;
-    }
-
-    @Override
-    public int dim() {
-      return 0;
-    }
-  }
-
-  private HierarchicalModel traverseFit(Hierarchy.CategoryNode node) {
-    DataSetImpl ds = (DataSetImpl) node.getInnerDS();
+  private HierarchicalModel traverseFit(final Hierarchy.CategoryNode node) {
+    final DataSet ds = node.getInnerDS();
+    final TIntList labels = new TIntArrayList();
     Func[] resultModels;
-    TIntList labels;
     if (ds != null) {
-      labels = new TIntArrayList();
-      Vec target = node.normalizeTarget(labels);
-      ds = new ChangedTarget(ds, target);
-      BFGrid grid = GridTools.medianGrid(ds, 32);
-      GradientBoosting<MLLLogit> boosting = new GradientBoosting<MLLLogit>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), new Computable<Vec, L2>() {
+      final Vec normTarget = node.normalizeTarget(labels);
+      final MLLLogit globalLoss = new MLLLogit(normTarget);
+
+      final GradientBoosting<MLLLogit> boosting = new GradientBoosting<MLLLogit>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), new Computable<Vec, L2>() {
         @Override
         public L2 compute(Vec argument) {
           return new SatL2(argument);
         }
       }), weakIters, weakStep);
-
-      final MLLLogit globalLoss = new MLLLogit(ds.target());
-
-      final int catId = node.getCategoryId();
-
-      final DataSet learn = ds;
-      ProgressHandler calcer = new ProgressHandler() {
+      final ProgressHandler calcer = new ProgressHandler() {
         int index = 0;
 
         @Override
         public void invoke(Trans partial) {
           if ((index + 1) % 20 == 0) {
-            double value = globalLoss.value(partial.transAll(learn.data()));
-            System.out.println("Node#" + catId + ", iter=" + index + ", MLLLogitValue=" + value);
+            double value = globalLoss.value(partial.transAll(ds.data()));
+            System.out.println("Node#" + node.getCategoryId() + ", iter=" + index + ", MLLLogitValue=" + value);
           }
           index++;
         }
@@ -93,11 +70,9 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
       boosting.addListener(calcer);
 
       System.out.println("Boosting at node " + node.getCategoryId() + " is started, DS size=" + ds.power());
-      Ensemble<MultiClassModel> ensemble = (Ensemble<MultiClassModel>) boosting.fit(ds, globalLoss);
-      double MLLLogitValue = globalLoss.value(ensemble.transAll(learn.data()));
-      System.out.println("MLLLogitValue = " + MLLLogitValue);
+      final Ensemble<MultiClassModel> ensemble = (Ensemble<MultiClassModel>) boosting.fit(ds, globalLoss);
       System.out.println("\n\n\n");
-      Trans[] mcModels = ensemble.models;
+      final Trans[] mcModels = ensemble.models;
 
       int classesCount = ensemble.ydim();
       Func[][] allModels = new Func[classesCount][ensemble.size()];
@@ -108,17 +83,26 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
       }
       resultModels = new Func[classesCount];
       for (int i = 0; i < resultModels.length; i++) {
-        resultModels[i] = new FuncEnsemble(allModels[i], VecTools.fill(new ArrayVec(ensemble.size()), weakStep));
+        resultModels[i] = new FuncEnsemble(allModels[i], VecTools.fill(new ArrayVec(ensemble.size()), -weakStep));
       }
     }
     else {
       //this node has only one child, so we introduce max const func that will return this child with probability = 1
-      resultModels = new Func[] {new MaxConstFunc()};
-      labels = new TIntArrayList();
+      resultModels = new Func[] {new Func.Stub() {
+        @Override
+        public double value(Vec x) {
+          return Double.MAX_VALUE;
+        }
+
+        @Override
+        public int dim() {
+          return 0;
+        }
+      }};
       labels.add(node.getChildren().get(0).getCategoryId());
       labels.add(node.getCategoryId());
     }
-    HierarchicalModel hierModel = new HierarchicalModel(resultModels, labels);
+    final HierarchicalModel hierModel = new HierarchicalModel(resultModels, labels);
     for (Hierarchy.CategoryNode child : node.getChildren()) {
       if (child.isLeaf())
         continue;
