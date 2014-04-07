@@ -19,6 +19,7 @@ import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.models.ProbabilisticGraphicalModel;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 
+import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -29,13 +30,23 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> implements Optimization<LLLogit> {
   public static abstract class Policy implements Filter<ProbabilisticGraphicalModel.Route> {
-    protected final SparseVec<IntBasis> weights = new SparseVec<IntBasis>(new IntBasis(Integer.MAX_VALUE));
-    public Vec weights() {
-      return weights;
+    protected static final ThreadLocal<SparseVec<IntBasis>> weights = new ThreadLocal<SparseVec<IntBasis>>(){
+      @Override
+      protected SparseVec<IntBasis> initialValue() {
+        return new SparseVec<IntBasis>(new IntBasis(Integer.MAX_VALUE));
+      }
+    };
+    private SparseVec<IntBasis> weightsLocal;
+
+    public SparseVec weights() {
+      if (weightsLocal == null)
+        weightsLocal = weights.get();
+      return weightsLocal;
     }
 
-    public void clear() {
-      VecTools.scale(weights, 0);
+    public Policy clear() {
+      VecTools.scale(weights(), 0.);
+      return this;
     }
   }
 
@@ -44,10 +55,10 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
     public Policy compute(ProbabilisticGraphicalModel argument) {
       return new Policy() {
         public boolean accept(ProbabilisticGraphicalModel.Route route) {
-          weights.set(route.index(), 1);
+          weights().set(route.index(), 1);
           return true;
         }
-      };
+      }.clear();
     }
   };
 
@@ -57,41 +68,43 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
       return new Policy() {
         @Override
         public boolean accept(ProbabilisticGraphicalModel.Route route) {
-          weights.add(route.index(), route.probab * prior(route.length()));
+          weights().add(route.index(), route.probab * prior(route.length()));
           return false;
         }
         private double prior(int length) {
           return Math.exp(-length);
         }
-      };
+      }.clear();
     }
   };
 
   public static final Computable<ProbabilisticGraphicalModel, Policy> FREQ_DENSITY_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
+    final WeakHashMap<ProbabilisticGraphicalModel, Vec> cache = new WeakHashMap<ProbabilisticGraphicalModel, Vec>();
     @Override
     public Policy compute(ProbabilisticGraphicalModel argument) {
-      final Vec freqs = new SparseVec<IntBasis>(new IntBasis(10000));
-      for (ProbabilisticGraphicalModel.Route r : argument.knownRoots()){
-        if (r.length() < freqs.dim())
-          freqs.adjust(r.length(), r.probab);
+      Vec freqs = cache.get(argument);
+      if (freqs == null) {
+        freqs = new ArrayVec(10000);
+        for (ProbabilisticGraphicalModel.Route r : argument.knownRoots()){
+          if (r.length() < freqs.dim())
+            freqs.adjust(r.length(), r.probab);
+        }
+        synchronized (cache) {
+          cache.put(argument, freqs);
+        }
       }
       final double unknownWeight = 1 - VecTools.norm1(freqs);
       final int knownRootsCount = argument.knownRoots().length;
 
+      final Vec finalFreqs = freqs;
       return new Policy() {
         @Override
         public boolean accept(ProbabilisticGraphicalModel.Route route) {
-          final double prior = freqs.get(route.length());
-          if (prior > 0)
-            weights.add(route.index(), route.probab * prior);
-          else
-            weights.add(route.index(), route.probab * unknownWeight / knownRootsCount);
+          final double prior = finalFreqs.get(route.length());
+          weights().add(route.index(), route.probab * (prior > 0 ? prior : 2 * unknownWeight / knownRootsCount));
           return false;
         }
-        private double prior(int length) {
-          return Math.exp(-length);
-        }
-      };
+      }.clear();
     }
   };
 
@@ -122,6 +135,7 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
     for (int j = 0; j < data.rows(); j++) {
       cpds[j] = currentPGM.extractControlPoints(data.row(j));
     }
+
     for (int t = 0; t < iterations; t++) {
       final ProbabilisticGraphicalModel.Route[] eroutes = new ProbabilisticGraphicalModel.Route[learn.power()];
       { // E-step
@@ -130,12 +144,20 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
           final ProbabilisticGraphicalModel finalCurrentPGM = currentPGM;
           final int finalJ = j;
           executor.execute(new Runnable() {
+            ThreadLocal<Policy> policy = new ThreadLocal<Policy>(){
+              @Override
+              protected Policy initialValue() {
+                return PGMEM.this.policy.compute(finalCurrentPGM);
+              }
+            };
             @Override
             public void run() {
-              final Policy policy = PGMEM.this.policy.compute(finalCurrentPGM);
+              final Policy policy = this.policy.get();
               finalCurrentPGM.visit(policy, cpds[finalJ]);
-              if (VecTools.norm(policy.weights()) > 0)
-                eroutes[finalJ] = finalCurrentPGM.knownRoots()[rng.nextSimple(policy.weights())];
+              final Vec weights = policy.weights();
+              final int randRoute = rng.nextSimple(weights);
+              if (randRoute >= 0)
+                eroutes[finalJ] = finalCurrentPGM.knownRoots()[randRoute];
               latch.countDown();
             }
           });
@@ -146,6 +168,7 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
           // skip
         }
       }
+
       final Mx next = new VecBasedMx(topology.columns(), new ArrayVec(topology.dim()));
       { // adjusting parameters of Dir(next[i]) by one only if this way is possible
         final MxIterator it = topology.nonZeroes();

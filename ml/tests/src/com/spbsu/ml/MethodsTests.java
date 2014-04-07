@@ -9,6 +9,7 @@ import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.math.vectors.impl.VecArrayMx;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
@@ -124,7 +125,7 @@ public class MethodsTests extends GridTest {
   }
 
   private void checkRestoreFixedTopology(final ProbabilisticGraphicalModel original, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, double lossProbab, int iterations, double accuracy) {
-    Vec[] ds = new Vec[10000];
+    Vec[] ds = new Vec[100000];
     for (int i = 0; i < ds.length; i++) {
       Vec vec;
 //      do {
@@ -135,18 +136,24 @@ public class MethodsTests extends GridTest {
     }
     final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
     final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.2, iterations, rng, policy);
+
     final Action<ProbabilisticGraphicalModel> listener = new Action<ProbabilisticGraphicalModel>() {
+      int iteration = 0;
       @Override
       public void invoke(ProbabilisticGraphicalModel pgm) {
+        Interval.stopAndPrint("Iteration " + ++iteration);
+        System.out.println();
         System.out.print(VecTools.distance(pgm.topology, original.topology));
         for (int i = 0; i < pgm.topology.columns(); i++) {
           System.out.print(" " + VecTools.distance(pgm.topology.row(i), original.topology.row(i)));
         }
         System.out.println();
+        Interval.start();
       }
     };
     pgmem.addListener(listener);
 
+    Interval.start();
     final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
     System.out.println(VecTools.prettyPrint(fit.topology));
