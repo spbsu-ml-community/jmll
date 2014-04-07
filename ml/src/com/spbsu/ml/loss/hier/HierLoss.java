@@ -1,4 +1,4 @@
-package com.spbsu.ml.loss;
+package com.spbsu.ml.loss.hier;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
