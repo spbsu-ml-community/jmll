@@ -1,13 +1,29 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.HierTools;
-import com.spbsu.ml.data.impl.Hierarchy;
-import com.spbsu.ml.loss.hier.*;
+import com.spbsu.ml.data.impl.Hierarchy;import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.MLLLogit;
+import com.spbsu.ml.loss.SatL2;
+import com.spbsu.ml.loss.multiclass.MCMacroF1Score;
+import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
+import com.spbsu.ml.loss.multiclass.MCMacroRecall;
+import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
+import com.spbsu.ml.loss.multiclass.hier.*;
+import com.spbsu.ml.loss.multiclass.hier.impl.HMCMacroF1Score;
+import com.spbsu.ml.loss.multiclass.hier.impl.HMCMacroPrecision;
+import com.spbsu.ml.loss.multiclass.hier.impl.HMCMacroRecall;
+import com.spbsu.ml.loss.multiclass.hier.impl.HMCMicroPrecision;
+import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.HierarchicalClassification;
+import com.spbsu.ml.methods.MultiClass;
+import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.HierarchicalModel;
+import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.array.TDoubleArrayList;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -62,14 +78,12 @@ public class HierTests extends TestSuite {
 
     public void testFitting() {
       HierarchicalClassification classification = new HierarchicalClassification(iters, weakStep);
-      HierLoss mainLoss = new MCMacroPrecision(hier, learn, minEntries);
+      HierLoss mainLoss = new HMCMacroPrecision(hier, learn, minEntries);
       HierLoss[] learnLosses = new HierLoss[] {
-          new MCMicroPrecision(mainLoss, learn.target()),
-          new MCMicroRecall(mainLoss, learn.target()),
-          new MCMicroF1Score(mainLoss, learn.target()),
+          new HMCMicroPrecision(mainLoss, learn.target()),
           mainLoss,
-          new MCMacroRecall(mainLoss, learn.target()),
-          new MCMacroF1Score(mainLoss, learn.target())
+          new HMCMacroRecall(mainLoss, learn.target()),
+          new HMCMacroF1Score(mainLoss, learn.target())
       };
       HierarchicalModel model = (HierarchicalModel) classification.fit(learn, mainLoss);
 
@@ -80,12 +94,10 @@ public class HierTests extends TestSuite {
       }
       if (test != null) {
         HierLoss[] testLosses = new HierLoss[] {
-            new MCMicroPrecision(mainLoss, test.target()),
-            new MCMicroRecall(mainLoss, test.target()),
-            new MCMicroF1Score(mainLoss, test.target()),
-            new MCMacroPrecision(mainLoss, test.target()),
-            new MCMacroRecall(mainLoss, test.target()),
-            new MCMacroF1Score(mainLoss, test.target())
+            new HMCMicroPrecision(mainLoss, test.target()),
+            new HMCMacroPrecision(mainLoss, test.target()),
+            new HMCMacroRecall(mainLoss, test.target()),
+            new HMCMacroF1Score(mainLoss, test.target())
         };
         Vec testPredicted = model.bestClassAll(test.data());
         for (int i = 0; i < testLosses.length; i++) {
@@ -106,9 +118,9 @@ public class HierTests extends TestSuite {
       FEATURES = "./ml/tests/data/features.txt.gz";
 
       depth = 4;
-      minEntries = 3;
+      minEntries = 450;
       weakStep = 1.5;
-      iters = 10;
+      iters = 1000;
 
       TDoubleArrayList borders = new TDoubleArrayList();
       learn = HierTools.loadRegressionAsMC(FEATURES, 1 << depth, borders);
@@ -116,6 +128,51 @@ public class HierTests extends TestSuite {
       hier = HierTools.prepareHierStructForRegressionMedian(learn.target());
       //    hier = prepareHierStructForRegressionUniform(depth);
       //    VecTools.append(learn.target(), VecTools.fill(new ArrayVec(learn.power()), (1 << depth) - 1));
+    }
+  }
+
+  public static class Something extends TestCase {
+    public void testBaseline() throws IOException {
+      final double weakStep = 0.5;
+      final int iters = 1;
+      final TDoubleArrayList borders = new TDoubleArrayList();
+      final int classCount = 16;
+      final DataSet learn = HierTools.loadRegressionAsMC("./ml/tests/data/features.txt.gz", classCount, borders);
+      final DataSet test = HierTools.loadRegressionAsMC("./ml/tests/data/featuresTest.txt.gz", classCount, borders);
+      final BFGrid grid = GridTools.medianGrid(learn, 32);
+      final MLLLogit learnLoss = new MLLLogit(learn.target());
+      final MLLLogit testLoss = new MLLLogit(test.target());
+
+      final GradientBoosting<MLLLogit> boosting = new GradientBoosting<MLLLogit>(new MultiClass(new GreedyObliviousTree(grid, 5),
+          new Computable<Vec, L2>() {
+            @Override
+            public L2 compute(Vec argument) {
+              return new SatL2(argument);
+            }
+          }
+      ), iters, weakStep);
+      final ProgressHandler calcer = new ProgressHandler() {
+        int index = 0;
+
+        @Override
+        public void invoke(Trans partial) {
+          if ((index + 1) % 20 == 0) {
+            double lvalue = learnLoss.value(partial.transAll(learn.data()));
+            double tvalue = testLoss.value(partial.transAll(test.data()));
+            System.out.println("iter=" + index + ", [learn]MLLLogitValue=" + lvalue + ", [test]MLLLogitValue=" + tvalue);
+          }
+          index++;
+        }
+      };
+      boosting.addListener(calcer);
+      Ensemble ensemble = boosting.fit(learn, learnLoss);
+      MultiClassModel model = HierarchicalClassification.joinBoostingResults(ensemble);
+      final Func.Stub learnP = new MCMicroPrecision(learn.target());
+      final Func.Stub testP = new MCMicroPrecision(test.target());
+      double learnPVal = learnP.value(model.bestClassAll(learn.data()));
+      double testPVal = testP.value(model.bestClassAll(test.data()));
+      System.out.println("learnPVal = " + learnPVal);
+      System.out.println("testPVal = " + testPVal);
     }
   }
 }

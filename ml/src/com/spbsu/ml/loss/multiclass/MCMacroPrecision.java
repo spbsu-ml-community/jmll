@@ -1,23 +1,21 @@
-package com.spbsu.ml.loss.hier;
+package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.impl.Hierarchy;
-import gnu.trove.iterator.TIntIterator;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.data.DataTools;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 /**
  * User: qdeee
- * Date: 07.03.14
- * Info: precision loss for hierarchical classification
+ * Date: 09.04.14
  */
-public class MCMacroPrecision extends HierLoss {
-  public MCMacroPrecision(Hierarchy unfilledHierarchy, DataSet dataSet, int minEntries) {
-    super(unfilledHierarchy, dataSet, minEntries);
-  }
+public class MCMacroPrecision extends Func.Stub {
+  private final Vec target;
+  private final int[] classLabels;
 
-  public MCMacroPrecision(HierLoss learningLoss, Vec testTarget) {
-    super(learningLoss, testTarget);
+  public MCMacroPrecision(final Vec target) {
+    this.target = target;
+    this.classLabels = DataTools.getClassesLabels(target);
   }
 
   @Override
@@ -35,8 +33,8 @@ public class MCMacroPrecision extends HierLoss {
 
     double result = 0.;
     int nonEmpty = 0;
-    for (TIntIterator iter = nodesClasses.iterator(); iter.hasNext(); ) {
-      int cls = iter.next();
+    for (int i = 0; i < classLabels.length; i++) {
+      int cls = classLabels[i];
       int tp = id2tp.get(cls);
       int fp = id2fp.get(cls);
       if (tp + fp != 0) {
@@ -45,5 +43,10 @@ public class MCMacroPrecision extends HierLoss {
       }
     }
     return result / nonEmpty;
+  }
+
+  @Override
+  public int dim() {
+    return target.dim();
   }
 }

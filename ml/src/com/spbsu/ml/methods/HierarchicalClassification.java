@@ -10,7 +10,8 @@ import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.impl.Hierarchy;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.loss.hier.HierLoss;
+import com.spbsu.ml.func.FuncEnsemble;
+import com.spbsu.ml.loss.multiclass.hier.HierLoss;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.loss.SatL2;
@@ -44,7 +45,8 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
   private HierarchicalModel traverseFit(final Hierarchy.CategoryNode node) {
     final DataSet ds = node.getInnerDS();
     final TIntList labels = new TIntArrayList();
-    Func[] resultModels;
+    final Func[] resultModels;
+
     if (ds != null) {
       final Vec normTarget = node.normalizeTarget(labels);
       final MLLLogit globalLoss = new MLLLogit(normTarget);
@@ -69,22 +71,10 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
       };
       boosting.addListener(calcer);
 
-      System.out.println("Boosting at node " + node.getCategoryId() + " is started, DS size=" + ds.power());
-      final Ensemble<MultiClassModel> ensemble = (Ensemble<MultiClassModel>) boosting.fit(ds, globalLoss);
-      System.out.println("\n\n\n");
-      final Trans[] mcModels = ensemble.models;
+      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, DS size=" + ds.power());
+      final Ensemble ensemble = boosting.fit(ds, globalLoss);
+      resultModels = joinBoostingResults(ensemble).dirs();
 
-      int classesCount = ensemble.ydim();
-      Func[][] allModels = new Func[classesCount][ensemble.size()];
-      for (int c = 0; c < allModels.length; c++) {
-        for (int iter = 0; iter < allModels[c].length; iter++) {
-          allModels[c][iter] = ((MultiClassModel)mcModels[iter]).dirs()[c];
-        }
-      }
-      resultModels = new Func[classesCount];
-      for (int i = 0; i < resultModels.length; i++) {
-        resultModels[i] = new FuncEnsemble(allModels[i], VecTools.fill(new ArrayVec(ensemble.size()), -weakStep));
-      }
     }
     else {
       //this node has only one child, so we introduce max const func that will return this child with probability = 1
@@ -112,23 +102,23 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
     return hierModel;
   }
 
-  private static class FuncEnsemble extends Ensemble<Func> implements Func{
-
-    public FuncEnsemble(Func[] models, Vec weights) {
-      super(models, weights);
-    }
-
-    public double value(Vec x) {
-      double result = 0.;
-      for (int i = 0; i < size(); i++) {
-        result += models[i].value(x) * weights.get(i);
+  public static MultiClassModel joinBoostingResults(Ensemble ensemble){
+    if (ensemble.last() instanceof MultiClassModel) {
+      Func[] joinedModels;
+      Func[][] transpose = new Func[ensemble.ydim()][ensemble.size()];
+      for (int c = 0; c < transpose.length; c++) {
+        for (int iter = 0; iter < transpose[c].length; iter++) {
+          final MultiClassModel mcm = (MultiClassModel) ensemble.models[iter];
+          transpose[c][iter] = mcm.dirs()[c];
+        }
       }
-      return result;
+      joinedModels = new Func[ensemble.ydim()];
+      for (int i = 0; i < joinedModels.length; i++) {
+        joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights);
+      }
+      return new MultiClassModel(joinedModels);
     }
-
-    @Override
-    public int dim() {
-      return super.xdim();
-    }
+    else
+      throw new ClassCastException("Ensemble object does not contain MultiClassModel objects");
   }
 }

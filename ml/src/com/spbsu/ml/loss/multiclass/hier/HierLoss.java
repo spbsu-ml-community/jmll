@@ -1,4 +1,4 @@
-package com.spbsu.ml.loss.hier;
+package com.spbsu.ml.loss.multiclass.hier;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
@@ -16,7 +16,6 @@ public abstract class HierLoss extends Func.Stub {
   protected final Hierarchy hierarchy;
   protected final Vec target;
   protected final TIntIntHashMap targetMapping;
-  protected final TIntList nodesClasses;
 
   protected HierLoss(Hierarchy unfilledHierarchy, DataSet dataSet, int minEntries) {
     unfilledHierarchy.fill(dataSet);
@@ -31,13 +30,11 @@ public abstract class HierLoss extends Func.Stub {
     }
     this.target = newTarget;
     this.hierarchy = prunedTree; //replace
-    this.nodesClasses = Hierarchy.getPostorderedVisitOrder(prunedTree.getRoot(), false);
   }
 
   protected HierLoss(HierLoss learningLoss, Vec testTarget) {
     this.hierarchy = learningLoss.hierarchy;
     this.targetMapping = learningLoss.targetMapping;
-    this.nodesClasses = learningLoss.nodesClasses;
 
     Vec newTarget = new ArrayVec(testTarget.dim());
     for (int i = 0; i < newTarget.dim(); i++) {
