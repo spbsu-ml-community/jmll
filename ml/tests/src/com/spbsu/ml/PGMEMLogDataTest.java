@@ -19,7 +19,9 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.methods.PGMEM;
-import com.spbsu.ml.models.ProbabilisticGraphicalModel;
+import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
+import com.spbsu.ml.models.pgm.Route;
+import com.spbsu.ml.models.pgm.SimplePGM;
 import junit.framework.TestCase;
 
 import java.io.*;
@@ -100,11 +102,11 @@ public class PGMEMLogDataTest extends TestCase {
     final Mx original = new VecBasedMx(SIZE, VecTools.fill(new ArrayVec(SIZE * SIZE), 1.));
     PGMEM pgmem = new PGMEM(original, 0.2, iterations, rng, policy);
     if (listen) {
-      final Action<ProbabilisticGraphicalModel> listener = new Action<ProbabilisticGraphicalModel>() {
+      final Action<SimplePGM> listener = new Action<SimplePGM>() {
         int iteration = 0;
 
         @Override
-        public void invoke(ProbabilisticGraphicalModel pgm) {
+        public void invoke(SimplePGM pgm) {
           Interval.stopAndPrint("Iteration " + ++iteration);
           System.out.println();
           System.out.print(VecTools.distance(pgm.topology, original));
@@ -118,7 +120,7 @@ public class PGMEMLogDataTest extends TestCase {
       pgmem.addListener(listener);
       Interval.start();
     }
-    ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
+    SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
     System.out.println(VecTools.prettyPrint(fit.topology));
     return fit;
@@ -127,17 +129,25 @@ public class PGMEMLogDataTest extends TestCase {
   private void checkModel(ProbabilisticGraphicalModel model, int accuracyLimit, Action<Pair<Integer, Double>> listener) throws IOException {
     DataSet check = new DataSetImpl(new VecArrayMx(validate.getRoutes()), new ArrayVec(validate.getRoutes().length));
     for (int i = 0; i < accuracyLimit; i++) {
-      listener.invoke(Pair.create(i, checkModel(check, model, i)));
+      listener.invoke(Pair.create(i, checkModel(check, (SimplePGM) model, i)));
     }
   }
 
-  private double checkModel(DataSet check, ProbabilisticGraphicalModel fit, int accuracy) {
+  private Route[] knownRoutes(SimplePGM model) {
+    ArrayList<Route> routes = new ArrayList<Route>();
+    for(int i=0; i<model.knownRoutesCount(); i++) {
+      routes.add(model.knownRoute(i));
+    }
+    return routes.toArray(new Route[0]);
+  }
+
+  private double checkModel(DataSet check, SimplePGM fit, int accuracy) {
     final int[][] cpds = new int[check.power()][];
     final Mx data = check.data();
     for (int j = 0; j < data.rows(); j++) {
       cpds[j] = fit.extractControlPoints(data.row(j));
     }
-    ProbabilisticGraphicalModel.Route[] knownRoutes = fit.knownRoots();
+    Route[] knownRoutes = knownRoutes(fit);
     int count = 0;
     for (int i = 0; i < cpds.length; i++) {
       for (int j = 0; j <= Math.min(knownRoutes.length - 1, accuracy); j++) {
@@ -150,10 +160,10 @@ public class PGMEMLogDataTest extends TestCase {
     return ((double) count) / cpds.length;
   }
 
-  private boolean checkRoute(ProbabilisticGraphicalModel.Route route, int... controlPoints) {
+  private boolean checkRoute(Route route, int... controlPoints) {
     int index = 0;
-    for (int t = 0; t < route.nodes.length && index < controlPoints.length; t++) {
-      if (route.nodes[t] == controlPoints[index])
+    for (int t = 0; t < route.length() && index < controlPoints.length; t++) {
+      if (route.dst(t) == controlPoints[index])
         index++;
     }
     return index == controlPoints.length;
