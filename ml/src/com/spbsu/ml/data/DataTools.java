@@ -187,6 +187,17 @@ public class DataTools {
     return points.toArray();
   }
 
+  public static int[] getClassesLabels(Vec target) {
+    TIntArrayList labels = new TIntArrayList();
+    for (int i = 0; i < target.dim(); i++) {
+      final int label = (int) target.get(i);
+      if (!labels.contains(label)) {
+        labels.add(label);
+      }
+    }
+    return labels.toArray();
+  }
+
   public static DataSet normalizeClasses(DataSet learn) {
     final DSIterator it = learn.iterator();
     final Vec normalized = new ArrayVec(learn.power());
