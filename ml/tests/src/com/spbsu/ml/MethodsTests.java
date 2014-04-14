@@ -2,7 +2,6 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.SparseVec;
@@ -20,25 +19,13 @@ import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.*;
-import com.spbsu.ml.methods.trees.GreedyContinuesObliviousSoftBondariesRegressionTree;
-import com.spbsu.ml.methods.trees.GreedyExponentialObliviousTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.models.ObliviousTree;
-import com.spbsu.ml.models.PolynomialExponentRegion;
-import com.spbsu.ml.models.ProbabilisticGraphicalModel;
+import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
+import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Random;
-import java.util.Scanner;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 
@@ -57,7 +44,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testPGMFit3x3() {
-    ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(3, new ArrayVec(new double[]{
+    SimplePGM original = new SimplePGM(new VecBasedMx(3, new ArrayVec(new double[]{
             0, 0.2, 0.8,
             0, 0, 1.,
             0, 0, 0
@@ -66,7 +53,7 @@ public class MethodsTests extends GridTest {
   }
 
   public void testPGMFit5x5() {
-    ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
+    SimplePGM original = new SimplePGM(new VecBasedMx(5, new ArrayVec(new double[]{
             0, 0.2, 0.3,  0.1,  0.4,
             0, 0,   0.25, 0.25, 0.5,
             0, 0,   0,    0.1,  0.9,
@@ -75,11 +62,11 @@ public class MethodsTests extends GridTest {
     })));
 
 
-    checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0., 10, 0.01);
+    checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0., 100, 0.01);
   }
 
   public void testPGMFit5x5RandSkip() {
-    final ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(new VecBasedMx(5, new ArrayVec(new double[]{
+    final SimplePGM original = new SimplePGM(new VecBasedMx(5, new ArrayVec(new double[]{
             0, 0.2, 0.3,  0.1,  0.4,
             0, 0,   0.25, 0.25, 0.5,
             0, 0,   0,    0.1,  0.9,
@@ -97,7 +84,7 @@ public class MethodsTests extends GridTest {
       VecTools.normalizeL1(originalMx.row(i));
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
-    ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(originalMx);
+    SimplePGM original = new SimplePGM(originalMx);
     checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0.5, 100, 0.01);
   }
 
@@ -109,7 +96,7 @@ public class MethodsTests extends GridTest {
       VecTools.normalizeL1(originalMx.row(i));
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
-    ProbabilisticGraphicalModel original = new ProbabilisticGraphicalModel(originalMx);
+    SimplePGM original = new SimplePGM(originalMx);
     checkRestoreFixedTopology(original, PGMEM.FREQ_DENSITY_PRIOR_PATH, 0.5, 100, 0.01);
   }
 
@@ -124,7 +111,7 @@ public class MethodsTests extends GridTest {
     return result;
   }
 
-  private void checkRestoreFixedTopology(final ProbabilisticGraphicalModel original, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, double lossProbab, int iterations, double accuracy) {
+  private void checkRestoreFixedTopology(final SimplePGM original, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, double lossProbab, int iterations, double accuracy) {
     Vec[] ds = new Vec[100000];
     for (int i = 0; i < ds.length; i++) {
       Vec vec;
@@ -135,12 +122,14 @@ public class MethodsTests extends GridTest {
       ds[i] = vec;
     }
     final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
-    final PGMEM pgmem = new PGMEM(new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.)), 0.2, iterations, rng, policy);
+    final VecBasedMx topology = new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.));
+    VecTools.scale(topology.row(topology.rows() - 1), 0.);
+    final PGMEM pgmem = new PGMEM(topology, 0.2, iterations, rng, policy);
 
-    final Action<ProbabilisticGraphicalModel> listener = new Action<ProbabilisticGraphicalModel>() {
+    final Action<SimplePGM> listener = new Action<SimplePGM>() {
       int iteration = 0;
       @Override
-      public void invoke(ProbabilisticGraphicalModel pgm) {
+      public void invoke(SimplePGM pgm) {
         Interval.stopAndPrint("Iteration " + ++iteration);
         System.out.println();
         System.out.print(VecTools.distance(pgm.topology, original.topology));
@@ -154,7 +143,7 @@ public class MethodsTests extends GridTest {
     pgmem.addListener(listener);
 
     Interval.start();
-    final ProbabilisticGraphicalModel fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
+    final SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
     System.out.println(VecTools.prettyPrint(fit.topology));
     System.out.println();

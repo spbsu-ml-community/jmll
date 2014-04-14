@@ -3,7 +3,6 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.*;
@@ -12,40 +11,44 @@ import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ThreadTools;
-import com.spbsu.ml.ProgressHandler;
-import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.models.ProbabilisticGraphicalModel;
-import gnu.trove.map.hash.TIntDoubleHashMap;
+import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
+import com.spbsu.ml.models.pgm.Route;
+import com.spbsu.ml.models.pgm.SimplePGM;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.WeakHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 /**
  * User: solar
  * Date: 27.01.14
  * Time: 13:29
  */
-public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> implements Optimization<LLLogit> {
-  public static abstract class Policy implements Filter<ProbabilisticGraphicalModel.Route> {
-    protected static final ThreadLocal<SparseVec<IntBasis>> weights = new ThreadLocal<SparseVec<IntBasis>>(){
-      @Override
-      protected SparseVec<IntBasis> initialValue() {
-        return new SparseVec<IntBasis>(new IntBasis(Integer.MAX_VALUE));
-      }
-    };
-    private SparseVec<IntBasis> weightsLocal;
+public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements Optimization<LLLogit> {
+  public static abstract class Policy implements Filter<Route> {
+    private final Vec weights;
+    private final List<Route> routes;
 
-    public SparseVec weights() {
-      if (weightsLocal == null)
-        weightsLocal = weights.get();
-      return weightsLocal;
+    protected Policy(ProbabilisticGraphicalModel pgm) {
+      weights = new ArrayVec(pgm.knownRoutesCount());
+      routes = new ArrayList<Route>(pgm.knownRoutesCount());
+    }
+    protected void addOption(Route r, double w) {
+      weights.set(routes.size(), w);
+      routes.add(r);
+    }
+
+    public Route next(FastRandom rng) {
+      return routes.isEmpty() ? null : routes.get(rng.nextSimple(weights));
     }
 
     public Policy clear() {
-      VecTools.scale(weights(), 0.);
+      VecTools.scale(weights, 0.);
+      routes.clear();
       return this;
     }
   }
@@ -53,9 +56,9 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
   public static final Computable<ProbabilisticGraphicalModel, Policy> MOST_PROBABLE_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
     @Override
     public Policy compute(ProbabilisticGraphicalModel argument) {
-      return new Policy() {
-        public boolean accept(ProbabilisticGraphicalModel.Route route) {
-          weights().set(route.index(), 1);
+      return new Policy(argument) {
+        public boolean accept(Route route) {
+          addOption(route, 1.);
           return true;
         }
       }.clear();
@@ -65,10 +68,10 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
   public static final Computable<ProbabilisticGraphicalModel, Policy> LAPLACE_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
     @Override
     public Policy compute(ProbabilisticGraphicalModel argument) {
-      return new Policy() {
+      return new Policy(argument) {
         @Override
-        public boolean accept(ProbabilisticGraphicalModel.Route route) {
-          weights().add(route.index(), route.probab * prior(route.length()));
+        public boolean accept(Route route) {
+          addOption(route, route.p() * prior(route.length()));
           return false;
         }
         private double prior(int length) {
@@ -85,23 +88,24 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
       Vec freqs = cache.get(argument);
       if (freqs == null) {
         freqs = new ArrayVec(10000);
-        for (ProbabilisticGraphicalModel.Route r : argument.knownRoots()){
+        for (int i = 0; i < argument.knownRoutesCount(); i++) {
+          Route r = argument.knownRoute(i);
           if (r.length() < freqs.dim())
-            freqs.adjust(r.length(), r.probab);
+            freqs.adjust(r.length(), r.p());
         }
         synchronized (cache) {
           cache.put(argument, freqs);
         }
       }
       final double unknownWeight = 1 - VecTools.norm1(freqs);
-      final int knownRootsCount = argument.knownRoots().length;
+      final int knownRootsCount = argument.knownRoutesCount();
 
       final Vec finalFreqs = freqs;
-      return new Policy() {
+      return new Policy(argument) {
         @Override
-        public boolean accept(ProbabilisticGraphicalModel.Route route) {
+        public boolean accept(Route route) {
           final double prior = finalFreqs.get(route.length());
-          weights().add(route.index(), route.probab * (prior > 0 ? prior : 2 * unknownWeight / knownRootsCount));
+          addOption(route, route.p() * (prior > 0 ? prior : 2 * unknownWeight / knownRootsCount));
           return false;
         }
       }.clear();
@@ -126,10 +130,32 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
     this.rng = rng;
   }
 
-  ThreadPoolExecutor executor = ThreadTools.createBGExecutor(PGMEM.class.getName(), -1);
   @Override
-  public ProbabilisticGraphicalModel fit(DataSet learn, LLLogit ll) {
-    ProbabilisticGraphicalModel currentPGM = new ProbabilisticGraphicalModel(topology);
+  public SimplePGM fit(DataSet learn, LLLogit ll) {
+    final ThreadGroup tg = new ThreadGroup(PGMEM.class.getName());
+    final Thread[] threads = new Thread[ThreadTools.COMPUTE_UNITS];
+    final ArrayBlockingQueue<Action<Policy>> queue = new ArrayBlockingQueue<Action<Policy>>(learn.power());
+    final Policy[] policies = new Policy[threads.length];
+    for (int i = 0; i < threads.length; i++) {
+      final int finalI = i;
+      threads[i] = new Thread(tg, new Runnable() {
+        @Override
+        public void run() {
+          try {
+            while(true) {
+              final Action<Policy> next = queue.take();
+              policies[finalI].clear();
+              next.invoke(policies[finalI]);
+            }
+          } catch (InterruptedException e) {
+            //
+          }
+        }
+      });
+      threads[i].start();
+    }
+
+    SimplePGM currentPGM = new SimplePGM(topology);
     final int[][] cpds = new int[learn.power()][];
     final Mx data = learn.data();
     for (int j = 0; j < data.rows(); j++) {
@@ -137,27 +163,23 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
     }
 
     for (int t = 0; t < iterations; t++) {
-      final ProbabilisticGraphicalModel.Route[] eroutes = new ProbabilisticGraphicalModel.Route[learn.power()];
+      final Route[] eroutes = new Route[learn.power()];
+      { // updating policies
+        for (int i = 0; i < policies.length; i++) {
+          policies[i] = policy.compute(currentPGM);
+        }
+      }
       { // E-step
         final CountDownLatch latch = new CountDownLatch(cpds.length);
+
         for (int j = 0; j < cpds.length; j++) {
-          final ProbabilisticGraphicalModel finalCurrentPGM = currentPGM;
+          final SimplePGM finalCurrentPGM = currentPGM;
           final int finalJ = j;
-          executor.execute(new Runnable() {
-            ThreadLocal<Policy> policy = new ThreadLocal<Policy>(){
-              @Override
-              protected Policy initialValue() {
-                return PGMEM.this.policy.compute(finalCurrentPGM);
-              }
-            };
+          queue.add(new Action<Policy>() {
             @Override
-            public void run() {
-              final Policy policy = this.policy.get();
+            public void invoke(Policy policy) {
               finalCurrentPGM.visit(policy, cpds[finalJ]);
-              final Vec weights = policy.weights();
-              final int randRoute = rng.nextSimple(weights);
-              if (randRoute >= 0)
-                eroutes[finalJ] = finalCurrentPGM.knownRoots()[randRoute];
+              eroutes[finalJ] = policy.next(rng);
               latch.countDown();
             }
           });
@@ -178,12 +200,12 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
         }
       }
       { // M-step
-        for (ProbabilisticGraphicalModel.Route eroute : eroutes) {
+        for (Route eroute : eroutes) {
           if (eroute == null)
             continue;
-          byte prev = eroute.nodes[0];
-          for (int i = 1; i < eroute.nodes.length; i++) {
-            next.adjust(prev, prev = eroute.nodes[i], 1.);
+          int prev = eroute.dst(0);
+          for (int i = 1; i < eroute.length(); i++) {
+            next.adjust(prev, prev = eroute.dst(i), 1.);
           }
         }
         for (int i = 0; i < next.rows(); i++) {
@@ -194,10 +216,11 @@ public class PGMEM extends WeakListenerHolderImpl<ProbabilisticGraphicalModel> i
         VecTools.scale(next, step/(1. - step));
         VecTools.append(next, currentPGM.topology);
         VecTools.scale(next, (1. - step));
-        currentPGM = new ProbabilisticGraphicalModel(next);
+        currentPGM = new SimplePGM(next);
         invoke(currentPGM);
       }
     }
+    tg.interrupt();
     return currentPGM;
   }
 }
