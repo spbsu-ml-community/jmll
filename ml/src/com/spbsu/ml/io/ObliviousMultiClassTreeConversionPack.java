@@ -62,7 +62,6 @@ public class ObliviousMultiClassTreeConversionPack implements ConversionPack<Obl
         }
       }
       result = result.delete(result.length() - 1, result.length());
-      result.append('\n');
 
       return result;
     }

@@ -57,7 +57,6 @@ public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree
         }
       }
       result = result.delete(result.length() - 1, result.length());
-      result.append('\n');
 
       return result;
     }
