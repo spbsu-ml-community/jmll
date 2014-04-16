@@ -28,6 +28,7 @@ import gnu.trove.map.hash.TDoubleIntHashMap;
 import java.util.Random;
 
 import static com.spbsu.commons.math.MathTools.sqr;
+import static com.spbsu.commons.math.vectors.VecTools.*;
 
 /**
  * User: solar
@@ -296,7 +297,7 @@ public class MethodsTests extends GridTest {
   }
 
   private class QualityCalcer implements ProgressHandler {
-    Vec residues = VecTools.copy(learn.target());
+    Vec residues = copy(learn.target());
     double total = 0;
     int index = 0;
 
@@ -355,6 +356,7 @@ public class MethodsTests extends GridTest {
     FMTrainingWorkaround fm = new FMTrainingWorkaround("r", "1,1,8", "10");
     fm.fit(learn, null);
   }
+
 }
 
 
