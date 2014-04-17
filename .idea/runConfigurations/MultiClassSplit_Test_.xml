@@ -1,0 +1,24 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="MultiClassSplit Test " type="Application" factoryName="Application">
+    <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+      <pattern>
+        <option name="PATTERN" value="com.spbsu.ml.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.JMLLCLI" />
+    <option name="VM_PARAMETERS" value="-Xmx4g" />
+    <option name="PROGRAM_PARAMETERS" value="fit -v -f tests/data/multiclass/features-learn.txt.gz -t tests/data/multiclass/features-test.txt.gz -T MLLLogit -O GradientBoosting(weak=MultiClassSplit,iterations=1000,step=0.5)" />
+    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/ml" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+    <option name="ALTERNATIVE_JRE_PATH" value="" />
+    <option name="ENABLE_SWING_INSPECTOR" value="false" />
+    <option name="ENV_VARIABLES" />
+    <option name="PASS_PARENT_ENVS" value="true" />
+    <module name="ml" />
+    <envs />
+    <RunnerSettings RunnerId="Run" />
+    <ConfigurationWrapper RunnerId="Run" />
+    <method />
+  </configuration>
+</component>

@@ -25,7 +25,9 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
         builder.append("{");
         Trans model = from.dirs[i];
         builder.append(from.dirs[i].getClass().getCanonicalName()).append(",\n");
+        builder.append("{");
         builder.append(repository.convert(model, CharSequence.class));
+        builder.append("}");
         builder.append("},\n");
       }
       builder.delete(builder.length() - 1, builder.length());
@@ -44,21 +46,18 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
 
     @Override
     public TransJoin convert(CharSequence from) {
-      int index = 0;
-      CharSequenceTools.cut(from, index, '{');
-      Trans[] models = new Trans[Integer.parseInt(CharSequenceTools.cut(from, index, ',').toString().trim())];
+      int index = CharSequenceTools.skipTo(from, 0, '{') + 1;
+      final int modelsCount = Integer.parseInt(CharSequenceTools.cut(from, index, ',').toString().trim());
+      final Trans[] models = new Trans[modelsCount];
       index = CharSequenceTools.skipTo(from, index, ',');
       try {
         for (int i = 0; i < models.length; i++) {
-          index = CharSequenceTools.skipTo(from, index, '{');
-          final CharSequence modelCS = CharSequenceTools.cutClose(from, index, '{', '}');
+          final CharSequence modelCS = CharSequenceTools.cutBetween(from, index, '{', '}');
           {
             int mindex = 0;
             String modelClassName = CharSequenceTools.cut(modelCS, mindex, ',').toString().trim();
             Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(modelClassName);
-            mindex = CharSequenceTools.skipTo(modelCS, mindex, ',');
-            mindex = CharSequenceTools.skipTo(modelCS, mindex, '{');
-            models[i] = repository.convert(CharSequenceTools.cutClose(modelCS, mindex, '{', '}'), elementClass);
+            models[i] = repository.convert(CharSequenceTools.cutBetween(modelCS, mindex, '{', '}'), elementClass);
           }
           index += modelCS.length();
         }

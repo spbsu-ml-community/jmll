@@ -24,14 +24,13 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
     public CharSequence convert(Ensemble from) {
       StringBuilder builder = new StringBuilder();
       builder.append(from.size());
-      builder.append("\n");
-      builder.append("\n");
+      builder.append("\n\n");
       for (int i = 0; i < from.size(); i++) {
         Trans model = from.models[i];
         builder.append(from.models[i].getClass().getCanonicalName()).append(" ");
         builder.append(from.weights.get(i)).append("\n");
         builder.append(repository.convert(model, CharSequence.class));
-        builder.append("\n");
+        builder.append("\n\n");
       }
       builder.delete(builder.length() - 1, builder.length());
       return builder;
