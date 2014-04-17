@@ -2,6 +2,7 @@ package com.spbsu.ml.models.pgm;
 
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 
@@ -23,7 +24,9 @@ public interface ProbabilisticGraphicalModel extends Trans, Func {
 
   int knownRoutesCount();
   Route knownRoute(int index);
-  double knownRouteWeight();
+  double knownRoutesWeight();
+
+  Route next(FastRandom rng);
 
   boolean isFinal(int node);
 }

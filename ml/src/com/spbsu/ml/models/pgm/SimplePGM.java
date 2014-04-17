@@ -2,11 +2,9 @@ package com.spbsu.ml.models.pgm;
 
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.IntBasis;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.Func;
 import gnu.trove.list.array.TByteArrayList;
@@ -24,7 +22,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
   public static final double KNOWN_ROUTES_PROBABILITY = 0.999;
   public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.000001;
   public final Mx topology;
-  private final boolean[] isFinalState;
+  protected final boolean[] isFinalState;
 
   private final byte[] nodes;
   private final MyLWRoute[] routes;
@@ -150,21 +148,20 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return toInt.toArray();
   }
 
-  public Vec next(FastRandom rng) {
-    while(true) {
-      SparseVec<IntBasis> result = new SparseVec<IntBasis>(new IntBasis(100));
-      int next = 1;
-      int index = 0;
+  public Route next(FastRandom rng) {
+    TByteArrayList result = new TByteArrayList(100);
+    byte next = 0;
+    double p = 1;
 
-      while (index < result.dim()) {
-        next = rng.nextSimple(topology.row(next - 1)) + 1;
-        result.set(index++, next);
-        if (isFinalState[next -1])
-          break;
-      }
-      if (result.get(result.dim()) == 0.)
-        return result;
+    while (true) {
+      final Vec trans = topology.row(next);
+      next = (byte)rng.nextSimple(trans);
+      p *= trans.get(next);
+      result.add(next);
+      if (isFinalState[next])
+        break;
     }
+    return new MyRoute(result.toArray(), p);
   }
 
   @Override
@@ -186,11 +183,11 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return routes[randRoute];
   }
 
-  public double knownRouteWeight() {
+  public double knownRoutesWeight() {
     return knownRoutesProBab;
   }
 
-  public class MyLWRoute implements Route {
+  public class MyLWRoute extends Route {
     private int start, end;
     private double probab;
 
@@ -239,7 +236,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     }
   }
 
-  public class MyRoute implements Route {
+  public class MyRoute extends Route {
     private final byte[] route;
     private final double probab;
     private double maxClosedProbab;
