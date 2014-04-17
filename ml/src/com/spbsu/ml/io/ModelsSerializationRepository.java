@@ -14,12 +14,15 @@ import com.spbsu.ml.GridEnabled;
  * Time: 13:01
  */
 public class ModelsSerializationRepository extends SerializationRepository<CharSequence> {
-  private static ConversionRepository conversion = new TypeConvertersCollection(new ObliviousTreeConversionPack(),
-                                                                                new ObliviousMultiClassTreeConversionPack(),
-                                                                                new EnsembleModelConversionPack(),
-                                                                                new TransJoinConversionPack(),
-                                                                                new FactorizationMachinesConversionPack(),
-                                                                                BFGrid.CONVERTER.getClass());
+  private static ConversionRepository conversion = new TypeConvertersCollection(
+      new ObliviousTreeConversionPack(),
+      new ObliviousMultiClassTreeConversionPack(),
+      new EnsembleModelConversionPack(),
+      new TransJoinConversionPack(),
+      new FactorizationMachinesConversionPack(),
+      new MultiClassModelConversionPack(),
+      BFGrid.CONVERTER.getClass()
+  );
   private BFGrid grid;
 
   public ModelsSerializationRepository() {

@@ -14,11 +14,16 @@ import com.spbsu.ml.func.TransJoin;
  * Time: 17:16
  */
 public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSequence> {
-  public static class To implements TypeConverter<TransJoin, CharSequence>, ConversionDependant {
+
+  public static abstract class BaseTo<F extends TransJoin> implements TypeConverter<F, CharSequence>, ConversionDependant {
     private ConversionRepository repository;
 
     @Override
-    public CharSequence convert(TransJoin from) {
+    public void setConversionRepository(final ConversionRepository repository) {
+      this.repository = repository;
+    }
+
+    protected CharSequence convertModels(F from) {
       StringBuilder builder = new StringBuilder();
       builder.append("{").append(from.dirs.length).append(",\n");
       for (int i = 0; i < from.dirs.length; i++) {
@@ -34,18 +39,24 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
       builder.append("}");
       return builder;
     }
+  }
 
+  public static class To extends BaseTo<TransJoin> {
     @Override
-    public void setConversionRepository(ConversionRepository repository) {
-      this.repository = repository;
+    public CharSequence convert(TransJoin from) {
+      return convertModels(from);
     }
   }
 
-  public static class From implements TypeConverter<CharSequence, TransJoin>, ConversionDependant {
+  public static abstract class BaseFrom<T extends TransJoin> implements TypeConverter<CharSequence, T>, ConversionDependant {
     private ConversionRepository repository;
 
     @Override
-    public TransJoin convert(CharSequence from) {
+    public void setConversionRepository(final ConversionRepository repository) {
+      this.repository = repository;
+    }
+
+    protected Trans[] convertModels(CharSequence from) {
       int index = CharSequenceTools.skipTo(from, 0, '{') + 1;
       final int modelsCount = Integer.parseInt(CharSequenceTools.cut(from, index, ',').toString().trim());
       final Trans[] models = new Trans[modelsCount];
@@ -64,12 +75,14 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
       } catch (ClassNotFoundException e) {
         throw new RuntimeException("Element class not found!", e);
       }
-      return new TransJoin(models);
+      return models;
     }
+  }
 
+  public static class From extends BaseFrom<TransJoin> {
     @Override
-    public void setConversionRepository(ConversionRepository repository) {
-      this.repository = repository;
+    public TransJoin convert(CharSequence from) {
+      return new TransJoin(convertModels(from));
     }
   }
 
