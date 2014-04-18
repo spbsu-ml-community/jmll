@@ -1,9 +1,6 @@
 package com.spbsu.ml.models;
 
-import com.spbsu.commons.math.vectors.IntBasis;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.ml.FuncC1;
@@ -55,8 +52,10 @@ public class FMModel extends FuncC1.Stub {
     for (int k = 0; k < V.rows(); k++) {
       double sum = 0.;
       double sumSqr = 0.;
-      for (int i = 0; i < x.dim(); i++) {
-        final double d = V.get(k, i) * x.get(i);
+      VecIterator i = x.nonZeroes();
+      final Vec row = V.row(k);
+      while (i.advance()) {
+        final double d = row.get(i.index()) * i.value();
         sum += d;
         sumSqr += d * d;
       }
