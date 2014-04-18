@@ -2,21 +2,19 @@ package com.spbsu.ml.data;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.RandomExt;
 import com.spbsu.commons.text.CharSequenceTools;
-import com.spbsu.commons.xml.JDOMUtil;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.CompositeTrans;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
-import com.spbsu.ml.data.impl.Hierarchy;
+import com.spbsu.ml.data.impl.DataSetImpl2;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
@@ -26,12 +24,8 @@ import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
-
-import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import org.jdom.Element;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.*;
@@ -47,6 +41,9 @@ import static java.lang.Math.max;
  * Time: 19:05
  */
 public class DataTools {
+  private static final String COMMON_DELIMETER = " ";
+  private static final String VEC_DELIMETER = ":";
+
   public static DataSet loadFromFeaturesTxt(String file) throws IOException {
     return loadFromFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file), null);
   }
@@ -108,6 +105,41 @@ public class DataTools {
     }
     return new DataSetImpl(data, target);
   }
+
+  public static DataSet loadFromSparseFeaturesTxt(String file) throws IOException {
+    return loadFromSparseFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
+  }
+
+  public static DataSet loadFromSparseFeaturesTxt(final Reader in) throws IOException {
+    final BufferedReader br = new BufferedReader(in);
+
+    //read matrix sizes
+    int cols = Integer.parseInt(br.readLine());
+    int rows = Integer.parseInt(br.readLine());
+
+    //create matrix with given params
+    final SparseMx<MxBasisImpl> mx = new SparseMx<MxBasisImpl>(new MxBasisImpl(rows, cols));
+    final double[] targets = new double[rows];
+    final IntBasis rowBias = new IntBasis(cols);
+
+    //read string like 'target1 feature_id1:val1 feature_id4:val4 ...'
+    String inline;
+    int curRow = 0;
+    while ((inline = br.readLine()) != null) {
+      final StringTokenizer tok = new StringTokenizer(inline, COMMON_DELIMETER);
+      targets[curRow] = Double.parseDouble(tok.nextToken());
+      final SparseVec<IntBasis> vec = new SparseVec<IntBasis>(rowBias);
+      while (tok.hasMoreElements()) {
+        final String[] parts = tok.nextToken().split(VEC_DELIMETER);
+        vec.add(Integer.parseInt(parts[0]), Double.parseDouble(parts[1]));
+      }
+      mx.setRow(curRow, vec);
+      ++curRow;
+    }
+    //don't use DataSetImpl it's iterator is easily overflowing
+    return new DataSetImpl2(mx, new ArrayVec(targets));
+  }
+
 
   public static void writeModel(Trans result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);

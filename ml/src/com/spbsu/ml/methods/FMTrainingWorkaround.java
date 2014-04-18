@@ -1,8 +1,7 @@
 package com.spbsu.ml.methods;
 
+import com.spbsu.commons.func.converters.Vec2StringConverter;
 import com.spbsu.commons.math.vectors.MxIterator;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
@@ -11,7 +10,10 @@ import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.models.FMModel;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.OutputStreamWriter;
 
 /**
  * User: qdeee
@@ -87,10 +89,10 @@ public class FMTrainingWorkaround implements Optimization {
       readInput(reader, false);
 
       //sending dataset
+      final Vec2StringConverter converter = new Vec2StringConverter();
       for (DSIterator iter = learn.iterator(); iter.advance(); ) {
         String target = String.valueOf(iter.y());
-        Vec row = VecTools.copySparse(iter.x());
-        final String entry = String.format("%s %s\n", target, row.toString());
+        final String entry = String.format("%s %s\n", target, converter.convertToSparse(iter.x()));
         writer.write(entry);
       }
       writer.flush();

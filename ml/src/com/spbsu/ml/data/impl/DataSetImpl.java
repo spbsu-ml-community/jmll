@@ -15,8 +15,8 @@ import com.spbsu.ml.data.DataSet;
  * Time: 17:36
  */
 public class DataSetImpl extends CacheHolderImpl implements DataSet {
-  private final Mx data;
-  private final Vec target;
+  protected final Mx data;
+  protected final Vec target;
 
   public DataSetImpl(double[] data, double[] target) {
     this.data = new VecBasedMx(data.length / target.length, new ArrayVec(data));
