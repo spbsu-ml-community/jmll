@@ -7,6 +7,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.Func;
 import gnu.trove.list.array.TByteArrayList;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -20,6 +21,7 @@ import java.util.*;
  * Time: 10:19
  */
 public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel {
+  public static final Logger LOG = Logger.create(SimplePGM.class);
   public static final double KNOWN_ROUTES_PROBABILITY = 0.999;
   public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.000001;
   public final Mx topology;
@@ -90,7 +92,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     for (int i = 0; i < boundaries.size(); i++) {
       routes[i] = new MyLWRoute(start, start = boundaries.get(i), probabs.get(i));
     }
-    System.out.println("Routes built: " + boundaries.size() + " weight: " + knownRoutesProBab);
+    LOG.debug("Routes built: " + boundaries.size() + " weight: " + knownRoutesProBab);
   }
 
   public SimplePGM(final Mx next, final double meanLen) {
@@ -216,19 +218,6 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     }
 
     @Override
-    public String toString() {
-      final StringBuilder builder = new StringBuilder(20);
-      builder.append('(');
-      for (int i = 0; i < length(); i++) {
-        if (i > 0)
-          builder.append(',');
-        builder.append(dst(i));
-      }
-      builder.append(')').append("->").append(p());
-      return builder.toString();
-    }
-
-    @Override
     public int length() {
       return end - start;
     }
@@ -288,19 +277,6 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     @Override
     public int last() {
       return route[route.length - 1];
-    }
-
-    @Override
-    public String toString() {
-      final StringBuilder builder = new StringBuilder(20);
-      builder.append('(');
-      for (int i = 0; i < length(); i++) {
-        if (i > 0)
-          builder.append(',');
-        builder.append(dst(i));
-      }
-      builder.append(')').append("->").append(p());
-      return builder.toString();
     }
 
     @Override
