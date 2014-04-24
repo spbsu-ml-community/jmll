@@ -2,22 +2,18 @@ package com.spbsu.ml.methods;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.impl.ChangedTarget;
-import com.spbsu.ml.data.impl.DataSetImpl;
-import com.spbsu.ml.data.impl.Hierarchy;
+import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.multiclass.hier.HierLoss;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.HierarchicalModel;
-import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.models.MCModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -31,8 +27,13 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
   private BFGrid grid;
 
   public HierarchicalClassification(int weakIters, double weakStep) {
+    this(weakIters, weakStep, null);
+  }
+
+  public HierarchicalClassification(final int weakIters, final double weakStep, final BFGrid grid) {
     this.weakIters = weakIters;
     this.weakStep = weakStep;
+    this.grid = grid;
   }
 
   @Override
@@ -42,13 +43,13 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
     return model;
   }
 
-  private HierarchicalModel traverseFit(final Hierarchy.CategoryNode node) {
-    final DataSet ds = node.getInnerDS();
+  private HierarchicalModel traverseFit(final HierarchyTree.Node node) {
+    final DataSet ds = node.createDS();
     final TIntList labels = new TIntArrayList();
     final Func[] resultModels;
 
     if (ds != null) {
-      final Vec normTarget = node.normalizeTarget(labels);
+      final Vec normTarget = DataTools.normalizeTarget(ds.target(), labels);
       final MLLLogit globalLoss = new MLLLogit(normTarget);
 
       final GradientBoosting<MLLLogit> boosting = new GradientBoosting<MLLLogit>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), new Computable<Vec, L2>() {
@@ -73,7 +74,7 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
 
       System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, DS size=" + ds.power());
       final Ensemble ensemble = boosting.fit(ds, globalLoss);
-      resultModels = joinBoostingResults(ensemble).dirs();
+      resultModels = MCModel.joinBoostingResults(ensemble).dirs();
 
     }
     else {
@@ -93,32 +94,12 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
       labels.add(node.getCategoryId());
     }
     final HierarchicalModel hierModel = new HierarchicalModel(resultModels, labels);
-    for (Hierarchy.CategoryNode child : node.getChildren()) {
+    for (HierarchyTree.Node child : node.getChildren()) {
       if (child.isLeaf())
         continue;
       HierarchicalModel childModel = traverseFit(child);
       hierModel.addChildren(childModel, child.getCategoryId());
     }
     return hierModel;
-  }
-
-  public static MultiClassModel joinBoostingResults(Ensemble ensemble){
-    if (ensemble.last() instanceof MultiClassModel) {
-      Func[] joinedModels;
-      Func[][] transpose = new Func[ensemble.ydim()][ensemble.size()];
-      for (int c = 0; c < transpose.length; c++) {
-        for (int iter = 0; iter < transpose[c].length; iter++) {
-          final MultiClassModel mcm = (MultiClassModel) ensemble.models[iter];
-          transpose[c][iter] = mcm.dirs()[c];
-        }
-      }
-      joinedModels = new Func[ensemble.ydim()];
-      for (int i = 0; i < joinedModels.length; i++) {
-        joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights);
-      }
-      return new MultiClassModel(joinedModels);
-    }
-    else
-      throw new ClassCastException("Ensemble object does not contain MultiClassModel objects");
   }
 }

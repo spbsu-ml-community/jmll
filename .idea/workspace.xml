@@ -5,42 +5,34 @@
       <artifact name="ml:jar" />
     </artifacts-to-build>
   </component>
-  <component name="BuildServerSettings">
-    <option name="LOGIN" value="" />
-    <option name="SERVER_URL" value="http://buildserver" />
-    <option name="PASSWORD" />
-    <option name="REMEMBER_ME" value="true" />
-    <option name="USE_IDEA_PROXY_SETTINGS" value="true" />
-    <option name="INSPECTIONS_BUILD_TYPE_IDS" />
-    <option name="DUPLICATES_BUILD_TYPE_IDS" />
-    <option name="COVERAGE_SETTINGS" />
-    <option name="TEST_STATUS_ENABLED" value="true" />
-    <option name="TEST_STATUS_SHOW_SUCCESSFUL" value="false" />
-    <option name="ARTIFACTS_BUILD_TYPE_IDS" />
-    <option name="PERFORM_COMMIT_IF_SUCCESSFUL" value="true" />
-    <option name="PERFORM_COMMIT_IF_NO_NEW_FAILED_TESTS" value="false" />
-    <option name="REQUEST_CONFIRMATON" value="false" />
-    <option name="PRE_TESTED_COMMIT" value="true" />
-    <option name="PROJECT_STATUS_DIALOG_SPLITTER_DIVIDER_LOCATION" value="500" />
-    <option name="CHANGES_STATUS_DIALOG_SPLITTER_DIVIDER_LOCATION" value="500" />
-    <option name="FILTER_BY_STATUS" value="false" />
-    <option name="FILTER_MARKED_AS_FIXED" value="false" />
-    <option name="SHOW_CLOSE_PROMPT" value="true" />
-    <option name="TOOL_WINDOW_SELECTED_CONTENT_INDEX" value="0" />
-    <option name="FILTER_BY_CURRENT_PROJECT" value="true" />
-  </component>
   <component name="ChangeListManager">
-    <list default="true" id="b5751471-ac07-4077-949f-2d3d12827f09" name="Default" comment="Added conversion pack for MultiClassModel">
+    <list default="true" id="b5751471-ac07-4077-949f-2d3d12827f09" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/HierJoinedBinClassModel.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/HierRefinedExpertModel.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalRefinedClassification.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/HierarchyTree.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/JoinedBinClassModel.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/MCModel.java" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/Hierarchy.java" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/commons" afterPath="$PROJECT_DIR$/commons" />
-    </list>
-    <list id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
-    <list id="5a866061-c8a4-4635-a048-6398c5bcd489" name="Idea" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/artifacts/ml_jar.xml" afterPath="$PROJECT_DIR$/.idea/artifacts/ml_jar.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroF1Score.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroF1Score.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroPrecision.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroPrecision.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroRecall.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroRecall.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMicroPrecision.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMicroPrecision.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/HierLoss.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/HierLoss.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/HierTests.java" afterPath="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/HierTests.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/HierTools.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/HierTools.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalClassification.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalClassification.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/HierarchicalModel.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/HierarchicalModel.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMacroPrecision.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMacroPrecision.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMicroPrecision.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMicroPrecision.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/MultiClassModel.java" afterPath="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/MultiClassModel.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
+    <list id="5b6ab03b-0341-46f5-afa7-0b2ffd5b24ef" name="ignore" comment="" />
     <ignored path=".idea/workspace.xml" />
     <ignored path="ML.iws" />
-    <file path="$PROJECT_DIR$/.idea/workspace.xml" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,7 +41,7 @@
   </component>
   <component name="ChangesViewManager" flattened_view="true" show_ignored="false" />
   <component name="CreatePatchCommitExecutor">
-    <option name="PATCH_PATH" value="" />
+    <option name="PATCH_PATH" value="$PROJECT_DIR$/.." />
   </component>
   <component name="DaemonCodeAnalyzer">
     <disable_hints />
@@ -107,102 +99,98 @@
     <favorites_list name="ML" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="MultiClassModelConversionPack.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/MultiClassModelConversionPack.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="25" column="19" selection-start="832" selection-end="832" vertical-scroll-proportion="0.0" vertical-offset="12" max-vertical-offset="720">
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DispersionTest.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/DispersionTest.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2850">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="CompositePGM.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/CompositePGM.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1575">
-              <folding>
-                <element signature="imports" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ProbabilisticGraphicalModel.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/ProbabilisticGraphicalModel.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="495">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Route.java" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/Route.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="13" column="26" selection-start="253" selection-end="253" vertical-scroll-proportion="0.58441556" vertical-offset="0" max-vertical-offset="345">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="SimplePGM.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/SimplePGM.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="4800">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ArrayTools.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/util/ArrayTools.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="303" column="27" selection-start="9484" selection-end="9484" vertical-scroll-proportion="0.0" vertical-offset="4287" max-vertical-offset="6630">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="FuncJoin.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/func/FuncJoin.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="17" column="19" selection-start="343" selection-end="343" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="360">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="TransJoinConversionPack.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/TransJoinConversionPack.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="77" column="88" selection-start="2989" selection-end="2989" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1410">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ModelsSerializationRepository.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="23" column="20" selection-start="876" selection-end="876" vertical-scroll-proportion="0.0" vertical-offset="57" max-vertical-offset="765">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <splitter split-orientation="horizontal" split-proportion="0.6571982">
+      <split-first>
+        <leaf>
+          <file leaf-file-name="MultiClassModel.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/MultiClassModel.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="24" column="39" selection-start="645" selection-end="645" vertical-scroll-proportion="0.0" vertical-offset="30" max-vertical-offset="645">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="HierTools.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/HierTools.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="182" column="24" selection-start="6471" selection-end="6471" vertical-scroll-proportion="0.0" vertical-offset="2319" max-vertical-offset="2850">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="MathTools.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/MathTools.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="64" column="24" selection-start="1643" selection-end="1643" vertical-scroll-proportion="0.0" vertical-offset="758" max-vertical-offset="2985">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="DataTools.java" pinned="false" current="true" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="279" column="61" selection-start="10507" selection-end="10507" vertical-scroll-proportion="0.90609556" vertical-offset="2855" max-vertical-offset="3780">
+                  <folding>
+                    <element signature="imports" expanded="true" />
+                    <element signature="docComment;class#DataTools#0" expanded="false" />
+                    <element signature="method#loadFromFeaturesTxt#0;class#DataTools#0" expanded="false" />
+                    <element signature="e#2658#2666#0" expanded="true" />
+                    <element signature="e#2760#2768#0" expanded="true" />
+                    <element signature="e#4973#4986#0" expanded="true" />
+                    <element signature="e#5464#5474#0" expanded="true" />
+                    <element signature="method#writeModel#0;class#DataTools#0" expanded="false" />
+                    <element signature="method#grid#0;class#DataTools#0" expanded="false" />
+                    <element signature="method#countClasses#0;class#DataTools#0" expanded="false" />
+                    <element signature="method#normalizeRelevance#0;class#DataTools#0" expanded="false" />
+                    <element signature="e#10626#10650#0" expanded="false" />
+                    <element signature="method#value#0;class#DataTools#0" expanded="false" />
+                    <element signature="method#bootstrap#0;class#DataTools#0" expanded="false" />
+                    <element signature="method#targetByName#0;class#DataTools#0" expanded="false" />
+                    <element signature="class#NormalizationType#0;class#DataTools#0" expanded="false" />
+                    <element signature="class#NormalizationProperties#0;class#DataTools#0" expanded="false" />
+                    <element signature="method#normalize#0;class#DataTools#0" expanded="false" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="SparseMx.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/SparseMx.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="12" column="19" selection-start="469" selection-end="469" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3870">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="HierLoss.java" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/HierLoss.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="46" column="0" selection-start="1561" selection-end="1561" vertical-scroll-proportion="0.0" vertical-offset="690" max-vertical-offset="1305">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-first>
+      <split-second>
+        <leaf>
+          <file leaf-file-name="HierTests.java" pinned="false" current="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/HierTests.java">
+              <provider selected="true" editor-type-id="text-editor">
+                <state line="229" column="24" selection-start="8516" selection-end="8516" vertical-scroll-proportion="1.2866557" vertical-offset="2144" max-vertical-offset="3105">
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-second>
+    </splitter>
   </component>
   <component name="FindManager">
     <FindUsagesManager>
@@ -210,62 +198,70 @@
     </FindUsagesManager>
   </component>
   <component name="Git.Settings">
+    <option name="UPDATE_TYPE" value="MERGE" />
+    <option name="SYNC_SETTING" value="SYNC" />
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="RefinedExperts" />
+      </map>
+    </option>
+    <option name="RECENT_COMMON_BRANCH" value="master" />
   </component>
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/trees/GreedyContinuesObliviousSoftBondariesRegressionTree.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/vectors/impl/VecBasedSquareMx.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/vectors/impl/ArrayVec.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/util/ArrayTools.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/vectors/MapBasis.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/math/vectors/EigenDecompositionTest.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/tests/src/com/spbsu/commons/math/vectors/VectorsTest.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/func/Ensemble.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/trees/GreedyExponentialObliviousTree.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GradientBoosting.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/HWScore.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/Multiclass.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/MultiClass.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/MultiClass2BinaryModel.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/ProbabilisticGraphicalModel.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/vectors/InfinityBasis.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/WeakListenerHolder.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/func/impl/WeakListenerHolderImpl.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/random/FastRandom.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/vectors/impl/SparseVec.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/PGMEM.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataSet.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ProbabilisticGraphicalModel.java" />
-        <option value="$PROJECT_DIR$/../../commons/trunk/src/com/spbsu/commons/math/vectors/VecTools.java" />
-        <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java" />
-        <option value="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/idxtrans/SubMxTransformation.java" />
-        <option value="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/IndexTransVec.java" />
-        <option value="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/idxtrans/CompositeTransformation.java" />
-        <option value="$PROJECT_DIR$/commons/tests/src/com/spbsu/commons/math/vectors/VectorsTest.java" />
-        <option value="$PROJECT_DIR$/commons/.gitignore.txt" />
-        <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/hier/MCMicroPrecision2.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMicroPrecision2.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/HMCMicroRecall.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/HMCMicroPrecision.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMacroRecall.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMacroF1Score.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/IndexedHierarchyTree.java" />
+        <option value="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/ExtendableVec.java" />
+        <option value="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/ExtendableMx.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/MLLLogit.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/AnotherMLLLogit.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/FMTrainingWorkaround.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMicroPrecision.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/func/TransJoin.java" />
-        <option value="$PROJECT_DIR$/commons/tests/src/com/spbsu/commons/text/CharSequenceToolsTest.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/EnsembleModelConversionPack.java" />
-        <option value="$PROJECT_DIR$/ml/tests/data/multiclass/query-childness-classifier.model" />
-        <option value="$PROJECT_DIR$/ml/tests/data/multiclass/model-test-2.txt" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java" />
-        <option value="$PROJECT_DIR$/commons/src/com/spbsu/commons/text/CharSequenceTools.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousMultiClassTreeConversionPack.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/AnotherMultiClass.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BinarizedDataSet.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BaseHierarchy.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BaseCategoryNode.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/Hierarchy.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/BaseHierarchyTree.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroF1Score.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroPrecision.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroRecall.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMicroPrecision.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/MCModel.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/func/JoinedBinClassModel.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/func/FuncJoin.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/Trans.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/TransJoinConversionPack.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/func/HierJoinedBinClassModel.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/MultiClassModel.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/HierTools.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/IndexedHierarchy.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalClassification.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/func/FuncEnsemble.java" />
         <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/HierarchicalModel.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/MultiClassModelConversionPack.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java" />
-        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/Route.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/RefinedModel.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/HierRefinedExpertModel.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/DataSetImpl.java" />
+        <option value="$PROJECT_DIR$/ml/tests/data/hier/test1.tsv" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalRefinedExpertClassification.java" />
+        <option value="$PROJECT_DIR$/ml/tests/data/hier/test.tsv" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalClassification2.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/HierLoss.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMicroPrecision.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMacroPrecision.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalExpRefinedClassification.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/HierarchyTree.java" />
+        <option value="$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/HierTests.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/models/HierJoinedBinClassModel.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalRefinedClassification.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/MultiClass.java" />
+        <option value="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/MathTools.java" />
+        <option value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java" />
+        <option value="$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/SparseMX.java" />
       </list>
     </option>
   </component>
@@ -280,9 +276,10 @@
     <option name="LAST_EDITED_TAB_NAME" />
   </component>
   <component name="ProjectFrameBounds">
+    <option name="x" value="2" />
     <option name="y" value="22" />
-    <option name="width" value="1440" />
-    <option name="height" value="874" />
+    <option name="width" value="1920" />
+    <option name="height" value="1058" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -304,7 +301,7 @@
     <OptionsSetting value="true" id="Add" />
     <OptionsSetting value="true" id="Remove" />
     <OptionsSetting value="true" id="Checkout" />
-    <OptionsSetting value="false" id="Update" />
+    <OptionsSetting value="true" id="Update" />
     <OptionsSetting value="true" id="Status" />
     <OptionsSetting value="true" id="Edit" />
     <ConfirmationsSetting value="0" id="Add" />
@@ -331,8 +328,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -340,20 +335,6 @@
               <option name="myItemId" value="jmll" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
             </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="External Libraries" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ExternalLibrariesNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="&lt; 1.7 &gt;" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.NamedLibraryElementNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="jmll" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
           </PATH>
           <PATH>
             <PATH_ELEMENT>
@@ -415,7 +396,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="models" />
+              <option name="myItemId" value="methods" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -437,12 +418,216 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="io" />
+              <option name="myItemId" value="loss" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="loss" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="multiclass" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="loss" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="multiclass" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="hier" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="loss" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="multiclass" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="hier" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="impl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="ml" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="data" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="impl" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="jmll" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="commons" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="math" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
       <pane id="Favorites" />
     </panes>
   </component>
@@ -466,7 +651,7 @@
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth1" value="108" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatOrder4" value="4" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth0" value="107" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../JavaReport/report" />
+    <property name="last_opened_file_path" value="$USER_HOME$/Downloads/trove-3.1a1" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth5" value="816" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth4" value="108" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth3" value="105" />
@@ -479,9 +664,9 @@
     <property name="GoToClass.includeLibraries" value="false" />
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="GoToFile.includeJavaFiles" value="false" />
-    <property name="last_directory_selection" value="$PROJECT_DIR$/../../commons/trunk/src" />
+    <property name="last_directory_selection" value="$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder5" value="5" />
-    <property name="options.lastSelected" value="project.propVCSSupport.Mappings" />
+    <property name="options.lastSelected" value="preferences.keymap" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder3" value="3" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder4" value="4" />
     <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder1" value="1" />
@@ -494,54 +679,45 @@
     <property name="dynamic.classpath" value="false" />
     <property name="extract.method.default.visibility" value="private" />
     <property name="OverrideImplement.overriding.sorted" value="false" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth0" value="261" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder0" value="0" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth1" value="263" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder1" value="1" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth2" value="268" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder2" value="2" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth3" value="1056" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder3" value="3" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth0" value="260" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder0" value="0" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth1" value="262" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder1" value="1" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth2" value="266" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder2" value="2" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="1060" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder3" value="3" />
-    <property name="LayoutCode.rearrangeEntriesJava" value="false" />
+    <property name="SearchEverywhereHistory" value="DT&#10;MCMo&#10;stuff&#10;GB&#10;HJB&#10;MCMP&#10;HMCP&#10;HM&#10;test1&#10;GOT&#10;OT&#10;AP&#10;RM&#10;HC&#10;MCM&#10;test&#10;StuffTest&#10;m2b&#10;FJ&#10;KeyMap&#10;Keys&#10;Multi&#10;HMC&#10;bds&#10;test.x&#10;hier.&#10;hier.x&#10;HierT&#10;HIERA&#10;IH&#10;CT&#10;LLL&#10;cli&#10;lll&#10;FMW&#10;LL&#10;LLLo&#10;MLLL&#10;MC&#10;sigm&#10;Binary&#10;List&#10;MemCopy&#10;Mx&#10;normalizeRe&#10;HT&#10;ITV&#10;S&#10;HL&#10;MCMi" />
+    <property name="ChangesBrowser.SHOW_FLATTEN" value="false" />
+  </component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings />
+    </option>
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.spbsu.ml.methods" />
+      <recent name="com.spbsu.ml.data.impl" />
       <recent name="com.spbsu.ml.models" />
       <recent name="com.spbsu.commons.math.vectors.impl.idxtrans" />
       <recent name="com.spbsu.commons.math.vectors.impl" />
-      <recent name="com.spbsu.ml.io" />
-      <recent name="com.spbsu.ml.func" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/ml/tests/data/multiclass" />
       <recent name="$PROJECT_DIR$/ml/src/com/spbsu/ml" />
     </key>
     <key name="ExtractSuperBase.RECENT_KEYS">
+      <recent name="com.spbsu.ml.data.impl" />
+      <recent name="com.spbsu.ml.models" />
+      <recent name="com.spbsu.ml.func" />
       <recent name="com.spbsu.ml" />
       <recent name="com.spbsu.commons.math" />
-      <recent name="com.spbsu.ml.methods.trees" />
     </key>
     <key name="MoveMembersDialog.RECENTS_KEY">
+      <recent name="com.spbsu.ml.models.MCModel" />
+      <recent name="com.spbsu.ml.data.impl.IndexedHierarchy" />
+      <recent name="com.spbsu.ml.methods.MultiClass" />
       <recent name="com.spbsu.commons.util.ArrayTools" />
       <recent name="com.spbsu.ml.data.DataTools" />
-      <recent name="com.spbsu.ml.data.DataTools1" />
-      <recent name="com.spbsu.commons.io.StreamTools" />
-      <recent name="com.spbsu.ml.models.Region" />
     </key>
     <key name="CreateClassDialog.RecentsKey">
+      <recent name="com.spbsu.ml.models" />
+      <recent name="com.spbsu.ml.func" />
+      <recent name="com.spbsu.commons.math.vectors.impl" />
       <recent name="com.spbsu.commons.math.vectors" />
       <recent name="com.spbsu.ml" />
-      <recent name="com.spbsu.ml.loss" />
-      <recent name="com.spbsu.ml.models" />
-      <recent name="com.spbsu.commons.func.converters" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="com.spbsu.ml.func" />
@@ -551,190 +727,8 @@
       <recent name="com.spbsu.commons.func.types" />
     </key>
   </component>
-  <component name="RestoreUpdateTree">
-    <UpdateInfo date="Moments ago" ActionInfo="_Update">
-      <UpdatedFiles>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Updated from server" />
-          <option name="myStatusName" value="Changed on server" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="CHANGED_ON_SERVER" />
-          <FILE-GROUP>
-            <option name="myUpdateName" value="Updated" />
-            <option name="myStatusName" value="Changed" />
-            <option name="mySupportsDeletion" value="false" />
-            <option name="myCanBeAbsent" value="false" />
-            <option name="myId" value="UPDATED" />
-            <PATH vcs="Git" revision="">$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/CompositePGM.java</PATH>
-            <PATH vcs="Git" revision="">$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/ProbabilisticGraphicalModel.java</PATH>
-            <PATH vcs="Git" revision="">$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/Route.java</PATH>
-            <PATH vcs="Git" revision="">$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/SimplePGM.java</PATH>
-            <PATH vcs="Git" revision="">$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java</PATH>
-          </FILE-GROUP>
-          <FILE-GROUP>
-            <option name="myUpdateName" value="Created" />
-            <option name="myStatusName" value="Created" />
-            <option name="mySupportsDeletion" value="false" />
-            <option name="myCanBeAbsent" value="false" />
-            <option name="myId" value="CREATED" />
-            <PATH vcs="Git" revision="">$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/DispersionTest.java</PATH>
-            <PATH vcs="Git" revision="">$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/PGMEMTest.java</PATH>
-          </FILE-GROUP>
-          <FILE-GROUP>
-            <option name="myUpdateName" value="Deleted" />
-            <option name="myStatusName" value="Deleted" />
-            <option name="mySupportsDeletion" value="false" />
-            <option name="myCanBeAbsent" value="true" />
-            <option name="myId" value="REMOVED_FROM_REPOSITORY" />
-          </FILE-GROUP>
-          <FILE-GROUP>
-            <option name="myUpdateName" value="Restored" />
-            <option name="myStatusName" value="Will be restored" />
-            <option name="mySupportsDeletion" value="false" />
-            <option name="myCanBeAbsent" value="false" />
-            <option name="myId" value="RESTORED" />
-          </FILE-GROUP>
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Modified" />
-          <option name="myStatusName" value="Modified" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="MODIFIED" />
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Skipped" />
-          <option name="myStatusName" value="Skipped" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="SKIPPED" />
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Merged with conflicts" />
-          <option name="myStatusName" value="Will be merged with conflicts" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="MERGED_WITH_CONFLICTS" />
-          <PATH vcs="Git" revision="">$PROJECT_DIR$/commons</PATH>
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Merged with tree conflicts" />
-          <option name="myStatusName" value="Merged with tree conflicts" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="MERGED_WITH_TREE_CONFLICT" />
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Merged with property conflicts" />
-          <option name="myStatusName" value="Will be merged with property conflicts" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="MERGED_WITH_PROPERTY_CONFLICT" />
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Merged" />
-          <option name="myStatusName" value="Will be merged" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="MERGED" />
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Not in repository" />
-          <option name="myStatusName" value="Not in repository" />
-          <option name="mySupportsDeletion" value="true" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="UNKNOWN" />
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Locally added" />
-          <option name="myStatusName" value="Locally added" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="LOCALLY_ADDED" />
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Locally removed" />
-          <option name="myStatusName" value="Locally removed" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="LOCALLY_REMOVED" />
-        </FILE-GROUP>
-        <FILE-GROUP>
-          <option name="myUpdateName" value="Switched" />
-          <option name="myStatusName" value="Switched" />
-          <option name="mySupportsDeletion" value="false" />
-          <option name="myCanBeAbsent" value="false" />
-          <option name="myId" value="SWITCHED" />
-        </FILE-GROUP>
-      </UpdatedFiles>
-    </UpdateInfo>
-  </component>
-  <component name="RunManager" selected="JUnit.SerializationTest">
-    <configuration default="false" name="VectorsTest.testSubSubMx" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-      <module name="commons" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" value="" />
-      <option name="PACKAGE_NAME" value="com.spbsu.commons.math.vectors" />
-      <option name="MAIN_CLASS_NAME" value="com.spbsu.commons.math.vectors.VectorsTest" />
-      <option name="METHOD_NAME" value="testSubSubMx" />
-      <option name="TEST_OBJECT" value="method" />
-      <option name="VM_PARAMETERS" value="-Xmx1g" />
-      <option name="PARAMETERS" value="" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
-      <option name="ENV_VARIABLES" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="TEST_SEARCH_SCOPE">
-        <value defaultName="moduleWithDependencies" />
-      </option>
-      <envs />
-      <patterns />
-      <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
-        <option name="TRANSPORT" value="0" />
-        <option name="LOCAL" value="true" />
-      </RunnerSettings>
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Debug" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
-    <configuration default="false" name="CharSequenceToolsTest.testCutBetween" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
-        <pattern>
-          <option name="PATTERN" value="com.spbsu.commons.text.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <module name="commons" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" value="" />
-      <option name="PACKAGE_NAME" value="com.spbsu.commons.text" />
-      <option name="MAIN_CLASS_NAME" value="com.spbsu.commons.text.CharSequenceToolsTest" />
-      <option name="METHOD_NAME" value="testCutBetween" />
-      <option name="TEST_OBJECT" value="method" />
-      <option name="VM_PARAMETERS" value="-Xmx1g" />
-      <option name="PARAMETERS" value="" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
-      <option name="ENV_VARIABLES" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <option name="TEST_SEARCH_SCOPE">
-        <value defaultName="moduleWithDependencies" />
-      </option>
-      <envs />
-      <patterns />
-      <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
-        <option name="TRANSPORT" value="0" />
-        <option name="LOCAL" value="true" />
-      </RunnerSettings>
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Debug" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
-    <configuration default="false" name="com.spbsu.ml in ml" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="JUnit.HierTests$RegressionRefinement.testFitting">
+    <configuration default="false" name="HierTests$RegressionRefinement.testFitting" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
         <pattern>
           <option name="PATTERN" value="com.spbsu.ml.*" />
@@ -745,9 +739,46 @@
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="PACKAGE_NAME" value="com.spbsu.ml" />
-      <option name="MAIN_CLASS_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$RegressionRefinement" />
+      <option name="METHOD_NAME" value="testFitting" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="VM_PARAMETERS" value="-Xmx1g" />
+      <option name="PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Profile ">
+        <option name="myExternalizedOptions" value="&#10;additional-options2=onexit\=snapshot&#10;" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="HierTests$RegressionRefinement" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+        <pattern>
+          <option name="PATTERN" value="com.spbsu.ml.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <module name="ml" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="PACKAGE_NAME" value="com.spbsu.ml" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$RegressionRefinement" />
       <option name="METHOD_NAME" value="" />
-      <option name="TEST_OBJECT" value="package" />
+      <option name="TEST_OBJECT" value="class" />
       <option name="VM_PARAMETERS" value="-Xmx1g" />
       <option name="PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
@@ -758,11 +789,17 @@
       </option>
       <envs />
       <patterns />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
       <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="SerializationTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration default="false" name="HierTests$RegressionExpRefinement" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
         <pattern>
           <option name="PATTERN" value="com.spbsu.ml.*" />
@@ -773,7 +810,7 @@
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="PACKAGE_NAME" value="com.spbsu.ml" />
-      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.SerializationTest" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$RegressionExpRefinement" />
       <option name="METHOD_NAME" value="" />
       <option name="TEST_OBJECT" value="class" />
       <option name="VM_PARAMETERS" value="-Xmx1g" />
@@ -790,7 +827,7 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="SerializationTest.testObliviousTree" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration default="false" name="HierTests$Stuff.testSt3" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
         <pattern>
           <option name="PATTERN" value="com.spbsu.ml.*" />
@@ -801,8 +838,8 @@
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="PACKAGE_NAME" value="com.spbsu.ml" />
-      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.SerializationTest" />
-      <option name="METHOD_NAME" value="testObliviousTree" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$Stuff" />
+      <option name="METHOD_NAME" value="testSt3" />
       <option name="TEST_OBJECT" value="method" />
       <option name="VM_PARAMETERS" value="-Xmx1g" />
       <option name="PARAMETERS" value="" />
@@ -814,34 +851,113 @@
       </option>
       <envs />
       <patterns />
-      <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
-        <option name="TRANSPORT" value="0" />
-        <option name="LOCAL" value="true" />
-      </RunnerSettings>
       <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Debug" />
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="true" type="AndroidTestRunConfigurationType" factoryName="Android Tests">
+    <configuration default="false" name="HierTests$Stuff.testSt4" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+        <pattern>
+          <option name="PATTERN" value="com.spbsu.ml.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <module name="ml" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="PACKAGE_NAME" value="com.spbsu.ml" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$Stuff" />
+      <option name="METHOD_NAME" value="testSt4" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="VM_PARAMETERS" value="-Xmx1g" />
+      <option name="PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="true" type="GrailsRunConfigurationType" factoryName="Grails" singleton="true">
       <module name="" />
-      <option name="TESTING_TYPE" value="0" />
-      <option name="INSTRUMENTATION_RUNNER_CLASS" value="" />
-      <option name="METHOD_NAME" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="cmdLine" value="run-app" />
+      <setting name="depsClasspath" value="false" />
+      <setting name="passParentEnv" value="true" />
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <setting name="launchBrowser" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="DjangoTestsConfigurationType" factoryName="Django tests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="commons" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="TARGET" value="" />
+      <option name="SETTINGS_FILE" value="" />
+      <option name="CUSTOM_SETTINGS" value="false" />
+      <option name="USE_OPTIONS" value="false" />
+      <option name="OPTIONS" value="" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="py.test">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="commons" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
       <option name="CLASS_NAME" value="" />
-      <option name="PACKAGE_NAME" value="" />
-      <option name="TARGET_SELECTION_MODE" value="EMULATOR" />
-      <option name="USE_LAST_SELECTED_DEVICE" value="false" />
-      <option name="PREFERRED_AVD" value="" />
-      <option name="USE_COMMAND_LINE" value="true" />
-      <option name="COMMAND_LINE" value="" />
-      <option name="WIPE_USER_DATA" value="false" />
-      <option name="DISABLE_BOOT_ANIMATION" value="false" />
-      <option name="NETWORK_SPEED" value="full" />
-      <option name="NETWORK_LATENCY" value="none" />
-      <option name="CLEAR_LOGCAT" value="false" />
-      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="true" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="testToRun" value="" />
+      <option name="keywords" value="" />
+      <option name="params" value="" />
+      <option name="USE_PARAM" value="false" />
+      <option name="USE_KEYWORD" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Nosetests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="commons" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="PARAMS" value="" />
+      <option name="USE_PARAM" value="false" />
       <method />
     </configuration>
     <configuration default="true" type="Remote" factoryName="Remote">
@@ -853,19 +969,6 @@
       <method />
     </configuration>
     <configuration default="true" type="JavascriptDebugType" factoryName="JavaScript Debug" singleton="true">
-      <method />
-    </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
       <method />
     </configuration>
     <configuration default="true" type="TestNG" factoryName="TestNG">
@@ -896,19 +999,37 @@
       <listeners />
       <method />
     </configuration>
-    <configuration default="true" type="Application" factoryName="Application">
-      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-      <option name="MAIN_CLASS_NAME" value="" />
-      <option name="VM_PARAMETERS" value="-Xmx1g" />
-      <option name="PROGRAM_PARAMETERS" value="" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" value="" />
-      <option name="ENABLE_SWING_INSPECTOR" value="false" />
-      <option name="ENV_VARIABLES" />
-      <option name="PASS_PARENT_ENVS" value="true" />
+    <configuration default="true" type="Applet" factoryName="Applet">
       <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Doctests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
       <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="commons" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
       <method />
     </configuration>
     <configuration default="true" type="JUnit" factoryName="JUnit">
@@ -932,23 +1053,295 @@
       <patterns />
       <method />
     </configuration>
-    <configuration default="true" type="AndroidRunConfigurationType" factoryName="Android Application">
+    <configuration default="true" type="FlashRunConfigurationType" factoryName="Flash App">
+      <option name="BCName" value="" />
+      <option name="IOSSimulatorSdkPath" value="" />
+      <option name="adlOptions" value="" />
+      <option name="airProgramParameters" value="" />
+      <option name="appDescriptorForEmulator" value="Android" />
+      <option name="debugTransport" value="USB" />
+      <option name="debuggerSdkRaw" value="BC SDK" />
+      <option name="emulator" value="NexusOne" />
+      <option name="emulatorAdlOptions" value="" />
+      <option name="fastPackaging" value="true" />
+      <option name="fullScreenHeight" value="0" />
+      <option name="fullScreenWidth" value="0" />
+      <option name="launchUrl" value="false" />
+      <option name="launcherParameters">
+        <LauncherParameters>
+          <option name="browserFamily" value="FIREFOX" />
+          <option name="launcherType" value="OSDefault" />
+          <option name="newPlayerInstance" value="false" />
+          <option name="playerPath" value="/Applications/Flash Player Debugger.app" />
+        </LauncherParameters>
+      </option>
+      <option name="mobileRunTarget" value="Emulator" />
+      <option name="moduleName" value="" />
+      <option name="overriddenMainClass" value="" />
+      <option name="overriddenOutputFileName" value="" />
+      <option name="overrideMainClass" value="false" />
+      <option name="runTrusted" value="true" />
+      <option name="screenDpi" value="0" />
+      <option name="screenHeight" value="0" />
+      <option name="screenWidth" value="0" />
+      <option name="url" value="http://" />
+      <option name="usbDebugPort" value="7936" />
+      <method />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="commons" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Unittests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="commons" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="PUREUNITTEST" value="true" />
+      <option name="PARAMS" value="" />
+      <option name="USE_PARAM" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="FlexUnitRunConfigurationType" factoryName="FlexUnit" appDescriptorForEmulator="Android" class_name="" emulatorAdlOptions="" method_name="" output_log_level="null" package_name="" scope="Class">
+      <option name="BCName" value="" />
+      <option name="launcherParameters">
+        <LauncherParameters>
+          <option name="browserFamily" value="FIREFOX" />
+          <option name="launcherType" value="OSDefault" />
+          <option name="newPlayerInstance" value="false" />
+          <option name="playerPath" value="/Applications/Flash Player Debugger.app" />
+        </LauncherParameters>
+      </option>
+      <option name="moduleName" value="" />
+      <option name="trusted" value="true" />
+      <method />
+    </configuration>
+    <configuration default="true" type="CucumberJavaRunConfigurationType" factoryName="Cucumber java">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <option name="myFilePath" />
+      <option name="GLUE" />
+      <option name="myNameFilter" />
+      <option name="myGeneratedName" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="VM_PARAMETERS" />
+      <option name="PROGRAM_PARAMETERS" />
+      <option name="WORKING_DIRECTORY" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
       <module name="" />
-      <option name="ACTIVITY_CLASS" value="" />
-      <option name="MODE" value="default_activity" />
-      <option name="DEPLOY" value="true" />
-      <option name="ARTIFACT_NAME" value="" />
-      <option name="TARGET_SELECTION_MODE" value="EMULATOR" />
-      <option name="USE_LAST_SELECTED_DEVICE" value="false" />
-      <option name="PREFERRED_AVD" value="" />
-      <option name="USE_COMMAND_LINE" value="true" />
-      <option name="COMMAND_LINE" value="" />
-      <option name="WIPE_USER_DATA" value="false" />
-      <option name="DISABLE_BOOT_ANIMATION" value="false" />
-      <option name="NETWORK_SPEED" value="full" />
-      <option name="NETWORK_LATENCY" value="none" />
-      <option name="CLEAR_LOGCAT" value="false" />
-      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="true" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="Application" factoryName="Application">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <option name="MAIN_CLASS_NAME" value="" />
+      <option name="VM_PARAMETERS" value="-Xmx1g" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Attests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="commons" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="HierTests$Base.testFitting" type="JUnit" factoryName="JUnit" nameIsGenerated="true">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+        <pattern>
+          <option name="PATTERN" value="com.spbsu.ml.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <module name="ml" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="PACKAGE_NAME" value="com.spbsu.ml" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$Base" />
+      <option name="METHOD_NAME" value="testFitting" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="VM_PARAMETERS" value="-Xmx2g" />
+      <option name="PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Profile ">
+        <option name="myExternalizedOptions" value="&#10;additional-options2=onexit\=snapshot&#10;" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="HierTests$Regression.testFitting" type="JUnit" factoryName="JUnit" nameIsGenerated="true">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+        <pattern>
+          <option name="PATTERN" value="com.spbsu.ml.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <module name="ml" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="PACKAGE_NAME" value="com.spbsu.ml" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$Regression" />
+      <option name="METHOD_NAME" value="testFitting" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="VM_PARAMETERS" value="-Xmx1g" />
+      <option name="PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Profile ">
+        <option name="myExternalizedOptions" value="&#10;additional-options2=onexit\=snapshot&#10;" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="HierTests$Regression.testPruning" type="JUnit" factoryName="JUnit" nameIsGenerated="true">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+        <pattern>
+          <option name="PATTERN" value="com.spbsu.ml.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <module name="ml" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="PACKAGE_NAME" value="com.spbsu.ml" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$Regression" />
+      <option name="METHOD_NAME" value="testPruning" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="VM_PARAMETERS" value="-Xmx1g" />
+      <option name="PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Profile ">
+        <option name="myExternalizedOptions" value="&#10;additional-options2=onexit\=snapshot&#10;" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="HierTests$BaseRefinement.testFitting" type="JUnit" factoryName="JUnit" nameIsGenerated="true">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+        <pattern>
+          <option name="PATTERN" value="com.spbsu.ml.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <module name="ml" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="PACKAGE_NAME" value="com.spbsu.ml" />
+      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.HierTests$BaseRefinement" />
+      <option name="METHOD_NAME" value="testFitting" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="VM_PARAMETERS" value="-Xmx1g" />
+      <option name="PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="moduleWithDependencies" />
+      </option>
+      <envs />
+      <patterns />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Profile ">
+        <option name="myExternalizedOptions" value="&#10;additional-options2=onexit\=snapshot&#10;" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
+      <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
     <configuration default="false" name="HWScore dimred" type="Application" factoryName="Application">
@@ -1094,55 +1487,29 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="Test Apply" type="Application" factoryName="Application">
-      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
-        <pattern>
-          <option name="PATTERN" value="com.spbsu.ml.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.JMLLCLI" />
-      <option name="VM_PARAMETERS" value="-Xmx4g" />
-      <option name="PROGRAM_PARAMETERS" value="apply -v -f tests/data/multiclass/features-test.txt.gz -m tests/data/multiclass/model-test-2.txt -g tests/data/multiclass/grid.txt" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/ml" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" value="" />
-      <option name="ENABLE_SWING_INSPECTOR" value="false" />
-      <option name="ENV_VARIABLES" />
-      <option name="PASS_PARENT_ENVS" value="true" />
-      <module name="ml" />
-      <envs />
-      <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
-        <option name="TRANSPORT" value="0" />
-        <option name="LOCAL" value="true" />
-      </RunnerSettings>
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Debug" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
-    <list size="12">
-      <item index="0" class="java.lang.String" itemvalue="Application.HWScore dimred" />
-      <item index="1" class="java.lang.String" itemvalue="Application.HWScore fit" />
-      <item index="2" class="java.lang.String" itemvalue="Application.JMLLCLI Regression" />
-      <item index="3" class="java.lang.String" itemvalue="Application.JMLLCLI Gradient Classification" />
-      <item index="4" class="java.lang.String" itemvalue="Application.JMLLCLI Gradient Multi Classification" />
-      <item index="5" class="java.lang.String" itemvalue="Application.MultiClassSplit Test " />
-      <item index="6" class="java.lang.String" itemvalue="Application.Test Apply" />
-      <item index="7" class="java.lang.String" itemvalue="JUnit.VectorsTest.testSubSubMx" />
-      <item index="8" class="java.lang.String" itemvalue="JUnit.CharSequenceToolsTest.testCutBetween" />
-      <item index="9" class="java.lang.String" itemvalue="JUnit.com.spbsu.ml in ml" />
-      <item index="10" class="java.lang.String" itemvalue="JUnit.SerializationTest" />
-      <item index="11" class="java.lang.String" itemvalue="JUnit.SerializationTest.testObliviousTree" />
+    <list size="14">
+      <item index="0" class="java.lang.String" itemvalue="JUnit.HierTests$Base.testFitting" />
+      <item index="1" class="java.lang.String" itemvalue="JUnit.HierTests$Regression.testFitting" />
+      <item index="2" class="java.lang.String" itemvalue="JUnit.HierTests$Regression.testPruning" />
+      <item index="3" class="java.lang.String" itemvalue="JUnit.HierTests$BaseRefinement.testFitting" />
+      <item index="4" class="java.lang.String" itemvalue="Application.HWScore dimred" />
+      <item index="5" class="java.lang.String" itemvalue="Application.HWScore fit" />
+      <item index="6" class="java.lang.String" itemvalue="Application.JMLLCLI Regression" />
+      <item index="7" class="java.lang.String" itemvalue="Application.JMLLCLI Gradient Classification" />
+      <item index="8" class="java.lang.String" itemvalue="Application.JMLLCLI Gradient Multi Classification" />
+      <item index="9" class="java.lang.String" itemvalue="JUnit.HierTests$RegressionRefinement.testFitting" />
+      <item index="10" class="java.lang.String" itemvalue="JUnit.HierTests$RegressionRefinement" />
+      <item index="11" class="java.lang.String" itemvalue="JUnit.HierTests$RegressionExpRefinement" />
+      <item index="12" class="java.lang.String" itemvalue="JUnit.HierTests$Stuff.testSt3" />
+      <item index="13" class="java.lang.String" itemvalue="JUnit.HierTests$Stuff.testSt4" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="JUnit.SerializationTest" />
-        <item index="1" class="java.lang.String" itemvalue="JUnit.SerializationTest.testObliviousTree" />
-        <item index="2" class="java.lang.String" itemvalue="JUnit.com.spbsu.ml in ml" />
-        <item index="3" class="java.lang.String" itemvalue="JUnit.CharSequenceToolsTest.testCutBetween" />
-        <item index="4" class="java.lang.String" itemvalue="JUnit.VectorsTest.testSubSubMx" />
+        <item index="0" class="java.lang.String" itemvalue="JUnit.HierTests$RegressionRefinement.testFitting" />
+        <item index="1" class="java.lang.String" itemvalue="JUnit.HierTests$Stuff.testSt4" />
+        <item index="2" class="java.lang.String" itemvalue="JUnit.HierTests$RegressionExpRefinement" />
+        <item index="3" class="java.lang.String" itemvalue="JUnit.HierTests$Stuff.testSt3" />
+        <item index="4" class="java.lang.String" itemvalue="JUnit.HierTests$RegressionRefinement" />
       </list>
     </recent_temporary>
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
@@ -1173,25 +1540,24 @@
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="b5751471-ac07-4077-949f-2d3d12827f09" name="Default" comment="" />
-      <changelist id="5a866061-c8a4-4635-a048-6398c5bcd489" name="Idea" comment="" />
+      <changelist id="5b6ab03b-0341-46f5-afa7-0b2ffd5b24ef" name="ignore" comment="" />
       <created>1293371229320</created>
       <updated>1293371229320</updated>
-      <workItem from="1397066018675" duration="2197000" />
-      <workItem from="1397133624899" duration="2442000" />
-      <workItem from="1397209010058" duration="659000" />
-      <workItem from="1397479991885" duration="3634000" />
-      <workItem from="1397550033515" duration="19686000" />
-      <workItem from="1397591869538" duration="22000" />
-      <workItem from="1397592747656" duration="431000" />
-      <workItem from="1397599845293" duration="4000" />
-      <workItem from="1397647670199" duration="1672000" />
-      <workItem from="1397659535490" duration="571000" />
-      <workItem from="1397660254235" duration="590000" />
-      <workItem from="1397660958129" duration="586000" />
-      <workItem from="1397669549633" duration="8537000" />
+      <workItem from="1397054550585" duration="28000" />
+      <workItem from="1397054581608" duration="45000" />
+      <workItem from="1397054631058" duration="27000" />
+      <workItem from="1397054660541" duration="36000" />
+      <workItem from="1397055212118" duration="5260000" />
+      <workItem from="1397063522104" duration="3724000" />
+      <workItem from="1397126468887" duration="101000" />
+      <workItem from="1397131522671" duration="5081000" />
+      <workItem from="1397137210082" duration="27768000" />
+      <workItem from="1397463425668" duration="54230000" />
+      <workItem from="1397653775224" duration="22299000" />
+      <workItem from="1397809330033" duration="80811000" />
+      <workItem from="1398336405247" duration="3499000" />
     </task>
     <task id="LOCAL-00001" summary="trash">
-      <changelist id="ff6f2eaa-1ae7-4772-8071-ec9db286ce94" name="trash" comment="" />
       <created>1293643421874</created>
       <updated>1293643421874</updated>
     </task>
@@ -1323,29 +1689,25 @@
       <created>1392302154561</created>
       <updated>1392302154561</updated>
     </task>
-    <task id="LOCAL-00034" summary="Added data sets for multiclass split">
-      <created>1397487685123</created>
-      <updated>1397487685123</updated>
+    <task id="LOCAL-00034" summary="Hier losses refactoring">
+      <created>1397131725430</created>
+      <updated>1397131725430</updated>
     </task>
-    <task id="LOCAL-00035" summary="Added MultiClassSplit Test run configuration&#10;">
-      <created>1397563001659</created>
-      <updated>1397563001659</updated>
+    <task id="LOCAL-00035" summary="Hier losses refactoring">
+      <created>1397729979606</created>
+      <updated>1397729979606</updated>
     </task>
-    <task id="LOCAL-00036" summary="Fixed TransJoin and Ensemble conversion bugs&#10;">
-      <created>1397583748650</created>
-      <updated>1397583748650</updated>
+    <task id="LOCAL-00036" summary="Added Refined hierarchical model">
+      <created>1398338805428</created>
+      <updated>1398338805428</updated>
     </task>
-    <task id="LOCAL-00037" summary="Added conversion pack for MultiClassModel">
-      <created>1397767141034</created>
-      <updated>1397767141034</updated>
-    </task>
-    <option name="localTasksCounter" value="38" />
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="41031000" />
+    <option name="totallyTimeSpent" value="202909000" />
   </component>
-  <component name="TodoView" selected-index="1">
+  <component name="TodoView" selected-index="4">
     <todo-panel id="selected-file">
       <are-packages-shown value="false" />
       <are-modules-shown value="false" />
@@ -1366,73 +1728,41 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="22" width="1440" height="874" extended-state="6" />
+    <frame x="2" y="22" width="1920" height="1058" extended-state="6" />
     <editor active="false" />
     <layout>
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Changes" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.54092073" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32919255" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32401657" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32744282" sideWeight="0.59227467" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="TeamCity" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2724758" sideWeight="0.28969958" order="9" side_tool="true" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.49872124" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32097188" sideWeight="0.71030045" order="12" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32919255" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.18725869" sideWeight="0.33065328" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3297414" sideWeight="0.58536583" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.29685265" sideWeight="0.7381295" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24920128" sideWeight="0.6713568" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.38773388" sideWeight="0.6659514" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32931158" sideWeight="0.7254306" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="IDEtalk Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="CDI" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Module Dependencies" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32954547" sideWeight="0.5546075" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-    </layout>
-    <layout-to-restore>
-      <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32867134" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32931158" sideWeight="0.7254306" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.41304347" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32919255" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32401657" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32931158" sideWeight="0.7254306" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3436853" sideWeight="0.59227467" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="IDEtalk Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2724758" sideWeight="0.28969958" order="10" side_tool="true" content_ui="tabs" />
-      <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.23558162" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
-      <window_info id="CDI" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3294964" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.21030043" sideWeight="0.7381295" order="1" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.36652836" sideWeight="0.6659514" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24967825" sideWeight="0.6713568" order="3" side_tool="false" content_ui="combo" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3250346" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.5006916" sideWeight="0.59227467" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.38405797" sideWeight="0.30298188" order="10" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2669433" sideWeight="0.71030045" order="13" side_tool="false" content_ui="tabs" />
+      <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32960597" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.23498964" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26293996" sideWeight="0.71030045" order="13" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3294964" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.18725869" sideWeight="0.33065328" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3297414" sideWeight="0.58536583" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3297414" sideWeight="0.58536583" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Module Dependencies" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32954547" sideWeight="0.5546075" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17518637" sideWeight="0.7381295" order="1" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.557971" sideWeight="0.69648564" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Documentation" active="true" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" x="100" y="122" width="1720" height="858" />
+      <window_info id="CDI" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24967825" sideWeight="0.6713568" order="4" side_tool="false" content_ui="combo" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Module Dependencies" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32954547" sideWeight="0.5546075" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-    </layout-to-restore>
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39958593" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+    </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
     <option name="RECENTLY_FILTERED_USER_GROUPS">
@@ -1443,11 +1773,11 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
-    <option name="CHECK_NEW_TODO" value="false" />
     <option name="myTodoPanelSettings">
       <TodoPanelSettings />
     </option>
+    <MESSAGE value="MErrors classifier, PACBayes try 1, reformatting, Broken GreedyTDRegion fixed and enchanced." />
+    <MESSAGE value="BooBag implemented. GTDR tunning" />
     <MESSAGE value="CV introduced with -X k/m option, few bugs fixed" />
     <MESSAGE value="Missing JDOM" />
     <MESSAGE value="Aggregator refactored" />
@@ -1469,13 +1799,10 @@
     <MESSAGE value="Misha've found severe trouble in synthetics generation" />
     <MESSAGE value="Mess in compositetransform dimensions fixed." />
     <MESSAGE value="IDEA project settings. Please DON'T CHANGE THEM UNTIL YOU KNOW FOR SURE WHAT YOU ARE DOING" />
-    <MESSAGE value="Added data sets for multiclass split" />
-    <MESSAGE value="Added MultiClassSplit Test run configuration&#10;" />
-    <MESSAGE value="Fixed TransJoin and Ensemble conversion bugs&#10;" />
-    <MESSAGE value="Added conversion pack for MultiClassModel" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added conversion pack for MultiClassModel" />
+    <MESSAGE value="Hier losses refactoring" />
+    <MESSAGE value="Added Refined hierarchical model" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added Refined hierarchical model" />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
-    <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1489,335 +1816,689 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/func/types/ConversionRepository.java">
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/util/ArrayTools.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="11" column="10" selection-start="254" selection-end="254" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="390" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/GridTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="34" column="70" selection-start="1005" selection-end="1005" vertical-scroll-proportion="0.6918819" vertical-offset="15" max-vertical-offset="2520" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/MethodsTests.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="78" column="96" selection-start="2501" selection-end="2501" vertical-scroll-proportion="1.4461248" vertical-offset="0" max-vertical-offset="5010" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/optimization/TensorNetFuncTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="14" column="13" selection-start="414" selection-end="414" vertical-scroll-proportion="0.0" vertical-offset="999" max-vertical-offset="1590" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/data/multiclass/grid.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="-0.8967391" vertical-offset="495" max-vertical-offset="12855" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/data/multiclass/model.txt">
-      <provider selected="true" editor-type-id="LargeFileEditor">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/data/multiclass/model-test.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="975" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/data/multiclass/features-test.txt.values">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="51" column="70" selection-start="4973" selection-end="4973" vertical-scroll-proportion="0.6397942" vertical-offset="392" max-vertical-offset="74355" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/SerializationTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="26" column="0" selection-start="656" selection-end="656" vertical-scroll-proportion="0.0" vertical-offset="72" max-vertical-offset="1170" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/func/converters/Vec2StringConverter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="40" column="16" selection-start="1293" selection-end="1293" vertical-scroll-proportion="0.0" vertical-offset="274" max-vertical-offset="870" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/FactorizationMachinesConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="16" column="13" selection-start="536" selection-end="536" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="795" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="197" column="0" selection-start="10048" selection-end="10048" vertical-scroll-proportion="0.0" vertical-offset="480" max-vertical-offset="6090" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/data/multiclass/model-test-2.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="20" column="0" selection-start="3382" selection-end="3382" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="525" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/io/Vec2CharSequenceConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="13" selection-start="354" selection-end="354" vertical-scroll-proportion="0.0" vertical-offset="90" max-vertical-offset="750" />
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home/src.zip!/java/lang/AbstractStringBuilder.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="691" column="33" selection-start="26758" selection-end="26758" vertical-scroll-proportion="0.0" vertical-offset="9601" max-vertical-offset="20805" />
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home/src.zip!/java/lang/StringBuilder.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="248" column="25" selection-start="7659" selection-end="7659" vertical-scroll-proportion="0.0" vertical-offset="3196" max-vertical-offset="6300">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/io/Mx2CharSequenceConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="13" selection-start="355" selection-end="355" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="885">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home/src.zip!/java/io/BufferedReader.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="304" column="11" selection-start="10072" selection-end="10072" vertical-scroll-proportion="-0.12987013" vertical-offset="4295" max-vertical-offset="7575" />
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/1.7.0.jdk/Contents/Home/src.zip!/java/io/LineNumberReader.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="198" column="33" selection-start="5309" selection-end="5309" vertical-scroll-proportion="0.3814935" vertical-offset="2330" max-vertical-offset="3900" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/commons/build.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="590" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../../JavaReport/report/mobile-search-report.iml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="915">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/text/CharSequenceTools.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="50" column="0" selection-start="1203" selection-end="1266" vertical-scroll-proportion="0.0" vertical-offset="495" max-vertical-offset="3315">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/PGMEM.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="30" column="13" selection-start="975" selection-end="975" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2985">
-          <folding>
-            <element signature="imports" expanded="false" />
-            <element signature="e#1814#2122#0" expanded="false" />
-            <element signature="e#2117#2118#0" expanded="false" />
-            <element signature="e#2216#2663#0" expanded="false" />
-            <element signature="e#2658#2659#0" expanded="false" />
-            <element signature="e#2897#2931#0" expanded="false" />
-            <element signature="e#4785#4801#0" expanded="false" />
-            <element signature="e#4985#5334#0" expanded="false" />
-            <element signature="e#5325#5326#0" expanded="false" />
-            <element signature="e#6115#6375#0" expanded="false" />
-            <element signature="e#6362#6363#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousTreeConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="84" column="49" selection-start="2941" selection-end="2941" vertical-scroll-proportion="0.0" vertical-offset="1260" max-vertical-offset="1920">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/func/types/impl/TypeConvertersCollection.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="89" column="42" selection-start="3766" selection-end="3766" vertical-scroll-proportion="0.0" vertical-offset="775" max-vertical-offset="2850">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/func/types/ConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="9" column="38" selection-start="216" selection-end="216" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="255">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/EnsembleModelConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="18" column="71" selection-start="571" selection-end="571" vertical-scroll-proportion="0.0" vertical-offset="15" max-vertical-offset="1185">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="134" column="27" selection-start="5559" selection-end="5559" vertical-scroll-proportion="0.0" vertical-offset="1229" max-vertical-offset="4500">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="17" column="13" selection-start="360" selection-end="360" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1785">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/func/TransJoin.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="20" column="13" selection-start="592" selection-end="592" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1305">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/Trans.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="22" column="17" selection-start="513" selection-end="513" vertical-scroll-proportion="0.0" vertical-offset="82" max-vertical-offset="675">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/Func.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="17" column="39" selection-start="440" selection-end="440" vertical-scroll-proportion="0.0" vertical-offset="22" max-vertical-offset="615">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/func/Ensemble.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="21" column="12" selection-start="533" selection-end="533" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="990">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalClassification.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="40" column="16" selection-start="1301" selection-end="1301" vertical-scroll-proportion="0.0" vertical-offset="34" max-vertical-offset="1620">
+        <state line="332" column="21" selection-start="10517" selection-end="10517" vertical-scroll-proportion="0.33283803" vertical-offset="4696" max-vertical-offset="6630">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousMultiClassTree.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="13" selection-start="299" selection-end="299" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1290">
+        <state line="15" column="13" selection-start="299" selection-end="299" vertical-scroll-proportion="0.14966741" vertical-offset="0" max-vertical-offset="1290">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/CompositeTrans.java">
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/func/FuncJoin.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="13" selection-start="345" selection-end="345" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="990">
+        <state line="26" column="0" selection-start="543" selection-end="543" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="360" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/Mx.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="9" column="17" selection-start="138" selection-end="138" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="450">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/func/FuncEnsemble.java">
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/IndexTransformation.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="10" column="65" selection-start="205" selection-end="205" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="495">
+        <state line="6" column="47" selection-start="97" selection-end="97" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="360">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/idxtrans/RowsPermutation.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="14" column="13" selection-start="280" selection-end="280" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1080" />
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/commons/libs/trove-3.0.3-src.jar!/gnu/trove/list/TIntList.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="415" column="20" selection-start="12557" selection-end="12557" vertical-scroll-proportion="0.0" vertical-offset="2521" max-vertical-offset="3525">
+          <folding>
+            <element signature="e#0#15413#0" expanded="false" />
+            <element signature="imports" expanded="false" />
+            <element signature="docComment;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#size#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#isEmpty#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#add#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#add#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#add#2;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#insert#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#insert#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#insert#2;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#get#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#set#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#set#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#set#2;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#replace#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#clear#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#transformValues#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#reverse#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#reverse#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#shuffle#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#subList#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#toArray#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#toArray#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#toArray#2;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#toArray#3;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#toArray#4;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#forEach#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#forEachDescending#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#sort#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#sort#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#fill#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#fill#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#binarySearch#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#binarySearch#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#indexOf#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#lastIndexOf#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#lastIndexOf#1;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#contains#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#grep#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#inverseGrep#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#max#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#min#0;class#TIntList#0" expanded="false" />
+            <element signature="docComment;method#sum#0;class#TIntList#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/VecBasedMx.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="54" column="0" selection-start="1303" selection-end="1303" vertical-scroll-proportion="0.0" vertical-offset="589" max-vertical-offset="2115">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/trees/BFOptimizationSubset.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="51" column="18" selection-start="1537" selection-end="1537" vertical-scroll-proportion="0.0" vertical-offset="348" max-vertical-offset="975" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/Aggregate.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="81" column="13" selection-start="2467" selection-end="2467" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2115">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/trees/GreedyObliviousTree.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="46" column="23" selection-start="1535" selection-end="1535" vertical-scroll-proportion="0.4484375" vertical-offset="193" max-vertical-offset="975" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/ObliviousTree.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="17" column="13" selection-start="360" selection-end="360" vertical-scroll-proportion="0.17065391" vertical-offset="28" max-vertical-offset="1785">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/idxtrans/ArrayPermutation.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="34" column="0" selection-start="809" selection-end="809" vertical-scroll-proportion="0.51432884" vertical-offset="94" max-vertical-offset="1110">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/commons/libs/trove-3.0.3-src.jar!/gnu/trove/list/linked/TIntLinkedList.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="189" column="0" selection-start="5156" selection-end="5156" vertical-scroll-proportion="0.0" vertical-offset="862" max-vertical-offset="4395">
+          <folding>
+            <element signature="docComment;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#TIntLinkedList#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#TIntLinkedList#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#getNoEntryValue#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#size#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#size#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#isEmpty#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#isEmpty#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#add#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#add#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#add#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#add#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#add#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#add#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#insert#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#insert#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#insert#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#insert#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#insert#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#insert#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#insert#3;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#link#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#get#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#getLinkAt#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#getLinkAt#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#getLink#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#getLink#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#getLink#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#getLink#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#set#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#set#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#set#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#set#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#set#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#set#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#replace#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#replace#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#clear#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#clear#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#remove#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#remove#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#removeLink#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#removeLink#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#containsAll#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#containsAll#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#containsAll#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#containsAll#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#containsAll#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#containsAll#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#addAll#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#addAll#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#addAll#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#addAll#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#addAll#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#addAll#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#retainAll#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#retainAll#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#retainAll#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#retainAll#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#retainAll#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#retainAll#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#removeAll#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#removeAll#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#removeAll#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#removeAll#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#removeAll#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#removeAll#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#removeAt#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#removeAt#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#remove#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#remove#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#transformValues#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#transformValues#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#reverse#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#reverse#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#reverse#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#reverse#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#shuffle#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#shuffle#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#subList#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#subList#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#toArray#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#toArray#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#toArray#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#toArray#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#toArray#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#toArray#2;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#toArray#3;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#toArray#3;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#toArray#4;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#toArray#4;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#forEach#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#forEach#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#forEachDescending#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#forEachDescending#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#sort#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#sort#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#sort#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#sort#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#fill#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#fill#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#fill#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#fill#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#binarySearch#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#binarySearch#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#binarySearch#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#binarySearch#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#indexOf#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#indexOf#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#lastIndexOf#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#lastIndexOf#1;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#contains#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#contains#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#iterator#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#iterator#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="class#21186:21832" expanded="false" />
+            <element signature="method#next#0;class#21186:21832" expanded="false" />
+            <element signature="method#hasNext#0;class#21186:21832" expanded="false" />
+            <element signature="method#remove#0;class#21186:21832" expanded="false" />
+            <element signature="docComment;method#grep#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#grep#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#inverseGrep#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#inverseGrep#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#max#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#max#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#min#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#min#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#sum#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#sum#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="n#!!doc;n#TIntLink#0;n#TIntLinkedList#0" expanded="false" />
+            <element signature="class#TIntLink#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#TIntLink#0;class#TIntLink#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="class#RemoveProcedure#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#execute#0;class#RemoveProcedure#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#execute#0;class#RemoveProcedure#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#writeExternal#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#writeExternal#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="docComment;method#readExternal#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#readExternal#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#no#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#equals#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#hashCode#0;class#TIntLinkedList#0" expanded="false" />
+            <element signature="method#toString#0;class#TIntLinkedList#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/tests/data/hier/test.tsv">
+      <provider editor-type-id="text-editor">
+        <state line="7" column="18" selection-start="298" selection-end="298" vertical-scroll-proportion="0.0" vertical-offset="30" max-vertical-offset="810" />
+      </provider>
+      <provider selected="true" editor-type-id="com.intellij.persistence.database.editor.CsvTableFileEditorProvider">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/IndexTransVec.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="34" column="0" selection-start="1190" selection-end="1190" vertical-scroll-proportion="0.0" vertical-offset="204" max-vertical-offset="1845">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/impl/ArrayVec.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="19" column="0" selection-start="490" selection-end="490" vertical-scroll-proportion="0.0" vertical-offset="46" max-vertical-offset="2085">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/func/TransJoin.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="99" column="0" selection-start="2402" selection-end="2402" vertical-scroll-proportion="0.0" vertical-offset="722" max-vertical-offset="1305">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/tests/data/hier/test.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="34" column="40" selection-start="1056" selection-end="1056" vertical-scroll-proportion="0.7213578" vertical-offset="0" max-vertical-offset="707" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/LLLogit.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="15" column="13" selection-start="350" selection-end="350" vertical-scroll-proportion="0.15991472" vertical-offset="0" max-vertical-offset="938">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/commons/libs/trove-3.0.3-src.jar!/gnu/trove/list/array/TIntArrayList.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="580" column="19" selection-start="15930" selection-end="15930" vertical-scroll-proportion="0.70054644" vertical-offset="3334" max-vertical-offset="6825">
+          <folding>
+            <element signature="docComment;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;field#_data#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;field#_pos#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;field#DEFAULT_CAPACITY#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;field#no_entry_value#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#TIntArrayList#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#TIntArrayList#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#TIntArrayList#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#TIntArrayList#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#TIntArrayList#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#TIntArrayList#3;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#TIntArrayList#3;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#TIntArrayList#4;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#TIntArrayList#4;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#TIntArrayList#5;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#wrap#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#wrap#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#wrap#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#wrap#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="class#5004:5392" expanded="false" />
+            <element signature="method#ensureCapacity#0;class#5004:5392" expanded="false" />
+            <element signature="docComment;method#getNoEntryValue#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#ensureCapacity#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#ensureCapacity#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#size#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#size#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#isEmpty#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#isEmpty#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#trimToSize#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#trimToSize#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#add#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#add#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#add#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#add#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#add#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#add#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#insert#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#insert#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#insert#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#insert#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#insert#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#insert#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#get#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#getQuick#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#getQuick#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#set#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#set#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#replace#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#replace#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#set#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#set#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#set#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#set#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#setQuick#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#setQuick#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#clear#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#clear#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#clear#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#clear#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#reset#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#reset#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#resetQuick#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#resetQuick#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#remove#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#removeAt#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#removeAt#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#remove#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="e#11631#11687#0" expanded="false" />
+            <element signature="e#11927#11988#0" expanded="false" />
+            <element signature="docComment;method#iterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#iterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#containsAll#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#containsAll#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#containsAll#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#containsAll#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#containsAll#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#containsAll#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#addAll#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#addAll#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#addAll#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#addAll#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#addAll#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#retainAll#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#retainAll#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#retainAll#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#retainAll#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#retainAll#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#retainAll#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#removeAll#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#removeAll#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#removeAll#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#transformValues#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#transformValues#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#reverse#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#reverse#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#reverse#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#reverse#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#shuffle#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#shuffle#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#swap#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#swap#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#subList#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#subList#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#toArray#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#toArray#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#toArray#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#toArray#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#toArray#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#toArray#2;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#toArray#3;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#toArray#3;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#toArray#4;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#toArray#4;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#equals#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#equals#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#hashCode#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#hashCode#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#forEach#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#forEach#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#forEachDescending#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#forEachDescending#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#sort#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#sort#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#sort#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#sort#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#fill#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#fill#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#fill#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#fill#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#binarySearch#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#binarySearch#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#binarySearch#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#binarySearch#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#indexOf#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#indexOf#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#indexOf#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#indexOf#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#lastIndexOf#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#lastIndexOf#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#lastIndexOf#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#lastIndexOf#1;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#contains#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#contains#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#grep#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#grep#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#inverseGrep#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#inverseGrep#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#max#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#max#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#min#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#min#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#sum#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#sum#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#toString#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#toString#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;field#cursor#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;field#lastRet#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#TIntArrayIterator#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#hasNext#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#hasNext#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#next#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#next#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="docComment;method#remove#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#remove#0;class#TIntArrayIterator#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#writeExternal#0;class#TIntArrayList#0" expanded="false" />
+            <element signature="method#readExternal#0;class#TIntArrayList#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/commons/libs/trove-3.0.3-src.jar!/gnu/trove/TIntCollection.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="256" column="12" selection-start="8627" selection-end="8627" vertical-scroll-proportion="0.33259425" vertical-offset="3210" max-vertical-offset="4515">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/tests/data/hier/test1.tsv">
+      <provider editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="795" />
+      </provider>
+      <provider selected="true" editor-type-id="com.intellij.persistence.database.editor.CsvTableFileEditorProvider">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/L2.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="93" column="63" selection-start="2197" selection-end="2197" vertical-scroll-proportion="0.0" vertical-offset="1018" max-vertical-offset="1635">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMicroPrecision.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="13" column="23" selection-start="391" selection-end="391" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="480">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroPrecision.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="14" column="30" selection-start="454" selection-end="454" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="495">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMicroPrecision.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="24" column="31" selection-start="544" selection-end="544" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="690">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/MCMacroPrecision.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="28" column="31" selection-start="774" selection-end="774" vertical-scroll-proportion="0.40983605" vertical-offset="0" max-vertical-offset="915">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/JMLLCLI.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="47" column="13" selection-start="1645" selection-end="1645" vertical-scroll-proportion="0.0" vertical-offset="5437" max-vertical-offset="6090">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/impl/DataSetImpl.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="84" column="12" selection-start="1897" selection-end="1897" vertical-scroll-proportion="1.9767442" vertical-offset="135" max-vertical-offset="1290">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/HierarchicalClassification.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="36" column="49" selection-start="1106" selection-end="1106" vertical-scroll-proportion="-0.29953918" vertical-offset="525" max-vertical-offset="1395">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/HierarchicalModel.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="32" selection-start="635" selection-end="635" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="555">
+        <state line="15" column="48" selection-start="450" selection-end="450" vertical-scroll-proportion="0.23856859" vertical-offset="0" max-vertical-offset="615">
+          <folding>
+            <element signature="e#597#616#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_45.jdk/Contents/Home/src.zip!/java/io/BufferedWriter.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="241" column="16" selection-start="7481" selection-end="7481" vertical-scroll-proportion="0.3320965" vertical-offset="3091" max-vertical-offset="3825">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ObliviousMultiClassTreeConversionPack.java">
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.7.0_45.jdk/Contents/Home/src.zip!/java/io/PrintStream.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="26" column="64" selection-start="778" selection-end="778" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1755">
+        <state line="543" column="28" selection-start="19073" selection-end="19073" vertical-scroll-proportion="0.44341373" vertical-offset="7501" max-vertical-offset="16620">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/HierLoss.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="46" column="0" selection-start="1561" selection-end="1561" vertical-scroll-proportion="0.0" vertical-offset="690" max-vertical-offset="1305">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/HierTests.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="229" column="24" selection-start="8516" selection-end="8516" vertical-scroll-proportion="1.2866557" vertical-offset="2144" max-vertical-offset="3105">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/GradientBoosting.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="60" column="0" selection-start="2010" selection-end="2054" vertical-scroll-proportion="0.6556503" vertical-offset="0" max-vertical-offset="938">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroF1Score.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="12" column="13" selection-start="329" selection-end="329" vertical-scroll-proportion="0.22263451" vertical-offset="0" max-vertical-offset="539">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/loss/multiclass/hier/impl/HMCMacroRecall.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="12" column="13" selection-start="328" selection-end="328" vertical-scroll-proportion="0.22263451" vertical-offset="0" max-vertical-offset="539">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/methods/MultiClass.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="21" column="104" selection-start="668" selection-end="668" vertical-scroll-proportion="0.37790698" vertical-offset="0" max-vertical-offset="525">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/MultiClassModel.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="9" selection-start="542" selection-end="542" vertical-scroll-proportion="0.0" vertical-offset="79" max-vertical-offset="870">
+        <state line="24" column="39" selection-start="645" selection-end="645" vertical-scroll-proportion="0.0" vertical-offset="30" max-vertical-offset="645">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/HierTools.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="182" column="24" selection-start="6471" selection-end="6471" vertical-scroll-proportion="0.0" vertical-offset="2319" max-vertical-offset="2850">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/MathTools.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="64" column="24" selection-start="1643" selection-end="1643" vertical-scroll-proportion="0.0" vertical-offset="758" max-vertical-offset="2985">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/math/vectors/SparseMx.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="12" column="19" selection-start="469" selection-end="469" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="3870">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/data/DataTools.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="279" column="61" selection-start="10507" selection-end="10507" vertical-scroll-proportion="0.90609556" vertical-offset="2855" max-vertical-offset="3780">
           <folding>
             <element signature="imports" expanded="true" />
+            <element signature="docComment;class#DataTools#0" expanded="false" />
+            <element signature="method#loadFromFeaturesTxt#0;class#DataTools#0" expanded="false" />
+            <element signature="e#2658#2666#0" expanded="true" />
+            <element signature="e#2760#2768#0" expanded="true" />
+            <element signature="e#4973#4986#0" expanded="true" />
+            <element signature="e#5464#5474#0" expanded="true" />
+            <element signature="method#writeModel#0;class#DataTools#0" expanded="false" />
+            <element signature="method#grid#0;class#DataTools#0" expanded="false" />
+            <element signature="method#countClasses#0;class#DataTools#0" expanded="false" />
+            <element signature="method#normalizeRelevance#0;class#DataTools#0" expanded="false" />
+            <element signature="e#10626#10650#0" expanded="false" />
+            <element signature="method#value#0;class#DataTools#0" expanded="false" />
+            <element signature="method#bootstrap#0;class#DataTools#0" expanded="false" />
+            <element signature="method#targetByName#0;class#DataTools#0" expanded="false" />
+            <element signature="class#NormalizationType#0;class#DataTools#0" expanded="false" />
+            <element signature="class#NormalizationProperties#0;class#DataTools#0" expanded="false" />
+            <element signature="method#normalize#0;class#DataTools#0" expanded="false" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/func/FuncJoin.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="17" column="19" selection-start="343" selection-end="343" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="435">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/commons/src/com/spbsu/commons/util/ArrayTools.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="303" column="27" selection-start="9484" selection-end="9484" vertical-scroll-proportion="0.0" vertical-offset="4287" max-vertical-offset="6630">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/TransJoinConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="77" column="88" selection-start="2989" selection-end="2989" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1410">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/ModelsSerializationRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="23" column="20" selection-start="876" selection-end="876" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="765">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/io/MultiClassModelConversionPack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="25" column="19" selection-start="832" selection-end="832" vertical-scroll-proportion="0.0" vertical-offset="12" max-vertical-offset="720">
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/tests/src/com/spbsu/ml/DispersionTest.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2850">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/CompositePGM.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="1575">
-          <folding>
-            <element signature="imports" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/ProbabilisticGraphicalModel.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="510">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/SimplePGM.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="4500">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ml/src/com/spbsu/ml/models/pgm/Route.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="26" selection-start="253" selection-end="253" vertical-scroll-proportion="0.58441556" vertical-offset="0" max-vertical-offset="345">
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1857,6 +2538,7 @@
       </state>
       <state key="GlobalLibrariesConfigurable.UI">
         <settings>
+          <last-edited>sass-stdlib</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
@@ -1885,7 +2567,6 @@
             <option name="proportions">
               <list>
                 <option value="0.2" />
-                <option value="0.6" />
               </list>
             </option>
           </splitter-proportions>

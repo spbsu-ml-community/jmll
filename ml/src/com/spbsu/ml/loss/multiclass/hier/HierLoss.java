@@ -2,30 +2,54 @@ package com.spbsu.ml.loss.multiclass.hier;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.impl.Hierarchy;
+import com.spbsu.ml.data.impl.HierarchyTree;
+import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.hash.TIntIntHashMap;
+
+import java.util.Iterator;
 
 /**
  * User: qdeee
  * Date: 06.03.14
  */
 public abstract class HierLoss extends Func.Stub {
-  protected final Hierarchy hierarchy;
-  protected final Vec target;
-  protected final TIntIntHashMap targetMapping;
+  protected HierarchyTree hierarchy;
+  protected Vec target;
+  protected TIntIntHashMap targetMapping;
+  private int minEntries;
 
-  protected HierLoss(Hierarchy unfilledHierarchy, DataSet dataSet, int minEntries) {
+  protected HierLoss(HierarchyTree unfilledHierarchy, DataSet dataSet, int minEntries) {
+    this.minEntries = minEntries;
     unfilledHierarchy.fill(dataSet);
-    Hierarchy prunedTree = unfilledHierarchy.getPrunedCopy(minEntries);
-    Hierarchy.traversePrint(prunedTree.getRoot());
+    init(unfilledHierarchy, dataSet.target());
+  }
 
-    this.targetMapping = Hierarchy.getTargetMapping(unfilledHierarchy.getRoot(), prunedTree.getRoot());
-    Vec newTarget = new ArrayVec(dataSet.power());
+  private void init(HierarchyTree filledHierarchy, Vec unmappedTarget) {
+    HierarchyTree prunedTree = filledHierarchy.getPrunedCopy(minEntries);
+    HierarchyTree.traversePrint(prunedTree.getRoot());
+
+    final TIntIntHashMap newTargetMapping = HierarchyTree.getTargetMapping(filledHierarchy.getRoot(), prunedTree.getRoot());
+    if (targetMapping != null) {
+      for (TIntIntIterator iter = targetMapping.iterator(); iter.hasNext(); ) {
+        iter.advance();
+        final int oldVal = iter.value();
+        final int newVal = newTargetMapping.get(oldVal);
+        iter.setValue(newVal);
+
+      }
+      targetMapping.putAll(newTargetMapping);
+    }
+    else {
+      this.targetMapping = newTargetMapping;
+    }
+    Vec newTarget = new ArrayVec(unmappedTarget.dim());
     for (int i = 0; i < newTarget.dim(); i++) {
-      int oldTargetVal = (int) dataSet.target().get(i);
+      int oldTargetVal = (int) unmappedTarget.get(i);
       newTarget.set(i, targetMapping.get(oldTargetVal));
     }
     this.target = newTarget;
@@ -43,8 +67,12 @@ public abstract class HierLoss extends Func.Stub {
     this.target = newTarget;
   }
 
-  public Hierarchy.CategoryNode getHierRoot() {
+  public HierarchyTree.Node getHierRoot() {
     return hierarchy.getRoot();
+  }
+
+  public void updateTree() {
+    init(hierarchy, target);
   }
 
   @Override

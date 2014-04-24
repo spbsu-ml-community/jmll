@@ -2,29 +2,29 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.IndexTransVec;
+import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.HierTools;
-import com.spbsu.ml.data.impl.Hierarchy;import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.data.impl.HierarchyTree;
+import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.loss.SatL2;
-import com.spbsu.ml.loss.multiclass.MCMacroF1Score;
-import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
-import com.spbsu.ml.loss.multiclass.MCMacroRecall;
 import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
 import com.spbsu.ml.loss.multiclass.hier.*;
 import com.spbsu.ml.loss.multiclass.hier.impl.HMCMacroF1Score;
 import com.spbsu.ml.loss.multiclass.hier.impl.HMCMacroPrecision;
 import com.spbsu.ml.loss.multiclass.hier.impl.HMCMacroRecall;
 import com.spbsu.ml.loss.multiclass.hier.impl.HMCMicroPrecision;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.HierarchicalClassification;
-import com.spbsu.ml.methods.MultiClass;
+import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.HierarchicalModel;
-import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.models.MCModel;
+import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -40,14 +40,15 @@ public class HierTests extends TestSuite {
     final TestSuite s = new TestSuite();
     s.addTestSuite(Base.class);
     s.addTestSuite(Regression.class);
+    s.addTestSuite(BaseRefinement.class);
     return s;
   }
 
   public static class Base extends TestCase {
     protected String HIER_XML = "./ml/tests/data/hier/test.xml";
-    protected String FEATURES = "./ml/tests/data/hier/test.tsv";
+    protected String FEATURES = "./ml/tests/data/hier/test1.tsv";
 
-    protected Hierarchy hier;
+    protected HierarchyTree hier;
     protected DataSet learn;
     protected DataSet test;
 
@@ -67,25 +68,32 @@ public class HierTests extends TestSuite {
 
     public void testLoading() {
       hier.fill(learn);
-      Hierarchy.traversePrint(hier.getRoot());
+      HierarchyTree.traversePrint(hier.getRoot());
     }
 
     public void testPruning()  {
       hier.fill(learn);
-      Hierarchy prunedTree = hier.getPrunedCopy(minEntries);
-      Hierarchy.traversePrint(prunedTree.getRoot());
+      HierarchyTree prunedTree = hier.getPrunedCopy(minEntries);
+      HierarchyTree.traversePrint(prunedTree.getRoot());
+    }
+
+    protected Trans fit(HierLoss mainLoss) {
+      HierarchicalClassification classification = new HierarchicalClassification(iters, weakStep);
+      return classification.fit(learn, mainLoss);
     }
 
     public void testFitting() {
-      HierarchicalClassification classification = new HierarchicalClassification(iters, weakStep);
       HierLoss mainLoss = new HMCMacroPrecision(hier, learn, minEntries);
+
+      double time = System.currentTimeMillis();
+      MCModel model = (MCModel) fit(mainLoss);
+      System.out.println("Learning time: " + ((System.currentTimeMillis() - time) / 1000) + " sec");
       HierLoss[] learnLosses = new HierLoss[] {
           new HMCMicroPrecision(mainLoss, learn.target()),
           mainLoss,
           new HMCMacroRecall(mainLoss, learn.target()),
           new HMCMacroF1Score(mainLoss, learn.target())
       };
-      HierarchicalModel model = (HierarchicalModel) classification.fit(learn, mainLoss);
 
       Vec learnPredicted = model.bestClassAll(learn.data());
       for (int i = 0; i < learnLosses.length; i++) {
@@ -106,8 +114,8 @@ public class HierTests extends TestSuite {
         }
       }
     }
-
   }
+
   public static class Regression extends Base {
     private static final String FEATURES_TEST = "./ml/tests/data/featuresTest.txt.gz";
 
@@ -120,7 +128,7 @@ public class HierTests extends TestSuite {
       depth = 4;
       minEntries = 450;
       weakStep = 1.5;
-      iters = 1000;
+      iters = 100;
 
       TDoubleArrayList borders = new TDoubleArrayList();
       learn = HierTools.loadRegressionAsMC(FEATURES, 1 << depth, borders);
@@ -131,7 +139,7 @@ public class HierTests extends TestSuite {
     }
   }
 
-  public static class Something extends TestCase {
+  public static class Baseline extends TestCase {
     public void testBaseline() throws IOException {
       final double weakStep = 0.5;
       final int iters = 1;
@@ -166,7 +174,7 @@ public class HierTests extends TestSuite {
       };
       boosting.addListener(calcer);
       Ensemble ensemble = boosting.fit(learn, learnLoss);
-      MultiClassModel model = HierarchicalClassification.joinBoostingResults(ensemble);
+      MCModel model = MCModel.joinBoostingResults(ensemble);
       final Func.Stub learnP = new MCMicroPrecision(learn.target());
       final Func.Stub testP = new MCMicroPrecision(test.target());
       double learnPVal = learnP.value(model.bestClassAll(learn.data()));
@@ -175,4 +183,54 @@ public class HierTests extends TestSuite {
       System.out.println("testPVal = " + testPVal);
     }
   }
+
+  public static class BaseRefinement extends Base {
+    @Override
+    protected Trans fit(final HierLoss mainLoss) {
+      HierarchicalRefinedClassification classification = new HierarchicalRefinedClassification(iters, weakStep);
+      return classification.fit(learn, mainLoss);
+    }
+  }
+
+  public static class RegressionRefinement extends Regression {
+    @Override
+    protected Trans fit(final HierLoss mainLoss) {
+      HierarchicalRefinedClassification classification = new HierarchicalRefinedClassification(iters, weakStep);
+      return classification.fit(learn, mainLoss);
+    }
+  }
+
+  public static class Stuff extends TestCase {
+    public void testSt() {
+      Vec vec = new ArrayVec(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+      Vec indVec = new IndexTransVec(vec,
+          new ArrayPermutation(new int[] {8, 1}));
+      for (int i = 0; i < indVec.dim(); i++) {
+        System.out.println(indVec.get(i));
+      }
+    }
+
+    public void testSt2() {
+      TIntList list = new TIntLinkedList();
+      final int i = list.indexOf(5);
+      System.out.println(i);
+    }
+
+    public void testSt3() {
+      System.out.println("lala");
+      for (int i = 0; i < 10; i++) {
+        System.out.print(i + "\r");
+      }
+      System.out.println("lala");
+    }
+
+    public void testSt4() {
+      int i, N=20;
+      for (i = 0; i < N; i--) {
+        System.out.print("*");
+      }
+    }
+
+  }
+
 }

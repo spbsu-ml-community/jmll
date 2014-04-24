@@ -16,11 +16,12 @@ import com.spbsu.ml.func.FuncJoin;
  * Date: 10.01.14
  * Time: 10:59
  */
-public class MultiClassModel extends FuncJoin {
+public class MultiClassModel extends MCModel {
   public MultiClassModel(Func[] dirs) {
     super(dirs);
   }
 
+  @Override
   public double p(int classNo, Vec x) {
     Vec trans = trans(x);
     double sumExps = 0.;
@@ -36,17 +37,10 @@ public class MultiClassModel extends FuncJoin {
    *
    * @param x features vector
    */
+  @Override
   public int bestClass(final Vec x) {
     double[] trans = trans(x).toArray();
     int bestClass = ArrayTools.max(trans);
     return trans[bestClass] > 0 ? bestClass : dirs.length;
-  }
-
-  public Vec bestClassAll(Mx data) {
-    Vec result = new ArrayVec(data.rows());
-    for (int i = 0; i < data.rows(); i++) {
-      result.set(i, bestClass(data.row(i)));
-    }
-    return result;
   }
 }

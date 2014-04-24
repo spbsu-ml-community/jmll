@@ -2,11 +2,9 @@ package com.spbsu.ml.loss.multiclass.hier.impl;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.impl.Hierarchy;
+import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.loss.multiclass.MCMacroRecall;
 import com.spbsu.ml.loss.multiclass.hier.HierLoss;
-import gnu.trove.iterator.TIntIterator;
-import gnu.trove.map.hash.TIntIntHashMap;
 
 /**
  * User: qdeee
@@ -15,7 +13,7 @@ import gnu.trove.map.hash.TIntIntHashMap;
 public class HMCMacroRecall extends HierLoss {
   private final MCMacroRecall recall;
 
-  public HMCMacroRecall(Hierarchy unfilledHierarchy, DataSet dataSet, int minEntries) {
+  public HMCMacroRecall(HierarchyTree unfilledHierarchy, DataSet dataSet, int minEntries) {
     super(unfilledHierarchy, dataSet, minEntries);
     recall = new MCMacroRecall(target);
   }
