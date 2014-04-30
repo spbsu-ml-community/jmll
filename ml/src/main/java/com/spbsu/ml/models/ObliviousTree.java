@@ -21,6 +21,10 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
   private final double[] basedOn;
   private final BFGrid grid;
 
+  public ObliviousTree(final List<BFGrid.BinaryFeature> features, double[] values) {
+    this(features, values, new double[values.length]);
+  }
+
   public ObliviousTree(final List<BFGrid.BinaryFeature> features, double[] values, double[] basedOn) {
     grid = features.get(0).row().grid();
     this.basedOn = basedOn;
