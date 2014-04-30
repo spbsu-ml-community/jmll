@@ -7,7 +7,6 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.Func;
 import gnu.trove.list.array.TByteArrayList;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -21,11 +20,10 @@ import java.util.*;
  * Time: 10:19
  */
 public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel {
-  public static final Logger LOG = Logger.create(SimplePGM.class);
   public static final double KNOWN_ROUTES_PROBABILITY = 0.999;
   public static final double MIN_SINGLE_ROUTE_PROBABILITY = 0.000001;
   public final Mx topology;
-  private final boolean[] isFinalState;
+  protected final boolean[] isFinalState;
 
   private final byte[] nodes;
   private final MyLWRoute[] routes;
@@ -92,7 +90,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     for (int i = 0; i < boundaries.size(); i++) {
       routes[i] = new MyLWRoute(start, start = boundaries.get(i), probabs.get(i));
     }
-    LOG.debug("Routes built: " + boundaries.size() + " weight: " + knownRoutesProBab);
+    System.out.println("Routes built: " + boundaries.size() + " weight: " + knownRoutesProBab);
   }
 
   public SimplePGM(final Mx next, final double meanLen) {
@@ -157,21 +155,20 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return toInt.toArray();
   }
 
-  public Vec next(FastRandom rng) {
-    while(true) {
-      SparseVec result = new SparseVec(100);
-      int next = 1;
-      int index = 0;
+  public Route next(FastRandom rng) {
+    TByteArrayList result = new TByteArrayList(100);
+    byte next = 0;
+    double p = 1;
 
-      while (index < result.dim()) {
-        next = rng.nextSimple(topology.row(next - 1)) + 1;
-        result.set(index++, next);
-        if (isFinalState[next -1])
-          break;
-      }
-      if (result.get(result.dim()) == 0.)
-        return result;
+    while (true) {
+      final Vec trans = topology.row(next);
+      next = (byte)rng.nextSimple(trans);
+      p *= trans.get(next);
+      result.add(next);
+      if (isFinalState[next])
+        break;
     }
+    return new MyRoute(result.toArray(), p);
   }
 
   @Override
@@ -193,11 +190,11 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return routes[randRoute];
   }
 
-  public double knownRouteWeight() {
+  public double knownRoutesWeight() {
     return knownRoutesProBab;
   }
 
-  public class MyLWRoute implements Route {
+  public class MyLWRoute extends Route {
     private int start, end;
     private double probab;
 
@@ -233,7 +230,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     }
   }
 
-  public class MyRoute implements Route {
+  public class MyRoute extends Route {
     private final byte[] route;
     private final double probab;
     private double maxClosedProbab;
