@@ -20,12 +20,24 @@ public class JoinedBinClassModel extends MCModel {
   }
 
   @Override
-  public double p(int classNo, Vec x) {
+  public int classesCount() {
+    return dirs.length;
+  }
+
+  @Override
+  public double prob(int classNo, Vec x) {
     Vec apply = trans(x);
-    double sumSigmoids = 0.;
-    for (int i = 0; i < apply.dim(); i++)
-      sumSigmoids += MathTools.sigmoid(apply.get(i));
-    return MathTools.sigmoid(apply.get(classNo)) / sumSigmoids;
+    return MathTools.sigmoid(apply.get(classNo), 0.65);
+  }
+
+  @Override
+  public Vec probs(final Vec x) {
+    Vec apply = trans(x);
+    Vec probs = new ArrayVec(apply.dim());
+    for (int i = 0; i < apply.dim(); i++) {
+      probs.set(i, MathTools.sigmoid(apply.get(i), 0.65));
+    }
+    return probs;
   }
 
   @Override

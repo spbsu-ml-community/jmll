@@ -13,7 +13,7 @@ import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.HierarchicalModel;
-import com.spbsu.ml.models.MCModel;
+import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -74,7 +74,7 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
 
       System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, DS size=" + ds.power());
       final Ensemble ensemble = boosting.fit(ds, globalLoss);
-      resultModels = MCModel.joinBoostingResults(ensemble).dirs();
+      resultModels = MultiClassModel.joinBoostingResults(ensemble).dirs();
 
     }
     else {
@@ -98,7 +98,7 @@ public class HierarchicalClassification implements Optimization<HierLoss>{
       if (child.isLeaf())
         continue;
       HierarchicalModel childModel = traverseFit(child);
-      hierModel.addChildren(childModel, child.getCategoryId());
+      hierModel.addChild(childModel, child.getCategoryId());
     }
     return hierModel;
   }

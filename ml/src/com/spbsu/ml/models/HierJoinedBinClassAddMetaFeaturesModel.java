@@ -2,8 +2,11 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.Func;
+import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.Arrays;
@@ -12,15 +15,15 @@ import java.util.Arrays;
  * User: qdeee
  * Date: 14.04.14
  */
-public class HierJoinedBinClassModel extends JoinedBinClassModel {
+public class HierJoinedBinClassAddMetaFeaturesModel extends JoinedBinClassModel {
   /**
    * Labels of classes that this model could return.
    */
   protected final TIntList classLabels;
 
-  protected final TIntObjectHashMap<HierJoinedBinClassModel> label2childModel = new TIntObjectHashMap<HierJoinedBinClassModel>();
+  protected final TIntObjectHashMap<HierJoinedBinClassAddMetaFeaturesModel> label2childModel = new TIntObjectHashMap<HierJoinedBinClassAddMetaFeaturesModel>();
 
-  public HierJoinedBinClassModel(final Func[] dirs, final TIntList classLabels) {
+  public HierJoinedBinClassAddMetaFeaturesModel(final Func[] dirs, final TIntList classLabels) {
     super(dirs);
     if (classLabels.size() == dirs.length) {
       this.classLabels = classLabels;
@@ -30,11 +33,11 @@ public class HierJoinedBinClassModel extends JoinedBinClassModel {
     }
   }
 
-  public void addChildren(HierJoinedBinClassModel child, int classId) {
+  public void addChildren(HierJoinedBinClassAddMetaFeaturesModel child, int classId) {
     label2childModel.put(classId, child);
   }
 
-  public HierJoinedBinClassModel getModelByLabel(int label) {
+  public HierJoinedBinClassAddMetaFeaturesModel getModelByLabel(int label) {
     return label2childModel.get(label);
   }
 
@@ -48,22 +51,29 @@ public class HierJoinedBinClassModel extends JoinedBinClassModel {
 
   @Override
   public int bestClass(Vec x) {
-    int c = super.bestClass(x);
+    final int c = super.bestClass(x);
     return classLabels.get(c);
   }
 
+  //
   @Override
   public Vec trans(final Vec x) {
-    final Vec trans = super.trans(x);
+    final Vec result = new ArrayVec(dirs.length);
+    final TDoubleList metafeatures = new TDoubleLinkedList();
     for (int i = 0; i < classLabels.size(); i++) {
-      int label = classLabels.get(i);
-      HierJoinedBinClassModel model = label2childModel.get(label);
+      final int label = classLabels.get(i);
+      final HierJoinedBinClassAddMetaFeaturesModel model = label2childModel.get(label);
       if (model != null) {
-        final double val = VecTools.sum(model.trans(x));
-        trans.adjust(i, val);
+        final Vec childTrans = model.trans(x);
+        final double sum = VecTools.sum(childTrans);
+        result.adjust(i, sum);
+        final Vec probs = model.probs(x);
+        metafeatures.add(probs.toArray());
       }
     }
-    return trans;
+    final Vec extendX = VecTools.extendVec(x, metafeatures.toArray());
+    final Vec selfTrans = super.trans(extendX);
+    return VecTools.append(result, selfTrans);
   }
 
   @Override

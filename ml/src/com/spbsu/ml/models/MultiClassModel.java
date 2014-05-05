@@ -9,6 +9,8 @@ import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
+import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.func.FuncJoin;
 
 /**
@@ -22,13 +24,35 @@ public class MultiClassModel extends MCModel {
   }
 
   @Override
-  public double p(int classNo, Vec x) {
+  public int classesCount() {
+    return dirs.length + 1;
+  }
+
+  @Override
+  public double prob(int classNo, Vec x) {
     Vec trans = trans(x);
     double sumExps = 0.;
     for (int i = 0; i < trans.dim(); i++)
       sumExps += Math.exp(trans.get(i));
     return classNo < dirs.length? Math.exp(trans.get(classNo)) / (sumExps + 1.)
                                 : 1. - sumExps / (sumExps + 1.);
+  }
+
+  @Override
+  public Vec probs(final Vec x) {
+    final Vec result = new ArrayVec(dirs.length + 1);
+    final Vec trans = trans(x);
+    double sumExps = 0.;
+    for (int i = 0; i < trans.dim(); i++) {
+      final double exp = Math.exp(trans.get(i));
+      result.set(i, exp);
+      sumExps += exp;
+    }
+    for (int i = 0; i < trans.dim(); i++) {
+      result.set(i, result.get(i) / (sumExps + 1));
+    }
+    result.set(trans.dim(), 1 - sumExps / (sumExps + 1));
+    return result;
   }
 
   /**
@@ -42,5 +66,24 @@ public class MultiClassModel extends MCModel {
     double[] trans = trans(x).toArray();
     int bestClass = ArrayTools.max(trans);
     return trans[bestClass] > 0 ? bestClass : dirs.length;
+  }
+
+  public static MultiClassModel joinBoostingResults(Ensemble ensemble) {
+    if (ensemble.last() instanceof MCModel) {
+      final Func[] joinedModels = new Func[ensemble.ydim()];
+      final Func[][] transpose = new Func[ensemble.ydim()][ensemble.size()];
+      for (int c = 0; c < transpose.length; c++) {
+        for (int iter = 0; iter < transpose[c].length; iter++) {
+          final MultiClassModel mcm = (MultiClassModel) ensemble.models[iter];
+          transpose[c][iter] = mcm.dirs()[c];
+        }
+      }
+      for (int i = 0; i < joinedModels.length; i++) {
+        joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights);
+      }
+      return new MultiClassModel(joinedModels);
+    }
+    else
+      throw new ClassCastException("Ensemble object does not contain MultiClassModel objects");
   }
 }

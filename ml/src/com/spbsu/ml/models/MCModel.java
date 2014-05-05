@@ -2,7 +2,9 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
@@ -17,29 +19,27 @@ public abstract class MCModel extends FuncJoin{
     super(dirs);
   }
 
-  public static MultiClassModel joinBoostingResults(Ensemble ensemble) {
-    if (ensemble.last() instanceof MCModel) {
-      Func[] joinedModels;
-      Func[][] transpose = new Func[ensemble.ydim()][ensemble.size()];
-      for (int c = 0; c < transpose.length; c++) {
-        for (int iter = 0; iter < transpose[c].length; iter++) {
-          final MultiClassModel mcm = (MultiClassModel) ensemble.models[iter];
-          transpose[c][iter] = mcm.dirs()[c];
-        }
-      }
-      joinedModels = new Func[ensemble.ydim()];
-      for (int i = 0; i < joinedModels.length; i++) {
-        joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights);
-      }
-      return new MultiClassModel(joinedModels);
+  public abstract int classesCount();
+  public abstract double prob(int classNo, Vec x);
+  public abstract Vec probs(Vec x);
+  public abstract int bestClass(Vec x);
+
+  public Vec probAll(int classNo, Mx data) {
+    Vec result = new ArrayVec(data.rows());
+    for (int i = 0; i < data.rows(); i++) {
+      result.set(i, prob(classNo, data.row(i)));
     }
-    else
-      throw new ClassCastException("Ensemble object does not contain MultiClassModel objects");
+    return result;
   }
 
-  public abstract double p(int classNo, Vec x);
-
-  public abstract int bestClass(Vec x);
+  public Mx probsAll(Mx data) {
+    Mx result = new VecBasedMx(data.rows(), classesCount());
+    for (int i = 0; i < result.rows(); i++) {
+      Vec probs = probs(data.row(i));
+      VecTools.assign(result.row(i), probs);
+    }
+    return result;
+  }
 
   public Vec bestClassAll(Mx data) {
     Vec result = new ArrayVec(data.rows());

@@ -37,6 +37,7 @@ import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
+import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
 /**
@@ -269,6 +270,31 @@ public class DataTools {
         result.set(i, labelPos);
     }
     return result;
+  }
+
+  public static DataSet extendDataset(DataSet sourceDS, Mx addedColumns) {
+    Vec[] columns = new Vec[addedColumns.columns()];
+    for (int i = 0; i < addedColumns.columns(); i++) {
+      columns[i] = addedColumns.col(i);
+    }
+    return extendDataset(sourceDS, columns);
+  }
+
+  public static DataSet extendDataset(DataSet sourceDS, Vec... addedColumns) {
+    if (addedColumns.length == 0)
+      return sourceDS;
+
+    Mx oldData = sourceDS.data();
+    Mx newData = new VecBasedMx(oldData.rows(), oldData.columns() + addedColumns.length);
+    for (MxIterator iter = oldData.nonZeroes(); iter.advance(); ) {
+      newData.set(iter.row(), iter.column(), iter.value());
+    }
+    for (int i = 0; i < addedColumns.length; i++) {
+      for (VecIterator iter = addedColumns[i].nonZeroes(); iter.advance(); ) {
+        newData.set(iter.index(), oldData.columns() + i, iter.value());
+      }
+    }
+    return new DataSetImpl(newData, sourceDS.target());
   }
 
   public static DataSet normalizeClasses(DataSet learn) {

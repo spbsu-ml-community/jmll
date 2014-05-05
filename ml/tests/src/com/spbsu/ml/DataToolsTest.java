@@ -1,9 +1,13 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.impl.DataSetImpl;
 
 /**
  * User: solar
@@ -40,5 +44,20 @@ public class DataToolsTest extends GridTest {
 //    assertEquals(4., weights[1]);
 //    assertEquals(1., sums[2]);
 //    assertEquals(2., weights[2]);
+  }
+
+  public void testExtendDataset() throws Exception {
+    DataSet ds = new DataSetImpl(
+        new VecBasedMx(2,
+            new ArrayVec(1, 2,
+                         3, 4)
+        ),
+        new ArrayVec(0.1,
+                     0.2)
+    );
+    final DataSet extDs = DataTools.extendDataset(ds, new ArrayVec(5., 6.), new ArrayVec(7., 8.));
+    for (DSIterator iter = extDs.iterator(); iter.advance(); ) {
+      System.out.println(iter.y() + "\t" + iter.x().toString());
+    }
   }
 }
