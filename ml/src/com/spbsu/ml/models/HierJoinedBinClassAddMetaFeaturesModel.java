@@ -1,5 +1,6 @@
 package com.spbsu.ml.models;
 
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
@@ -19,7 +20,7 @@ public class HierJoinedBinClassAddMetaFeaturesModel extends JoinedBinClassModel 
   /**
    * Labels of classes that this model could return.
    */
-  protected final TIntList classLabels;
+  public final TIntList classLabels;
 
   protected final TIntObjectHashMap<HierJoinedBinClassAddMetaFeaturesModel> label2childModel = new TIntObjectHashMap<HierJoinedBinClassAddMetaFeaturesModel>();
 

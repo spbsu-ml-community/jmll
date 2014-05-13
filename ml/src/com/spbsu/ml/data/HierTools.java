@@ -1,5 +1,6 @@
 package com.spbsu.ml.data;
 
+import com.spbsu.commons.math.stat.impl.NumericSampleDistribution;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
@@ -132,6 +133,19 @@ public class HierTools {
       parent.addChild(nodes[i]);
     }
     return new HierarchyTree(root);
+  }
+
+  public static void printMeanAndVarForClassificationOut(final Vec target, final Vec factor, String comment) {
+    final NumericSampleDistribution<Double> distributionPositive = new NumericSampleDistribution<Double>();
+    final NumericSampleDistribution<Double> distributionNegative = new NumericSampleDistribution<Double>();
+    for (int i = 0; i < factor.dim(); i++) {
+      if (target.get(i) > 0)
+        distributionPositive.update(factor.get(i));
+      else
+        distributionNegative.update(factor.get(i));
+    }
+    System.out.println(comment + " (positive samples), mean = " + distributionPositive.getMean() + ", stddev = " + distributionPositive.getStandardDeviation());
+    System.out.println(comment + " (negative samples), mean = " + distributionNegative.getMean() + ", stddev = " + distributionNegative.getStandardDeviation());
   }
 
   private static class Counter {

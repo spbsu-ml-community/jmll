@@ -52,6 +52,21 @@ public class HierarchyTree {
     root.fillDS(learn, id2positions);
   }
 
+  public HierarchyTree getStructureCopy() {
+    Node newRoot = traverseStructureCopy(root);
+    return new HierarchyTree(newRoot);
+  }
+
+  private Node traverseStructureCopy(Node node) {
+    Node newNode = new Node(node.categoryId, null);
+    for (Node child : node.children) {
+      Node newChild = traverseStructureCopy(child);
+      newNode.addChild(newChild);
+      newChild.parent = newNode;
+    }
+    return newNode;
+  }
+
   public HierarchyTree getPrunedCopy(int minEntries) {
     Node newRoot = root.getPrunedCopy(minEntries);
     if (newRoot == null || newRoot.classesPositions.size() <= 1) {

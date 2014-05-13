@@ -1,11 +1,15 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.math.MathTools;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.HierTools;
+import com.spbsu.ml.data.impl.ChangedTarget;
+import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
@@ -22,10 +26,11 @@ import com.spbsu.ml.loss.multiclass.hier.impl.HMCMacroRecall;
 import com.spbsu.ml.loss.multiclass.hier.impl.HMCMicroPrecision;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.HierJoinedBinClassAddMetaFeaturesModel;
+import com.spbsu.ml.models.HierRefinedExpertModel;
 import com.spbsu.ml.models.MCModel;
 import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.array.TDoubleArrayList;
-import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -67,6 +72,13 @@ public class HierTests extends TestSuite {
       hier.fill(learn);
       HierarchyTree prunedTree = hier.getPrunedCopy(minEntries);
       HierarchyTree.traversePrint(prunedTree.getRoot());
+    }
+
+    public void testCopyStructure() {
+      hier.fill(learn);
+      final HierarchyTree prunedCopy = hier.getPrunedCopy(minEntries);
+      final HierarchyTree structureCopy = prunedCopy.getStructureCopy();
+      HierarchyTree.traversePrint(structureCopy.getRoot());
     }
 
     protected Trans fit(HierLoss mainLoss) {
@@ -120,7 +132,7 @@ public class HierTests extends TestSuite {
       depth = 4;
       minEntries = 450;
       weakStep = 1.5;
-      iters = 1000;
+      iters = 200;
 
       TDoubleArrayList borders = new TDoubleArrayList();
       learn = HierTools.loadRegressionAsMC(FEATURES, 1 << depth, borders);
@@ -222,11 +234,64 @@ public class HierTests extends TestSuite {
   }
 
   public static class RegressionRefinimentExperts extends Regression {
+    private void calcMetaFeaturesStats(final HierJoinedBinClassAddMetaFeaturesModel btModel, final HierLoss origLoss) {
+      final HierarchyTree learnTree = hier.getStructureCopy();
+      final HierarchyTree testTree = hier.getStructureCopy();
+
+      final Vec mappedLearnTarget = new ArrayVec(learn.power());
+      for (int i = 0; i < mappedLearnTarget.dim(); i++) {
+        double val = learn.target().get(i);
+        double mappedVal = origLoss.targetMapping.get((int) val);
+        mappedLearnTarget.set(i, mappedVal);
+      }
+      final Vec mappedTestTarget = new ArrayVec(test.power());
+      for (int i = 0; i < mappedTestTarget.dim(); i++) {
+        double val = test.target().get(i);
+        double mappedVal = origLoss.targetMapping.get((int)val);
+        mappedTestTarget.set(i, mappedVal);
+      }
+
+      learnTree.fill(new ChangedTarget((DataSetImpl) learn, mappedLearnTarget));
+      testTree.fill(new ChangedTarget((DataSetImpl) test, mappedTestTarget));
+
+      traverseCalcMetaFeaturesStats(btModel, learnTree.getRoot(), testTree.getRoot());
+    }
+
+    private void traverseCalcMetaFeaturesStats(final HierJoinedBinClassAddMetaFeaturesModel btModel, final HierarchyTree.Node learnNode, final HierarchyTree.Node testNode) {
+      for (int i = 0; i < learnNode.getChildren().size(); i++) {
+        final HierarchyTree.Node childLearnNode = learnNode.getChildren().get(i);
+        final HierarchyTree.Node childTestNode = testNode.getChildren().get(i);
+        if (childLearnNode.isLeaf())
+          continue;
+        final int label = childLearnNode.getCategoryId();
+        final HierJoinedBinClassAddMetaFeaturesModel childModel = btModel.getModelByLabel(label);
+        if (childModel != null) {
+          final DataSet learnNodeDSForChild = learnNode.createDSForChild(label);
+          final DataSet testNodeDSForChild = testNode.createDSForChild(label);
+          final Mx learnChildProbs = childModel.probsAll(learnNodeDSForChild.data());
+          final Mx testChildProbs = childModel.probsAll(testNodeDSForChild.data());
+          final Vec[] learnColumns = VecTools.splitMxColumns(learnChildProbs);
+          final Vec[] testColumns = VecTools.splitMxColumns(testChildProbs);
+          for (int j = 0; j < learnColumns.length; j++) {
+            Vec learnColumn = learnColumns[j];
+            Vec testColumn = testColumns[j];
+            System.out.println();
+            HierTools.printMeanAndVarForClassificationOut(learnNodeDSForChild.target(), learnColumn, "[LEARN] Calc stats for " + childModel.classLabels.get(j));
+            System.out.println();
+            HierTools.printMeanAndVarForClassificationOut(testNodeDSForChild.target(), testColumn, "[TEST] Calc stats for " + childModel.classLabels.get(j));
+          }
+          traverseCalcMetaFeaturesStats(childModel, childLearnNode, childTestNode);
+        }
+      }
+    }
+
 
     @Override
     protected Trans fit(final HierLoss mainLoss) {
       HierarchicalRefinedExpertClassification classification = new HierarchicalRefinedExpertClassification(iters, weakStep);
-      return classification.fit(learn, mainLoss);
+      final HierRefinedExpertModel model = (HierRefinedExpertModel) classification.fit(learn, mainLoss);
+      calcMetaFeaturesStats(model.bottomUpModel, mainLoss);
+      return model;
     }
   }
 }

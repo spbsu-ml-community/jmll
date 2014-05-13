@@ -20,7 +20,7 @@ import java.util.Iterator;
 public abstract class HierLoss extends Func.Stub {
   protected HierarchyTree hierarchy;
   protected Vec target;
-  protected TIntIntHashMap targetMapping;
+  public TIntIntHashMap targetMapping;
   private int minEntries;
 
   protected HierLoss(HierarchyTree unfilledHierarchy, DataSet dataSet, int minEntries) {

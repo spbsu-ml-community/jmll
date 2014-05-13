@@ -12,7 +12,7 @@ import gnu.trove.list.linked.TDoubleLinkedList;
  * Date: 18.04.14
  */
 public class HierRefinedExpertModel extends HierarchicalModel {
-  protected final HierJoinedBinClassAddMetaFeaturesModel bottomUpModel;
+  public final HierJoinedBinClassAddMetaFeaturesModel bottomUpModel;
 
   public HierRefinedExpertModel(Func[] dirs, TIntList classLabels, HierJoinedBinClassAddMetaFeaturesModel bottomUpModel) {
     super(dirs, classLabels);
