@@ -1,62 +1,124 @@
 package com.spbsu.ml.methods;
 
+import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecArrayMx;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.VecBasedMxCP;
+import com.spbsu.commons.math.vectors.impl.*;
+import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
+import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.GridTools;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.FuncEnsemble;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
+import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.MultiClass2BinaryModel;
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+
+import java.util.Random;
 
 /**
  * User: qdeee
  * Date: 07.05.14
  */
 public class CodingMatrixLearning implements Optimization<LLLogit> {
+  public static final double IGNORE_THRESHOLD = 0.2;
   private final int k;
   private final int l;
 
-  public CodingMatrixLearning(final int k, final int l) {
+  private final Mx initB;
+
+  public CodingMatrixLearning(final int k, final int l, final Mx initB) {
     this.k = k;
     this.l = l;
+    this.initB = initB;
   }
+
+  public CodingMatrixLearning(final int k, final int l) {
+    this(k, l, new VecBasedMx(k, l));
+    Random rand = new FastRandom(100000);
+    do {
+      for (int i = 0; i < k; i++) {
+        for (int j = 0; j < l; j++) {
+          initB.set(i, j, rand.nextInt(3) - 1);
+        }
+      }
+    } while (!checkConstraints(initB));
+  }
+
+
 
   @Override
   public Trans fit(final DataSet learn, final LLLogit llLogit) {
+    final TIntObjectMap<TIntList> indexes = DataTools.splitClassesIdxs(learn);
 
-    return null;
+    final Mx S = createSimilarityMatrix(learn, indexes);
+    final Mx B = findMatrixB(S, 10, 0.5, 0.25, 0.35, 0.45);
+
+    Func[] binClassifiers = new Func[l];
+    for (int j = 0; j < l; j++) {
+      final TIntList learnIdxs = new TIntLinkedList();
+      final TDoubleList target = new TDoubleLinkedList();
+      for (int i = 0; i < k; i++) {
+        final double code = B.get(i, j);
+        if (Math.abs(code) > IGNORE_THRESHOLD) {
+          final TIntList classIdxs = indexes.get(i);
+          target.fill(target.size(), target.size() + classIdxs.size(), Math.signum(code));
+          learnIdxs.addAll(classIdxs);
+        }
+      }
+
+      final DataSet dataSet = new DataSetImpl(
+          new VecBasedMx(
+              learn.xdim(),
+              new IndexTransVec(
+                  learn.data(),
+                  new RowsPermutation(learnIdxs.toArray(), learn.xdim())
+              )
+          ),
+          new ArrayVec(target.toArray())
+      );
+      final LLLogit loss = new LLLogit(dataSet.target());
+      final BFGrid grid = GridTools.medianGrid(dataSet, 32);
+      final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
+          new GreedyObliviousTree<L2>(grid, 5),
+          100, 0.5
+      );
+      final Ensemble ensemble = boosting.fit(learn, loss);
+      final FuncEnsemble funcEnsemble = new FuncEnsemble(ArrayTools.map(ensemble.models, Func.class, new Computable<Trans, Func>() {
+        @Override
+        public Func compute(final Trans argument) {
+          return (Func)argument;
+        }
+      }), ensemble.weights);
+      binClassifiers[j] = funcEnsemble;
+    }
+    return new MultiClass2BinaryModel(B, binClassifiers);
   }
 
-  public Mx createSimilarityMatrix(DataSet learn) {
-    final TIntObjectMap<TIntList> indexes = new TIntObjectHashMap<TIntList>();
-    for (DSIterator iter = learn.iterator(); iter.advance(); ) {
-      final int catId = (int) iter.y();
-      if (indexes.containsKey(catId)) {
-        indexes.get(catId).add(iter.index());
-      }
-      else {
-        final TIntList newClassIdxs = new TIntLinkedList();
-        newClassIdxs.add(iter.index());
-        indexes.put(catId, newClassIdxs);
-      }
-    }
-
+  public Mx createSimilarityMatrix(DataSet learn, TIntObjectMap<TIntList> classesIdxs) {
     final Mx S = new VecBasedMx(k, k);
     for (int i = 0; i < k; i++) {
-      final TIntList classIdxsI = indexes.get(i);
+      final TIntList classIdxsI = classesIdxs.get(i);
       for (int j = i; j < k; j++) {
-        final TIntList classIdxsJ = indexes.get(j);
+        final TIntList classIdxsJ = classesIdxs.get(j);
         double value = 0.;
         for (TIntIterator iterI = classIdxsI.iterator(); iterI.hasNext(); ) {
           final int i1 = iterI.next();
@@ -92,11 +154,26 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
     return result;
   }
 
+  private boolean checkConstraints(final Mx B) {
+    final Mx A = createConstraintsMatrix(B);
+    final Vec vecB = mx2vec(B);
+    System.out.println(B.toString());
+    System.out.println(vecB.toString());
+    final Vec checkVec = VecTools.multiply(A, vecB);
+    for (int i = 0; i < 2*k*l; i++)
+      if (checkVec.get(i) > 1.)
+        return false;
+    for (int i = 2* k * l; i < 2*k*l + 2*l; i++)
+      if (checkVec.get(i) > -2.)
+        return false;
+    for (int i = 2* k * l + 2* l; i < 2*k*l + 2*l + k; i++)
+      if (checkVec.get(i) > -1)
+        return false;
+    return true;
+  }
+
   public Mx findMatrixB(final Mx S, int iters, double step, double lambdaC, double lambdaR, double lambda1) {
-    Mx mxB = new VecBasedMx(l, new ArrayVec(k*l));
-    {
-      //init B
-    }
+    Mx mxB = initB;
 
     final Vec b = new ArrayVec(2* k * l + 2* l + k);
     {
@@ -179,6 +256,7 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
           }
         }
       }
+      System.out.println();
       System.out.println(mxB.toString());
       System.out.println();
 
@@ -186,17 +264,19 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
     return mxB;
   }
 
+
   /**
    *
    * @param B Coding matrix that was obtained at the last iteration, size = [k,l]
    * @return Matrix of constraints
    */
-  public Mx createConstraintsMatrix(final Mx B) {
+  public static Mx createConstraintsMatrix(final Mx B) {
+    final int k = B.rows();
+    final int l = B.columns();
     final Mx A = new VecBasedMx(2* k * l + 2* l + k, k * l);
     for (int j = 0; j < k * l; j++) {
       A.set(j, j, -1.0);
       A.set(k * l + j, j, 1.0);
-      System.out.println(j % k + " " + j / k);
       final double signum = Math.signum(B.get(j % k, j / k));
       A.set(2* k * l + j/ k, j, -1 - signum);
       A.set(2* k * l + l + j/ k, j, 1 -signum);
@@ -204,6 +284,4 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
     }
     return A;
   }
-
-
 }

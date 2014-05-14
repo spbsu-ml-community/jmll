@@ -29,6 +29,9 @@ import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -250,6 +253,7 @@ public class DataTools {
     return labels.toArray();
   }
 
+<<<<<<< HEAD
   /**
    * Normalization of multiclass target. Target may contain any labels
    * @param target Target vec with any class labels.
@@ -295,6 +299,22 @@ public class DataTools {
       }
     }
     return new DataSetImpl(newData, sourceDS.target());
+=======
+  public static TIntObjectMap<TIntList> splitClassesIdxs(DataSet ds) {
+    final TIntObjectMap<TIntList> indexes = new TIntObjectHashMap<TIntList>();
+    for (DSIterator iter = ds.iterator(); iter.advance(); ) {
+      final int catId = (int) iter.y();
+      if (indexes.containsKey(catId)) {
+        indexes.get(catId).add(iter.index());
+      }
+      else {
+        final TIntList newClassIdxs = new TIntLinkedList();
+        newClassIdxs.add(iter.index());
+        indexes.put(catId, newClassIdxs);
+      }
+    }
+    return indexes;
+>>>>>>> 8024ea3... learning multiclass model with coding matrix
   }
 
   public static DataSet normalizeClasses(DataSet learn) {

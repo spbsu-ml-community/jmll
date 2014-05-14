@@ -5,8 +5,15 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.HierTools;
+import com.spbsu.ml.loss.LLLogit;
+import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
+import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
+import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.linked.TDoubleLinkedList;
 import junit.framework.TestCase;
 
@@ -38,7 +45,7 @@ public class CodingMatrixLearningTest extends TestCase {
   }
 
   public void testFindMatrix() throws Exception {
-    final Mx S = method.createSimilarityMatrix(learn);
+    final Mx S = method.createSimilarityMatrix(learn, DataTools.splitClassesIdxs(learn));
     final int iters = 50;
     final double step = 0.5;
     final double lambdaC = 0.2;
@@ -50,17 +57,21 @@ public class CodingMatrixLearningTest extends TestCase {
 
   public void testCreateConstraintsMatrix() throws Exception {
 
-    final Mx constraintsMatrix = method.createConstraintsMatrix(B);
+    final Mx constraintsMatrix = CodingMatrixLearning.createConstraintsMatrix(B);
     System.out.println(constraintsMatrix.toString());
   }
 
   public void testSimilarityMatrix() throws Exception {
-    final Mx similarityMatrix = method.createSimilarityMatrix(learn);
+    final Mx similarityMatrix = method.createSimilarityMatrix(learn, DataTools.splitClassesIdxs(learn));
     System.out.println(similarityMatrix.toString());
   }
 
-  public void testStuff() {
-    final Vec subtract = VecTools.subtract(B, B);
-    System.out.println(subtract.getClass());
+  public void testFit() throws Exception {
+    final MultiClassModel model = (MultiClassModel) method.fit(learn, new LLLogit(learn.target()));
+    final Vec predict = model.bestClassAll(learn.data());
+    final Func microPrecision = new MCMicroPrecision(learn.target());
+    final Func macroPrecision = new MCMacroPrecision(learn.target());
+    System.out.println("microP = " + microPrecision.value(predict));
+    System.out.println("macroP = " + macroPrecision.value(predict));
   }
 }
