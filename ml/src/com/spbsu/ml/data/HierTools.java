@@ -9,6 +9,7 @@ import com.spbsu.ml.data.impl.ChangedTarget;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -23,7 +24,7 @@ import java.util.List;
  * Date: 07.04.14
  */
 public class HierTools {
-  public static DataSet loadRegressionAsMC(String file, int classCount, TDoubleArrayList borders)  throws IOException{
+  public static DataSet loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{
     DataSet ds = DataTools.loadFromFeaturesTxt(file);
 
     double[] target = ds.target().toArray();
