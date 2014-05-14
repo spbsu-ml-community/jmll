@@ -171,7 +171,12 @@ public class HierarchicalRefinedClassification implements Optimization<HierLoss>
       };
       boosting.addListener(calcer);
 
-      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, DS size=" + learnDS.power());
+      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, learn DS size=" + learnDS.power() + ", filtered errors = " + errors.size());
+      {
+        for (HierarchyTree.Node childNode : node.getChildren()) {
+          System.out.println("entries for class{" + childNode.getCategoryId() + "} = " + DataTools.classEntriesCount(learnDS.target(), childNode.getCategoryId()));
+        }
+      }
       final Ensemble ensemble = boosting.fit(learnDS, globalLoss);
       System.out.println();
       resultModels = MultiClassModel.joinBoostingResults(ensemble).dirs();
