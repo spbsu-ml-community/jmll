@@ -1,6 +1,8 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.math.metrics.Metric;
+import com.spbsu.commons.math.metrics.impl.CosineDVectorMetric;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
@@ -13,7 +15,6 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.GridTools;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.DataTools;
 import com.spbsu.ml.data.impl.DataSetImpl;
@@ -23,14 +24,13 @@ import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MultiClass2BinaryModel;
+import com.spbsu.ml.models.MulticlassCodingMatrixModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.Random;
 
@@ -39,20 +39,45 @@ import java.util.Random;
  * Date: 07.05.14
  */
 public class CodingMatrixLearning implements Optimization<LLLogit> {
-  public static final double IGNORE_THRESHOLD = 0.2;
+  private static final double MX_IGNORE_THRESHOLD = 0.2;
+  private static final double MX_LEARN_STEP = 0.75;
+  private static final double MC_STEP = 0.5;
+  private static final int MC_ITERS = 1000;
+  private static final double MX_LEARN_EPS = 1e-3;
+
   private final int k;
   private final int l;
 
   private final Mx initB;
 
-  public CodingMatrixLearning(final int k, final int l, final Mx initB) {
-    this.k = k;
-    this.l = l;
+  private final double mxLearnStep;
+  private final double mcStep;
+  private final int mcIters;
+
+  private final double lambdaC;
+  private final double lambdaR;
+  private final double lambda1;
+
+
+  public CodingMatrixLearning(final Mx initB, final double mxLearnStep, final double mcStep, final int mcIters) {
+    this.mxLearnStep = mxLearnStep;
+    this.mcStep = mcStep;
+    this.mcIters = mcIters;
+    this.k = initB.rows();
+    this.l = initB.columns();
     this.initB = initB;
+
+    this.lambdaC = k;
+    this.lambdaR = 1.0;
+    this.lambda1 = k;
+  }
+
+  public CodingMatrixLearning(final Mx initB) {
+    this(initB, MX_LEARN_STEP, MC_STEP, MC_ITERS);
   }
 
   public CodingMatrixLearning(final int k, final int l) {
-    this(k, l, new VecBasedMx(k, l));
+    this(new VecBasedMx(k, l));
     Random rand = new FastRandom(100000);
     do {
       for (int i = 0; i < k; i++) {
@@ -63,14 +88,12 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
     } while (!checkConstraints(initB));
   }
 
-
-
   @Override
   public Trans fit(final DataSet learn, final LLLogit llLogit) {
     final TIntObjectMap<TIntList> indexes = DataTools.splitClassesIdxs(learn);
 
     final Mx S = createSimilarityMatrix(learn, indexes);
-    final Mx B = findMatrixB(S, 10, 0.5, 0.25, 0.35, 0.45);
+    final Mx B = findMatrixB(S, mxLearnStep);
 
     Func[] binClassifiers = new Func[l];
     for (int j = 0; j < l; j++) {
@@ -78,7 +101,7 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
       final TDoubleList target = new TDoubleLinkedList();
       for (int i = 0; i < k; i++) {
         final double code = B.get(i, j);
-        if (Math.abs(code) > IGNORE_THRESHOLD) {
+        if (Math.abs(code) > MX_IGNORE_THRESHOLD) {
           final TIntList classIdxs = indexes.get(i);
           target.fill(target.size(), target.size() + classIdxs.size(), Math.signum(code));
           learnIdxs.addAll(classIdxs);
@@ -99,7 +122,7 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
       final BFGrid grid = GridTools.medianGrid(dataSet, 32);
       final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
           new GreedyObliviousTree<L2>(grid, 5),
-          100, 0.5
+          mcIters, mcStep
       );
       final Ensemble ensemble = boosting.fit(learn, loss);
       final FuncEnsemble funcEnsemble = new FuncEnsemble(ArrayTools.map(ensemble.models, Func.class, new Computable<Trans, Func>() {
@@ -110,10 +133,17 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
       }), ensemble.weights);
       binClassifiers[j] = funcEnsemble;
     }
-    return new MultiClass2BinaryModel(B, binClassifiers);
+    return new MulticlassCodingMatrixModel(B, binClassifiers);
   }
 
-  public Mx createSimilarityMatrix(DataSet learn, TIntObjectMap<TIntList> classesIdxs) {
+  public static Mx createSimilarityMatrix(DataSet learn) {
+    final TIntObjectMap<TIntList> indexes = DataTools.splitClassesIdxs(learn);
+    return createSimilarityMatrix(learn, indexes);
+  }
+
+  public static Mx createSimilarityMatrix(DataSet learn, TIntObjectMap<TIntList> classesIdxs) {
+    Metric<Vec> metric = new CosineDVectorMetric();
+    final int k = classesIdxs.keys().length;
     final Mx S = new VecBasedMx(k, k);
     for (int i = 0; i < k; i++) {
       final TIntList classIdxsI = classesIdxs.get(i);
@@ -124,7 +154,10 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
           final int i1 = iterI.next();
           for (TIntIterator iterJ = classIdxsJ.iterator(); iterJ.hasNext(); ) {
             final int i2 = iterJ.next();
-            value += VecTools.distance(learn.data().row(i1), learn.data().row(i2));
+//            final double inner = VecTools.multiply(learn.data().row(i1), learn.data().row(i2));
+//            value += Math.pow((inner + 5), 2);
+//            value += VecTools.distance(learn.data().row(i1), learn.data().row(i2));
+            value += 0.5 * metric.distance(learn.data().row(i1), learn.data().row(i2));
           }
         }
         value /= classIdxsI.size() * classIdxsJ.size();
@@ -154,25 +187,11 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
     return result;
   }
 
-  private boolean checkConstraints(final Mx B) {
-    final Mx A = createConstraintsMatrix(B);
-    final Vec vecB = mx2vec(B);
-    System.out.println(B.toString());
-    System.out.println(vecB.toString());
-    final Vec checkVec = VecTools.multiply(A, vecB);
-    for (int i = 0; i < 2*k*l; i++)
-      if (checkVec.get(i) > 1.)
-        return false;
-    for (int i = 2* k * l; i < 2*k*l + 2*l; i++)
-      if (checkVec.get(i) > -2.)
-        return false;
-    for (int i = 2* k * l + 2* l; i < 2*k*l + 2*l + k; i++)
-      if (checkVec.get(i) > -1)
-        return false;
-    return true;
+  public Mx findMatrixB(final Mx S, double step) {
+    return findMatrixB(S, step, lambdaC, lambdaR, lambda1);
   }
 
-  public Mx findMatrixB(final Mx S, int iters, double step, double lambdaC, double lambdaR, double lambda1) {
+  public Mx findMatrixB(final Mx S, double step, double lambdaC, double lambdaR, double lambda1) {
     Mx mxB = initB;
 
     final Vec b = new ArrayVec(2* k * l + 2* l + k);
@@ -188,9 +207,9 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
     final Mx Inv = new VecBasedMx(k, k);
     {
       final double mult = 1 / (k * lambdaR * lambdaC + lambdaC * lambdaC);
-      VecTools.fill(Inv, -lambdaR / mult);
+      VecTools.fill(Inv, -lambdaR * mult);
       for (int i = 0; i < Inv.columns(); i++)
-        Inv.adjust(i, i, (k * lambdaR + lambdaC) / mult);
+        Inv.adjust(i, i, (k * lambdaR + lambdaC) * mult);
       VecTools.scale(Inv, 0.5); //see algorithm's iteration process
     }
 
@@ -211,7 +230,8 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
     }
 
     int iter = 0;
-    while (iter++ < iters) {
+    double error = 100500;
+    while (error > MX_LEARN_EPS) {
       /**
        * B^{i+1} = Inv * (2S * B^{i} - (transpose(A) * gamma - mu))
        * def: m1 = 2S * B^{i}
@@ -228,7 +248,9 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
         final Vec sub1 = VecTools.subtract(m2, mu);
         final Mx sub1Mx = vec2mx(sub1, m1.columns());
         final Mx sub2 = VecTools.subtract(m1, sub1Mx);
-        mxB = VecTools.multiply(Inv, sub2);
+        final Mx newMxB = VecTools.multiply(Inv, sub2);
+        error = VecTools.infNorm(VecTools.subtract(mxB, newMxB));
+        mxB = newMxB;
       }
 
       /**
@@ -256,12 +278,33 @@ public class CodingMatrixLearning implements Optimization<LLLogit> {
           }
         }
       }
-      System.out.println();
+      System.out.println("iter:" + iter++);
       System.out.println(mxB.toString());
       System.out.println();
 
+//      if (!checkConstraints(mxB))
+//        throw new IllegalStateException("out of contraints!");
+
     }
     return mxB;
+  }
+
+  public static boolean checkConstraints(final Mx B) {
+    final int k = B.rows();
+    final int l = B.columns();
+    final Mx A = createConstraintsMatrix(B);
+    final Vec vecB = mx2vec(B);
+    final Vec checkVec = VecTools.multiply(A, vecB);
+    for (int i = 0; i < 2*k*l; i++)
+      if (checkVec.get(i) > 1.)
+        return false;
+    for (int i = 2* k * l; i < 2*k*l + 2*l; i++)
+      if (checkVec.get(i) > -2.)
+        return false;
+    for (int i = 2* k * l + 2* l; i < 2*k*l + 2*l + k; i++)
+      if (checkVec.get(i) > -1)
+        return false;
+    return true;
   }
 
 
