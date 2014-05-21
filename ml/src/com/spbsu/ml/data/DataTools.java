@@ -5,7 +5,10 @@ import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.SparseVec;
+import com.spbsu.commons.math.vectors.impl.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
+import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.random.RandomExt;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.ml.BFGrid;
@@ -24,6 +27,7 @@ import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
+import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -33,6 +37,7 @@ import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
+import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
 /**
@@ -193,6 +198,19 @@ public class DataTools {
     return null;
   }
 
+  public static DataSetImpl getSubset(DataSetImpl source, int[] idxs) {
+    Mx newMx = new VecBasedMx(source.xdim(),
+        new IndexTransVec(
+            source.data(),
+            new RowsPermutation(idxs, source.xdim()))
+    );
+    Vec newTarget = new IndexTransVec(
+        source.target(),
+        new ArrayPermutation(idxs)
+    );
+    return new DataSetImpl(newMx, newTarget);
+  }
+
   public static int countClasses(Vec target) {
     int classesCount = 0;
     for (int i = 0; i < target.dim(); i++) {
@@ -210,13 +228,15 @@ public class DataTools {
     return result;
   }
 
-  public static int[] extractClass(Vec target, int classNo) {
-    final TIntArrayList points = new TIntArrayList(target.dim());
+  public static Vec extractClass(Vec target, int classNo) {
+    Vec result = new ArrayVec(target.dim());
     for (int i = 0; i < target.dim(); i++) {
       if (target.get(i) == classNo)
-        points.add(i);
+        result.set(i, 1.);
+      else
+        result.set(i, -1.);
     }
-    return points.toArray();
+    return result;
   }
 
   public static int[] getClassesLabels(Vec target) {
@@ -228,6 +248,53 @@ public class DataTools {
       }
     }
     return labels.toArray();
+  }
+
+  /**
+   * Normalization of multiclass target. Target may contain any labels
+   * @param target Target vec with any class labels.
+   * @param labels Empty list which will be filled here by classes labels corresponding their order.
+   *               Each label will appear once.
+   * @return new target vec with classes labels from {0..K}.
+   */
+  public static Vec normalizeTarget(Vec target, TIntList labels) {
+    Vec result = new ArrayVec(target.dim());
+    for (int i = 0; i < target.dim(); i++) {
+      int oldTargetVal = (int) target.get(i);
+      int labelPos = labels.indexOf(oldTargetVal);
+      if (labelPos == -1) {
+        result.set(i, labels.size());
+        labels.add(oldTargetVal);
+      }
+      else
+        result.set(i, labelPos);
+    }
+    return result;
+  }
+
+  public static DataSet extendDataset(DataSet sourceDS, Mx addedColumns) {
+    Vec[] columns = new Vec[addedColumns.columns()];
+    for (int i = 0; i < addedColumns.columns(); i++) {
+      columns[i] = addedColumns.col(i);
+    }
+    return extendDataset(sourceDS, columns);
+  }
+
+  public static DataSet extendDataset(DataSet sourceDS, Vec... addedColumns) {
+    if (addedColumns.length == 0)
+      return sourceDS;
+
+    Mx oldData = sourceDS.data();
+    Mx newData = new VecBasedMx(oldData.rows(), oldData.columns() + addedColumns.length);
+    for (MxIterator iter = oldData.nonZeroes(); iter.advance(); ) {
+      newData.set(iter.row(), iter.column(), iter.value());
+    }
+    for (int i = 0; i < addedColumns.length; i++) {
+      for (VecIterator iter = addedColumns[i].nonZeroes(); iter.advance(); ) {
+        newData.set(iter.index(), oldData.columns() + i, iter.value());
+      }
+    }
+    return new DataSetImpl(newData, sourceDS.target());
   }
 
   public static DataSet normalizeClasses(DataSet learn) {

@@ -25,6 +25,11 @@ public class MCMacroPrecision extends Func.Stub {
     for (int i = 0; i < x.dim(); i++) {
       int expected = (int) target.get(i);
       int actual = (int) x.get(i);
+
+      //skip unrecognized class
+      if (actual == -1)
+        continue;
+
       if (actual == expected)
         id2tp.adjustOrPutValue(actual, 1, 1);
       else
