@@ -22,10 +22,8 @@ import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyContinuesObliviousSoftBondariesRegressionTree;
 import com.spbsu.ml.methods.trees.GreedyExponentialObliviousTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.models.ObliviousTree;
-import com.spbsu.ml.models.PolynomialExponentRegion;
-import com.spbsu.ml.models.ProbabilisticGraphicalModel;
+import com.spbsu.ml.methods.trees.GreedyObliviousTreeSoftCondtion;
+import com.spbsu.ml.models.*;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
@@ -194,8 +192,7 @@ public class MethodsTests extends GridTest {
     boosting.fit(learn, new L2(learn.target()));
   }
 
-  public class addBoostingListeners<GlobalLoss extends Func> {
-    addBoostingListeners(GradientBoosting<GlobalLoss> boosting, GlobalLoss loss, DataSet _learn, DataSet _validate) {
+public <GlobalLoss extends Func> void addBoostingListeners(GradientBoosting<GlobalLoss> boosting, GlobalLoss loss, DataSet _learn, DataSet _validate) {
       final Action counter = new ProgressHandler() {
         int index = 0;
 
@@ -216,11 +213,15 @@ public class MethodsTests extends GridTest {
       boosting.fit(_learn, loss);
 
     }
-  }
 
   public void testOTBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 2000, 0.01);
-    new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 2000, 0.02);
+    addBoostingListeners(boosting, new SatL2(learn.target()), learn, validate);
+  }
+
+  public void testOTSC() {
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTreeSoftCondtion(GridTools.medianGrid(learn, 32), 6, 0.7, 0.99, 5), rng), 2000, 0.01);
+    addBoostingListeners(boosting, new SatL2(learn.target()), learn, validate);
   }
 
   public void testPCAOTBoost() {
@@ -228,21 +229,21 @@ public class MethodsTests extends GridTest {
     doPCA(mas);
     DataSet myValidate = mas[1], myLearn = mas[0];
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(myLearn, 32), 6), rng), 2000, 0.005);
-    new addBoostingListeners<SatL2>(boosting, new SatL2(myLearn.target()), myLearn, myValidate);
+    addBoostingListeners(boosting, new SatL2(myLearn.target()), myLearn, myValidate);
   }
 
   public void testCOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
       new BootstrapOptimization(new GreedyContinuesObliviousSoftBondariesRegressionTree(rng, learn, GridTools.medianGrid(learn, 32), 6, 10, true, 1, 0, 0, 1e5), rng), 2000, 0.01);
-    new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
+    addBoostingListeners(boosting, new SatL2(learn.target()), learn, validate);
   }
 
   public void testEOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
       new BootstrapOptimization<L2>(
         new GreedyExponentialObliviousTree(
-          GridTools.medianGrid(learn, 32), 6, 2500), rng), 2000, 0.04);
-    new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
+          GridTools.medianGrid(learn, 32), 6, 0.1), rng), 2000, 0.005);
+    addBoostingListeners(boosting, new SatL2(learn.target()), learn, validate);
   }
 
   private double sqr(double x) {
@@ -254,6 +255,20 @@ public class MethodsTests extends GridTest {
     ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
     for (int depth = 1; depth <= 6; depth++) {
       ObliviousTree tree = (ObliviousTree) new GreedyObliviousTree(GridTools.medianGrid(learn, 32), depth).fit(learn, new L2(learn.target()));
+      System.out.print("Oblivious Tree depth = " + depth);
+      scoreCalcerLearn.invoke(tree);
+      scoreCalcerValidate.invoke(tree);
+      System.out.println();
+    }
+  }
+
+  public void testSoftObliviousTree() {
+    testObliviousTree();
+    System.out.println();
+    ScoreCalcer scoreCalcerValidate = new ScoreCalcer(" On validate data Set loss = ", validate);
+    ScoreCalcer scoreCalcerLearn = new ScoreCalcer(" On learn data Set loss = ", learn);
+    for (int depth = 2; depth <= 2; depth++) {
+      ObliviousTree tree = (ObliviousTree) new GreedyObliviousTreeSoftCondtion(GridTools.medianGrid(learn, 32), depth, 0.7, 1, depth).fit(learn, new WeightedLoss<L2>(new L2(learn.target())));
       System.out.print("Oblivious Tree depth = " + depth);
       scoreCalcerLearn.invoke(tree);
       scoreCalcerValidate.invoke(tree);
@@ -311,8 +326,8 @@ public class MethodsTests extends GridTest {
     ScoreCalcer scoreCalcerValidate = new ScoreCalcer(/*" On validate data Set loss = "*/"\t", validate);
     ScoreCalcer scoreCalcerLearn = new ScoreCalcer(/*"On learn data Set loss = "*/"\t", learn);
     for (int depth = 1; depth <= 6; depth++) {
-      ContinousObliviousTree tree = new GreedyExponentialObliviousTree(
-        GridTools.medianGrid(learn, 32), depth, 15).fit(learn, new WeightedLoss<L2>(new L2(learn.target())));
+      ExponentialObliviousTree tree = new GreedyExponentialObliviousTree(
+        GridTools.medianGrid(learn, 32), depth, 1).fit(learn, new WeightedLoss<L2>(new L2(learn.target())));
       //for(int i = 0; i < 10/*learn.target().ydim()*/;i++)
       // System.out.println(learn.target().get(i) + "= " + tree.value(learn.data().row(i)));
       System.out.print("Oblivious Tree deapth = " + depth);
@@ -497,7 +512,7 @@ public class MethodsTests extends GridTest {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
       new GreedyContinuesObliviousSoftBondariesRegressionTree(rng, myLearn, GridTools.medianGrid(myLearn, 32), 6, 6, true, 1, 0.1, 1, 1e6),
       2000, 0.1);
-    new addBoostingListeners<SatL2>(boosting, new SatL2(myLearn.target()), myLearn, myValidate);
+    addBoostingListeners(boosting, new SatL2(myLearn.target()), myLearn, myValidate);
   }
 
   public void testDebugContinousObliviousTree() {
@@ -518,12 +533,16 @@ public class MethodsTests extends GridTest {
 
   public void testObliviousTreeFail() throws FileNotFoundException {
     int depth = 6;
-    Scanner scanner = new Scanner(new File("./ml/tests/data/badMx.txt"));
+    Scanner scanner = new Scanner(new File("ml/tests/data/badloss.txt"));
     Vec vec = new ArrayVec(learn.power());
+    int []weights = new int[learn.power()];
     System.out.println(learn.power());
     for (int i = 0; i < learn.power(); i++)
       vec.set(i, Double.parseDouble(scanner.next()));
-    ObliviousTree tree = (ObliviousTree) new GreedyObliviousTree(GridTools.medianGrid(learn, 32), depth).fit(learn, new L2(vec));
+    for (int i = 0; i < learn.power(); i++)
+      weights[i] =  Integer.parseInt(scanner.next());
+    ObliviousTree tree = (ObliviousTree) new GreedyObliviousTree(GridTools.medianGrid(learn, 32), depth).fit(learn,
+      new WeightedLoss<L2>(new L2(vec), weights));
     System.out.println(tree);
   }
 
@@ -671,7 +690,7 @@ public class MethodsTests extends GridTest {
 
   public void testGreedyPolynomialExponentRegionBoost() {
     GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization<L2>(new GreedyPolynomialExponentRegion(GridTools.medianGrid(learn, 32), 1, 2500), rng), 5000, 0.05);
-    new addBoostingListeners<SatL2>(boosting, new SatL2(learn.target()), learn, validate);
+    addBoostingListeners(boosting, new SatL2(learn.target()), learn, validate);
   }
 }
 
