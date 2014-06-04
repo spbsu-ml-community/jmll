@@ -2,7 +2,6 @@ package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.data.DataTools;
 
 /**
  * User: qdeee

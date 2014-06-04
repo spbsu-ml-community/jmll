@@ -6,7 +6,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;

@@ -4,7 +4,7 @@ import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.random.RandomExt;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.StatBasedLoss;
 
 import java.util.Random;

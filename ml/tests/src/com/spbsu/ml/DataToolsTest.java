@@ -1,12 +1,10 @@
 package com.spbsu.ml;
 
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
-import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.impl.DataSetImpl;
 
 /**

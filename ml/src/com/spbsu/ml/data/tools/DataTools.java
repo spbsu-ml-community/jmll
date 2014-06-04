@@ -1,37 +1,35 @@
-package com.spbsu.ml.data;
+package com.spbsu.ml.data.tools;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.math.vectors.impl.IndexTransVec;
+import com.spbsu.commons.math.vectors.impl.SparseVec;
 import com.spbsu.commons.math.vectors.impl.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.random.RandomExt;
 import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.CompositeTrans;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.impl.ChangedTarget;
+import com.spbsu.ml.data.DSIterator;
+import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.impl.DataSetImpl2;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.io.ModelsSerializationRepository;
-import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -40,7 +38,6 @@ import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
-import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
 /**
@@ -214,68 +211,6 @@ public class DataTools {
     return new DataSetImpl(newMx, newTarget);
   }
 
-  public static int countClasses(Vec target) {
-    int classesCount = 0;
-    for (int i = 0; i < target.dim(); i++) {
-      classesCount = max((int)target.get(i) + 1, classesCount);
-    }
-    return classesCount;
-  }
-
-  public static int classEntriesCount(Vec target, int classNo) {
-    int result = 0;
-    for (int i = 0; i < target.dim(); i++) {
-      if ((int)target.get(i) == classNo)
-        result++;
-    }
-    return result;
-  }
-
-  public static Vec extractClass(Vec target, int classNo) {
-    Vec result = new ArrayVec(target.dim());
-    for (int i = 0; i < target.dim(); i++) {
-      if (target.get(i) == classNo)
-        result.set(i, 1.);
-      else
-        result.set(i, -1.);
-    }
-    return result;
-  }
-
-  public static int[] getClassesLabels(Vec target) {
-    TIntArrayList labels = new TIntArrayList();
-    for (int i = 0; i < target.dim(); i++) {
-      final int label = (int) target.get(i);
-      if (!labels.contains(label)) {
-        labels.add(label);
-      }
-    }
-    return labels.toArray();
-  }
-
-<<<<<<< HEAD
-  /**
-   * Normalization of multiclass target. Target may contain any labels
-   * @param target Target vec with any class labels.
-   * @param labels Empty list which will be filled here by classes labels corresponding their order.
-   *               Each label will appear once.
-   * @return new target vec with classes labels from {0..K}.
-   */
-  public static Vec normalizeTarget(Vec target, TIntList labels) {
-    Vec result = new ArrayVec(target.dim());
-    for (int i = 0; i < target.dim(); i++) {
-      int oldTargetVal = (int) target.get(i);
-      int labelPos = labels.indexOf(oldTargetVal);
-      if (labelPos == -1) {
-        result.set(i, labels.size());
-        labels.add(oldTargetVal);
-      }
-      else
-        result.set(i, labelPos);
-    }
-    return result;
-  }
-
   public static DataSet extendDataset(DataSet sourceDS, Mx addedColumns) {
     Vec[] columns = new Vec[addedColumns.columns()];
     for (int i = 0; i < addedColumns.columns(); i++) {
@@ -299,47 +234,40 @@ public class DataTools {
       }
     }
     return new DataSetImpl(newData, sourceDS.target());
-=======
-  public static TIntObjectMap<TIntList> splitClassesIdxs(DataSet ds) {
-    final TIntObjectMap<TIntList> indexes = new TIntObjectHashMap<TIntList>();
-    for (DSIterator iter = ds.iterator(); iter.advance(); ) {
-      final int catId = (int) iter.y();
-      if (indexes.containsKey(catId)) {
-        indexes.get(catId).add(iter.index());
-      }
-      else {
-        final TIntList newClassIdxs = new TIntLinkedList();
-        newClassIdxs.add(iter.index());
-        indexes.put(catId, newClassIdxs);
-      }
+  }
+
+  public static Pair<DataSet, DataSet> splitCv(DataSet learn, double percentage, Random rnd) {
+    final TIntList learnIndices = new TIntLinkedList();
+    final TIntList testIndices = new TIntLinkedList();
+    for (int i = 0; i < learn.power(); i++) {
+      if (rnd.nextDouble() < percentage)
+        learnIndices.add(i);
+      else
+        testIndices.add(i);
     }
-    return indexes;
->>>>>>> 8024ea3... learning multiclass model with coding matrix
+    final int[] learnIndicesArr = learnIndices.toArray();
+    final int[] testIndicesArr = testIndices.toArray();
+    return Pair.<DataSet, DataSet>create(
+        new DataSetImpl(
+            new VecBasedMx(
+                learn.xdim(),
+                new IndexTransVec(
+                    learn.data(),
+                    new RowsPermutation(learnIndicesArr, learn.xdim())
+                )
+            ),
+            new IndexTransVec(learn.target(), new ArrayPermutation(learnIndicesArr))
+        ),
+        new DataSetImpl(
+            new VecBasedMx(
+                learn.xdim(),
+                new IndexTransVec(
+                    learn.data(),
+                    new RowsPermutation(testIndicesArr, learn.xdim())
+                )
+            ),
+            new IndexTransVec(learn.target(), new ArrayPermutation(testIndicesArr))));
   }
-
-  public static DataSet normalizeClasses(DataSet learn) {
-    final DSIterator it = learn.iterator();
-    final Vec normalized = new ArrayVec(learn.power());
-    while (it.advance()) {
-      normalized.set(it.index(), normalizeRelevance(it.y()));
-    }
-    return new ChangedTarget((DataSetImpl)learn, normalized);
-  }
-
-  private static <LocalLoss extends L2> double normalizeRelevance(double y) {
-    if (y <= 0.0)
-      return 0.;
-//    else if (y < 0.14)
-//      return 1.;
-//    else if (y < 0.41)
-//      return 2.;
-//    else if (y < 0.61)
-//      return 3.;
-//    else
-//      return 4.;
-    return 1.;
-  }
-
 
   public static Vec value(Mx ds, Func f) {
     Vec result = new ArrayVec(ds.rows());

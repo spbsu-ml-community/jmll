@@ -18,7 +18,8 @@ import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
@@ -97,7 +98,7 @@ public class JMLLCLI {
       final TIntObjectHashMap<CharSequence> metaTest = new TIntObjectHashMap<CharSequence>();
       DataSet learn = DataTools.loadFromFeaturesTxt(learnFile, metaLearn);
       if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
-        learn = DataTools.normalizeClasses(learn);
+        learn = MCTools.normalizeClasses(learn);
       if (learnFile.endsWith(".gz"))
         learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
 
@@ -114,7 +115,7 @@ public class JMLLCLI {
       if (command.getArgs().length <= 0)
         throw new RuntimeException("Please provide mode to run");
       if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
-        test = DataTools.normalizeClasses(test);
+        test = MCTools.normalizeClasses(test);
 
       String mode = command.getArgs()[0];
 

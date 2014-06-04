@@ -2,7 +2,7 @@ package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.data.DataTools;
+import com.spbsu.ml.data.tools.MCTools;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 /**
@@ -15,7 +15,7 @@ public class MCMacroRecall extends Func.Stub {
 
   public MCMacroRecall(final Vec target) {
     this.target = target;
-    this.classLabels = DataTools.getClassesLabels(target);
+    this.classLabels = MCTools.getClassesLabels(target);
   }
 
   @Override

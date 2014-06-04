@@ -1,16 +1,10 @@
-package com.spbsu.ml.data;
+package com.spbsu.ml.data.tools;
 
 import com.spbsu.commons.math.stat.impl.NumericSampleDistribution;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.xml.JDOMUtil;
-import com.spbsu.ml.data.impl.ChangedTarget;
-import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import gnu.trove.iterator.TIntObjectIterator;
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.jdom.Element;
@@ -24,32 +18,6 @@ import java.util.List;
  * Date: 07.04.14
  */
 public class HierTools {
-  public static DataSet loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{
-    DataSet ds = DataTools.loadFromFeaturesTxt(file);
-
-    double[] target = ds.target().toArray();
-    int[] idxs = ArrayTools.sequence(0, target.length);
-    ArrayTools.parallelSort(target, idxs);
-
-    if (borders.size() == 0) {
-      double min = target[0];
-      double max = target[target.length - 1];
-      double delta = (max - min) / classCount;
-      for (int i = 0; i < classCount; i++) {
-        borders.add(delta * (i + 1));
-      }
-    }
-
-    Vec resultTarget = new ArrayVec(ds.power());
-    int targetCursor = 0;
-    for (int borderCursor = 0; borderCursor < borders.size(); borderCursor++){
-      while (targetCursor < target.length && target[targetCursor] <= borders.get(borderCursor)) {
-        resultTarget.set(idxs[targetCursor], borderCursor);
-        targetCursor++;
-      }
-    }
-    return new ChangedTarget((DataSetImpl)ds, resultTarget);
-  }
 
   public static void convertCatalogXmlToTree(File catalogXml, File out) throws IOException {
     TIntIntHashMap id2parentId = new TIntIntHashMap();
@@ -159,7 +127,7 @@ public class HierTools {
 
   public static HierarchyTree prepareHierStructForRegressionMedian(Vec targetMC) {
     double[] target = targetMC.toArray();
-    int clsCount = DataTools.countClasses(targetMC);
+    int clsCount = MCTools.countClasses(targetMC);
     int[] freq = new int[clsCount];
     for (int i = 0; i < target.length; i++) {
       freq[(int)target[i]]++;
