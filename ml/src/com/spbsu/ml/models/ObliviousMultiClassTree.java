@@ -1,7 +1,7 @@
 package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Trans;
 

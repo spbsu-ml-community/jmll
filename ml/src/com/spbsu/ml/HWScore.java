@@ -3,7 +3,7 @@ package com.spbsu.ml;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.tools.DataTools;

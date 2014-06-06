@@ -1,10 +1,10 @@
 package com.spbsu.ml.func;
 
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 
 import static com.spbsu.commons.math.vectors.VecTools.append;
-import static com.spbsu.commons.math.vectors.VecTools.multiply;
+import static com.spbsu.commons.math.vectors.MxTools.multiply;
 
 /**
  * User: solar
@@ -13,9 +13,9 @@ import static com.spbsu.commons.math.vectors.VecTools.multiply;
  */
 public class NormalizedLinear extends Linear {
   private final double avg;
-  private final VecTools.NormalizationProperties props;
+  private final MxTools.NormalizationProperties props;
 
-  public NormalizedLinear(double avg, Vec weights, final VecTools.NormalizationProperties props) {
+  public NormalizedLinear(double avg, Vec weights, final MxTools.NormalizationProperties props) {
     super(weights);
     this.avg = avg;
     this.props = props;
@@ -23,7 +23,7 @@ public class NormalizedLinear extends Linear {
 
   @Override
   public double value(Vec point) {
-    Vec x = multiply(props.xTrans, point);
+    Vec x = MxTools.multiply(props.xTrans, point);
     append(x, props.xMean);
     return super.value(point) + avg;
   }

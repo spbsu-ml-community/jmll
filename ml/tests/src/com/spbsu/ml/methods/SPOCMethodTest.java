@@ -10,6 +10,8 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
+import com.spbsu.ml.clustering.ClusterizationAlgorithm;
+import com.spbsu.ml.clustering.impl.KMeansAlgorithm;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
@@ -25,14 +27,22 @@ import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
 import com.spbsu.ml.methods.spoc.*;
 import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearning;
 import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearningGreedy;
+import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearningGreedyParallels;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MultiClassModel;
+import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.linked.TDoubleLinkedList;
+import gnu.trove.map.TIntObjectMap;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.io.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * User: qdeee
@@ -112,7 +122,7 @@ public class SPOCMethodTest extends TestSuite {
     }
 
     public void testFindMx() {
-      final CodingMatrixLearning codingMatrixLearning = new CodingMatrixLearning(k, l, mxStep, lambdaC, lambdaR, lambda1);
+      final AbstractCodingMatrixLearning codingMatrixLearning = getCodingMatrixLearning();
       final Mx codingMatrix = codingMatrixLearning.trainCodingMatrix(S);
       System.out.println(codingMatrix.toString());
       if (!CodingMatrixLearning.checkConstraints(codingMatrix)) {
@@ -121,7 +131,7 @@ public class SPOCMethodTest extends TestSuite {
     }
 
     public void testFit() {
-      final CodingMatrixLearning cml = new CodingMatrixLearning(k, l, mxStep, lambdaC, lambdaR, lambda1);
+      final AbstractCodingMatrixLearning cml = getCodingMatrixLearning();
       final Mx codingMatrix = cml.trainCodingMatrix(S);
 //      if (!CodingMatrixLearning.checkConstraints(codingMatrix)) {
 //        throw new IllegalStateException("Result matrix is out of constraints");
@@ -134,8 +144,12 @@ public class SPOCMethodTest extends TestSuite {
       System.out.println();
     }
 
+    protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
+      return new CodingMatrixLearning(k, l, mxStep, lambdaC, lambdaR, lambda1);
+    }
+
     public void _testFitWithProbs() {
-      final CodingMatrixLearning cml = new CodingMatrixLearning(k, l, mxStep, lambdaC, lambdaR, lambda1);
+      final AbstractCodingMatrixLearning cml = getCodingMatrixLearning();
       final Mx codingMatrix = cml.trainCodingMatrix(S);
       if (!CodingMatrixLearning.checkConstraints(codingMatrix)) {
         throw new IllegalStateException("Result matrix is out of constraints");
@@ -153,16 +167,22 @@ public class SPOCMethodTest extends TestSuite {
   }
 
   public static class DefaultDataTests extends Base {
+    private final static double[] hierBorders = new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61};
+    public static final double[] classicBorders = new double[]{0.06999, 0.13999, 0.40999, 0.60999, 0.61};
+
     public void setUp() throws Exception {
       super.setUp();
       final TDoubleList borders = new TDoubleArrayList();
-      borders.addAll(new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61});
+//      borders.addAll(new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61});
+      borders.addAll(classicBorders);
+//      borders.addAll(hierBorders);
       learn = MCTools.loadRegressionAsMC("./ml/tests/data/features.txt.gz", borders.size(), borders);
       test = MCTools.loadRegressionAsMC("./ml/tests/data/featuresTest.txt.gz", borders.size(), borders);
-      S = loadMxFromFile("./ml/tests/data/multiclass/regression_based/features.txt.similarityMx");
+//      S = loadMxFromFile("./ml/tests/data/multiclass/regression_based/features.txt.similarityMx");
+      S = loadMxFromFile("/Users/qdeee/Datasets/features-simmatrix-classic.txt");
 
       k = borders.size();
-      l = 10;
+      l = 5;
 
       lambdaC = 3.0;
       lambdaR = 2.5;
@@ -179,7 +199,7 @@ public class SPOCMethodTest extends TestSuite {
 
     @Override
     public void testBaseline() {
-      mcIters = 80;
+      mcIters = 100;
       mcStep = 0.5;
       super.testBaseline();
     }
@@ -187,14 +207,19 @@ public class SPOCMethodTest extends TestSuite {
 
   public static class GreedyDefaultDS extends DefaultDataTests {
 
+    //      lambdaC = 3;
+    //      lambdaR = 2.5;
+    //      lambda1 = 2;
     @Override
-    public void testFindMx() {
-      lambdaC = 3;
-      lambdaR = 2.5;
-      lambda1 = 2;
-      final AbstractCodingMatrixLearning codingMatrixLearning = new CodingMatrixLearningGreedy(k, l, lambdaC, lambdaR, lambda1);
-      final Mx codingMatrix = codingMatrixLearning.trainCodingMatrix(S);
-      System.out.println(codingMatrix.toString());
+    protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
+      return new CodingMatrixLearningGreedy(k, l, lambdaC, lambdaR, lambda1);
+    }
+  }
+
+  public static class ParallelGreedyDefaultDS extends DefaultDataTests {
+    @Override
+    protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
+      return new CodingMatrixLearningGreedyParallels(k, l, lambdaC, lambdaR, lambda1);
     }
   }
 
@@ -224,6 +249,30 @@ public class SPOCMethodTest extends TestSuite {
     }
 
   }
+
+  public static class StuffTests extends TestCase{
+
+    private DataSet learn;
+
+    @Override
+    protected void setUp() throws Exception {
+      learn = DataTools.loadFromFeaturesTxt("./ml/tests/data/features.txt.gz");
+    }
+
+    public void testRelevanceSplit() throws IOException {
+      final DataSet dataSet = MCTools.normalizeClasses(learn);
+      final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(dataSet);
+      for (TIntObjectIterator<TIntList> iter = indexes.iterator(); iter.hasNext(); ) {
+        iter.advance();
+        System.out.println(iter.key() + " : " + iter.value().size());
+      }
+    }
+
+    public void testHistSplit() throws Exception{
+
+    }
+  }
+
 
   public void testCreateConstraintsMatrix() throws Exception {
     final Mx B = new VecBasedMx(

@@ -1,10 +1,11 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -38,7 +39,7 @@ public interface Trans {
       for (int i = 0; i < ds.rows(); i++) {
         VecTools.assign(result.row(i), trans(ds.row(i)));
       }
-      return VecTools.transpose(result);
+      return MxTools.transpose(result);
     }
   }
 }

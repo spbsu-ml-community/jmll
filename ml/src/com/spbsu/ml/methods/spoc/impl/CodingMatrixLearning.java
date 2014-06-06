@@ -1,8 +1,8 @@
 package com.spbsu.ml.methods.spoc.impl;
 
 import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
 
@@ -100,13 +100,13 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
 
       final Mx A = createConstraintsMatrix(mxB);
       {
-        final Mx m1 = VecTools.multiply(S, mxB);
+        final Mx m1 = MxTools.multiply(S, mxB);
         VecTools.scale(m1, 2.);
-        final Vec m2 = VecTools.multiply(VecTools.transpose(A), gamma);
+        final Vec m2 = MxTools.multiply(MxTools.transpose(A), gamma);
         final Vec sub1 = VecTools.subtract(m2, mu);
         final Mx sub1Mx = vec2mx(sub1, m1.columns());
         final Mx sub2 = VecTools.subtract(m1, sub1Mx);
-        final Mx newMxB = VecTools.multiply(Inv, sub2);
+        final Mx newMxB = MxTools.multiply(Inv, sub2);
         error = VecTools.infNorm(VecTools.subtract(mxB, newMxB));
         mxB = newMxB;
       }
@@ -121,7 +121,7 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
        */
       {
         final Vec vecB = mx2vec(mxB);
-        final Vec m1 = VecTools.multiply(A, vecB);
+        final Vec m1 = MxTools.multiply(A, vecB);
         final Vec sub = VecTools.subtract(b, m1);
         VecTools.incscale(gamma, sub, -1 * mxLearnStep);
         for (VecIterator iterator = gamma.nonZeroes(); iterator.advance(); ) {

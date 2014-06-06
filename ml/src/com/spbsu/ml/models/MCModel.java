@@ -3,11 +3,9 @@ package com.spbsu.ml.models;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.func.FuncJoin;
 
 /**

@@ -1,10 +1,11 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.optimization.FuncConvex;
@@ -139,19 +140,19 @@ public class OptimizersTests extends TestCase {
         for (int i = 0; i < mxC.dim(); i++)
             mxC.set(i, rnd.nextGaussian());                  //create random mx C
 
-        VecTools.householderLQ(mxC, mxL, mxQ);
+        MxTools.householderLQ(mxC, mxL, mxQ);
 
         for (int i = 0; i < mxL.rows(); i++)
             if (mxL.get(i, i) < 1e-3)
                 mxL.set(i, i, 3 + rnd.nextDouble());         //make det(C) != 0
 
-        mxC = VecTools.multiply(mxL, mxQ);
+        mxC = MxTools.multiply(mxL, mxQ);
 
         for (int i = 0; i < sigma.rows(); i++) {
             sigma.set(i, i, rnd.nextDouble() + 10);          //make mxA positive-definite
         }
 
-        mxA = VecTools.multiply(VecTools.multiply(mxC, sigma), VecTools.transpose(mxC));
+        mxA = MxTools.multiply(MxTools.multiply(mxC, sigma), MxTools.transpose(mxC));
         for (int i = 0; i < w.dim(); i++) {
             w.set(i, rnd.nextGaussian());
         }

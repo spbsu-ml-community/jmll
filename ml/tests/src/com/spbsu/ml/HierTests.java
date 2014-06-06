@@ -2,9 +2,9 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.HierTools;
@@ -274,8 +274,8 @@ public class HierTests extends TestSuite {
           final DataSet testNodeDSForChild = testNode.createDSForChild(label);
           final Mx learnChildProbs = childModel.probsAll(learnNodeDSForChild.data());
           final Mx testChildProbs = childModel.probsAll(testNodeDSForChild.data());
-          final Vec[] learnColumns = VecTools.splitMxColumns(learnChildProbs);
-          final Vec[] testColumns = VecTools.splitMxColumns(testChildProbs);
+          final Vec[] learnColumns = MxTools.splitMxColumns(learnChildProbs);
+          final Vec[] testColumns = MxTools.splitMxColumns(testChildProbs);
           for (int j = 0; j < learnColumns.length; j++) {
             Vec learnColumn = learnColumns[j];
             Vec testColumn = testColumns[j];

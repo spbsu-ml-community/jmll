@@ -1,10 +1,11 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.loss.L2;
@@ -40,7 +41,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
   }
 
   public static boolean validateSolution(Mx a, Vec right, Vec sol) {
-    Vec val = VecTools.multiply(a, sol);
+    Vec val = MxTools.multiply(a, sol);
     double l2 = VecTools.distance(val, right);
     if (l2 > right.dim()) {
       /*for (int i = 0; i < right.dim(); i++)
@@ -58,7 +59,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     int n = mx.rows();
     Mx l = new VecBasedMx(n, n);
     Mx q = new VecBasedMx(n, n);
-    VecTools.householderLQ(mx, l, q);
+    MxTools.householderLQ(mx, l, q);
     //System.out.println(VecTools.inverseLTriangle(l));
     //System.out.println(VecTools.multiply(q,VecTools.transpose(q)));
     Vec first = new ArrayVec(n);
@@ -72,7 +73,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
         first.set(i, 0);
       }
     }
-    Vec ans = VecTools.multiply(q, first);
+    Vec ans = MxTools.multiply(q, first);
     if (!validateSolution(mx, right, ans)) {
       PrintWriter printWriter = null;
       try {

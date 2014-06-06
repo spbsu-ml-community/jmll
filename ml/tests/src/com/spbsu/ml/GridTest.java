@@ -2,8 +2,8 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.FileTestCase;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.impl.DataSetImpl;

@@ -1,10 +1,10 @@
 //package com.spbsu.ml.models.pgm;
 //
 //import com.spbsu.commons.filters.Filter;
-//import com.spbsu.commons.math.vectors.IntBasis;
+//import com.spbsu.commons.math.vectors.impl.basis.IntBasis;
 //import com.spbsu.commons.math.vectors.Mx;
 //import com.spbsu.commons.math.vectors.Vec;
-//import com.spbsu.commons.math.vectors.impl.SparseVec;
+//import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 //import com.spbsu.commons.random.FastRandom;
 //import gnu.trove.list.array.TIntArrayList;
 //

@@ -1,17 +1,12 @@
 package com.spbsu.ml.loss.multiclass.hier;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.util.Pair;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import gnu.trove.iterator.TIntIntIterator;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.hash.TIntIntHashMap;
-
-import java.util.Iterator;
 
 /**
  * User: qdeee

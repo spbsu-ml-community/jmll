@@ -4,7 +4,7 @@ import com.spbsu.commons.func.types.ConversionDependant;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.TypeConverter;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.Ensemble;

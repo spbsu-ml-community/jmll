@@ -2,10 +2,11 @@ package com.spbsu.ml.methods.spoc;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.data.DSIterator;
@@ -81,7 +82,7 @@ public class CMLMetricOptimization {
         final double underLog = mu.get((int)iter.y()) * sigmoid + (1 - mu.get((int)iter.y())) * (1 - sigmoid);
         result -= Math.log(underLog);
       }
-      result += c * VecTools.multiply(VecTools.multiply(laplacian, mu), mu);
+      result += c * VecTools.multiply(MxTools.multiply(laplacian, mu), mu);
       return result;
     }
 

@@ -1,7 +1,7 @@
 package com.spbsu.ml;
 
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.func.Ensemble;

@@ -1,9 +1,8 @@
 package com.spbsu.ml.models;
 
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;

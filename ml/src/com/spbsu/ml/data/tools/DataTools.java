@@ -3,12 +3,15 @@ package com.spbsu.ml.data.tools;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.IndexTransVec;
-import com.spbsu.commons.math.vectors.impl.SparseVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.basis.IntBasis;
+import com.spbsu.commons.math.vectors.impl.basis.MxBasisImpl;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
+import com.spbsu.commons.math.vectors.impl.mx.SparseMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
+import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.RandomExt;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.commons.util.Pair;
@@ -348,12 +351,12 @@ public class DataTools {
     VecTools.scale(covar, 1./ds.power());
     switch (type) {
       case SPHERE:
-        final Mx l = VecTools.choleskyDecomposition(covar);
-        trans = VecTools.inverseLTriangle(l);
+        final Mx l = MxTools.choleskyDecomposition(covar);
+        trans = MxTools.inverseLTriangle(l);
         break;
       case PCA:
         trans = new VecBasedMx(ds.xdim(), ds.xdim());
-        VecTools.eigenDecomposition(covar, new VecBasedMx(ds.xdim(), ds.xdim()), trans);
+        MxTools.eigenDecomposition(covar, new VecBasedMx(ds.xdim(), ds.xdim()), trans);
         break;
       case SCALE:
         trans = new VecBasedMx(ds.xdim(), ds.xdim());
@@ -369,7 +372,7 @@ public class DataTools {
     for (int i = 0; i < ds.power(); i++) {
       Vec row = newData.row(i);
       VecTools.append(row, mean);
-      VecTools.assign(row, VecTools.multiply(trans, row));
+      VecTools.assign(row, MxTools.multiply(trans, row));
 
       newTarget.set(i, (newTarget.get(i) - targetMean) / targetVar);
     }

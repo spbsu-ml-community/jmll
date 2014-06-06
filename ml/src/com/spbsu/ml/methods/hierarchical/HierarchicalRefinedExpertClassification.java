@@ -2,8 +2,8 @@ package com.spbsu.ml.methods.hierarchical;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.DataSet;
@@ -79,7 +79,7 @@ public class HierarchicalRefinedExpertClassification implements Optimization<Hie
         final List<Vec> bonusFeatures = new LinkedList<Vec>();
         for (HierJoinedBinClassAddMetaFeaturesModel childrenModel : childrenModels) {
           Mx features = childrenModel.probsAll(childDS.data());
-          Collections.addAll(bonusFeatures, VecTools.splitMxColumns(features));
+          Collections.addAll(bonusFeatures, MxTools.splitMxColumns(features));
         }
         final DataSet extendedChildDS = DataTools.extendDataset(childDS, ArrayTools.map(bonusFeatures.toArray(), Vec.class, new Computable<Object, Vec>() {
           @Override
@@ -174,7 +174,7 @@ public class HierarchicalRefinedExpertClassification implements Optimization<Hie
         final HierJoinedBinClassAddMetaFeaturesModel childBottomTopModel = btModel.getModelByLabel(childNode.getCategoryId());
         if (childBottomTopModel != null) {
           final Mx features = childBottomTopModel.probsAll(filteredDs.data());
-          Collections.addAll(bonusFeatures, VecTools.splitMxColumns(features));
+          Collections.addAll(bonusFeatures, MxTools.splitMxColumns(features));
         }
       }
 

@@ -2,12 +2,10 @@ package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.optimization.Optimize;
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 

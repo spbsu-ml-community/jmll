@@ -7,11 +7,12 @@ import com.google.gson.JsonParser;
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecArrayMx;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecArrayMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
@@ -122,7 +123,7 @@ public class PGMEMLogDataTest extends TestCase {
     }
     SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
-    System.out.println(VecTools.prettyPrint(fit.topology));
+    System.out.println(MxTools.prettyPrint(fit.topology));
     return fit;
   }
 

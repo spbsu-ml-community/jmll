@@ -1,8 +1,9 @@
 package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.SparseVec;
+import com.spbsu.commons.math.vectors.impl.basis.IntBasis;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.ml.FuncC1;
 
 /**

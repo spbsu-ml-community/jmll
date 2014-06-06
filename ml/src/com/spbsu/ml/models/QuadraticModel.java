@@ -1,6 +1,7 @@
 package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.ml.Func;
@@ -23,7 +24,7 @@ public class QuadraticModel extends Func.Stub {
 
   @Override
   public double value(Vec x) {
-    return VecTools.multiply(x, VecTools.multiply(M, x)) + VecTools.multiply(x, b) + c;
+    return VecTools.multiply(x, MxTools.multiply(M, x)) + VecTools.multiply(x, b) + c;
   }
 
   @Override

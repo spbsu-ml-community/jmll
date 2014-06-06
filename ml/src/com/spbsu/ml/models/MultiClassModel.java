@@ -1,17 +1,11 @@
 package com.spbsu.ml.models;
 
-import com.spbsu.commons.func.Evaluator;
-import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
-import com.spbsu.ml.func.FuncJoin;
 
 /**
  * User: solar

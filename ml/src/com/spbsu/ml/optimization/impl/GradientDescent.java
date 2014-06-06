@@ -2,7 +2,7 @@ package com.spbsu.ml.optimization.impl;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.optimization.FuncConvex;
 import com.spbsu.ml.optimization.Optimize;

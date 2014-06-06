@@ -3,10 +3,9 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.MultiClassModel;
 

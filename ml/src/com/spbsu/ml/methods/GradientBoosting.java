@@ -4,7 +4,7 @@ import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
@@ -14,7 +14,6 @@ import com.spbsu.ml.func.Ensemble;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
 * User: solar

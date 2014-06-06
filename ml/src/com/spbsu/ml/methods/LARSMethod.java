@@ -2,10 +2,11 @@ package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.func.NormalizedLinear;
@@ -36,14 +37,14 @@ public class LARSMethod implements Optimization<L2> {
     final int featuresCount = orig.columns();
     Vec betas = new ArrayVec(featuresCount);
     double avg = VecTools.sum(loss.target) / loss.xdim();
-    final VecTools.NormalizationProperties props = new VecTools.NormalizationProperties();
-    Mx learn = VecTools.normalize(orig, VecTools.NormalizationType.SCALE, props);
+    final MxTools.NormalizationProperties props = new MxTools.NormalizationProperties();
+    Mx learn = MxTools.normalize(orig, MxTools.NormalizationType.SCALE, props);
     Vec values = new ArrayVec(orig.rows());
     fill(values, -avg);
     append(values, loss.target);
 
     for (int t = 0; t < featuresCount; t++) {
-      Vec correlations = multiply(transpose(learn), values);
+      Vec correlations = MxTools.multiply(MxTools.transpose(learn), values);
       double bestCorr;
       final List<Direction> selectedDirections = new ArrayList<Direction>(featuresCount);
       {
@@ -69,12 +70,12 @@ public class LARSMethod implements Optimization<L2> {
             }
           }
         }
-        inverseCo = VecTools.inverseCholesky(covariance);
+        inverseCo = MxTools.inverseCholesky(covariance);
       }
       final Vec ones = fill(new ArrayVec(selectedDirections.size()), 1.);
-      double norm = Math.sqrt(multiply(ones, multiply(inverseCo, ones)));
+      double norm = Math.sqrt(multiply(ones, MxTools.multiply(inverseCo, ones)));
       scale(ones, norm);
-      Vec w = multiply(inverseCo, ones);
+      Vec w = MxTools.multiply(inverseCo, ones);
       double[] equiangular = new double[learn.rows()];
       {
         for (int r = 0; r < learn.rows(); r++) {

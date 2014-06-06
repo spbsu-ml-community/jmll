@@ -1,12 +1,11 @@
 package com.spbsu.ml.io;
 
-import com.spbsu.commons.func.converters.Double2BufferConverter;
 import com.spbsu.commons.func.converters.Vec2StringConverter;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.ml.models.FMModel;
 

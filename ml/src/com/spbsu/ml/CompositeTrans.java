@@ -1,8 +1,8 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -57,7 +57,7 @@ public class CompositeTrans<F extends Trans, G extends Trans> extends Trans.Stub
 
       @Override
       public Vec trans(Vec x) {
-        return VecTools.multiply((Mx)f.gradient().trans(g.trans(x)), (Mx)g.gradient().trans(x));
+        return MxTools.multiply((Mx) f.gradient().trans(g.trans(x)), (Mx) g.gradient().trans(x));
       }
     };
   }
