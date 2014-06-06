@@ -1,10 +1,10 @@
 package com.spbsu.ml.methods.spoc.impl;
 
 import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.Combinatorics;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
-import sun.plugin.dom.exception.InvalidStateException;
+import java.util.Arrays;
 
 /**
  * User: qdeee
@@ -15,10 +15,10 @@ public class CodingMatrixLearningGreedy extends AbstractCodingMatrixLearning {
     super(k, l, lambdaC, lambdaR, lambda1);
   }
 
-  private double calcLoss(final Mx B, final Mx S) {
+  protected double calcLoss(final Mx B, final Mx S) {
     double result = 0;
-    final Mx mult = VecTools.multiply(B, VecTools.transpose(B));
-    result -= VecTools.trace(VecTools.multiply(mult, S));
+    final Mx mult = MxTools.multiply(B, MxTools.transpose(B));
+    result -= MxTools.trace(MxTools.multiply(mult, S));
     result += lambdaR * VecTools.sum(mult);
     result += lambdaC * VecTools.sum2(B);
     result += lambda1 * VecTools.l1(B);
@@ -29,13 +29,13 @@ public class CodingMatrixLearningGreedy extends AbstractCodingMatrixLearning {
   public Mx findMatrixB(final Mx S) {
     final Mx mxB = new VecBasedMx(k, l);
     for (int j = 0; j < l; j++) {
-      final Combinatorics.PartialPermutations permutationsGenerator = new Combinatorics.PartialPermutations(3, k);
+      final Combinatorics.PartialPermutations permutationsGenerator = new Combinatorics.PartialPermutations(2, k);
       int[] bestPerm = null;
       double bestLoss = Double.MAX_VALUE;
       while (permutationsGenerator.hasNext()) {
         final int[] perm = permutationsGenerator.next();
         for (int i = 0; i < k; i++) {
-          mxB.set(i, j, perm[i] - 1);
+          mxB.set(i, j, 2 * perm[i] - 1);
         }
         final Mx sub = mxB.sub(0, 0, k, j + 1);
         if (checkConstraints(sub) && checkColumnsIndependence(sub)) {
@@ -48,11 +48,11 @@ public class CodingMatrixLearningGreedy extends AbstractCodingMatrixLearning {
       }
       if (bestPerm != null) {
         for (int i = 0; i < k; i++) {
-          mxB.set(i, j, bestPerm[i] - 1);
+          mxB.set(i, j, 2 * bestPerm[i] - 1);
         }
       }
       else
-        throw new InvalidStateException("Not found appreciate column #" + j);
+        throw new IllegalStateException("Not found appreciate column #" + j);
       System.out.println("Column " + j + " is over!");
     }
     return mxB;
