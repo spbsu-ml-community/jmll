@@ -3,14 +3,15 @@ package com.spbsu.ml;
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.math.vectors.IntBasis;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.SparseVec;
-import com.spbsu.commons.math.vectors.impl.VecArrayMx;
-import com.spbsu.commons.math.vectors.impl.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.basis.IntBasis;
+import com.spbsu.commons.math.vectors.impl.mx.VecArrayMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.impl.DataSetImpl;
@@ -138,9 +139,9 @@ public class PGMEMTest extends TestCase {
     Interval.start();
     final SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
-    System.out.println(VecTools.prettyPrint(fit.topology));
+    System.out.println(MxTools.prettyPrint(fit.topology));
     System.out.println();
-    System.out.println(VecTools.prettyPrint(original.topology));
+    System.out.println(MxTools.prettyPrint(original.topology));
 
     assertTrue(VecTools.distance(fit.topology, original.topology) < accuracy * fit.topology.dim());
   }
