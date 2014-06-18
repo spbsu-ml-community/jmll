@@ -23,7 +23,7 @@ public class CombL2 extends L2 {
   @Override
   public double score(MSEStats stats) {
     final double n = stats.weight;
-    final double deltaD = stats.weight > 1 ? (- stats.sum * stats.sum / stats.weight) * MathTools.sqr(stats.weight / (stats.weight - 1.)) : 0;
+    final double deltaD = stats.weight > 1 ? (-stats.sum * stats.sum / stats.weight) * MathTools.sqr(stats.weight / (stats.weight - 1.)) : 0;
     return deltaD * (1 + 2 * log(n + 1));
   }
 }
