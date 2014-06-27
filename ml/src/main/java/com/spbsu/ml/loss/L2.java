@@ -1,11 +1,13 @@
 package com.spbsu.ml.loss;
 
+import org.jetbrains.annotations.NotNull;
+
+
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.FuncC1;
-import com.sun.javafx.beans.annotations.NonNull;
 
 import static com.spbsu.commons.math.vectors.VecTools.*;
 
@@ -21,7 +23,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats> {
     this.target = target;
   }
 
-  @NonNull
+  @NotNull
   @Override
   public Vec gradient(Vec x) {
     Vec result = copy(x);
