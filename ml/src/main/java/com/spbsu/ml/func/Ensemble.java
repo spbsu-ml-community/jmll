@@ -8,6 +8,8 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Trans;
 
+
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -71,6 +73,31 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
     for (int i = 0; i < models.length; i++) {
       VecTools.append(result, VecTools.scale(models[i].trans(x), weights.get(i)));
     }
+    return result;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    final Ensemble ensemble = (Ensemble) o;
+
+    if (!Arrays.equals(models, ensemble.models)) {
+      return false;
+    }
+    return weights.equals(ensemble.weights);
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = Arrays.hashCode(models);
+    result = 31 * result + weights.hashCode();
     return result;
   }
 }

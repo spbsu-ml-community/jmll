@@ -12,11 +12,12 @@ import static com.spbsu.commons.math.MathTools.sqr;
 import static com.spbsu.commons.math.vectors.VecTools.*;
 
 /**
+ * Stein paradox experiments.
  * User: solar
  * Date: 16.04.14
  * Time: 13:24
  */
-public class DispersionTest extends TestCase {
+public abstract class DispersionTest extends TestCase {
   public void testStein() {
     Random rng = new FastRandom();
     for (int n = 1; n < 100; n++) {

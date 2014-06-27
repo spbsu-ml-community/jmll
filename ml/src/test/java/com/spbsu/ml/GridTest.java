@@ -21,8 +21,8 @@ public class GridTest extends FileTestCase {
   static private synchronized void loadDataSet() {
     try {
       if (learn == null || validate == null) {
-        learn = DataTools.loadFromFeaturesTxt("./ml/tests/data/features.txt.gz");
-        validate = DataTools.loadFromFeaturesTxt("./ml/tests/data/featuresTest.txt.gz");
+        learn = DataTools.loadFromFeaturesTxt("./jmll/ml/src/test/data/features.txt.gz");
+        validate = DataTools.loadFromFeaturesTxt("./jmll/ml/src/test/data/featuresTest.txt.gz");
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -165,6 +165,6 @@ public class GridTest extends FileTestCase {
 
   @Override
   protected String getTestDataPath() {
-    return "./ml/tests/data/grid/";
+    return "./jmll/ml/src/test/data/grid/";
   }
 }

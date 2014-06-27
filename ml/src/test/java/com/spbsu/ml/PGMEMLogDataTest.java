@@ -32,8 +32,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * Created by inikifor on 12.04.14.
  */
-public class PGMEMLogDataTest extends TestCase {
-
+public abstract class PGMEMLogDataTest extends TestCase {
   private static final int SIZE = 11;
 
   private FastRandom rng;
@@ -49,8 +48,8 @@ public class PGMEMLogDataTest extends TestCase {
 
   protected void setUp() throws Exception {
     rng = new FastRandom(0);
-    learn = new LogsData(new GZIPInputStream(new FileInputStream("./ml/tests/data/pgmem/ses_100k_simple_rand1.dat.gz")));
-    validate = new LogsData(new GZIPInputStream(new FileInputStream("./ml/tests/data/pgmem/ses_100k_simple_rand2.dat.gz")));
+    learn = new LogsData(new GZIPInputStream(new FileInputStream("./jmll/ml/src/test/data/pgmem/ses_100k_simple_rand1.dat.gz")));
+    validate = new LogsData(new GZIPInputStream(new FileInputStream("./jmll/ml/src/test/data/pgmem/ses_100k_simple_rand2.dat.gz")));
   }
 
   public void testMostProbable() throws IOException {

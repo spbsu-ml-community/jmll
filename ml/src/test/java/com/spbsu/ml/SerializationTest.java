@@ -57,7 +57,7 @@ public class SerializationTest extends GridTest {
     }
     assertTrue(caught);
     serialization = new ModelsSerializationRepository(grid);
-    assertEquals(sum, serialization.read(serialization.write(sum), Linear.class));
+    assertEquals(sum, serialization.read(serialization.write(sum), Ensemble.class));
   }
 
   public void testFMModel() {

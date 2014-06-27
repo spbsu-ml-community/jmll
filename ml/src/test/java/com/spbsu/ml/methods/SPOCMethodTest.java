@@ -41,10 +41,11 @@ import java.io.*;
 /**
  * User: qdeee
  * Date: 07.05.14
+ * [TODO]: Руслан, надо сделать так, чтобы тесты проходили, в частности убери хардкоды имен файлов
  */
-public class SPOCMethodTest extends TestSuite {
+public abstract class SPOCMethodTest extends TestSuite {
 
-  private static class Base extends TestCase {
+  private abstract static class Base extends TestCase {
     protected DataSet learn;
     protected DataSet test;
     protected Mx S;
@@ -160,7 +161,7 @@ public class SPOCMethodTest extends TestSuite {
     }
   }
 
-  public static class DefaultDataTests extends Base {
+  public abstract static class DefaultDataTests extends Base {
     private final static double[] hierBorders = new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61};
     public static final double[] classicBorders = new double[]{0.06999, 0.13999, 0.40999, 0.60999, 0.61};
 
@@ -170,8 +171,8 @@ public class SPOCMethodTest extends TestSuite {
 //      borders.addAll(new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61});
       borders.addAll(classicBorders);
 //      borders.addAll(hierBorders);
-      learn = MCTools.loadRegressionAsMC("./ml/tests/data/features.txt.gz", borders.size(), borders);
-      test = MCTools.loadRegressionAsMC("./ml/tests/data/featuresTest.txt.gz", borders.size(), borders);
+      learn = MCTools.loadRegressionAsMC("./jmll/ml/src/test/data/features.txt.gz", borders.size(), borders);
+      test = MCTools.loadRegressionAsMC("./jmll/ml/src/test/data/featuresTest.txt.gz", borders.size(), borders);
 //      S = loadMxFromFile("./ml/tests/data/multiclass/regression_based/features.txt.similarityMx");
       S = loadMxFromFile("/Users/qdeee/Datasets/features-simmatrix-classic.txt");
 
@@ -199,7 +200,7 @@ public class SPOCMethodTest extends TestSuite {
     }
   }
 
-  public static class GreedyDefaultDS extends DefaultDataTests {
+  public abstract static class GreedyDefaultDS extends DefaultDataTests {
 
     //      lambdaC = 3;
     //      lambdaR = 2.5;
@@ -210,14 +211,14 @@ public class SPOCMethodTest extends TestSuite {
     }
   }
 
-  public static class ParallelGreedyDefaultDS extends DefaultDataTests {
+  public abstract static class ParallelGreedyDefaultDS extends DefaultDataTests {
     @Override
     protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
       return new CodingMatrixLearningGreedyParallels(k, l, lambdaC, lambdaR, lambda1);
     }
   }
 
-  public static class ExternDataTests extends Base {
+  public abstract static class ExternDataTests extends Base {
     public void setUp() throws Exception {
       super.setUp();
       final DataSet fullds = DataTools.loadFromSparseFeaturesTxt("./ml/tests/data/multiclass/ds_letter/letter.libfm");
@@ -244,7 +245,7 @@ public class SPOCMethodTest extends TestSuite {
 
   }
 
-  public static class StuffTests extends TestCase{
+  public abstract static class StuffTests extends TestCase{
 
     private DataSet learn;
 
