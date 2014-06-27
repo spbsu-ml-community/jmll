@@ -4,8 +4,6 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.tools.MCTools;
-import gnu.trove.list.TIntList;
-import gnu.trove.map.TIntObjectMap;
 
 /**
  * User: qdeee

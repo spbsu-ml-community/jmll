@@ -4,7 +4,6 @@ import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.Combinatorics;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
-import java.util.Arrays;
 
 /**
  * User: qdeee

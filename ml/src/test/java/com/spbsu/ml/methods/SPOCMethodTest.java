@@ -10,8 +10,6 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
-import com.spbsu.ml.clustering.ClusterizationAlgorithm;
-import com.spbsu.ml.clustering.impl.KMeansAlgorithm;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
@@ -34,15 +32,11 @@ import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.map.TIntObjectMap;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.io.*;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * User: qdeee

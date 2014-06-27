@@ -1,8 +1,5 @@
 package com.spbsu.ml.models.pgm;
 
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecIterator;
-
 /**
  * User: solar
  * Date: 07.04.14

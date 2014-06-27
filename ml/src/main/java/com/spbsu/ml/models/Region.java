@@ -6,7 +6,7 @@ import com.spbsu.ml.BinOptimizedModel;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
-import java.util.ArrayList;
+
 import java.util.List;
 
 /**

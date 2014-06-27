@@ -2,12 +2,9 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.MxIterator;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * User: solar

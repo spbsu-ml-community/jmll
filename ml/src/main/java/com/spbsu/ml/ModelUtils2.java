@@ -8,8 +8,6 @@ import java.io.LineNumberReader;
 
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.text.CharSequenceTools;
-import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Trans;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 
 /**

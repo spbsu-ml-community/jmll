@@ -3,8 +3,6 @@ package com.spbsu.ml.methods.spoc.impl;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.commons.util.CollectionTools;
 import com.spbsu.commons.util.Combinatorics;
 import com.spbsu.commons.util.Pair;
 

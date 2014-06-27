@@ -2,7 +2,6 @@ package com.spbsu.ml.data.stats;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.impl.DataSetImpl;
 import gnu.trove.map.hash.TIntObjectHashMap;
