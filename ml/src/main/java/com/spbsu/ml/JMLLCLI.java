@@ -1,5 +1,13 @@
 package com.spbsu.ml;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.Random;
+import java.util.StringTokenizer;
+
+
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Factory;
@@ -7,35 +15,28 @@ import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.DSIterator;
 import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.lang.reflect.Method;
-import java.util.Random;
-import java.util.StringTokenizer;
 
 import static com.spbsu.commons.math.vectors.VecTools.append;
 
@@ -84,7 +85,7 @@ public class JMLLCLI {
 
   public static void main(String[] args) throws IOException {
     CommandLineParser parser = new GnuParser();
-    Random rnd = new FastRandom();
+    FastRandom rnd = new FastRandom();
     ModelsSerializationRepository serializationRepository = new ModelsSerializationRepository();
 
     try {
@@ -245,7 +246,7 @@ public class JMLLCLI {
             new IndexTransVec(learn.target(), new ArrayPermutation(testIndicesArr))));
   }
 
-  private static Optimization chooseMethod(String scheme, Factory<BFGrid> grid, Random rnd) {
+  private static Optimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
     final Factory<? extends Optimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd);
     String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
@@ -285,7 +286,7 @@ public class JMLLCLI {
     return factory.create();
   }
 
-  private static Factory<? extends Optimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final Random rnd) {
+  private static Factory<? extends Optimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd) {
     if ("GradientBoosting".equals(name)) {
       return new Factory<Optimization>() {
         public Optimization weak = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
