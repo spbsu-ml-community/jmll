@@ -12,7 +12,7 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.commons.random.RandomExt;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.text.CharSequenceTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
@@ -280,7 +280,7 @@ public class DataTools {
     return result;
   }
 
-  public static <LocalLoss extends StatBasedLoss> WeightedLoss<LocalLoss> bootstrap(LocalLoss loss, RandomExt rnd) {
+  public static <LocalLoss extends StatBasedLoss> WeightedLoss<LocalLoss> bootstrap(LocalLoss loss, FastRandom rnd) {
     int[] poissonWeights = new int[loss.xdim()];
     for (int i = 0; i < loss.xdim(); i++) {
       poissonWeights[i] = rnd.nextPoisson(1.);

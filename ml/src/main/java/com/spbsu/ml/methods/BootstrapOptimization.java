@@ -1,13 +1,11 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
-import com.spbsu.commons.random.RandomExt;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.DataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.StatBasedLoss;
-
-import java.util.Random;
 
 /**
 * User: solar
@@ -15,12 +13,12 @@ import java.util.Random;
 * Time: 22:13:54
 */
 public class BootstrapOptimization<Loss extends StatBasedLoss> extends WeakListenerHolderImpl<Trans> implements Optimization<Loss> {
-  protected final RandomExt rnd;
+  protected final FastRandom rnd;
   private final Optimization weak;
 
-  public BootstrapOptimization(Optimization weak, Random rnd) {
+  public BootstrapOptimization(Optimization weak, FastRandom rnd) {
     this.weak = weak;
-    this.rnd = new RandomExt(rnd);
+    this.rnd = rnd;
   }
 
   @Override
