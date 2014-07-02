@@ -85,7 +85,7 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
           index++;
       }
       //if(index == 1)
-      //  System.out.println(features.get(0).condition);
+      //  System.out.println(features.at(0).condition);
       double f = loss.target.get(i);
       double weight = 1; //Math.exp(-calcDistanseToRegion(index, ds.data().row(i)));
       //System.out.println(weight);

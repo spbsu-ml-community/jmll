@@ -45,7 +45,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     double l2 = VecTools.distance(val, right);
     if (l2 > right.dim()) {
       /*for (int i = 0; i < right.dim(); i++)
-        System.out.format("%f = %f\n", val.get(i), right.get(i));*/
+        System.out.format("%f = %f\n", val.at(i), right.at(i));*/
     }
     //System.out.println(l2);
     return l2 < 0.1 * right.dim();

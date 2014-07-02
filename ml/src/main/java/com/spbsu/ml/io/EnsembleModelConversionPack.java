@@ -5,7 +5,7 @@ import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.Ensemble;
 
@@ -47,7 +47,7 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
 
     @Override
     public Ensemble convert(CharSequence from) {
-      CharSequence[] elements = CharSequenceTools.split(from, "\n\n");
+      CharSequence[] elements = CharSeqTools.split(from, "\n\n");
       Trans[] models;
       double[] weights;
 
@@ -56,7 +56,7 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
         models = new Trans[count];
         weights = new double[count];
         for (int i = 0; i < count; i++) {
-          final CharSequence[] lines = CharSequenceTools.split(elements[i + 1], "\n");
+          final CharSequence[] lines = CharSeqTools.split(elements[i + 1], "\n");
           StringTokenizer tok = new StringTokenizer(lines[0].toString(), " ");
           Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(tok.nextToken());
           weights[i] = Double.parseDouble(tok.nextToken());

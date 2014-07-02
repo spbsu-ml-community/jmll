@@ -13,7 +13,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.CompositeTrans;
@@ -151,14 +151,14 @@ public class DataTools {
 
   public static void writeModel(Trans result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);
-    StreamTools.writeChars(CharSequenceTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
-                           serializationRepository.write(result)), to);
+    StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
+        serializationRepository.write(result)), to);
   }
 
   public static Trans readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(new FileInputStream(fileName)));
     String line = modelReader.readLine();
-    CharSequence[] parts = CharSequenceTools.split(line, '\t');
+    CharSequence[] parts = CharSeqTools.split(line, '\t');
     Class<? extends Trans> modelClazz = (Class<? extends Trans>)Class.forName(parts[0].toString());
     return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }

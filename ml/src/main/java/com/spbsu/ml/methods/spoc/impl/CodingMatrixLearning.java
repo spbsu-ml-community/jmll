@@ -182,13 +182,13 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
 //    final Vec vecB = mx2vec(B);
 //    final Vec checkVec = VecTools.multiply(A, vecB);
 //    for (int i = 0; i < 2*k*l; i++)
-//      if (checkVec.get(i) > 1.)
+//      if (checkVec.at(i) > 1.)
 //        return false;
 //    for (int i = 2* k * l; i < 2*k*l + 2*l; i++)
-//      if (checkVec.get(i) > -2.)
+//      if (checkVec.at(i) > -2.)
 //        return false;
 //    for (int i = 2* k * l + 2* l; i < 2*k*l + 2*l + k; i++)
-//      if (checkVec.get(i) > -1)
+//      if (checkVec.at(i) > -1)
 //        return false;
 //    return true;
 //  }

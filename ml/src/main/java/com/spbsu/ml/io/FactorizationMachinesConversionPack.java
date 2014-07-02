@@ -6,7 +6,7 @@ import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.ml.models.FMModel;
 
 /**
@@ -32,7 +32,7 @@ public class FactorizationMachinesConversionPack implements ConversionPack<FMMod
     @Override
     public FMModel convert(final CharSequence from) {
       final Vec2StringConverter vec2StringConverter = new Vec2StringConverter();
-      final CharSequence[] lines = CharSequenceTools.split(from, '\n');
+      final CharSequence[] lines = CharSeqTools.split(from, '\n');
       final double w0 = Double.valueOf(lines[0].toString());
       final Vec w = vec2StringConverter.convertFrom(lines[1].toString());
       final Vec vecV = vec2StringConverter.convertFrom(lines[2].toString());

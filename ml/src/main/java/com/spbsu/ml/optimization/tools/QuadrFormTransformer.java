@@ -24,7 +24,7 @@ public class QuadrFormTransformer {
     }
 
     //show overview of the matrix of the 'inverted' quadratic form.
-    // 'i*j' equal to 'x.get(i)*x.get(j)'
+    // 'i*j' equal to 'x.at(i)*x.at(j)'
     public static void printOverview(int n, int factors) {
         int size = n*factors;
         String holder = "%s*%s";

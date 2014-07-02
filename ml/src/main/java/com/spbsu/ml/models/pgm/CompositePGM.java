@@ -72,7 +72,7 @@
 //    TIntArrayList toInt = new TIntArrayList(x.dim() + 1);
 //    toInt.add(0);
 //    for (int i = 0; i < x.dim(); i++) {
-//      final double next = x.get(i);
+//      final double next = x.at(i);
 //      if (next < 1 || next >= topology.rows())
 //        break;
 //      toInt.add((int)next - 1);
@@ -92,7 +92,7 @@
 //        if (next == topology.columns())
 //          break;
 //      }
-//      if (result.get(result.dim()) == 0.)
+//      if (result.at(result.dim()) == 0.)
 //        return result;
 //    }
 //  }

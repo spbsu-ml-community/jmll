@@ -2,8 +2,8 @@ package com.spbsu.ml.io;
 
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.TypeConverter;
-import com.spbsu.commons.text.CharSequenceReader;
-import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.commons.seq.CharSeqReader;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.GridEnabled;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
@@ -84,7 +84,7 @@ public class ObliviousMultiClassTreeConversionPack implements ConversionPack<Obl
       if (grid == null)
         throw new RuntimeException("Grid must be setup for serialization of oblivious trees, use SerializationRepository.customize!");
       String line;
-      LineNumberReader lnr = new LineNumberReader(new CharSequenceReader(source));
+      LineNumberReader lnr = new LineNumberReader(new CharSeqReader(source));
       List<BFGrid.BinaryFeature> splits = new ArrayList<BFGrid.BinaryFeature>(10);
       try {
         while ((line = lnr.readLine()) != null) {
@@ -100,9 +100,9 @@ public class ObliviousMultiClassTreeConversionPack implements ConversionPack<Obl
         double[] values = new double[1 << splits.size()];
         double[] based = new double[1 << splits.size()];
         boolean[][] masks = new boolean[1 << splits.size()][];
-        CharSequence[] valuesStr = CharSequenceTools.split(line, ' ');
+        CharSequence[] valuesStr = CharSeqTools.split(line, ' ');
         for (CharSequence value : valuesStr) {
-          final CharSequence[] pattern2ValueBased = CharSequenceTools.split(value, ':');
+          final CharSequence[] pattern2ValueBased = CharSeqTools.split(value, ':');
           final int leafIndex = Integer.parseInt(pattern2ValueBased[0].toString(), 2);
           values[leafIndex] = Double.parseDouble(pattern2ValueBased[1].toString());
 //          based[leafIndex] = Double.parseDouble(pattern2ValueBased[2].toString());

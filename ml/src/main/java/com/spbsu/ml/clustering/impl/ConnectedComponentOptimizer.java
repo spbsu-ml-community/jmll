@@ -106,7 +106,7 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
             maxComponentIndex = iter.componentIndex;
           }
         }
-//        System.out.println(termsBasis.fromIndex(topEntry.iters.get(0).iter.index()) + ": " + topEntry.iters.size()+ ":" + maxComponentIndex + ":" + (sum / Math.max(1, count)));
+//        System.out.println(termsBasis.fromIndex(topEntry.iters.at(0).iter.index()) + ": " + topEntry.iters.size()+ ":" + maxComponentIndex + ":" + (sum / Math.max(1, count)));
       }
 
       for (IndexedVecIter iter : topEntry.iters) {

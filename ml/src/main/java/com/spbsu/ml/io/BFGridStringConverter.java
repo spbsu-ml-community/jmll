@@ -1,7 +1,7 @@
 package com.spbsu.ml.io;
 
 import com.spbsu.commons.func.Converter;
-import com.spbsu.commons.text.CharSequenceReader;
+import com.spbsu.commons.seq.CharSeqReader;
 import com.spbsu.ml.BFGrid;
 import gnu.trove.list.array.TDoubleArrayList;
 import java.io.IOException;
@@ -19,7 +19,7 @@ public class BFGridStringConverter implements Converter<BFGrid, CharSequence> {
   @Override
   public BFGrid convertFrom(CharSequence source) {
     final List<BFGrid.BFRow> rows = new ArrayList<BFGrid.BFRow>(1000);
-    final LineNumberReader reader = new LineNumberReader(new CharSequenceReader(source));
+    final LineNumberReader reader = new LineNumberReader(new CharSeqReader(source));
     String line;
     try {
       final TDoubleArrayList borders = new TDoubleArrayList();

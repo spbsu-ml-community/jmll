@@ -7,7 +7,7 @@ import java.io.LineNumberReader;
 
 
 import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 
 /**
@@ -24,7 +24,7 @@ public class ModelUtils2 {
   {
     final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(inputStream));
     final String line = modelReader.readLine();
-    final CharSequence[] parts = CharSequenceTools.split(line, '\t');
+    final CharSequence[] parts = CharSeqTools.split(line, '\t');
     //noinspection unchecked
     final Class<? extends Trans> modelClazz = (Class<? extends Trans>) Class.forName(parts[0].toString());
     return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);

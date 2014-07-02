@@ -4,7 +4,7 @@ import com.spbsu.commons.func.types.ConversionDependant;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.TypeConverter;
-import com.spbsu.commons.text.CharSequenceTools;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.TransJoin;
 
@@ -57,18 +57,18 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
     }
 
     protected Trans[] convertModels(CharSequence from) {
-      int index = CharSequenceTools.skipTo(from, 0, '{') + 1;
-      final int modelsCount = Integer.parseInt(CharSequenceTools.cut(from, index, ',').toString().trim());
+      int index = CharSeqTools.skipTo(from, 0, '{') + 1;
+      final int modelsCount = Integer.parseInt(CharSeqTools.cut(from, index, ',').toString().trim());
       final Trans[] models = new Trans[modelsCount];
-      index = CharSequenceTools.skipTo(from, index, ',');
+      index = CharSeqTools.skipTo(from, index, ',');
       try {
         for (int i = 0; i < models.length; i++) {
-          final CharSequence modelCS = CharSequenceTools.cutBetween(from, index, '{', '}');
+          final CharSequence modelCS = CharSeqTools.cutBetween(from, index, '{', '}');
           {
             int mindex = 0;
-            String modelClassName = CharSequenceTools.cut(modelCS, mindex, ',').toString().trim();
+            String modelClassName = CharSeqTools.cut(modelCS, mindex, ',').toString().trim();
             Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(modelClassName);
-            models[i] = repository.convert(CharSequenceTools.cutBetween(modelCS, mindex, '{', '}'), elementClass);
+            models[i] = repository.convert(CharSeqTools.cutBetween(modelCS, mindex, '{', '}'), elementClass);
           }
           index += modelCS.length();
         }
