@@ -7,6 +7,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.impl.HierarchyTree;
@@ -20,6 +21,7 @@ import com.spbsu.ml.loss.multiclass.hier.HierLoss;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.MultiClass;
 import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.*;
 import gnu.trove.list.TIntList;
@@ -35,7 +37,7 @@ import java.util.List;
  * User: qdeee
  * Date: 10.04.14
  */
-public class HierarchicalRefinedExpertClassification implements Optimization<HierLoss> {
+public class HierarchicalRefinedExpertClassification implements VecOptimization<HierLoss> {
   private int weakIters;
   private double weakStep;
 //  private BFGrid grid;
@@ -46,7 +48,7 @@ public class HierarchicalRefinedExpertClassification implements Optimization<Hie
   }
 
   @Override
-  public Trans fit(final DataSet learn, final HierLoss hierLoss) {
+  public Trans fit(final VectorizedRealTargetDataSet<?> learn, final HierLoss hierLoss) {
     final HierJoinedBinClassAddMetaFeaturesModel hierJoinedBinClassModel = traverseFitBottomTop(hierLoss.getHierRoot());
     final HierRefinedExpertModel hierarchicalModel = traverseFitTopBottom(hierLoss.getHierRoot(), hierJoinedBinClassModel);
     return hierarchicalModel;
@@ -74,14 +76,14 @@ public class HierarchicalRefinedExpertClassification implements Optimization<Hie
       System.out.println(String.format("\n\nBoosting at node %d is started, DS size=%d", node.getCategoryId(), node.getEntriesCount()));
       final Func[] resultModels = new Func[labels.size()];
       for (int c = 0; c < labels.size(); c++) {
-        final DataSet childDS = node.createDSForChild(labels.get(c));
+        final VectorizedRealTargetDataSet childDS = node.createDSForChild(labels.get(c));
 
         final List<Vec> bonusFeatures = new LinkedList<Vec>();
         for (HierJoinedBinClassAddMetaFeaturesModel childrenModel : childrenModels) {
           Mx features = childrenModel.probsAll(childDS.data());
           Collections.addAll(bonusFeatures, MxTools.splitMxColumns(features));
         }
-        final DataSet extendedChildDS = DataTools.extendDataset(childDS, ArrayTools.map(bonusFeatures.toArray(), Vec.class, new Computable<Object, Vec>() {
+        final VectorizedRealTargetDataSet extendedChildDS = DataTools.extendDataset(childDS, ArrayTools.map(bonusFeatures.toArray(), Vec.class, new Computable<Object, Vec>() {
           @Override
           public Vec compute(final Object argument) {
             return (Vec)argument;
@@ -151,7 +153,7 @@ public class HierarchicalRefinedExpertClassification implements Optimization<Hie
 
     if (node.isTrainingNode()) {
       final TIntList idxs = node.joinLists();
-      final DataSet fullDs = node.createDS();
+      final VectorizedRealTargetDataSet fullDs = node.createDS();
 
       //fucking sh*t: double model applying: bestClassAll, probAll.
       final Vec predicted = btModel.bestClassAll(fullDs.data());
@@ -167,7 +169,7 @@ public class HierarchicalRefinedExpertClassification implements Optimization<Hie
         node.addErrorChild(errors);
       }
 
-      final DataSet filteredDs = node.createDS();
+      final VectorizedRealTargetDataSet filteredDs = node.createDS();
 
       final List<Vec> bonusFeatures = new LinkedList<Vec>();
       for (HierarchyTree.Node childNode : node.getChildren()) {
@@ -178,7 +180,7 @@ public class HierarchicalRefinedExpertClassification implements Optimization<Hie
         }
       }
 
-      final DataSet extendedDs = DataTools.extendDataset(filteredDs, ArrayTools.map(bonusFeatures.toArray(), Vec.class, new Computable<Object, Vec>() {
+      final VectorizedRealTargetDataSet extendedDs = DataTools.extendDataset(filteredDs, ArrayTools.map(bonusFeatures.toArray(), Vec.class, new Computable<Object, Vec>() {
         @Override
         public Vec compute(final Object argument) {
           return (Vec)argument;
@@ -208,7 +210,7 @@ public class HierarchicalRefinedExpertClassification implements Optimization<Hie
       };
       boosting.addListener(calcer);
 
-      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, DS size=" + extendedDs.power() + ", filtered errors = " + errors.size());
+      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, DS size=" + extendedDs.length() + ", filtered errors = " + errors.size());
       {
         for (HierarchyTree.Node childNode : node.getChildren()) {
           System.out.println("entries for class {" + childNode.getCategoryId() + "} = " + MCTools.classEntriesCount(extendedDs.target(), childNode.getCategoryId()));

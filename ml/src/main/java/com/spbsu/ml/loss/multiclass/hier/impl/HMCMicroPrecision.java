@@ -1,7 +1,7 @@
 package com.spbsu.ml.loss.multiclass.hier.impl;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
 import com.spbsu.ml.loss.multiclass.hier.HierLoss;
@@ -13,7 +13,7 @@ import com.spbsu.ml.loss.multiclass.hier.HierLoss;
 public class HMCMicroPrecision extends HierLoss {
   private final MCMicroPrecision precision;
 
-  public HMCMicroPrecision(final HierarchyTree unfilledHierarchy, final DataSet dataSet, final int minEntries) {
+  public HMCMicroPrecision(final HierarchyTree unfilledHierarchy, final VectorizedRealTargetDataSet dataSet, final int minEntries) {
     super(unfilledHierarchy, dataSet, minEntries);
     precision = new MCMicroPrecision(target);
   }

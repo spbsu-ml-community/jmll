@@ -4,7 +4,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.GreedyTDRegion;
 import com.spbsu.ml.models.ContinousObliviousTree;
@@ -39,7 +39,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
   private final double linearFineLambda, constFineLambda, quadraticFineLambda;
   private final double lipshicParametr;
 
-  public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
+  public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, VectorizedRealTargetDataSet ds, BFGrid grid, int depth) {
     super(grid);
     got = new GreedyObliviousTree(grid, depth);
     numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
@@ -53,7 +53,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     //executor = Executors.newFixedThreadPool(4);
   }
 
-  public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth, double regulation,
+  public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, VectorizedRealTargetDataSet ds, BFGrid grid, int depth, double regulation,
                                                              boolean softBoundary, double constFineLambda, double linearFineLambda, double quadraticFineLambda, double lipshicParametr) {
     super(grid);
     this.regulationCoefficient = regulation;
@@ -274,12 +274,12 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 
   int numberOfPointInLeaf[];
 
-  void precalculateMissCoefficients(DataSet ds, L2 loss) {
+  void precalculateMissCoefficients(VectorizedRealTargetDataSet ds, L2 loss) {
     quadraticMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
     linearMissCoefficient = new double[numberOfVariables];
     coordinateSum = new double[1 << depth][depth];
     numberOfPointInLeaf = new int[1 << depth];
-    for (int i = 0; i < ds.power(); i++) {
+    for (int i = 0; i < ds.length(); i++) {
       int index = 0;
       for (BFGrid.BinaryFeature feature : features) {
         index <<= 1;
@@ -361,7 +361,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     }
   }
 
-  public ContinousObliviousTree fit(DataSet ds, L2 loss) {
+  public ContinousObliviousTree fit(VectorizedRealTargetDataSet<?> ds, L2 loss) {
     features = got.fit(ds, loss).features();
     if (features.size() != depth) {
       System.out.println("Greedy oblivious tree bug");

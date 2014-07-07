@@ -12,9 +12,9 @@ import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.impl.ChangedTarget;
-import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
 import com.spbsu.ml.loss.L2;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.iterator.TIntObjectIterator;
@@ -97,32 +97,31 @@ public class MCTools {
     return result;
   }
 
-  public static TIntObjectMap<TIntList> splitClassesIdxs(DataSet ds) {
+  public static TIntObjectMap<TIntList> splitClassesIdxs(VectorizedRealTargetDataSet ds) {
     final TIntObjectMap<TIntList> indexes = new TIntObjectHashMap<TIntList>();
-    for (DSIterator iter = ds.iterator(); iter.advance(); ) {
-      final int catId = (int) iter.y();
+    for (int i = 0; i < ds.length(); i++) {
+      final int catId = (int) ds.target().get(i);
       if (indexes.containsKey(catId)) {
-        indexes.get(catId).add(iter.index());
+        indexes.get(catId).add(i);
       }
       else {
         final TIntList newClassIdxs = new TIntLinkedList();
-        newClassIdxs.add(iter.index());
+        newClassIdxs.add(i);
         indexes.put(catId, newClassIdxs);
       }
     }
     return indexes;
   }
 
-  public static DataSet normalizeClasses(DataSet learn) {
-    final DSIterator it = learn.iterator();
-    final Vec normalized = new ArrayVec(learn.power());
-    while (it.advance()) {
-      normalized.set(it.index(), normalizeRelevance(it.y()));
+  public static VectorizedRealTargetDataSet normalizeClasses(VectorizedRealTargetDataSet<?> learn) {
+    final Vec normalized = new ArrayVec(learn.length());
+    for (int i = 0; i < learn.length(); i++) {
+      normalized.set(i, normalizeRelevance(learn.target().get(i)));
     }
-    return new ChangedTarget((DataSetImpl)learn, normalized);
+    return new ChangedTarget((LightDataSetImpl)learn, normalized);
   }
 
-  private static <LocalLoss extends L2> double normalizeRelevance(double y) {
+  private static double normalizeRelevance(double y) {
     if (y <= 0.0)
       return 0.;
 //    else if (y < 0.14)
@@ -136,7 +135,7 @@ public class MCTools {
     return 1.;
   }
 
-  public static Pair<DataSet, DataSet> splitCvMulticlass(DataSet ds, double percentage, Random rnd) {
+  public static Pair<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet> splitCvMulticlass(VectorizedRealTargetDataSet ds, double percentage, Random rnd) {
     final TIntObjectMap<TIntList> indexes = splitClassesIdxs(ds);
     final TIntList learnIdxs = new TIntLinkedList();
     final TIntList testIdxs = new TIntLinkedList();
@@ -151,8 +150,8 @@ public class MCTools {
     }
     final int[] learnIndicesArr = learnIdxs.toArray();
     final int[] testIndicesArr = testIdxs.toArray();
-    return Pair.<DataSet, DataSet>create(
-        new DataSetImpl(
+    return Pair.<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet>create(
+        new LightDataSetImpl(
             new VecBasedMx(
                 ds.xdim(),
                 new IndexTransVec(
@@ -162,7 +161,7 @@ public class MCTools {
             ),
             new IndexTransVec(ds.target(), new ArrayPermutation(learnIndicesArr))
         ),
-        new DataSetImpl(
+        new LightDataSetImpl(
             new VecBasedMx(
                 ds.xdim(),
                 new IndexTransVec(
@@ -173,7 +172,7 @@ public class MCTools {
             new IndexTransVec(ds.target(), new ArrayPermutation(testIndicesArr))));
   }
 
-  public static DataSet transformRegressionToMC(DataSet regressionDs, int classCount, TDoubleList borders) throws IOException {
+  public static VectorizedRealTargetDataSet transformRegressionToMC(VectorizedRealTargetDataSet regressionDs, int classCount, TDoubleList borders) throws IOException {
     double[] target = regressionDs.target().toArray();
     int[] idxs = ArrayTools.sequence(0, target.length);
     ArrayTools.parallelSort(target, idxs);
@@ -187,7 +186,7 @@ public class MCTools {
       }
     }
 
-    Vec resultTarget = new ArrayVec(regressionDs.power());
+    Vec resultTarget = new ArrayVec(regressionDs.length());
     int targetCursor = 0;
     for (int borderCursor = 0; borderCursor < borders.size(); borderCursor++){
       while (targetCursor < target.length && target[targetCursor] <= borders.get(borderCursor)) {
@@ -195,15 +194,15 @@ public class MCTools {
         targetCursor++;
       }
     }
-    return new ChangedTarget((DataSetImpl)regressionDs, resultTarget);
+    return new ChangedTarget((LightDataSetImpl)regressionDs, resultTarget);
   }
 
-  public static DataSet loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{
-    DataSet ds = DataTools.loadFromFeaturesTxt(file);
+  public static VectorizedRealTargetDataSet loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{
+    VectorizedRealTargetDataSet ds = DataTools.loadFromFeaturesTxt(file);
     return transformRegressionToMC(ds, classCount, borders);
   }
 
-  public static Mx createSimilarityMatrix(DataSet learn) {
+  public static Mx createSimilarityMatrix(VectorizedRealTargetDataSet learn) {
     final TIntObjectMap<TIntList> indexes = splitClassesIdxs(learn);
     final Metric<Vec> metric = new CosineDVectorMetric();
     final int k = indexes.keys().length;

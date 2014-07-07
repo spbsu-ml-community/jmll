@@ -3,7 +3,7 @@ package com.spbsu.ml.loss.multiclass.hier;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
@@ -18,7 +18,7 @@ public abstract class HierLoss extends Func.Stub {
   public TIntIntHashMap targetMapping;
   private int minEntries;
 
-  protected HierLoss(HierarchyTree unfilledHierarchy, DataSet dataSet, int minEntries) {
+  protected HierLoss(HierarchyTree unfilledHierarchy, VectorizedRealTargetDataSet dataSet, int minEntries) {
     this.minEntries = minEntries;
     unfilledHierarchy.fill(dataSet);
     init(unfilledHierarchy, dataSet.target());

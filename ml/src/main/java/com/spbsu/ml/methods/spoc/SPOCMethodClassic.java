@@ -10,15 +10,15 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.*;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MulticlassCodingMatrixModel;
 import gnu.trove.list.TDoubleList;
@@ -31,7 +31,7 @@ import gnu.trove.map.TIntObjectMap;
  * User: qdeee
  * Date: 07.05.14
  */
-public class SPOCMethodClassic implements Optimization<LLLogit> {
+public class SPOCMethodClassic implements VecOptimization<LLLogit> {
   protected static final double MX_IGNORE_THRESHOLD = 0.1;
   protected final int k;
   protected final int l;
@@ -61,12 +61,12 @@ public class SPOCMethodClassic implements Optimization<LLLogit> {
     }
   }
 
-  protected Trans createModel(final Func[] binClass, final DataSet learnDS) {
+  protected Trans createModel(final Func[] binClass, final VectorizedRealTargetDataSet learnDS) {
     return new MulticlassCodingMatrixModel(codingMatrix, binClass, MX_IGNORE_THRESHOLD);
   }
 
   @Override
-  public Trans fit(final DataSet learn, final LLLogit llLogit) {
+  public Trans fit(final VectorizedRealTargetDataSet<?> learn, final LLLogit llLogit) {
     System.out.println("coding matrix: \n" + codingMatrix.toString());
 
     final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(learn);
@@ -83,7 +83,7 @@ public class SPOCMethodClassic implements Optimization<LLLogit> {
         }
       }
 
-      final DataSet dataSet = new DataSetImpl(
+      final VectorizedRealTargetDataSet dataSet = new LightDataSetImpl(
           new VecBasedMx(
               learn.xdim(),
               new IndexTransVec(

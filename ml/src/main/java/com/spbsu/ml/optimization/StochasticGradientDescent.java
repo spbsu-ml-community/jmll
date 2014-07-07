@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods;
+package com.spbsu.ml.optimization;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;

@@ -4,7 +4,7 @@ import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.*;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.func.Ensemble;
@@ -16,7 +16,7 @@ import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.multiclass.hier.HierLoss;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.MultiClass;
-import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.HierJoinedBinClassModel;
 import com.spbsu.ml.models.HierarchicalModel;
@@ -32,7 +32,7 @@ import java.util.List;
  * User: qdeee
  * Date: 10.04.14
  */
-public class HierarchicalRefinedClassification implements Optimization<HierLoss> {
+public class HierarchicalRefinedClassification implements VecOptimization<HierLoss> {
   private int weakIters;
   private double weakStep;
 //  private BFGrid grid;
@@ -43,7 +43,7 @@ public class HierarchicalRefinedClassification implements Optimization<HierLoss>
   }
 
   @Override
-  public Trans fit(final DataSet learn, final HierLoss hierLoss) {
+  public Trans fit(final VectorizedRealTargetDataSet<?> learn, final HierLoss hierLoss) {
 //    grid = GridTools.medianGrid(learn, 32);
     final HierJoinedBinClassModel hierJoinedBinClassModel = traverseFitBottomTop(hierLoss.getHierRoot());
     final HierarchicalModel hierarchicalModel = traverseFitTopBottom(hierLoss.getHierRoot(), hierJoinedBinClassModel);
@@ -72,7 +72,7 @@ public class HierarchicalRefinedClassification implements Optimization<HierLoss>
       System.out.println(String.format("\n\nBoosting at node %d is started, DS size=%d", node.getCategoryId(), node.getEntriesCount()));
       final Func[] resultModels = new Func[labels.size()];
       for (int c = 0; c < labels.size(); c++) {
-        final DataSet childDS = node.createDSForChild(labels.get(c));
+        final VectorizedRealTargetDataSet childDS = node.createDSForChild(labels.get(c));
         final LLLogit globalLoss = new LLLogit(childDS.target());
 
         final int classIndex = labels.get(c);
@@ -136,7 +136,7 @@ public class HierarchicalRefinedClassification implements Optimization<HierLoss>
 
     if (node.isTrainingNode()) {
       final TIntList idxs = node.joinLists();
-      final DataSet ds = node.createDS();
+      final VectorizedRealTargetDataSet ds = node.createDS();
       final Vec predicted = btModel.bestClassAll(ds.data());
       final TIntList errors = new TIntLinkedList();
       for (int i = 0; i < predicted.dim(); i++) {
@@ -149,7 +149,7 @@ public class HierarchicalRefinedClassification implements Optimization<HierLoss>
         node.addErrorChild(errors);
       }
 
-      final DataSet learnDS = node.createDS();
+      final VectorizedRealTargetDataSet learnDS = node.createDS();
 
       final Vec normTarget = MCTools.normalizeTarget(learnDS.target(), labels);
       final MLLLogit globalLoss = new MLLLogit(normTarget);
@@ -174,7 +174,7 @@ public class HierarchicalRefinedClassification implements Optimization<HierLoss>
       };
       boosting.addListener(calcer);
 
-      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, learn DS size=" + learnDS.power() + ", filtered errors = " + errors.size());
+      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, learn DS size=" + learnDS.length() + ", filtered errors = " + errors.size());
       {
         for (HierarchyTree.Node childNode : node.getChildren()) {
           System.out.println("entries for class{" + childNode.getCategoryId() + "} = " + MCTools.classEntriesCount(learnDS.target(), childNode.getCategoryId()));

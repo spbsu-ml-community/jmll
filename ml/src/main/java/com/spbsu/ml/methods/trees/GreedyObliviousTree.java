@@ -5,10 +5,10 @@ import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.data.Aggregate;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
-import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ import java.util.ListIterator;
  * Date: 30.11.12
  * Time: 17:01
  */
-public class GreedyObliviousTree<Loss extends StatBasedLoss> implements Optimization<Loss> {
+public class GreedyObliviousTree<Loss extends StatBasedLoss> implements VecOptimization<Loss> {
   private final int depth;
   private final BFGrid grid;
 
@@ -31,14 +31,14 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> implements Optimiza
   }
 
   @Override
-  public ObliviousTree fit(DataSet ds, final Loss loss) {
+  public ObliviousTree fit(VectorizedRealTargetDataSet<?> ds, final Loss loss) {
     List<BFOptimizationSubset> leaves = new ArrayList<BFOptimizationSubset>(1 << depth);
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(depth);
     double currentScore = Double.POSITIVE_INFINITY;
 
     final BinarizedDataSet bds;
     bds = ds.cache(Binarize.class).binarize(grid);
-    leaves.add(new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, ds.power())));
+    leaves.add(new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, ds.length())));
 
     final double[] scores = new double[grid.size()];
     for (int level = 0; level < depth; level++) {

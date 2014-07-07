@@ -10,7 +10,7 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.func.Ensemble;
@@ -46,8 +46,8 @@ import java.io.*;
 public abstract class SPOCMethodTest extends TestSuite {
 
   private abstract static class Base extends TestCase {
-    protected DataSet learn;
-    protected DataSet test;
+    protected VectorizedRealTargetDataSet learn;
+    protected VectorizedRealTargetDataSet test;
     protected Mx S;
 
     protected int k;
@@ -65,7 +65,7 @@ public abstract class SPOCMethodTest extends TestSuite {
     protected int metricIters;
     protected double metricStep;
 
-    protected static void evalModel(final MultiClassModel model, final DataSet ds, final String prefixComment) {
+    protected static void evalModel(final MultiClassModel model, final VectorizedRealTargetDataSet ds, final String prefixComment) {
       final Vec predict = model.bestClassAll(ds.data());
       final Func[] metrics = new Func[] {
           new MCMicroPrecision(ds.target()),
@@ -132,7 +132,7 @@ public abstract class SPOCMethodTest extends TestSuite {
 //        throw new IllegalStateException("Result matrix is out of constraints");
 //      }
 
-      final Optimization<LLLogit> method = new SPOCMethodClassic(codingMatrix, mcStep, mcIters);
+      final VecOptimization<LLLogit> method = new SPOCMethodClassic(codingMatrix, mcStep, mcIters);
       final MultiClassModel model = (MultiClassModel) method.fit(learn, null);
       evalModel(model, learn, "[LEARN] ");
       evalModel(model, test, "[TEST] ");
@@ -150,7 +150,7 @@ public abstract class SPOCMethodTest extends TestSuite {
         throw new IllegalStateException("Result matrix is out of constraints");
       }
 
-      final Optimization<LLLogit> method = new SPOCMethodClassic(codingMatrix, mcStep, mcIters);
+      final VecOptimization<LLLogit> method = new SPOCMethodClassic(codingMatrix, mcStep, mcIters);
       final MultiClassModel model = (MultiClassModel) method.fit(learn, null);
       evalModel(model, learn, "[LEARN] ");
       evalModel(model, test, "[TEST] ");
@@ -221,8 +221,8 @@ public abstract class SPOCMethodTest extends TestSuite {
   public abstract static class ExternDataTests extends Base {
     public void setUp() throws Exception {
       super.setUp();
-      final DataSet fullds = DataTools.loadFromSparseFeaturesTxt("./ml/tests/data/multiclass/ds_letter/letter.libfm");
-      final Pair<DataSet, DataSet> pairDS = MCTools.splitCvMulticlass(fullds, 0.8, new FastRandom(100501));
+      final VectorizedRealTargetDataSet fullds = DataTools.loadFromSparseFeaturesTxt("./ml/tests/data/multiclass/ds_letter/letter.libfm");
+      final Pair<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet> pairDS = MCTools.splitCvMulticlass(fullds, 0.8, new FastRandom(100501));
       learn = pairDS.first;
       test = pairDS.second;
       S = loadMxFromFile("./ml/tests/data/multiclass/ds_letter/letter.similarityMx");
@@ -247,7 +247,7 @@ public abstract class SPOCMethodTest extends TestSuite {
 
   public abstract static class StuffTests extends TestCase{
 
-    private DataSet learn;
+    private VectorizedRealTargetDataSet learn;
 
     @Override
     protected void setUp() throws Exception {
@@ -255,7 +255,7 @@ public abstract class SPOCMethodTest extends TestSuite {
     }
 
     public void testRelevanceSplit() throws IOException {
-      final DataSet dataSet = MCTools.normalizeClasses(learn);
+      final VectorizedRealTargetDataSet dataSet = MCTools.normalizeClasses(learn);
       final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(dataSet);
       for (TIntObjectIterator<TIntList> iter = indexes.iterator(); iter.hasNext(); ) {
         iter.advance();

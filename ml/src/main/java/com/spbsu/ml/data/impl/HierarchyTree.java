@@ -8,7 +8,7 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.TDoubleList;
@@ -36,7 +36,7 @@ public class HierarchyTree {
     this.root = treeRoot;
   }
 
-  public void fill(DataSet learn) {
+  public void fill(VectorizedRealTargetDataSet learn) {
     TIntObjectHashMap<TIntList> id2positions = new TIntObjectHashMap<TIntList>();
     Vec target = learn.target();
     for (int i = 0; i < target.dim(); i++) {
@@ -123,7 +123,7 @@ public class HierarchyTree {
     Node parent;
     List<Node> children;
 
-    DataSet sourceDS = null;
+    VectorizedRealTargetDataSet sourceDS = null;
     TIntObjectMap<TIntList> classesPositions;
 
     public Node(int categoryId, Node parent) {
@@ -133,7 +133,7 @@ public class HierarchyTree {
       this.classesPositions = new TIntObjectHashMap<TIntList>(3);
     }
 
-    public Node(final int categoryId, final Node parent, final DataSet sourceDS) {
+    public Node(final int categoryId, final Node parent, final VectorizedRealTargetDataSet sourceDS) {
       this(categoryId, parent);
       this.sourceDS = sourceDS;
     }
@@ -150,7 +150,7 @@ public class HierarchyTree {
       this.children.add(node);
     }
 
-    public void fillDS(final DataSet learn, final TIntObjectHashMap<TIntList> id2positions) {
+    public void fillDS(final VectorizedRealTargetDataSet learn, final TIntObjectHashMap<TIntList> id2positions) {
       sourceDS = learn;
       final TIntList positions = id2positions.get(categoryId);
       if (positions != null)
@@ -242,7 +242,7 @@ public class HierarchyTree {
       return false;
     }
 
-    public DataSet createDS(TIntList removeIdxs) {
+    public VectorizedRealTargetDataSet createDS(TIntList removeIdxs) {
       final TIntList join = joinLists();
       if (removeIdxs != null) {
         join.removeAll(removeIdxs);
@@ -267,15 +267,15 @@ public class HierarchyTree {
         targetList.fill(targetList.size(), targetList.size() + selfClass.size(), categoryId);
       final Vec target = new ArrayVec(targetList.toArray());
       assert(target.dim() != data.rows());
-      return new DataSetImpl(data, target);
+      return new LightDataSetImpl(data, target);
     }
 
-    public DataSet createDS() {
+    public VectorizedRealTargetDataSet createDS() {
       return createDS(null);
     }
 
-    public DataSet createDSForChild(int chosenCatId) {
-      double[] targetArr = new double[sourceDS.power()];
+    public VectorizedRealTargetDataSet createDSForChild(int chosenCatId) {
+      double[] targetArr = new double[sourceDS.length()];
       ArrayTools.fill(targetArr, 0, targetArr.length, -1.);
       final TIntList chosenClassIdxs = classesPositions.get(chosenCatId);
       for (TIntIterator iter = chosenClassIdxs.iterator(); iter.hasNext(); ) {
@@ -284,7 +284,7 @@ public class HierarchyTree {
 
       if (!isRoot()) {
         TIntList idxs = new TIntLinkedList();
-        idxs.addAll(ArrayTools.sequence(0, sourceDS.power()));
+        idxs.addAll(ArrayTools.sequence(0, sourceDS.length()));
         for (Node child : children) {
           if (child.categoryId != chosenCatId) {
             idxs.removeAll(classesPositions.get(child.categoryId));
@@ -306,10 +306,10 @@ public class HierarchyTree {
         );
         Vec target = new IndexTransVec(new ArrayVec(targetArr), new ArrayPermutation(perm));
 
-        return new DataSetImpl(data, target);
+        return new LightDataSetImpl(data, target);
       }
       else {
-        return new ChangedTarget((DataSetImpl) sourceDS, new ArrayVec(targetArr));
+        return new ChangedTarget((LightDataSetImpl) sourceDS, new ArrayVec(targetArr));
       }
     }
 

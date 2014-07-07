@@ -1,7 +1,7 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.stats.OrderByFeature;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
@@ -15,7 +15,7 @@ import java.util.Arrays;
  * Time: 17:42
  */
 public class GridTools {
-  public static BFGrid medianGrid(DataSet ds, int binFactor) {
+  public static BFGrid medianGrid(VectorizedRealTargetDataSet ds, int binFactor) {
     final int dim = ds.xdim();
     BFGrid.BFRow[] rows = new BFGrid.BFRow[dim];
     final TIntHashSet known = new TIntHashSet();
@@ -23,10 +23,10 @@ public class GridTools {
     final TIntArrayList borders = new TIntArrayList();
     int bfCount = 0;
 
-    double[] feature = new double[ds.power()];
+    double[] feature = new double[ds.length()];
     for (int f = 0; f < dim; f++) {
       borders.clear();
-      borders.add(ds.power());
+      borders.add(ds.length());
       final ArrayPermutation permutation = byFeature.orderBy(f);
       int[] order = permutation.direct();
       int[] reverse = permutation.reverse();
@@ -70,7 +70,7 @@ public class GridTools {
       final TDoubleArrayList dborders = new TDoubleArrayList();
       { // drop existing
         int[] crcs = new int[borders.size()];
-        for (int i = 0; i < ds.power(); i++) { // unordered index
+        for (int i = 0; i < ds.length(); i++) { // unordered index
           final int orderedIndex = reverse[i];
           for (int b = 0; b < borders.size() && orderedIndex >= borders.get(b); b++) {
             crcs[b] = (crcs[b] * 31) + (i + 1);

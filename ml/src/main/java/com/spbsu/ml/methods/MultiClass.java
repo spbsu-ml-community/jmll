@@ -5,7 +5,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.MultiClassModel;
 
@@ -14,17 +14,17 @@ import com.spbsu.ml.models.MultiClassModel;
  * Date: 27.11.13
  * Time: 18:55
  */
-public class MultiClass implements Optimization<L2> {
-  private final Optimization<L2> inner;
+public class MultiClass implements VecOptimization<L2> {
+  private final VecOptimization<L2> inner;
   private final Computable<Vec, ? extends L2> local;
 
-  public MultiClass(Optimization<L2> inner, Computable<Vec, ? extends L2> local) {
+  public MultiClass(VecOptimization<L2> inner, Computable<Vec, ? extends L2> local) {
     this.inner = inner;
     this.local = local;
   }
 
   @Override
-  public MultiClassModel fit(DataSet learn, L2 mllLogitGradient) {
+  public MultiClassModel fit(VectorizedRealTargetDataSet<?> learn, L2 mllLogitGradient) {
     final Mx data = learn.data();
     final Mx gradient = new VecBasedMx(data.rows(), mllLogitGradient.target);
     final Func[] models = new Func[gradient.rows()];

@@ -8,7 +8,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.func.NormalizedLinear;
 import com.spbsu.ml.loss.L2;
 
@@ -22,7 +22,7 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
  * Date: 27.12.10
  * Time: 18:04
  */
-public class LARSMethod implements Optimization<L2> {
+public class LARSMethod implements VecOptimization<L2> {
   private class Direction {
     double sign;
     int index;
@@ -32,7 +32,7 @@ public class LARSMethod implements Optimization<L2> {
     }
   }
 
-  public NormalizedLinear fit(DataSet origDS, L2 loss) {
+  public NormalizedLinear fit(VectorizedRealTargetDataSet<?> origDS, L2 loss) {
     Mx orig = origDS.data();
     final int featuresCount = orig.columns();
     Vec betas = new ArrayVec(featuresCount);

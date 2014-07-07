@@ -4,9 +4,6 @@ import com.spbsu.commons.func.Computable;
 import com.spbsu.ml.clustering.ClusterizationAlgorithm;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
-import com.spbsu.commons.util.RBTreeNode;
-import com.spbsu.commons.util.RBTreeNodeBase;
-import com.spbsu.commons.util.RedBlackTree;
 
 
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -41,7 +38,7 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
     }
   }
 
-  private static class VecIterEntry extends RBTreeNodeBase {
+  private static class VecIterEntry implements Comparable<VecIterEntry> {
     List<IndexedVecIter> iters = new LinkedList<IndexedVecIter>();
     final int index;
 
@@ -50,9 +47,8 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
     }
 
     @Override
-    public int compareTo(RBTreeNode node) {
-      final VecIterEntry entry = (VecIterEntry) node;
-      return index - entry.index;
+    public int compareTo(@NotNull VecIterEntry node) {
+      return index - node.index;
     }
   }
 
@@ -70,7 +66,7 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
   @NotNull
   @Override
   public Collection<? extends Collection<T>> cluster(Collection<T> dataSet, final Computable<T, Vec> data2DVector) {
-    final RedBlackTree<VecIterEntry> iters = new RedBlackTree<VecIterEntry>();
+    final TreeSet<VecIterEntry> iters = new TreeSet<>();
     final TIntObjectHashMap<VecIterEntry> cache = new TIntObjectHashMap<VecIterEntry>();
     final List<IndexedVecIter<T>> entries = new ArrayList<IndexedVecIter<T>>();
     double minToJoin = this.minToJoin;// + 0.5 * (1 - Math.min(1,  Math.log(2000) / Math.log(dataSet.size())));

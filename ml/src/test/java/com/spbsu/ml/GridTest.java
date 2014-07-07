@@ -4,9 +4,10 @@ import com.spbsu.commons.FileTestCase;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.data.impl.DataSetImpl;
+
 
 import java.io.IOException;
 
@@ -16,7 +17,7 @@ import java.io.IOException;
  * Time: 16:35
  */
 public class GridTest extends FileTestCase {
-  public static DataSet learn, validate;
+  public static VectorizedRealTargetDataSet learn, validate;
 
   static private synchronized void loadDataSet() {
     try {
@@ -32,8 +33,8 @@ public class GridTest extends FileTestCase {
   public void testFeaturesLoaded() {
     assertEquals(50, learn.xdim());
     assertEquals(50, validate.xdim());
-    assertEquals(12465, learn.power());
-    assertEquals(46596, validate.power());
+    assertEquals(12465, learn.length());
+    assertEquals(46596, validate.length());
   }
 
   public void testGrid1() throws IOException {
@@ -88,7 +89,7 @@ public class GridTest extends FileTestCase {
 
   public void testSplitUniform() {
     final VecBasedMx data = new VecBasedMx(1, new ArrayVec(0, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8));
-    DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));
+    VectorizedRealTargetDataSet ds = new LightDataSetImpl(data, new ArrayVec(data.rows()));
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(3, grid.size());
     assertEquals(0.1, grid.bf(0).condition);
@@ -98,7 +99,7 @@ public class GridTest extends FileTestCase {
 
   public void testSplitUniformUnsorted() {
     final VecBasedMx data = new VecBasedMx(1, new ArrayVec(0.8, 0.5, 0, 0.1, 0.2, 0.3, 0.6, 0.7));
-    DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));
+    VectorizedRealTargetDataSet ds = new LightDataSetImpl(data, new ArrayVec(data.rows()));
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(3, grid.size());
     assertEquals(0.1, grid.bf(0).condition);
@@ -108,7 +109,7 @@ public class GridTest extends FileTestCase {
 
   public void testSplitBinary() {
     final VecBasedMx data = new VecBasedMx(1, new ArrayVec(0, 0, 1, 1, 1, 1, 1, 1));
-    DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));
+    VectorizedRealTargetDataSet ds = new LightDataSetImpl(data, new ArrayVec(data.rows()));
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(1, grid.size());
     assertEquals(0., grid.bf(0).condition);
@@ -116,21 +117,21 @@ public class GridTest extends FileTestCase {
 
   public void testSplitBinaryIncorrect1() {
     final VecBasedMx data = new VecBasedMx(1, new ArrayVec(1, 1, 1, 1, 1, 1, 1, 1));
-    DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));
+    VectorizedRealTargetDataSet ds = new LightDataSetImpl(data, new ArrayVec(data.rows()));
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(0, grid.size());
   }
 
   public void testSplitBinaryIncorrect2() {
     final VecBasedMx data = new VecBasedMx(1, new ArrayVec(0, 1, 1, 1, 1, 1, 1, 1));
-    DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));
+    VectorizedRealTargetDataSet ds = new LightDataSetImpl(data, new ArrayVec(data.rows()));
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(1, grid.size());
   }
 
   public void testBinarize4() {
     final VecBasedMx data = new VecBasedMx(1, new ArrayVec(0, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8));
-    DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));
+    VectorizedRealTargetDataSet ds = new LightDataSetImpl(data, new ArrayVec(data.rows()));
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     byte[] bin = new byte[1];
     grid.binarize(new ArrayVec(0.), bin);
@@ -141,7 +142,7 @@ public class GridTest extends FileTestCase {
 
   public void testSameFeatures() {
       final VecBasedMx data = new VecBasedMx(1, new ArrayVec(0.0, 0.5, 0.3));
-      DataSet ds = new DataSetImpl(data, new ArrayVec(data.rows()));
+      VectorizedRealTargetDataSet ds = new LightDataSetImpl(data, new ArrayVec(data.rows()));
       final BFGrid grid = GridTools.medianGrid(ds, 32);
       assertEquals(1, grid.size());
   }

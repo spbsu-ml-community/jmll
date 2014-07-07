@@ -25,8 +25,8 @@ import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.func.Ensemble;
@@ -97,19 +97,19 @@ public class JMLLCLI {
 
       final TIntObjectHashMap<CharSequence> metaLearn = new TIntObjectHashMap<CharSequence>();
       final TIntObjectHashMap<CharSequence> metaTest = new TIntObjectHashMap<CharSequence>();
-      DataSet learn = DataTools.loadFromFeaturesTxt(learnFile, metaLearn);
+      VectorizedRealTargetDataSet learn = DataTools.loadFromFeaturesTxt(learnFile, metaLearn);
       if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
         learn = MCTools.normalizeClasses(learn);
       if (learnFile.endsWith(".gz"))
         learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
 
-      DataSet test;
+      VectorizedRealTargetDataSet test;
       if (!command.hasOption(CROSS_VALIDATION_OPTION)) {
         test = command.hasOption(TEST_OPTION) ? DataTools.loadFromFeaturesTxt(command.getOptionValue(TEST_OPTION), metaTest) : learn;
       } else {
         final String cvOption = command.getOptionValue(CROSS_VALIDATION_OPTION);
         final String[] cvOptionsSplit = StringUtils.split(cvOption, "/", 2);
-        final Pair<DataSet, DataSet> learnTest = splitCV(learn, Integer.parseInt(cvOptionsSplit[1]), new FastRandom(Integer.parseInt(cvOptionsSplit[0])));
+        final Pair<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet> learnTest = splitCV(learn, Integer.parseInt(cvOptionsSplit[1]), new FastRandom(Integer.parseInt(cvOptionsSplit[0])));
         learn = learnTest.first;
         test = learnTest.second;
       }
@@ -120,7 +120,7 @@ public class JMLLCLI {
 
       String mode = command.getArgs()[0];
 
-      final DataSet finalLearn = learn;
+      final VectorizedRealTargetDataSet finalLearn = learn;
       final Factory<BFGrid> lazyGrid = new Factory<BFGrid>() {
         BFGrid cooked;
 
@@ -139,7 +139,7 @@ public class JMLLCLI {
       final String outputFile = command.hasOption(OUTPUT_OPTION) ? command.getOptionValue(OUTPUT_OPTION) : learnFile;
 
       if ("fit".equals(mode)) {
-        final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd);
+        final VecOptimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd);
         final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
         final Func loss = DataTools.targetByName(target).compute(learn.target());
         final String[] metricNames = command.getOptionValues(METRICS_OPTION);
@@ -177,27 +177,21 @@ public class JMLLCLI {
         }
         DataTools.writeModel(result, new File(outputFile + ".model"), serializationRepository);
       } else if ("apply".equals(mode)) {
-        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"));
-        try {
+        try (final OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"))) {
           Trans model = DataTools.readModel(command.getOptionValue(MODEL_OPTION, "features.txt.model"), serializationRepository);
-          DSIterator it = learn.iterator();
-          int index = 0;
-          while (it.advance()) {
+          for (int i = 0; i < learn.length(); i++) {
             final CharSequence value;
             if (model instanceof Func) {
               final Func func = (Func) model;
-              value = Double.toString(func.value(it.x()));
+              value = Double.toString(func.value(learn.data().row(i)));
             } else {
-              value = model.trans(it.x()).toString();
+              value = model.trans(learn.data().row(i)).toString();
             }
-            writer.append(metaLearn.get(index));
+            writer.append(metaLearn.get(i));
             writer.append('\t');
             writer.append(value);
             writer.append('\n');
-            index++;
           }
-        } finally {
-          writer.close();
         }
       } else {
         throw new RuntimeException("Mode " + mode + " is not recognized");
@@ -213,10 +207,10 @@ public class JMLLCLI {
   }
 
 
-  private static Pair<DataSet, DataSet> splitCV(DataSet learn, int folds, Random rnd) {
+  private static Pair<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet> splitCV(VectorizedRealTargetDataSet learn, int folds, Random rnd) {
     TIntArrayList learnIndices = new TIntArrayList();
     TIntArrayList testIndices = new TIntArrayList();
-    for (int i = 0; i < learn.power(); i++) {
+    for (int i = 0; i < learn.length(); i++) {
       if (rnd.nextDouble() < 1. / folds)
         learnIndices.add(i);
       else
@@ -224,8 +218,8 @@ public class JMLLCLI {
     }
     final int[] learnIndicesArr = learnIndices.toArray();
     final int[] testIndicesArr = testIndices.toArray();
-    return Pair.<DataSet, DataSet>create(
-        new DataSetImpl(
+    return Pair.<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet>create(
+        new LightDataSetImpl(
             new VecBasedMx(
                 learn.xdim(),
                 new IndexTransVec(
@@ -235,7 +229,7 @@ public class JMLLCLI {
             ),
             new IndexTransVec(learn.target(), new ArrayPermutation(learnIndicesArr))
         ),
-        new DataSetImpl(
+        new LightDataSetImpl(
             new VecBasedMx(
                 learn.xdim(),
                 new IndexTransVec(
@@ -246,9 +240,9 @@ public class JMLLCLI {
             new IndexTransVec(learn.target(), new ArrayPermutation(testIndicesArr))));
   }
 
-  private static Optimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd) {
+  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
-    final Factory<? extends Optimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd);
+    final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd);
     String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
     StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
     Method[] builderMethods = factory.getClass().getMethods();
@@ -286,10 +280,10 @@ public class JMLLCLI {
     return factory.create();
   }
 
-  private static Factory<? extends Optimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd) {
+  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd) {
     if ("GradientBoosting".equals(name)) {
-      return new Factory<Optimization>() {
-        public Optimization weak = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
+      return new Factory<VecOptimization>() {
+        public VecOptimization weak = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
         public String lossName = "LogL2";
         public double step = 0.005;
         public int icount = 200;
@@ -306,22 +300,22 @@ public class JMLLCLI {
           this.lossName = lossName;
         }
 
-        public void weak(Optimization weak) {
+        public void weak(VecOptimization weak) {
           this.weak = weak;
         }
 
         @Override
-        public Optimization create() {
+        public VecOptimization create() {
           //noinspection unchecked
           return new GradientBoosting(weak, DataTools.targetByName(lossName), icount, step);
         }
       };
     } else if ("MultiClassSplit".equals(name)) {
       return new Factory<MultiClass>() {
-        public Optimization inner = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
+        public VecOptimization inner = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
         public String localName = "SatL2";
 
-        public void inner(Optimization i) {
+        public void inner(VecOptimization i) {
           this.inner = i;
         }
 
@@ -335,7 +329,7 @@ public class JMLLCLI {
         }
       };
     } else if ("GreedyObliviousTree".equals(name)) {
-      return new Factory<Optimization>() {
+      return new Factory<VecOptimization>() {
         public int depth = 6;
 
         public void depth(int d) {
@@ -343,19 +337,19 @@ public class JMLLCLI {
         }
 
         @Override
-        public Optimization create() {
+        public VecOptimization create() {
           return new GreedyObliviousTree(grid.create(), depth);
         }
       };
     } else if ("GreedyTDRegion".equals(name)) {
-      return new Factory<Optimization>() {
+      return new Factory<VecOptimization>() {
         @Override
-        public Optimization create() {
+        public VecOptimization create() {
           return new GreedyTDRegion(grid.create());
         }
       };
     } else if ("FMWorkaround".equals(name)) {
-      return new Factory<Optimization>() {
+      return new Factory<VecOptimization>() {
         public String task = "-r";
         public String dim = "1,1,8";
         public String iters = "1000";
@@ -378,7 +372,7 @@ public class JMLLCLI {
         }
 
         @Override
-        public Optimization create() {
+        public VecOptimization create() {
           return new FMTrainingWorkaround(task, dim, iters, others);
         }
       };
@@ -388,14 +382,14 @@ public class JMLLCLI {
 
 
   private static class ProgressPrinter implements ProgressHandler {
-    private final DataSet learn;
-    private final DataSet test;
+    private final VectorizedRealTargetDataSet learn;
+    private final VectorizedRealTargetDataSet test;
     private final Trans loss;
     private final Trans[] testMetrics;
     Vec learnValues;
     Vec[] testValuesArray;
 
-    public ProgressPrinter(DataSet learn, DataSet test, Trans learnMetric, Trans[] testMetrics) {
+    public ProgressPrinter(VectorizedRealTargetDataSet learn, VectorizedRealTargetDataSet test, Trans learnMetric, Trans[] testMetrics) {
       this.learn = learn;
       this.test = test;
       this.loss = learnMetric;

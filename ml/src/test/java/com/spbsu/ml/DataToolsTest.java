@@ -2,10 +2,9 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.data.impl.DataSetImpl;
 
 /**
  * User: solar
@@ -45,7 +44,7 @@ public class DataToolsTest extends GridTest {
   }
 
   public void testExtendDataset() throws Exception {
-    DataSet ds = new DataSetImpl(
+    VectorizedRealTargetDataSet ds = new LightDataSetImpl(
         new VecBasedMx(2,
             new ArrayVec(1, 2,
                          3, 4)
@@ -53,9 +52,10 @@ public class DataToolsTest extends GridTest {
         new ArrayVec(0.1,
                      0.2)
     );
-    final DataSet extDs = DataTools.extendDataset(ds, new ArrayVec(5., 6.), new ArrayVec(7., 8.));
-    for (DSIterator iter = extDs.iterator(); iter.advance(); ) {
-      System.out.println(iter.y() + "\t" + iter.x().toString());
+    final VectorizedRealTargetDataSet extDs = DataTools.extendDataset(ds, new ArrayVec(5., 6.), new ArrayVec(7., 8.));
+
+    for (int i = 0; i < extDs.length(); i++) {
+      System.out.println(extDs.target().get(i) + "\t" + extDs.data().row(i).toString());
     }
   }
 }

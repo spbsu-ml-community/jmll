@@ -7,7 +7,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.func.Ensemble;
@@ -20,14 +20,14 @@ import java.util.List;
 * Date: 21.12.2010
 * Time: 22:13:54
 */
-public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolderImpl<Trans> implements Optimization<GlobalLoss> {
-  protected final Optimization<L2> weak;
+public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolderImpl<Trans> implements VecOptimization<GlobalLoss> {
+  protected final VecOptimization<L2> weak;
   private final Computable<Vec, L2> factory;
   int iterationsCount;
 
   double step;
 
-  public GradientBoosting(Optimization<L2> weak, int iterationsCount, double step) {
+  public GradientBoosting(VecOptimization<L2> weak, int iterationsCount, double step) {
     this(weak, new Computable<Vec, L2>() {
       @Override
       public L2 compute(Vec argument) {
@@ -36,7 +36,7 @@ public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolde
     }, iterationsCount, step);
   }
 
-  public GradientBoosting(Optimization<L2> weak, Computable<Vec, L2> factory, int iterationsCount, double step) {
+  public GradientBoosting(VecOptimization<L2> weak, Computable<Vec, L2> factory, int iterationsCount, double step) {
     this.weak = weak;
     this.factory = factory;
     this.iterationsCount = iterationsCount;
@@ -44,7 +44,7 @@ public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolde
   }
 
   @Override
-  public Ensemble fit(DataSet learn, GlobalLoss globalLoss) {
+  public Ensemble fit(VectorizedRealTargetDataSet<?> learn, GlobalLoss globalLoss) {
     final Vec cursor = new ArrayVec(globalLoss.xdim());
     List<Trans> weakModels = new ArrayList<Trans>(iterationsCount);
     final Trans gradient = globalLoss.gradient();

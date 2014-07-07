@@ -10,9 +10,8 @@ import com.spbsu.commons.math.vectors.impl.mx.VecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.logging.Interval;
-import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.NormalizedLinear;
 import com.spbsu.ml.loss.L2;
@@ -25,6 +24,7 @@ import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
+
 
 import java.util.Random;
 
@@ -122,7 +122,7 @@ public abstract class MethodsTests extends GridTest {
 //      while (VecTools.norm(vec) < MathTools.EPSILON);
       ds[i] = vec;
     }
-    final DataSetImpl dataSet = new DataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
+    final LightDataSetImpl dataSet = new LightDataSetImpl(new VecArrayMx(ds), new ArrayVec(ds.length));
     final VecBasedMx topology = new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.));
     VecTools.scale(topology.row(topology.rows() - 1), 0.);
     final PGMEM pgmem = new PGMEM(topology, 0.2, iterations, rng, policy);
@@ -144,7 +144,7 @@ public abstract class MethodsTests extends GridTest {
     pgmem.addListener(listener);
 
     Interval.start();
-    final SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.power()), 1.)));
+    final SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.length()), 1.)));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
     System.out.println(MxTools.prettyPrint(fit.topology));
     System.out.println();
@@ -211,7 +211,7 @@ public abstract class MethodsTests extends GridTest {
   }
 
   public class addBoostingListeners<GlobalLoss extends Func> {
-    addBoostingListeners(GradientBoosting<GlobalLoss> boosting, GlobalLoss loss, DataSet _learn, DataSet _validate) {
+    addBoostingListeners(GradientBoosting<GlobalLoss> boosting, GlobalLoss loss, VectorizedRealTargetDataSet _learn, VectorizedRealTargetDataSet _validate) {
       final Action counter = new ProgressHandler() {
         int index = 0;
 
@@ -230,14 +230,14 @@ public abstract class MethodsTests extends GridTest {
       boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
       final Ensemble ans = boosting.fit(_learn, loss);
-      Vec current = new ArrayVec(_validate.power());
-      for (int i = 0; i < _validate.power(); i++) {
+      Vec current = new ArrayVec(_validate.length());
+      for (int i = 0; i < _validate.length(); i++) {
         double f = 0;
         for (int j = 0; j < ans.models.length; j++)
           f += ans.weights.get(j) * ((Func)ans.models[j]).value(_validate.data().row(i));
         current.set(i, f);
       }
-      System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target()) / Math.sqrt(_validate.power()));
+      System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target()) / Math.sqrt(_validate.length()));
 
     }
   }
@@ -251,12 +251,12 @@ public abstract class MethodsTests extends GridTest {
   protected static class ScoreCalcer implements ProgressHandler {
     final String message;
     final Vec current;
-    private final DataSet ds;
+    private final VectorizedRealTargetDataSet ds;
 
-    public ScoreCalcer(String message, DataSet ds) {
+    public ScoreCalcer(String message, VectorizedRealTargetDataSet ds) {
       this.message = message;
       this.ds = ds;
-      current = new ArrayVec(ds.power());
+      current = new ArrayVec(ds.length());
     }
 
     double min = 1e10;
@@ -266,19 +266,15 @@ public abstract class MethodsTests extends GridTest {
       if (partial instanceof Ensemble) {
         final Ensemble linear = (Ensemble) partial;
         final Trans increment = linear.last();
-        final DSIterator iter = ds.iterator();
-        int index = 0;
-        while (iter.advance()) {
-          current.adjust(index++, linear.wlast() * ((Func) increment).value(iter.x()));
+        for (int i = 0; i < ds.length(); i++) {
+          current.adjust(i, linear.wlast() * ((Func) increment).value(ds.data().row(i)));
         }
       } else {
-        final DSIterator iter = ds.iterator();
-        int index = 0;
-        while (iter.advance()) {
-          current.set(index++, ((Func) partial).value(iter.x()));
+        for (int i = 0; i < ds.length(); i++) {
+          current.set(i, ((Func) partial).value(ds.data().row(i)));
         }
       }
-      double curLoss = VecTools.distance(current, ds.target()) / Math.sqrt(ds.power());
+      double curLoss = VecTools.distance(current, ds.target()) / Math.sqrt(ds.length());
       System.out.print(message + curLoss);
       min = Math.min(curLoss, min);
       System.out.print(" minimum = " + min);
@@ -307,12 +303,11 @@ public abstract class MethodsTests extends GridTest {
         final Ensemble model = (Ensemble) partial;
         final Trans increment = model.last();
 
-        final DSIterator iterator = learn.iterator();
         final TDoubleIntHashMap values = new TDoubleIntHashMap();
         final TDoubleDoubleHashMap dispersionDiff = new TDoubleDoubleHashMap();
         int index = 0;
-        while (iterator.advance()) {
-          final double value = ((Func) increment).value(iterator.x());
+        for (int i = 0; i < learn.data().rows(); i++) {
+          final double value = ((Func) increment).value(learn.data().row(i));
           values.adjustOrPutValue(value, 1, 1);
           final double ddiff = sqr(residues.get(index)) - sqr(residues.get(index) - value);
           residues.adjust(index, -model.wlast() * value);
@@ -342,7 +337,7 @@ public abstract class MethodsTests extends GridTest {
         double sum = 0;
         double sum2 = 0;
         for (int i = 0; i < n; i++) {
-          double v = learn.target().get(rng.nextInt(learn.power()));
+          double v = learn.target().get(rng.nextInt(learn.length()));
           sum += v;
           sum2 += v * v;
         }

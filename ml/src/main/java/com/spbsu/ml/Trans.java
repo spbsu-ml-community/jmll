@@ -1,5 +1,6 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * Date: 21.12.2010
  * Time: 22:07:07
  */
-public interface Trans {
+public interface Trans extends Computable<Vec,Vec> {
   int xdim();
   int ydim();
   @Nullable
@@ -33,6 +34,11 @@ public interface Trans {
 //      }
 //      return result;
 //    }
+
+    @Override
+    public Vec compute(final Vec argument) {
+      return trans(argument);
+    }
 
     public Mx transAll(Mx ds) {
       Mx result = new VecBasedMx(ydim(), new ArrayVec(ds.rows() * ydim()));

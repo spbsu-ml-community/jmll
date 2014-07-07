@@ -5,10 +5,10 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.GreedyPolynomialExponentRegion;
-import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.ExponentialObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
 
@@ -24,7 +24,7 @@ import java.util.List;
     *Idea please stop making my code yellow
 */
 
-public class GreedyExponentialObliviousTree implements Optimization<L2> {
+public class GreedyExponentialObliviousTree implements VecOptimization<L2> {
 
   private final int numberOfVariablesByLeaf;
   private final int numberOfVariables;
@@ -69,10 +69,10 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
     return DistCoef * ans;
   }
 
-  void precalculateMissCoefficients(DataSet ds, final L2 loss) {
+  void precalculateMissCoefficients(VectorizedRealTargetDataSet ds, final L2 loss) {
     quadraticMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
     linearMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf];
-    for (int i = 0; i < ds.power(); i++) {
+    for (int i = 0; i < ds.length(); i++) {
       double data[] = new double[depth + 1];
       data[0] = 1;
       for (int s = 0; s < features.size(); s++) {
@@ -103,11 +103,11 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
 
 
   @Override
-  public ExponentialObliviousTree fit(DataSet ds, final L2 loss) {
+  public ExponentialObliviousTree fit(VectorizedRealTargetDataSet<?> ds, final L2 loss) {
     ObliviousTree base = got.fit(ds, loss);
     features = base.features();
     double baseMse = 0;
-    for (int i = 0; i < ds.power(); i++)
+    for (int i = 0; i < ds.length(); i++)
       baseMse += sqr(base.value(ds.data().row(i)) - loss.target.get(i));
     System.out.println("\nBase_MSE = " + baseMse);
 
@@ -115,7 +115,7 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
       System.out.println("Oblivious Tree bug");
       try {
         PrintWriter printWriter = new PrintWriter(new File("badloss.txt"));
-        for(int i = 0; i < ds.power(); i++)
+        for(int i = 0; i < ds.length(); i++)
           printWriter.println(loss.target.get(i));
         printWriter.close();
       } catch (FileNotFoundException e) {
@@ -152,7 +152,7 @@ public class GreedyExponentialObliviousTree implements Optimization<L2> {
     //    System.out.println(serializeCondtion(i));
     ExponentialObliviousTree ret = new ExponentialObliviousTree(features, out, DistCoef);
     double mse = 0;
-    for (int i = 0; i < ds.power(); i++)
+    for (int i = 0; i < ds.length(); i++)
       mse += sqr(ret.value(ds.data().row(i)) - loss.target.get(i));
     System.out.println("MSE = " + mse);
     /*if (mse > baseMse + 1e-5)

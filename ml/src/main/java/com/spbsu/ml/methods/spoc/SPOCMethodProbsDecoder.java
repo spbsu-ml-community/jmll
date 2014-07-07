@@ -3,7 +3,7 @@ package com.spbsu.ml.methods.spoc;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.models.MulticlassCodingMatrixModelProbsDecoder;
 
 /**
@@ -33,7 +33,7 @@ public class SPOCMethodProbsDecoder extends SPOCMethodClassic {
   }
 
   @Override
-  protected Trans createModel(final Func[] binClass, final DataSet learnDS) {
+  protected Trans createModel(final Func[] binClass, final VectorizedRealTargetDataSet learnDS) {
     final CMLMetricOptimization metricOptimization = new CMLMetricOptimization(learnDS, S, metricC, metricIters, metricStep);
     final Mx mu = metricOptimization.trainProbs(codingMatrix, binClass);
     return new MulticlassCodingMatrixModelProbsDecoder(codingMatrix, binClass, MX_IGNORE_THRESHOLD, mu);

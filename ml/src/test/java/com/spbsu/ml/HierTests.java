@@ -5,12 +5,12 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.HierTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.impl.ChangedTarget;
-import com.spbsu.ml.data.impl.DataSetImpl;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
@@ -51,8 +51,8 @@ public abstract class HierTests extends TestSuite {
     protected String FEATURES = "./jmll/ml/src/test/data/hier/test.tsv";
 
     protected HierarchyTree hier;
-    protected DataSet learn;
-    protected DataSet test;
+    protected VectorizedRealTargetDataSet learn;
+    protected VectorizedRealTargetDataSet test;
 
     protected int minEntries = 3;
     protected int iters = 10;
@@ -146,7 +146,7 @@ public abstract class HierTests extends TestSuite {
       System.out.println(borders.toString());
       hier = HierTools.prepareHierStructForRegressionMedian(learn.target());
       //    hier = prepareHierStructForRegressionUniform(depth);
-      //    VecTools.append(learn.target(), VecTools.fill(new ArrayVec(learn.power()), (1 << depth) - 1));
+      //    VecTools.append(learn.target(), VecTools.fill(new ArrayVec(learn.size()), (1 << depth) - 1));
     }
   }
 
@@ -156,8 +156,8 @@ public abstract class HierTests extends TestSuite {
       final int iters = 1000;
       final TDoubleArrayList borders = new TDoubleArrayList(new double[]{0.038125, 0.07625, 0.114375, 0.1525, 0.61});
       final int classCount = 5;
-      final DataSet learn = MCTools.loadRegressionAsMC("./ml/tests/data/features.txt.gz", classCount, borders);
-      final DataSet test = MCTools.loadRegressionAsMC("./ml/tests/data/featuresTest.txt.gz", classCount, borders);
+      final VectorizedRealTargetDataSet learn = MCTools.loadRegressionAsMC("./ml/tests/data/features.txt.gz", classCount, borders);
+      final VectorizedRealTargetDataSet test = MCTools.loadRegressionAsMC("./ml/tests/data/featuresTest.txt.gz", classCount, borders);
       final BFGrid grid = GridTools.medianGrid(learn, 32);
       final MLLLogit learnLoss = new MLLLogit(learn.target());
       final MLLLogit testLoss = new MLLLogit(test.target());
@@ -244,21 +244,21 @@ public abstract class HierTests extends TestSuite {
       final HierarchyTree learnTree = hier.getStructureCopy();
       final HierarchyTree testTree = hier.getStructureCopy();
 
-      final Vec mappedLearnTarget = new ArrayVec(learn.power());
+      final Vec mappedLearnTarget = new ArrayVec(learn.length());
       for (int i = 0; i < mappedLearnTarget.dim(); i++) {
         double val = learn.target().get(i);
         double mappedVal = origLoss.targetMapping.get((int) val);
         mappedLearnTarget.set(i, mappedVal);
       }
-      final Vec mappedTestTarget = new ArrayVec(test.power());
+      final Vec mappedTestTarget = new ArrayVec(test.length());
       for (int i = 0; i < mappedTestTarget.dim(); i++) {
         double val = test.target().get(i);
         double mappedVal = origLoss.targetMapping.get((int)val);
         mappedTestTarget.set(i, mappedVal);
       }
 
-      learnTree.fill(new ChangedTarget((DataSetImpl) learn, mappedLearnTarget));
-      testTree.fill(new ChangedTarget((DataSetImpl) test, mappedTestTarget));
+      learnTree.fill(new ChangedTarget((LightDataSetImpl) learn, mappedLearnTarget));
+      testTree.fill(new ChangedTarget((LightDataSetImpl) test, mappedTestTarget));
 
       traverseCalcMetaFeaturesStats(btModel, learnTree.getRoot(), testTree.getRoot());
     }
@@ -272,8 +272,8 @@ public abstract class HierTests extends TestSuite {
         final int label = childLearnNode.getCategoryId();
         final HierJoinedBinClassAddMetaFeaturesModel childModel = btModel.getModelByLabel(label);
         if (childModel != null) {
-          final DataSet learnNodeDSForChild = learnNode.createDSForChild(label);
-          final DataSet testNodeDSForChild = testNode.createDSForChild(label);
+          final VectorizedRealTargetDataSet learnNodeDSForChild = learnNode.createDSForChild(label);
+          final VectorizedRealTargetDataSet testNodeDSForChild = testNode.createDSForChild(label);
           final Mx learnChildProbs = childModel.probsAll(learnNodeDSForChild.data());
           final Mx testChildProbs = childModel.probsAll(testNodeDSForChild.data());
           final Vec[] learnColumns = MxTools.splitMxColumns(learnChildProbs);

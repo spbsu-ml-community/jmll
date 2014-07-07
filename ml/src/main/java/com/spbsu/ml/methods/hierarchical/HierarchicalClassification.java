@@ -3,7 +3,7 @@ package com.spbsu.ml.methods.hierarchical;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.*;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.func.Ensemble;
@@ -13,7 +13,7 @@ import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.MultiClass;
-import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.HierarchicalModel;
 import com.spbsu.ml.models.MultiClassModel;
@@ -24,7 +24,7 @@ import gnu.trove.list.array.TIntArrayList;
  * User: qdeee
  * Date: 06.02.14
  */
-public class HierarchicalClassification implements Optimization<HierLoss> {
+public class HierarchicalClassification implements VecOptimization<HierLoss> {
   private int weakIters;
   private double weakStep;
   private BFGrid grid;
@@ -40,14 +40,14 @@ public class HierarchicalClassification implements Optimization<HierLoss> {
   }
 
   @Override
-  public Trans fit(DataSet learn, HierLoss hierLoss) {
+  public Trans fit(VectorizedRealTargetDataSet<?> learn, HierLoss hierLoss) {
     grid = GridTools.medianGrid(learn, 32);
     HierarchicalModel model = traverseFit(hierLoss.getHierRoot());
     return model;
   }
 
   private HierarchicalModel traverseFit(final HierarchyTree.Node node) {
-    final DataSet ds = node.createDS();
+    final VectorizedRealTargetDataSet ds = node.createDS();
     final TIntList labels = new TIntArrayList();
     final Func[] resultModels;
 
@@ -75,7 +75,7 @@ public class HierarchicalClassification implements Optimization<HierLoss> {
       };
       boosting.addListener(calcer);
 
-      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, DS size=" + ds.power());
+      System.out.println("\n\nBoosting at node " + node.getCategoryId() + " is started, DS size=" + ds.length());
       final Ensemble ensemble = boosting.fit(ds, globalLoss);
       resultModels = MultiClassModel.joinBoostingResults(ensemble).dirs();
 

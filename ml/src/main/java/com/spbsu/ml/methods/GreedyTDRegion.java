@@ -5,7 +5,7 @@ import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.data.Aggregate;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.methods.trees.BFOptimizationSubset;
@@ -19,7 +19,7 @@ import java.util.List;
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyTDRegion<O extends StatBasedLoss> implements Optimization<O> {
+public class GreedyTDRegion<O extends StatBasedLoss> implements VecOptimization<O> {
   protected final BFGrid grid;
 
   public GreedyTDRegion(BFGrid grid) {
@@ -27,14 +27,14 @@ public class GreedyTDRegion<O extends StatBasedLoss> implements Optimization<O> 
   }
 
   @Override
-  public Region fit(DataSet learn, final O loss) {
+  public Region fit(VectorizedRealTargetDataSet<?> learn, final O loss) {
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(100);
     final List<Boolean> mask = new ArrayList<Boolean>();
     double currentScore = Double.POSITIVE_INFINITY;
     final AdditiveStatistics excluded = (AdditiveStatistics)loss.statsFactory().create();
     BFOptimizationSubset current;
     final BinarizedDataSet bds = learn.cache(Binarize.class).binarize(grid);
-    current = new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, learn.power()));
+    current = new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, learn.length()));
 
 
     final double[] scores = new double[grid.size()];

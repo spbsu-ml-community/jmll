@@ -4,8 +4,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Holder;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
@@ -24,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyRegion implements Optimization<WeightedLoss<L2>> {
+public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
   public static final int NN_NEIGHBORHOOD = 1000;
   private final Random rng;
   private final BFGrid grid;
@@ -38,14 +37,12 @@ public class GreedyRegion implements Optimization<WeightedLoss<L2>> {
     this.grid = grid;
   }
 
-  private void prepareNN(DataSet ds) {
-    final int total = ds.power();
+  private void prepareNN(VectorizedRealTargetDataSet ds) {
+    final int total = ds.length();
     binarization = new byte[total][];
-    final DSIterator iter = ds.iterator();
-    int index = 0;
-    while (iter.advance()) {
-      final byte[] folds = binarization[index++] = new byte[iter.x().dim()];
-      grid.binarize(iter.x(), folds);
+    for (int i = 0; i < ds.length(); i++) {
+      final byte[] folds = binarization[i] = new byte[ds.xdim()];
+      grid.binarize(ds.data().row(i), folds);
     }
     nn = new int[total * NN_NEIGHBORHOOD];
     int[] l1dist = new int[total];
@@ -74,7 +71,7 @@ public class GreedyRegion implements Optimization<WeightedLoss<L2>> {
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
   ThreadPoolExecutor exec = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 1, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
   @Override
-  public synchronized Region fit(final DataSet learn, final WeightedLoss<L2> loss) {
+  public synchronized Region fit(final VectorizedRealTargetDataSet<?> learn, final WeightedLoss<L2> loss) {
     prepareNN(learn);
     final Holder<Region> answer = new Holder<Region>(null);
     final CountDownLatch latch = new CountDownLatch(POOL_SIZE);
@@ -100,11 +97,11 @@ public class GreedyRegion implements Optimization<WeightedLoss<L2>> {
     return answer.getValue();
   }
 
-  public Region fitInner(DataSet learn, StatBasedLoss loss) {
+  public Region fitInner(VectorizedRealTargetDataSet learn, StatBasedLoss loss) {
     int pointIdx = choosePointAtRandomNN(learn);
 
     byte[] folds = binarization[pointIdx];
-    final int total = learn.power();
+    final int total = learn.length();
     int[] order = ArrayTools.sequence(0, total);
     int[] l1dist = new int[total];
     {
@@ -205,29 +202,27 @@ public class GreedyRegion implements Optimization<WeightedLoss<L2>> {
     return err * (1. - 2 * (Math.log(2)/ Math.log(count + 1.) + (total > count ? Math.log(2)/ Math.log(total - count + 1.) : 0))) + betta * ccount;
   }
 
-  private int choosePointAtRandom(DataSet learn) {
+  private int choosePointAtRandom(VectorizedRealTargetDataSet learn) {
     double total = 0.;
     {
-      final DSIterator dsIterator = learn.iterator();
-      while (dsIterator.advance()) {
-        total += Math.abs(dsIterator.y());
+      for (int i = 0; i < learn.length(); i++) {
+        total += Math.abs(learn.target().get(i));
       }
     }
     int startPointIndex = 0;
     {
       double rnd = total * rng.nextDouble();
-      final DSIterator dsIterator = learn.iterator();
-      while (dsIterator.advance() && rnd > Math.abs(dsIterator.y())) {
-        rnd -= Math.abs(dsIterator.y());
+      for (int i = 0; i < learn.length() && rnd > Math.abs(learn.target().get(i)); i++) {
+        rnd -= Math.abs(learn.target().get(i));
         startPointIndex++;
       }
     }
     return startPointIndex;
   }
 
-  private int choosePointAtRandomNN(DataSet learn) {
+  private int choosePointAtRandomNN(VectorizedRealTargetDataSet learn) {
     double total = 0.;
-    double[] weights = new double[learn.power()];
+    double[] weights = new double[learn.length()];
     double max = 0;
     int maxIndex = -1;
     final Vec target = learn.target();

@@ -5,8 +5,7 @@ import com.spbsu.commons.math.vectors.MxIterator;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.models.FMModel;
 
@@ -18,9 +17,9 @@ import java.io.OutputStreamWriter;
 /**
  * User: qdeee
  * Date: 24.03.14
+ * [TODO:qdeee]:rewrite for different loss functions
  */
-public class FMTrainingWorkaround implements Optimization {
-
+public class FMTrainingWorkaround implements VecOptimization<Func> {
   private final static String LIBFM_PATH = System.getProperty("user.dir") + "/libfm";
   private String task;
   private String dim; // e.g, "1/1/8"
@@ -39,10 +38,10 @@ public class FMTrainingWorkaround implements Optimization {
   }
 
   @Override
-  public Trans fit(final DataSet learn, final Func func) {
+  public Trans fit(final VectorizedRealTargetDataSet<?> learn, final Func func) {
     float minTarget = Float.MAX_VALUE;
     float maxTarget = Float.MIN_VALUE;
-    for (int i = 0; i < learn.power(); i++) {
+    for (int i = 0; i < learn.length(); i++) {
       final double t = learn.target().get(i);
       if (minTarget > t)
         minTarget = (float) t;
@@ -50,7 +49,7 @@ public class FMTrainingWorkaround implements Optimization {
         maxTarget = (float) t;
     }
     int numFeatures = learn.xdim();
-    int numRows = learn.power();
+    int numRows = learn.length();
     long numValues = 0;
     MxIterator mxIterator = learn.data().nonZeroes();
     while (mxIterator.advance()) {
@@ -90,14 +89,14 @@ public class FMTrainingWorkaround implements Optimization {
 
       //sending dataset
       final Vec2StringConverter converter = new Vec2StringConverter();
-      for (DSIterator iter = learn.iterator(); iter.advance(); ) {
-        String target = String.valueOf(iter.y());
-        final String entry = String.format("%s %s\n", target, converter.convertToSparse(iter.x()));
+      for (int i = 0; i < learn.length(); i++) {
+        String target = String.valueOf(learn.target().get(i));
+        final String entry = String.format("%s %s\n", target, converter.convertToSparse(learn.data().row(i)));
         writer.write(entry);
       }
       writer.flush();
 
-      System.out.println("upload is finished");
+//      System.out.println("upload is finished");
       readInput(reader, true);
 
       //read result model
@@ -111,10 +110,8 @@ public class FMTrainingWorkaround implements Optimization {
       final FMModel read = serializationRepository.read(modelStr, FMModel.class);
       return read;
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
-
-    return null;
   }
 
   private void readInput(LineNumberReader reader, boolean blocking) throws IOException {

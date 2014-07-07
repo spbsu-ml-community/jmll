@@ -1,7 +1,7 @@
 package com.spbsu.ml.loss.multiclass.hier.impl;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.loss.multiclass.MCMacroRecall;
 import com.spbsu.ml.loss.multiclass.hier.HierLoss;
@@ -13,7 +13,7 @@ import com.spbsu.ml.loss.multiclass.hier.HierLoss;
 public class HMCMacroRecall extends HierLoss {
   private final MCMacroRecall recall;
 
-  public HMCMacroRecall(HierarchyTree unfilledHierarchy, DataSet dataSet, int minEntries) {
+  public HMCMacroRecall(HierarchyTree unfilledHierarchy, VectorizedRealTargetDataSet dataSet, int minEntries) {
     super(unfilledHierarchy, dataSet, minEntries);
     recall = new MCMacroRecall(target);
   }

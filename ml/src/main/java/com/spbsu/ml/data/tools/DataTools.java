@@ -19,10 +19,8 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.CompositeTrans;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
-import com.spbsu.ml.data.impl.DataSetImpl;
-import com.spbsu.ml.data.impl.DataSetImpl2;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
@@ -52,19 +50,19 @@ public class DataTools {
   private static final String COMMON_DELIMETER = " ";
   private static final String VEC_DELIMETER = ":";
 
-  public static DataSet loadFromFeaturesTxt(String file) throws IOException {
+  public static VectorizedRealTargetDataSet loadFromFeaturesTxt(String file) throws IOException {
     return loadFromFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file), null);
   }
 
-  public static DataSet loadFromFeaturesTxt(String file, TIntObjectHashMap<CharSequence> meta) throws IOException {
+  public static VectorizedRealTargetDataSet loadFromFeaturesTxt(String file, TIntObjectHashMap<CharSequence> meta) throws IOException {
     return loadFromFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file), meta);
   }
 
-  public static DataSet loadFromFeaturesTxt(Reader reader) throws IOException {
+  public static VectorizedRealTargetDataSet loadFromFeaturesTxt(Reader reader) throws IOException {
     return loadFromFeaturesTxt(reader, null);
   }
 
-  public static DataSet loadFromFeaturesTxt(Reader in, TIntObjectHashMap<CharSequence> meta) throws IOException {
+  public static VectorizedRealTargetDataSet loadFromFeaturesTxt(Reader in, TIntObjectHashMap<CharSequence> meta) throws IOException {
     final LineNumberReader reader = new LineNumberReader(in);
     List<double[]> set = new LinkedList<double[]>();
     List<Double> targets = new LinkedList<Double>();
@@ -111,14 +109,14 @@ public class DataTools {
       target[index] = iterT.next();
       index++;
     }
-    return new DataSetImpl(data, target);
+    return new LightDataSetImpl(data, target);
   }
 
-  public static DataSet loadFromSparseFeaturesTxt(String file) throws IOException {
+  public static VectorizedRealTargetDataSet loadFromSparseFeaturesTxt(String file) throws IOException {
     return loadFromSparseFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
   }
 
-  public static DataSet loadFromSparseFeaturesTxt(final Reader in) throws IOException {
+  public static VectorizedRealTargetDataSet loadFromSparseFeaturesTxt(final Reader in) throws IOException {
     final BufferedReader br = new BufferedReader(in);
 
     //read matrix sizes
@@ -144,8 +142,7 @@ public class DataTools {
       mx.setRow(curRow, vec);
       ++curRow;
     }
-    //don't use DataSetImpl it's iterator is easily overflowing
-    return new DataSetImpl2(mx, new ArrayVec(targets));
+    return new LightDataSetImpl(mx, new ArrayVec(targets));
   }
 
 
@@ -201,7 +198,7 @@ public class DataTools {
     return null;
   }
 
-  public static DataSetImpl getSubset(DataSetImpl source, int[] idxs) {
+  public static LightDataSetImpl getSubset(LightDataSetImpl source, int[] idxs) {
     Mx newMx = new VecBasedMx(source.xdim(),
         new IndexTransVec(
             source.data(),
@@ -211,10 +208,10 @@ public class DataTools {
         source.target(),
         new ArrayPermutation(idxs)
     );
-    return new DataSetImpl(newMx, newTarget);
+    return new LightDataSetImpl(newMx, newTarget);
   }
 
-  public static DataSet extendDataset(DataSet sourceDS, Mx addedColumns) {
+  public static VectorizedRealTargetDataSet extendDataset(VectorizedRealTargetDataSet sourceDS, Mx addedColumns) {
     Vec[] columns = new Vec[addedColumns.columns()];
     for (int i = 0; i < addedColumns.columns(); i++) {
       columns[i] = addedColumns.col(i);
@@ -222,7 +219,7 @@ public class DataTools {
     return extendDataset(sourceDS, columns);
   }
 
-  public static DataSet extendDataset(DataSet sourceDS, Vec... addedColumns) {
+  public static VectorizedRealTargetDataSet extendDataset(VectorizedRealTargetDataSet sourceDS, Vec... addedColumns) {
     if (addedColumns.length == 0)
       return sourceDS;
 
@@ -236,13 +233,13 @@ public class DataTools {
         newData.set(iter.index(), oldData.columns() + i, iter.value());
       }
     }
-    return new DataSetImpl(newData, sourceDS.target());
+    return new LightDataSetImpl(newData, sourceDS.target());
   }
 
-  public static Pair<DataSet, DataSet> splitCv(DataSet learn, double percentage, Random rnd) {
+  public static Pair<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet> splitCv(VectorizedRealTargetDataSet learn, double percentage, Random rnd) {
     final TIntList learnIndices = new TIntLinkedList();
     final TIntList testIndices = new TIntLinkedList();
-    for (int i = 0; i < learn.power(); i++) {
+    for (int i = 0; i < learn.length(); i++) {
       if (rnd.nextDouble() < percentage)
         learnIndices.add(i);
       else
@@ -250,8 +247,8 @@ public class DataTools {
     }
     final int[] learnIndicesArr = learnIndices.toArray();
     final int[] testIndicesArr = testIndices.toArray();
-    return Pair.<DataSet, DataSet>create(
-        new DataSetImpl(
+    return Pair.<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet>create(
+        new LightDataSetImpl(
             new VecBasedMx(
                 learn.xdim(),
                 new IndexTransVec(
@@ -261,7 +258,7 @@ public class DataTools {
             ),
             new IndexTransVec(learn.target(), new ArrayPermutation(learnIndicesArr))
         ),
-        new DataSetImpl(
+        new LightDataSetImpl(
             new VecBasedMx(
                 learn.xdim(),
                 new IndexTransVec(
@@ -322,33 +319,33 @@ public class DataTools {
     public double yVar;
   }
 
-  public static DataSet normalize(DataSet ds, NormalizationType type, NormalizationProperties props) {
+  public static VectorizedRealTargetDataSet normalize(VectorizedRealTargetDataSet ds, NormalizationType type, NormalizationProperties props) {
     final Vec mean = new ArrayVec(ds.xdim());
     final Mx covar = new VecBasedMx(ds.xdim(), ds.xdim());
     double targetMean;
     double targetVar;
     Mx trans;
     {
-      DSIterator it = ds.iterator();
       double tSum = 0.;
       double tSum2 = 0.;
-      while (it.advance()) {
-        VecTools.append(mean, it.x());
-        tSum += it.y();
-        tSum2 += it.y() * it.y();
+      for (int i = 0; i < ds.length(); i++) {
+        VecTools.append(mean, ds.data().row(i));
+        final double y = ds.target().get(i);
+        tSum += y;
+        tSum2 += y * y;
       }
-      targetMean = tSum / ds.power();
-      targetVar = Math.sqrt((tSum2 - ds.power() * targetMean * targetMean) / ds.power());
-      VecTools.scale(mean, -1./ds.power());
+      targetMean = tSum / ds.length();
+      targetVar = Math.sqrt((tSum2 - ds.length() * targetMean * targetMean) / ds.length());
+      VecTools.scale(mean, -1./ds.length());
     }
     Vec temp = new ArrayVec(ds.xdim());
-    for (int i = 0; i < ds.power(); i++) {
+    for (int i = 0; i < ds.length(); i++) {
       Vec vec = ds.data().row(i);
       VecTools.assign(temp, vec);
       VecTools.append(temp, mean);
       VecTools.addOuter(covar, temp, temp);
     }
-    VecTools.scale(covar, 1./ds.power());
+    VecTools.scale(covar, 1./ds.length());
     switch (type) {
       case SPHERE:
         final Mx l = MxTools.choleskyDecomposition(covar);
@@ -369,7 +366,7 @@ public class DataTools {
     }
     Vec newTarget = VecTools.copy(ds.target());
     Mx newData = VecTools.copy(ds.data());
-    for (int i = 0; i < ds.power(); i++) {
+    for (int i = 0; i < ds.length(); i++) {
       Vec row = newData.row(i);
       VecTools.append(row, mean);
       VecTools.assign(row, MxTools.multiply(trans, row));
@@ -380,7 +377,7 @@ public class DataTools {
     props.xTrans = trans;
     props.yMean = targetMean;
     props.yVar = targetVar;
-    return new DataSetImpl(newData, newTarget);
+    return new LightDataSetImpl(newData, newTarget);
   }
 
 }

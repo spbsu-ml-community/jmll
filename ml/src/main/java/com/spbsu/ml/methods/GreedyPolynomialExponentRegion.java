@@ -7,7 +7,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.PolynomialExponentRegion;
 import com.spbsu.ml.models.Region;
@@ -19,7 +19,7 @@ import java.io.PrintWriter;
 /**
  * Created by towelenee on 20.02.14.
  */
-public class GreedyPolynomialExponentRegion implements Optimization<L2> {
+public class GreedyPolynomialExponentRegion implements VecOptimization<L2> {
   private final GreedyTDRegion greedyTDRegion;
   private BFGrid.BinaryFeature[] features;
   private boolean[] mask;
@@ -99,12 +99,12 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
   }
 
   @Override
-  public PolynomialExponentRegion fit(DataSet learn, L2 loss) {
+  public PolynomialExponentRegion fit(VectorizedRealTargetDataSet<?> learn, L2 loss) {
     Region base = greedyTDRegion.fit(learn, loss);
     features = base.getFeatures();
     mask = base.getMask();
     double baseMse = 0;
-    for (int i = 0; i < learn.power(); i++)
+    for (int i = 0; i < learn.length(); i++)
       baseMse += sqr(base.value(learn.data().row(i)) - loss.target.get(i));
     System.out.println("\nBase_MSE = " + baseMse);
 
@@ -154,7 +154,7 @@ public class GreedyPolynomialExponentRegion implements Optimization<L2> {
     System.out.println(result);
     PolynomialExponentRegion ret = new PolynomialExponentRegion(features, mask, result.toArray(), distCoeffiecent);
     double mse = 0;
-    for (int i = 0; i < learn.power(); i++)
+    for (int i = 0; i < learn.length(); i++)
       mse += sqr(ret.value(learn.data().row(i)) - loss.target.get(i));
     System.out.println("mse = " + mse);
     return ret;

@@ -6,5 +6,5 @@ package com.spbsu.ml.data;
  * Time: 17:34
  */
 public interface StatisticCalculator {
-    public double value(DataSet set);
+    public double value(VectorizedRealTargetDataSet set);
 }

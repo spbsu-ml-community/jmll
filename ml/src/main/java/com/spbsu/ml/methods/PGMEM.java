@@ -10,7 +10,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ThreadTools;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.Route;
@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * Date: 27.01.14
  * Time: 13:29
  */
-public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements Optimization<LLLogit> {
+public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptimization<LLLogit> {
   public static abstract class Policy implements Filter<Route> {
     private final Vec weights;
     private final List<Route> routes;
@@ -129,10 +129,10 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements Optimiza
   }
 
   @Override
-  public SimplePGM fit(DataSet learn, LLLogit ll) {
+  public SimplePGM fit(VectorizedRealTargetDataSet learn, LLLogit ll) {
     final ThreadGroup tg = new ThreadGroup(PGMEM.class.getName());
     final Thread[] threads = new Thread[ThreadTools.COMPUTE_UNITS];
-    final ArrayBlockingQueue<Action<Policy>> queue = new ArrayBlockingQueue<Action<Policy>>(learn.power());
+    final ArrayBlockingQueue<Action<Policy>> queue = new ArrayBlockingQueue<Action<Policy>>(learn.length());
     final Policy[] policies = new Policy[threads.length];
     for (int i = 0; i < threads.length; i++) {
       final int finalI = i;
@@ -154,14 +154,14 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements Optimiza
     }
 
     SimplePGM currentPGM = new SimplePGM(topology);
-    final int[][] cpds = new int[learn.power()][];
+    final int[][] cpds = new int[learn.length()][];
     final Mx data = learn.data();
     for (int j = 0; j < data.rows(); j++) {
       cpds[j] = currentPGM.extractControlPoints(data.row(j));
     }
 
     for (int t = 0; t < iterations; t++) {
-      final Route[] eroutes = new Route[learn.power()];
+      final Route[] eroutes = new Route[learn.length()];
       { // updating policies
         for (int i = 0; i < policies.length; i++) {
           policies[i] = policy.compute(currentPGM);

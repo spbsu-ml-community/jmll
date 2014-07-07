@@ -9,8 +9,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.FuncC1;
-import com.spbsu.ml.data.DSIterator;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
@@ -21,14 +20,14 @@ import gnu.trove.map.TIntObjectMap;
  * Date: 21.05.14
  */
 public class CMLMetricOptimization {
-  private final DataSet ds;
+  private final VectorizedRealTargetDataSet ds;
   private final TIntObjectMap<TIntList> classesIdxs;
   private final Mx laplacian;
   private final double c;
   private final int iters;
   private final double step;
 
-  public CMLMetricOptimization(final DataSet ds, final Mx S, final double c, final int iters, final double step) {
+  public CMLMetricOptimization(final VectorizedRealTargetDataSet ds, final Mx S, final double c, final int iters, final double step) {
     this.ds = ds;
     this.iters = iters;
     this.step = step;
@@ -76,10 +75,10 @@ public class CMLMetricOptimization {
     @Override
     public double value(final Vec mu) {
       double result = 0.0;
-      for (DSIterator iter = ds.iterator(); iter.advance(); ) {
-        final double trans = binClassifier.value(iter.x());
+      for (int i = 0; i < ds.length(); i++) {
+        final double trans = binClassifier.value(ds.data().row(i));
         final double sigmoid = MathTools.sigmoid(trans);
-        final double underLog = mu.get((int)iter.y()) * sigmoid + (1 - mu.get((int)iter.y())) * (1 - sigmoid);
+        final double underLog = mu.get((int)ds.target().get(i)) * sigmoid + (1 - mu.get((int)ds.target().get(i))) * (1 - sigmoid);
         result -= Math.log(underLog);
       }
       result += c * VecTools.multiply(MxTools.multiply(laplacian, mu), mu);

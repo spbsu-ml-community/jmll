@@ -7,10 +7,10 @@ import com.spbsu.commons.math.vectors.Vec;
  * Date: 26.12.10
  * Time: 19:09
  */
-public class ChangedTarget extends DataSetImpl {
-  final DataSetImpl parent;
+public class ChangedTarget extends LightDataSetImpl {
+  final LightDataSetImpl parent;
 
-  public ChangedTarget(DataSetImpl parent, Vec target) {
+  public ChangedTarget(LightDataSetImpl parent, Vec target) {
     super(parent.data(), target);
     this.parent = parent;
   }

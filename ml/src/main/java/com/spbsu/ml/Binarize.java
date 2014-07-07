@@ -1,9 +1,10 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.func.Computable;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.data.impl.DataSetImpl;
+import com.spbsu.ml.data.impl.LightDataSetImpl;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,9 +14,9 @@ import java.util.Map;
  * Date: 12.11.13
  * Time: 18:43
  */
-public class Binarize implements Computable<DataSet, Binarize> {
+public class Binarize implements Computable<VectorizedRealTargetDataSet, Binarize> {
   Map<BFGrid, BinarizedDataSet> grids = new HashMap<BFGrid, BinarizedDataSet>(1);
-  DataSetImpl set;
+  LightDataSetImpl set;
   public synchronized BinarizedDataSet binarize(BFGrid grid) {
     BinarizedDataSet result = grids.get(grid);
     if (result == null)
@@ -24,8 +25,8 @@ public class Binarize implements Computable<DataSet, Binarize> {
   }
 
   @Override
-  public Binarize compute(DataSet argument) {
-    set = (DataSetImpl)argument;
+  public Binarize compute(VectorizedRealTargetDataSet argument) {
+    set = (LightDataSetImpl)argument;
     return this;
   }
 }

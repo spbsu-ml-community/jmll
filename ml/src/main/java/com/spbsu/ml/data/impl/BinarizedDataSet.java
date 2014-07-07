@@ -1,7 +1,7 @@
 package com.spbsu.ml.data.impl;
 
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 
 /**
  * User: solar
@@ -9,19 +9,19 @@ import com.spbsu.ml.data.DataSet;
  * Time: 21:19
  */
 public class BinarizedDataSet {
-  private final DataSet base;
+  private final VectorizedRealTargetDataSet base;
   private final BFGrid grid;
   private final byte[][] bins;
 
-  public BinarizedDataSet(DataSet base, BFGrid grid) {
+  public BinarizedDataSet(VectorizedRealTargetDataSet base, BFGrid grid) {
     this.base = base;
     this.grid = grid;
     bins = new byte[base.xdim()][];
     for (int f = 0; f < bins.length; f++) {
-      bins[f] = new byte[base.power()];
+      bins[f] = new byte[base.length()];
     }
     byte[] binarization = new byte[grid.rows()];
-    for (int t = 0; t < base.power(); t++) {
+    for (int t = 0; t < base.length(); t++) {
       grid.binarize(base.data().row(t), binarization);
       for (int f = 0; f < bins.length; f++) {
         bins[f][t] = binarization[f];
@@ -29,7 +29,7 @@ public class BinarizedDataSet {
     }
   }
 
-  public DataSet original() {
+  public VectorizedRealTargetDataSet original() {
     return base;
   }
 

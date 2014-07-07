@@ -1,6 +1,7 @@
 package com.spbsu.ml.data;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.meta.DSItem;
 
 /**
  * User: solar
@@ -13,6 +14,8 @@ public interface DSIterator {
   double y();
   double x(int i);
   Vec x();
+
+  DSItem item();
 
   int index();
 }
