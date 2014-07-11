@@ -23,8 +23,8 @@ public class GridTest extends FileTestCase {
   private static synchronized void loadDataSet() {
     try {
       if (learn == null || validate == null) {
-        learn = DataTools.loadFromFeaturesTxt("./jmll/ml/src/test/data/features.txt.gz");
-        validate = DataTools.loadFromFeaturesTxt("./jmll/ml/src/test/data/featuresTest.txt.gz");
+        learn = DataTools.loadFromFeaturesTxt("./ml/src/test/data/features.txt.gz");
+        validate = DataTools.loadFromFeaturesTxt("./ml/src/test/data/featuresTest.txt.gz");
       }
     } catch (IOException e) {
       e.printStackTrace();
