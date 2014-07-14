@@ -1,45 +1,45 @@
 package com.spbsu.ml.data.tools;
 
+import java.io.*;
+import java.util.*;
+import java.util.zip.GZIPInputStream;
+
+
+import com.fasterxml.jackson.core.JsonParser;
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.func.Processor;
+import com.spbsu.commons.func.types.ConversionRepository;
+import com.spbsu.commons.func.types.SerializationRepository;
+import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.basis.IntBasis;
-import com.spbsu.commons.math.vectors.impl.basis.MxBasisImpl;
-import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
-import com.spbsu.commons.math.vectors.impl.mx.SparseMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
+import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.CharSeqTools;
-import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.CompositeTrans;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
-import com.spbsu.ml.data.impl.LightDataSetImpl;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.meta.DSItem;
+import com.spbsu.ml.meta.impl.JsonLineMeta;
+import com.spbsu.ml.meta.impl.JsonPoolMeta;
+import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.linked.TIntLinkedList;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
-import java.io.*;
-import java.lang.reflect.Constructor;
-import java.util.*;
-import java.util.zip.GZIPInputStream;
-
-import static java.lang.Math.max;
+import gnu.trove.list.array.TIntArrayList;
 
 /**
  * User: solar
@@ -47,106 +47,36 @@ import static java.lang.Math.max;
  * Time: 19:05
  */
 public class DataTools {
-  private static final String COMMON_DELIMETER = " ";
-  private static final String VEC_DELIMETER = ":";
-
-  public static VectorizedRealTargetDataSet loadFromFeaturesTxt(String file) throws IOException {
-    return loadFromFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file), null);
+  public static Pool<QURLItem> loadFromFeaturesTxt(String file) throws IOException {
+    return loadFromFeaturesTxt(file, file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
   }
 
-  public static VectorizedRealTargetDataSet loadFromFeaturesTxt(String file, TIntObjectHashMap<CharSequence> meta) throws IOException {
-    return loadFromFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file), meta);
-  }
-
-  public static VectorizedRealTargetDataSet loadFromFeaturesTxt(Reader reader) throws IOException {
-    return loadFromFeaturesTxt(reader, null);
-  }
-
-  public static VectorizedRealTargetDataSet loadFromFeaturesTxt(Reader in, TIntObjectHashMap<CharSequence> meta) throws IOException {
-    final LineNumberReader reader = new LineNumberReader(in);
-    List<double[]> set = new LinkedList<double[]>();
-    List<Double> targets = new LinkedList<Double>();
-    int maxFeatures = 0;
-    String line;
-    final List<Double> featuresA = new ArrayList<Double>();
-    int lindex = 0;
-    while ((line = reader.readLine()) != null) {
-      try {
-        final StringBuffer metaline = new StringBuffer();
-        featuresA.clear();
-        StringTokenizer tok = new StringTokenizer(line, "\t");
-        metaline.append(tok.nextToken()); // group
-        targets.add(Double.parseDouble(tok.nextToken()));
-        metaline.append("\t").append(tok.nextToken()); // item name
-        metaline.append("\t").append(tok.nextToken()); // equality class inside group
-        while (tok.hasMoreTokens()) {
-          featuresA.add(Double.parseDouble(tok.nextToken()));
+  public static FeaturesTxtPool loadFromFeaturesTxt(String file, Reader in) throws IOException {
+    final List<QURLItem> items = new ArrayList<>();
+    final VecBuilder target = new VecBuilder();
+    final VecBuilder data = new VecBuilder();
+    final int[] featuresCount = new int[]{-1};
+    CharSeqTools.processLines(in, new Processor<CharSequence>() {
+      int lindex = 0;
+      @Override
+      public void process(final CharSequence arg) {
+        lindex++;
+        final CharSequence[] parts = CharSeqTools.split(arg, '\t');
+        items.add(new QURLItem(CharSeqTools.parseInt(parts[0]), parts[2].toString(), CharSeqTools.parseInt(parts[3])));
+        target.append(CharSeqTools.parseFloat(parts[1]));
+        if (featuresCount[0] < 0)
+          featuresCount[0] = parts.length - 4;
+        else if (featuresCount[0] != parts.length - 4)
+          throw new RuntimeException("\"Failed to parse line \" + lindex + \":\"");
+        for (int i = 4; i < parts.length; i++) {
+          data.append(CharSeqTools.parseFloat(parts[i]));
         }
-        maxFeatures = Math.max(maxFeatures, featuresA.size());
-        double[] features = new double[maxFeatures];
-        for (int i = 0; i < featuresA.size(); i++) {
-          features[i] = featuresA.get(i);
-        }
-        if (meta != null)
-          meta.put(set.size(), metaline);
-        set.add(features);
       }
-      catch (Throwable th) {
-        System.out.println("Failed to parse line " + lindex + ":");
-        System.out.println(line);
-      }
-      lindex++;
-    }
-    double[] data = new double[maxFeatures * set.size()];
-    double[] target = new double[set.size()];
-    Iterator<double[]> iterF = set.iterator();
-    Iterator<Double> iterT = targets.iterator();
-    int featuresCount = maxFeatures;
-    int index = 0;
-    while (iterF.hasNext()) {
-      final double[] features = iterF.next();
-      System.arraycopy(features, 0, data, index * featuresCount, features.length);
-      target[index] = iterT.next();
-      index++;
-    }
-    return new LightDataSetImpl(data, target);
+    });
+    return new FeaturesTxtPool(file, new ArraySeq<>(items.toArray(new QURLItem[items.size()])), new VecBasedMx(featuresCount[0], data), target);
   }
 
-  public static VectorizedRealTargetDataSet loadFromSparseFeaturesTxt(String file) throws IOException {
-    return loadFromSparseFeaturesTxt(file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
-  }
-
-  public static VectorizedRealTargetDataSet loadFromSparseFeaturesTxt(final Reader in) throws IOException {
-    final BufferedReader br = new BufferedReader(in);
-
-    //read matrix sizes
-    int cols = Integer.parseInt(br.readLine());
-    int rows = Integer.parseInt(br.readLine());
-
-    //create matrix with given params
-    final SparseMx<MxBasisImpl> mx = new SparseMx<MxBasisImpl>(new MxBasisImpl(rows, cols));
-    final double[] targets = new double[rows];
-    final IntBasis rowBias = new IntBasis(cols);
-
-    //read string like 'target1 feature_id1:val1 feature_id4:val4 ...'
-    String inline;
-    int curRow = 0;
-    while ((inline = br.readLine()) != null) {
-      final StringTokenizer tok = new StringTokenizer(inline, COMMON_DELIMETER);
-      targets[curRow] = Double.parseDouble(tok.nextToken());
-      final SparseVec<IntBasis> vec = new SparseVec<IntBasis>(rowBias);
-      while (tok.hasMoreElements()) {
-        final String[] parts = tok.nextToken().split(VEC_DELIMETER);
-        vec.add(Integer.parseInt(parts[0]), Double.parseDouble(parts[1]));
-      }
-      mx.setRow(curRow, vec);
-      ++curRow;
-    }
-    return new LightDataSetImpl(mx, new ArrayVec(targets));
-  }
-
-
-  public static void writeModel(Trans result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
+  public static void writeModel(Computable result, DataSet learn, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);
     StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
         serializationRepository.write(result)), to);
@@ -160,7 +90,7 @@ public class DataTools {
     return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }
 
-  public static BFGrid grid(Trans result) {
+  public static BFGrid grid(Computable<?, Vec> result) {
     if (result instanceof CompositeTrans) {
       final CompositeTrans composite = (CompositeTrans) result;
       BFGrid grid = grid(composite.f);
@@ -198,20 +128,7 @@ public class DataTools {
     return null;
   }
 
-  public static LightDataSetImpl getSubset(LightDataSetImpl source, int[] idxs) {
-    Mx newMx = new VecBasedMx(source.xdim(),
-        new IndexTransVec(
-            source.data(),
-            new RowsPermutation(idxs, source.xdim()))
-    );
-    Vec newTarget = new IndexTransVec(
-        source.target(),
-        new ArrayPermutation(idxs)
-    );
-    return new LightDataSetImpl(newMx, newTarget);
-  }
-
-  public static VectorizedRealTargetDataSet extendDataset(VectorizedRealTargetDataSet sourceDS, Mx addedColumns) {
+  public static DataSet extendDataset(VecDataSet sourceDS, Mx addedColumns) {
     Vec[] columns = new Vec[addedColumns.columns()];
     for (int i = 0; i < addedColumns.columns(); i++) {
       columns[i] = addedColumns.col(i);
@@ -219,7 +136,7 @@ public class DataTools {
     return extendDataset(sourceDS, columns);
   }
 
-  public static VectorizedRealTargetDataSet extendDataset(VectorizedRealTargetDataSet sourceDS, Vec... addedColumns) {
+  public static VecDataSet extendDataset(VecDataSet sourceDS, Vec... addedColumns) {
     if (addedColumns.length == 0)
       return sourceDS;
 
@@ -233,40 +150,7 @@ public class DataTools {
         newData.set(iter.index(), oldData.columns() + i, iter.value());
       }
     }
-    return new LightDataSetImpl(newData, sourceDS.target());
-  }
-
-  public static Pair<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet> splitCv(VectorizedRealTargetDataSet learn, double percentage, Random rnd) {
-    final TIntList learnIndices = new TIntLinkedList();
-    final TIntList testIndices = new TIntLinkedList();
-    for (int i = 0; i < learn.length(); i++) {
-      if (rnd.nextDouble() < percentage)
-        learnIndices.add(i);
-      else
-        testIndices.add(i);
-    }
-    final int[] learnIndicesArr = learnIndices.toArray();
-    final int[] testIndicesArr = testIndices.toArray();
-    return Pair.<VectorizedRealTargetDataSet, VectorizedRealTargetDataSet>create(
-        new LightDataSetImpl(
-            new VecBasedMx(
-                learn.xdim(),
-                new IndexTransVec(
-                    learn.data(),
-                    new RowsPermutation(learnIndicesArr, learn.xdim())
-                )
-            ),
-            new IndexTransVec(learn.target(), new ArrayPermutation(learnIndicesArr))
-        ),
-        new LightDataSetImpl(
-            new VecBasedMx(
-                learn.xdim(),
-                new IndexTransVec(
-                    learn.data(),
-                    new RowsPermutation(testIndicesArr, learn.xdim())
-                )
-            ),
-            new IndexTransVec(learn.target(), new ArrayPermutation(testIndicesArr))));
+    return new VecDataSetImpl(newData, sourceDS);
   }
 
   public static Vec value(Mx ds, Func f) {
@@ -285,99 +169,127 @@ public class DataTools {
     return new WeightedLoss<LocalLoss>(loss, poissonWeights);
   }
 
-  public static Computable<Vec, ? extends Func> targetByName(final String name) {
+  public static Class<? extends Func> targetByName(final String name) {
     try {
-      @SuppressWarnings("unchecked")
-      Class<Func> oracleClass = (Class<Func>)Class.forName("com.spbsu.ml.loss." + name);
-      final Constructor<Func> constructor = oracleClass.getConstructor(Vec.class);
-      return new Computable<Vec, Func>() {
-        @Override
-        public Func compute(Vec argument) {
-          try {
-            return constructor.newInstance(argument);
-          } catch (Exception e) {
-            throw new RuntimeException("Exception during metric " + name + " initialization", e);
-          }
-        }
-      };
+      return (Class<? extends Func>)Class.forName("com.spbsu.ml.loss." + name);
     }
     catch (Exception e) {
       throw new RuntimeException("Unable to create requested target: " + name, e);
     }
   }
 
-  public enum NormalizationType {
-    SPHERE,
-    PCA,
-    SCALE
+  public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<CharSequence>(new TypeConvertersCollection(ConversionRepository.ROOT, "com.spbsu.ml.io"), CharSequence.class);
+
+  public static int[][] splitAtRandom(final int size, final FastRandom rng, final double... v) {
+    Vec weights = new ArrayVec(v);
+    TIntArrayList[] folds = new TIntArrayList[v.length];
+    for (int i = 0; i < size; i++) {
+      folds[rng.nextSimple(weights)].add(i);
+    }
+    int[][] result = new int[folds.length][];
+    for (int i = 0; i < folds.length; i++) {
+      result[i] = folds[i].toArray();
+    }
+    return result;
   }
 
-  public static class NormalizationProperties {
-    public Vec xMean;
-    public Mx xTrans;
-    public double yMean;
-    public double yVar;
-  }
-
-  public static VectorizedRealTargetDataSet normalize(VectorizedRealTargetDataSet ds, NormalizationType type, NormalizationProperties props) {
-    final Vec mean = new ArrayVec(ds.xdim());
-    final Mx covar = new VecBasedMx(ds.xdim(), ds.xdim());
-    double targetMean;
-    double targetVar;
-    Mx trans;
-    {
-      double tSum = 0.;
-      double tSum2 = 0.;
-      for (int i = 0; i < ds.length(); i++) {
-        VecTools.append(mean, ds.data().row(i));
-        final double y = ds.target().get(i);
-        tSum += y;
-        tSum2 += y * y;
+  public static <T> Vec calcAll(final Computable<T, Vec> result, final DataSet<T> data) {
+    VecBuilder results = new VecBuilder(data.length());
+    int dim = 0;
+    for (int i = 0; i < data.length(); i++) {
+      final Vec vec = result.compute(data.at(i));
+      for (int j = 0; j < vec.length(); j++) {
+        results.append(vec.at(j));
       }
-      targetMean = tSum / ds.length();
-      targetVar = Math.sqrt((tSum2 - ds.length() * targetMean * targetMean) / ds.length());
-      VecTools.scale(mean, -1./ds.length());
+      dim = vec.length();
     }
-    Vec temp = new ArrayVec(ds.xdim());
-    for (int i = 0; i < ds.length(); i++) {
-      Vec vec = ds.data().row(i);
-      VecTools.assign(temp, vec);
-      VecTools.append(temp, mean);
-      VecTools.addOuter(covar, temp, temp);
-    }
-    VecTools.scale(covar, 1./ds.length());
-    switch (type) {
-      case SPHERE:
-        final Mx l = MxTools.choleskyDecomposition(covar);
-        trans = MxTools.inverseLTriangle(l);
-        break;
-      case PCA:
-        trans = new VecBasedMx(ds.xdim(), ds.xdim());
-        MxTools.eigenDecomposition(covar, new VecBasedMx(ds.xdim(), ds.xdim()), trans);
-        break;
-      case SCALE:
-        trans = new VecBasedMx(ds.xdim(), ds.xdim());
-        for (int i = 0; i < trans.columns(); i++) {
-          trans.set(i, i, 1./Math.sqrt(covar.get(i, i)));
-        }
-        break;
-      default:
-        throw new NotImplementedException();
-    }
-    Vec newTarget = VecTools.copy(ds.target());
-    Mx newData = VecTools.copy(ds.data());
-    for (int i = 0; i < ds.length(); i++) {
-      Vec row = newData.row(i);
-      VecTools.append(row, mean);
-      VecTools.assign(row, MxTools.multiply(trans, row));
+    return dim > 1 ? new VecBasedMx(dim, results) : results;
+  }
 
-      newTarget.set(i, (newTarget.get(i) - targetMean) / targetVar);
+  public static enum LineType {
+    ITEMS,
+    FEATURE,
+    TARGET
+  }
+
+  public static enum TargetType {
+    REAL
+  }
+
+  public static <T extends DSItem> Pool<T> loadFromFile(Reader input, final Class<T> dsiClass) throws IOException{
+    try {
+      final PoolBuilder builder = new PoolBuilder();
+      CharSeqTools.processLines(input, new Processor<CharSequence>() {
+        @Override
+        public void process(final CharSequence arg) {
+          final CharSequence[] parts = CharSeqTools.split(arg, '\t');
+          try {
+            switch (LineType.valueOf(parts[0].toString().toUpperCase())) {
+              case ITEMS: {
+                final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
+                builder.setMeta(parser.readValueAs(JsonPoolMeta.class));
+                int index = 2;
+                builder.nextChunk();
+                while (index < parts.length) {
+                  builder.addItem(SERIALIZATION.read(parts[index], dsiClass));
+                }
+                break;
+              }
+              case FEATURE: {
+                final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
+                JsonLineMeta fmeta = parser.readValueAs(JsonLineMeta.class);
+                Class<? extends Vec> vecClass = Vec.class;
+                switch (fmeta.alignment()) {
+                  case DENSE:
+                    vecClass = ArrayVec.class;
+                    break;
+                  case SPARSE:
+                    vecClass = SparseVec.class;
+                    break;
+                  case NULL:
+                    vecClass = SingleValueVec.class;
+                    break;
+                }
+                builder.addFeature(fmeta, SERIALIZATION.read(
+                    CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
+                    vecClass));
+                break;
+              }
+              case TARGET: {
+                final TargetType targetType = TargetType.valueOf(parts[1].toString().toUpperCase());
+                switch (targetType) {
+                  case REAL:
+                    builder.nextChunk();
+                    int index = 2;
+                    while (index < parts.length) {
+                      builder.addTarget(CharSeqTools.parseFloat(parts[index++]));
+                    }
+                    break;
+                }
+                break;
+              }
+            }
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      });
+      return builder.create(dsiClass);
     }
-    props.xMean = mean;
-    props.xTrans = trans;
-    props.yMean = targetMean;
-    props.yVar = targetVar;
-    return new LightDataSetImpl(newData, newTarget);
+    catch (RuntimeException e) {
+      if (e.getCause() instanceof IOException) {
+        throw (IOException)e.getCause();
+      }
+      throw e;
+    }
+  }
+
+  public static <T extends DSItem> Pool<T> loadFromFile(String file, Class<T> dsiClass) throws IOException {
+    try(final InputStreamReader input =
+        file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file)) {
+      return loadFromFile(
+          input, dsiClass);
+    }
   }
 
 }

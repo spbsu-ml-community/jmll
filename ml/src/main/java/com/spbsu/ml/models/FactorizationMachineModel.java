@@ -28,7 +28,7 @@ public class FactorizationMachineModel extends FuncC1.Stub {
   }
 
   public FactorizationMachineModel(final Mx v) {
-    this(v, new SparseVec<IntBasis>(new IntBasis(v.rows())), 0.);
+    this(v, new SparseVec(new IntBasis(v.rows()).size()), 0.);
   }
 
   @Override

@@ -1,15 +1,5 @@
 package com.spbsu.ml.methods;
 
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.commons.util.Holder;
-import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.StatBasedLoss;
-import com.spbsu.ml.loss.WeightedLoss;
-import com.spbsu.ml.models.Region;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -18,18 +8,28 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.util.Holder;
+import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.models.Region;
+
 /**
  * User: solar
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
+public class GreedyRegion extends VecOptimization.Stub<WeightedLoss<? extends L2>> {
   public static final int NN_NEIGHBORHOOD = 1000;
   private final Random rng;
   private final BFGrid grid;
   byte[][] binarization;
   int[] nn;
-  private double alpha = 10;
   private double betta = 0.00001;
 
   public GreedyRegion(Random rng, BFGrid grid) {
@@ -37,12 +37,12 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
     this.grid = grid;
   }
 
-  private void prepareNN(VectorizedRealTargetDataSet ds) {
+  private void prepareNN(DataSet ds) {
     final int total = ds.length();
     binarization = new byte[total][];
     for (int i = 0; i < ds.length(); i++) {
-      final byte[] folds = binarization[i] = new byte[ds.xdim()];
-      grid.binarize(ds.data().row(i), folds);
+      final byte[] folds = binarization[i] = new byte[((VecDataSet) ds).xdim()];
+      grid.binarize(((VecDataSet) ds).data().row(i), folds);
     }
     nn = new int[total * NN_NEIGHBORHOOD];
     int[] l1dist = new int[total];
@@ -71,7 +71,7 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
   public static final int POOL_SIZE = Runtime.getRuntime().availableProcessors();
   ThreadPoolExecutor exec = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 1, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
   @Override
-  public synchronized Region fit(final VectorizedRealTargetDataSet<?> learn, final WeightedLoss<L2> loss) {
+  public synchronized Region fit(final VecDataSet learn, final WeightedLoss<? extends L2> loss) {
     prepareNN(learn);
     final Holder<Region> answer = new Holder<Region>(null);
     final CountDownLatch latch = new CountDownLatch(POOL_SIZE);
@@ -97,8 +97,8 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
     return answer.getValue();
   }
 
-  public Region fitInner(VectorizedRealTargetDataSet learn, StatBasedLoss loss) {
-    int pointIdx = choosePointAtRandomNN(learn);
+  public Region fitInner(VecDataSet learn, WeightedLoss<? extends L2> loss) {
+    int pointIdx = choosePointAtRandomNN(learn, loss.base());
 
     byte[] folds = binarization[pointIdx];
     final int total = learn.length();
@@ -117,7 +117,7 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
       ArrayTools.parallelSort(l1dist, order);
     }
 
-    final List<BinaryCond> conditions = new ArrayList<BinaryCond>(grid.size());
+    final List<BinaryCond> conditions = new ArrayList<>(grid.size());
     for (int bf = 0; bf < grid.size(); bf++) {
       BinaryCond bc = new BinaryCond();
       bc.bf = grid.bf(bf);
@@ -130,6 +130,8 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
     double bestMean = 0.;
     double bestScore = Double.MAX_VALUE;
     int bestCount = 0;
+    final Vec target = loss.base().target;
+
     while (!conditions.isEmpty()) {
       final int currentConditionsCount = conditions.size();
       double[] csum = new double[currentConditionsCount];
@@ -153,13 +155,13 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
           }
         }
         if (matches == currentConditionsCount) {
-          final double y = learn.target().get(index);
+          final double y = target.get(index);
           sum += y;
           sum2 += y * y;
           count++;
         }
         else if (matches == currentConditionsCount - 1) { // the only binary feature has not matched
-          final double y = learn.target().get(index);
+          final double y = target.get(index);
           csum[lastUnmatch] += y;
           csum2[lastUnmatch] += y * y;
           ccount[lastUnmatch]++;
@@ -168,7 +170,7 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
       { // best region update
         double score = score(total, count, sum, sum2, currentConditionsCount);
         if (score < bestScore) {
-          best = new ArrayList<BinaryCond>(conditions);
+          best = new ArrayList<>(conditions);
           bestScore = score;
           bestMean = sum/count;
           bestCount = count;
@@ -187,7 +189,7 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
         conditions.remove(worst);
       }
     }
-    List<BFGrid.BinaryFeature> features = new ArrayList<BFGrid.BinaryFeature>();
+    List<BFGrid.BinaryFeature> features = new ArrayList<>();
     boolean[] mask = new boolean[best.size()];
     for (int i = 0; i < best.size(); i++) {
       features.add(best.get(i).bf);
@@ -202,30 +204,10 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
     return err * (1. - 2 * (Math.log(2)/ Math.log(count + 1.) + (total > count ? Math.log(2)/ Math.log(total - count + 1.) : 0))) + betta * ccount;
   }
 
-  private int choosePointAtRandom(VectorizedRealTargetDataSet learn) {
-    double total = 0.;
-    {
-      for (int i = 0; i < learn.length(); i++) {
-        total += Math.abs(learn.target().get(i));
-      }
-    }
-    int startPointIndex = 0;
-    {
-      double rnd = total * rng.nextDouble();
-      for (int i = 0; i < learn.length() && rnd > Math.abs(learn.target().get(i)); i++) {
-        rnd -= Math.abs(learn.target().get(i));
-        startPointIndex++;
-      }
-    }
-    return startPointIndex;
-  }
-
-  private int choosePointAtRandomNN(VectorizedRealTargetDataSet learn) {
+  private int choosePointAtRandomNN(VecDataSet learn, L2 target) {
     double total = 0.;
     double[] weights = new double[learn.length()];
     double max = 0;
-    int maxIndex = -1;
-    final Vec target = learn.target();
     for (int i = 0; i < weights.length; i++) {
       double sum = 0;
       for (int t = 0; t < NN_NEIGHBORHOOD; t++) {
@@ -235,7 +217,6 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
       total += weights[i];
       if (max < weights[i]) {
         max = weights[i];
-        maxIndex = i;
       }
     }
 //    return maxIndex;
@@ -259,13 +240,7 @@ public class GreedyRegion implements VecOptimization<WeightedLoss<L2>> {
 
     @Override
     public String toString() {
-      StringBuilder builder = new StringBuilder();
-      builder.append(" ")
-              .append(bf.findex)
-              .append(mask ? ">=" : "<")
-              .append(bf.condition);
-
-      return builder.toString();
+      return " " + bf.findex + (mask ? ">=" : "<") + bf.condition;
     }
   }
 }

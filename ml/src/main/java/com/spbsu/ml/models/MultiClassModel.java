@@ -53,7 +53,7 @@ public class MultiClassModel extends MCModel {
    * Def: 'sum_i^{N-1}{e^{s_i}}' as 'S'.
    * If we need to compare 'e^{s_k}/(S + 1}' and '1 - S/(S + 1)', it's enough to compare 's_k' and '0'.
    *
-   * @param x features vector
+   * @param x lines vector
    */
   @Override
   public int bestClass(final Vec x) {

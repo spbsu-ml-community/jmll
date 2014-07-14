@@ -2,8 +2,9 @@ package com.spbsu.ml.methods.spoc;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
+import com.spbsu.ml.loss.MLLLogit;
 
 /**
  * User: qdeee
@@ -51,8 +52,8 @@ public abstract class AbstractCodingMatrixLearning {
     return findMatrixB(similarityMatrix);
   }
 
-  public Mx trainCodingMatrix(final VectorizedRealTargetDataSet learn) {
-    final Mx similarityMatrix = MCTools.createSimilarityMatrix(learn);
+  public Mx trainCodingMatrix(final VecDataSet learn, MLLLogit target) {
+    final Mx similarityMatrix = MCTools.createSimilarityMatrix(learn, target);
     return findMatrixB(similarityMatrix);
   }
 

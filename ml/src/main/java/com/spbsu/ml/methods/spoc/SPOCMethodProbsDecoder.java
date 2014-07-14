@@ -3,7 +3,8 @@ package com.spbsu.ml.methods.spoc;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.models.MulticlassCodingMatrixModelProbsDecoder;
 
 /**
@@ -17,24 +18,23 @@ public class SPOCMethodProbsDecoder extends SPOCMethodClassic {
   private final Mx S;
 
   private final double metricStep;
-  private final int metricIters;
   private final double metricC;
 
   public SPOCMethodProbsDecoder(final Mx codingMatrix, final Mx mxS, final double mcStep, final int mcIters) {
-    this(codingMatrix, mxS, mcStep, mcIters, METRIC_STEP, METRIC_ITERS, METRIC_C);
+    this(codingMatrix, mxS, mcStep, mcIters, METRIC_STEP, METRIC_C);
   }
 
-  public SPOCMethodProbsDecoder(final Mx codingMatrix, final Mx mxS, final double mcStep, final int mcIters, final double metricStep, final int metricIters, final double metricC) {
+  public SPOCMethodProbsDecoder(final Mx codingMatrix, final Mx mxS, final double mcStep, final int mcIters, final double metricStep,
+                                final double metricC) {
     super(codingMatrix, mcStep, mcIters);
     S = mxS;
     this.metricStep = metricStep;
-    this.metricIters = metricIters;
     this.metricC = metricC;
   }
 
   @Override
-  protected Trans createModel(final Func[] binClass, final VectorizedRealTargetDataSet learnDS) {
-    final CMLMetricOptimization metricOptimization = new CMLMetricOptimization(learnDS, S, metricC, metricIters, metricStep);
+  protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final MLLLogit llLogit) {
+    final CMLMetricOptimization metricOptimization = new CMLMetricOptimization(learnDS, llLogit, S, metricC, metricStep);
     final Mx mu = metricOptimization.trainProbs(codingMatrix, binClass);
     return new MulticlassCodingMatrixModelProbsDecoder(codingMatrix, binClass, MX_IGNORE_THRESHOLD, mu);
   }

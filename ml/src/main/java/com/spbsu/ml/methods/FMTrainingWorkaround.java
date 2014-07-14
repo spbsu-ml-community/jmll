@@ -3,10 +3,10 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.func.converters.Vec2StringConverter;
 import com.spbsu.commons.math.vectors.MxIterator;
 import com.spbsu.commons.text.StringUtils;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.io.ModelsSerializationRepository;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.FMModel;
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ import java.io.OutputStreamWriter;
  * Date: 24.03.14
  * [TODO:qdeee]:rewrite for different loss functions
  */
-public class FMTrainingWorkaround implements VecOptimization<Func> {
+public class FMTrainingWorkaround extends VecOptimization.Stub<L2> {
   private final static String LIBFM_PATH = System.getProperty("user.dir") + "/libfm";
   private String task;
   private String dim; // e.g, "1/1/8"
@@ -38,11 +38,11 @@ public class FMTrainingWorkaround implements VecOptimization<Func> {
   }
 
   @Override
-  public Trans fit(final VectorizedRealTargetDataSet<?> learn, final Func func) {
+  public Trans fit(final VecDataSet learn, final L2 func) {
     float minTarget = Float.MAX_VALUE;
     float maxTarget = Float.MIN_VALUE;
     for (int i = 0; i < learn.length(); i++) {
-      final double t = learn.target().get(i);
+      final double t = func.target.get(i);
       if (minTarget > t)
         minTarget = (float) t;
       if (maxTarget < t)
@@ -90,7 +90,7 @@ public class FMTrainingWorkaround implements VecOptimization<Func> {
       //sending dataset
       final Vec2StringConverter converter = new Vec2StringConverter();
       for (int i = 0; i < learn.length(); i++) {
-        String target = String.valueOf(learn.target().get(i));
+        String target = String.valueOf(func.target.get(i));
         final String entry = String.format("%s %s\n", target, converter.convertToSparse(learn.data().row(i)));
         writer.write(entry);
       }

@@ -26,7 +26,7 @@ public class FMModel extends FuncC1.Stub {
   }
 
   public FMModel(final Mx v) {
-    this(v, new SparseVec<IntBasis>(new IntBasis(v.columns())), 0.);
+    this(v, new SparseVec(v.columns()), 0.);
   }
 
   public Mx getV() {

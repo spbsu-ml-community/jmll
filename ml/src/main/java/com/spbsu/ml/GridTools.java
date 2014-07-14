@@ -1,13 +1,16 @@
 package com.spbsu.ml;
 
+import java.util.Arrays;
+
+
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.stats.OrderByFeature;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
-
-import java.util.Arrays;
 
 /**
  * User: solar
@@ -15,11 +18,11 @@ import java.util.Arrays;
  * Time: 17:42
  */
 public class GridTools {
-  public static BFGrid medianGrid(VectorizedRealTargetDataSet ds, int binFactor) {
-    final int dim = ds.xdim();
+  public static BFGrid medianGrid(DataSet<Vec> ds, int binFactor) {
+    final int dim = ((VecDataSet) ds).xdim();
     BFGrid.BFRow[] rows = new BFGrid.BFRow[dim];
     final TIntHashSet known = new TIntHashSet();
-    final OrderByFeature byFeature = ds.cache(OrderByFeature.class);
+    final OrderByFeature byFeature = ds.cache().cache(OrderByFeature.class, DataSet.class);
     final TIntArrayList borders = new TIntArrayList();
     int bfCount = 0;
 
@@ -37,7 +40,7 @@ public class GridTools {
       if(!haveDiffrentElements)
           continue;
       for (int i = 0; i < feature.length; i++)
-        feature[i] = ds.data().get(order[i], f);
+        feature[i] = ds.at(order[i]).get(f);
       while (borders.size() < binFactor + 1) {
         double bestScore = 0;
         int bestSplit = -1;

@@ -51,4 +51,8 @@ public class LLLogit extends FuncC1.Stub {
 
     return exp(result / point.dim());
   }
+
+  public int label(final int idx) {
+    return (int)target.get(idx);
+  }
 }

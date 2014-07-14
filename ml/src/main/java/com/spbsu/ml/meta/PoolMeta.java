@@ -10,5 +10,35 @@ import java.util.Date;
 public interface PoolMeta {
   String source();
   String author();
+  String file();
   Date created();
+  boolean duplicatesAllowed();
+
+  class FakePoolMeta implements PoolMeta {
+    private final Date creationDate = new Date();
+    @Override
+    public String source() {
+      return "/dev/random";
+    }
+
+    @Override
+    public String author() {
+      return "/dev/null";
+    }
+
+    @Override
+    public String file() {
+      return "/dev/null";
+    }
+
+    @Override
+    public Date created() {
+      return creationDate;
+    }
+
+    @Override
+    public boolean duplicatesAllowed() {
+      return false;
+    }
+  };
 }

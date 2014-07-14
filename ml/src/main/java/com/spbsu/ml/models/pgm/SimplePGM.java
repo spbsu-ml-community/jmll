@@ -152,7 +152,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
 
   public Vec next(FastRandom rng) {
     while(true) {
-      SparseVec<IntBasis> result = new SparseVec<IntBasis>(new IntBasis(100));
+      SparseVec result = new SparseVec(100);
       int next = 1;
       int index = 0;
 

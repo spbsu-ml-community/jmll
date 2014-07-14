@@ -2,8 +2,8 @@ package com.spbsu.ml.data.stats;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
-import com.spbsu.ml.data.impl.LightDataSetImpl;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 /**
@@ -13,13 +13,13 @@ import gnu.trove.map.hash.TIntObjectHashMap;
  * Time: 20:32
  * To change this template use File | Settings | File Templates.
  */
-public class OrderByFeature implements Computable<VectorizedRealTargetDataSet, OrderByFeature> {
+public class OrderByFeature implements Computable<DataSet, OrderByFeature> {
   final TIntObjectHashMap<ArrayPermutation> orders = new TIntObjectHashMap<ArrayPermutation>();
-  LightDataSetImpl set;
+  VecDataSet set;
 
   @Override
-  public OrderByFeature compute(VectorizedRealTargetDataSet argument) {
-    set = (LightDataSetImpl)argument;
+  public OrderByFeature compute(DataSet argument) {
+    set = (VecDataSet)argument;
     return this;
   }
 

@@ -10,13 +10,14 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.*;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
-import com.spbsu.ml.data.impl.LightDataSetImpl;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
+import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
@@ -31,7 +32,7 @@ import gnu.trove.map.TIntObjectMap;
  * User: qdeee
  * Date: 07.05.14
  */
-public class SPOCMethodClassic implements VecOptimization<LLLogit> {
+public class SPOCMethodClassic extends VecOptimization.Stub<MLLLogit> {
   protected static final double MX_IGNORE_THRESHOLD = 0.1;
   protected final int k;
   protected final int l;
@@ -61,15 +62,15 @@ public class SPOCMethodClassic implements VecOptimization<LLLogit> {
     }
   }
 
-  protected Trans createModel(final Func[] binClass, final VectorizedRealTargetDataSet learnDS) {
+  protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final MLLLogit llLogit) {
     return new MulticlassCodingMatrixModel(codingMatrix, binClass, MX_IGNORE_THRESHOLD);
   }
 
   @Override
-  public Trans fit(final VectorizedRealTargetDataSet<?> learn, final LLLogit llLogit) {
+  public Trans fit(final VecDataSet learn, final MLLLogit llLogit) {
     System.out.println("coding matrix: \n" + codingMatrix.toString());
 
-    final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(learn);
+    final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(llLogit);
     final Func[] binClassifiers = new Func[l];
     for (int j = 0; j < l; j++) {
       final TIntList learnIdxs = new TIntLinkedList();
@@ -83,18 +84,16 @@ public class SPOCMethodClassic implements VecOptimization<LLLogit> {
         }
       }
 
-      final VectorizedRealTargetDataSet dataSet = new LightDataSetImpl(
+      final VecDataSet dataSet = new VecDataSetImpl(
           new VecBasedMx(
               learn.xdim(),
               new IndexTransVec(
                   learn.data(),
                   new RowsPermutation(learnIdxs.toArray(), learn.xdim())
               )
-          ),
-          new ArrayVec(target.toArray())
-      );
+          ), learn);
 
-      final LLLogit loss = new LLLogit(dataSet.target());
+      final LLLogit loss = new LLLogit(new ArrayVec(target.toArray()));
       final BFGrid grid = GridTools.medianGrid(dataSet, 32);
       final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
           new GreedyObliviousTree<L2>(grid, 5),
@@ -123,6 +122,6 @@ public class SPOCMethodClassic implements VecOptimization<LLLogit> {
       }), ensemble.weights);
       binClassifiers[j] = funcEnsemble;
     }
-    return createModel(binClassifiers, learn);
+    return createModel(binClassifiers, learn, llLogit);
   }
 }

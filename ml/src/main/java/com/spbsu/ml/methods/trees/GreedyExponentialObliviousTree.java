@@ -5,7 +5,8 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.GreedyPolynomialExponentRegion;
 import com.spbsu.ml.methods.VecOptimization;
@@ -24,7 +25,7 @@ import java.util.List;
     *Idea please stop making my code yellow
 */
 
-public class GreedyExponentialObliviousTree implements VecOptimization<L2> {
+public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
 
   private final int numberOfVariablesByLeaf;
   private final int numberOfVariables;
@@ -41,7 +42,6 @@ public class GreedyExponentialObliviousTree implements VecOptimization<L2> {
     this.depth = depth;
     numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
     numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
-
   }
 
   public int getIndex(int mask, int i, int j) {
@@ -69,23 +69,23 @@ public class GreedyExponentialObliviousTree implements VecOptimization<L2> {
     return DistCoef * ans;
   }
 
-  void precalculateMissCoefficients(VectorizedRealTargetDataSet ds, final L2 loss) {
+  void precalculateMissCoefficients(DataSet ds, final L2 loss) {
     quadraticMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
     linearMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf];
     for (int i = 0; i < ds.length(); i++) {
       double data[] = new double[depth + 1];
       data[0] = 1;
       for (int s = 0; s < features.size(); s++) {
-        data[s + 1] = ds.data().get(i, features.get(s).findex);
+        data[s + 1] = ((VecDataSet) ds).data().get(i, features.get(s).findex);
       }
       int index = 0;
       for (int j = 0; j < features.size(); j++) {
         index <<= 1;
-        if (features.get(j).value(ds.data().row(i)))
+        if (features.get(j).value(((VecDataSet) ds).data().row(i)))
           index++;
       }
       //if(index == 1)
-      //  System.out.println(features.at(0).condition);
+      //  System.out.println(lines.at(0).condition);
       double f = loss.target.get(i);
       double weight = 1; //Math.exp(-calcDistanseToRegion(index, ds.data().row(i)));
       //System.out.println(weight);
@@ -103,7 +103,7 @@ public class GreedyExponentialObliviousTree implements VecOptimization<L2> {
 
 
   @Override
-  public ExponentialObliviousTree fit(VectorizedRealTargetDataSet<?> ds, final L2 loss) {
+  public ExponentialObliviousTree fit(VecDataSet ds, final L2 loss) {
     ObliviousTree base = got.fit(ds, loss);
     features = base.features();
     double baseMse = 0;

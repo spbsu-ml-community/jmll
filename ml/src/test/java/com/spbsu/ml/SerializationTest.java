@@ -20,7 +20,7 @@ public class SerializationTest extends GridTest {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    grid = GridTools.medianGrid(learn, 32);
+    grid = GridTools.medianGrid(learn.vecData(), 32);
   }
 
   public void testObliviousTree() {

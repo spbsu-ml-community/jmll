@@ -4,7 +4,8 @@ import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
@@ -16,15 +17,20 @@ import com.spbsu.ml.loss.WeightedLoss;
 */
 public class BootstrapOptimization<Loss extends StatBasedLoss> extends WeakListenerHolderImpl<Trans> implements VecOptimization<Loss> {
   protected final FastRandom rnd;
-  private final VecOptimization<WeightedLoss<Loss>> weak;
+  private final VecOptimization<WeightedLoss<? extends Loss>> weak;
 
-  public BootstrapOptimization(VecOptimization<WeightedLoss<Loss>> weak, FastRandom rnd) {
+  public BootstrapOptimization(VecOptimization<WeightedLoss<? extends Loss>> weak, FastRandom rnd) {
     this.weak = weak;
     this.rnd = rnd;
   }
 
   @Override
-  public Trans fit(VectorizedRealTargetDataSet<?> learn, Loss globalLoss) {
+  public Trans fit(VecDataSet learn, Loss globalLoss) {
     return weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
+  }
+
+  @Override
+  public Class<Vec> itemClass() {
+    return Vec.class;
   }
 }

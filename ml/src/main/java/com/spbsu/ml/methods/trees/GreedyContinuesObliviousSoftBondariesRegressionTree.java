@@ -1,16 +1,5 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.methods.GreedyTDRegion;
-import com.spbsu.ml.models.ContinousObliviousTree;
-import com.spbsu.ml.optimization.FuncConvex;
-import com.spbsu.ml.optimization.Optimize;
-import com.spbsu.ml.optimization.impl.Nesterov1;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -20,6 +9,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+
+
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.Trans;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.methods.GreedyTDRegion;
+import com.spbsu.ml.models.ContinousObliviousTree;
+import com.spbsu.ml.optimization.FuncConvex;
+import com.spbsu.ml.optimization.Optimize;
+import com.spbsu.ml.optimization.impl.Nesterov1;
 
 /**
  * Created with IntelliJ IDEA.
@@ -39,7 +42,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
   private final double linearFineLambda, constFineLambda, quadraticFineLambda;
   private final double lipshicParametr;
 
-  public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, VectorizedRealTargetDataSet ds, BFGrid grid, int depth) {
+  public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
     super(grid);
     got = new GreedyObliviousTree(grid, depth);
     numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
@@ -53,7 +56,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     //executor = Executors.newFixedThreadPool(4);
   }
 
-  public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, VectorizedRealTargetDataSet ds, BFGrid grid, int depth, double regulation,
+  public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth, double regulation,
                                                              boolean softBoundary, double constFineLambda, double linearFineLambda, double quadraticFineLambda, double lipshicParametr) {
     super(grid);
     this.regulationCoefficient = regulation;
@@ -274,7 +277,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 
   int numberOfPointInLeaf[];
 
-  void precalculateMissCoefficients(VectorizedRealTargetDataSet ds, L2 loss) {
+  void precalculateMissCoefficients(DataSet ds, L2 loss) {
     quadraticMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
     linearMissCoefficient = new double[numberOfVariables];
     coordinateSum = new double[1 << depth][depth];
@@ -283,13 +286,13 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
       int index = 0;
       for (BFGrid.BinaryFeature feature : features) {
         index <<= 1;
-        if (feature.value(ds.data().row(i)))
+        if (feature.value(((VecDataSet) ds).data().row(i)))
           index++;
       }
       double data[] = new double[depth + 1];
       data[0] = 1;
       for (int s = 0; s < features.size(); s++) {
-        data[s + 1] = ds.data().get(i, features.get(s).findex);
+        data[s + 1] = ((VecDataSet) ds).data().get(i, features.get(s).findex);
       }
       for (int s = 1; s <= depth; s++)
         coordinateSum[index][s - 1] += data[s];
@@ -361,7 +364,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     }
   }
 
-  public ContinousObliviousTree fit(VectorizedRealTargetDataSet<?> ds, L2 loss) {
+  public ContinousObliviousTree fit(VecDataSet ds, L2 loss) {
     features = got.fit(ds, loss).features();
     if (features.size() != depth) {
       System.out.println("Greedy oblivious tree bug");

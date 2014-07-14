@@ -4,6 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.FuncC1;
 
@@ -17,26 +18,26 @@ import static java.lang.Math.log;
  * Time: 22:37:55
  */
 public class MLLLogit extends FuncC1.Stub {
-  private final Vec target;
+  private final IntSeq target;
   private final int classesCount;
 
-  public MLLLogit(Vec target) {
+  public MLLLogit(IntSeq target) {
     this.target = target;
-    classesCount = (int)target.get(ArrayTools.max(target.toArray())) + 1;
+    classesCount = target.at(ArrayTools.max(target)) + 1;
   }
 
   @Override
   public Vec gradient(Vec point) {
     Vec result = new ArrayVec(point.dim());
-    Mx resultMx = new VecBasedMx(target.dim(), result);
-    Mx mxPoint = new VecBasedMx(target.dim(), point);
-    for (int i = 0; i < target.dim(); i++) {
+    Mx resultMx = new VecBasedMx(target.length(), result);
+    Mx mxPoint = new VecBasedMx(target.length(), point);
+    for (int i = 0; i < target.length(); i++) {
       double sum = 0;
       for (int c = 0; c < classesCount - 1; c++){
         double expX = exp(mxPoint.get(c, i));
         sum += expX;
       }
-      final int pointClass = (int)target.get(i);
+      final int pointClass = target.at(i);
       for (int c = 0; c < classesCount - 1; c++){
         if (pointClass == c)
           resultMx.adjust(c, i, -(1. + sum - exp(mxPoint.get(c, i)))/(1. + sum));
@@ -50,25 +51,37 @@ public class MLLLogit extends FuncC1.Stub {
   @Override
   public double value(Vec point) {
     double result = 0;
-    Mx mxPoint = new VecBasedMx(target.dim(), point);
-    for (int i = 0; i < target.dim(); i++) {
+    Mx mxPoint = new VecBasedMx(target.length(), point);
+    for (int i = 0; i < target.length(); i++) {
       double sum = 0;
       for (int c = 0; c < classesCount - 1; c++){
         double expX = exp(mxPoint.get(c, i));
         sum += expX;
       }
-      final int pointClass = (int)target.get(i);
+      final int pointClass = target.at(i);
       if (pointClass != classesCount - 1)
         result += log(exp(mxPoint.get(pointClass, i)) / (1. + sum));
       else
         result += log(1./(1. + sum));
     }
 
-    return exp(result / target.dim());
+    return exp(result / target.length());
   }
 
   @Override
   public int dim() {
-    return target.dim() * (classesCount - 1);
+    return target.length() * (classesCount - 1);
+  }
+
+  public int label(int idx) {
+    return target.at(idx);
+  }
+
+  public int classesCount() {
+    return classesCount;
+  }
+
+  public IntSeq labels() {
+    return target;
   }
 }

@@ -1,10 +1,10 @@
 package com.spbsu.ml.loss.multiclass.hier;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
 import com.spbsu.ml.data.impl.HierarchyTree;
+import com.spbsu.ml.loss.MLLLogit;
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
 
@@ -12,66 +12,76 @@ import gnu.trove.map.hash.TIntIntHashMap;
  * User: qdeee
  * Date: 06.03.14
  */
-public abstract class HierLoss extends Func.Stub {
-  protected HierarchyTree hierarchy;
-  protected Vec target;
-  public TIntIntHashMap targetMapping;
-  private int minEntries;
-
-  protected HierLoss(HierarchyTree unfilledHierarchy, VectorizedRealTargetDataSet dataSet, int minEntries) {
-    this.minEntries = minEntries;
-    unfilledHierarchy.fill(dataSet);
-    init(unfilledHierarchy, dataSet.target());
-  }
-
-  private void init(HierarchyTree filledHierarchy, Vec unmappedTarget) {
-    HierarchyTree prunedTree = filledHierarchy.getPrunedCopy(minEntries);
-    HierarchyTree.traversePrint(prunedTree.getRoot());
-
-    final TIntIntHashMap newTargetMapping = HierarchyTree.getTargetMapping(filledHierarchy.getRoot(), prunedTree.getRoot());
-    if (targetMapping != null) {
-      for (TIntIntIterator iter = targetMapping.iterator(); iter.hasNext(); ) {
-        iter.advance();
-        final int oldVal = iter.value();
-        final int newVal = newTargetMapping.get(oldVal);
-        iter.setValue(newVal);
-
-      }
-      targetMapping.putAll(newTargetMapping);
-    }
-    else {
-      this.targetMapping = newTargetMapping;
-    }
-    Vec newTarget = new ArrayVec(unmappedTarget.dim());
-    for (int i = 0; i < newTarget.dim(); i++) {
-      int oldTargetVal = (int) unmappedTarget.get(i);
-      newTarget.set(i, targetMapping.get(oldTargetVal));
-    }
-    this.target = newTarget;
-    this.hierarchy = prunedTree; //replace
-  }
-
-  protected HierLoss(HierLoss learningLoss, Vec testTarget) {
-    this.hierarchy = learningLoss.hierarchy;
-    this.targetMapping = learningLoss.targetMapping;
-
-    Vec newTarget = new ArrayVec(testTarget.dim());
-    for (int i = 0; i < newTarget.dim(); i++) {
-      newTarget.set(i, targetMapping.get((int) testTarget.get(i)));
-    }
-    this.target = newTarget;
-  }
-
-  public HierarchyTree.Node getHierRoot() {
-    return hierarchy.getRoot();
-  }
-
-  public void updateTree() {
-    init(hierarchy, target);
+public class HierLoss extends Func.Stub {
+  @Override
+  public double value(final Vec x) {
+    return 0;
   }
 
   @Override
   public int dim() {
-    return target.dim();
+    return 0;
   }
+//  protected HierarchyTree hierarchy;
+//  protected MLLLogit target;
+//  public TIntIntHashMap targetMapping;
+//  private int minEntries;
+//
+//  protected HierLoss(HierLoss learningLoss, MLLLogit testTarget) {
+//    this.hierarchy = learningLoss.hierarchy;
+//    this.targetMapping = learningLoss.targetMapping;
+//
+//    int[] newTarget = new int[testTarget.dim()];
+//    for (int i = 0; i < newTarget.length; i++) {
+//      int oldTargetVal = testTarget.label(i);
+//      newTarget[i] = targetMapping.get(oldTargetVal);
+//    }
+//    this.target = new MLLLogit(new IntSeq(newTarget));
+//  }
+//
+//  public MLLLogit original() {
+//    return target;
+//  }
+//
+//  protected HierLoss(HierarchyTree unfilledHierarchy, MLLLogit target, int minEntries) {
+//    this.minEntries = minEntries;
+//    unfilledHierarchy.fill(target);
+//    init(unfilledHierarchy, target);
+//  }
+//
+//  private void init(HierarchyTree filledHierarchy, MLLLogit target) {
+//    HierarchyTree prunedTree = filledHierarchy.getPrunedCopy(minEntries);
+//    HierarchyTree.traversePrint(prunedTree.getRoot());
+//
+//    final TIntIntHashMap newTargetMapping = HierarchyTree.getTargetMapping(filledHierarchy.getRoot(), prunedTree.getRoot());
+//    if (targetMapping != null) {
+//      for (TIntIntIterator iter = targetMapping.iterator(); iter.hasNext(); ) {
+//        iter.advance();
+//        final int oldVal = iter.value();
+//        final int newVal = newTargetMapping.get(oldVal);
+//        iter.setValue(newVal);
+//
+//      }
+//      targetMapping.putAll(newTargetMapping);
+//    }
+//    else {
+//      this.targetMapping = newTargetMapping;
+//    }
+//    int[] newTarget = new int[target.dim()];
+//    for (int i = 0; i < newTarget.length; i++) {
+//      int oldTargetVal = target.label(i);
+//      newTarget[i] = targetMapping.get(oldTargetVal);
+//    }
+//    this.target = new MLLLogit(new IntSeq(newTarget));
+//    this.hierarchy = prunedTree; //replace
+//  }
+//
+//  public HierarchyTree.Node getHierRoot() {
+//    return hierarchy.getRoot();
+//  }
+//
+//  @Override
+//  public int dim() {
+//    return target.dim();
+//  }
 }

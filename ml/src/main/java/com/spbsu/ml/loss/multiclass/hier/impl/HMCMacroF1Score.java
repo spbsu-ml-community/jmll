@@ -1,7 +1,7 @@
 package com.spbsu.ml.loss.multiclass.hier.impl;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.loss.multiclass.MCMacroF1Score;
 import com.spbsu.ml.loss.multiclass.hier.HierLoss;
@@ -11,20 +11,20 @@ import com.spbsu.ml.loss.multiclass.hier.HierLoss;
  * Date: 14.03.14
  */
 public class HMCMacroF1Score extends HierLoss {
-  private final MCMacroF1Score f1Score;
-
-  public HMCMacroF1Score(HierarchyTree unfilledHierarchy, VectorizedRealTargetDataSet dataSet, int minEntries) {
-    super(unfilledHierarchy, dataSet, minEntries);
-    f1Score = new MCMacroF1Score(target);
-  }
-
-  public HMCMacroF1Score(HierLoss learningLoss, Vec testTarget) {
-    super(learningLoss, testTarget);
-    f1Score = new MCMacroF1Score(target);
-  }
-
-  @Override
-  public double value(Vec x) {
-    return f1Score.value(x);
-  }
+//  private final MCMacroF1Score f1Score;
+//
+//  public HMCMacroF1Score(HierarchyTree unfilledHierarchy, VecDataSet dataSet, int minEntries) {
+//    super(unfilledHierarchy, dataSet, minEntries);
+//    f1Score = new MCMacroF1Score(target);
+//  }
+//
+//  public HMCMacroF1Score(HierLoss learningLoss, Vec testTarget) {
+//    super(learningLoss, testTarget);
+//    f1Score = new MCMacroF1Score(target);
+//  }
+//
+//  @Override
+//  public double value(Vec x) {
+//    return f1Score.value(x);
+//  }
 }

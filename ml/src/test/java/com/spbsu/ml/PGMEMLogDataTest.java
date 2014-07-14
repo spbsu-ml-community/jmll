@@ -10,14 +10,15 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.mx.VecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
-import com.spbsu.ml.data.impl.LightDataSetImpl;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.methods.PGMEM;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
@@ -53,21 +54,21 @@ public abstract class PGMEMLogDataTest extends TestCase {
   }
 
   public void testMostProbable() throws IOException {
-    VectorizedRealTargetDataSet dataSet = new LightDataSetImpl(new VecArrayMx(learn.getRoutes()), new ArrayVec(learn.getRoutes().length));
+    VecDataSet dataSet = new VecDataSetImpl(new RowsVecArrayMx(learn.getRoutes()), null);
     ProbabilisticGraphicalModel model = getModel(dataSet, 100, PGMEM.MOST_PROBABLE_PATH, true);
 
     checkModel(model, 3, modelValidationListener);
   }
 
   public void testLaplacePrior() throws IOException {
-    VectorizedRealTargetDataSet dataSet = new LightDataSetImpl(new VecArrayMx(learn.getRoutes()), new ArrayVec(learn.getRoutes().length));
+    VecDataSet dataSet = new VecDataSetImpl(new RowsVecArrayMx(learn.getRoutes()), null);
     ProbabilisticGraphicalModel model = getModel(dataSet, 100, PGMEM.LAPLACE_PRIOR_PATH, true);
 
     checkModel(model, 3, modelValidationListener);
   }
 
   public void testFreqDensityPrior() throws IOException {
-    VectorizedRealTargetDataSet dataSet = new LightDataSetImpl(new VecArrayMx(learn.getRoutes()), new ArrayVec(learn.getRoutes().length));
+    VecDataSet dataSet = new VecDataSetImpl(new RowsVecArrayMx(learn.getRoutes()), null);
     ProbabilisticGraphicalModel model = getModel(dataSet, 100, PGMEM.FREQ_DENSITY_PRIOR_PATH, true);
 
     checkModel(model, 3, modelValidationListener);
@@ -90,14 +91,14 @@ public abstract class PGMEMLogDataTest extends TestCase {
     for (int i = 1; i <= partitionCount; i++) {
       Vec[] part = new Vec[i == partitionCount ? ld.getRoutes().length : i * stepSize];
       System.arraycopy(ld.getRoutes(), 0, part, 0, part.length);
-      VectorizedRealTargetDataSet dataSet = new LightDataSetImpl(new VecArrayMx(part), new ArrayVec(part.length));
+      VecDataSet dataSet = new VecDataSetImpl(new RowsVecArrayMx(part), null);
       System.out.println("\nData set size: " + dataSet.length() + ":");
       ProbabilisticGraphicalModel model = getModel(dataSet, iterations, policy, false);
       checkModel(model, 3, modelValidationListener);
     }
   }
 
-  private ProbabilisticGraphicalModel getModel(VectorizedRealTargetDataSet dataSet, int iterations, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, boolean listen)
+  private ProbabilisticGraphicalModel getModel(VecDataSet dataSet, int iterations, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, boolean listen)
       throws IOException {
     final Mx original = new VecBasedMx(SIZE, VecTools.fill(new ArrayVec(SIZE * SIZE), 1.));
     PGMEM pgmem = new PGMEM(original, 0.2, iterations, rng, policy);
@@ -127,7 +128,7 @@ public abstract class PGMEMLogDataTest extends TestCase {
   }
 
   private void checkModel(ProbabilisticGraphicalModel model, int accuracyLimit, Action<Pair<Integer, Double>> listener) throws IOException {
-    VectorizedRealTargetDataSet check = new LightDataSetImpl(new VecArrayMx(validate.getRoutes()), new ArrayVec(validate.getRoutes().length));
+    VecDataSet check = new VecDataSetImpl(new RowsVecArrayMx(validate.getRoutes()), null);
     for (int i = 0; i < accuracyLimit; i++) {
       listener.invoke(Pair.create(i, checkModel(check, (SimplePGM) model, i)));
     }
@@ -141,9 +142,9 @@ public abstract class PGMEMLogDataTest extends TestCase {
     return routes.toArray(new Route[0]);
   }
 
-  private double checkModel(VectorizedRealTargetDataSet check, SimplePGM fit, int accuracy) {
+  private double checkModel(DataSet check, SimplePGM fit, int accuracy) {
     final int[][] cpds = new int[check.length()][];
-    final Mx data = check.data();
+    final Mx data = ((VecDataSet) check).data();
     for (int j = 0; j < data.rows(); j++) {
       cpds[j] = fit.extractControlPoints(data.row(j));
     }

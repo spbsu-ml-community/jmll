@@ -62,6 +62,14 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     return metric.trans(x).get(0);
   }
 
+  public double weight(final int index) {
+    return weights[index];
+  }
+
+  public BasedOn base() {
+    return metric;
+  }
+
   public static class Stat implements AdditiveStatistics {
     public AdditiveStatistics inside;
     private final int[] weights;

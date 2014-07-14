@@ -67,6 +67,10 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats> {
     return stats.weight > MathTools.EPSILON ? stats.sum/stats.weight : 0;
   }
 
+  public double get(final int i) {
+    return target.get(i);
+  }
+
   public static class MSEStats implements AdditiveStatistics {
     public volatile double sum;
     public volatile double sum2;

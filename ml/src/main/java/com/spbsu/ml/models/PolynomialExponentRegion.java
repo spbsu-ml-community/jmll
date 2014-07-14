@@ -25,7 +25,7 @@ public class PolynomialExponentRegion extends Func.Stub {
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(x) != mask[i])
         return 0;
-        //distanse += Math.pow(features[i].condition - x.at(features[i].findex), 2);
+        //distanse += Math.pow(lines[i].condition - x.at(lines[i].findex), 2);
     }
     //return distanse;
     return 1;

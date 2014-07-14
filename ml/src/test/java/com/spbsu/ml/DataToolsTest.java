@@ -2,8 +2,8 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
-import com.spbsu.ml.data.impl.LightDataSetImpl;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
 
 /**
@@ -44,18 +44,19 @@ public class DataToolsTest extends GridTest {
   }
 
   public void testExtendDataset() throws Exception {
-    VectorizedRealTargetDataSet ds = new LightDataSetImpl(
+    final ArrayVec target = new ArrayVec(0.1,
+        0.2);
+    VecDataSet ds = new VecDataSetImpl(
         new VecBasedMx(2,
             new ArrayVec(1, 2,
                          3, 4)
         ),
-        new ArrayVec(0.1,
-                     0.2)
+        null
     );
-    final VectorizedRealTargetDataSet extDs = DataTools.extendDataset(ds, new ArrayVec(5., 6.), new ArrayVec(7., 8.));
+    final VecDataSet extDs = DataTools.extendDataset(ds, new ArrayVec(5., 6.), new ArrayVec(7., 8.));
 
     for (int i = 0; i < extDs.length(); i++) {
-      System.out.println(extDs.target().get(i) + "\t" + extDs.data().row(i).toString());
+      System.out.println(target.get(i) + "\t" + extDs.at(i).toString());
     }
   }
 }

@@ -44,7 +44,7 @@ public class ExponentialObliviousTree extends ContinousObliviousTree {
       x[i + 1] = _x.get(features[i].findex);
     x[0] = 1;
     double sumWeights = 0;
-    //for (int index = 0; index < 1 << features.length; index++) {
+    //for (int index = 0; index < 1 << lines.length; index++) {
     //double weight = Math.exp(-calcDistanseToRegion(index, _x));
     //sumWeights += weight;
     int index = 0;

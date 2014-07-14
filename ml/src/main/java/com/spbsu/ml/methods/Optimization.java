@@ -3,7 +3,7 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.data.DataSet;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: solar
@@ -17,4 +17,6 @@ public interface Optimization<Loss extends Func, DSType extends DataSet<DSItem>,
    * @return function f = \arg \min_f Loss((f(learn_i))_1^m)
    */
   Computable<DSItem,Vec> fit(DSType learn, Loss loss);
+
+  Class<DSItem> itemClass();
 }

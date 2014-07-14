@@ -3,6 +3,7 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.*;
@@ -10,7 +11,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ThreadTools;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.Route;
@@ -129,7 +130,7 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
   }
 
   @Override
-  public SimplePGM fit(VectorizedRealTargetDataSet learn, LLLogit ll) {
+  public SimplePGM fit(VecDataSet learn, LLLogit ll) {
     final ThreadGroup tg = new ThreadGroup(PGMEM.class.getName());
     final Thread[] threads = new Thread[ThreadTools.COMPUTE_UNITS];
     final ArrayBlockingQueue<Action<Policy>> queue = new ArrayBlockingQueue<Action<Policy>>(learn.length());
@@ -220,5 +221,10 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
     }
     tg.interrupt();
     return currentPGM;
+  }
+
+  @Override
+  public Class<Vec> itemClass() {
+    return Vec.class;
   }
 }

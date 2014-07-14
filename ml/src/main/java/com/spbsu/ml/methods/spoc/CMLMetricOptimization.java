@@ -9,8 +9,9 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.FuncC1;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
+import com.spbsu.ml.loss.MLLLogit;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.map.TIntObjectMap;
@@ -20,18 +21,18 @@ import gnu.trove.map.TIntObjectMap;
  * Date: 21.05.14
  */
 public class CMLMetricOptimization {
-  private final VectorizedRealTargetDataSet ds;
   private final TIntObjectMap<TIntList> classesIdxs;
   private final Mx laplacian;
   private final double c;
-  private final int iters;
+  private final VecDataSet ds;
+  private final MLLLogit target;
   private final double step;
 
-  public CMLMetricOptimization(final VectorizedRealTargetDataSet ds, final Mx S, final double c, final int iters, final double step) {
+  public CMLMetricOptimization(final VecDataSet ds, MLLLogit target, final Mx S, final double c, final double step) {
     this.ds = ds;
-    this.iters = iters;
+    this.target = target;
     this.step = step;
-    this.classesIdxs = MCTools.splitClassesIdxs(ds);
+    this.classesIdxs = MCTools.splitClassesIdxs(target);
     this.laplacian = VecTools.copy(S);
     VecTools.scale(laplacian, -1.0);
     for (int i = 0; i < laplacian.rows(); i++) {
@@ -78,7 +79,7 @@ public class CMLMetricOptimization {
       for (int i = 0; i < ds.length(); i++) {
         final double trans = binClassifier.value(ds.data().row(i));
         final double sigmoid = MathTools.sigmoid(trans);
-        final double underLog = mu.get((int)ds.target().get(i)) * sigmoid + (1 - mu.get((int)ds.target().get(i))) * (1 - sigmoid);
+        final double underLog = mu.get(target.label(i)) * sigmoid + (1 - mu.get(target.label(i))) * (1 - sigmoid);
         result -= Math.log(underLog);
       }
       result += c * VecTools.multiply(MxTools.multiply(laplacian, mu), mu);

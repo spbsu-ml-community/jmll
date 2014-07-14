@@ -7,7 +7,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.func.Ensemble;
@@ -44,7 +44,7 @@ public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolde
   }
 
   @Override
-  public Ensemble fit(VectorizedRealTargetDataSet<?> learn, GlobalLoss globalLoss) {
+  public Ensemble fit(VecDataSet learn, GlobalLoss globalLoss) {
     final Vec cursor = new ArrayVec(globalLoss.xdim());
     List<Trans> weakModels = new ArrayList<Trans>(iterationsCount);
     final Trans gradient = globalLoss.gradient();
@@ -58,5 +58,10 @@ public class GradientBoosting<GlobalLoss extends Func> extends WeakListenerHolde
       VecTools.append(cursor, VecTools.scale(weakModel.transAll(learn.data()), -step));
     }
     return new Ensemble(weakModels, -step);
+  }
+
+  @Override
+  public Class<Vec> itemClass() {
+    return Vec.class;
   }
 }

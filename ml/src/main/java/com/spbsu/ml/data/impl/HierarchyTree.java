@@ -1,29 +1,29 @@
 package com.spbsu.ml.data.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
+
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.data.VectorizedRealTargetDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.set.impl.VecDataSetImpl;
+import com.spbsu.ml.data.tools.MCTools;
+import com.spbsu.ml.loss.LLLogit;
+import com.spbsu.ml.loss.MLLLogit;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.iterator.TIntObjectIterator;
-import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.lang.Math.min;
 
 /**
  * User: qdeee
@@ -36,11 +36,10 @@ public class HierarchyTree {
     this.root = treeRoot;
   }
 
-  public void fill(VectorizedRealTargetDataSet learn) {
-    TIntObjectHashMap<TIntList> id2positions = new TIntObjectHashMap<TIntList>();
-    Vec target = learn.target();
+  public void fill(MLLLogit target) {
+    TIntObjectHashMap<TIntList> id2positions = new TIntObjectHashMap<>();
     for (int i = 0; i < target.dim(); i++) {
-      int catId = (int) target.get(i);
+      int catId = target.label(i);
       if (id2positions.containsKey(catId))
         id2positions.get(catId).add(i);
       else {
@@ -49,22 +48,7 @@ public class HierarchyTree {
         id2positions.put(catId, indexes);
       }
     }
-    root.fillDS(learn, id2positions);
-  }
-
-  public HierarchyTree getStructureCopy() {
-    Node newRoot = traverseStructureCopy(root);
-    return new HierarchyTree(newRoot);
-  }
-
-  private Node traverseStructureCopy(Node node) {
-    Node newNode = new Node(node.categoryId, null);
-    for (Node child : node.children) {
-      Node newChild = traverseStructureCopy(child);
-      newNode.addChild(newChild);
-      newChild.parent = newNode;
-    }
-    return newNode;
+    root.fillDS(id2positions);
   }
 
   public HierarchyTree getPrunedCopy(int minEntries) {
@@ -123,19 +107,13 @@ public class HierarchyTree {
     Node parent;
     List<Node> children;
 
-    VectorizedRealTargetDataSet sourceDS = null;
     TIntObjectMap<TIntList> classesPositions;
 
     public Node(int categoryId, Node parent) {
       this.categoryId = categoryId;
       this.parent = parent;
-      this.children = new ArrayList<Node>();
-      this.classesPositions = new TIntObjectHashMap<TIntList>(3);
-    }
-
-    public Node(final int categoryId, final Node parent, final VectorizedRealTargetDataSet sourceDS) {
-      this(categoryId, parent);
-      this.sourceDS = sourceDS;
+      this.children = new ArrayList<>();
+      this.classesPositions = new TIntObjectHashMap<>(3);
     }
 
     public List<Node> getChildren() {
@@ -150,8 +128,7 @@ public class HierarchyTree {
       this.children.add(node);
     }
 
-    public void fillDS(final VectorizedRealTargetDataSet learn, final TIntObjectHashMap<TIntList> id2positions) {
-      sourceDS = learn;
+    public void fillDS(final TIntObjectHashMap<TIntList> id2positions) {
       final TIntList positions = id2positions.get(categoryId);
       if (positions != null)
         classesPositions.put(categoryId, new TIntArrayList(positions));
@@ -160,7 +137,7 @@ public class HierarchyTree {
 
       if (!isLeaf()) {
         for (Node child : children) {
-          child.fillDS(learn, id2positions);
+          child.fillDS(id2positions);
           classesPositions.put(child.categoryId, child.joinLists());
         }
       }
@@ -168,12 +145,12 @@ public class HierarchyTree {
 
     private Node getPrunedCopy(int minEntries) {
       if (isLeaf()) {
-        final Node node = new Node(categoryId, null, sourceDS);
+        final Node node = new Node(categoryId, null);
         node.classesPositions.put(categoryId, new TIntArrayList(0));
         return node;
       }
 
-      final Node node = new Node(categoryId, null, sourceDS);
+      final Node node = new Node(categoryId, null);
       final TIntList origLastClass = classesPositions.get(categoryId);
       final TIntList lastClassIdxs = new TIntLinkedList(origLastClass);
 
@@ -242,22 +219,8 @@ public class HierarchyTree {
       return false;
     }
 
-    public VectorizedRealTargetDataSet createDS(TIntList removeIdxs) {
-      final TIntList join = joinLists();
-      if (removeIdxs != null) {
-        join.removeAll(removeIdxs);
-      }
-      final int[] perm = join.toArray();
-      Mx data = new VecBasedMx(
-          sourceDS.xdim(),
-          new IndexTransVec(sourceDS.data(),
-              new RowsPermutation(
-                  perm,
-                  sourceDS.xdim()
-              )
-          )
-      );
-      TDoubleList targetList = new TDoubleLinkedList();
+    public MLLLogit createTarget(final TIntList labels) {
+      TIntList targetList = new TIntLinkedList();
       for (Node child : children) {
         final int categoryId = child.categoryId;
         targetList.fill(targetList.size(), targetList.size() + classesPositions.get(categoryId).size(), categoryId);
@@ -265,26 +228,33 @@ public class HierarchyTree {
       final TIntList selfClass = classesPositions.get(categoryId);
       if (selfClass.size() > 0)
         targetList.fill(targetList.size(), targetList.size() + selfClass.size(), categoryId);
-      final Vec target = new ArrayVec(targetList.toArray());
-      assert(target.dim() != data.rows());
-      return new LightDataSetImpl(data, target);
+      return MCTools.normalizeTarget(new MLLLogit(new IntSeq(targetList.toArray())), labels);
     }
 
-    public VectorizedRealTargetDataSet createDS() {
-      return createDS(null);
+    private VecDataSet createDS(VecDataSet learn, TIntList removeIdxs) {
+      final TIntList join = joinLists();
+      join.removeAll(removeIdxs);
+      final int[] perm = join.toArray();
+      Mx data = new VecBasedMx(
+          learn.xdim(),
+          new IndexTransVec(learn.data(),
+              new RowsPermutation(
+                  perm,
+                  learn.xdim()
+              )
+          )
+      );
+      return new VecDataSetImpl(data, learn);
     }
 
-    public VectorizedRealTargetDataSet createDSForChild(int chosenCatId) {
-      double[] targetArr = new double[sourceDS.length()];
-      ArrayTools.fill(targetArr, 0, targetArr.length, -1.);
-      final TIntList chosenClassIdxs = classesPositions.get(chosenCatId);
-      for (TIntIterator iter = chosenClassIdxs.iterator(); iter.hasNext(); ) {
-        targetArr[iter.next()] = 1.;
-      }
+    public VecDataSet createDS(VecDataSet source) {
+      return createDS(source, new TIntArrayList());
+    }
 
+    public VecDataSet createDSForChild(int chosenCatId, VecDataSet ds) {
       if (!isRoot()) {
         TIntList idxs = new TIntLinkedList();
-        idxs.addAll(ArrayTools.sequence(0, sourceDS.length()));
+        idxs.addAll(ArrayTools.sequence(0, ds.length()));
         for (Node child : children) {
           if (child.categoryId != chosenCatId) {
             idxs.removeAll(classesPositions.get(child.categoryId));
@@ -296,21 +266,27 @@ public class HierarchyTree {
 
         final int[] perm = idxs.toArray();
         Mx data = new VecBasedMx(
-            sourceDS.xdim(),
-            new IndexTransVec(sourceDS.data(),
+            ds.xdim(),
+            new IndexTransVec(ds.data(),
                 new RowsPermutation(
                     perm,
-                    sourceDS.xdim()
+                    ds.xdim()
                 )
             )
         );
-        Vec target = new IndexTransVec(new ArrayVec(targetArr), new ArrayPermutation(perm));
+        return new VecDataSetImpl(data, ds);
+      }
+      return ds;
+    }
 
-        return new LightDataSetImpl(data, target);
+    public LLLogit createTargetForChild(int chosenCatId, MLLLogit target) {
+      double[] targetArr = new double[target.dim()];
+      ArrayTools.fill(targetArr, 0, targetArr.length, -1.);
+      final TIntList chosenClassIdxs = classesPositions.get(chosenCatId);
+      for (TIntIterator iter = chosenClassIdxs.iterator(); iter.hasNext(); ) {
+        targetArr[iter.next()] = 1.;
       }
-      else {
-        return new ChangedTarget((LightDataSetImpl) sourceDS, new ArrayVec(targetArr));
-      }
+      return new LLLogit(new ArrayVec(targetArr));
     }
 
     public boolean hasOwnDS() {
