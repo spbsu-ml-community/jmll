@@ -1,6 +1,7 @@
 package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: solar
@@ -8,8 +9,8 @@ import com.spbsu.commons.math.vectors.Vec;
  * Time: 22:37:55
  */
 public class CorrL2 extends L2 {
-  public CorrL2(Vec target) {
-    super(target);
+  public CorrL2(Vec target, DataSet<?> owner) {
+    super(target, owner);
   }
 
   @Override

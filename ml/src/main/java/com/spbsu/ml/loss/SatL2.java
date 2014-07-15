@@ -1,6 +1,7 @@
 package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: solar
@@ -8,8 +9,8 @@ import com.spbsu.commons.math.vectors.Vec;
  * Time: 22:37:55
  */
 public class SatL2 extends L2 {
-  public SatL2(Vec target) {
-    super(target);
+  public SatL2(Vec target, DataSet<?> base) {
+    super(target, base);
   }
 
   @Override

@@ -24,7 +24,7 @@ public interface VecDataSet extends DataSet<Vec> {
 
     public Stub(VecDataSet parent) {
       super(parent);
-      vec = parent.vec();
+      vec = parent != null ? parent.vec() : null;
     }
 
     public Stub(DataSet<?> parent, Vectorization<?> vec) {

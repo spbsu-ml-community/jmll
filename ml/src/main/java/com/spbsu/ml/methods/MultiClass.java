@@ -6,6 +6,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.MultiClassModel;
 
@@ -16,9 +17,9 @@ import com.spbsu.ml.models.MultiClassModel;
  */
 public class MultiClass extends VecOptimization.Stub<L2> {
   private final VecOptimization<L2> inner;
-  private final Computable<Vec, ? extends L2> local;
+  private final Class<? extends L2> local;
 
-  public MultiClass(VecOptimization<L2> inner, Computable<Vec, ? extends L2> local) {
+  public MultiClass(VecOptimization<L2> inner, Class<? extends L2> local) {
     this.inner = inner;
     this.local = local;
   }
@@ -29,7 +30,7 @@ public class MultiClass extends VecOptimization.Stub<L2> {
     final Mx gradient = new VecBasedMx(data.rows(), mllLogitGradient.target);
     final Func[] models = new Func[gradient.rows()];
     for (int c = 0; c < models.length; c++) {
-      models[c] = (Func)inner.fit(learn, local.compute(gradient.row(c)));
+      models[c] = (Func)inner.fit(learn, DataTools.newTarget(local, gradient, learn));
     }
     return new MultiClassModel(models);
   }

@@ -11,6 +11,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;
@@ -219,7 +220,7 @@ public class HierarchyTree {
       return false;
     }
 
-    public MLLLogit createTarget(final TIntList labels) {
+    public MLLLogit createTarget(final TIntList labels, DataSet<?> owner) {
       TIntList targetList = new TIntLinkedList();
       for (Node child : children) {
         final int categoryId = child.categoryId;
@@ -228,7 +229,7 @@ public class HierarchyTree {
       final TIntList selfClass = classesPositions.get(categoryId);
       if (selfClass.size() > 0)
         targetList.fill(targetList.size(), targetList.size() + selfClass.size(), categoryId);
-      return MCTools.normalizeTarget(new MLLLogit(new IntSeq(targetList.toArray())), labels);
+      return MCTools.normalizeTarget(new MLLLogit(new IntSeq(targetList.toArray()), owner), labels);
     }
 
     private VecDataSet createDS(VecDataSet learn, TIntList removeIdxs) {
@@ -286,7 +287,7 @@ public class HierarchyTree {
       for (TIntIterator iter = chosenClassIdxs.iterator(); iter.hasNext(); ) {
         targetArr[iter.next()] = 1.;
       }
-      return new LLLogit(new ArrayVec(targetArr));
+      return new LLLogit(new ArrayVec(targetArr), target.owner());
     }
 
     public boolean hasOwnDS() {

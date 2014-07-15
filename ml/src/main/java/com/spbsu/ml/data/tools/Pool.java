@@ -1,7 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +10,7 @@ import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.ml.Func;
+import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.Vectorization;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -103,13 +101,8 @@ public class Pool<I extends DSItem> {
     return joinFeatures(ArrayTools.sequence(0, features.length));
   }
 
-  public <T extends Func> T target(Class<T> targetClass) {
-    try {
-      final Constructor<T> constructor = targetClass.getConstructor(target.getClass(), DataSet.class);
-      return constructor.newInstance(target, data());
-    } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-      throw new RuntimeException("Unable to create " + targetClass.getName() + " target");
-    }
+  public <T extends TargetFunc> T target(Class<T> targetClass) {
+    return DataTools.newTarget(targetClass, target, data());
   }
 
   public int size() {

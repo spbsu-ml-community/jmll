@@ -8,6 +8,8 @@ import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.FuncC1;
+import com.spbsu.ml.TargetFunc;
+import com.spbsu.ml.data.set.DataSet;
 
 import static com.spbsu.commons.math.vectors.VecTools.*;
 
@@ -16,11 +18,13 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats> {
+public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, TargetFunc {
   public final Vec target;
+  private final DataSet<?> owner;
 
-  public L2(Vec target) {
+  public L2(Vec target, DataSet<?> owner) {
     this.target = target;
+    this.owner = owner;
   }
 
   @NotNull
@@ -69,6 +73,11 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats> {
 
   public double get(final int i) {
     return target.get(i);
+  }
+
+  @Override
+  public DataSet<?> owner() {
+    return owner;
   }
 
   public static class MSEStats implements AdditiveStatistics {

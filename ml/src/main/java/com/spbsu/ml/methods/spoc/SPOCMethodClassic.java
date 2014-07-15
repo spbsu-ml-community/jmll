@@ -93,7 +93,7 @@ public class SPOCMethodClassic extends VecOptimization.Stub<MLLLogit> {
               )
           ), learn);
 
-      final LLLogit loss = new LLLogit(new ArrayVec(target.toArray()));
+      final LLLogit loss = new LLLogit(new ArrayVec(target.toArray()), learn);
       final BFGrid grid = GridTools.medianGrid(dataSet, 32);
       final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
           new GreedyObliviousTree<L2>(grid, 5),

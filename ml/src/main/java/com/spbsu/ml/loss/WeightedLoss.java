@@ -1,11 +1,14 @@
 package com.spbsu.ml.loss;
 
+import org.jetbrains.annotations.Nullable;
+
+
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import org.jetbrains.annotations.Nullable;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: solar
@@ -68,6 +71,11 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
 
   public BasedOn base() {
     return metric;
+  }
+
+  @Override
+  public DataSet<?> owner() {
+    return metric.owner();
   }
 
   public static class Stat implements AdditiveStatistics {

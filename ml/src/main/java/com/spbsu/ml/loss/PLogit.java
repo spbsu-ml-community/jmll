@@ -1,6 +1,7 @@
 package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: starlight
@@ -9,8 +10,8 @@ import com.spbsu.commons.math.vectors.Vec;
 public class PLogit extends LLLogit {
   private final Vec target;
 
-  public PLogit(final Vec target) {
-    super(target);
+  public PLogit(final Vec target, DataSet<?> base) {
+    super(target, base);
     this.target = target;
   }
 

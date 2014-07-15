@@ -7,6 +7,8 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.FuncC1;
+import com.spbsu.ml.TargetFunc;
+import com.spbsu.ml.data.set.DataSet;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -17,12 +19,14 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class MLLLogit extends FuncC1.Stub {
+public class MLLLogit extends FuncC1.Stub implements TargetFunc {
   private final IntSeq target;
+  private final DataSet<?> owner;
   private final int classesCount;
 
-  public MLLLogit(IntSeq target) {
+  public MLLLogit(IntSeq target, DataSet<?> owner) {
     this.target = target;
+    this.owner = owner;
     classesCount = target.at(ArrayTools.max(target)) + 1;
   }
 
@@ -83,5 +87,10 @@ public class MLLLogit extends FuncC1.Stub {
 
   public IntSeq labels() {
     return target;
+  }
+
+  @Override
+  public DataSet<?> owner() {
+    return owner;
   }
 }

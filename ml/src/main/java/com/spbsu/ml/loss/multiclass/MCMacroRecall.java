@@ -2,6 +2,8 @@ package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.TargetFunc;
+import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import gnu.trove.map.hash.TIntIntHashMap;
 
@@ -9,12 +11,14 @@ import gnu.trove.map.hash.TIntIntHashMap;
  * User: qdeee
  * Date: 09.04.14
  */
-public class MCMacroRecall extends Func.Stub {
+public class MCMacroRecall extends Func.Stub implements TargetFunc {
   private final Vec target;
+  private final DataSet<?> owner;
   private final int[] classLabels;
 
-  public MCMacroRecall(final Vec target) {
+  public MCMacroRecall(final Vec target, DataSet<?> owner) {
     this.target = target;
+    this.owner = owner;
     this.classLabels = MCTools.getClassesLabels(target);
   }
 
@@ -48,5 +52,10 @@ public class MCMacroRecall extends Func.Stub {
   @Override
   public int dim() {
     return target.dim();
+  }
+
+  @Override
+  public DataSet<?> owner() {
+    return owner;
   }
 }

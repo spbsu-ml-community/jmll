@@ -121,7 +121,7 @@ public abstract class PGMEMLogDataTest extends TestCase {
       pgmem.addListener(listener);
       Interval.start();
     }
-    SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.length()), 1.)));
+    SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.length()), 1.), dataSet));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
     System.out.println(MxTools.prettyPrint(fit.topology));
     return fit;

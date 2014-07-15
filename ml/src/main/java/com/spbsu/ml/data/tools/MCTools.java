@@ -91,7 +91,7 @@ public class MCTools {
       else
         result[i] = labelPos;
     }
-    return new MLLLogit(new IntSeq(result));
+    return new MLLLogit(new IntSeq(result), target.owner());
   }
 
   public static TIntObjectMap<TIntList> splitClassesIdxs(MLLLogit target) {
@@ -147,7 +147,7 @@ public class MCTools {
         targetCursor++;
       }
     }
-    return new MLLLogit(new IntSeq(resultTarget));
+    return new MLLLogit(new IntSeq(resultTarget), regression.owner());
   }
 
   public static Pair<VecDataSet, MLLLogit> loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{

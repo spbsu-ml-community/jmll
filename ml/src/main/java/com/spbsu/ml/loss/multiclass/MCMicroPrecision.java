@@ -2,16 +2,20 @@ package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.TargetFunc;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: qdeee
  * Date: 09.04.14
  */
-public class MCMicroPrecision extends Func.Stub {
+public class MCMicroPrecision extends Func.Stub implements TargetFunc {
   protected final Vec target;
+  private final DataSet<?> owner;
 
-  public MCMicroPrecision(final Vec target) {
+  public MCMicroPrecision(final Vec target, DataSet<?> owner) {
     this.target = target;
+    this.owner = owner;
   }
 
   @Override
@@ -37,5 +41,10 @@ public class MCMicroPrecision extends Func.Stub {
   @Override
   public int dim() {
     return target.dim();
+  }
+
+  @Override
+  public DataSet<?> owner() {
+    return owner;
   }
 }

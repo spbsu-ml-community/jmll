@@ -3,7 +3,9 @@ package com.spbsu.ml.loss.multiclass.hier;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.impl.HierarchyTree;
+import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.loss.MLLLogit;
 import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.hash.TIntIntHashMap;
@@ -12,7 +14,7 @@ import gnu.trove.map.hash.TIntIntHashMap;
  * User: qdeee
  * Date: 06.03.14
  */
-public class HierLoss extends Func.Stub {
+public class HierLoss extends Func.Stub implements TargetFunc {
   @Override
   public double value(final Vec x) {
     return 0;
@@ -21,6 +23,11 @@ public class HierLoss extends Func.Stub {
   @Override
   public int dim() {
     return 0;
+  }
+
+  @Override
+  public DataSet<?> owner() {
+    return null;
   }
 //  protected HierarchyTree hierarchy;
 //  protected MLLLogit target;

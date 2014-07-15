@@ -1,6 +1,8 @@
 package com.spbsu.ml.data.tools;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
@@ -20,10 +22,8 @@ import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.CharSeqTools;
-import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.CompositeTrans;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.seq.Seq;
+import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
@@ -31,6 +31,7 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.io.ModelsSerializationRepository;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.meta.DSItem;
@@ -63,20 +64,20 @@ public class DataTools {
         lindex++;
         final CharSequence[] parts = CharSeqTools.split(arg, '\t');
         items.add(new QURLItem(CharSeqTools.parseInt(parts[0]), parts[2].toString(), CharSeqTools.parseInt(parts[3])));
-        target.append(CharSeqTools.parseFloat(parts[1]));
+        target.append(CharSeqTools.parseDouble(parts[1]));
         if (featuresCount[0] < 0)
           featuresCount[0] = parts.length - 4;
         else if (featuresCount[0] != parts.length - 4)
           throw new RuntimeException("\"Failed to parse line \" + lindex + \":\"");
         for (int i = 4; i < parts.length; i++) {
-          data.append(CharSeqTools.parseFloat(parts[i]));
+          data.append(CharSeqTools.parseDouble(parts[i]));
         }
       }
     });
-    return new FeaturesTxtPool(file, new ArraySeq<>(items.toArray(new QURLItem[items.size()])), new VecBasedMx(featuresCount[0], data), target);
+    return new FeaturesTxtPool(file, new ArraySeq<>(items.toArray(new QURLItem[items.size()])), new VecBasedMx(featuresCount[0], data.sub(0, data.length())), target.sub(0, target.length()));
   }
 
-  public static void writeModel(Computable result, DataSet learn, File to, ModelsSerializationRepository serializationRepository) throws IOException {
+  public static void writeModel(Computable result, File to, ModelsSerializationRepository serializationRepository) throws IOException {
     BFGrid grid = grid(result);
     StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
         serializationRepository.write(result)), to);
@@ -169,9 +170,9 @@ public class DataTools {
     return new WeightedLoss<LocalLoss>(loss, poissonWeights);
   }
 
-  public static Class<? extends Func> targetByName(final String name) {
+  public static Class<? extends TargetFunc> targetByName(final String name) {
     try {
-      return (Class<? extends Func>)Class.forName("com.spbsu.ml.loss." + name);
+      return (Class<? extends TargetFunc>)Class.forName("com.spbsu.ml.loss." + name);
     }
     catch (Exception e) {
       throw new RuntimeException("Unable to create requested target: " + name, e);
@@ -204,6 +205,15 @@ public class DataTools {
       dim = vec.length();
     }
     return dim > 1 ? new VecBasedMx(dim, results) : results;
+  }
+
+  public static <Target extends TargetFunc> Target newTarget(final Class<Target> targetClass, final Seq<?> values, final DataSet<?> ds) {
+    try {
+      final Constructor<Target> constructor = targetClass.getConstructor(values.getClass(), ds.getClass());
+      return constructor.newInstance(values, ds);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static enum LineType {
@@ -262,7 +272,7 @@ public class DataTools {
                     builder.nextChunk();
                     int index = 2;
                     while (index < parts.length) {
-                      builder.addTarget(CharSeqTools.parseFloat(parts[index++]));
+                      builder.addTarget(CharSeqTools.parseDouble(parts[index++]));
                     }
                     break;
                 }

@@ -3,6 +3,7 @@ package com.spbsu.ml.loss;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: solar
@@ -10,15 +11,8 @@ import com.spbsu.commons.math.vectors.Vec;
  * Time: 22:37:55
  */
 public class LOOL2 extends L2 {
-  public static final Computable<Vec, LOOL2> FACTORY = new Computable<Vec, LOOL2>() {
-    @Override
-    public LOOL2 compute(Vec argument) {
-      return new LOOL2(argument);
-    }
-  };
-
-  public LOOL2(Vec target) {
-    super(target);
+  public LOOL2(Vec target, DataSet<?> base) {
+    super(target, base);
   }
 
   @Override

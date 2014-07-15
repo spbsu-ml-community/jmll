@@ -17,7 +17,7 @@ public interface DataSet<Item> extends Seq<Item>, CacheHolder {
   DataSet<?> parent();
 
   abstract class Stub<T> extends Seq.Stub<T> implements DataSet<T> {
-    public ScopedCache cache = new ScopedCache(getClass());
+    public ScopedCache cache = new ScopedCache(getClass(), this);
     private final DataSet<?> parent;
 
     protected Stub(final DataSet<?> parent) {
@@ -34,17 +34,17 @@ public interface DataSet<Item> extends Seq<Item>, CacheHolder {
       return parent.meta();
     }
 
-    @Override
-    public boolean isImmutable() {
-      return true;
-    }
-
     public int index(T obj) {
       for (int i = 0; i < length(); i++) {
         if (at(i).equals(obj))
           return i;
       }
       throw new RuntimeException("Object is not in dataset");
+    }
+
+    @Override
+    public final boolean isImmutable() {
+      return true;
     }
 
     @Override

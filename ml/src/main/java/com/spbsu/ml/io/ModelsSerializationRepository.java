@@ -5,6 +5,7 @@ import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.SerializationRepository;
 import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.GridEnabled;
 
@@ -14,7 +15,7 @@ import com.spbsu.ml.GridEnabled;
  * Time: 13:01
  */
 public class ModelsSerializationRepository extends SerializationRepository<CharSequence> {
-  private static ConversionRepository conversion = new TypeConvertersCollection(
+  private static ConversionRepository conversion = new TypeConvertersCollection(MathTools.CONVERSION,
       new ObliviousTreeConversionPack(),
       new ObliviousMultiClassTreeConversionPack(),
       new EnsembleModelConversionPack(),

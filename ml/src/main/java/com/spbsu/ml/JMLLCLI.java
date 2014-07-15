@@ -3,8 +3,6 @@ package com.spbsu.ml;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.StringTokenizer;
 
@@ -136,7 +134,7 @@ public class JMLLCLI {
         case "fit":
           final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, null);
           final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
-          final Func loss = learn.target(DataTools.targetByName(target));
+          final TargetFunc loss = learn.target(DataTools.targetByName(target));
           final String[] metricNames = command.getOptionValues(METRICS_OPTION);
           final Func[] metrics = new Func[metricNames != null ? metricNames.length : 1];
           if (metricNames != null) {
@@ -170,7 +168,7 @@ public class JMLLCLI {
             serializationRepository = serializationRepository.customizeGrid(grid);
             StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".grid"));
           }
-          DataTools.writeModel(result, learnDS, new File(outputFile + ".model"), serializationRepository);
+          DataTools.writeModel(result, new File(outputFile + ".model"), serializationRepository);
           break;
         case "apply":
           try (final OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"))) {
@@ -275,7 +273,7 @@ public class JMLLCLI {
         @Override
         public VecOptimization create() {
           //noinspection unchecked
-          return new GradientBoosting(weak, new TargetFactory<L2>(learn, lossName), icount, step);
+          return new GradientBoosting(weak, DataTools.targetByName(lossName), icount, step);
         }
       };
     } else if ("MultiClassSplit".equals(name)) {
@@ -293,7 +291,7 @@ public class JMLLCLI {
 
         @Override
         public MultiClass create() {
-          return new MultiClass(inner, new TargetFactory<L2>(learn, localName));
+          return new MultiClass(inner, (Class<? extends L2>)DataTools.targetByName(localName));
         }
       };
     } else if ("GreedyObliviousTree".equals(name)) {
@@ -400,26 +398,6 @@ public class JMLLCLI {
       }
       System.out.println();
 //      Interval.resume();
-    }
-  }
-
-  private static class TargetFactory<T extends Func> implements Computable<Vec, T> {
-    private final DataSet learn;
-    private Class<? extends Func> targetClass;
-
-    public TargetFactory(final DataSet learn, String targetName) {
-      this.learn = learn;
-      targetClass = DataTools.targetByName(targetName);
-    }
-
-    @Override
-    public T compute(final Vec argument) {
-      try {
-        final Constructor<? extends Func> constructor = targetClass.getConstructor(Vec.class, DataSet.class);
-        return (T)constructor.newInstance(argument, learn);
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-        throw new RuntimeException(e);
-      }
     }
   }
 }

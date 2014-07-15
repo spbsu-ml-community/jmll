@@ -8,7 +8,9 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
+import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.Pool;
@@ -144,7 +146,7 @@ public abstract class MethodsTests extends GridTest {
     pgmem.addListener(listener);
 
     Interval.start();
-    final SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.length()), 1.)));
+    final SimplePGM fit = pgmem.fit(dataSet, new LLLogit(VecTools.fill(new ArrayVec(dataSet.length()), 1.), dataSet));
     VecTools.fill(fit.topology.row(fit.topology.rows() - 1), 0);
     System.out.println(MxTools.prettyPrint(fit.topology));
     System.out.println();
@@ -163,13 +165,9 @@ public abstract class MethodsTests extends GridTest {
   }
 
   public void testGRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(new BootstrapOptimization<L2>(new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn.vecData(), 32)), rng),
-      new Computable<Vec, L2>() {
-        @Override
-        public L2 compute(Vec argument) {
-          return new L2(argument);
-        }
-      }, 10000, 0.02);
+    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
+        new BootstrapOptimization<L2>(
+            new GreedyRegion(new FastRandom(),GridTools.medianGrid(learn.vecData(), 32)), rng), L2.class, 10000, 0.02);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -213,7 +211,7 @@ public abstract class MethodsTests extends GridTest {
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
 
-  public class addBoostingListeners<GlobalLoss extends Func> {
+  public class addBoostingListeners<GlobalLoss extends TargetFunc> {
     addBoostingListeners(GradientBoosting<GlobalLoss> boosting, GlobalLoss loss, Pool<?> _learn, Pool<?> _validate) {
       final Action counter = new ProgressHandler() {
         int index = 0;

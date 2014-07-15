@@ -1,6 +1,7 @@
 package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: solar
@@ -13,11 +14,11 @@ public class FBetaLogit extends LLLogit {
   private final RLogit recall;
   private final double betta;
 
-  public FBetaLogit(Vec target, double betta) {
-    super(target);
+  public FBetaLogit(Vec target, DataSet<?> owner, double betta) {
+    super(target, owner);
     this.betta = betta;
-    this.precision = new PLogit(target);
-    this.recall = new RLogit(target);
+    this.precision = new PLogit(target, owner);
+    this.recall = new RLogit(target, owner);
   }
 
   /**

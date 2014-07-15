@@ -3,6 +3,8 @@ package com.spbsu.ml.loss;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.FuncC1;
+import com.spbsu.ml.TargetFunc;
+import com.spbsu.ml.data.set.DataSet;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -13,11 +15,13 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class LLX2 extends FuncC1.Stub {
+public class LLX2 extends FuncC1.Stub implements TargetFunc {
   private final Vec target;
+  private final DataSet<?> owner;
 
-  public LLX2(Vec target) {
+  public LLX2(Vec target, DataSet<?> owner) {
     this.target = target;
+    this.owner = owner;
   }
 
   public Vec gradient(Vec point) {
@@ -49,5 +53,10 @@ public class LLX2 extends FuncC1.Stub {
     }
 
     return result;
+  }
+
+  @Override
+  public DataSet<?> owner() {
+    return owner;
   }
 }
