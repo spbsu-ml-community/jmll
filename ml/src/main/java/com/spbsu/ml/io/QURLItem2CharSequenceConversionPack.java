@@ -20,12 +20,12 @@ import com.spbsu.ml.meta.items.QURLItem;
  */
 public class QURLItem2CharSequenceConversionPack implements ConversionPack<QURLItem, CharSequence> {
   public static class To implements TypeConverter<QURLItem, CharSequence> {
+    JsonFactory factory = new JsonFactory();
+    final ObjectMapper mapper = new ObjectMapper(factory);
     @Override
     public CharSequence convert(final QURLItem from) {
-      JsonFactory factory = new JsonFactory();
       final StringWriter writer = new StringWriter();
       try {
-        final ObjectMapper mapper = new ObjectMapper(factory);
         final JsonGenerator generator = factory.createGenerator(writer);
         generator.setCodec(mapper);
         generator.disable(JsonGenerator.Feature.QUOTE_FIELD_NAMES);
@@ -38,9 +38,14 @@ public class QURLItem2CharSequenceConversionPack implements ConversionPack<QURLI
     }
   }
   public static class From implements TypeConverter<CharSequence, QURLItem> {
+    JsonFactory factory = new JsonFactory();
+    final ObjectMapper mapper = new ObjectMapper(factory);
+    {
+      factory.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+      factory.setCodec(mapper);
+    }
     @Override
     public QURLItem convert(final CharSequence from) {
-      JsonFactory factory = new JsonFactory();
       try {
         final JsonParser parser = factory.createParser(new CharSequenceReader(from));
         return parser.readValueAs(QURLItem.class);

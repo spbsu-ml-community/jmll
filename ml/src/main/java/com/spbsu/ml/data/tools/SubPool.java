@@ -5,7 +5,7 @@ import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.meta.DSItem;
-import com.spbsu.ml.meta.FeatureMeta;
+import com.spbsu.ml.meta.PoolFeatureMeta;
 
 /**
  * User: solar
@@ -23,11 +23,11 @@ public class SubPool<I extends DSItem> extends Pool<I> {
     this.indices = indices;
   }
 
-  private static Pair<? extends FeatureMeta, ? extends Seq<?>>[] cutFeatures(Pair<? extends FeatureMeta, ? extends Seq<?>>[] original, int[] indices) {
+  private static Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] cutFeatures(Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] original, int[] indices) {
     @SuppressWarnings("unchecked")
-    Pair<FeatureMeta, Seq<?>>[] result = new Pair[original.length];
+    Pair<PoolFeatureMeta, Seq<?>>[] result = new Pair[original.length];
     for (int i = 0; i < original.length; i++) {
-      result[i] = Pair.<FeatureMeta, Seq<?>>create(original[i].first, ArrayTools.cut(original[i].getSecond(), indices));
+      result[i] = Pair.<PoolFeatureMeta, Seq<?>>create(original[i].first, ArrayTools.cut(original[i].getSecond(), indices));
     }
     return result;
   }

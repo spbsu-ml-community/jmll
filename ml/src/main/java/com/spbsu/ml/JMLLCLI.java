@@ -188,7 +188,7 @@ public class JMLLCLI {
           }
           break;
         case "convert-pool":
-          DataTools.writeTo(learn, new FileWriter(command.getOptionValue('o', "features.pool")));
+          DataTools.writePoolTo(learn, new FileWriter(command.getOptionValue('o', "features.pool")));
           break;
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");

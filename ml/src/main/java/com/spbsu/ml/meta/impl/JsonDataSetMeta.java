@@ -3,22 +3,25 @@ package com.spbsu.ml.meta.impl;
 import java.util.Date;
 
 
-import com.spbsu.ml.meta.PoolMeta;
+import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.meta.DataSetMeta;
 
 /**
  * User: solar
  * Date: 07.07.14
  * Time: 13:26
  */
-public class JsonPoolMeta implements PoolMeta {
-  private final String file;
+public class JsonDataSetMeta implements DataSetMeta {
+  public Pool owner;
   public String source;
   public String author;
   public Date created;
-  public boolean duplicates;
+  public ItemType type;
+  public String id;
 
-  public JsonPoolMeta(String file) {
-    this.file = file;
+  @Override
+  public String id() {
+    return id;
   }
 
   @Override
@@ -32,8 +35,8 @@ public class JsonPoolMeta implements PoolMeta {
   }
 
   @Override
-  public String file() {
-    return file;
+  public Pool owner() {
+    return owner;
   }
 
   @Override
@@ -41,7 +44,8 @@ public class JsonPoolMeta implements PoolMeta {
     return created;
   }
 
-  public boolean duplicatesAllowed() {
-    return duplicates;
+  @Override
+  public ItemType type() {
+    return type;
   }
 }

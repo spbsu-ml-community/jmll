@@ -1,5 +1,6 @@
 package com.spbsu.ml;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 
 
@@ -8,6 +9,8 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.meta.DSItem;
 
 /**
  * User: solar
@@ -48,8 +51,17 @@ public class DataToolsTest extends GridTest {
 
   public void testDSSave() throws Exception {
     final StringWriter out = new StringWriter();
-    DataTools.writeTo(learn, out);
-//    checkResultByFile(out.getBuffer());
+    DataTools.writePoolTo(learn, out);
+    checkResultByFile(out.getBuffer());
+  }
+
+  public void testDSSaveLoad() throws Exception {
+    final StringWriter out = new StringWriter();
+    DataTools.writePoolTo(learn, out);
+    final Pool<? extends DSItem> pool = DataTools.readPoolFrom(new StringReader(out.toString()));
+    StringWriter out1 = new StringWriter();
+    DataTools.writePoolTo(pool, out1);
+    assertEquals(out.toString(), out1.toString());
   }
 
   public void testExtendDataset() throws Exception {

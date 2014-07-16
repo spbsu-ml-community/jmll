@@ -8,9 +8,12 @@ import com.spbsu.ml.meta.DSItem;
  * Time: 21:25
  */
 public class QURLItem implements DSItem {
-  public final int queryId;
-  public final String url;
-  public final int groupId;
+  public int queryId;
+  public String url;
+  public int groupId;
+
+  public QURLItem() {
+  }
 
   public QURLItem(int queryId, String url, int groupId) {
     this.queryId = queryId;

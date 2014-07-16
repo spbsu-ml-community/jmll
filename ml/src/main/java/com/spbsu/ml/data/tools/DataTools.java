@@ -1,31 +1,38 @@
 package com.spbsu.ml.data.tools;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Processor;
-import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.SerializationRepository;
 import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.*;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxIterator;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
+import com.spbsu.commons.seq.CharSeqReader;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
-import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
@@ -39,8 +46,9 @@ import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.meta.FeatureMeta;
+import com.spbsu.ml.meta.PoolFeatureMeta;
+import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 import com.spbsu.ml.meta.impl.JsonFeatureMeta;
-import com.spbsu.ml.meta.impl.JsonPoolMeta;
 import com.spbsu.ml.meta.impl.JsonTargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
@@ -238,29 +246,45 @@ public class DataTools {
     TARGET,
   }
 
-  public static <T extends DSItem> void writeTo(final Pool<T> pool, Writer out) throws IOException {
+  public static <T extends DSItem> void writePoolTo(final Pool<T> pool, Writer out) throws IOException {
     final JsonFactory jsonFactory = new JsonFactory();
     jsonFactory.disable(JsonGenerator.Feature.QUOTE_FIELD_NAMES);
     jsonFactory.configure(JsonParser.Feature.ALLOW_COMMENTS, false);
     { // meta
       out.append(LineType.ITEMS.name().toLowerCase()).append('\t');
-      StringWriter writer = new StringWriter();
-      final JsonGenerator generator = jsonFactory.createGenerator(writer);
-      generator.writeStartObject();
-      generator.writeStringField("author", pool.meta().author());
-      generator.writeStringField("source", pool.meta().source());
-      generator.writeNumberField("created", pool.meta().created().getTime());
-      generator.writeEndObject();
-      generator.close();
-      out.append(writer.getBuffer());
-      for (int i = 0; i < pool.size(); i++) {
-        out.append('\t').append(SERIALIZATION.write(pool.items.at(i)));
+      {
+        StringWriter writer = new StringWriter();
+        final JsonGenerator generator = jsonFactory.createGenerator(writer);
+        generator.writeStartObject();
+        generator.writeStringField("id", pool.meta().id());
+        generator.writeStringField("author", pool.meta().author());
+        generator.writeStringField("source", pool.meta().source());
+        generator.writeNumberField("created", pool.meta().created().getTime());
+        generator.writeStringField("type", pool.meta().type().name());
+        generator.writeEndObject();
+        generator.close();
+        out.append(writer.getBuffer());
+      }
+
+      out.append('\t');
+      {
+        StringWriter writer = new StringWriter();
+        final JsonGenerator generator = jsonFactory.createGenerator(writer);
+        generator.setCodec(new ObjectMapper(jsonFactory));
+        generator.writeStartArray();
+
+        for (int i = 0; i < pool.size(); i++) {
+          generator.writeObject(pool.data().at(i));
+        }
+        generator.writeEndArray();
+        generator.close();
+        out.append(writer.getBuffer());
       }
       out.append('\n');
     }
 
     for (int i = 0; i < pool.features.length; i++) { // features
-      final Pair<? extends FeatureMeta, ? extends Seq<?>> feature = pool.features[i];
+      final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = pool.features[i];
       out.append(LineType.FEATURE.name().toLowerCase()).append('\t');
       writeFeature(out, jsonFactory, feature);
     }
@@ -272,7 +296,7 @@ public class DataTools {
   }
 
   private static void writeFeature(final Writer out, final JsonFactory jsonFactory,
-                                   final Pair<? extends FeatureMeta, ? extends Seq<?>> feature) throws IOException
+                                   final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature) throws IOException
   {
     {
       StringWriter writer = new StringWriter();
@@ -281,6 +305,7 @@ public class DataTools {
       generator.writeStringField("id", feature.first.id());
       generator.writeStringField("description", feature.first.description());
       generator.writeStringField("type", feature.first.type().name());
+      generator.writeStringField("associated", feature.first.associated().meta().id());
       generator.writeEndObject();
       generator.close();
       out.append(writer.getBuffer());
@@ -290,7 +315,7 @@ public class DataTools {
     out.append('\n');
   }
 
-  public static <T extends DSItem> Pool<T> loadFromFile(Reader input, final Class<T> dsiClass) throws IOException{
+  public static Pool<? extends DSItem> readPoolFrom(Reader input) throws IOException{
     try {
       final PoolBuilder builder = new PoolBuilder();
       CharSeqTools.processLines(input, new Processor<CharSequence>() {
@@ -298,20 +323,22 @@ public class DataTools {
         public void process(final CharSequence arg) {
           final CharSequence[] parts = CharSeqTools.split(arg, '\t');
           try {
+            final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
             switch (LineType.valueOf(parts[0].toString().toUpperCase())) {
               case ITEMS: {
-                final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
-                builder.setMeta(parser.readValueAs(JsonPoolMeta.class));
-                int index = 2;
-                while (index < parts.length) {
-                  builder.addItem(SERIALIZATION.read(parts[index], dsiClass));
+                final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
+                builder.setMeta(meta);
+
+                final JsonParser parseItems = CharSeqTools.parseJSON(parts[2]);
+                final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
+                final List<? extends DSItem> myObjects = mapper.readValue(parseItems, mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz()));
+                for (int i = 0; i < myObjects.size(); i++) {
+                  builder.addItem(myObjects.get(i));
                 }
                 break;
               }
               case FEATURE: {
-                final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
                 JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
-
                 Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
                 builder.newFeature(fmeta, SERIALIZATION.read(
                     CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
@@ -319,9 +346,7 @@ public class DataTools {
                 break;
               }
               case TARGET: {
-                final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
                 JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
-
                 Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
                 builder.newTarget(fmeta, SERIALIZATION.read(
                     CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
@@ -334,7 +359,7 @@ public class DataTools {
           }
         }
       });
-      return builder.create(dsiClass);
+      return builder.create();
     }
     catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
@@ -344,11 +369,10 @@ public class DataTools {
     }
   }
 
-  public static <T extends DSItem> Pool<T> loadFromFile(String file, Class<T> dsiClass) throws IOException {
+  public static Pool<? extends DSItem> loadFromFile(String file) throws IOException {
     try(final InputStreamReader input =
         file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file)) {
-      return loadFromFile(
-          input, dsiClass);
+      return readPoolFrom(input);
     }
   }
 

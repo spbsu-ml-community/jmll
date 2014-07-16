@@ -4,7 +4,7 @@ package com.spbsu.ml.data.set;
 import com.spbsu.commons.func.CacheHolder;
 import com.spbsu.commons.func.ScopedCache;
 import com.spbsu.commons.seq.Seq;
-import com.spbsu.ml.meta.PoolMeta;
+import com.spbsu.ml.meta.DataSetMeta;
 
 /**
  * User: solar
@@ -12,7 +12,7 @@ import com.spbsu.ml.meta.PoolMeta;
  * Time: 17:22
  */
 public interface DataSet<Item> extends Seq<Item>, CacheHolder {
-  PoolMeta meta();
+  DataSetMeta meta();
   int index(Item it);
   DataSet<?> parent();
 
@@ -30,7 +30,7 @@ public interface DataSet<Item> extends Seq<Item>, CacheHolder {
     }
 
     @Override
-    public PoolMeta meta() {
+    public DataSetMeta meta() {
       return parent.meta();
     }
 
