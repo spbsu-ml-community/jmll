@@ -5,7 +5,6 @@
       <element id="directory" name="META-INF">
         <element id="file-copy" path="$PROJECT_DIR$/commons/src/META-INF/MANIFEST.MF" />
       </element>
-      <element id="module-output" name="ml" />
       <element id="module-output" name="commons" />
       <element id="extracted-dir" path="$PROJECT_DIR$/commons/libs/commons-logging.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/commons/libs/annotations.jar" path-in-jar="/" />
@@ -17,6 +16,9 @@
       <element id="extracted-dir" path="$PROJECT_DIR$/commons/libs/junit.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/commons/libs/commons-fileupload-1.2.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/commons/libs/jdom-1.1.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$APPLICATION_HOME_DIR$/lib/junit-4.10.jar" path-in-jar="/" />
+      <element id="module-output" name="ml" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/ml/libs/gson-2.2.4.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

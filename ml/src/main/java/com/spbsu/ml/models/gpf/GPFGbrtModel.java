@@ -7,10 +7,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
 import gnu.trove.list.array.TIntArrayList;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: irlab
@@ -189,7 +186,7 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
     int nObservations = 0;
   }
 
-  SessionGradientValue eval_L_and_dL_df(SessionFeatureRepresentation sesf, final boolean do_eval_gradient) {
+  SessionGradientValue eval_L_and_dL_df(SessionFeatureRepresentation sesf, final boolean do_eval_gradient, Vec f) {
     SessionGradientValue ret = new SessionGradientValue();
 
     Session ses = sesf.ses;
@@ -198,9 +195,14 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
       ret.gradient = new ArrayVec(sesf.f_count);
 
     // 1 & для каждой пары блоков $i$, $j$ вычислить $f(i,j)$; третья координата - наличие клика c_i
-    ArrayVec f = new ArrayVec(sesf.f_count);
-    for (int i = 0; i < sesf.f_count; i++)
-      f.set(i, f_model.value(sesf.features.row(i)));
+    if (f != null) {
+      if (f.dim() != sesf.f_count)
+        throw new IllegalArgumentException("f.dim() != sesf.f_count:" + f.dim() + " != " + sesf.f_count);
+    } else {
+      f = new ArrayVec(sesf.f_count);
+      for (int i = 0; i < sesf.f_count; i++)
+        f.set(i, f_model.value(sesf.features.row(i)));
+    }
 
     // 2 & для каждого блока $i$ вычислить норму $\sum_k f(i, k)$; Вторая координата - наличие клика c_i
     Mx sum_f_i_k = new VecBasedMx(sesf.blocks_length, 2);
@@ -286,7 +288,7 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
       double sumA_e_t = 0.;
       for (int t = 1; t <= max_path_length_pruned; t++)
         sumA_e_t += A.get(e, t);
-      double observation_prob = observation_prob = sumA_e_t * (1 - P_noclick_i[e]) / P_noclick_i[e];
+      double observation_prob = sumA_e_t * (1 - P_noclick_i[e]) / P_noclick_i[e];
       ret.loglikelihood += Math.log(observation_prob);
 
       if (do_eval_gradient) {

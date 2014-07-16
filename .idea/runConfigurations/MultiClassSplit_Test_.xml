@@ -8,7 +8,7 @@
     </extension>
     <option name="MAIN_CLASS_NAME" value="com.spbsu.ml.JMLLCLI" />
     <option name="VM_PARAMETERS" value="-Xmx4g" />
-    <option name="PROGRAM_PARAMETERS" value="fit -v -f tests/data/multiclass/features-learn.txt.gz -t tests/data/multiclass/features-test.txt.gz -T MLLLogit -O GradientBoosting(weak=MultiClassSplit,iterations=1000,step=0.5)" />
+    <option name="PROGRAM_PARAMETERS" value="fit -v -f src/test/data/multiclass/ds1/features-learn.txt.gz -t src/test/data/multiclass/ds1/features-test.txt.gz" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/ml" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
@@ -17,7 +17,13 @@
     <option name="PASS_PARENT_ENVS" value="true" />
     <module name="ml" />
     <envs />
+    <RunnerSettings RunnerId="Debug">
+      <option name="DEBUG_PORT" value="" />
+      <option name="TRANSPORT" value="0" />
+      <option name="LOCAL" value="true" />
+    </RunnerSettings>
     <RunnerSettings RunnerId="Run" />
+    <ConfigurationWrapper RunnerId="Debug" />
     <ConfigurationWrapper RunnerId="Run" />
     <method />
   </configuration>

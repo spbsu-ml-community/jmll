@@ -25,7 +25,7 @@ public class GPFTestGbrt {
     GPFGbrtModel.SessionGradientValue grad = new GPFGbrtModel.SessionGradientValue();
     for (Session ses: dataset) {
       GPFGbrtModel.SessionFeatureRepresentation sesf = new GPFGbrtModel.SessionFeatureRepresentation(ses, model);
-      GPFGbrtModel.SessionGradientValue ses_grad = model.eval_L_and_dL_df(sesf, true);
+      GPFGbrtModel.SessionGradientValue ses_grad = model.eval_L_and_dL_df(sesf, true, null);
       grad.nObservations += ses_grad.nObservations;
       grad.loglikelihood += ses_grad.loglikelihood;
       if (grad.nObservations < 100) {
