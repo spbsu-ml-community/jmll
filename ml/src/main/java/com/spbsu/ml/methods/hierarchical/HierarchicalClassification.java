@@ -1,13 +1,18 @@
 package com.spbsu.ml.methods.hierarchical;
 
+import java.util.Arrays;
+
+
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.loss.multiclass.hier.HierLoss;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.MLLLogit;
@@ -20,14 +25,16 @@ import com.spbsu.ml.models.HierarchicalModel;
 import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.stack.array.TIntArrayStack;
 
 /**
  * User: qdeee
  * Date: 06.02.14
  */
-public class HierarchicalClassification extends VecOptimization.Stub<HierLoss> {
+public class HierarchicalClassification extends VecOptimization.Stub<MLLLogit> {
   @Override
-  public Trans fit(final VecDataSet learn, final HierLoss hierLoss) {
+  public Trans fit(final VecDataSet learn, final MLLLogit mllLogit) {
     return null;
   }
 //  private int weakIters;

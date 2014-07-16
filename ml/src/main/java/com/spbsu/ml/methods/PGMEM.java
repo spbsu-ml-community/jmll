@@ -222,9 +222,4 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
     tg.interrupt();
     return currentPGM;
   }
-
-  @Override
-  public Class<Vec> itemClass() {
-    return Vec.class;
-  }
 }

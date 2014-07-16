@@ -18,9 +18,5 @@ public interface VecOptimization<Loss extends TargetFunc> extends Optimization<L
   Trans fit(VecDataSet learn, Loss loss);
 
   abstract class Stub<Loss extends TargetFunc> implements VecOptimization<Loss> {
-    @Override
-    public Class<Vec> itemClass() {
-      return Vec.class;
-    }
   }
 }

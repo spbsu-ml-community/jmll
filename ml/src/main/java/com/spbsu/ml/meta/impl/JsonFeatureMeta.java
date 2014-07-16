@@ -7,10 +7,10 @@ import com.spbsu.ml.meta.FeatureMeta;
  * Date: 07.07.14
  * Time: 13:44
  */
-public class JsonLineMeta implements FeatureMeta {
+public class JsonFeatureMeta implements FeatureMeta {
   public String id;
   public String description;
-  public Alignment alignment;
+  public ValueType type;
 
   @Override
   public String id() {
@@ -22,11 +22,8 @@ public class JsonLineMeta implements FeatureMeta {
     return description;
   }
 
-  public Alignment alignment() {
-    return alignment;
-  }
-
-  public enum Alignment {
-    DENSE, SPARSE, NULL
+  @Override
+  public ValueType type() {
+    return type;
   }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.Vectorization;
@@ -14,6 +15,7 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.PoolMeta;
+import com.spbsu.ml.meta.TargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
 
 /**
@@ -30,7 +32,22 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
       public String file() {
         return file;
       }
-    }, items, genFakeFeatures(data), target);
+    }, items, genFakeFeatures(data), Pair.create(new TargetMeta() {
+      @Override
+      public String id() {
+        return "whoknowsthefakeid";
+      }
+
+      @Override
+      public String description() {
+        return "fake relevance marks";
+      }
+
+      @Override
+      public ValueType type() {
+        return ValueType.VEC;
+      }
+    }, target));
     this.data = data;
   }
 
@@ -38,6 +55,7 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
     List<Pair<FeatureMeta, Vec>> features = new ArrayList<>();
     for (int i = 0; i < data.columns(); i++) {
       final int finalI = i;
+      final FeatureMeta.ValueType type = VecTools.isSparse(data.col(i), 0.1) ? FeatureMeta.ValueType.SPARSE_VEC : FeatureMeta.ValueType.VEC;
       features.add(Pair.<FeatureMeta, Vec>create(new FeatureMeta() {
         @Override
         public String id() {
@@ -48,7 +66,12 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
         public String description() {
           return "Fake feature from features.txt format #" + finalI;
         }
-      }, data.col(i)));
+
+        @Override
+        public ValueType type() {
+          return type;
+        }
+      }, type == FeatureMeta.ValueType.VEC ? data.col(i) : VecTools.copySparse(data.col(i))));
     }
     //noinspection unchecked
     return features.toArray(new Pair[features.size()]);

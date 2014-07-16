@@ -168,7 +168,7 @@ public class JMLLCLI {
             serializationRepository = serializationRepository.customizeGrid(grid);
             StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".grid"));
           }
-          DataTools.writeModel(result, new File(outputFile + ".model"), serializationRepository);
+          DataTools.writeModel(result, new File(outputFile + ".model"));
           break;
         case "apply":
           try (final OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"))) {
@@ -187,6 +187,9 @@ public class JMLLCLI {
             }
           }
           break;
+        case "convert-pool":
+          DataTools.writeTo(learn, new FileWriter(command.getOptionValue('o', "features.pool")));
+          break;
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
@@ -199,7 +202,6 @@ public class JMLLCLI {
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
     }
   }
-
 
   private static <I extends DSItem> Pair<SubPool<I>, SubPool<I>> splitCV(Pool<I> pool, int folds, FastRandom rnd) {
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, 1. / folds, (folds - 1.) / folds);

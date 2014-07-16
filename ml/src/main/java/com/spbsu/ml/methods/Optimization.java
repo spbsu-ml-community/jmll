@@ -18,6 +18,4 @@ public interface Optimization<Loss extends TargetFunc, DSType extends DataSet<DS
    * @return function f = \arg \min_f Loss((f(learn_i))_1^m)
    */
   Computable<DSItem,Vec> fit(DSType learn, Loss loss);
-
-  Class<DSItem> itemClass();
 }

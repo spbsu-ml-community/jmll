@@ -7,10 +7,9 @@ import java.util.*;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.seq.ArraySeq;
-import com.spbsu.commons.seq.GrowingSeq;
 import com.spbsu.commons.seq.Seq;
+import com.spbsu.commons.seq.SeqTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.meta.FeatureMeta;
@@ -26,7 +25,8 @@ public class PoolBuilder implements Factory<Pool<DSItem>> {
   private JsonPoolMeta meta;
   private List<DSItem> items = new ArrayList<>();
   private List<Pair<FeatureMeta, Vec>> features = new ArrayList<>();
-  private GrowingSeq<?> target;
+  private Seq<?> target;
+  private TargetMeta targetMeta;
   private int lastRegistered = 0;
 
   @Override
@@ -63,11 +63,11 @@ public class PoolBuilder implements Factory<Pool<DSItem>> {
         meta,
         new ArraySeq<>(items.toArray((Item[])Array.newInstance(items.get(0).getClass(), items.size()))),
         features.toArray((Pair<FeatureMeta, Vec>[]) new Pair[features.size()]),
-        target);
+        Pair.<TargetMeta, Seq<?>>create(targetMeta, target));
     meta = null;
     items = new ArrayList<>();
     features = new ArrayList<>();
-    target = new VecBuilder();
+    target = null;
     lastRegistered = 0;
     return result;
   }
@@ -80,43 +80,13 @@ public class PoolBuilder implements Factory<Pool<DSItem>> {
     items.add(read);
   }
 
-  public void addFeature(final FeatureMeta meta, Vec values) {
-    final ListIterator<Pair<FeatureMeta, Vec>> itFeatures = features.listIterator();
-    while (itFeatures.hasNext()) {
-      Pair<FeatureMeta, Vec> next = itFeatures.next();
-      if (next.first.equals(meta)) {
-        itFeatures.remove();
-        itFeatures.add(Pair.create(meta, VecTools.concat(next.second, values)));
-        return;
-      }
-    }
-    features.add(Pair.create(meta, values));
+  public void newFeature(final FeatureMeta meta, Seq<?> values) {
+    features.add(Pair.create(meta, (Vec)values));
   }
 
-  public void addData(final FeatureMeta meta, Vec values) {
-    final ListIterator<Pair<FeatureMeta, Vec>> itFeatures = features.listIterator();
-    while (itFeatures.hasNext()) {
-      Pair<FeatureMeta, Vec> next = itFeatures.next();
-      if (next.first.equals(meta)) {
-        itFeatures.remove();
-        itFeatures.add(Pair.create(meta, VecTools.concat(next.second, values)));
-        return;
-      }
-    }
-    features.add(Pair.create(meta, values));
-  }
-
-
-  public void nextChunk() {
-    lastRegistered = items.size();
-  }
-
-  public int chunkLength() {
-    return items.size() - lastRegistered;
-  }
-
-  public <T> void addTarget(final T v) {
+  public <T> void newTarget(final TargetMeta meta, Seq<?> target) {
     //noinspection unchecked
-    ((GrowingSeq<T>) target).add(v);
+    targetMeta = meta;
+    this.target = target;
   }
 }

@@ -1,5 +1,8 @@
 package com.spbsu.ml;
 
+import java.io.StringWriter;
+
+
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -41,6 +44,12 @@ public class DataToolsTest extends GridTest {
 //    assertEquals(4., weights[1]);
 //    assertEquals(1., sums[2]);
 //    assertEquals(2., weights[2]);
+  }
+
+  public void testDSSave() throws Exception {
+    final StringWriter out = new StringWriter();
+    DataTools.writeTo(learn, out);
+    checkResultByFile(out.getBuffer());
   }
 
   public void testExtendDataset() throws Exception {

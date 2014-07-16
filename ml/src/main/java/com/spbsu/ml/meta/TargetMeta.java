@@ -5,16 +5,5 @@ package com.spbsu.ml.meta;
  * Date: 07.07.14
  * Time: 15:53
  */
-public interface TargetMeta {
-  TargetMeta FAKE = new TargetMeta() {
-    @Override
-    public ValueType type() {
-      return ValueType.REAL;
-    }
-  };
-
-  ValueType type();
-  enum ValueType {
-    REAL,
-  }
+public interface TargetMeta extends FeatureMeta {
 }

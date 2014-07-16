@@ -18,6 +18,7 @@ import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.PoolMeta;
+import com.spbsu.ml.meta.TargetMeta;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
 /**
@@ -28,11 +29,11 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 */
 public class Pool<I extends DSItem> {
   protected final PoolMeta meta;
-  protected final Seq<?> target;
+  protected final Pair<? extends TargetMeta, ? extends Seq<?>> target;
   protected final Seq<I> items;
-  protected final Pair<FeatureMeta, ? extends Seq<?>>[] features;
+  protected final Pair<? extends FeatureMeta, ? extends Seq<?>>[] features;
 
-  public Pool(final PoolMeta meta, final Seq<I> items, final Pair<FeatureMeta, ? extends Seq<?>>[] features, final Seq<?> target) {
+  public Pool(final PoolMeta meta, final Seq<I> items, final Pair<? extends FeatureMeta, ? extends Seq<?>>[] features, final Pair<? extends TargetMeta, ? extends Seq<?>> target) {
     this.meta = meta;
     this.target = target;
     this.items = items;
@@ -102,7 +103,7 @@ public class Pool<I extends DSItem> {
   }
 
   public <T extends TargetFunc> T target(Class<T> targetClass) {
-    return DataTools.newTarget(targetClass, target, data());
+    return DataTools.newTarget(targetClass, target.second, data());
   }
 
   public int size() {

@@ -28,9 +28,4 @@ public class BootstrapOptimization<Loss extends StatBasedLoss> extends WeakListe
   public Trans fit(VecDataSet learn, Loss globalLoss) {
     return weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
   }
-
-  @Override
-  public Class<Vec> itemClass() {
-    return Vec.class;
-  }
 }

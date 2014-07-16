@@ -3,7 +3,6 @@ package com.spbsu.ml.meta.impl;
 import java.util.Date;
 
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.spbsu.ml.meta.PoolMeta;
 
 /**
@@ -42,7 +41,6 @@ public class JsonPoolMeta implements PoolMeta {
     return created;
   }
 
-  @Override
   public boolean duplicatesAllowed() {
     return duplicates;
   }

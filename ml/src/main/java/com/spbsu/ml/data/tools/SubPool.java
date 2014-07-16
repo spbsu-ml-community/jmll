@@ -19,11 +19,12 @@ public class SubPool<I extends DSItem> extends Pool<I> {
     super(original.meta,
         ArrayTools.cut(original.items, indices),
         cutFeatures(original.features, indices),
-        ArrayTools.cut(original.target, indices));
+        Pair.create(original.target.first, ArrayTools.cut(original.target.second, indices)));
     this.indices = indices;
   }
 
-  private static Pair<FeatureMeta, ? extends Seq<?>>[] cutFeatures(Pair<FeatureMeta, ? extends Seq<?>>[] original, int[] indices) {
+  private static Pair<? extends FeatureMeta, ? extends Seq<?>>[] cutFeatures(Pair<? extends FeatureMeta, ? extends Seq<?>>[] original, int[] indices) {
+    @SuppressWarnings("unchecked")
     Pair<FeatureMeta, Seq<?>>[] result = new Pair[original.length];
     for (int i = 0; i < original.length; i++) {
       result[i] = Pair.<FeatureMeta, Seq<?>>create(original[i].first, ArrayTools.cut(original[i].getSecond(), indices));

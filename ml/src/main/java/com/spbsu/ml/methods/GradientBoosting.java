@@ -54,9 +54,4 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
     }
     return new Ensemble(weakModels, -step);
   }
-
-  @Override
-  public Class<Vec> itemClass() {
-    return Vec.class;
-  }
 }

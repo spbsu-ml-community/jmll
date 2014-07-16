@@ -37,7 +37,7 @@ import static com.spbsu.commons.math.MathTools.sqr;
  * Date: 26.11.12
  * Time: 15:50
  */
-public abstract class MethodsTests extends GridTest {
+public class MethodsTests extends GridTest {
   private FastRandom rng;
 
   @Override
@@ -309,8 +309,9 @@ public abstract class MethodsTests extends GridTest {
         final TDoubleIntHashMap values = new TDoubleIntHashMap();
         final TDoubleDoubleHashMap dispersionDiff = new TDoubleDoubleHashMap();
         int index = 0;
-        for (int i = 0; i < ((VecDataSet) learn).data().rows(); i++) {
-          final double value = ((Func) increment).value(((VecDataSet) learn).data().row(i));
+        final VecDataSet ds = learn.vecData();
+        for (int i = 0; i < ds.data().rows(); i++) {
+          final double value = ((Func) increment).value(ds.data().row(i));
           values.adjustOrPutValue(value, 1, 1);
           final double ddiff = sqr(residues.get(index)) - sqr(residues.get(index) - value);
           residues.adjust(index, -model.wlast() * value);

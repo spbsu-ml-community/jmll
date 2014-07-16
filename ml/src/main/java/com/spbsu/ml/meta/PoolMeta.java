@@ -12,7 +12,6 @@ public interface PoolMeta {
   String author();
   String file();
   Date created();
-  boolean duplicatesAllowed();
 
   class FakePoolMeta implements PoolMeta {
     private final Date creationDate = new Date();
@@ -36,9 +35,5 @@ public interface PoolMeta {
       return creationDate;
     }
 
-    @Override
-    public boolean duplicatesAllowed() {
-      return false;
-    }
   };
 }
