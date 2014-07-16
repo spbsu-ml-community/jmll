@@ -4,7 +4,6 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.Seq;
-import com.sun.java.swing.action.AlignLeftAction;
 
 /**
  * User: solar
