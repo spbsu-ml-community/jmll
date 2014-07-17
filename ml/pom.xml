@@ -71,6 +71,7 @@
           <archive>
             <manifest>
               <mainClass>com.spbsu.ml.JMLLCLI</mainClass>
+              <argLine>-Dfile.encoding=UTF-8</argLine>
             </manifest>
           </archive>
           <descriptorRefs>
