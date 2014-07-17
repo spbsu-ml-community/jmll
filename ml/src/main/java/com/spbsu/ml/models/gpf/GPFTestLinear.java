@@ -145,8 +145,8 @@ public class GPFTestLinear {
 
   @Test
   public void testOptimizeSGD() throws IOException {
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand1.dat.gz", new GPFLinearModel(), 0);
-    final List<Session> test_dataset = GPFData.loadDatasetFromJSON("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand2.dat.gz", new GPFLinearModel(), 10000);
+    final List<Session> dataset = GPFData.loadDatasetFromJSON("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand1.dat.gz", new GPFLinearModel(), 1000);
+    final List<Session> test_dataset = GPFData.loadDatasetFromJSON("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand2.dat.gz", new GPFLinearModel(), 1000);
 
     boolean test_sorted_clicks_model = false;
     if (test_sorted_clicks_model) {

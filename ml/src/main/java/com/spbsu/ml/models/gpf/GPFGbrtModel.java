@@ -18,7 +18,7 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
   public final int MAX_NONZERO_FEATS = 8;
 
   // parameters for eval_L_and_Gradient
-  public double PRUNE_A_THRESHOLD = 0.01;
+  public double PRUNE_A_THRESHOLD = 1E-5; //0.01;
 
   private VecBasedMx clickProbability = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
   

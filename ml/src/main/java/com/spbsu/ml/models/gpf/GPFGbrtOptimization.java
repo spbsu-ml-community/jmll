@@ -29,18 +29,20 @@ public class GPFGbrtOptimization {
     FastRandom rng = new FastRandom(0);
     GPFGbrtModel model = new GPFGbrtModel();
 
+    int rows_limit = 1000;
+
     System.out.println("" + new Date() + "\tload dataset");
-    GPFVectorizedDataset learn = GPFVectorizedDataset.load("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand1.dat.gz", model, 1000);
-    GPFVectorizedDataset validate = GPFVectorizedDataset.load("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand2.dat.gz", model, 1000);
+    GPFVectorizedDataset learn = GPFVectorizedDataset.load("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand1.dat.gz", model, rows_limit);
+    GPFVectorizedDataset validate = GPFVectorizedDataset.load("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand2.dat.gz", model, rows_limit);
 
     System.out.println("" + new Date() + "\ttrainClickProbability");
     model.trainClickProbability(learn.sessionList);
 
     System.out.println("" + new Date() + "\tset up boosting");
-    GradientBoosting<GPFLoss> boosting = new GradientBoosting<GPFLoss>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 2000, 0.02);
-//    GradientBoosting<GPFLoss> boosting = new GradientBoosting<GPFLoss>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 20, 0.02);
-    GPFLoss learn_loss = new GPFLoss(model, learn);
-    GPFLoss validate_loss = new GPFLoss(model, validate);
+    GradientBoosting<GPFLoglikelihood> boosting = new GradientBoosting<GPFLoglikelihood>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 200000, 0.02);
+//    GradientBoosting<GPFLoglikelihood> boosting = new GradientBoosting<GPFLoglikelihood>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 20, 0.02);
+    GPFLoglikelihood learn_loss = new GPFLoglikelihood(model, learn);
+    GPFLoglikelihood validate_loss = new GPFLoglikelihood(model, validate);
 
     System.out.println("learn dataset:\t" + learn.sfrList.size() + "\tsessions, " + "feature matrix:\t" + learn.data().rows() + " * " + learn.data().columns());
 
@@ -91,11 +93,11 @@ public class GPFGbrtOptimization {
     }
   }
 
-  static class GPFLoss extends FuncC1.Stub {
+  static class GPFLoglikelihood extends FuncC1.Stub {
     final GPFGbrtModel model;
     final GPFVectorizedDataset dataset;
 
-    public GPFLoss(GPFGbrtModel model, GPFVectorizedDataset dataset) {
+    public GPFLoglikelihood(GPFGbrtModel model, GPFVectorizedDataset dataset) {
       this.model = model;
       this.dataset = dataset;
     }
@@ -176,10 +178,10 @@ public class GPFGbrtOptimization {
     private int index = 0;
     private double learn_min = Double.POSITIVE_INFINITY;
     private double valid_min = Double.POSITIVE_INFINITY;
-    private GPFLoss learn_loss;
-    private GPFLoss validate_loss;
+    private GPFLoglikelihood learn_loss;
+    private GPFLoglikelihood validate_loss;
 
-    private IterationListener(GPFLoss learn_loss, GPFLoss validate_loss) {
+    private IterationListener(GPFLoglikelihood learn_loss, GPFLoglikelihood validate_loss) {
       this.learn_loss = learn_loss;
       this.validate_loss = validate_loss;
     }
