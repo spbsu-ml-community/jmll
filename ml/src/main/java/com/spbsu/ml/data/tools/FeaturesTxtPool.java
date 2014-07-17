@@ -137,7 +137,7 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
 
     public FakeDataSetMeta(final String file) {
       this.file = file;
-      creationDate = new Date();
+      creationDate = new Date(0);
     }
 
     @Override
@@ -165,15 +165,6 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
 
     @Override
     public Date created() {
-      final File poolFile = new File(file);
-      if (poolFile.exists()) {
-        try {
-          final BasicFileAttributes attributes = Files.readAttributes(poolFile.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-          creationDate = new Date(attributes.creationTime().toMillis());
-        } catch (IOException e) {
-          // skip;
-        }
-      }
       return creationDate;
     }
   }
