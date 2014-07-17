@@ -27,7 +27,7 @@ public class MLLLogit extends FuncC1.Stub implements TargetFunc {
   public MLLLogit(IntSeq target, DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
-    classesCount = target.at(ArrayTools.max(target)) + 1;
+    classesCount = ArrayTools.max(target) + 1;
   }
 
   @Override
