@@ -52,7 +52,7 @@ public class MethodsTests extends GridTest {
             0, 0, 1.,
             0, 0, 0
     })));
-    checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0.0, 10, 0.01);
+    checkRestoreFixedTopology(original, PGMEM.GAMMA_PRIOR_PATH, 0.0, 100, 0.01);
   }
 
   public void testPGMFit5x5() {
@@ -65,7 +65,7 @@ public class MethodsTests extends GridTest {
     })));
 
 
-    checkRestoreFixedTopology(original, PGMEM.MOST_PROBABLE_PATH, 0., 100, 0.01);
+    checkRestoreFixedTopology(original, PGMEM.GAMMA_PRIOR_PATH, 0., 100, 0.01);
   }
 
   public void testPGMFit5x5RandSkip() {
@@ -77,7 +77,7 @@ public class MethodsTests extends GridTest {
             0, 0,   0,    0,    0
     })));
 
-    checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0.8, 100, 0.05);
+    checkRestoreFixedTopology(original, PGMEM.GAMMA_PRIOR_PATH, 0.8, 100, 0.01);
   }
   public void testPGMFit10x10Rand() {
     final VecBasedMx originalMx = new VecBasedMx(10, new ArrayVec(100));
@@ -88,7 +88,7 @@ public class MethodsTests extends GridTest {
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
     SimplePGM original = new SimplePGM(originalMx);
-    checkRestoreFixedTopology(original, PGMEM.LAPLACE_PRIOR_PATH, 0.5, 100, 0.01);
+    checkRestoreFixedTopology(original, PGMEM.POISSON_PRIOR_PATH, 0.5, 100, 0.01);
   }
 
   public void testPGMFit10x10FreqBasedPriorRand() {
@@ -100,7 +100,7 @@ public class MethodsTests extends GridTest {
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
     SimplePGM original = new SimplePGM(originalMx);
-    checkRestoreFixedTopology(original, PGMEM.FREQ_DENSITY_PRIOR_PATH, 0.5, 100, 0.01);
+    checkRestoreFixedTopology(original, PGMEM.POISSON_PRIOR_PATH, 0.5, 100, 0.01);
   }
 
   private Vec breakV(Vec next, double lossProbab) {
@@ -127,7 +127,7 @@ public class MethodsTests extends GridTest {
     final VecDataSet dataSet = new VecDataSetImpl(new RowsVecArrayMx(ds), null);
     final VecBasedMx topology = new VecBasedMx(original.topology.columns(), VecTools.fill(new ArrayVec(original.topology.dim()), 1.));
     VecTools.scale(topology.row(topology.rows() - 1), 0.);
-    final PGMEM pgmem = new PGMEM(topology, 0.2, iterations, rng, policy);
+    final PGMEM pgmem = new PGMEM(topology, 0.5, iterations, rng, policy);
 
     final Action<SimplePGM> listener = new Action<SimplePGM>() {
       int iteration = 0;

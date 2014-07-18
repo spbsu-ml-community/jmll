@@ -2,7 +2,6 @@ package com.spbsu.ml.models.pgm;
 
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.impl.basis.IntBasis;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -28,6 +27,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
 
   private final byte[] nodes;
   private final MyLWRoute[] routes;
+  public double meanERouteLength = 0;
 
   private double knownRoutesProBab;
 
@@ -91,6 +91,11 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
       routes[i] = new MyLWRoute(start, start = boundaries.get(i), probabs.get(i));
     }
     System.out.println("Routes built: " + boundaries.size() + " weight: " + knownRoutesProBab);
+  }
+
+  public SimplePGM(final Mx next, final double meanLen) {
+    this(next);
+    this.meanERouteLength = meanLen;
   }
 
   /** need to change this to prefix tree which is way faster */

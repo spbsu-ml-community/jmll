@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.func.types.SerializationRepository;
@@ -331,7 +332,8 @@ public class DataTools {
 
                 final JsonParser parseItems = CharSeqTools.parseJSON(parts[2]);
                 final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
-                final List<? extends DSItem> myObjects = mapper.readValue(parseItems, mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz()));
+                final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
+                final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
                 for (int i = 0; i < myObjects.size(); i++) {
                   builder.addItem(myObjects.get(i));
                 }
