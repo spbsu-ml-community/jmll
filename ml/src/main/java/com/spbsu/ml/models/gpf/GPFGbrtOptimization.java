@@ -1,19 +1,24 @@
 package com.spbsu.ml.models.gpf;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+
 import com.spbsu.commons.func.Action;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.*;
-import com.spbsu.ml.data.impl.LightDataSetImpl;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-
-import java.io.IOException;
-import java.util.*;
-
 import org.junit.Test;
 
 /**
@@ -58,13 +63,13 @@ public class GPFGbrtOptimization {
             "\tvalidL=" + Math.exp( -validate_loss.evalAverageLL(ans)) );
   }
 
-  static class GPFVectorizedDataset extends LightDataSetImpl {
+  static class GPFVectorizedDataset extends VecDataSetImpl {
     final List<Session> sessionList;
     final List<GPFGbrtModel.SessionFeatureRepresentation> sfrList;
     final int[] sessionPositions; // data[sessionPositions[i]] is the first row for session sfrList[i]
 
-    public GPFVectorizedDataset(List<Session> sessionList, List<GPFGbrtModel.SessionFeatureRepresentation> sfrList, int[] sessionPositions, double[] data, double[] target) {
-      super(data, target);
+    public GPFVectorizedDataset(List<Session> sessionList, List<GPFGbrtModel.SessionFeatureRepresentation> sfrList, int[] sessionPositions, Mx data) {
+      super(data, null);
       this.sessionList = sessionList;
       this.sfrList = sfrList;
       this.sessionPositions = sessionPositions;
@@ -89,11 +94,11 @@ public class GPFGbrtOptimization {
         System.arraycopy(sfr.features.toArray(), 0, data, sessionPositions[i] * model.NFEATS, sfr.features.dim());
       }
 
-      return new GPFVectorizedDataset(sessionList, sfrList, sessionPositions, data, target);
+      return new GPFVectorizedDataset(sessionList, sfrList, sessionPositions, new VecBasedMx(model.NFEATS, new ArrayVec(data)));
     }
   }
 
-  static class GPFLoglikelihood extends FuncC1.Stub {
+  static class GPFLoglikelihood extends FuncC1.Stub implements TargetFunc {
     final GPFGbrtModel model;
     final GPFVectorizedDataset dataset;
 
@@ -171,6 +176,11 @@ public class GPFGbrtOptimization {
     @Override
     public int dim() {
       return dataset.data().rows();
+    }
+
+    @Override
+    public DataSet<?> owner() {
+      return dataset;
     }
   }
 

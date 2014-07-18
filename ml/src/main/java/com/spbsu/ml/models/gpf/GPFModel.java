@@ -176,7 +176,7 @@ public interface GPFModel {
         state_probabilities.set(Session.Q_ind, 1.);
 
         for (int t = 0; t < MAX_PATH_LENGTH; t++)
-          state_probabilities = MxTools.multiply(state_probabilities, transmx_ci);
+          state_probabilities = MxTools.multiply(transmx_ci, state_probabilities);
 
         // вероятность через MAX_PATH_LENGTH шагов остаться в состоянии (ci, click)
         hasClickProbabilities[ci] = state_probabilities.get(1 * blocks.length + ci);
@@ -211,7 +211,7 @@ public interface GPFModel {
         state_probabilities.set(Session.Q_ind, 1.);
 
         for (int t = 0; t < MAX_PATH_LENGTH; t++)
-          state_probabilities = MxTools.multiply(state_probabilities, transmx_ci);
+          state_probabilities = MxTools.multiply(transmx_ci, state_probabilities);
 
         // вероятность через MAX_PATH_LENGTH шагов остаться в состоянии (ci, click) или (ci, noclick)
         hasViewProbabilities[ci] = state_probabilities.get(0 * blocks.length + ci) + state_probabilities.get(1 * blocks.length + ci);
@@ -237,7 +237,7 @@ public interface GPFModel {
       state_probabilities.set(Session.Q_ind, 1.);
 
       for (int t = 0; t < MAX_PATH_LENGTH; t++) {
-        state_probabilities = MxTools.multiply(state_probabilities, transmx_0);
+        state_probabilities = MxTools.multiply(transmx_0, state_probabilities);
         for (int i = Session.R0_ind; i < blocks.length; i++)
           expectedAttention[i] += state_probabilities.get(0 * blocks.length + i) + state_probabilities.get(1 * blocks.length + i);
       }
