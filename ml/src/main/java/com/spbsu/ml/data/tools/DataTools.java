@@ -1,12 +1,11 @@
 package com.spbsu.ml.data.tools;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.*;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -31,9 +30,9 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
-import com.spbsu.commons.seq.CharSeqReader;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
+import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
@@ -46,7 +45,6 @@ import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.meta.DSItem;
-import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.PoolFeatureMeta;
 import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 import com.spbsu.ml.meta.impl.JsonFeatureMeta;
@@ -225,26 +223,13 @@ public class DataTools {
     return dim > 1 ? new VecBasedMx(dim, results.build()) : results.build();
   }
 
+  @Nullable
   public static <Target extends TargetFunc> Target newTarget(final Class<Target> targetClass, final Seq<?> values, final DataSet<?> ds) {
-    try {
-      final Constructor<Target>[] constructors = (Constructor<Target>[])targetClass.getConstructors();
-      for (Constructor<Target> constructor : constructors) {
-        final Class<?>[] parameters = constructor.getParameterTypes();
-        if (parameters.length == 2 &&
-            parameters[0].isAssignableFrom(values.getClass()) &&
-            parameters[1].isAssignableFrom(ds.getClass()))
-          return constructor.newInstance(values, ds);
-      }
-      throw new RuntimeException("No propper constructor!");
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static enum LineType {
-    ITEMS,
-    FEATURE,
-    TARGET,
+    Target target = null;
+    target = RuntimeUtils.newInstanceByAssignable(targetClass, values, ds, target);
+    if (target != null)
+      return target;
+    throw new RuntimeException("No proper constructor!");
   }
 
   public static <T extends DSItem> void writePoolTo(final Pool<T> pool, Writer out) throws IOException {
@@ -252,7 +237,7 @@ public class DataTools {
     jsonFactory.disable(JsonGenerator.Feature.QUOTE_FIELD_NAMES);
     jsonFactory.configure(JsonParser.Feature.ALLOW_COMMENTS, false);
     { // meta
-      out.append(LineType.ITEMS.name().toLowerCase()).append('\t');
+      out.append("items").append('\t');
       {
         StringWriter writer = new StringWriter();
         final JsonGenerator generator = jsonFactory.createGenerator(writer);
@@ -285,14 +270,13 @@ public class DataTools {
     }
 
     for (int i = 0; i < pool.features.length; i++) { // features
-      final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = pool.features[i];
-      out.append(LineType.FEATURE.name().toLowerCase()).append('\t');
-      writeFeature(out, jsonFactory, feature);
+      out.append("feature").append('\t');
+      writeFeature(out, jsonFactory, pool.features[i]);
     }
 
-    { // target
-      out.append(LineType.TARGET.name().toLowerCase()).append('\t');
-      writeFeature(out, jsonFactory, pool.target);
+    for (int i = 0; i < pool.targets.size(); i++) { // targets
+      out.append("target").append('\t');
+      writeFeature(out, jsonFactory, pool.targets.get(i));
     }
   }
 
@@ -325,8 +309,8 @@ public class DataTools {
           final CharSequence[] parts = CharSeqTools.split(arg, '\t');
           try {
             final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
-            switch (LineType.valueOf(parts[0].toString().toUpperCase())) {
-              case ITEMS: {
+            switch (parts[0].toString()) {
+              case "items": {
                 final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
                 builder.setMeta(meta);
 
@@ -339,7 +323,7 @@ public class DataTools {
                 }
                 break;
               }
-              case FEATURE: {
+              case "feature": {
                 JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
                 Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
                 builder.newFeature(fmeta, SERIALIZATION.read(
@@ -347,7 +331,7 @@ public class DataTools {
                     vecClass));
                 break;
               }
-              case TARGET: {
+              case "target": {
                 JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
                 Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
                 builder.newTarget(fmeta, SERIALIZATION.read(

@@ -1,7 +1,10 @@
 package com.spbsu.ml.data.tools;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 import com.spbsu.commons.func.Factory;
@@ -10,8 +13,6 @@ import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.meta.DSItem;
-import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.TargetMeta;
 import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 import com.spbsu.ml.meta.impl.JsonFeatureMeta;
 import com.spbsu.ml.meta.impl.JsonTargetMeta;
@@ -24,9 +25,8 @@ import com.spbsu.ml.meta.impl.JsonTargetMeta;
 public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
   private JsonDataSetMeta meta;
   private List<DSItem> items = new ArrayList<>();
-  private List<Pair<JsonFeatureMeta, Vec>> features = new ArrayList<>();
-  private Seq<?> target;
-  private JsonTargetMeta targetMeta;
+  private List<Pair<JsonFeatureMeta, Seq<?>>> features = new ArrayList<>();
+  private List<Pair<JsonTargetMeta, Seq<?>>> targets = new ArrayList<>();
 
   @Override
   public Pool<? extends DSItem> create() {
@@ -38,20 +38,22 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
         meta,
         new ArraySeq<>(items.toArray((Item[])Array.newInstance(items.get(0).getClass(), items.size()))),
         features.toArray((Pair<JsonFeatureMeta, Vec>[]) new Pair[features.size()]),
-        Pair.<TargetMeta, Seq<?>>create(targetMeta, target));
+        targets.toArray((Pair<JsonTargetMeta, Vec>[]) new Pair[targets.size()]));
     { // verifying lines
-      for (Pair<JsonFeatureMeta, Vec> entry : features) {
+      for (Pair<JsonFeatureMeta, Seq<?>> entry : features) {
         entry.getFirst().owner = result;
-        if (entry.second.dim() != items.size())
+        if (entry.second.length() != items.size())
           throw new RuntimeException(
-              "Feature " + entry.first.toString() + " has " + entry.second.dim() + " entries " + " expected " + items.size());
+              "Feature " + entry.first.toString() + " has " + entry.second.length() + " entries " + " expected " + items.size());
       }
     }
     { // checking targets
-      targetMeta.owner = result;
-      if (target.length() != items.size())
-        throw new RuntimeException(
-            "Target has " + target.length() + " entries " + " expected " + items.size());
+      for (Pair<JsonTargetMeta, Seq<?>> entry : targets) {
+        entry.getFirst().owner = result;
+        if (entry.second.length() != items.size())
+          throw new RuntimeException(
+              "Target has " + entry.second.length() + " entries " + " expected " + items.size());
+      }
     }
 
     final Set<String> itemIds = new HashSet<>();
@@ -65,7 +67,7 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
     meta = null;
     items = new ArrayList<>();
     features = new ArrayList<>();
-    target = null;
+    targets = new ArrayList<>();
     return result;
   }
 
@@ -78,12 +80,10 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
   }
 
   public void newFeature(final JsonFeatureMeta meta, Seq<?> values) {
-    features.add(Pair.create(meta, (Vec)values));
+    features.add(Pair.<JsonFeatureMeta, Seq<?>>create(meta, values));
   }
 
-  public <T> void newTarget(final JsonTargetMeta meta, Seq<?> target) {
-    //noinspection unchecked
-    targetMeta = meta;
-    this.target = target;
+  public void newTarget(final JsonTargetMeta meta, Seq<?> target) {
+    this.targets.add(Pair.<JsonTargetMeta, Seq<?>>create(meta, target));
   }
 }

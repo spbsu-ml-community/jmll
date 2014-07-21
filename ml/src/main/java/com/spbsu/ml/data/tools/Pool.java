@@ -1,6 +1,7 @@
 package com.spbsu.ml.data.tools;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -8,6 +9,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.seq.Seq;
+import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.TargetFunc;
@@ -27,13 +29,16 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 */
 public class Pool<I extends DSItem> {
   protected final DataSetMeta meta;
-  protected final Pair<? extends TargetMeta, ? extends Seq<?>> target;
+  protected final List<Pair<? extends TargetMeta, ? extends Seq<?>>> targets;
   protected final Seq<I> items;
   protected final Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] features;
 
-  public Pool(final DataSetMeta meta, final Seq<I> items, final Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] features, final Pair<? extends TargetMeta, ? extends Seq<?>> target) {
+  public Pool(final DataSetMeta meta,
+              final Seq<I> items,
+              final Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] features,
+              final Pair<? extends TargetMeta, ? extends Seq<?>>[] targets) {
     this.meta = meta;
-    this.target = target;
+    this.targets = Arrays.asList(targets);
     this.items = items;
     this.features = features;
   }
@@ -110,8 +115,17 @@ public class Pool<I extends DSItem> {
     return joinFeatures(ArrayTools.sequence(0, features.length), ds);
   }
 
+  public void addTarget(TargetMeta meta, Seq<?> target) {
+    targets.add(Pair.create(meta, target));
+  }
+
   public <T extends TargetFunc> T target(Class<T> targetClass) {
-    return DataTools.newTarget(targetClass, target.second, data());
+    for (int i = targets.size() - 1; i >= 0; i--) {
+      final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targets.get(i).second, targets.get(i).getFirst().associated());
+      if (target != null)
+        return target;
+    }
+    throw new RuntimeException("No proper constructor found");
   }
 
   public int size() {

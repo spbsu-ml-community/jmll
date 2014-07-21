@@ -1,10 +1,5 @@
-package com.spbsu.ml.data.tools;
+package com.spbsu.ml;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -13,28 +8,25 @@ import java.util.List;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.ml.Vectorization;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
-import com.spbsu.ml.meta.DataSetMeta;
-import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.PoolFeatureMeta;
-import com.spbsu.ml.meta.TargetMeta;
-import com.spbsu.ml.meta.items.QURLItem;
+import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.meta.*;
 
 /**
-* User: solar
-* Date: 07.07.14
-* Time: 20:55
-*/
-public class FeaturesTxtPool extends Pool<QURLItem> {
+ * User: solar
+ * Date: 18.07.14
+ * Time: 18:40
+ */
+public class FakePool extends Pool<FakePool.FakeItem> {
   private final Mx data;
 
-  public FeaturesTxtPool(final String file, Seq<QURLItem> items, final Mx data, Vec target) {
-    super(new FakeDataSetMeta(file), items, genFakeFeatures(data), new Pair[]{Pair.create(new FakeTargetMeta(), target)});
+  public FakePool(final Mx data, Seq<?> target) {
+    super(new FakeDataSetMeta(), genItems(target.length()), genFakeFeatures(data), new Pair[]{Pair.create(new FakeTargetMeta(), target)});
     this.data = data;
     for (int i = 0; i < features.length; i++) {
       Pair<? extends FeatureMeta, ? extends Seq<?>> feature = features[i];
@@ -57,10 +49,10 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
 
 
   public VecDataSet vecData() {
-    final DataSet<QURLItem> ds = data();
-    return new VecDataSetImpl(ds, data, new Vectorization<QURLItem>() {
+    final DataSet<FakeItem> ds = data();
+    return new VecDataSetImpl(ds, data, new Vectorization<FakeItem>() {
       @Override
-      public Vec value(final QURLItem subject) {
+      public Vec value(final FakeItem subject) {
         return data.row(ds.index(subject));
       }
 
@@ -79,7 +71,7 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
   private static class FakeFeatureMeta implements PoolFeatureMeta {
     private final int finalI;
     private final ValueType type;
-    private Pool<QURLItem> owner;
+    private Pool<FakeItem> owner;
 
     public FakeFeatureMeta(final int finalI, final ValueType type) {
       this.finalI = finalI;
@@ -102,13 +94,13 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
     }
 
     @Override
-    public DataSet<QURLItem> associated() {
+    public DataSet<FakeItem> associated() {
       return owner.data();
     }
   }
 
   private static class FakeTargetMeta implements TargetMeta {
-    private Pool<QURLItem> owner;
+    private Pool<FakeItem> owner;
     @Override
     public String id() {
       return "whoknowsthefakeid";
@@ -125,18 +117,16 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
     }
 
     @Override
-    public DataSet<QURLItem> associated() {
+    public DataSet<FakeItem> associated() {
       return owner.data();
     }
   }
 
   private static class FakeDataSetMeta implements DataSetMeta {
-    private final String file;
     protected Date creationDate;
     private Pool owner;
 
-    public FakeDataSetMeta(final String file) {
-      this.file = file;
+    public FakeDataSetMeta() {
       creationDate = new Date(0);
     }
 
@@ -166,6 +156,27 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
     @Override
     public Date created() {
       return creationDate;
+    }
+  }
+
+  private static Seq<FakeItem> genItems(int count) {
+    FakeItem[] result = new FakeItem[count];
+    for (int i = 0; i < result.length; i++)
+      result[i] = new FakeItem(i);
+    return new ArraySeq<FakeItem>(result);
+  }
+
+  public static class FakeItem implements DSItem {
+
+    private final int id;
+
+    private FakeItem(final int id) {
+      this.id = id;
+    }
+
+    @Override
+    public String id() {
+      return "" + id;
     }
   }
 }
