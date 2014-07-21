@@ -28,9 +28,13 @@ $RECYCLE.BIN/
 ### IntelliJ ###
 *.iws
 *.ipr
-#*.iml
-workspace.xml
-#.idea/
+*.iml
+.idea/
+!.idea/runConfigurations
+!.idea/inspectionProfiles
+!.idea/codeStyleSettings.xml
+!.idea/projectCodeStyle.xml
+!.idea/vcs.xml
 
 ### Eclipse ###
 *.pydevproject
@@ -61,7 +65,7 @@ local.properties
 .buildpath
 
 ### Maven ###
-target/
+*/target/*
 
 ### Java ###
 *.class
