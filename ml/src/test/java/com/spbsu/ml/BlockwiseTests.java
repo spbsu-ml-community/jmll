@@ -66,7 +66,13 @@ public class BlockwiseTests extends TestCase {
         20, 0.5);
     final Ensemble ensemble = boosting.fit(ds, newTarget);
     final MultiClassModel model = MultiClassModel.joinBoostingResults(ensemble);
-    final Func mcMacroPrecision = new MCMacroPrecision(newTarget.labels(), ds);
+    //TODO: use appropriate ctor or converters
+    final IntSeq labels = newTarget.labels();
+    final ArrayVec vec = new ArrayVec(labels.length());
+    for (int i = 0; i < labels.length(); i++) {
+      vec.set(i, labels.at(i));
+    }
+    final Func mcMacroPrecision = new MCMacroPrecision(vec, ds);
     final double value = mcMacroPrecision.value(model.bestClassAll(ds.data()));
     System.out.println(value);
   }
