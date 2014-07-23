@@ -30,12 +30,12 @@ import static com.spbsu.commons.math.vectors.VecTools.distance;
  * Time: 19:07
  */
 
-public class OptimizersTests extends TestCase {
+public class OptimizersTest extends TestCase {
     private static final double EPS = 1e-6;
     private static final int N = 6;
     private static final int TESTS_COUNT = 15;
 
-    private static Logger LOG = Logger.create(OptimizersTests.class);
+    private static Logger LOG = Logger.create(OptimizersTest.class);
 
     public void testAllMethodsRandom() {
         Vec x0 = new ArrayVec(N);

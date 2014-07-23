@@ -30,7 +30,7 @@ import java.io.IOException;
 * User: qdeee
 * Date: 16.07.14
 */
-public class BlockwiseTests extends TestCase {
+public class BlockwiseTest extends TestCase {
   private IntSeq intTarget;
   private Vec doubleTarget;
   private Vec point;
@@ -56,11 +56,11 @@ public class BlockwiseTests extends TestCase {
     final TDoubleArrayList borders = new TDoubleArrayList(new double[]{0.038125, 0.07625, 0.114375, 0.1525, 0.61});
     final Pair<VecDataSet,IntSeq> pair = MCTools.loadRegressionAsMC("./jmll/ml/src/test/data/features.txt.gz", 5, borders);
 
-    VecDataSet ds = pair.first;
+    final VecDataSet ds = pair.first;
     final IntSeq intTarget = pair.second;
 
-    BlockwiseMLLLogit newTarget = new BlockwiseMLLLogit(intTarget, ds);
-    MLLLogit oldTarget = new MLLLogit(intTarget, ds);
+    final BlockwiseMLLLogit newTarget = new BlockwiseMLLLogit(intTarget, ds);
+    final MLLLogit oldTarget = new MLLLogit(intTarget, ds);
 
     final BFGrid grid = GridTools.medianGrid(ds, 32);
 
