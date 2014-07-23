@@ -52,7 +52,7 @@ public class BlockwiseTests extends TestCase {
 
   public void testMulticlass() throws IOException {
     final TDoubleArrayList borders = new TDoubleArrayList(new double[]{0.038125, 0.07625, 0.114375, 0.1525, 0.61});
-    final Pair<VecDataSet,MLLLogit> pair = MCTools.loadRegressionAsMC("./ml/src/test/data/features.txt.gz", 5, borders);
+    final Pair<VecDataSet,MLLLogit> pair = MCTools.loadRegressionAsMC("./jmll/ml/src/test/data/features.txt.gz", 5, borders);
 
     VecDataSet ds = pair.first;
 
