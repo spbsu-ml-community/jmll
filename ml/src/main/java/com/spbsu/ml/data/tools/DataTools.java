@@ -226,7 +226,7 @@ public class DataTools {
   @Nullable
   public static <Target extends TargetFunc> Target newTarget(final Class<Target> targetClass, final Seq<?> values, final DataSet<?> ds) {
     Target target = null;
-    target = RuntimeUtils.newInstanceByAssignable(targetClass, values, ds, target);
+    target = RuntimeUtils.newInstanceByAssignable(targetClass, values, ds);
     if (target != null)
       return target;
     throw new RuntimeException("No proper constructor!");

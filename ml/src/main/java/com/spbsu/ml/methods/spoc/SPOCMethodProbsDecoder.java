@@ -4,7 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.loss.MLLLogit;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.models.MulticlassCodingMatrixModelProbsDecoder;
 
 /**
@@ -33,7 +33,7 @@ public class SPOCMethodProbsDecoder extends SPOCMethodClassic {
   }
 
   @Override
-  protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final MLLLogit llLogit) {
+  protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final BlockwiseMLLLogit llLogit) {
     final CMLMetricOptimization metricOptimization = new CMLMetricOptimization(learnDS, llLogit, S, metricC, metricStep);
     final Mx mu = metricOptimization.trainProbs(codingMatrix, binClass);
     return new MulticlassCodingMatrixModelProbsDecoder(codingMatrix, binClass, MX_IGNORE_THRESHOLD, mu);

@@ -2,11 +2,15 @@ package com.spbsu.ml.data.tools;
 
 import com.spbsu.commons.math.stat.impl.NumericSampleDistribution;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.xml.JDOMUtil;
 import com.spbsu.ml.data.impl.HierarchyTree;
 import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.stack.array.TIntArrayStack;
 import org.jdom.Element;
 
 import java.io.File;
@@ -20,16 +24,16 @@ import java.util.List;
 public class HierTools {
 
   public static void convertCatalogXmlToTree(File catalogXml, File out) throws IOException {
-    TIntIntHashMap id2parentId = new TIntIntHashMap();
-    TIntObjectHashMap<Element> id2node = new TIntObjectHashMap<Element>();
+    final TIntIntHashMap id2parentId = new TIntIntHashMap();
+    final TIntObjectHashMap<Element> id2node = new TIntObjectHashMap<Element>();
 
-    Element catalog = JDOMUtil.loadXML(catalogXml).getChild("cat");
-    List<Element> items  = catalog.getChildren();
+    final Element catalog = JDOMUtil.loadXML(catalogXml).getChild("cat");
+    final List<Element> items  = catalog.getChildren();
     for (Element item : items) {
       try {
-        int id = Integer.parseInt(item.getAttributeValue("id"));
+        final int id = Integer.parseInt(item.getAttributeValue("id"));
         if (id != 0) {
-          int parentId = Integer.parseInt(item.getAttributeValue("parent_id"));
+          final int parentId = Integer.parseInt(item.getAttributeValue("parent_id"));
           id2parentId.put(id, parentId);
         }
         id2node.put(id, item);
@@ -41,12 +45,12 @@ public class HierTools {
 
     for (TIntObjectIterator<Element> iter = id2node.iterator(); iter.hasNext(); ) {
       iter.advance();
-      int id = iter.key();
+      final int id = iter.key();
       if (id != 0) {
         try {
-          int parentId = id2parentId.get(id);//Integer.parseInt(iter.value().getAttributeValue("parent_id"));
-          Element element = iter.value();
-          Element parentElement = id2node.get(parentId);
+          final int parentId = id2parentId.get(id);//Integer.parseInt(iter.value().getAttributeValue("parent_id"));
+          final Element element = iter.value();
+          final Element parentElement = id2node.get(parentId);
           if (parentElement != null)
             parentElement.addContent(element.detach());
           else  {
@@ -62,27 +66,27 @@ public class HierTools {
   }
 
   public static HierarchyTree loadHierarchicalStructure(String hierarchyXml) throws IOException{
-    Element catalog = JDOMUtil.loadXML(new File(hierarchyXml));
-    HierarchyTree.Node root = traverseLoad(catalog, null);
+    final Element catalog = JDOMUtil.loadXML(new File(hierarchyXml));
+    final HierarchyTree.Node root = traverseLoad(catalog, null);
     return new HierarchyTree(root);
   }
 
   private static HierarchyTree.Node traverseLoad(Element element, HierarchyTree.Node parentNode) {
-    int id = Integer.parseInt(element.getAttributeValue("id"));
-    HierarchyTree.Node node = new HierarchyTree.Node(id, parentNode);
+    final int id = Integer.parseInt(element.getAttributeValue("id"));
+    final HierarchyTree.Node node = new HierarchyTree.Node(id, parentNode);
     for (Element child : (List<Element>)element.getChildren())
       node.addChild(traverseLoad(child, node));
     return node;
   }
 
   public static void saveHierarchicalStructure(HierarchyTree ds, String outFile) throws IOException{
-    HierarchyTree.Node root = ds.getRoot();
-    Element catalog = traverseSave(root, 0);
+    final HierarchyTree.Node root = ds.getRoot();
+    final Element catalog = traverseSave(root, 0);
     JDOMUtil.flushXML(catalog, new File(outFile));
   }
 
   private static Element traverseSave(HierarchyTree.Node node, int depth) {
-    Element element = new Element("cat" + depth);
+    final Element element = new Element("cat" + depth);
     element.setAttribute("id", String.valueOf(node.getCategoryId()));
     element.setAttribute("size", String.valueOf(node.getEntriesCount()));
     for (HierarchyTree.Node child : node.getChildren()) {
@@ -92,12 +96,12 @@ public class HierTools {
   }
 
   public static HierarchyTree prepareHierStructForRegressionUniform(int depth)  {
-    HierarchyTree.Node root = new HierarchyTree.Node(0, null);
+    final HierarchyTree.Node root = new HierarchyTree.Node(0, null);
 
-    HierarchyTree.Node[] nodes = new HierarchyTree.Node[(1 << (depth + 1)) - 1];
+    final HierarchyTree.Node[] nodes = new HierarchyTree.Node[(1 << (depth + 1)) - 1];
     nodes[0] = root;
     for (int i = 1; i < nodes.length; i++) {
-      HierarchyTree.Node parent = nodes[i % 2 == 0 ? (i - 2) / 2 : (i - 1) / 2];
+      final HierarchyTree.Node parent = nodes[i % 2 == 0 ? (i - 2) / 2 : (i - 1) / 2];
       nodes[i] = new HierarchyTree.Node(i, parent);
       parent.addChild(nodes[i]);
     }
@@ -118,21 +122,19 @@ public class HierTools {
   }
 
   private static class Counter {
-
     int number = 0;
     public Counter(int init) {this.number = init;}
     public int getNext()     {return number++;}
 
   }
 
-  public static HierarchyTree prepareHierStructForRegressionMedian(Vec targetMC) {
-    double[] target = targetMC.toArray();
-    int clsCount = MCTools.countClasses(targetMC);
-    int[] freq = new int[clsCount];
-    for (int i = 0; i < target.length; i++) {
-      freq[(int)target[i]]++;
+  public static HierarchyTree prepareHierStructForRegressionMedian(IntSeq targetMC) {
+    final int clsCount = MCTools.countClasses(targetMC);
+    final int[] freq = new int[clsCount];
+    for (int i = 0; i < targetMC.length(); i++) {
+      freq[targetMC.at(i)]++;
     }
-    HierarchyTree.Node root = splitAndAddChildren(freq, 0, freq.length, new Counter(freq.length));
+    final HierarchyTree.Node root = splitAndAddChildren(freq, 0, freq.length, new Counter(freq.length));
     return new HierarchyTree(root);
 
   }
@@ -155,7 +157,7 @@ public class HierTools {
       }
     }
 
-    HierarchyTree.Node node = new HierarchyTree.Node(innerNodeIdx.getNext(), null);
+    final HierarchyTree.Node node = new HierarchyTree.Node(innerNodeIdx.getNext(), null);
     if (bestSplit == start) {
       node.addChild(new HierarchyTree.Node(start, node));
     }

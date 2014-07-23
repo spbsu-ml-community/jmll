@@ -1,10 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
@@ -20,6 +15,11 @@ import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.meta.*;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
 * User: solar
@@ -38,7 +38,7 @@ public class Pool<I extends DSItem> {
               final Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] features,
               final Pair<? extends TargetMeta, ? extends Seq<?>>[] targets) {
     this.meta = meta;
-    this.targets = Arrays.asList(targets);
+    this.targets = new LinkedList<>(Arrays.asList(targets));
     this.items = items;
     this.features = features;
   }

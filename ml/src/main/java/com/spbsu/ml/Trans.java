@@ -27,14 +27,6 @@ public interface Trans extends Computable<Vec,Vec> {
       return null;
     }
 
-//    public Mx transAll(Mx ds) {
-//      Mx result = new VecBasedMx(ds.rows(), new ArrayVec(ds.rows() * ydim()));
-//      for (int i = 0; i < ds.rows(); i++) {
-//        VecTools.assign(result.col(i), trans(ds.row(i)));
-//      }
-//      return result;
-//    }
-
     @Override
     public Vec compute(final Vec argument) {
       return trans(argument);
@@ -45,7 +37,7 @@ public interface Trans extends Computable<Vec,Vec> {
       for (int i = 0; i < ds.rows(); i++) {
         VecTools.assign(result.row(i), trans(ds.row(i)));
       }
-      return MxTools.transpose(result);
+      return result;
     }
   }
 }
