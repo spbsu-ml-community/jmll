@@ -5,6 +5,7 @@ import java.util.Date;
 
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.meta.items.QURLItem;
+import com.spbsu.ml.meta.items.ViewportAnswersWeighting;
 
 /**
  * User: solar
@@ -20,7 +21,8 @@ public interface DataSetMeta {
   ItemType type();
 
   enum ItemType {
-    QURL(QURLItem.class)
+    QURL(QURLItem.class),
+    VIEWPORT_WEIGHTING(ViewportAnswersWeighting.class)
     ;
 
     private final Class<? extends DSItem> clazz;
