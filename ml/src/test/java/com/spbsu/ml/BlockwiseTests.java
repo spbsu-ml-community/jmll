@@ -2,7 +2,6 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
@@ -10,13 +9,16 @@ import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.loss.*;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.MLLLogit;
+import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseSatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseWeightedLoss;
 import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
-import com.spbsu.ml.methods.*;
+import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.MultiClass;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -52,12 +54,13 @@ public class BlockwiseTests extends TestCase {
 
   public void testMulticlass() throws IOException {
     final TDoubleArrayList borders = new TDoubleArrayList(new double[]{0.038125, 0.07625, 0.114375, 0.1525, 0.61});
-    final Pair<VecDataSet,MLLLogit> pair = MCTools.loadRegressionAsMC("./jmll/ml/src/test/data/features.txt.gz", 5, borders);
+    final Pair<VecDataSet,IntSeq> pair = MCTools.loadRegressionAsMC("./jmll/ml/src/test/data/features.txt.gz", 5, borders);
 
     VecDataSet ds = pair.first;
+    final IntSeq intTarget = pair.second;
 
-    MLLLogit oldTarget = pair.second;
-    BlockwiseMLLLogit newTarget = new BlockwiseMLLLogit(oldTarget.labels(), oldTarget.owner());
+    BlockwiseMLLLogit newTarget = new BlockwiseMLLLogit(intTarget, ds);
+    MLLLogit oldTarget = new MLLLogit(intTarget, ds);
 
     final BFGrid grid = GridTools.medianGrid(ds, 32);
 
@@ -66,13 +69,7 @@ public class BlockwiseTests extends TestCase {
         20, 0.5);
     final Ensemble ensemble = boosting.fit(ds, newTarget);
     final MultiClassModel model = MultiClassModel.joinBoostingResults(ensemble);
-    //TODO: use appropriate ctor or converters
-    final IntSeq labels = newTarget.labels();
-    final ArrayVec vec = new ArrayVec(labels.length());
-    for (int i = 0; i < labels.length(); i++) {
-      vec.set(i, labels.at(i));
-    }
-    final Func mcMacroPrecision = new MCMacroPrecision(vec, ds);
+    final Func mcMacroPrecision = new MCMacroPrecision(newTarget.labels(), ds);
     final double value = mcMacroPrecision.value(model.bestClassAll(ds.data()));
     System.out.println(value);
   }

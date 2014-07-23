@@ -1,6 +1,7 @@
 package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
@@ -10,10 +11,10 @@ import com.spbsu.ml.data.set.DataSet;
  * Date: 09.04.14
  */
 public class MCMicroPrecision extends Func.Stub implements TargetFunc {
-  protected final Vec target;
+  protected final IntSeq target;
   private final DataSet<?> owner;
 
-  public MCMicroPrecision(final Vec target, DataSet<?> owner) {
+  public MCMicroPrecision(final IntSeq target, DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
   }
@@ -23,8 +24,8 @@ public class MCMicroPrecision extends Func.Stub implements TargetFunc {
     int tp = 0;
     int fp = 0;
     for (int i = 0; i < x.dim(); i++) {
-      int expected = (int) target.get(i);
-      int actual = (int) x.get(i);
+      final int expected = target.at(i);
+      final int actual = (int) x.get(i);
 
       //skip unrecognized class
       if (actual == -1)
@@ -40,7 +41,7 @@ public class MCMicroPrecision extends Func.Stub implements TargetFunc {
 
   @Override
   public int dim() {
-    return target.dim();
+    return target.length();
   }
 
   @Override

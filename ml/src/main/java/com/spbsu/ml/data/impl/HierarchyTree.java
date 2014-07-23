@@ -16,12 +16,13 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.MLLLogit;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -31,42 +32,43 @@ import gnu.trove.map.hash.TIntObjectHashMap;
  * Date: 21.02.14
  */
 public class HierarchyTree {
-  private Node root;
+  private final Node root;
 
   public HierarchyTree(Node treeRoot) {
     this.root = treeRoot;
   }
 
-  public void fill(MLLLogit target) {
-    TIntObjectHashMap<TIntList> id2positions = new TIntObjectHashMap<>();
-    for (int i = 0; i < target.dim(); i++) {
-      int catId = target.label(i);
-      if (id2positions.containsKey(catId))
-        id2positions.get(catId).add(i);
+  public void fill(BlockwiseMLLLogit target) {
+    final TIntObjectHashMap<TIntList> label2positions = new TIntObjectHashMap<>();
+    final int length = target.labels().length();
+    for (int i = 0; i < length; i++) {
+      final int label = target.label(i);
+      if (label2positions.containsKey(label))
+        label2positions.get(label).add(i);
       else {
-        TIntList indexes = new TIntLinkedList();
+        final TIntList indexes = new TIntLinkedList();
         indexes.add(i);
-        id2positions.put(catId, indexes);
+        label2positions.put(label, indexes);
       }
     }
-    root.fillDS(id2positions);
+    root.fillDS(label2positions);
   }
 
   public HierarchyTree getPrunedCopy(int minEntries) {
-    Node newRoot = root.getPrunedCopy(minEntries);
+    final Node newRoot = root.getPrunedCopy(minEntries);
     if (newRoot == null || newRoot.classesPositions.size() <= 1) {
       throw new IllegalStateException("Hierarchy is empty after pruning!");
     }
     return new HierarchyTree(newRoot);
   }
 
-  public static TIntIntHashMap getTargetMapping(Node from, Node to) {
-    TIntIntHashMap map = new TIntIntHashMap();
+  public static TIntIntMap getTargetMapping(Node from, Node to) {
+    final TIntIntMap map = new TIntIntHashMap();
     traverseCreateMapping(from, to, map);
     return map;
   }
 
-  private static void traverseCreateMapping(Node from , Node to, TIntIntHashMap map) {
+  private static void traverseCreateMapping(Node from , Node to, TIntIntMap map) {
     map.put(from.categoryId, to.categoryId);
     for (Node fromChild : from.children) {
       boolean hasEqualChild = false;
@@ -220,23 +222,25 @@ public class HierarchyTree {
       return false;
     }
 
-    public MLLLogit createTarget(final TIntList labels, DataSet<?> owner) {
-      TIntList targetList = new TIntLinkedList();
+    public BlockwiseMLLLogit createTarget(final TIntList labels, DataSet<?> owner) {
+      final TIntList targetList = new TIntLinkedList();
       for (Node child : children) {
         final int categoryId = child.categoryId;
         targetList.fill(targetList.size(), targetList.size() + classesPositions.get(categoryId).size(), categoryId);
       }
+
       final TIntList selfClass = classesPositions.get(categoryId);
       if (selfClass.size() > 0)
         targetList.fill(targetList.size(), targetList.size() + selfClass.size(), categoryId);
-      return MCTools.normalizeTarget(new MLLLogit(new IntSeq(targetList.toArray()), owner), labels);
+      final IntSeq intTarget = MCTools.normalizeTarget(new IntSeq(targetList.toArray()), labels);
+      return new BlockwiseMLLLogit(intTarget, owner);
     }
 
     private VecDataSet createDS(VecDataSet learn, TIntList removeIdxs) {
       final TIntList join = joinLists();
       join.removeAll(removeIdxs);
       final int[] perm = join.toArray();
-      Mx data = new VecBasedMx(
+      final Mx data = new VecBasedMx(
           learn.xdim(),
           new IndexTransVec(learn.data(),
               new RowsPermutation(
@@ -254,7 +258,7 @@ public class HierarchyTree {
 
     public VecDataSet createDSForChild(int chosenCatId, VecDataSet ds) {
       if (!isRoot()) {
-        TIntList idxs = new TIntLinkedList();
+        final TIntList idxs = new TIntLinkedList();
         idxs.addAll(ArrayTools.sequence(0, ds.length()));
         for (Node child : children) {
           if (child.categoryId != chosenCatId) {
@@ -266,7 +270,7 @@ public class HierarchyTree {
         }
 
         final int[] perm = idxs.toArray();
-        Mx data = new VecBasedMx(
+        final Mx data = new VecBasedMx(
             ds.xdim(),
             new IndexTransVec(ds.data(),
                 new RowsPermutation(
@@ -280,8 +284,8 @@ public class HierarchyTree {
       return ds;
     }
 
-    public LLLogit createTargetForChild(int chosenCatId, MLLLogit target) {
-      double[] targetArr = new double[target.dim()];
+    public LLLogit createTargetForChild(int chosenCatId, BlockwiseMLLLogit target) {
+      final double[] targetArr = new double[target.labels().length()];
       ArrayTools.fill(targetArr, 0, targetArr.length, -1.);
       final TIntList chosenClassIdxs = classesPositions.get(chosenCatId);
       for (TIntIterator iter = chosenClassIdxs.iterator(); iter.hasNext(); ) {

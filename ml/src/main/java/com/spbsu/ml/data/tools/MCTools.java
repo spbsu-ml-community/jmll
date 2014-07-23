@@ -1,21 +1,15 @@
 package com.spbsu.ml.data.tools;
 
-import java.io.IOException;
-
-
 import com.spbsu.commons.math.metrics.Metric;
 import com.spbsu.commons.math.metrics.impl.CosineDVectorMetric;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.MLLLogit;
 import com.spbsu.ml.meta.items.QURLItem;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TDoubleList;
@@ -25,6 +19,8 @@ import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.io.IOException;
+
 import static java.lang.Math.max;
 
 /**
@@ -33,38 +29,34 @@ import static java.lang.Math.max;
  */
 public class MCTools {
 
-  public static int countClasses(Vec target) {
+  public static int countClasses(IntSeq target) {
     int classesCount = 0;
-    for (int i = 0; i < target.dim(); i++) {
-      classesCount = max((int)target.get(i) + 1, classesCount);
+    for (int i = 0; i < target.length(); i++) {
+      classesCount = max(target.at(i) + 1, classesCount);
     }
     return classesCount;
   }
 
-  public static int classEntriesCount(LLLogit target, int classNo) {
+  public static int classEntriesCount(IntSeq target, int classNo) {
     int result = 0;
-    for (int i = 0; i < target.dim(); i++) {
-      if ((int)target.label(i) == classNo)
+    for (int i = 0; i < target.length(); i++) {
+      if (target.at(i) == classNo)
         result++;
     }
     return result;
   }
 
-  public static Vec extractClass(Vec target, int classNo) {
-    Vec result = new ArrayVec(target.dim());
-    for (int i = 0; i < target.dim(); i++) {
-      if (target.get(i) == classNo)
-        result.set(i, 1.);
-      else
-        result.set(i, -1.);
-    }
-    return result;
+  public static IntSeq extractClass(IntSeq target, int classNo) {
+    final int[] result = new int[target.length()];
+    for (int i = 0; i < target.length(); i++)
+      result[i] = (target.at(i) == classNo) ? 1 : -1;
+    return new IntSeq(result);
   }
 
-  public static int[] getClassesLabels(Vec target) {
-    TIntArrayList labels = new TIntArrayList();
-    for (int i = 0; i < target.dim(); i++) {
-      final int label = (int) target.get(i);
+  public static int[] getClassesLabels(IntSeq target) {
+    final TIntList labels = new TIntArrayList();
+    for (int i = 0; i < target.length(); i++) {
+      final int label = target.at(i);
       if (!labels.contains(label)) {
         labels.add(label);
       }
@@ -79,11 +71,11 @@ public class MCTools {
    *               Each label will appear once.
    * @return new target vec with classes labels from {0..K}.
    */
-  public static MLLLogit normalizeTarget(MLLLogit target, TIntList labels) {
-    int[] result = new int[target.dim()];
-    for (int i = 0; i < target.dim(); i++) {
-      int oldTargetVal = target.label(i);
-      int labelPos = labels.indexOf(oldTargetVal);
+  public static IntSeq normalizeTarget(IntSeq target, TIntList labels) {
+    final int[] result = new int[target.length()];
+    for (int i = 0; i < target.length(); i++) {
+      final int oldTargetVal = target.at(i);
+      final int labelPos = labels.indexOf(oldTargetVal);
       if (labelPos == -1) {
         result[i] = labels.size();
         labels.add(oldTargetVal);
@@ -91,20 +83,20 @@ public class MCTools {
       else
         result[i] = labelPos;
     }
-    return new MLLLogit(new IntSeq(result), target.owner());
+    return new IntSeq(result);
   }
 
-  public static TIntObjectMap<TIntList> splitClassesIdxs(MLLLogit target) {
+  public static TIntObjectMap<TIntList> splitClassesIdxs(IntSeq target) {
     final TIntObjectMap<TIntList> indexes = new TIntObjectHashMap<TIntList>();
-    for (int i = 0; i < target.dim(); i++) {
-      final int catId = target.label(i);
-      if (indexes.containsKey(catId)) {
-        indexes.get(catId).add(i);
+    for (int i = 0; i < target.length(); i++) {
+      final int label = target.at(i);
+      if (indexes.containsKey(label)) {
+        indexes.get(label).add(i);
       }
       else {
         final TIntList newClassIdxs = new TIntLinkedList();
         newClassIdxs.add(i);
-        indexes.put(catId, newClassIdxs);
+        indexes.put(label, newClassIdxs);
       }
     }
     return indexes;
@@ -125,21 +117,21 @@ public class MCTools {
   }
 
 
-  public static MLLLogit transformRegressionToMC(L2 regression, int classCount, TDoubleList borders) throws IOException {
-    double[] target = regression.target.toArray();
-    int[] idxs = ArrayTools.sequence(0, target.length);
+  public static IntSeq transformRegressionToMC(Vec regressionTarget, int classCount, TDoubleList borders) throws IOException {
+    final double[] target = regressionTarget.toArray();
+    final int[] idxs = ArrayTools.sequence(0, target.length);
     ArrayTools.parallelSort(target, idxs);
 
     if (borders.size() == 0) {
-      double min = target[0];
-      double max = target[target.length - 1];
-      double delta = (max - min) / classCount;
+      final double min = target[0];
+      final double max = target[target.length - 1];
+      final double delta = (max - min) / classCount;
       for (int i = 0; i < classCount; i++) {
         borders.add(delta * (i + 1));
       }
     }
 
-    int[] resultTarget = new int[regression.dim()];
+    final int[] resultTarget = new int[target.length];
     int targetCursor = 0;
     for (int borderCursor = 0; borderCursor < borders.size(); borderCursor++){
       while (targetCursor < target.length && target[targetCursor] <= borders.get(borderCursor)) {
@@ -147,15 +139,15 @@ public class MCTools {
         targetCursor++;
       }
     }
-    return new MLLLogit(new IntSeq(resultTarget), regression.owner());
+    return new IntSeq(resultTarget);
   }
 
-  public static Pair<VecDataSet, MLLLogit> loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{
+  public static Pair<VecDataSet, IntSeq> loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{
     final Pool<QURLItem> pool = DataTools.loadFromFeaturesTxt(file);
-    return Pair.create(pool.vecData(), transformRegressionToMC(pool.target(L2.class), classCount, borders));
+    return Pair.create(pool.vecData(), transformRegressionToMC(pool.target(L2.class).target, classCount, borders));
   }
 
-  public static Mx createSimilarityMatrix(VecDataSet learn, MLLLogit target) {
+  public static Mx createSimilarityMatrix(VecDataSet learn, IntSeq target) {
     final TIntObjectMap<TIntList> indexes = splitClassesIdxs(target);
     final Metric<Vec> metric = new CosineDVectorMetric();
     final int k = indexes.keys().length;

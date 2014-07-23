@@ -1,6 +1,7 @@
 package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
@@ -13,7 +14,7 @@ public class MCMacroF1Score extends Func.Stub implements TargetFunc{
   private final MCMacroPrecision precision;
   private final MCMacroRecall recall;
 
-  public MCMacroF1Score(final Vec target, DataSet<?> owner) {
+  public MCMacroF1Score(final IntSeq target, DataSet<?> owner) {
     precision = new MCMacroPrecision(target, owner);
     recall = new MCMacroRecall(target, owner);
   }

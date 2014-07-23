@@ -1,40 +1,61 @@
 package com.spbsu.ml.methods.hierarchical;
 
-import java.util.Arrays;
-
-
-import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.data.impl.HierarchyTree;
-import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.loss.WeightedLoss;
-import com.spbsu.ml.loss.multiclass.hier.HierLoss;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.MLLLogit;
-import com.spbsu.ml.loss.SatL2;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.MultiClass;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.HierarchicalModel;
-import com.spbsu.ml.models.MultiClassModel;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.stack.TIntStack;
 import gnu.trove.stack.array.TIntArrayStack;
+
+import java.util.Arrays;
 
 /**
  * User: qdeee
  * Date: 06.02.14
  */
-public class HierarchicalClassification extends VecOptimization.Stub<MLLLogit> {
+public class HierarchicalClassification extends VecOptimization.Stub<BlockwiseMLLLogit> {
+  protected final VecOptimization<BlockwiseMLLLogit> weak;
+  protected final TIntObjectMap<int[]> deps;
+  protected final int root;
+
+  public HierarchicalClassification(final VecOptimization<BlockwiseMLLLogit> weak, final TIntObjectMap<int[]> deps, final int root) {
+    this.weak = weak;
+    this.deps = deps;
+    this.root = root;
+  }
+
   @Override
-  public Trans fit(final VecDataSet learn, final MLLLogit mllLogit) {
+  public Trans fit(final VecDataSet learn, final BlockwiseMLLLogit globalLoss) {
+    final int[] weights = new int[learn.length()];
+    final int[] localClasses = new int[learn.length()];
+    final BlockwiseMLLLogit localLoss = new BlockwiseMLLLogit(new IntSeq(localClasses), learn);
+    final TIntStack toProcess = new TIntArrayStack();
+
+    toProcess.push(root);
+    while (toProcess.size() > 0) {
+      final TIntSet uniqClasses = new TIntHashSet(2);
+      final int currentId = toProcess.pop();
+      for (int i = 0; i < learn.length(); i++) {
+        final int idx = Arrays.binarySearch(deps.get(currentId), globalLoss.label(i));
+        if (idx != -1) {
+          weights[i] = 1;
+          localClasses[i] = idx;
+          uniqClasses.add(idx);
+        }
+        else {
+          weights[i] = 0;
+        }
+      }
+
+      final Trans model = weak.fit(learn, localLoss);
+
+//      BlockwiseWeightedLoss<BlockwiseMLLLogit> weightedLoss = (BlockwiseWeightedLoss<BlockwiseMLLLogit>) new BlockwiseWeightedLoss<>(globalLoss, weights);
+    }
+
     return null;
   }
 //  private int weakIters;
