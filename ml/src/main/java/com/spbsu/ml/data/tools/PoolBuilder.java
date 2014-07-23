@@ -37,8 +37,8 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
     final Pool<Item> result = new Pool<>(
         meta,
         new ArraySeq<>(items.toArray((Item[])Array.newInstance(items.get(0).getClass(), items.size()))),
-        features.toArray((Pair<JsonFeatureMeta, Vec>[]) new Pair[features.size()]),
-        targets.toArray((Pair<JsonTargetMeta, Vec>[]) new Pair[targets.size()]));
+        features.toArray((Pair<JsonFeatureMeta, Seq<?>>[]) new Pair[features.size()]),
+        targets.toArray((Pair<JsonTargetMeta, Seq<?>>[]) new Pair[targets.size()]));
     { // verifying lines
       for (Pair<JsonFeatureMeta, Seq<?>> entry : features) {
         entry.getFirst().owner = result;
