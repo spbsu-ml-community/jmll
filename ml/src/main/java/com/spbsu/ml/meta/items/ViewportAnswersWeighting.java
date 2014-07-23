@@ -3,6 +3,7 @@ package com.spbsu.ml.meta.items;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.DVector;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.meta.DSItem;
 
 /**
@@ -19,13 +20,18 @@ public class ViewportAnswersWeighting implements DSItem {
   public ViewportAnswersWeighting(final String reqId, String vpName, final DVector<String> answers) {
     this.vpName = vpName;
     final VecIterator nzIt = answers.nonZeroes();
-    this.answers = new String[VecTools.l0(answers)];
-    this.weights = new double[this.answers.length];
+    int[] order = new int[VecTools.l0(answers)];
+    this.weights = new double[order.length];
     int index = 0;
     while (nzIt.advance()) {
-      this.answers[index] = answers.basis().fromIndex(nzIt.index());
+      order[index] = nzIt.index();
       this.weights[index] = nzIt.value();
       index++;
+    }
+    ArrayTools.parallelSort(weights, order);
+    this.answers = new String[order.length];
+    for (int i = 0; i < order.length; i++) {
+      this.answers[i] = answers.basis().fromIndex(order[i]);
     }
     this.reqId = reqId;
   }
