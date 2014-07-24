@@ -152,7 +152,7 @@ public abstract class SPOCMethodTest extends TestSuite {
 
 
 
-  public static class DefaultDataTests extends Base {
+  public abstract static class DefaultDataTests extends Base {
     private final static double[] hierBorders = new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61};
     public static final double[] classicBorders = new double[]{0.06999, 0.13999, 0.40999, 0.60999, 0.61};
 
@@ -196,7 +196,7 @@ public abstract class SPOCMethodTest extends TestSuite {
     }
   }
 
-  public static class GreedyDefaultDS extends DefaultDataTests {
+  public abstract static class GreedyDefaultDS extends DefaultDataTests {
     @Override
     public void setUp() throws Exception {
       super.setUp();
@@ -209,7 +209,7 @@ public abstract class SPOCMethodTest extends TestSuite {
     }
   }
 
-  public static class ParallelGreedyDefaultDS extends DefaultDataTests {
+  public abstract static class ParallelGreedyDefaultDS extends DefaultDataTests {
     @Override
     protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
       return new CodingMatrixLearningGreedyParallels(k, l, lambdaC, lambdaR, lambda1);
