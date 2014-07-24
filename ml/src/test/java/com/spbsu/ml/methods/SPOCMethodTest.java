@@ -1,15 +1,13 @@
 package com.spbsu.ml.methods;
 
-import com.spbsu.commons.func.types.TypeConverter;
-import com.spbsu.commons.math.io.Mx2CharSequenceConversionPack;
+import com.spbsu.commons.io.StreamTools;
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
-import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.func.Ensemble;
@@ -20,6 +18,8 @@ import com.spbsu.ml.loss.multiclass.MCMacroF1Score;
 import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
 import com.spbsu.ml.loss.multiclass.MCMacroRecall;
 import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
+import com.spbsu.ml.meta.impl.FakeTargetMeta;
+import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
 import com.spbsu.ml.methods.spoc.CMLMetricOptimization;
 import com.spbsu.ml.methods.spoc.SPOCMethodClassic;
@@ -28,23 +28,21 @@ import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearningGreedy;
 import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearningGreedyParallels;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.test_utils.TestResourceLoader;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.io.*;
-
 /**
 * User: qdeee
 * Date: 07.05.14
-* [TODO]: Руслан, надо сделать так, чтобы тесты проходили, в частности убери хардкоды имен файлов
 */
 public abstract class SPOCMethodTest extends TestSuite {
 
   private abstract static class Base extends TestCase {
-    protected Pool learn;
-    protected Pool test;
+    protected Pool<?> learn;
+    protected Pool<?> test;
     protected Mx S;
 
     protected int k;
@@ -163,14 +161,16 @@ public abstract class SPOCMethodTest extends TestSuite {
       final TDoubleList borders = new TDoubleArrayList();
 //      borders.addAll(classicBorders);
       borders.addAll(hierBorders);
+      learn = TestResourceLoader.loadPool("features.txt.gz");
+      test = TestResourceLoader.loadPool("featuresTest.txt.gz");
+      final IntSeq learnTarget = MCTools.transformRegressionToMC(learn.target(L2.class).target, borders.size(), borders);
+      final IntSeq testTarget = MCTools.transformRegressionToMC(test.target(L2.class).target, borders.size(), borders);
+      learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), learnTarget);
+      test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), testTarget);
 
-      final Pair<VecDataSet, IntSeq> learnPair = MCTools.loadRegressionAsMC("./ml/src/test/data/features.txt.gz", borders.size(), borders);
-      final Pair<VecDataSet, IntSeq> testPair = MCTools.loadRegressionAsMC("./ml/src/test/data/featuresTest.txt.gz", borders.size(), borders);
-      learn = new FakePool(learnPair.first.data(), learnPair.second);
-      test = new FakePool(testPair.first.data(), testPair.second);
-
-//      S = loadMxFromFile("./ml/tests/data/multiclass/regression_based/lines.txt.similarityMx");
-      S = loadMxFromFile("/Users/qdeee/Datasets/features-simmatrix-classic.txt");
+//      final CharSequence mxStr = StreamTools.readStream(TestResourceLoader.loadResourceAsStream("multiclass/regression_based/features.txt.similarityMx"));
+      final CharSequence mxStr = StreamTools.readStream(TestResourceLoader.loadResourceAsStream("multiclass/regression_based/features-simmatrix-classic.txt"));
+      S = MathTools.CONVERSION.convert(mxStr, Mx.class);
 
       k = borders.size();
       l = 5;
@@ -197,17 +197,19 @@ public abstract class SPOCMethodTest extends TestSuite {
   }
 
   public static class GreedyDefaultDS extends DefaultDataTests {
+    @Override
+    public void setUp() throws Exception {
+      super.setUp();
+      mcIters = 200;
+    }
 
-    //      lambdaC = 3;
-    //      lambdaR = 2.5;
-    //      lambda1 = 2;
     @Override
     protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
       return new CodingMatrixLearningGreedy(k, l, lambdaC, lambdaR, lambda1);
     }
   }
 
-  public abstract static class ParallelGreedyDefaultDS extends DefaultDataTests {
+  public static class ParallelGreedyDefaultDS extends DefaultDataTests {
     @Override
     protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
       return new CodingMatrixLearningGreedyParallels(k, l, lambdaC, lambdaR, lambda1);
@@ -255,23 +257,4 @@ public abstract class SPOCMethodTest extends TestSuite {
     System.out.println(constraintsMatrix.toString());
   }
 
-  private static void writeMxToFile(final Mx mx, final String filename) throws FileNotFoundException {
-    final PrintWriter writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(filename)));
-    final TypeConverter<Mx, CharSequence> converter = new Mx2CharSequenceConversionPack.Mx2CharSequenceConverter();
-    final CharSequence mxStr = converter.convert(mx);
-    writer.write(mxStr.toString());
-    writer.flush();
-  }
-
-  private static Mx loadMxFromFile(final String filename) throws IOException {
-    final TypeConverter<CharSequence, Mx> converter = new Mx2CharSequenceConversionPack.CharSequence2MxConverter();
-    final BufferedReader reader = new BufferedReader(new FileReader(new File(filename)));
-    final StringBuilder builder = new StringBuilder();
-    String s;
-    while ((s = reader.readLine()) != null) {
-      builder.append(s);
-      builder.append("\n");
-    }
-    return converter.convert(builder.toString());
-  }
 }

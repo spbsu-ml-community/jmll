@@ -9,8 +9,8 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
-import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.test_utils.TestResourceLoader;
 
 /**
  * User: solar
@@ -23,8 +23,8 @@ public class GridTest extends FileTestCase {
   private static synchronized void loadDataSet() {
     try {
       if (learn == null || validate == null) {
-        learn = DataTools.loadFromFeaturesTxt("./jmll/ml/src/test/data/features.txt.gz");
-        validate = DataTools.loadFromFeaturesTxt("./jmll/ml/src/test/data/featuresTest.txt.gz");
+        learn = TestResourceLoader.loadPool("features.txt.gz");
+        validate = TestResourceLoader.loadPool("featuresTest.txt.gz");
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -167,6 +167,11 @@ public class GridTest extends FileTestCase {
 
   @Override
   protected String getTestDataPath() {
-    return "./jmll/ml/src/test/data/grid/";
+    try {
+      return TestResourceLoader.getFullPath("grid/");
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
+    }
   }
 }
