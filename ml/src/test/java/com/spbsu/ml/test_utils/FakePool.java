@@ -1,4 +1,4 @@
-package com.spbsu.ml;
+package com.spbsu.ml.test_utils;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,6 +11,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.ml.Vectorization;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
