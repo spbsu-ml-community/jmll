@@ -84,14 +84,17 @@ public class MedianRow implements DynamicRow {
             int end = bfs.get(i).borderIndex;
             double median = feature[start + (end - start) / 2];
             int split = Math.abs(Arrays.binarySearch(feature, start, end, median));
-            while (split > 0 && Math.abs(feature[split] - median) < eps) // look for first less then median value
+            while (split > start && Math.abs(feature[split] - median) < eps) // look for first less then median value
                 split--;
             if (Math.abs(feature[split] - median) > 1e-9) split++;
+
+//
             final double scoreLeft = Math.log(end - split) + Math.log(split - start);
-            if (split > 0) {
-                if (scoreLeft > bestScore + 1e-8) {
+            if (split > start) {
+                if (scoreLeft > bestScore) {
                     bestScore = scoreLeft;
-                    diff = (end-start+1)* Math.log( (end - start + 1.0) / feature.length) - (end - split) * Math.log( (end - split)*1.0 / feature.length) - (split - start + 1) * Math.log( (split - start + 1.0) / feature.length);
+                    diff = (end - start + 1) * Math.log((end - start + 1.0) / feature.length)
+                            - (end - split + 1.0) * Math.log((end - split + 1.0) / feature.length) - (split - start + 1.0) * Math.log((split - start) * 1.0 / feature.length);
                     diff /= feature.length;
                     bestSplit = split;
                     bestSplits.clear();
@@ -102,16 +105,17 @@ public class MedianRow implements DynamicRow {
             }
             while (++split < end && Math.abs(feature[split] - median) < eps)
                 ; // first after elements with such value
+
             final double scoreRight = Math.log(end - split) + Math.log(split - start);
             if (split < end) {
-                if (scoreRight > bestScore + 1e-8) {
+                if (scoreRight > bestScore) {
                     bestScore = scoreRight;
-                    diff = (end-start+1)* Math.log( (end - start + 1.0) / feature.length) - (end - split) * Math.log( (end - split)*1.0 / feature.length) - (split - start + 1) * Math.log( (split - start + 1.0) / feature.length);
-                    diff /= feature.length;
                     bestSplit = split;
+                    diff = (end - start + 1) * Math.log((end - start + 1.0) / feature.length)
+                            - (end - split + 1.0) * Math.log((end - split + 1.0) / feature.length) - (split - start + 1.0) * Math.log((split - start) * 1.0 / feature.length);
+                    diff /= feature.length;
                     bestSplits.clear();
                     bestSplits.add(bestSplit);
-
                 } else if (Math.abs(scoreRight - bestScore) < 1e-8) {
                     bestSplits.add(split);
                 }

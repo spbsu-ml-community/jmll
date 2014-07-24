@@ -4,22 +4,13 @@ import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 
-import static java.util.concurrent.Executors.newFixedThreadPool;
-
-/**
- * User: solar
- * Date: 21.12.2010
- * Time: 22:13:54
- */
 public class RandomForest<Loss extends StatBasedLoss> extends WeakListenerHolderImpl<Trans> implements VecOptimization<Loss> {
     protected final FastRandom rnd;
     private final VecOptimization<WeightedLoss<? extends Loss>> weak;
@@ -33,10 +24,10 @@ public class RandomForest<Loss extends StatBasedLoss> extends WeakListenerHolder
 
     @Override
     public Trans fit(VecDataSet learn, Loss globalLoss) {
-        Func[] weakModels = new Func[treesCount];
+        Trans[] weakModels = new Trans[treesCount];
         for (int i = 0; i < treesCount; ++i)
-            weakModels[i] = (Func) weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
-        return new FuncEnsemble(weakModels, VecTools.fill(new ArrayVec(weakModels.length), 1.0 / treesCount));
+            weakModels[i] = weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
+        return new Ensemble(weakModels, VecTools.fill(new ArrayVec(weakModels.length), 1.0 / treesCount));
     }
 }
 

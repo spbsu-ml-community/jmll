@@ -6,7 +6,6 @@ import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.DynamicGrid.AggregateDynamic;
 import com.spbsu.ml.DynamicGrid.Impl.BFDynamicGrid;
-import com.spbsu.ml.DynamicGrid.Impl.BinaryFeatureImpl;
 import com.spbsu.ml.DynamicGrid.Impl.MedianRow;
 import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
@@ -74,7 +73,6 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
             rows[f] = new MedianRow(feature, f, minSplits);
         }
         this.grid = new BFDynamicGrid(rows);
-        lambda = 1;
     }
 
 
@@ -89,115 +87,126 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
         TIntArrayList nonActiveF = new TIntArrayList(grid.rows());
         TIntArrayList nonActiveBin = new TIntArrayList(grid.rows());
         final List<BinaryFeature> conditions = new ArrayList<>(depth);
-
-        leaves.add(new BFDynamicOptimizationSubset(bds, loss, ArrayTools.sequence(0, ds.length())));
-        double currentScore = Double.POSITIVE_INFINITY;
         final double[][] scores = new double[grid.rows()][];
         for (int i = 0; i < scores.length; ++i) {
             scores[i] = new double[0];
         }
-        for (int level = 0; level < depth; level++) {
-            for (int f = 0; f < scores.length; ++f) {
-                if (scores[f].length != grid.row(f).size()) {
-                    scores[f] = new double[grid.row(f).size()];
-                } else Arrays.fill(scores[f], 0);
-            }
-            for (BFDynamicOptimizationSubset leaf : leaves) {
-                leaf.visitAllSplits(new AggregateDynamic.SplitVisitor<AdditiveStatistics>() {
-                    @Override
-                    public void accept(BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
-                        double leftScore = loss.score(left);
-                        double rightScore = loss.score(right);
-                        scores[bf.fIndex()][bf.binNo()] += leftScore + rightScore;
-                    }
-                });
-            }
 
-            int bestSplitF = -1;
-            int bestSplitBin = -1;
-            double bestSplitScore = Double.POSITIVE_INFINITY;
+        while (true) {
+            boolean updated = false;
+            leaves.clear();
+            conditions.clear();
+            leaves.add(new BFDynamicOptimizationSubset(bds, loss, ArrayTools.sequence(0, ds.length())));
+            double currentScore = Double.POSITIVE_INFINITY;
 
-            int bestNonActiveSplitF = -1;
-            int bestNonActiveSplitBin = -1;
-            double bestNonActiveSplitScore = Double.POSITIVE_INFINITY;
-            nonActiveF.clear();
-            nonActiveBin.clear();
-            for (int f = 0; f < scores.length; ++f) {
-                for (int bin = 0; bin < scores[f].length; ++bin) {
-                    if (grid.isActive(f, bin)) {
-                        final double score = bestSplitScore - scores[f][bin];
-                        if (score > 0) {
-                            bestSplitF = f;
-                            bestSplitBin = bin;
-                            bestSplitScore = scores[f][bin];
+            for (int level = 0; level < depth; level++) {
+                for (int f = 0; f < scores.length; ++f) {
+                    if (scores[f].length != grid.row(f).size()) {
+                        scores[f] = new double[grid.row(f).size()];
+                    } else Arrays.fill(scores[f], 0);
+                }
+                for (BFDynamicOptimizationSubset leaf : leaves) {
+                    leaf.visitAllSplits(new AggregateDynamic.SplitVisitor<AdditiveStatistics>() {
+                        @Override
+                        public void accept(BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+                            double leftScore = loss.score(left);
+                            double rightScore = loss.score(right);
+                            scores[bf.fIndex()][bf.binNo()] += leftScore + rightScore;
                         }
-                    } else {
-                        nonActiveF.add(f);
-                        nonActiveBin.add(bin);
-                    }
+                    });
                 }
 
-            }
+                int bestSplitF = -1;
+                int bestSplitBin = -1;
+                double bestSplitScore = Double.POSITIVE_INFINITY;
+
+                int bestNonActiveSplitF = -1;
+                int bestNonActiveSplitBin = -1;
+                double bestNonActiveSplitScore = Double.POSITIVE_INFINITY;
+                nonActiveF.clear();
+                nonActiveBin.clear();
+                for (int f = 0; f < scores.length; ++f) {
+                    for (int bin = 0; bin < scores[f].length; ++bin) {
+                        if (grid.isActive(f, bin)) {
+                            final double score = bestSplitScore - scores[f][bin];
+                            if (score > 0) {
+                                bestSplitF = f;
+                                bestSplitBin = bin;
+                                bestSplitScore = scores[f][bin];
+                            }
+                        } else {
+                            nonActiveF.add(f);
+                            nonActiveBin.add(bin);
+                        }
+                    }
+
+                }
 //
-            if (growGrid) {
-                double threshold = bestSplitScore < currentScore ? bestSplitScore : currentScore;
-                for (int j = 0; j < nonActiveF.size(); ++j) {
-                    int feature = nonActiveF.get(j);
-                    int bin = nonActiveBin.get(j);
+                if (growGrid) {
+                    double threshold = bestSplitScore < currentScore ? bestSplitScore : currentScore;
+                    for (int j = 0; j < nonActiveF.size(); ++j) {
+                        int feature = nonActiveF.get(j);
+                        int bin = nonActiveBin.get(j);
+                        BinaryFeature bf = grid.bf(feature, bin);
+                        double reg = lambda != 0 ? bf.regularization() : 0;
+                        final double score = threshold - scores[feature][bin] - lambda * reg;
+                        if (score > 0) {
+                            bds.queueSplit(bf);
+                            if (bestNonActiveSplitScore > scores[feature][bin]) {
+                                bestNonActiveSplitF = feature;
+                                bestNonActiveSplitBin = bin;
+                                bestNonActiveSplitScore = scores[feature][bin];
 
-                    BinaryFeature bf = grid.bf(feature, bin);
-                    final double score = threshold - scores[feature][bin] - lambda * bf.regularization();
-                    if (score > 0) {
-                        bds.queueSplit(bf);
-                        if (bestNonActiveSplitScore > scores[feature][bin]) {
-                            bestNonActiveSplitF = feature;
-                            bestNonActiveSplitBin = bin;
-                            bestNonActiveSplitScore = scores[feature][bin];
+                            }
 
                         }
-
                     }
                 }
-            }
 
-            if (bestNonActiveSplitScore < bestSplitScore + eps) {
-                bestSplitF = bestNonActiveSplitF;
-                bestSplitBin = bestNonActiveSplitBin;
-            }
-
-
-            //tree growing continue
-            if (bestSplitF < 0 || scores[bestSplitF][bestSplitBin] >= currentScore) {
-                if (growGrid) {
-                    bds.acceptQueue(leaves);
+                if (bestNonActiveSplitScore < bestSplitScore + eps) {
+                    bestSplitF = bestNonActiveSplitF;
+                    bestSplitBin = bestNonActiveSplitBin;
                 }
-                break;
-            }
-            final BinaryFeature bestSplitBF = grid.bf(bestSplitF, bestSplitBin);
+
+
+                //tree growing continue
+                if (bestSplitF < 0 || scores[bestSplitF][bestSplitBin] >= currentScore) {
+                    if (growGrid) {
+                        if (bds.acceptQueue(leaves)) {
+                            updated = true;
+                        }
+                    }
+                    break;
+                }
+                final BinaryFeature bestSplitBF = grid.bf(bestSplitF, bestSplitBin);
 
 
 //            final BinaryFeature bestSplitBF = grid.bf(bestSplit);
-            final List<BFDynamicOptimizationSubset> next = new ArrayList<>(leaves.size() * 2);
-            final ListIterator<BFDynamicOptimizationSubset> iter = leaves.listIterator();
-            while (iter.hasNext()) {
-                final BFDynamicOptimizationSubset subset = iter.next();
-                next.add(subset);
-                next.add(subset.split(bestSplitBF));
+                final List<BFDynamicOptimizationSubset> next = new ArrayList<>(leaves.size() * 2);
+                final ListIterator<BFDynamicOptimizationSubset> iter = leaves.listIterator();
+                while (iter.hasNext()) {
+                    final BFDynamicOptimizationSubset subset = iter.next();
+                    next.add(subset);
+                    next.add(subset.split(bestSplitBF));
+                }
+                conditions.add(bestSplitBF);
+                leaves = next;
+                currentScore = scores[bestSplitF][bestSplitBin];
+                if (growGrid) {
+                    if (bds.acceptQueue(leaves)) {
+                        updated = true;
+                    }
+                }
             }
-            conditions.add(bestSplitBF);
-            leaves = next;
-            currentScore = scores[bestSplitF][bestSplitBin];
-            if (growGrid) {
-                bds.acceptQueue(leaves);
+
+            if (!updated) {
+                double[] values = new double[leaves.size()];
+                for (int i = 0; i < values.length; i++) {
+                    values[i] = loss.bestIncrement(leaves.get(i).total());
+                }
+                return new ObliviousTreeDynamicBin(conditions, values);
             }
         }
-
-        double[] values = new double[leaves.size()];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = loss.bestIncrement(leaves.get(i).total());
-        }
-        return new ObliviousTreeDynamicBin(conditions, values);
-
 
     }
 
