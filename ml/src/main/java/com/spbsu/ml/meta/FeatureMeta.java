@@ -33,4 +33,23 @@ public interface FeatureMeta {
       return type;
     }
   }
+
+  abstract class Stub implements FeatureMeta{
+
+    @Override
+    public final boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof FeatureMeta))
+        return false;
+
+      return this == o || ((o instanceof FeatureMeta) && id().equals(((FeatureMeta) o).id()));
+    }
+
+    @Override
+    public final int hashCode() {
+      return id().hashCode();
+    }
+  }
 }
