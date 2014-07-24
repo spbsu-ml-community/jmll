@@ -1,12 +1,5 @@
 package com.spbsu.ml;
 
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.lang.reflect.Method;
-import java.util.StringTokenizer;
-
-
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Factory;
@@ -33,6 +26,11 @@ import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import org.apache.commons.cli.*;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.StringTokenizer;
 
 import static com.spbsu.commons.math.vectors.VecTools.append;
 
@@ -60,6 +58,7 @@ public class JMLLCLI {
   private static final String FOREST_LENGTH_OPTION = "a";
   private static final String CROSS_VALIDATION_OPTION = "X";
   private static final String OUTPUT_OPTION = "o";
+  private static final String JSON_FORMAT = "j";
 
   static Options options = new Options();
 
@@ -77,6 +76,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("forest-length").withDescription("forest length").hasArg().create(FOREST_LENGTH_OPTION));
     options.addOption(OptionBuilder.withLongOpt("cross-validation").withDescription("k folds CV").hasArg().create(CROSS_VALIDATION_OPTION));
     options.addOption(OptionBuilder.withLongOpt("out").withDescription("output file name").hasArg().create(OUTPUT_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("json-format").withDescription("alternative format for features.txt").hasArg(false).create(JSON_FORMAT));
   }
 
   public static void main(String[] args) throws IOException {
@@ -91,11 +91,13 @@ public class JMLLCLI {
 
       String learnFile = command.getOptionValue(LEARN_OPTION, "features.txt");
 
-      Pool learn = DataTools.loadFromFeaturesTxt(learnFile);
+      Pool learn = command.hasOption(JSON_FORMAT) ? DataTools.loadFromFile(learnFile)
+          : DataTools.loadFromFeaturesTxt(learnFile);
+
       if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
 //        learn = MCTools.normalizeClasses(learn);
-      if (learnFile.endsWith(".gz"))
-        learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
+        if (learnFile.endsWith(".gz"))
+          learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
 
       Pool test;
       if (!command.hasOption(CROSS_VALIDATION_OPTION)) {
@@ -153,7 +155,7 @@ public class JMLLCLI {
 
           Interval.start();
           Interval.suspend();
-          final DataSet learnDS = learn.data();
+          final DataSet learnDS = learn.vecData();
           @SuppressWarnings("unchecked")
           final Computable result = method.fit(learnDS, loss);
           Interval.stopAndPrint("Total fit time:");
