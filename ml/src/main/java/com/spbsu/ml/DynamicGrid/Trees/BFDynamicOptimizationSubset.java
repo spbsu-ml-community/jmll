@@ -36,6 +36,7 @@ public class BFDynamicOptimizationSubset {
         final BFDynamicOptimizationSubset rightBro = new BFDynamicOptimizationSubset(bds, oracle, right.toArray());
         aggregate.remove(rightBro.aggregate);
         points = left.toArray();
+        aggregate.updatePoints(points);
         return rightBro;
     }
 
@@ -59,6 +60,7 @@ public class BFDynamicOptimizationSubset {
 
 
     public void rebuild(int... features) {
+//        this.aggregate = new AggregateDynamic(bds, oracle.statsFactory(), points);
         this.aggregate.rebuild(features);
 
     }

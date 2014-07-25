@@ -1,7 +1,6 @@
 package com.spbsu.ml.DynamicGrid.Interface;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.BFGrid;
 
 /**
  * Created by noxoomo on 23/07/14.
@@ -9,7 +8,6 @@ import com.spbsu.ml.BFGrid;
 public interface DynamicGrid {
     public int rows();
 
-    public int size();
 
     public boolean isActive(int fIndex, int binNo);
 
@@ -28,7 +26,6 @@ public interface DynamicGrid {
 
 
     public int[] hist();
-
 
 
 }

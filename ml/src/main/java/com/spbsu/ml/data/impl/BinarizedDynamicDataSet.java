@@ -113,9 +113,9 @@ public class BinarizedDynamicDataSet {
                 feature.row().addSplit();
                 feature.setActive(true);
             }
-//            updateBins();
-            for (BinaryFeature feature : queue)
-                updateBins(feature.fIndex());
+            updateBins();
+//            for (BinaryFeature feature : queue)
+//                updateBins(feature.fIndex());
             queue.clear();
 //            java 8 parallel version
 //            leaves.parallelStream().forEach((leave) -> leave.rebuild(origFIndexes));

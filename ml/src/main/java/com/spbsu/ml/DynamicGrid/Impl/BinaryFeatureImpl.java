@@ -45,7 +45,7 @@ public class BinaryFeatureImpl implements BinaryFeature {
     @Override
     public double regularization() {
         if (active) return 0;
-    return regScore;
+        return regScore;
     }
 
     public boolean value(Vec vec) {
@@ -73,20 +73,20 @@ public class BinaryFeatureImpl implements BinaryFeature {
     }
 
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof BinaryFeatureImpl)) return false;
-        BinaryFeatureImpl that = (BinaryFeatureImpl) o;
-        return fIndex() == that.fIndex() && bfRow.equals(that.bfRow);
-    }
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (!(o instanceof BinaryFeatureImpl)) return false;
+//        BinaryFeatureImpl that = (BinaryFeatureImpl) o;
+//        return fIndex() == that.fIndex() && bfRow.equals(that.bfRow);
+//    }
 
-    @Override
-    public int hashCode() {
-        int result = bfRow.hashCode();
-        result = 31 * result;
-        return result;
-    }
+//    @Override
+//    public int hashCode() {
+//        int result = bfRow.hashCode();
+//        result = 31 * result;
+//        return result;
+//    }
 
     @Override
     public String toString() {

@@ -18,7 +18,11 @@ public class AggregateDynamic {
     private final DynamicGrid grid;
     private final AdditiveStatistics[][] bins;
     private final Factory<AdditiveStatistics> factory;
-    private final int[] points;
+    private int[] points;
+
+    public void updatePoints(int[] points) {
+        this.points = points;
+    }
 
     public AggregateDynamic(BinarizedDynamicDataSet bds, Factory<AdditiveStatistics> factory, int[] points) {
         this.points = points;
@@ -34,7 +38,6 @@ public class AggregateDynamic {
 
     public AdditiveStatistics combinatorForFeature(BinaryFeature bf) {
         final AdditiveStatistics result = factory.create();
-
         final DynamicRow row = bf.row();
         final int binNo = bf.binNo();
         final int origFIndex = row.origFIndex();
@@ -45,18 +48,13 @@ public class AggregateDynamic {
     }
 
     public AdditiveStatistics total() {
-//    if (total == null) { // calculating total by non empty row
         AdditiveStatistics myTotal = factory.create();
         final DynamicRow row = grid.nonEmptyRow();
         final AdditiveStatistics[][] myBins = bins;
-        for (int bin = 0; bin < bins[row.origFIndex()].length; ++bin) {
+        for (int bin = 0; bin <= row.size(); ++bin) {
             myTotal.append(myBins[row.origFIndex()][bin]);
         }
         return myTotal;
-//      total = myTotal;
-//    }
-
-//    return total;
     }
 
     private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Aggregator thread", -1);
@@ -68,17 +66,14 @@ public class AggregateDynamic {
             for (int j = 0; j < bins[i].length; ++j)
                 my[i][j].remove(other[i][j]);
         }
-//    total.remove(aggregate.total());
     }
 
     public interface SplitVisitor<T> {
         void accept(BinaryFeature bf, T left, T right);
-
     }
 
     public <T extends AdditiveStatistics> void visit(SplitVisitor<T> visitor) {
         final T total = (T) total();
-
         for (int f = 0; f < grid.rows(); f++) {
             final T left = (T) factory.create();
             final T right = (T) factory.create().append(total);

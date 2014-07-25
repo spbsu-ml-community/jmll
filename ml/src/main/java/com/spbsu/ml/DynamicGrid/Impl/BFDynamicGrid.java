@@ -5,12 +5,9 @@ import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicRow;
 
-import java.util.ArrayList;
-
 public class BFDynamicGrid implements DynamicGrid {
     private DynamicRow[] rows;
-    private DynamicRow leastNonEmptyRow = null;
-    private int size = 0;
+    private final DynamicRow leastNonEmptyRow;
 //    private ArrayList<BinaryFeature> features = new ArrayList<>();
 
     public BFDynamicGrid(DynamicRow[] rows) {
@@ -18,11 +15,14 @@ public class BFDynamicGrid implements DynamicGrid {
         for (DynamicRow row : rows) {
             row.setOwner(this);
         }
+
+        DynamicRow least = null;
         for (int f = 0; f < rows.length; ++f)
             if (!rows[f].empty()) {
-                leastNonEmptyRow = rows[f];
+                least = rows[f];
                 break;
             }
+        leastNonEmptyRow = least;
     }
 
     public DynamicRow row(int feature) {
@@ -53,7 +53,6 @@ public class BFDynamicGrid implements DynamicGrid {
     }
 
 
-
     @Override
     public int[] hist() {
         int[] counts = new int[rows.length];
@@ -67,14 +66,10 @@ public class BFDynamicGrid implements DynamicGrid {
         return rows.length;
     }
 
-    @Override
-    public int size() {
-        return size;
-    }
 
     @Override
     public boolean isActive(int fIndex, int binNo) {
-        return bf(fIndex,binNo).isActive();
+        return bf(fIndex, binNo).isActive();
     }
 
 
