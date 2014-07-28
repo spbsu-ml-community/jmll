@@ -109,4 +109,5 @@ public class BinaryFeatureImpl implements BinaryFeature {
     };
 
 
+    public int gridHash;
 }

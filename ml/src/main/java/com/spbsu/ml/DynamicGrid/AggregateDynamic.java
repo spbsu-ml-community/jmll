@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class AggregateDynamic {
     private final BinarizedDynamicDataSet bds;
     private final DynamicGrid grid;
-    private final AdditiveStatistics[][] bins;
+    public final AdditiveStatistics[][] bins;
     private final Factory<AdditiveStatistics> factory;
     private int[] points;
 
@@ -50,9 +50,9 @@ public class AggregateDynamic {
     public AdditiveStatistics total() {
         AdditiveStatistics myTotal = factory.create();
         final DynamicRow row = grid.nonEmptyRow();
-        final AdditiveStatistics[][] myBins = bins;
-        for (int bin = 0; bin <= row.size(); ++bin) {
-            myTotal.append(myBins[row.origFIndex()][bin]);
+        final AdditiveStatistics[] myBins = bins[row.origFIndex()];
+        for (int bin = 0; bin < myBins.length; ++bin) {
+            myTotal.append(myBins[bin]);
         }
         return myTotal;
     }
@@ -63,8 +63,9 @@ public class AggregateDynamic {
         final AdditiveStatistics[][] my = bins;
         final AdditiveStatistics[][] other = aggregate.bins;
         for (int i = 0; i < bins.length; i++) {
-            for (int j = 0; j < bins[i].length; ++j)
+            for (int j = 0; j < bins[i].length; ++j) {
                 my[i][j].remove(other[i][j]);
+            }
         }
     }
 
@@ -99,28 +100,33 @@ public class AggregateDynamic {
                 public void run() {
                     final int[] bin = bds.bins(finalFIndex);
                     if (!grid.row(finalFIndex).empty()) {
-                        final int length = 4 * (indices.length / 4);
+
+//                        final int length = 4 * (indices.length / 4);
                         final AdditiveStatistics[] binsLocal = new AdditiveStatistics[grid.row(finalFIndex).size() + 1];
+
                         for (int i = 0; i < binsLocal.length; ++i)
                             binsLocal[i] = factory.create();
-                        final int[] indicesLocal = indices;
-                        for (int i = 0; i < length; i += 4) {
-                            final int idx1 = indicesLocal[i];
-                            final int idx2 = indicesLocal[i + 1];
-                            final int idx3 = indicesLocal[i + 2];
-                            final int idx4 = indicesLocal[i + 3];
-                            final AdditiveStatistics bin1 = binsLocal[bin[idx1]];
-                            final AdditiveStatistics bin2 = binsLocal[bin[idx2]];
-                            final AdditiveStatistics bin3 = binsLocal[bin[idx3]];
-                            final AdditiveStatistics bin4 = binsLocal[bin[idx4]];
-                            bin1.append(idx1, 1);
-                            bin2.append(idx2, 1);
-                            bin3.append(idx3, 1);
-                            bin4.append(idx4, 1);
+                        for (int i : indices) {
+                            binsLocal[bin[i]].append(i, 1);
                         }
-                        for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
-                            binsLocal[bin[i]].append(indicesLocal[i], 1);
-                        }
+//                        final int[] indicesLocal = indices;
+//                        for (int i = 0; i < length; i += 4) {
+//                            final int idx1 = indicesLocal[i];
+//                            final int idx2 = indicesLocal[i + 1];
+//                            final int idx3 = indicesLocal[i + 2];
+//                            final int idx4 = indicesLocal[i + 3];
+//                            final AdditiveStatistics bin1 = binsLocal[bin[idx1]];
+//                            final AdditiveStatistics bin2 = binsLocal[bin[idx2]];
+//                            final AdditiveStatistics bin3 = binsLocal[bin[idx3]];
+//                            final AdditiveStatistics bin4 = binsLocal[bin[idx4]];
+//                            bin1.append(idx1, 1);
+//                            bin2.append(idx2, 1);
+//                            bin3.append(idx3, 1);
+//                            bin4.append(idx4, 1);
+//                        }
+//                        for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
+//                            binsLocal[bin[i]].append(indicesLocal[i], 1);
+//                        }
                         bins[finalFIndex] = binsLocal;
                     }
                     latch.countDown();

@@ -8,6 +8,12 @@ import com.spbsu.commons.math.vectors.Vec;
 public interface DynamicGrid {
     public int rows();
 
+    //    public boolean isKnown(BinaryFeature f);
+//
+    public void setKnown(int hash);
+
+    public boolean isKnown(int hash);
+
 
     public boolean isActive(int fIndex, int binNo);
 

@@ -1,6 +1,5 @@
 package com.spbsu.ml.data.impl;
 
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicRow;
@@ -63,11 +62,11 @@ public class BinarizedDynamicDataSet {
     }
 
     private void updateBins(int f) {
-        Vec obs = ((VecDataSet) base).data().col(f);
+//        Vec obs = ((VecDataSet) base).data().col(f);
 //            int[] binarization = new int[((VecDataSet) base).data().rows()];
         DynamicRow row = grid.row(f);
-        for (int t = 0; t < obs.dim(); ++t) {
-            bins[f][t] = row.bin(obs.get(t));
+        for (int t = 0; t < bins[f].length; ++t) {
+            bins[f][t] = row.bin(((VecDataSet) base).at(t).get(f));
         }
     }
 
@@ -113,9 +112,9 @@ public class BinarizedDynamicDataSet {
                 feature.row().addSplit();
                 feature.setActive(true);
             }
-            updateBins();
-//            for (BinaryFeature feature : queue)
-//                updateBins(feature.fIndex());
+//            updateBins();
+            for (BinaryFeature feature : queue)
+                updateBins(feature.fIndex());
             queue.clear();
 //            java 8 parallel version
 //            leaves.parallelStream().forEach((leave) -> leave.rebuild(origFIndexes));

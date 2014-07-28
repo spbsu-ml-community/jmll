@@ -1,19 +1,15 @@
 package com.spbsu.ml.DynamicGrid.Trees;
 
 import com.spbsu.commons.func.AdditiveStatistics;
-import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.DynamicGrid.AggregateDynamic;
 import com.spbsu.ml.DynamicGrid.Impl.BFDynamicGrid;
-import com.spbsu.ml.DynamicGrid.Impl.MedianRow;
 import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.DynamicGrid.Models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.data.impl.BinarizedDynamicDataSet;
-import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.stats.OrderByFeature;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.methods.VecOptimization;
 import gnu.trove.list.array.TIntArrayList;
@@ -28,7 +24,6 @@ import java.util.ListIterator;
  */
 public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
     private final int depth;
-    private final double eps = 0;
     private DynamicGrid grid;
     private boolean growGrid = true;
     private final int minSplits;
@@ -54,18 +49,8 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
         this.minSplits = minSplits;
         this.depth = depth;
         this.lambda = lambda;
-        final OrderByFeature byFeature = ds.cache().cache(OrderByFeature.class, DataSet.class);
 
-        MedianRow[] rows = new MedianRow[ds.data().columns()];
-        for (int f = 0; f < ds.data().columns(); ++f) {
-            final ArrayPermutation permutation = byFeature.orderBy(f);
-            int[] order = permutation.direct();
-            double[] feature = new double[order.length];
-            for (int i = 0; i < feature.length; i++)
-                feature[i] = ds.at(order[i]).get(f);
-            rows[f] = new MedianRow(feature, f, minSplits);
-        }
-        this.grid = new BFDynamicGrid(rows);
+        this.grid = new BFDynamicGrid(ds, minSplits);
     }
 
 
@@ -127,7 +112,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
                     for (int bin = 0; bin < scores[f].length; ++bin) {
                         if (grid.isActive(f, bin)) {
                             final double score = bestSplitScore - scores[f][bin];
-                            if (score > eps) {
+                            if (score > 0) {
                                 bestSplitF = f;
                                 bestSplitBin = bin;
                                 bestSplitScore = scores[f][bin];
@@ -138,8 +123,6 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
                         }
                     }
                 }
-// 3 3 16 1 1 1 1 1 1 1 1 1 1 1 8 12 9 7 1 1 7 1 1 6 7 3 1 1 1 0 0 5 1 4 1 6 1 15 6 5 0 0 0 0 0 0 4 9 6 1
-//3 3 16 1 1 1 1 1 1 1 1 1 1 1 3 12 9 7 1 1 2 1 1 6 6 3 1 1 1 0 0 4 1 3 1 3 1 15 4 5 0 0 0 0 0 0 4 8 5 1
                 if (growGrid) {
                     double threshold = bestSplitScore < currentScore ? bestSplitScore : currentScore;
                     for (int j = 0; j < nonActiveF.size(); ++j) {
@@ -192,6 +175,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
                 }
             }
 
+            //updated = false;
             if (!updated) {
                 double[] values = new double[leaves.size()];
                 for (int i = 0; i < values.length; i++) {
