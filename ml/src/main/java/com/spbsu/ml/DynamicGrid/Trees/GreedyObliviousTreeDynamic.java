@@ -85,8 +85,6 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
                     } else Arrays.fill(scores[f], 0);
                 }
 
-                //debug
-
 
                 for (BFDynamicOptimizationSubset leaf : leaves) {
                     leaf.visitAllSplits(new AggregateDynamic.SplitVisitor<AdditiveStatistics>() {
@@ -175,7 +173,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
                 }
             }
 
-            //updated = false;
+            updated = false;
             if (!updated) {
                 double[] values = new double[leaves.size()];
                 for (int i = 0; i < values.length; i++) {

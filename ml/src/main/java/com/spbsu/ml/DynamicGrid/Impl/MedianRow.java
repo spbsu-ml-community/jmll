@@ -4,7 +4,6 @@ import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicRow;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.*;
 
@@ -17,9 +16,7 @@ public class MedianRow implements DynamicRow {
     private DynamicGrid grid = null;
     private final double[] feature;
     private final int[] reverse;
-    private TIntHashSet known = new TIntHashSet();
-    private TIntHashSet bad = new TIntHashSet();
-    //    private final TIntArrayList borders = new TIntArrayList();
+    private TIntArrayList borders = new TIntArrayList();
     private final ArrayList<BinaryFeatureImpl> bfs = new ArrayList<>();
     private final int levels;
 
@@ -34,10 +31,7 @@ public class MedianRow implements DynamicRow {
             if (feature[i] != feature[i - 1])
                 ++lvl;
         this.levels = lvl;
-        BinaryFeatureImpl end = new BinaryFeatureImpl(this, origFIndex, feature[feature.length - 1], feature.length);
-        end.setBinNo(Integer.MAX_VALUE);
-        bfs.add(end);
-//        borders.add(feature.length);
+        borders.add(feature.length);
         for (int i = 0; i < minSplits; ++i)
             addSplit();
         for (BinaryFeature bf : bfs)
@@ -65,7 +59,7 @@ public class MedianRow implements DynamicRow {
 
     @Override
     public int size() {
-        return bfs.size() - 1;
+        return bfs.size();
     }
 
     @Override
@@ -85,14 +79,12 @@ public class MedianRow implements DynamicRow {
         if (bestSplitsCache.size() == 0) {
             updateCache();
         }
-
-        return addFromCache();
-
-//        Collections.sort(bfs, BinaryFeatureImpl.borderComparator);
-//        for (int i = 0; i < bfs.size(); ++i) {
-//            bfs.get(i).setBinNo(i);
-//        }
-//        return true;
+        while (!addFromCache()) {
+            updateCache();
+            if (bestSplitsCache.size() == 0)
+                return false;
+        }
+        return true;
     }
 
     private boolean addFromCache() {
@@ -101,7 +93,6 @@ public class MedianRow implements DynamicRow {
             BinaryFeatureImpl bf = bestSplitsCache.get(ind);
             bestSplitsCache.remove(ind);
             if (grid.isKnown(bf.gridHash)) {
-                bad.add(bf.borderIndex);
                 continue;
             }
             bfs.add(bf);
@@ -121,19 +112,19 @@ public class MedianRow implements DynamicRow {
         double diff = 0;
         int bestSplit = -1;
         TIntArrayList bestSplits = new TIntArrayList();
-        for (int i = 0; i < bfs.size(); ++i) {
-            int start = i > 0 ? bfs.get(i - 1).borderIndex : 0;
-            int end = bfs.get(i).borderIndex;
+        for (int i = 0; i < borders.size(); ++i) {
+            int start = i > 0 ? borders.get(i - 1) : 0;
+            int end = borders.get(i);//.borderIndex;
             double median = feature[start + (end - start) / 2];
             int split = Math.abs(Arrays.binarySearch(feature, start, end, median));
-            while (split > 0 && Math.abs(feature[split] - median) < eps) // look for first less then median value
+            while (split > start && Math.abs(feature[split] - median) < eps) // look for first less then median value
                 split--;
             if (Math.abs(feature[split] - median) > 1e-9) split++;
 
 //
             final double scoreLeft = Math.log(end - split) + Math.log(split - start);
-            if (split > 0) {
-                if (scoreLeft > bestScore && !bad.contains(split)) {
+            if (split > start) {
+                if (scoreLeft > bestScore) {
                     bestScore = scoreLeft;
                     diff = (end - start + 1) * Math.log((end - start + 1.0) / feature.length)
                             - (end - split + 1.0) * Math.log((end - split + 1.0) / feature.length) - (split - start + 1.0) * Math.log((split - start) * 1.0 / feature.length);
@@ -149,7 +140,7 @@ public class MedianRow implements DynamicRow {
                 ; // first after elements with such value
 
             final double scoreRight = Math.log(end - split) + Math.log(split - start);
-            if (split < end && !bad.contains(split)) {
+            if (split < end) {
                 if (scoreRight > bestScore) {
                     bestScore = scoreRight;
                     bestSplit = split;
@@ -169,6 +160,7 @@ public class MedianRow implements DynamicRow {
 
         for (int i = 0; i < bestSplits.size(); ++i) {
             bestSplit = bestSplits.get(i);
+            borders.add(bestSplit);
             BinaryFeatureImpl newBF = new BinaryFeatureImpl(this, origFIndex, feature[bestSplit - 1], bestSplit);
             bestSplitsCache.add(newBF);
             newBF.setRegScore(diff);
@@ -184,76 +176,10 @@ public class MedianRow implements DynamicRow {
         for (int i = 0; i < bestSplitsCache.size(); ++i) {
             bestSplitsCache.get(i).gridHash = crcs[i];
         }
+        borders.sort();
     }
 
 
-//
-//    public boolean addSplit() {
-//        if (bfs.size() >= levels + 1)
-//            return false;
-//        double bestScore = Double.POSITIVE_INFINITY;
-//        double diff = 0;
-//        int bestSplit = -1;
-//        TIntArrayList bestSplits = new TIntArrayList();
-//        for (int i = 0; i < bfs.size(); ++i) {
-//            int start = i > 0 ? bfs.get(i - 1).borderIndex : 0;
-//            int end = bfs.get(i).borderIndex;
-//            double median = feature[start + (end - start) / 2];
-//            int split = Math.abs(Arrays.binarySearch(feature, start, end, median));
-//            while (split > start && Math.abs(feature[split] - median) < eps) // look for first less then median value
-//                split--;
-//            if (Math.abs(feature[split] - median) > 1e-9) split++;
-//
-////
-//            diff = (end - start + 1) * Math.log((end - start + 1.0) / feature.length)
-//                    - (end - split + 1.0) * Math.log((end - split + 1.0) / feature.length) - (split - start + 1.0) * Math.log((split - start) * 1.0 / feature.length);
-//            diff /= feature.length;
-//            final double scoreLeft = diff;
-//            if (split > start) {
-//                if (diff < bestScore) {
-//                    bestScore = scoreLeft;
-//                    bestSplit = split;
-//                    bestSplits.clear();
-//                    bestSplits.add(bestSplit);
-//                } else if (Math.abs(scoreLeft - bestScore) < 1e-8) {
-//                    bestSplits.add(split);
-//                }
-//            }
-//            while (++split < end && Math.abs(feature[split] - median) < eps)
-//                ; // first after elements with such value
-//
-//
-//            diff = (end - start + 1) * Math.log((end - start + 1.0) / feature.length)
-//                    - (end - split + 1.0) * Math.log((end - split + 1.0) / feature.length) - (split - start + 1.0) * Math.log((split - start) * 1.0 / feature.length);
-//            diff /= feature.length;
-//            final double scoreRight = diff;
-//            if (split < end) {
-//                if (scoreRight < bestScore) {
-//                    bestScore = scoreRight;
-//                    bestSplit = split;
-//                    bestSplits.clear();
-//                    bestSplits.add(bestSplit);
-//                } else if (Math.abs(scoreRight - bestScore) < 1e-8) {
-//                    bestSplits.add(split);
-//                }
-//            }
-//        }
-//        if (bestSplit > 100000)
-//            return false;
-////        bestSplit = bestSplits.get(rand.nextInt(bestSplits.size()));
-////        bestSplit = bestSplits.get(0);
-//
-//        BinaryFeatureImpl newBF = new BinaryFeatureImpl(this, origFIndex, feature[bestSplit - 1], bestSplit);
-//        bfs.add(newBF);
-//        newBF.setRegScore(bestScore);
-//
-//        Collections.sort(bfs, BinaryFeatureImpl.borderComparator);
-//        for (int i = 0; i < bfs.size(); ++i) {
-//            bfs.get(i).setBinNo(i);
-//        }
-//        candidates += bestSplits.size();
-//        return true;
-//    }
 
     @Override
     public boolean empty() {
