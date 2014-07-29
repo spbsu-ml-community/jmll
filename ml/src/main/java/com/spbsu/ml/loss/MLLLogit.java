@@ -19,6 +19,7 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
+@Deprecated
 public class MLLLogit extends FuncC1.Stub implements TargetFunc {
   private final IntSeq target;
   private final DataSet<?> owner;

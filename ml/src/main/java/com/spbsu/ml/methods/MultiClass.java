@@ -26,11 +26,11 @@ public class MultiClass extends VecOptimization.Stub<L2> {
 
   @Override
   public MultiClassModel fit(VecDataSet learn, L2 mllLogitGradient) {
-    final Mx data = learn.data();
-    final Mx gradient = new VecBasedMx(data.rows(), mllLogitGradient.target);
-    final Func[] models = new Func[gradient.rows()];
+    final Mx gradient = (Mx)mllLogitGradient.target;
+    final Func[] models = new Func[gradient.columns()];
     for (int c = 0; c < models.length; c++) {
-      models[c] = (Func)inner.fit(learn, DataTools.newTarget(local, gradient.row(c), learn));
+      final L2 loss = DataTools.newTarget(local, gradient.col(c), learn);
+      models[c] = (Func)inner.fit(learn, loss);
     }
     return new MultiClassModel(models);
   }

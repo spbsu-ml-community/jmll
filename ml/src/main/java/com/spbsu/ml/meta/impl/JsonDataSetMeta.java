@@ -19,6 +19,20 @@ public class JsonDataSetMeta implements DataSetMeta {
   public ItemType type;
   public String id;
 
+  public JsonDataSetMeta(final Pool owner, final String source, final String author, final Date created, final ItemType type,
+                         final String id)
+  {
+    this.owner = owner;
+    this.source = source;
+    this.author = author;
+    this.created = created;
+    this.type = type;
+    this.id = id;
+  }
+
+  public JsonDataSetMeta() {
+  }
+
   @Override
   public String id() {
     return id;

@@ -128,7 +128,7 @@ public class Aggregate {
               bin4.append(idx4, 1);
             }
             for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
-              binsLocal[offset + bin[i]].append(indicesLocal[i], 1);
+              binsLocal[offset + bin[indicesLocal[i]]].append(indicesLocal[i], 1);
             }
           }
           latch.countDown();

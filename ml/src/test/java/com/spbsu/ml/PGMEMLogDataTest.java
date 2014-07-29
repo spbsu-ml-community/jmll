@@ -24,6 +24,7 @@ import com.spbsu.ml.methods.PGMEM;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.Route;
 import com.spbsu.ml.models.pgm.SimplePGM;
+import com.spbsu.ml.test_utils.TestResourceLoader;
 import junit.framework.TestCase;
 
 import java.io.*;
@@ -49,8 +50,8 @@ public abstract class PGMEMLogDataTest extends TestCase {
 
   protected void setUp() throws Exception {
     rng = new FastRandom(0);
-    learn = new LogsData(new GZIPInputStream(new FileInputStream("./jmll/ml/src/test/data/pgmem/ses_100k_simple_rand1.dat.gz")));
-    validate = new LogsData(new GZIPInputStream(new FileInputStream("./jmll/ml/src/test/data/pgmem/ses_100k_simple_rand2.dat.gz")));
+    learn = new LogsData(new GZIPInputStream(TestResourceLoader.loadResourceAsStream("pgmem/ses_100k_simple_rand1.dat.gz")));
+    validate = new LogsData(new GZIPInputStream(TestResourceLoader.loadResourceAsStream("pgmem/ses_100k_simple_rand2.dat.gz")));
   }
 
   public void testMostProbable() throws IOException {
