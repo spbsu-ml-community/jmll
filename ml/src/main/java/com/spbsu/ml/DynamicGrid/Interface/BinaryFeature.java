@@ -20,4 +20,7 @@ public interface BinaryFeature {
     public void setActive(boolean status);
 
     public double regularization();
+
+    public int useCount();
+    public void use();
 }

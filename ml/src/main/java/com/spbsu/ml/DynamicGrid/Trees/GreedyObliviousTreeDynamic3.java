@@ -5,6 +5,7 @@ import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.DynamicGrid.AggregateDynamic;
 import com.spbsu.ml.DynamicGrid.Impl.BFDynamicGrid;
+import com.spbsu.ml.DynamicGrid.Impl.MedianRow;
 import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.DynamicGrid.Models.ObliviousTreeDynamicBin;
@@ -22,7 +23,7 @@ import java.util.ListIterator;
 /**
  * Created by noxoomo on 22/07/14.
  */
-public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyObliviousTreeDynamic3<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
     private final int depth;
     private DynamicGrid grid;
     private boolean growGrid = true;
@@ -31,22 +32,22 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
     private double eps = 1e-4;
 
 
-    public GreedyObliviousTreeDynamic(DynamicGrid grid, int depth) {
+    public GreedyObliviousTreeDynamic3(DynamicGrid grid, int depth) {
         this.depth = depth;
         this.grid = grid;
         minSplits = 1;
         lambda = 1;
     }
 
-    public GreedyObliviousTreeDynamic(VecDataSet ds, int depth) {
+    public GreedyObliviousTreeDynamic3(VecDataSet ds, int depth) {
         this(ds, depth, 0, 1);
     }
 
-    public GreedyObliviousTreeDynamic(VecDataSet ds, int depth, double lambda) {
+    public GreedyObliviousTreeDynamic3(VecDataSet ds, int depth, double lambda) {
         this(ds, depth, lambda, 1);
     }
 
-    public GreedyObliviousTreeDynamic(VecDataSet ds, int depth, double lambda, int minSplits) {
+    public GreedyObliviousTreeDynamic3(VecDataSet ds, int depth, double lambda, int minSplits) {
         this.minSplits = minSplits;
         this.depth = depth;
         this.lambda = lambda;
@@ -135,8 +136,8 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
                         int feature = nonActiveF.get(j);
                         int bin = nonActiveBin.get(j);
                         BinaryFeature bf = grid.bf(feature, bin);
-                        double reg = lambda != 0 ? bf.regularization() : 0;
-                        final double score = threshold - scores[feature][bin] - lambda * reg;
+                        double reg = lambda != 0 ? ((MedianRow) grid.row(bestSplitF)).activeEntropy - ((MedianRow) bf.row()).candidateEntropy : 0;
+                        final double score = threshold - scores[feature][bin] + lambda * reg;
                         if (score > eps) {
                             bds.queueSplit(bf);
                             if (bestNonActiveSplitScore > scores[feature][bin]) {
@@ -181,13 +182,13 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
                 }
             }
 
-//            updated = false;
+            updated = false;
             if (!updated) {
                 double[] values = new double[leaves.size()];
                 for (int i = 0; i < values.length; i++) {
                     values[i] = loss.bestIncrement(leaves.get(i).total());
                 }
-                for (BinaryFeature bf: conditions) {
+                for (BinaryFeature bf : conditions) {
                     bf.use();
                 }
                 return new ObliviousTreeDynamicBin(conditions, values);

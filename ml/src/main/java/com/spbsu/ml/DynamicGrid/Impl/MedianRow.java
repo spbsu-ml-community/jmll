@@ -19,6 +19,9 @@ public class MedianRow implements DynamicRow {
     private TIntArrayList borders = new TIntArrayList();
     private final ArrayList<BinaryFeatureImpl> bfs = new ArrayList<>();
     private final int levels;
+    private boolean calcEntropy = false;
+    public double activeEntropy;
+    public double candidateEntropy;
 
 
     public MedianRow(DynamicGrid grid, double[] feature, int[] reverse, int origFIndex, int minSplits) {
@@ -34,8 +37,10 @@ public class MedianRow implements DynamicRow {
         borders.add(feature.length);
         for (int i = 0; i < minSplits; ++i)
             addSplit();
-        for (BinaryFeature bf : bfs)
+        for (BinaryFeature bf : bfs) {
+            activeEntropy += bf.regularization();
             bf.setActive(true);
+        }
         addSplit();
     }
 
@@ -95,12 +100,14 @@ public class MedianRow implements DynamicRow {
             if (grid.isKnown(bf.gridHash)) {
                 continue;
             }
+            candidateEntropy += bf.regularization();
             bfs.add(bf);
             grid.setKnown(bf.gridHash);
             Collections.sort(bfs, BinaryFeatureImpl.borderComparator);
             for (int i = 0; i < bfs.size(); ++i) {
                 bfs.get(i).setBinNo(i);
             }
+
             return true;
         }
         return false;
@@ -126,8 +133,8 @@ public class MedianRow implements DynamicRow {
             if (split > start) {
                 if (scoreLeft > bestScore) {
                     bestScore = scoreLeft;
-                    diff = (end - start + 1) * Math.log((end - start + 1.0) / feature.length)
-                            - (end - split + 1.0) * Math.log((end - split + 1.0) / feature.length) - (split - start + 1.0) * Math.log((split - start) * 1.0 / feature.length);
+                    diff = (end - start) * Math.log((end - start) * 1.0 / feature.length)
+                            - (end - split) * Math.log((end - split) * 1.0 / feature.length) - (split - start) * Math.log((split - start) * 1.0 / feature.length);
                     diff /= feature.length;
                     bestSplit = split;
                     bestSplits.clear();
@@ -144,8 +151,8 @@ public class MedianRow implements DynamicRow {
                 if (scoreRight > bestScore) {
                     bestScore = scoreRight;
                     bestSplit = split;
-                    diff = (end - start + 1) * Math.log((end - start + 1.0) / feature.length)
-                            - (end - split + 1.0) * Math.log((end - split + 1.0) / feature.length) - (split - start + 1.0) * Math.log((split - start) * 1.0 / feature.length);
+                    diff = (end - start) * Math.log((end - start) * 1.0 / feature.length)
+                            - (end - split) * Math.log((end - split) * 1.0 / feature.length) - (split - start) * Math.log((split - start) * 1.0 / feature.length);
                     diff /= feature.length;
                     bestSplits.clear();
                     bestSplits.add(bestSplit);
@@ -180,7 +187,6 @@ public class MedianRow implements DynamicRow {
     }
 
 
-
     @Override
     public boolean empty() {
         return size() == 0;
@@ -202,5 +208,11 @@ public class MedianRow implements DynamicRow {
         while (index < size() && value > bfs.get(index).condition)
             index++;
         return index;
+    }
+
+    @Override
+    public void setActive(BinaryFeature feature) {
+        activeEntropy += feature.regularization();
+        feature.setActive(true);
     }
 }

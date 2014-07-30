@@ -14,6 +14,15 @@ public class BinaryFeatureImpl implements BinaryFeature {
     private int binNo;
     public final int origFIndex;
     public final int borderIndex;
+    private int useCount;
+
+    public int useCount() {
+        return useCount;
+    }
+
+    public void use() {
+        ++useCount;
+    }
 
 
     public final double condition;

@@ -24,4 +24,5 @@ public interface DynamicRow {
     public int bin(double v);
 
 
+    void setActive(BinaryFeature feature);
 }

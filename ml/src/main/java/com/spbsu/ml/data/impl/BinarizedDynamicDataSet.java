@@ -110,7 +110,7 @@ public class BinarizedDynamicDataSet {
 
             for (BinaryFeature feature : queue) {
                 feature.row().addSplit();
-                feature.setActive(true);
+                feature.row().setActive(feature);
             }
 //            updateBins();
             for (BinaryFeature feature : queue)
