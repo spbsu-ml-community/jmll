@@ -1,0 +1,68 @@
+package com.spbsu.ml.methods;
+
+import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
+import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.random.FastRandom;
+import com.spbsu.ml.Trans;
+import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.loss.StatBasedLoss;
+import com.spbsu.ml.loss.WeightedLoss;
+
+public class RandomForest<Loss extends StatBasedLoss> extends WeakListenerHolderImpl<Trans> implements VecOptimization<Loss> {
+    protected final FastRandom rnd;
+    private final VecOptimization<WeightedLoss<? extends Loss>> weak;
+    private final int treesCount;
+
+    public RandomForest(VecOptimization<WeightedLoss<? extends Loss>> weak, FastRandom rnd, int treesCount) {
+        this.weak = weak;
+        this.treesCount = treesCount;
+        this.rnd = rnd;
+    }
+
+    @Override
+    public Trans fit(VecDataSet learn, Loss globalLoss) {
+        Trans[] weakModels = new Trans[treesCount];
+        for (int i = 0; i < treesCount; ++i)
+            weakModels[i] = weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
+        return new Ensemble(weakModels, VecTools.fill(new ArrayVec(weakModels.length), 1.0 / treesCount));
+    }
+}
+
+////
+//package com.spbsu.ml.methods;
+//
+//        import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
+//        import com.spbsu.commons.math.vectors.VecTools;
+//        import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+//        import com.spbsu.commons.random.FastRandom;
+//        import com.spbsu.ml.Func;
+//        import com.spbsu.ml.Trans;
+//        import com.spbsu.ml.data.set.VecDataSet;
+//        import com.spbsu.ml.data.tools.DataTools;
+//        import com.spbsu.ml.func.Ensemble;
+//        import com.spbsu.ml.loss.StatBasedLoss;
+//        import com.spbsu.ml.loss.WeightedLoss;
+//
+//
+//public class RandomForest<Loss extends StatBasedLoss> extends WeakListenerHolderImpl<Trans> implements VecOptimization<Loss> {
+//    protected final FastRandom rnd;
+//    private final VecOptimization<WeightedLoss<? extends Loss>> weak;
+//    private final int treesCount;
+//
+//    public RandomForest(VecOptimization<WeightedLoss<? extends Loss>> weak, FastRandom rnd, int treesCount) {
+//        this.weak = weak;
+//        this.treesCount = treesCount;
+//        this.rnd = rnd;
+//    }
+//
+//    @Override
+//    public Trans fit(VecDataSet learn, Loss globalLoss) {
+//        Trans[] weakModels = new Func[treesCount];
+//        for (int i = 0; i < treesCount; ++i)
+//            weakModels[i] = weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
+//        return new Ensemble<>(weakModels, VecTools.fill(new ArrayVec(weakModels.length), 1.0 / treesCount));
+//    }
+//}

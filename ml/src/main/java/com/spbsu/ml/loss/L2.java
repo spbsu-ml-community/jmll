@@ -1,8 +1,5 @@
 package com.spbsu.ml.loss;
 
-import org.jetbrains.annotations.NotNull;
-
-
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.MathTools;
@@ -10,6 +7,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
+import org.jetbrains.annotations.NotNull;
 
 import static com.spbsu.commons.math.vectors.VecTools.*;
 
@@ -79,6 +77,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
   public DataSet<?> owner() {
     return owner;
   }
+
 
   public static class MSEStats implements AdditiveStatistics {
     public volatile double sum;
