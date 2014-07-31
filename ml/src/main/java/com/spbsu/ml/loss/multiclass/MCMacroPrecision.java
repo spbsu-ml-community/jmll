@@ -1,6 +1,7 @@
 package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
@@ -12,11 +13,11 @@ import gnu.trove.map.hash.TIntIntHashMap;
  * Date: 09.04.14
  */
 public class MCMacroPrecision extends Func.Stub implements TargetFunc {
-  private final Vec target;
+  private final IntSeq target;
   private final DataSet<?> owner;
   private final int[] classLabels;
 
-  public MCMacroPrecision(final Vec target, DataSet<?> owner) {
+  public MCMacroPrecision(final IntSeq target, DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
     this.classLabels = MCTools.getClassesLabels(target);
@@ -24,11 +25,11 @@ public class MCMacroPrecision extends Func.Stub implements TargetFunc {
 
   @Override
   public double value(Vec x) {
-    TIntIntHashMap id2tp = new TIntIntHashMap();
-    TIntIntHashMap id2fp = new TIntIntHashMap();
+    final TIntIntHashMap id2tp = new TIntIntHashMap();
+    final TIntIntHashMap id2fp = new TIntIntHashMap();
     for (int i = 0; i < x.dim(); i++) {
-      int expected = (int) target.get(i);
-      int actual = (int) x.get(i);
+      final int expected = target.at(i);
+      final int actual = (int) x.get(i);
 
       //skip unrecognized class
       if (actual == -1)
@@ -43,9 +44,9 @@ public class MCMacroPrecision extends Func.Stub implements TargetFunc {
     double result = 0.;
     int nonEmpty = 0;
     for (int i = 0; i < classLabels.length; i++) {
-      int cls = classLabels[i];
-      int tp = id2tp.get(cls);
-      int fp = id2fp.get(cls);
+      final int cls = classLabels[i];
+      final int tp = id2tp.get(cls);
+      final int fp = id2fp.get(cls);
       if (tp + fp != 0) {
         nonEmpty++;
         result += tp / (0. + tp + fp);
@@ -56,7 +57,7 @@ public class MCMacroPrecision extends Func.Stub implements TargetFunc {
 
   @Override
   public int dim() {
-    return target.dim();
+    return target.length();
   }
 
   @Override

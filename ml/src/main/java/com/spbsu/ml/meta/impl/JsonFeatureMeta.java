@@ -9,7 +9,7 @@ import com.spbsu.ml.meta.*;
  * Date: 07.07.14
  * Time: 13:44
  */
-public class JsonFeatureMeta implements PoolFeatureMeta {
+public class JsonFeatureMeta extends FeatureMeta.Stub implements PoolFeatureMeta {
   public String id;
   public String description;
   public ValueType type;

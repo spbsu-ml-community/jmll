@@ -4,7 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.loss.MLLLogit;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 
 /**
  * User: qdeee
@@ -52,8 +52,8 @@ public abstract class AbstractCodingMatrixLearning {
     return findMatrixB(similarityMatrix);
   }
 
-  public Mx trainCodingMatrix(final VecDataSet learn, MLLLogit target) {
-    final Mx similarityMatrix = MCTools.createSimilarityMatrix(learn, target);
+  public Mx trainCodingMatrix(final VecDataSet learn, BlockwiseMLLLogit target) {
+    final Mx similarityMatrix = MCTools.createSimilarityMatrix(learn, target.labels());
     return findMatrixB(similarityMatrix);
   }
 

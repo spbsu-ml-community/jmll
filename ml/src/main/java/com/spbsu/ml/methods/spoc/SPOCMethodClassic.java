@@ -17,7 +17,7 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.MLLLogit;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
@@ -32,7 +32,7 @@ import gnu.trove.map.TIntObjectMap;
  * User: qdeee
  * Date: 07.05.14
  */
-public class SPOCMethodClassic extends VecOptimization.Stub<MLLLogit> {
+public class SPOCMethodClassic extends VecOptimization.Stub<BlockwiseMLLLogit> {
   protected static final double MX_IGNORE_THRESHOLD = 0.1;
   protected final int k;
   protected final int l;
@@ -62,15 +62,15 @@ public class SPOCMethodClassic extends VecOptimization.Stub<MLLLogit> {
     }
   }
 
-  protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final MLLLogit llLogit) {
+  protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final BlockwiseMLLLogit llLogit) {
     return new MulticlassCodingMatrixModel(codingMatrix, binClass, MX_IGNORE_THRESHOLD);
   }
 
   @Override
-  public Trans fit(final VecDataSet learn, final MLLLogit llLogit) {
+  public Trans fit(final VecDataSet learn, final BlockwiseMLLLogit llLogit) {
     System.out.println("coding matrix: \n" + codingMatrix.toString());
 
-    final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(llLogit);
+    final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(llLogit.labels());
     final Func[] binClassifiers = new Func[l];
     for (int j = 0; j < l; j++) {
       final TIntList learnIdxs = new TIntLinkedList();

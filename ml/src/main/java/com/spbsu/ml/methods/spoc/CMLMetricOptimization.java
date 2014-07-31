@@ -11,7 +11,7 @@ import com.spbsu.ml.Func;
 import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.loss.MLLLogit;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.map.TIntObjectMap;
@@ -25,14 +25,14 @@ public class CMLMetricOptimization {
   private final Mx laplacian;
   private final double c;
   private final VecDataSet ds;
-  private final MLLLogit target;
+  private final BlockwiseMLLLogit target;
   private final double step;
 
-  public CMLMetricOptimization(final VecDataSet ds, MLLLogit target, final Mx S, final double c, final double step) {
+  public CMLMetricOptimization(final VecDataSet ds, BlockwiseMLLLogit target, final Mx S, final double c, final double step) {
     this.ds = ds;
     this.target = target;
     this.step = step;
-    this.classesIdxs = MCTools.splitClassesIdxs(target);
+    this.classesIdxs = MCTools.splitClassesIdxs(target.labels());
     this.laplacian = VecTools.copy(S);
     VecTools.scale(laplacian, -1.0);
     for (int i = 0; i < laplacian.rows(); i++) {
