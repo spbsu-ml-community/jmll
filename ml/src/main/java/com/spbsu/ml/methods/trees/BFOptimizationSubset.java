@@ -44,6 +44,7 @@ public class BFOptimizationSubset {
     return rightBro;
   }
 
+
   public int size() {
     return points.length;
   }

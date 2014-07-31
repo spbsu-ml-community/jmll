@@ -7,22 +7,21 @@ package com.spbsu.ml.DynamicGrid.Interface;
 public interface DynamicRow {
 
 
-    public int origFIndex();
+  public int origFIndex();
 
-    public int size();
+  public int size();
 
-    public DynamicGrid grid();
+  public DynamicGrid grid();
 
-    public boolean addSplit();
+  public boolean addSplit();
 
-    public boolean empty();
+  public boolean empty();
 
-    public BinaryFeature bf(int binNo);
+  public BinaryFeature bf(int binNo);
 
-    public void setOwner(DynamicGrid grid);
+  public void setOwner(DynamicGrid grid);
 
-    public int bin(double v);
+  public int bin(double v);
 
-
-    void setActive(BinaryFeature feature);
+//    void setActive(BinaryFeature feature);
 }

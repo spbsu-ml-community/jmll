@@ -1,11 +1,10 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.func.Computable;
+import com.spbsu.ml.DynamicGrid.Impl.BinarizedDynamicDataSet;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.data.impl.BinarizedDynamicDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
-
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +18,7 @@ public class Binarize implements Computable<VecDataSet, Binarize> {
   Map<BFGrid, BinarizedDataSet> grids = new HashMap<>(1);
   Map<DynamicGrid, BinarizedDynamicDataSet> dynamicGrids = new HashMap<>(1);
   VecDataSet set;
+
   public synchronized BinarizedDataSet binarize(BFGrid grid) {
     BinarizedDataSet result = grids.get(grid);
     if (result == null)
@@ -26,12 +26,12 @@ public class Binarize implements Computable<VecDataSet, Binarize> {
     return result;
   }
 
-    public synchronized BinarizedDynamicDataSet binarize(DynamicGrid grid) {
-        BinarizedDynamicDataSet result = dynamicGrids.get(grid);
-        if (result == null)
-            dynamicGrids.put(grid, result = new BinarizedDynamicDataSet(set, grid));
-        return result;
-    }
+  public synchronized BinarizedDynamicDataSet binarize(DynamicGrid grid) {
+    BinarizedDynamicDataSet result = dynamicGrids.get(grid);
+    if (result == null)
+      dynamicGrids.put(grid, result = new BinarizedDynamicDataSet(set, grid));
+    return result;
+  }
 
   @Override
   public Binarize compute(VecDataSet argument) {

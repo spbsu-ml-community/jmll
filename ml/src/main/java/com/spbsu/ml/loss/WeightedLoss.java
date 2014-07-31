@@ -1,14 +1,12 @@
 package com.spbsu.ml.loss;
 
-import org.jetbrains.annotations.Nullable;
-
-
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.DataSet;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * User: solar
@@ -29,7 +27,7 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     return new Factory<Stat>() {
       @Override
       public Stat create() {
-        return new Stat(weights, (AdditiveStatistics)metric.statsFactory().create());
+        return new Stat(weights, (AdditiveStatistics) metric.statsFactory().create());
       }
     };
   }
@@ -47,23 +45,23 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   @Override
   public double value(Stat comb) {
     return metric.value(comb.inside);
-  }
+    }
 
-  @Override
-  public int dim() {
-    return metric.xdim();
-  }
+    @Override
+    public int dim() {
+      return metric.xdim();
+    }
 
   @Nullable
-  @Override
+    @Override
   public Trans gradient() {
     return metric.gradient();
-  }
+    }
 
-  @Override
-  public double value(Vec x) {
-    return metric.trans(x).get(0);
-  }
+    @Override
+    public double value(Vec x) {
+      return metric.trans(x).get(0);
+    }
 
   public double weight(final int index) {
     return weights[index];
@@ -73,10 +71,10 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     return metric;
   }
 
-  @Override
-  public DataSet<?> owner() {
-    return metric.owner();
-  }
+    @Override
+    public DataSet<?> owner() {
+      return metric.owner();
+    }
 
   public static class Stat implements AdditiveStatistics {
     public AdditiveStatistics inside;
@@ -109,7 +107,7 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
 
     @Override
     public Stat remove(AdditiveStatistics other) {
-      inside.remove(((Stat)other).inside);
+      inside.remove(((Stat) other).inside);
       return this;
     }
   }
