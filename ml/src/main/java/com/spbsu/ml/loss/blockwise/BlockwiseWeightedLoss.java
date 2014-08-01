@@ -3,6 +3,8 @@ package com.spbsu.ml.loss.blockwise;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.ml.BlockwiseFuncC1;
+import com.spbsu.ml.TargetFunc;
+import com.spbsu.ml.data.set.DataSet;
 
 /**
 * User: qdeee
@@ -10,11 +12,13 @@ import com.spbsu.ml.BlockwiseFuncC1;
 * Time: 9:54
 */
 
-public class BlockwiseWeightedLoss<BasedOn extends BlockwiseFuncC1> extends BlockwiseFuncC1.Stub {
+public class BlockwiseWeightedLoss<BasedOn extends BlockwiseFuncC1 & TargetFunc> extends BlockwiseFuncC1.Stub implements TargetFunc{
   private final BasedOn metric;
   private final int[] weights;
 
   public BlockwiseWeightedLoss(BasedOn metric, int[] weights) {
+    if (metric.dim() / metric.blockSize() != weights.length)
+      throw new IllegalArgumentException("weights.length must be equal to blocks count");
     this.metric = metric;
     this.weights = weights;
   }
@@ -53,5 +57,10 @@ public class BlockwiseWeightedLoss<BasedOn extends BlockwiseFuncC1> extends Bloc
   @Override
   public int blockSize() {
     return metric.blockSize();
+  }
+
+  @Override
+  public DataSet<?> owner() {
+    return metric.owner();
   }
 }
