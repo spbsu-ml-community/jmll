@@ -22,7 +22,7 @@ import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.MultiClass;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.models.MCModel;
 import com.spbsu.ml.test_utils.TestResourceLoader;
 import gnu.trove.list.array.TDoubleArrayList;
 import junit.framework.TestCase;
@@ -72,7 +72,7 @@ public class BlockwiseTest extends TestCase {
         new MultiClass(new GreedyObliviousTree(grid, 5), SatL2.class),
         20, 0.5);
     final Ensemble ensemble = boosting.fit(ds, newTarget);
-    final MultiClassModel model = MultiClassModel.joinBoostingResults(ensemble);
+    final MCModel model = MCTools.joinBoostingResults(ensemble);
     final Func mcMacroPrecision = new MCMacroPrecision(newTarget.labels(), ds);
     final double value = mcMacroPrecision.value(model.bestClassAll(ds.data()));
     System.out.println(value);

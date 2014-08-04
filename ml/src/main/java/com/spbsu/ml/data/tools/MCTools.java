@@ -200,6 +200,7 @@ public class MCTools {
     }
   }
 
+  //only for boosting of MultiClassModel models
   public static MultiClassModel joinBoostingResults(Ensemble ensemble) {
     if (ensemble.last() instanceof MultiClassModel) {
       final Func[] joinedModels = new Func[ensemble.ydim()];
@@ -211,19 +212,12 @@ public class MCTools {
           transpose[c][iter] = sourceFunctions[c];
         }
       }
-//      for (int c = 0; c < transpose.length; c++) {
-//        for (int iter = 0; iter < transpose[c].length; iter++) {
-//          final MultiClassModel mcm = (MultiClassModel) ensemble.models[iter];
-//          final Func[] sourceFunctions = mcm.getInternModel().dirs();
-//          transpose[c][iter] = sourceFunctions[c];
-//        }
-//      }
       for (int i = 0; i < joinedModels.length; i++) {
         joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights);
       }
       return new MultiClassModel(joinedModels);
     }
     else
-      throw new ClassCastException("Ensemble object does not contain MCModel.Stub objects");
+      throw new ClassCastException("Ensemble object does not contain MultiClassModel objects");
   }
 }
