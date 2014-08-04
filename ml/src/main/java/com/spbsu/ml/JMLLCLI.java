@@ -18,6 +18,10 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
+import com.spbsu.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic;
+import com.spbsu.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic2;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
@@ -53,11 +57,13 @@ public class JMLLCLI {
   private static final String GRID_OPTION = "g";
   private static final String MODEL_OPTION = "m";
   private static final String VERBOSE_OPTION = "v";
+  private static final String HIST_OPTION = "h";
   private static final String NORMALIZE_RELEVANCE_OPTION = "r";
   private static final String FOREST_LENGTH_OPTION = "a";
   private static final String CROSS_VALIDATION_OPTION = "X";
   private static final String OUTPUT_OPTION = "o";
   private static final String JSON_FORMAT = "j";
+  private static final String WRITE_BIN_FORMULA = "mxbin";
 
   static Options options = new Options();
 
@@ -76,6 +82,8 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("cross-validation").withDescription("k folds CV").hasArg().create(CROSS_VALIDATION_OPTION));
     options.addOption(OptionBuilder.withLongOpt("out").withDescription("output file name").hasArg().create(OUTPUT_OPTION));
     options.addOption(OptionBuilder.withLongOpt("json-format").withDescription("alternative format for features.txt").hasArg(false).create(JSON_FORMAT));
+    options.addOption(OptionBuilder.withLongOpt("matrixnetbin").withDescription("write model in matrix-net bin format").hasArg(false).create(WRITE_BIN_FORMULA));
+    options.addOption(OptionBuilder.withLongOpt("histogram").withDescription("histogram for dynamic grid").hasArg(false).create(HIST_OPTION));
   }
 
   public static void main(String[] args) throws IOException {
@@ -91,15 +99,14 @@ public class JMLLCLI {
       if (command.hasOption(GRID_OPTION)) {
         final BFGrid grid = DataTools.SERIALIZATION.read(StreamTools.readFile(new File(command.getOptionValue(GRID_OPTION))), BFGrid.class);
         serializationRepository = new ModelsSerializationRepository(grid);
-      }
-      else {
+      } else {
         serializationRepository = new ModelsSerializationRepository();
       }
 
       String learnFile = command.getOptionValue(LEARN_OPTION, "features.txt");
 
       Pool learn = command.hasOption(JSON_FORMAT) ? DataTools.loadFromFile(learnFile)
-                                                  : DataTools.loadFromFeaturesTxt(learnFile);
+              : DataTools.loadFromFeaturesTxt(learnFile);
 
 //      if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
 //        learn = MCTools.normalizeClasses(learn);
@@ -110,8 +117,7 @@ public class JMLLCLI {
       final Pool test;
       if (!command.hasOption(CROSS_VALIDATION_OPTION)) {
         test = command.hasOption(TEST_OPTION) ? DataTools.loadFromFeaturesTxt(command.getOptionValue(TEST_OPTION)) : learn;
-      }
-      else {
+      } else {
         final String cvOption = command.getOptionValue(CROSS_VALIDATION_OPTION);
         final String[] cvOptionsSplit = StringUtils.split(cvOption, "/", 2);
         final Pair<SubPool, SubPool> learnTest = splitCV(learn, Integer.parseInt(cvOptionsSplit[1]), new FastRandom(Integer.parseInt(cvOptionsSplit[0])));
@@ -141,7 +147,7 @@ public class JMLLCLI {
               return cooked;
             }
           };
-          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd);
+          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, learn.vecData());
 
           final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
           final TargetFunc loss = learn.target(DataTools.targetByName(target));
@@ -153,10 +159,9 @@ public class JMLLCLI {
             for (int i = 0; i < metricNames.length; i++) {
               metrics[i] = test.target(DataTools.targetByName(metricNames[i]));
             }
-          }
-          else {
-            metrics = new Func[] {
-                test.target(DataTools.targetByName(target))
+          } else {
+            metrics = new Func[]{
+                    test.target(DataTools.targetByName(target))
             };
           }
 
@@ -165,7 +170,11 @@ public class JMLLCLI {
             //noinspection unchecked
             ((WeakListenerHolder) method).addListener(progressHandler);
           }
-
+          final Action<Trans> histHandler = new HistPrinter();
+          if (method instanceof WeakListenerHolder && command.hasOption(HIST_OPTION)) {
+            //noinspection unchecked
+            ((WeakListenerHolder) method).addListener(histHandler);
+          }
 
           Interval.start();
           Interval.suspend();
@@ -180,13 +189,25 @@ public class JMLLCLI {
           }
           System.out.println();
 
-          if (serializationRepository.getGrid() == null) {
-            @Nullable BFGrid grid = DataTools.grid(result);
-            if (grid != null) {
-              StreamTools.writeChars(DataTools.SERIALIZATION.write(grid), new File(outputFile + ".grid"));
+
+          if (command.hasOption(WRITE_BIN_FORMULA)) {
+            DataTools.writeBinModel(result, new File(outputFile + ".model"));
+          } else {
+            if (serializationRepository.getGrid() == null) {
+              @Nullable BFGrid grid = DataTools.grid(result);
+              if (grid != null) {
+                StreamTools.writeChars(DataTools.SERIALIZATION.write(grid), new File(outputFile + ".grid"));
+              }
             }
+
+            if (serializationRepository.getDynamicGrid() == null) {
+              @Nullable DynamicGrid dynamicGrid = DataTools.dynamicGrid(result);
+              if (dynamicGrid != null) {
+                StreamTools.writeChars(DataTools.SERIALIZATION.write(dynamicGrid), new File(outputFile + ".dynamicGrid"));
+              }
+            }
+            DataTools.writeModel(result, new File(outputFile + ".model"));
           }
-          DataTools.writeModel(result, new File(outputFile + ".model"));
           break;
         case "apply":
           try (final OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"))) {
@@ -225,9 +246,9 @@ public class JMLLCLI {
     return Pair.create(new SubPool<I>(pool, cvSplit[0]), new SubPool<I>(pool, cvSplit[1]));
   }
 
-  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd) {
+  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd, final VecDataSet learn) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
-    final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd);
+    final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd, learn);
     final String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
     final StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
     final Method[] builderMethods = factory.getClass().getMethods();
@@ -253,8 +274,8 @@ public class JMLLCLI {
           setter.invoke(factory, Double.parseDouble(value));
         } else if (String.class.equals(type)) {
           setter.invoke(factory, value);
-        } else if (Optimization.class.equals(type)) {
-          setter.invoke(factory, chooseMethod(value, grid, rnd));
+        } else if (Optimization.class.isAssignableFrom(type)) {
+          setter.invoke(factory, chooseMethod(value, grid, rnd, learn));
         } else {
           System.err.println("Can not set up parameter: " + name + " to value: " + value + ". Unknown parameter type: " + type + "");
         }
@@ -265,7 +286,7 @@ public class JMLLCLI {
     return factory.create();
   }
 
-  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd) {
+  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd, final VecDataSet learn) {
     switch (name) {
       case "GradientBoosting":
         return new Factory<VecOptimization>() {
@@ -327,6 +348,55 @@ public class JMLLCLI {
             return new GreedyObliviousTree(grid.create(), depth);
           }
         };
+      case "GreedyObliviousTreeDynamic2": {
+        return new Factory<VecOptimization>() {
+          public int depth = 6;
+          public int lambda = 2;
+          public int minSplits = 1;
+
+          public void minSplits(int val) {
+            this.minSplits = val;
+          }
+
+          public void depth(int d) {
+            this.depth = d;
+          }
+
+          public void lambda(int l) {
+            this.lambda = l;
+          }
+
+          @Override
+          public VecOptimization create() {
+            return new BootstrapOptimization(new GreedyObliviousTreeDynamic2(learn, depth, lambda, minSplits), new FastRandom());
+          }
+        };
+      }
+
+      case "GreedyObliviousTreeDynamic": {
+        return new Factory<VecOptimization>() {
+          public int depth = 6;
+          public int lambda = 2;
+          public int minSplits = 1;
+
+          public void minSplits(int val) {
+            this.minSplits = val;
+          }
+
+          public void depth(int d) {
+            this.depth = d;
+          }
+
+          public void lambda(int l) {
+            this.lambda = l;
+          }
+
+          @Override
+          public VecOptimization create() {
+            return new BootstrapOptimization(new GreedyObliviousTreeDynamic(learn, depth, lambda, minSplits), new FastRandom());
+          }
+        };
+      }
       case "GreedyTDRegion":
         return new Factory<VecOptimization>() {
           @Override
@@ -421,4 +491,37 @@ public class JMLLCLI {
 //      Interval.resume();
     }
   }
+
+  private static class HistPrinter implements ProgressHandler {
+    int iteration = 0;
+
+    @Override
+    public void invoke(Trans partial) {
+//      Interval.suspend();
+      iteration++;
+      if (iteration % 10 != 0) {
+        return;
+      }
+      if (partial instanceof Ensemble) {
+        final Ensemble ensemble = (Ensemble) partial;
+        final double step = ensemble.wlast();
+        final Trans last = ensemble.last();
+        if (last instanceof ObliviousTreeDynamicBin) {
+          ObliviousTreeDynamicBin tree = (ObliviousTreeDynamicBin) last;
+          System.out.println("Current grid " + mkString(tree.grid().hist()));
+        }
+      }
+    }
+  }
+
+  public static String mkString(int[] arr) {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < arr.length - 1; ++i) {
+      builder.append(arr[i]);
+      builder.append(" ");
+    }
+    builder.append(arr[arr.length - 1]);
+    return builder.toString();
+  }
+
 }
