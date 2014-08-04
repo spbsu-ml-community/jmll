@@ -14,15 +14,6 @@ public class BinaryFeatureImpl implements BinaryFeature {
   private int binNo;
   public final int origFIndex;
   public final int borderIndex;
-  private int useCount;
-
-  public int useCount() {
-    return useCount;
-  }
-
-  public void use() {
-    ++useCount;
-  }
 
 
   public final double condition;
@@ -55,6 +46,11 @@ public class BinaryFeatureImpl implements BinaryFeature {
   public double regularization() {
     if (active) return 0;
     return regScore;
+  }
+
+  @Override
+  public double condition() {
+    return this.condition;
   }
 
   public boolean value(Vec vec) {

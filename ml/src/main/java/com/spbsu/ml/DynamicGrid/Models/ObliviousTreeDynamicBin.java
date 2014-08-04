@@ -6,7 +6,6 @@ import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
 import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.Func;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -15,8 +14,13 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
   private final double[] values;
   private final DynamicGrid grid;
 
+  public int depth() {
+    return features.length;
+  }
+
+
   public ObliviousTreeDynamicBin(final List<BinaryFeature> features, double[] values) {
-    grid = features.get(0).row().grid();
+    this.grid = features.get(0).row().grid();
     this.features = features.toArray(new BinaryFeature[features.size()]);
     this.values = values;
   }
@@ -61,11 +65,8 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
     return index;
   }
 
-  public List<BinaryFeature> features() {
-    List<BinaryFeature> ret = new ArrayList<>();
-    for (int i = 0; i < features.length; i++)
-      ret.add(features[i]);
-    return ret;
+  public BinaryFeature[] features() {
+    return features;
   }
 
   public double[] values() {
@@ -94,7 +95,7 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
   }
 
   public DynamicGrid grid() {
-    return features[0].row().grid();
+    return grid;
   }
 
   @Override

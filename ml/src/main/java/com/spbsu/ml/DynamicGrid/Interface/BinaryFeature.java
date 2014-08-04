@@ -14,14 +14,13 @@ public interface BinaryFeature {
 
   public int fIndex();
 
-
   public boolean isActive();
 
   public void setActive(boolean status);
 
   public double regularization();
 
-  public int useCount();
+  public double condition();
 
-  public void use();
+
 }

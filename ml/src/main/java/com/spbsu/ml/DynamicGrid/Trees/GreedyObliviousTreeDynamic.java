@@ -26,7 +26,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
   private final int depth;
   private DynamicGrid grid;
   private boolean growGrid = true;
-  private final int minSplits;
+  //  private final int minSplits;
   private final double lambda;
   private double eps = 1e-4;
 
@@ -34,7 +34,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
   public GreedyObliviousTreeDynamic(DynamicGrid grid, int depth) {
     this.depth = depth;
     this.grid = grid;
-    minSplits = 1;
+//    minSplits = 1;
     lambda = 1;
   }
 
@@ -47,10 +47,9 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
   }
 
   public GreedyObliviousTreeDynamic(VecDataSet ds, int depth, double lambda, int minSplits) {
-    this.minSplits = minSplits;
+//    this.minSplits = minSplits;
     this.depth = depth;
     this.lambda = lambda;
-
     this.grid = new BFDynamicGrid(ds, minSplits);
   }
 
@@ -111,18 +110,11 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
           for (int bin = 0; bin < scores[f].length; ++bin) {
             BinaryFeature bf = grid.bf(f, bin);
             if (bf.isActive()) {
-              if (Math.abs(bestSplitScore - scores[f][bin]) < eps) {
-                if (bf.useCount() < grid.bf(bestSplitF, bestSplitBin).useCount()) {
-                  bestSplitF = f;
-                  bestSplitBin = bin;
-                  bestSplitScore = scores[f][bin];
-                }
-              } else if (bestSplitScore > scores[f][bin]) {
+              if (bestSplitScore > scores[f][bin]) {
                 bestSplitF = f;
                 bestSplitBin = bin;
                 bestSplitScore = scores[f][bin];
               }
-
             } else {
               nonActiveF.add(f);
               nonActiveBin.add(bin);
@@ -181,15 +173,15 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
         }
       }
 
-//            updated = false;
+//      updated = false;
       if (!updated) {
         double[] values = new double[leaves.size()];
         for (int i = 0; i < values.length; i++) {
           values[i] = loss.bestIncrement(leaves.get(i).total());
         }
-        for (BinaryFeature bf : conditions) {
-          bf.use();
-        }
+//        for (BinaryFeature bf : conditions) {
+//          bf.use();
+//        }
         return new ObliviousTreeDynamicBin(conditions, values);
       }
     }
