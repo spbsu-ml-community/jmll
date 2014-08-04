@@ -14,6 +14,7 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.SatL2;
 
 /**
 * User: solar
@@ -28,7 +29,7 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
   double step;
 
   public GradientBoosting(VecOptimization<L2> weak, int iterationsCount, double step) {
-    this(weak, L2.class, iterationsCount, step);
+    this(weak, SatL2.class, iterationsCount, step);
   }
 
   public GradientBoosting(VecOptimization<L2> weak, Class<? extends L2> factory, int iterationsCount, double step) {
