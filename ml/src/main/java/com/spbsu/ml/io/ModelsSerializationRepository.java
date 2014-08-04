@@ -8,6 +8,7 @@ import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.GridEnabled;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * User: solar
@@ -40,14 +41,20 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
         return true;
       }
     }), CharSequence.class);
+    this.grid = grid;
   }
 
   private ModelsSerializationRepository(ConversionRepository repository) {
     super(repository, CharSequence.class);
   }
 
+  @Nullable
+  public BFGrid getGrid() {
+    return grid;
+  }
+
   public ModelsSerializationRepository customizeGrid(final BFGrid grid) {
-    return new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
       @Override
       public boolean accept(TypeConverter typeConverter) {
         if (typeConverter instanceof GridEnabled)
@@ -55,5 +62,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
         return true;
       }
     }));
+    repository.grid = grid;
+    return repository;
   }
 }

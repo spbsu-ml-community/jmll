@@ -14,7 +14,6 @@ import com.spbsu.commons.seq.CharSeqBuilder;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
-import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
@@ -80,71 +79,85 @@ public class JMLLCLI {
   }
 
   public static void main(String[] args) throws IOException {
-    CommandLineParser parser = new GnuParser();
-    FastRandom rnd = new FastRandom();
-    ModelsSerializationRepository serializationRepository = new ModelsSerializationRepository();
+    final CommandLineParser parser = new GnuParser();
+    final ModelsSerializationRepository serializationRepository;
 
     try {
       final CommandLine command = parser.parse(options, args);
-      if (command.hasOption(GRID_OPTION))
-        serializationRepository = serializationRepository.customizeGrid(serializationRepository.read(StreamTools.readFile(new File(command.getOptionValue('g'))), BFGrid.class));
+
+      if (command.getArgs().length == 0)
+        throw new RuntimeException("Please provide mode to run");
+
+      if (command.hasOption(GRID_OPTION)) {
+        final BFGrid grid = DataTools.SERIALIZATION.read(StreamTools.readFile(new File(command.getOptionValue(GRID_OPTION))), BFGrid.class);
+        serializationRepository = new ModelsSerializationRepository(grid);
+      }
+      else {
+        serializationRepository = new ModelsSerializationRepository();
+      }
 
       String learnFile = command.getOptionValue(LEARN_OPTION, "features.txt");
 
       Pool learn = command.hasOption(JSON_FORMAT) ? DataTools.loadFromFile(learnFile)
-          : DataTools.loadFromFeaturesTxt(learnFile);
+                                                  : DataTools.loadFromFeaturesTxt(learnFile);
 
-      if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
+//      if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
 //        learn = MCTools.normalizeClasses(learn);
-        if (learnFile.endsWith(".gz"))
-          learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
 
-      Pool test;
+      if (learnFile.endsWith(".gz"))
+        learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
+
+      final Pool test;
       if (!command.hasOption(CROSS_VALIDATION_OPTION)) {
         test = command.hasOption(TEST_OPTION) ? DataTools.loadFromFeaturesTxt(command.getOptionValue(TEST_OPTION)) : learn;
-      } else {
+      }
+      else {
         final String cvOption = command.getOptionValue(CROSS_VALIDATION_OPTION);
         final String[] cvOptionsSplit = StringUtils.split(cvOption, "/", 2);
         final Pair<SubPool, SubPool> learnTest = splitCV(learn, Integer.parseInt(cvOptionsSplit[1]), new FastRandom(Integer.parseInt(cvOptionsSplit[0])));
         learn = learnTest.first;
         test = learnTest.second;
       }
-      if (command.getArgs().length <= 0)
-        throw new RuntimeException("Please provide mode to run");
 
-      String mode = command.getArgs()[0];
-
-      final VecDataSet finalLearn = learn.vecData();
-      final Factory<BFGrid> lazyGrid = new Factory<BFGrid>() {
-        BFGrid cooked;
-
-        @Override
-        public BFGrid create() {
-          if (cooked == null) {
-            if (!command.hasOption("g"))
-              cooked = GridTools.medianGrid(finalLearn, Integer.parseInt(command.getOptionValue(BIN_FOLDS_COUNT_OPTION, "32")));
-            else
-              cooked = BFGrid.CONVERTER.convertFrom(command.getOptionValue("g"));
-          }
-          return cooked;
-        }
-      };
-
+      final String mode = command.getArgs()[0];
       final String outputFile = command.hasOption(OUTPUT_OPTION) ? command.getOptionValue(OUTPUT_OPTION) : learnFile;
 
+      final VecDataSet learnDS = learn.vecData();
       switch (mode) {
         case "fit":
-          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, null);
+          final FastRandom rnd = new FastRandom();
+          final Factory<BFGrid> lazyGrid = new Factory<BFGrid>() {
+            BFGrid cooked;
+
+            @Override
+            public BFGrid create() {
+              if (cooked == null) {
+                if (command.hasOption(GRID_OPTION)) {
+                  cooked = serializationRepository.getGrid();
+                } else {
+                  cooked = GridTools.medianGrid(learnDS, Integer.parseInt(command.getOptionValue(BIN_FOLDS_COUNT_OPTION, "32")));
+                }
+              }
+              return cooked;
+            }
+          };
+          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd);
+
           final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
           final TargetFunc loss = learn.target(DataTools.targetByName(target));
+
           final String[] metricNames = command.getOptionValues(METRICS_OPTION);
-          final Func[] metrics = new Func[metricNames != null ? metricNames.length : 1];
+          final Func[] metrics;
           if (metricNames != null) {
+            metrics = new Func[metricNames.length];
             for (int i = 0; i < metricNames.length; i++) {
               metrics[i] = test.target(DataTools.targetByName(metricNames[i]));
             }
-          } else {
-            metrics[0] = test.target(DataTools.targetByName(target));
+          }
+          else {
+            metrics = new Func[] {
+                test.target(DataTools.targetByName(target))
+            };
           }
 
           final Action<Trans> progressHandler = new ProgressPrinter(learn, test, loss, metrics);
@@ -153,38 +166,40 @@ public class JMLLCLI {
             ((WeakListenerHolder) method).addListener(progressHandler);
           }
 
+
           Interval.start();
           Interval.suspend();
-          final DataSet learnDS = learn.vecData();
+
           @SuppressWarnings("unchecked")
           final Computable result = method.fit(learnDS, loss);
+
           Interval.stopAndPrint("Total fit time:");
           System.out.print("Learn: " + loss.value(DataTools.calcAll(result, learnDS)) + " Test:");
           for (final Trans metric : metrics) {
-            System.out.print(" " + metric.trans(DataTools.calcAll(result, test.data())));
+            System.out.print(" " + metric.trans(DataTools.calcAll(result, test.vecData())));
           }
           System.out.println();
 
-          @Nullable BFGrid grid = DataTools.grid(result);
-          if (grid != null) {
-            serializationRepository = serializationRepository.customizeGrid(grid);
-            StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".grid"));
+          if (serializationRepository.getGrid() == null) {
+            @Nullable BFGrid grid = DataTools.grid(result);
+            if (grid != null) {
+              StreamTools.writeChars(DataTools.SERIALIZATION.write(grid), new File(outputFile + ".grid"));
+            }
           }
           DataTools.writeModel(result, new File(outputFile + ".model"));
           break;
         case "apply":
           try (final OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"))) {
-            Computable model = DataTools.readModel(command.getOptionValue(MODEL_OPTION, "features.txt.model"), serializationRepository);
-            final DataSet data = learn.data();
+            final Computable model = DataTools.readModel(command.getOptionValue(MODEL_OPTION, "features.txt.model"), serializationRepository);
             final CharSeqBuilder value = new CharSeqBuilder();
 
-            for (int i = 0; i < data.length(); i++) {
+            for (int i = 0; i < learnDS.length(); i++) {
               value.clear();
-              value.append(MathTools.CONVERSION.convert(data.parent().at(i), CharSequence.class));
+              value.append(MathTools.CONVERSION.convert(learnDS.parent().at(i), CharSequence.class));
               value.append('\t');
-              value.append(MathTools.CONVERSION.convert(data.at(i), CharSequence.class));
+              value.append(MathTools.CONVERSION.convert(learnDS.at(i), CharSequence.class));
               value.append('\t');
-              value.append(MathTools.CONVERSION.convert(model.compute(data.at(i)), CharSequence.class));
+              value.append(MathTools.CONVERSION.convert(model.compute(learnDS.at(i)), CharSequence.class));
               writer.append(value).append('\n');
             }
           }
@@ -210,12 +225,12 @@ public class JMLLCLI {
     return Pair.create(new SubPool<I>(pool, cvSplit[0]), new SubPool<I>(pool, cvSplit[1]));
   }
 
-  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd, final DataSet learn) {
+  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
-    final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd, learn);
-    String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
-    StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
-    Method[] builderMethods = factory.getClass().getMethods();
+    final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd);
+    final String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
+    final StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
+    final Method[] builderMethods = factory.getClass().getMethods();
     while (paramsTok.hasMoreTokens()) {
       final String param = paramsTok.nextToken();
       final int splitPos = param.indexOf('=');
@@ -230,7 +245,7 @@ public class JMLLCLI {
         System.err.println("Can not set up parameter: " + name + " to value: " + value + ". No setter in builder.");
         continue;
       }
-      Class type = setter.getParameterTypes()[0];
+      final Class type = setter.getParameterTypes()[0];
       try {
         if (Integer.class.equals(type) || int.class.equals(type)) {
           setter.invoke(factory, Integer.parseInt(value));
@@ -239,7 +254,7 @@ public class JMLLCLI {
         } else if (String.class.equals(type)) {
           setter.invoke(factory, value);
         } else if (Optimization.class.equals(type)) {
-          setter.invoke(factory, chooseMethod(value, grid, rnd, null));
+          setter.invoke(factory, chooseMethod(value, grid, rnd));
         } else {
           System.err.println("Can not set up parameter: " + name + " to value: " + value + ". Unknown parameter type: " + type + "");
         }
@@ -250,104 +265,106 @@ public class JMLLCLI {
     return factory.create();
   }
 
-  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd, final DataSet learn) {
-    if ("GradientBoosting".equals(name)) {
-      return new Factory<VecOptimization>() {
-        public VecOptimization weak = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
-        public String lossName = "LogL2";
-        public double step = 0.005;
-        public int icount = 200;
+  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd) {
+    switch (name) {
+      case "GradientBoosting":
+        return new Factory<VecOptimization>() {
+          public VecOptimization weak = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
+          public String lossName = "LogL2";
+          public double step = 0.005;
+          public int icount = 200;
 
-        public void step(double s) {
-          this.step = s;
-        }
+          public void step(double s) {
+            this.step = s;
+          }
 
-        public void iterations(int icount) {
-          this.icount = icount;
-        }
+          public void iterations(int icount) {
+            this.icount = icount;
+          }
 
-        public void local(String lossName) {
-          this.lossName = lossName;
-        }
+          public void local(String lossName) {
+            this.lossName = lossName;
+          }
 
-        public void weak(VecOptimization weak) {
-          this.weak = weak;
-        }
+          public void weak(VecOptimization weak) {
+            this.weak = weak;
+          }
 
-        @Override
-        public VecOptimization create() {
-          //noinspection unchecked
-          return new GradientBoosting(weak, DataTools.targetByName(lossName), icount, step);
-        }
-      };
-    } else if ("MultiClassSplit".equals(name)) {
-      return new Factory<MultiClass>() {
-        public VecOptimization inner = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
-        public String localName = "SatL2";
+          @Override
+          public VecOptimization create() {
+            //noinspection unchecked
+            return new GradientBoosting(weak, DataTools.targetByName(lossName), icount, step);
+          }
+        };
+      case "MultiClassSplit":
+        return new Factory<MultiClass>() {
+          public VecOptimization inner = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
+          public String localName = "SatL2";
 
-        public void inner(VecOptimization i) {
-          this.inner = i;
-        }
+          public void inner(VecOptimization i) {
+            this.inner = i;
+          }
 
-        public void local(String localName) {
-          this.localName = localName;
-        }
+          public void local(String localName) {
+            this.localName = localName;
+          }
 
-        @Override
-        public MultiClass create() {
-          return new MultiClass(inner, (Class<? extends L2>)DataTools.targetByName(localName));
-        }
-      };
-    } else if ("GreedyObliviousTree".equals(name)) {
-      return new Factory<VecOptimization>() {
-        public int depth = 6;
+          @Override
+          public MultiClass create() {
+            return new MultiClass(inner, (Class<? extends L2>) DataTools.targetByName(localName));
+          }
+        };
+      case "GreedyObliviousTree":
+        return new Factory<VecOptimization>() {
+          public int depth = 6;
 
-        public void depth(int d) {
-          this.depth = d;
-        }
+          public void depth(int d) {
+            this.depth = d;
+          }
 
-        @Override
-        public VecOptimization create() {
-          return new GreedyObliviousTree(grid.create(), depth);
-        }
-      };
-    } else if ("GreedyTDRegion".equals(name)) {
-      return new Factory<VecOptimization>() {
-        @Override
-        public VecOptimization create() {
-          return new GreedyTDRegion(grid.create());
-        }
-      };
-    } else if ("FMWorkaround".equals(name)) {
-      return new Factory<VecOptimization>() {
-        public String task = "-r";
-        public String dim = "1,1,8";
-        public String iters = "1000";
-        public String others = "";
+          @Override
+          public VecOptimization create() {
+            return new GreedyObliviousTree(grid.create(), depth);
+          }
+        };
+      case "GreedyTDRegion":
+        return new Factory<VecOptimization>() {
+          @Override
+          public VecOptimization create() {
+            return new GreedyTDRegion(grid.create());
+          }
+        };
+      case "FMWorkaround":
+        return new Factory<VecOptimization>() {
+          public String task = "-r";
+          public String dim = "1,1,8";
+          public String iters = "1000";
+          public String others = "";
 
-        public void task(final String task) {
-          this.task = task;
-        }
+          public void task(final String task) {
+            this.task = task;
+          }
 
-        public void dim(final String dim) {
-          this.dim = dim;
-        }
+          public void dim(final String dim) {
+            this.dim = dim;
+          }
 
-        public void iters(final String iters) {
-          this.iters = iters;
-        }
+          public void iters(final String iters) {
+            this.iters = iters;
+          }
 
-        public void others(final String others) {
-          this.others = others;
-        }
+          public void others(final String others) {
+            this.others = others;
+          }
 
-        @Override
-        public VecOptimization create() {
-          return new FMTrainingWorkaround(task, dim, iters, others);
-        }
-      };
+          @Override
+          public VecOptimization create() {
+            return new FMTrainingWorkaround(task, dim, iters, others);
+          }
+        };
+      default:
+        throw new RuntimeException("Unknown weak model: " + name);
     }
-    else throw new RuntimeException("Unknown weak model: " + name);
   }
 
 
@@ -380,14 +397,14 @@ public class JMLLCLI {
         final Ensemble ensemble = (Ensemble) partial;
         final double step = ensemble.wlast();
         final Trans last = ensemble.last();
-        append(learnValues, VecTools.scale(last.transAll(((VecDataSet) learn).data()), step));
+        append(learnValues, VecTools.scale(last.transAll(learn.vecData().data()), step));
         for (final Vec testValues : testValuesArray) {
-          append(testValues, VecTools.scale(last.transAll(((VecDataSet) test).data()), step));
+          append(testValues, VecTools.scale(last.transAll(test.vecData().data()), step));
         }
       } else {
-        learnValues = partial.transAll(((VecDataSet) learn).data());
+        learnValues = partial.transAll(learn.vecData().data());
         for (int i = 0; i < testValuesArray.length; i++) {
-          testValuesArray[i] = partial.transAll(((VecDataSet) test).data());
+          testValuesArray[i] = partial.transAll(test.vecData().data());
         }
       }
       iteration++;
