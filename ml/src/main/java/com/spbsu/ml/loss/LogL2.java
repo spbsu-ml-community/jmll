@@ -21,8 +21,6 @@ public class LogL2 extends L2 {
 
   @Override
   public double score(MSEStats stats) {
-    return stats.weight > 1 ? (-stats.sum * stats.sum / stats.weight) * MathTools.sqr(stats.weight / (stats.weight - 1.)) * (1 + 2 * Math.log(stats.weight + 1)) : 0;
-
-//      return stats.weight > 1 ? (- stats.sum * stats.sum / stats.weight) * Math.log(stats.weight + 1) : 0;
+    return stats.weight > 1 ? (- stats.sum * stats.sum / stats.weight) * Math.log(stats.weight + 1) : 0;
   }
 }
