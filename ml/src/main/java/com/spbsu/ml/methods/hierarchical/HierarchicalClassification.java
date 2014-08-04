@@ -1,63 +1,111 @@
 package com.spbsu.ml.methods.hierarchical;
 
 import com.spbsu.commons.seq.IntSeq;
+import com.spbsu.commons.util.tree.FastTree;
+import com.spbsu.commons.util.tree.Node;
+import com.spbsu.commons.util.tree.NodeVisitor;
+import com.spbsu.commons.util.tree.Tree;
+import com.spbsu.commons.util.tree.impl.node.InternalNode;
+import com.spbsu.commons.util.tree.impl.node.LeafNode;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.spbsu.ml.loss.blockwise.BlockwiseWeightedLoss;
+import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.VecOptimization;
-import gnu.trove.map.TIntObjectMap;
+import com.spbsu.ml.models.HierarchicalModel;
+import com.spbsu.ml.models.MultiClassModel;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import gnu.trove.stack.TIntStack;
-import gnu.trove.stack.array.TIntArrayStack;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
 
 /**
  * User: qdeee
  * Date: 06.02.14
  */
 public class HierarchicalClassification extends VecOptimization.Stub<BlockwiseMLLLogit> {
-  protected final VecOptimization<BlockwiseMLLLogit> weak;
-  protected final TIntObjectMap<int[]> deps;
-  protected final int root;
+  protected final VecOptimization<TargetFunc> weak;
+  protected final FastTree tree;
 
-  public HierarchicalClassification(final VecOptimization<BlockwiseMLLLogit> weak, final TIntObjectMap<int[]> deps, final int root) {
+  public HierarchicalClassification(final VecOptimization<TargetFunc> weak, final FastTree tree) {
     this.weak = weak;
-    this.deps = deps;
-    this.root = root;
+    this.tree = tree;
   }
 
   @Override
   public Trans fit(final VecDataSet learn, final BlockwiseMLLLogit globalLoss) {
+    //avoiding a lot of allocations
     final int[] weights = new int[learn.length()];
     final int[] localClasses = new int[learn.length()];
-    final BlockwiseMLLLogit localLoss = new BlockwiseMLLLogit(new IntSeq(localClasses), learn);
-    final TIntStack toProcess = new TIntArrayStack();
 
-    toProcess.push(root);
-    while (toProcess.size() > 0) {
-      final TIntSet uniqClasses = new TIntHashSet(2);
-      final int currentId = toProcess.pop();
-      for (int i = 0; i < learn.length(); i++) {
-        final int idx = Arrays.binarySearch(deps.get(currentId), globalLoss.label(i));
-        if (idx != -1) {
-          weights[i] = 1;
-          localClasses[i] = idx;
-          uniqClasses.add(idx);
+    final NodeVisitor<HierarchicalModel> learner = new NodeVisitor<HierarchicalModel>() {
+      @Override
+      public HierarchicalModel visit(final InternalNode node) {
+        final TIntList uniqClasses = new TIntLinkedList();
+        for (Node child : node.getChildren()) {
+          uniqClasses.add(child.id);
         }
-        else {
+
+        for (int i = 0; i < learn.length(); i++) {
+          final int dsClassLabel = globalLoss.label(i);
+          final List<Node> children = node.getChildren();
           weights[i] = 0;
+          localClasses[i] = -1;
+          for (int j = 0; j < children.size(); j++) {
+            final Node child = children.get(j);
+            if (tree.isFirstDescendantOfSecondOrEqual(dsClassLabel, child.id)) {
+              weights[i] = 1;
+              localClasses[i] = j;
+              break;
+            }
+          }
         }
+
+        final BlockwiseWeightedLoss<BlockwiseMLLLogit> localWeightedLoss = new BlockwiseWeightedLoss<>(
+            new BlockwiseMLLLogit(new IntSeq(localClasses), learn),
+            weights
+        );
+        final MultiClassModel model = (MultiClassModel) weak.fit(learn, localWeightedLoss);
+        final HierarchicalModel hierarchicalModel = new HierarchicalModel(model, new TIntArrayList(uniqClasses));
+        for (Node child : node.getChildren()) {
+          final HierarchicalModel childModel = child.accept(this);
+          if (childModel != null) {
+            hierarchicalModel.addChild(childModel, child.id);
+          }
+        }
+        return hierarchicalModel;
       }
 
-      final Trans model = weak.fit(learn, localLoss);
-
-//      BlockwiseWeightedLoss<BlockwiseMLLLogit> weightedLoss = (BlockwiseWeightedLoss<BlockwiseMLLLogit>) new BlockwiseWeightedLoss<>(globalLoss, weights);
-    }
-
-    return null;
+      @Override
+      public HierarchicalModel visit(final LeafNode node) {
+        return null;
+      }
+    };
+    return tree.getRoot().accept(learner);
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //  private int weakIters;
 //  private double weakStep;
 //  private BFGrid grid;
@@ -132,4 +180,51 @@ public class HierarchicalClassification extends VecOptimization.Stub<BlockwiseML
 //    }
 //    return hierModel;
 //  }
+
+
+
+//  final Stack<HierarchicalModel> stackModels = new Stack<>();
+//  final Stack<InternalNode> stackNodes = new Stack<>();
+//  stackNodes.push((InternalNode) tree.getRoot());
+//
+//  while (stackNodes.size() > 0) {
+//    final InternalNode node = stackNodes.pop();
+//    final TIntList uniqClasses = new TIntLinkedList();
+//    for (Node child : node.getChildren()) {
+//      uniqClasses.add(child.id);
+//    }
+//
+//    for (int i = 0; i < learn.length(); i++) {
+//      final int dsClassLabel = globalLoss.label(i);
+//      final List<Node> children = node.getChildren();
+//      weights[i] = 0;
+//      localClasses[i] = -1;
+//      for (int j = 0; j < children.size(); j++) {
+//        final Node child = children.get(j);
+//        if (tree.isFirstDescendantOfSecondOrEqual(dsClassLabel, child.id)) {
+//          weights[i] = 1;
+//          localClasses[i] = j;
+//          break;
+//        }
+//      }
+//    }
+//
+//    final BlockwiseWeightedLoss<BlockwiseMLLLogit> localWeightedLoss = new BlockwiseWeightedLoss<>(
+//        new BlockwiseMLLLogit(new IntSeq(localClasses), learn), weights);
+//    final MultiClassModel model = (MultiClassModel) weak.fit(learn, localWeightedLoss);
+//    final HierarchicalModel hierarchicalModel = new HierarchicalModel(model.dirs(), new TIntArrayList(uniqClasses));
+//    for (Node child : node.getChildren()) {
+//      if (child instanceof InternalNode) {
+//        stackNodes.push((InternalNode) child);
+//      }
+//    }
+//  }
+//
+//
+//  return null;
 }
+
+
+
+
+

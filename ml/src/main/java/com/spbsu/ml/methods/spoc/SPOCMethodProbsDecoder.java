@@ -4,7 +4,9 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.MulticlassCodingMatrixModelProbsDecoder;
 
 /**
@@ -20,14 +22,14 @@ public class SPOCMethodProbsDecoder extends SPOCMethodClassic {
   private final double metricStep;
   private final double metricC;
 
-  public SPOCMethodProbsDecoder(final Mx codingMatrix, final Mx mxS, final double mcStep, final int mcIters) {
-    this(codingMatrix, mxS, mcStep, mcIters, METRIC_STEP, METRIC_C);
+  public SPOCMethodProbsDecoder(final Mx codingMatrix, final Mx mxS, final VecOptimization<LLLogit> weak) {
+    this(codingMatrix, mxS, weak, METRIC_STEP, METRIC_C);
   }
 
-  public SPOCMethodProbsDecoder(final Mx codingMatrix, final Mx mxS, final double mcStep, final int mcIters, final double metricStep,
+  public SPOCMethodProbsDecoder(final Mx codingMatrix, final Mx mxS, final VecOptimization<LLLogit> weak, final double metricStep,
                                 final double metricC) {
-    super(codingMatrix, mcStep, mcIters);
-    S = mxS;
+    super(codingMatrix, weak);
+    this.S = mxS;
     this.metricStep = metricStep;
     this.metricC = metricC;
   }
@@ -35,7 +37,7 @@ public class SPOCMethodProbsDecoder extends SPOCMethodClassic {
   @Override
   protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final BlockwiseMLLLogit llLogit) {
     final CMLMetricOptimization metricOptimization = new CMLMetricOptimization(learnDS, llLogit, S, metricC, metricStep);
-    final Mx mu = metricOptimization.trainProbs(codingMatrix, binClass);
-    return new MulticlassCodingMatrixModelProbsDecoder(codingMatrix, binClass, MX_IGNORE_THRESHOLD, mu);
+    final Mx mu = metricOptimization.trainProbs(codeMatrix, binClass);
+    return new MulticlassCodingMatrixModelProbsDecoder(codeMatrix, binClass, MX_IGNORE_THRESHOLD, mu);
   }
 }

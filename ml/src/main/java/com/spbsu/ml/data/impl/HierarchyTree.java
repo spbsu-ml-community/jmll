@@ -31,6 +31,7 @@ import gnu.trove.map.hash.TIntObjectHashMap;
  * User: qdeee
  * Date: 21.02.14
  */
+@Deprecated
 public class HierarchyTree {
   private final Node root;
 
@@ -222,7 +223,7 @@ public class HierarchyTree {
       return false;
     }
 
-    public BlockwiseMLLLogit createTarget(final TIntList labels, DataSet<?> owner) {
+    public BlockwiseMLLLogit createTarget(final TIntArrayList labels, DataSet<?> owner) {
       final TIntList targetList = new TIntLinkedList();
       for (Node child : children) {
         final int categoryId = child.categoryId;

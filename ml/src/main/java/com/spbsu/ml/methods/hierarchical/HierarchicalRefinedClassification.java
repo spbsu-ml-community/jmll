@@ -1,43 +1,162 @@
 package com.spbsu.ml.methods.hierarchical;
 
-import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.seq.IntSeq;
+import com.spbsu.commons.util.tree.FastTree;
+import com.spbsu.commons.util.tree.Node;
+import com.spbsu.commons.util.tree.NodeVisitor;
+import com.spbsu.commons.util.tree.impl.node.InternalNode;
+import com.spbsu.commons.util.tree.impl.node.LeafNode;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.data.impl.HierarchyTree;
-import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.FuncEnsemble;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.MLLLogit;
-import com.spbsu.ml.loss.SatL2;
-import com.spbsu.ml.loss.multiclass.hier.HierLoss;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.MultiClass;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.spbsu.ml.loss.blockwise.BlockwiseWeightedLoss;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.HierJoinedBinClassModel;
+//import com.spbsu.ml.models.HierJoinedBinClassModel;
 import com.spbsu.ml.models.HierarchicalModel;
+import com.spbsu.ml.models.JoinedBinClassModel;
 import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * User: qdeee
  * Date: 10.04.14
  */
-public class HierarchicalRefinedClassification extends VecOptimization.Stub<HierLoss> {
-  @Override
-  public Trans fit(final VecDataSet learn, final HierLoss hierLoss) {
-    return null;
+@Deprecated
+public class HierarchicalRefinedClassification extends VecOptimization.Stub<BlockwiseMLLLogit> {
+  protected final VecOptimization<TargetFunc> weak;
+  protected final FastTree tree;
+
+  public HierarchicalRefinedClassification(final VecOptimization<TargetFunc> weak, final FastTree tree) {
+    this.weak = weak;
+    this.tree = tree;
   }
+
+  @Override
+  public Trans fit(final VecDataSet learn, final BlockwiseMLLLogit globalLoss) {
+    final HierarchicalModel hierJoinedBinClassModel = firstTraverse(learn, globalLoss);
+    final HierarchicalModel hierarchicalModel = secondTraverse(learn, globalLoss, hierJoinedBinClassModel);
+    return hierarchicalModel;
+  }
+
+  private HierarchicalModel firstTraverse(final VecDataSet learn, final BlockwiseMLLLogit globalLoss) {
+    //avoiding a lot of allocations
+    final int[] localClasses = new int[learn.length()];
+
+    final NodeVisitor<HierarchicalModel> learner = new NodeVisitor<HierarchicalModel>() {
+      @Override
+      public HierarchicalModel visit(final InternalNode node) {
+        final TIntList uniqClasses = new TIntLinkedList();
+        for (Node child : node.getChildren()) {
+          uniqClasses.add(child.id);
+        }
+
+        for (int i = 0; i < learn.length(); i++) {
+          final int dsClassLabel = globalLoss.label(i);
+          final List<Node> children = node.getChildren();
+          localClasses[i] = -1;
+          for (int j = 0; j < children.size(); j++) {
+            final Node child = children.get(j);
+            if (tree.isFirstDescendantOfSecondOrEqual(dsClassLabel, child.id)) {
+              localClasses[i] = j;
+              break;
+            }
+          }
+        }
+
+        final Func[] models = new Func[uniqClasses.size()];
+        for (int j = 0; j < uniqClasses.size(); j++) {
+          final IntSeq oneVsRestTarget = MCTools.extractClassForBinary(new IntSeq(localClasses), j);
+          final BlockwiseMLLLogit localLoss = new BlockwiseMLLLogit(oneVsRestTarget, learn);
+          final MultiClassModel model = (MultiClassModel) weak.fit(learn, localLoss);
+          models[j] = (Func) model.getInternModel().dirs()[0];
+        }
+        final HierarchicalModel nodeModel = new HierarchicalModel(new JoinedBinClassModel(models), uniqClasses);
+        for (Node child : node.getChildren()) {
+          final HierarchicalModel childModel = child.accept(this);
+          if (childModel != null) {
+            nodeModel.addChild(childModel, child.id);
+          }
+        }
+        return nodeModel;
+      }
+
+      @Override
+      public HierarchicalModel visit(final LeafNode node) {
+        return null;
+      }
+    };
+    return tree.getRoot().accept(learner);
+  }
+
+  private HierarchicalModel secondTraverse(final VecDataSet learn, final BlockwiseMLLLogit globalLoss, final HierarchicalModel cleanModel) {
+    //avoiding a lot of allocations
+    final int[] weights = new int[learn.length()];
+    final int[] localClasses = new int[learn.length()];
+
+    final Stack<HierarchicalModel> modelsStack = new Stack<>();
+    modelsStack.push(cleanModel);
+
+    final NodeVisitor<HierarchicalModel> learner = new NodeVisitor<HierarchicalModel>() {
+      @Override
+      public HierarchicalModel visit(final InternalNode node) {
+        final TIntList uniqClasses = new TIntLinkedList();
+        for (Node child : node.getChildren()) {
+          uniqClasses.add(child.id);
+        }
+
+        //collect indices (what about previous model errors?)
+        for (int i = 0; i < learn.length(); i++) {
+          final int dsClassLabel = globalLoss.label(i);
+          final List<Node> children = node.getChildren();
+          weights[i] = 0;
+          localClasses[i] = -1;
+          for (int j = 0; j < children.size(); j++) {
+            final Node child = children.get(j);
+            if (tree.isFirstDescendantOfSecondOrEqual(dsClassLabel, child.id)) {
+              weights[i] = 1;
+              localClasses[i] = j;
+              break;
+            }
+          }
+        }
+
+        //learn and apply model to the sub(!)pool
+        //
+        final BlockwiseWeightedLoss<BlockwiseMLLLogit> localWeightedLoss = new BlockwiseWeightedLoss<>(
+            new BlockwiseMLLLogit(new IntSeq(localClasses), learn),
+            weights
+        );
+        final MultiClassModel dirtyModel = (MultiClassModel) weak.fit(learn, localWeightedLoss);
+        //
+
+
+        final MultiClassModel model = (MultiClassModel) weak.fit(learn, localWeightedLoss);
+        final HierarchicalModel hierarchicalModel = new HierarchicalModel(model, new TIntArrayList(uniqClasses));
+        for (Node child : node.getChildren()) {
+          final HierarchicalModel childModel = child.accept(this);
+          if (childModel != null) {
+            hierarchicalModel.addChild(childModel, child.id);
+          }
+        }
+        return hierarchicalModel;
+      }
+
+      @Override
+      public HierarchicalModel visit(final LeafNode node) {
+        return null;
+      }
+    };
+    return tree.getRoot().accept(learner);
+  }
+
+
+
 //  private int weakIters;
 //  private double weakStep;
 ////  private BFGrid grid;
