@@ -1,8 +1,8 @@
-package com.spbsu.ml.DynamicGrid.Impl;
+package com.spbsu.ml.dynamicGrid.impl;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicRow;
+import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
 
 import java.util.Comparator;
 
@@ -25,7 +25,7 @@ public class BinaryFeatureImpl implements BinaryFeature {
   }
 
 
-  public BinaryFeatureImpl(MedianRow bfRow, int origFIndex, double condition, int index) {
+  public BinaryFeatureImpl(DynamicRow bfRow, int origFIndex, double condition, int index) {
     this.bfRow = bfRow;
     this.origFIndex = origFIndex;
     this.condition = condition;

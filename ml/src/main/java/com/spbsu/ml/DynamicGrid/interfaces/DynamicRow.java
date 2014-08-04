@@ -1,11 +1,10 @@
-package com.spbsu.ml.DynamicGrid.Interface;
+package com.spbsu.ml.dynamicGrid.interfaces;
 
 
 /**
  * Created by noxoomo on 23/07/14.
  */
 public interface DynamicRow {
-
 
   public int origFIndex();
 

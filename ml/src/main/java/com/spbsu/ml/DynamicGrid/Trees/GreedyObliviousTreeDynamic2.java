@@ -1,15 +1,15 @@
-package com.spbsu.ml.DynamicGrid.Trees;
+package com.spbsu.ml.dynamicGrid.trees;
 
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Binarize;
-import com.spbsu.ml.DynamicGrid.AggregateDynamic;
-import com.spbsu.ml.DynamicGrid.Impl.BFDynamicGrid;
-import com.spbsu.ml.DynamicGrid.Impl.BinarizedDynamicDataSet;
-import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
-import com.spbsu.ml.DynamicGrid.Models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.dynamicGrid.AggregateDynamic;
+import com.spbsu.ml.dynamicGrid.impl.BFDynamicGrid;
+import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
+import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.methods.VecOptimization;
 import gnu.trove.list.array.TIntArrayList;

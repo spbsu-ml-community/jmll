@@ -1,8 +1,8 @@
-package com.spbsu.ml.DynamicGrid.Impl;
+package com.spbsu.ml.dynamicGrid.impl;
 
-import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicRow;
+import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;

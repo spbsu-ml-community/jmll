@@ -1,13 +1,13 @@
-package com.spbsu.ml.DynamicGrid;
+package com.spbsu.ml.dynamicGrid;
 
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.ThreadTools;
-import com.spbsu.ml.DynamicGrid.Impl.BinarizedDynamicDataSet;
-import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicRow;
+import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
+import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;

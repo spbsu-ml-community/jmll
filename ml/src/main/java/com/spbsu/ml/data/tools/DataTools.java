@@ -25,11 +25,11 @@ import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
-import com.spbsu.ml.DynamicGrid.Models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
@@ -107,25 +107,27 @@ public class DataTools {
   }
 
 
-  public static void writeBinModel(Ensemble<Trans> ensemble, File file) throws IOException {
-    if (ensemble.models.length == 0)
-      return;
-    if (ensemble.models[0] instanceof ObliviousTreeDynamicBin) {
-      DynamicGrid grid = dynamicGrid(ensemble);
-      DynamicBinModelBuilder builder = new DynamicBinModelBuilder(grid);
-      for (int i = 0; i < ensemble.models.length; ++i) {
-        builder.append((ObliviousTreeDynamicBin) ensemble.models[i], ensemble.weights.at(i));
+  public static void writeBinModel(Computable result, File file) throws IOException {
+    if (result instanceof Ensemble) {
+      Ensemble<Trans> ensemble = (Ensemble) result;
+      if (ensemble.models.length == 0)
+        return;
+      if (ensemble.models[0] instanceof ObliviousTreeDynamicBin) {
+        DynamicGrid grid = dynamicGrid(ensemble);
+        DynamicBinModelBuilder builder = new DynamicBinModelBuilder(grid);
+        for (int i = 0; i < ensemble.models.length; ++i) {
+          builder.append((ObliviousTreeDynamicBin) ensemble.models[i], ensemble.weights.at(i));
+        }
+        builder.build().toFile(file);
+      } else if (ensemble.models[0] instanceof ObliviousTree) {
+        BFGrid grid = grid(ensemble);
+        BinModelBuilder builder = new BinModelBuilder(grid);
+        for (int i = 0; i < ensemble.models.length; ++i) {
+          builder.append((ObliviousTree) ensemble.models[i], ensemble.weights.at(i));
+        }
+        builder.build().toFile(file);
       }
-      builder.build().toFile(file);
-    } else if (ensemble.models[0] instanceof ObliviousTree) {
-      BFGrid grid = grid(ensemble);
-      BinModelBuilder builder = new BinModelBuilder(grid);
-      for (int i = 0; i < ensemble.models.length; ++i) {
-        builder.append((ObliviousTree) ensemble.models[i], ensemble.weights.at(i));
-      }
-      builder.build().toFile(file);
     }
-
   }
 
 

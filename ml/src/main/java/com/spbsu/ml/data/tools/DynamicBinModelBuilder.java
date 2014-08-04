@@ -1,9 +1,9 @@
 package com.spbsu.ml.data.tools;
 
-import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicRow;
-import com.spbsu.ml.DynamicGrid.Models.ObliviousTreeDynamicBin;
+import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
+import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 
 /**
  * Created by noxoomo on 31/07/14.

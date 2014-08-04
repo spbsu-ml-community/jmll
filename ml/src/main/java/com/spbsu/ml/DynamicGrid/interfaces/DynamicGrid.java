@@ -1,4 +1,4 @@
-package com.spbsu.ml.DynamicGrid.Interface;
+package com.spbsu.ml.dynamicGrid.interfaces;
 
 import com.spbsu.commons.math.vectors.Vec;
 

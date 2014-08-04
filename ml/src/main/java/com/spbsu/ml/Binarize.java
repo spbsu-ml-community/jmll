@@ -1,10 +1,10 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.func.Computable;
-import com.spbsu.ml.DynamicGrid.Impl.BinarizedDynamicDataSet;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
 
 import java.util.HashMap;
 import java.util.Map;

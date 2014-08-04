@@ -1,13 +1,13 @@
-package com.spbsu.ml.DynamicGrid.Impl;
+package com.spbsu.ml.dynamicGrid.impl;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicRow;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.stats.OrderByFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
 import gnu.trove.set.hash.TIntHashSet;
 
 public class BFDynamicGrid implements DynamicGrid {
@@ -36,6 +36,19 @@ public class BFDynamicGrid implements DynamicGrid {
     this.rows = rows;
     leastNonEmptyRow = least;
 
+  }
+
+  public BFDynamicGrid(DynamicRow[] rows) {
+    DynamicRow least = null;
+    for (int f = 0; f < rows.length; ++f)
+      if (!rows[f].empty()) {
+        least = rows[f];
+        break;
+      }
+    this.rows = rows;
+    leastNonEmptyRow = least;
+    for (DynamicRow row : rows)
+      row.setOwner(this);
   }
 
 

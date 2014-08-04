@@ -19,6 +19,10 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
+import com.spbsu.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic;
+import com.spbsu.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic2;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
@@ -54,11 +58,13 @@ public class JMLLCLI {
   private static final String GRID_OPTION = "g";
   private static final String MODEL_OPTION = "m";
   private static final String VERBOSE_OPTION = "v";
+  private static final String HIST_OPTION = "h";
   private static final String NORMALIZE_RELEVANCE_OPTION = "r";
   private static final String FOREST_LENGTH_OPTION = "a";
   private static final String CROSS_VALIDATION_OPTION = "X";
   private static final String OUTPUT_OPTION = "o";
   private static final String JSON_FORMAT = "j";
+  private static final String WRITE_BIN_FORMULA = "mxbin";
 
   static Options options = new Options();
 
@@ -77,13 +83,15 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("cross-validation").withDescription("k folds CV").hasArg().create(CROSS_VALIDATION_OPTION));
     options.addOption(OptionBuilder.withLongOpt("out").withDescription("output file name").hasArg().create(OUTPUT_OPTION));
     options.addOption(OptionBuilder.withLongOpt("json-format").withDescription("alternative format for features.txt").hasArg(false).create(JSON_FORMAT));
+    options.addOption(OptionBuilder.withLongOpt("matrixnetbin").withDescription("write model in matrix-net bin format").hasArg(false).create(WRITE_BIN_FORMULA));
+    options.addOption(OptionBuilder.withLongOpt("histogram").withDescription("histogram for dynamic grid").hasArg(false).create(HIST_OPTION));
   }
+
 
   public static void main(String[] args) throws IOException {
     CommandLineParser parser = new GnuParser();
     FastRandom rnd = new FastRandom();
     ModelsSerializationRepository serializationRepository = new ModelsSerializationRepository();
-
     try {
       final CommandLine command = parser.parse(options, args);
       if (command.hasOption(GRID_OPTION))
@@ -92,7 +100,7 @@ public class JMLLCLI {
       String learnFile = command.getOptionValue(LEARN_OPTION, "features.txt");
 
       Pool learn = command.hasOption(JSON_FORMAT) ? DataTools.loadFromFile(learnFile)
-          : DataTools.loadFromFeaturesTxt(learnFile);
+              : DataTools.loadFromFeaturesTxt(learnFile);
 
       if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
 //        learn = MCTools.normalizeClasses(learn);
@@ -110,7 +118,7 @@ public class JMLLCLI {
         test = learnTest.second;
       }
       if (command.getArgs().length <= 0)
-        throw new RuntimeException("Please provide mode to run");
+        throw new RuntimeException("Please provide  to run");
 
       String mode = command.getArgs()[0];
 
@@ -134,7 +142,7 @@ public class JMLLCLI {
 
       switch (mode) {
         case "fit":
-          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, null);
+          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, finalLearn);
           final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
           final TargetFunc loss = learn.target(DataTools.targetByName(target));
           final String[] metricNames = command.getOptionValues(METRICS_OPTION);
@@ -148,9 +156,16 @@ public class JMLLCLI {
           }
 
           final Action<Trans> progressHandler = new ProgressPrinter(learn, test, loss, metrics);
+          final Action<Trans> histHandler = new HistPrinter();
           if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION)) {
             //noinspection unchecked
             ((WeakListenerHolder) method).addListener(progressHandler);
+
+          }
+          if (method instanceof WeakListenerHolder && command.hasOption(HIST_OPTION)) {
+            //noinspection unchecked
+            ((WeakListenerHolder) method).addListener(histHandler);
+
           }
 
           Interval.start();
@@ -161,16 +176,25 @@ public class JMLLCLI {
           Interval.stopAndPrint("Total fit time:");
           System.out.print("Learn: " + loss.value(DataTools.calcAll(result, learnDS)) + " Test:");
           for (final Trans metric : metrics) {
-            System.out.print(" " + metric.trans(DataTools.calcAll(result, test.data())));
+            System.out.print(" " + metric.trans(DataTools.calcAll(result, test.vecData())));
           }
           System.out.println();
 
           @Nullable BFGrid grid = DataTools.grid(result);
-          if (grid != null) {
-            serializationRepository = serializationRepository.customizeGrid(grid);
-            StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".grid"));
+          @Nullable DynamicGrid dynamicGrid = DataTools.dynamicGrid(result);
+          if (command.hasOption(WRITE_BIN_FORMULA)) {
+            DataTools.writeBinModel(result, new File(outputFile + ".model"));
+          } else {
+            if (grid != null) {
+              serializationRepository = serializationRepository.customizeGrid(grid);
+              StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".grid"));
+            }
+            if (dynamicGrid != null) {
+              serializationRepository = serializationRepository.customizeGrid(grid);
+              StreamTools.writeChars(serializationRepository.write(grid), new File(outputFile + ".dynamciGrid"));
+            }
+            DataTools.writeModel(result, new File(outputFile + ".model"));
           }
-          DataTools.writeModel(result, new File(outputFile + ".model"));
           break;
         case "apply":
           try (final OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile + ".values"))) {
@@ -210,7 +234,7 @@ public class JMLLCLI {
     return Pair.create(new SubPool<I>(pool, cvSplit[0]), new SubPool<I>(pool, cvSplit[1]));
   }
 
-  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd, final DataSet learn) {
+  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd, final VecDataSet learn) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
     final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd, learn);
     String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
@@ -239,7 +263,9 @@ public class JMLLCLI {
         } else if (String.class.equals(type)) {
           setter.invoke(factory, value);
         } else if (Optimization.class.equals(type)) {
-          setter.invoke(factory, chooseMethod(value, grid, rnd, null));
+          setter.invoke(factory, chooseMethod(value, grid, rnd, learn));
+        } else if (VecOptimization.class.equals(type)) {
+          setter.invoke(factory, chooseMethod(value, grid, rnd, learn));
         } else {
           System.err.println("Can not set up parameter: " + name + " to value: " + value + ". Unknown parameter type: " + type + "");
         }
@@ -250,11 +276,12 @@ public class JMLLCLI {
     return factory.create();
   }
 
-  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd, final DataSet learn) {
+
+  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd, final VecDataSet learn) {
     if ("GradientBoosting".equals(name)) {
       return new Factory<VecOptimization>() {
         public VecOptimization weak = new BootstrapOptimization(new GreedyObliviousTree(grid.create(), 6), rnd);
-        public String lossName = "LogL2";
+        public String lossName = "L2Reg";
         public double step = 0.005;
         public int icount = 200;
 
@@ -295,7 +322,7 @@ public class JMLLCLI {
 
         @Override
         public MultiClass create() {
-          return new MultiClass(inner, (Class<? extends L2>)DataTools.targetByName(localName));
+          return new MultiClass(inner, (Class<? extends L2>) DataTools.targetByName(localName));
         }
       };
     } else if ("GreedyObliviousTree".equals(name)) {
@@ -309,6 +336,52 @@ public class JMLLCLI {
         @Override
         public VecOptimization create() {
           return new GreedyObliviousTree(grid.create(), depth);
+        }
+      };
+    } else if ("GreedyObliviousTreeDynamic2".equals(name)) {
+      return new Factory<VecOptimization>() {
+        public int depth = 6;
+        public int lambda = 2;
+        public int minSplits = 1;
+
+        public void minSplits(int val) {
+          this.minSplits = val;
+        }
+
+        public void depth(int d) {
+          this.depth = d;
+        }
+
+        public void lambda(int l) {
+          this.lambda = l;
+        }
+
+        @Override
+        public VecOptimization create() {
+          return new BootstrapOptimization(new GreedyObliviousTreeDynamic2(learn, depth, lambda, minSplits), new FastRandom());
+        }
+      };
+    } else if ("GreedyObliviousTreeDynamic".equals(name)) {
+      return new Factory<VecOptimization>() {
+        public int depth = 6;
+        public int lambda = 2;
+        public int minSplits = 1;
+
+        public void minSplits(int val) {
+          this.minSplits = val;
+        }
+
+        public void depth(int d) {
+          this.depth = d;
+        }
+
+        public void lambda(int l) {
+          this.lambda = l;
+        }
+
+        @Override
+        public VecOptimization create() {
+          return new BootstrapOptimization(new GreedyObliviousTreeDynamic(learn, depth, lambda, minSplits), new FastRandom());
         }
       };
     } else if ("GreedyTDRegion".equals(name)) {
@@ -346,22 +419,21 @@ public class JMLLCLI {
           return new FMTrainingWorkaround(task, dim, iters, others);
         }
       };
-    }
-    else throw new RuntimeException("Unknown weak model: " + name);
+    } else throw new RuntimeException("Unknown weak model: " + name);
   }
 
 
   private static class ProgressPrinter implements ProgressHandler {
-    private final Pool learn;
-    private final Pool test;
+    private final VecDataSet learn;
+    private final VecDataSet test;
     private final Func loss;
     private final Func[] testMetrics;
     Vec learnValues;
     Vec[] testValuesArray;
 
     public ProgressPrinter(Pool learn, Pool test, Func learnMetric, Func[] testMetrics) {
-      this.learn = learn;
-      this.test = test;
+      this.learn = learn.vecData();
+      this.test = test.vecData();
       this.loss = learnMetric;
       this.testMetrics = testMetrics;
       learnValues = new ArrayVec(learnMetric.xdim());
@@ -380,14 +452,14 @@ public class JMLLCLI {
         final Ensemble ensemble = (Ensemble) partial;
         final double step = ensemble.wlast();
         final Trans last = ensemble.last();
-        append(learnValues, VecTools.scale(last.transAll(((VecDataSet) learn).data()), step));
+        append(learnValues, VecTools.scale(last.transAll(learn.data()), step));
         for (final Vec testValues : testValuesArray) {
-          append(testValues, VecTools.scale(last.transAll(((VecDataSet) test).data()), step));
+          append(testValues, VecTools.scale(last.transAll(test.data()), step));
         }
       } else {
         learnValues = partial.transAll(((VecDataSet) learn).data());
         for (int i = 0; i < testValuesArray.length; i++) {
-          testValuesArray[i] = partial.transAll(((VecDataSet) test).data());
+          testValuesArray[i] = partial.transAll(test.data());
         }
       }
       iteration++;
@@ -396,6 +468,7 @@ public class JMLLCLI {
       }
 
       System.out.print(iteration);
+
       System.out.print(" " + loss.trans(learnValues));
       for (int i = 0; i < testMetrics.length; i++) {
         System.out.print("\t" + testMetrics[i].trans(testValuesArray[i]));
@@ -403,5 +476,38 @@ public class JMLLCLI {
       System.out.println();
 //      Interval.resume();
     }
+  }
+
+
+  private static class HistPrinter implements ProgressHandler {
+    int iteration = 0;
+
+    @Override
+    public void invoke(Trans partial) {
+//      Interval.suspend();
+      iteration++;
+      if (iteration % 10 != 0) {
+        return;
+      }
+      if (partial instanceof Ensemble) {
+        final Ensemble ensemble = (Ensemble) partial;
+        final double step = ensemble.wlast();
+        final Trans last = ensemble.last();
+        if (last instanceof ObliviousTreeDynamicBin) {
+          ObliviousTreeDynamicBin tree = (ObliviousTreeDynamicBin) last;
+          System.out.println("Current grid " + mkString(tree.grid().hist()));
+        }
+      }
+    }
+  }
+
+  public static String mkString(int[] arr) {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < arr.length - 1; ++i) {
+      builder.append(arr[i]);
+      builder.append(" ");
+    }
+    builder.append(arr[arr.length - 1]);
+    return builder.toString();
   }
 }

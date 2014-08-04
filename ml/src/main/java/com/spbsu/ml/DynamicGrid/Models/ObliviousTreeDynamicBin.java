@@ -1,10 +1,10 @@
-package com.spbsu.ml.DynamicGrid.Models;
+package com.spbsu.ml.dynamicGrid.models;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.DynamicGrid.Impl.BinarizedDynamicDataSet;
-import com.spbsu.ml.DynamicGrid.Interface.BinaryFeature;
-import com.spbsu.ml.DynamicGrid.Interface.DynamicGrid;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
+import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
 
 import java.util.Arrays;
 import java.util.List;
