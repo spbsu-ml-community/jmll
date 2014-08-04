@@ -8,9 +8,18 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.ml.Func;
 import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.multiclass.MCMacroF1Score;
+import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
+import com.spbsu.ml.loss.multiclass.MCMacroRecall;
+import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
 import com.spbsu.ml.meta.items.QURLItem;
+import com.spbsu.ml.models.MCModel;
+import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
@@ -28,7 +37,6 @@ import static java.lang.Math.max;
  * Date: 04.06.14
  */
 public class MCTools {
-
   public static int countClasses(IntSeq target) {
     int classesCount = 0;
     for (int i = 0; i < target.length(); i++) {
@@ -46,13 +54,18 @@ public class MCTools {
     return result;
   }
 
-  public static IntSeq extractClass(IntSeq target, int classNo) {
+  public static IntSeq extractClassForBinary(IntSeq target, int classNo) {
     final int[] result = new int[target.length()];
     for (int i = 0; i < target.length(); i++)
-      result[i] = (target.at(i) == classNo) ? 1 : -1;
+      result[i] = (target.at(i) == classNo) ? 0 : 1;
     return new IntSeq(result);
   }
 
+  /**
+   *
+   * @param target MC target with any classes labels
+   * @return classes labels corresponding their order (uniq)
+   */
   public static int[] getClassesLabels(IntSeq target) {
     final TIntList labels = new TIntArrayList();
     for (int i = 0; i < target.length(); i++) {
@@ -68,10 +81,10 @@ public class MCTools {
    * Normalization of multiclass target. Target may contain any labels
    * @param target Target vec with any class labels.
    * @param labels Empty list which will be filled here by classes labels corresponding their order.
-   *               Each label will appear once.
+   *               Each label will appear once. There are NPE bug in Trove's implementation of TIntLinkedList, so only TIntArrayList may be passed.
    * @return new target vec with classes labels from {0..K}.
    */
-  public static IntSeq normalizeTarget(IntSeq target, TIntList labels) {
+  public static IntSeq normalizeTarget(IntSeq target, TIntArrayList labels) {
     final int[] result = new int[target.length()];
     for (int i = 0; i < target.length(); i++) {
       final int oldTargetVal = target.at(i);
@@ -173,4 +186,44 @@ public class MCTools {
     return S;
   }
 
+  public static void evalModel(final MCModel model, final Pool ds, final String prefixComment) {
+    final Vec predict = model.bestClassAll(ds.vecData().data());
+    final Func[] metrics = new Func[] {
+        ds.target(MCMicroPrecision.class),
+        ds.target(MCMacroPrecision.class),
+        ds.target(MCMacroRecall.class),
+        ds.target(MCMacroF1Score.class),
+    };
+    for (Func metric : metrics) {
+      double val = metric.value(predict);
+      System.out.println(prefixComment + metric.getClass().getSimpleName() + ", value = " + val);
+    }
+  }
+
+  public static MultiClassModel joinBoostingResults(Ensemble ensemble) {
+    if (ensemble.last() instanceof MultiClassModel) {
+      final Func[] joinedModels = new Func[ensemble.ydim()];
+      final Func[][] transpose = new Func[ensemble.ydim()][ensemble.size()];
+      for (int iter = 0; iter < ensemble.size(); iter++) {
+        final MultiClassModel model = (MultiClassModel) ensemble.models[iter];
+        final Func[] sourceFunctions = model.getInternModel().dirs();
+        for (int c = 0; c < ensemble.ydim(); c++) {
+          transpose[c][iter] = sourceFunctions[c];
+        }
+      }
+//      for (int c = 0; c < transpose.length; c++) {
+//        for (int iter = 0; iter < transpose[c].length; iter++) {
+//          final MultiClassModel mcm = (MultiClassModel) ensemble.models[iter];
+//          final Func[] sourceFunctions = mcm.getInternModel().dirs();
+//          transpose[c][iter] = sourceFunctions[c];
+//        }
+//      }
+      for (int i = 0; i < joinedModels.length; i++) {
+        joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights);
+      }
+      return new MultiClassModel(joinedModels);
+    }
+    else
+      throw new ClassCastException("Ensemble object does not contain MCModel.Stub objects");
+  }
 }

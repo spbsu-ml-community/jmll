@@ -9,6 +9,7 @@ import com.spbsu.ml.Func;
  * User: qdeee
  * Date: 23.05.14
  */
+@Deprecated
 public class MulticlassCodingMatrixModelProbsDecoder extends MulticlassCodingMatrixModel {
   private final Mx mu;
 

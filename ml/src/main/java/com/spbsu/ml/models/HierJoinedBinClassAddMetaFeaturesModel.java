@@ -15,6 +15,7 @@ import java.util.Arrays;
  * User: qdeee
  * Date: 14.04.14
  */
+@Deprecated
 public class HierJoinedBinClassAddMetaFeaturesModel extends JoinedBinClassModel {
   /**
    * Labels of classes that this model could return.
@@ -42,39 +43,31 @@ public class HierJoinedBinClassAddMetaFeaturesModel extends JoinedBinClassModel 
   }
 
   @Override
-  public double prob(final int classLabel, final Vec x) {
-    final int pos = classLabels.indexOf(classLabel);
-    if (pos == -1)
-      throw new IllegalArgumentException("Invalid class label");
-    return super.prob(pos, x);
-  }
-
-  @Override
   public int bestClass(Vec x) {
     final int c = super.bestClass(x);
     return classLabels.get(c);
   }
 
   //
-  @Override
-  public Vec trans(final Vec x) {
-    final Vec result = new ArrayVec(dirs.length);
-    final TDoubleList metafeatures = new TDoubleLinkedList();
-    for (int i = 0; i < classLabels.size(); i++) {
-      final int label = classLabels.get(i);
-      final HierJoinedBinClassAddMetaFeaturesModel model = label2childModel.get(label);
-      if (model != null) {
-        final Vec childTrans = model.trans(x);
-        final double sum = VecTools.sum(childTrans);
-        result.adjust(i, sum);
-        final Vec probs = model.probs(x);
-        metafeatures.add(probs.toArray());
-      }
-    }
-    final Vec extendX = VecTools.extendVec(x, metafeatures.toArray());
-    final Vec selfTrans = super.trans(extendX);
-    return VecTools.append(result, selfTrans);
-  }
+//  @Override
+//  public Vec trans(final Vec x) {
+//    final Vec result = new ArrayVec(dirs.length);
+//    final TDoubleList metafeatures = new TDoubleLinkedList();
+//    for (int i = 0; i < classLabels.size(); i++) {
+//      final int label = classLabels.get(i);
+//      final HierJoinedBinClassAddMetaFeaturesModel model = label2childModel.get(label);
+//      if (model != null) {
+//        final Vec childTrans = model.trans(x);
+//        final double sum = VecTools.sum(childTrans);
+//        result.adjust(i, sum);
+//        final Vec probs = model.probs(x);
+//        metafeatures.add(probs.toArray());
+//      }
+//    }
+//    final Vec extendX = VecTools.extendVec(x, metafeatures.toArray());
+//    final Vec selfTrans = super.trans(extendX);
+//    return VecTools.append(result, selfTrans);
+//  }
 
   @Override
   public String toString() {

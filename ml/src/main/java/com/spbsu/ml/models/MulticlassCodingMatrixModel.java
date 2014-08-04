@@ -9,27 +9,34 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.func.FuncJoin;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
 /**
- * User: solar
- * Date: 10.01.14
+ * User: qdeee
+ * Date: 04.06.14
  * Time: 10:59
  */
-public class MulticlassCodingMatrixModel extends MultiClassModel {
+public class MulticlassCodingMatrixModel extends MCModel.Stub {
   public static final Logger LOG = Logger.create(MulticlassCodingMatrixModel.class);
+  protected final FuncJoin binaryClassifiers;
   protected final Mx codingMatrix;
   protected final double ignoreThreshold;
-  private final Metric<Vec> metric;
+  protected final Metric<Vec> metric;
 
-  public MulticlassCodingMatrixModel(final Mx codingMatrix, Func[] binaryClassifiers, double ignore_treshold) {
-    super(binaryClassifiers);
+  public MulticlassCodingMatrixModel(final Mx codingMatrix, Func[] binaryClassifiers, double ignoreTreshold) {
     LOG.assertTrue(codingMatrix.columns() == binaryClassifiers.length, "Coding matrix columns count must match binary classifiers.");
+    this.binaryClassifiers = new FuncJoin(binaryClassifiers);
     this.codingMatrix = codingMatrix;
-    this.ignoreThreshold = ignore_treshold;
-    metric = new LossBasedSkipZeroMetric();
+    this.ignoreThreshold = ignoreTreshold;
+    this.metric = new LossBasedSkipZeroMetric();
+  }
+
+  public FuncJoin getInternalModel() {
+    return binaryClassifiers;
   }
 
   private Vec binarize(final Vec trans) {
@@ -53,10 +60,20 @@ public class MulticlassCodingMatrixModel extends MultiClassModel {
   }
 
   @Override
+  public Vec probs(final Vec x) {
+    throw new NotImplementedException();
+  }
+
+  @Override
   public int bestClass(final Vec x) {
-    final Vec trans = trans(x);
+    final Vec trans = binaryClassifiers.trans(x);
     final double[] dist = calcDistances(trans);
     return ArrayTools.min(dist);
+  }
+
+  @Override
+  public int dim() {
+    return binaryClassifiers.xdim();
   }
 
   protected static class LossBasedSkipZeroMetric implements Metric<Vec> {
