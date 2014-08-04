@@ -10,6 +10,7 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.DynamicGridEnabled;
 import com.spbsu.ml.GridEnabled;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * User: solar
@@ -30,6 +31,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
           new ObliviousTreeDynamicBinConversionPack()
   );
   private BFGrid grid;
+  private DynamicGrid dynamicGrid;
 
   public ModelsSerializationRepository() {
     super(conversion, CharSequence.class);
@@ -44,6 +46,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
         return true;
       }
     }), CharSequence.class);
+    this.grid = grid;
   }
 
   public ModelsSerializationRepository(final DynamicGrid grid) {
@@ -55,6 +58,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
         return true;
       }
     }), CharSequence.class);
+    this.dynamicGrid = dynamicGrid;
   }
 
 
@@ -62,8 +66,17 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
     super(repository, CharSequence.class);
   }
 
+  @Nullable
+  public DynamicGrid getDynamicGrid() {
+    return dynamicGrid;
+  }
+  @Nullable
+  public BFGrid getGrid() {
+    return grid;
+  }
+
   public ModelsSerializationRepository customizeGrid(final BFGrid grid) {
-    return new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
       @Override
       public boolean accept(TypeConverter typeConverter) {
         if (typeConverter instanceof GridEnabled)
@@ -71,17 +84,21 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
         return true;
       }
     }));
+    repository.grid = grid;
+    return repository;
   }
 
   public ModelsSerializationRepository customizeGrid(final DynamicGrid grid) {
-    return new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
       @Override
       public boolean accept(TypeConverter typeConverter) {
         if (typeConverter instanceof DynamicGridEnabled)
-          ((DynamicGridEnabled) typeConverter).setGrid(grid);
+          ((DynamicGridEnabled) typeConverter).setGrid(dynamicGrid);
         return true;
       }
     }));
+    repository.dynamicGrid = dynamicGrid;
+    return repository;
   }
 
 }

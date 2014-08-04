@@ -34,6 +34,9 @@ public class Pool<I extends DSItem> {
   protected final Seq<I> items;
   protected final Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] features;
 
+  protected DataSet<I> data;
+  protected VecDataSet vecDataSet;
+
   public Pool(final DataSetMeta meta,
               final Seq<I> items,
               final Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] features,
@@ -47,8 +50,6 @@ public class Pool<I extends DSItem> {
   public DataSetMeta meta() {
     return meta;
   }
-
-  DataSet<I> data;
   public synchronized DataSet<I> data() {
     if (data == null) {
       final TObjectIntHashMap<I> indices = new TObjectIntHashMap<>((int) (items.length() * 2), 0.7f);
@@ -128,21 +129,24 @@ public class Pool<I extends DSItem> {
   }
 
   public VecDataSet vecData() {
-    final Class[] supportedFeatureTypes = new Class[]{Vec.class, VecSeq.class};
-    final DataSet<I> ds = data();
-    final TIntArrayList toJoin = new TIntArrayList(features.length);
-    for (int i = 0; i < features.length; i++) {
-      Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = features[i];
-      if (feature.getFirst().associated() == ds) {
-        for (final Class clazz : supportedFeatureTypes) {
-          if (clazz.isAssignableFrom(feature.getFirst().type().clazz())) {
-            toJoin.add(i);
-            break;
+    if (vecDataSet == null) {
+      final Class[] supportedFeatureTypes = new Class[]{Vec.class, VecSeq.class};
+      final DataSet<I> ds = data();
+      final TIntArrayList toJoin = new TIntArrayList(features.length);
+      for (int i = 0; i < features.length; i++) {
+        Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = features[i];
+        if (feature.getFirst().associated() == ds) {
+          for (final Class clazz : supportedFeatureTypes) {
+            if (clazz.isAssignableFrom(feature.getFirst().type().clazz())) {
+              toJoin.add(i);
+              break;
+            }
           }
         }
       }
+      vecDataSet = joinFeatures(toJoin.toArray(), ds);
     }
-    return joinFeatures(toJoin.toArray(), ds);
+    return vecDataSet;
   }
 
   public void addTarget(TargetMeta meta, Seq<?> target) {
