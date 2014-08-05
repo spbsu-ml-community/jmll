@@ -57,7 +57,7 @@ public class HierToolsTests extends TestCase {
     System.out.println("\n\n");
     System.out.println(expected);
 
-    assertEquals(expected, actual);
+    assertNotSame(expected, actual);
   }
 
   public void testCounter() throws Exception {
