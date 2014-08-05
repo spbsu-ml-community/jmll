@@ -5,9 +5,9 @@ import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.seq.CharSeqReader;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.ml.DynamicGridEnabled;
-import com.spbsu.ml.dynamicGridFix.interfacesFix.BinaryFeature;
-import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicGrid;
-import com.spbsu.ml.dynamicGridFix.modelsFix.ObliviousTreeDynamicBin;
+import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
