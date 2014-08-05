@@ -58,8 +58,8 @@ public class StaticRow implements DynamicRow {
   }
 
   @Override
-  public int bin(double value) {
-    int index = 0;
+  public short bin(double value) {
+    short index = 0;
     while (index < size() && value > bfs[index].condition())
       index++;
     return index;

@@ -141,7 +141,7 @@ public class AggregateDynamic {
       exec.execute(new Runnable() {
         @Override
         public void run() {
-          final int[] bin = bds.bins(finalFIndex);
+          final short[] bin = bds.bins(finalFIndex);
           if (!grid.row(finalFIndex).empty()) {
 
             final int length = 4 * (indices.length / 4);

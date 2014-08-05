@@ -15,6 +15,7 @@ public class BFDynamicOptimizationSubset {
   private final StatBasedLoss<AdditiveStatistics> oracle;
   private AggregateDynamic aggregate;
 
+
   public BFDynamicOptimizationSubset(BinarizedDynamicDataSet bds, StatBasedLoss oracle, int[] points) {
     this.bds = bds;
     this.points = points;
@@ -25,7 +26,7 @@ public class BFDynamicOptimizationSubset {
   public BFDynamicOptimizationSubset split(BinaryFeature feature) {
     TIntArrayList left = new TIntArrayList(points.length);
     TIntArrayList right = new TIntArrayList(points.length);
-    final int[] bins = bds.bins(feature.fIndex());
+    final short[] bins = bds.bins(feature.fIndex());
     for (int i : points) {
       if (bins[i] <= feature.binNo()) {
         left.add(i);

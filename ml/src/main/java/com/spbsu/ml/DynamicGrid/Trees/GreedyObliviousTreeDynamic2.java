@@ -62,6 +62,16 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
   }
 
 
+  public GreedyObliviousTreeDynamic2(DynamicGrid grid, int depth, double lambda, boolean grow) {
+//    this.minSplits = minSplits;
+    this.depth = depth;
+    this.minSplits = 1;
+    this.lambda = lambda;
+    this.grid = grid;
+    this.growGrid = grow;
+  }
+
+
   public void stopGrowing() {
     this.growGrid = false;
   }

@@ -16,7 +16,7 @@ public interface DynamicGrid {
 
   public DynamicRow row(int feature);
 
-  public void binarize(Vec x, int[] folds);
+  public void binarize(Vec x, short[] folds);
 
   public BinaryFeature bf(int fIndex, int binNo);
 

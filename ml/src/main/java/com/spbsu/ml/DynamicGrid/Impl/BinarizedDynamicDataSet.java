@@ -18,18 +18,18 @@ import java.util.List;
 public class BinarizedDynamicDataSet {
   private final DataSet base;
   private final DynamicGrid grid;
-  private final int[][] bins;
+  private final short[][] bins;
   public final List<BinaryFeature> queue = new ArrayList<>();
 
   public BinarizedDynamicDataSet(DataSet base, DynamicGrid grid) {
     this.base = base;
     this.grid = grid;
     int xdim = ((VecDataSet) base).xdim();
-    bins = new int[xdim][];
+    bins = new short[xdim][];
     for (int f = 0; f < bins.length; f++) {
-      bins[f] = new int[base.length()];
+      bins[f] = new short[base.length()];
     }
-    int[] binarization = new int[grid.rows()];
+    short[] binarization = new short[grid.rows()];
     for (int t = 0; t < base.length(); t++) {
       grid.binarize(((VecDataSet) base).data().row(t), binarization);
       for (int f = 0; f < bins.length; f++) {
@@ -48,9 +48,9 @@ public class BinarizedDynamicDataSet {
 
   public void updateBins() {
     for (int f1 = 0; f1 < bins.length; f1++) {
-      bins[f1] = new int[base.length()];
+      bins[f1] = new short[base.length()];
     }
-    int[] binarization = new int[grid.rows()];
+    short[] binarization = new short[grid.rows()];
     for (int t = 0; t < base.length(); t++) {
       grid.binarize(((VecDataSet) base).data().row(t), binarization);
       for (int f1 = 0; f1 < bins.length; f1++) {
@@ -75,7 +75,7 @@ public class BinarizedDynamicDataSet {
     return grid;
   }
 
-  public int[] bins(int findex) {
+  public short[] bins(int findex) {
     return bins[findex];
   }
 

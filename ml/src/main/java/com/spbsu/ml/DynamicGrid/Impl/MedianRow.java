@@ -197,8 +197,8 @@ public class MedianRow implements DynamicRow {
   }
 
   @Override
-  public int bin(double value) {
-    int index = 0;
+  public short bin(double value) {
+    short index = 0;
     while (index < size() && value > bfs.get(index).condition)
       index++;
     return index;

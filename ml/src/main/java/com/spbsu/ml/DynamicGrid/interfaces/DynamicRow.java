@@ -20,6 +20,6 @@ public interface DynamicRow {
 
   public void setOwner(DynamicGrid grid);
 
-  public int bin(double v);
+  public short bin(double v);
 //    void setActive(BinaryFeature feature);
 }

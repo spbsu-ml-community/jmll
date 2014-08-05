@@ -57,7 +57,7 @@ public class BFDynamicGrid implements DynamicGrid {
   }
 
   @Override
-  public void binarize(Vec x, int[] folds) {
+  public void binarize(Vec x, short[] folds) {
     for (int i = 0; i < x.dim(); i++) {
       folds[i] = rows[i].bin(x.get(i));
     }
