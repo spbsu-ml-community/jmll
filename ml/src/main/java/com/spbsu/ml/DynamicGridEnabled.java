@@ -1,6 +1,6 @@
 package com.spbsu.ml;
 
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicGrid;
 
 public interface DynamicGridEnabled {
   DynamicGrid getGrid();

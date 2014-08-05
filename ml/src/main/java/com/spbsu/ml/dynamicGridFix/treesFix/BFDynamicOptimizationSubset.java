@@ -1,9 +1,9 @@
-package com.spbsu.ml.dynamicGrid.trees;
+package com.spbsu.ml.dynamicGridFix.treesFix;
 
 import com.spbsu.commons.func.AdditiveStatistics;
-import com.spbsu.ml.dynamicGrid.AggregateDynamic;
-import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
-import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
+import com.spbsu.ml.dynamicGridFix.AggregateDynamic;
+import com.spbsu.ml.dynamicGridFix.implFix.BinarizedDynamicDataSet;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.BinaryFeature;
 import com.spbsu.ml.loss.StatBasedLoss;
 import gnu.trove.list.array.TIntArrayList;
 

@@ -2,10 +2,10 @@ package com.spbsu.ml.io;
 
 import com.spbsu.commons.func.Converter;
 import com.spbsu.commons.seq.CharSeqReader;
-import com.spbsu.ml.dynamicGrid.impl.BFDynamicGrid;
-import com.spbsu.ml.dynamicGrid.impl.StaticRow;
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
+import com.spbsu.ml.dynamicGridFix.implFix.BFDynamicGrid;
+import com.spbsu.ml.dynamicGridFix.implFix.StaticRow;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicGrid;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicRow;
 import gnu.trove.list.array.TDoubleArrayList;
 
 import java.io.IOException;

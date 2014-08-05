@@ -1,7 +1,7 @@
-package com.spbsu.ml.dynamicGrid.models;
+package com.spbsu.ml.dynamicGridFix.modelsFix;
 
 import com.spbsu.ml.Func;
-import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
+import com.spbsu.ml.dynamicGridFix.implFix.BinarizedDynamicDataSet;
 
 /**
  * Created by noxoomo on 23/07/14.

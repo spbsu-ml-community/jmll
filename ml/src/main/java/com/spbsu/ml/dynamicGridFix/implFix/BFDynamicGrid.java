@@ -1,13 +1,13 @@
-package com.spbsu.ml.dynamicGrid.impl;
+package com.spbsu.ml.dynamicGridFix.implFix;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.stats.OrderByFeature;
-import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.BinaryFeature;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicGrid;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicRow;
 import gnu.trove.set.hash.TIntHashSet;
 
 public class BFDynamicGrid implements DynamicGrid {
@@ -29,6 +29,7 @@ public class BFDynamicGrid implements DynamicGrid {
       rows[f] = new MedianRow(this, feature, permutation.reverse(), f, minSplits);
     }
     DynamicRow least = null;
+
     for (int f = 0; f < rows.length; ++f)
       if (!rows[f].empty()) {
         least = rows[f];

@@ -1,4 +1,4 @@
-package com.spbsu.ml.dynamicGrid.interfaces;
+package com.spbsu.ml.dynamicGridFix.interfacesFix;
 
 
 /**

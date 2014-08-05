@@ -1,11 +1,11 @@
-package com.spbsu.ml.dynamicGrid.impl;
+package com.spbsu.ml.dynamicGridFix.implFix;
 
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
-import com.spbsu.ml.dynamicGrid.trees.BFDynamicOptimizationSubset;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.BinaryFeature;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicGrid;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicRow;
+import com.spbsu.ml.dynamicGridFix.treesFix.BFDynamicOptimizationSubset;
 
 import java.util.ArrayList;
 import java.util.List;

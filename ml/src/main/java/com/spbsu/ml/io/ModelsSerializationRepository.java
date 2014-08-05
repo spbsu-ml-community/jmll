@@ -9,7 +9,7 @@ import com.spbsu.commons.math.MathTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.DynamicGridEnabled;
 import com.spbsu.ml.GridEnabled;
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGridFix.interfacesFix.DynamicGrid;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -70,6 +70,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   public DynamicGrid getDynamicGrid() {
     return dynamicGrid;
   }
+
   @Nullable
   public BFGrid getGrid() {
     return grid;
