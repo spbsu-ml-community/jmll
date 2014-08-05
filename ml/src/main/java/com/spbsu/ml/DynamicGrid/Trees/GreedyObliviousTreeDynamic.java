@@ -28,7 +28,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
   private boolean growGrid = true;
   //  private final int minSplits;
   private final double lambda;
-  private double eps = 1e-4;
+  private static double eps = 1e-4;
 
 
   public GreedyObliviousTreeDynamic(DynamicGrid grid, int depth) {
@@ -77,7 +77,6 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
       leaves.add(new BFDynamicOptimizationSubset(bds, loss, ArrayTools.sequence(0, ds.length())));
       double currentScore = Double.POSITIVE_INFINITY;
 
-
       for (int level = 0; level < depth; level++) {
         for (int f = 0; f < scores.length; ++f) {
           if (scores[f].length != grid.row(f).size()) {
@@ -90,8 +89,8 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
           leaf.visitAllSplits(new AggregateDynamic.SplitVisitor<AdditiveStatistics>() {
             @Override
             public void accept(BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
-              double leftScore = loss.score(left);
-              double rightScore = loss.score(right);
+              final double leftScore = loss.score(left);
+              final double rightScore = loss.score(right);
               scores[bf.fIndex()][bf.binNo()] += leftScore + rightScore;
             }
           });

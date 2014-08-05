@@ -11,7 +11,7 @@ import java.util.*;
  * Created by noxoomo on 23/07/14.
  */
 public class MedianRow implements DynamicRow {
-  private final double eps = 1e-9;
+  private final static double eps = 1e-9;
   private final int origFIndex;
   private DynamicGrid grid = null;
   private final double[] feature;

@@ -25,6 +25,4 @@ public interface DynamicGrid {
   public boolean addSplit(int feature);
 
   public int[] hist();
-
-
 }

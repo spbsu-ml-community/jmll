@@ -15,6 +15,7 @@ public class BFDynamicGrid implements DynamicGrid {
   private TIntHashSet known = new TIntHashSet();
   private final DynamicRow leastNonEmptyRow;
 
+
   public BFDynamicGrid(VecDataSet ds, int minSplits) {
     final OrderByFeature byFeature = ds.cache().cache(OrderByFeature.class, DataSet.class);
 
@@ -35,7 +36,6 @@ public class BFDynamicGrid implements DynamicGrid {
       }
     this.rows = rows;
     leastNonEmptyRow = least;
-
   }
 
   public BFDynamicGrid(DynamicRow[] rows) {
@@ -88,6 +88,7 @@ public class BFDynamicGrid implements DynamicGrid {
     }
     return counts;
   }
+
 
   public int rows() {
     return rows.length;

@@ -28,7 +28,7 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
   private boolean growGrid = true;
   private final int minSplits;
   private final double lambda;
-  private double eps = 1e-4;
+  private static double eps = 1e-4;
 
 
   public GreedyObliviousTreeDynamic2(DynamicGrid grid, int depth) {
@@ -50,8 +50,15 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
     this.minSplits = minSplits;
     this.depth = depth;
     this.lambda = lambda;
-
     this.grid = new BFDynamicGrid(ds, minSplits);
+  }
+
+  public GreedyObliviousTreeDynamic2(VecDataSet ds, int depth, double lambda, int minSplits, boolean grow) {
+    this.minSplits = minSplits;
+    this.depth = depth;
+    this.lambda = lambda;
+    this.grid = new BFDynamicGrid(ds, minSplits);
+    this.growGrid = grow;
   }
 
 

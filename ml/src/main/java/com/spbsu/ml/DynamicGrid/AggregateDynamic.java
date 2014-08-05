@@ -73,15 +73,58 @@ public class AggregateDynamic {
     void accept(BinaryFeature bf, T left, T right);
   }
 
+
+  private static int sequentialLimit = 4;
+//
+//  public <T extends AdditiveStatistics> void visit(final SplitVisitor<T> visitor) {
+//    final CountDownLatch latch = new CountDownLatch(grid.rows());
+//    final T total = (T) total();
+//    for (int f = 0; f < grid.rows(); f++) {
+//      final DynamicRow row = grid.row(f);
+//      if (row.size() < sequentialLimit) {
+//        final T left = (T) factory.create();
+//        final T right = (T) factory.create().append(total);
+//        final AdditiveStatistics[] rowBins = bins[row.origFIndex()];
+//        for (int b = 0; b < row.size(); b++) {
+//          left.append(rowBins[b]);
+//          right.remove(rowBins[b]);
+//          visitor.accept(row.bf(b), left, right);
+//        }
+//        latch.countDown();
+//      } else {
+//        exec.execute(new Runnable() {
+//          @Override
+//          public void run() {
+//            final T left = (T) factory.create();
+//            final T right = (T) factory.create().append(total);
+//            final AdditiveStatistics[] rowBins = bins[row.origFIndex()];
+//            for (int b = 0; b < row.size(); b++) {
+//              left.append(rowBins[b]);
+//              right.remove(rowBins[b]);
+//              visitor.accept(row.bf(b), left, right);
+//            }
+//            latch.countDown();
+//          }
+//        });
+//      }
+//    }
+//    try {
+//      latch.await();
+//    } catch (InterruptedException e) {
+//      // skip
+//    }
+//  }
+
   public <T extends AdditiveStatistics> void visit(SplitVisitor<T> visitor) {
     final T total = (T) total();
     for (int f = 0; f < grid.rows(); f++) {
       final T left = (T) factory.create();
       final T right = (T) factory.create().append(total);
       final DynamicRow row = grid.row(f);
+      final AdditiveStatistics[] rowBins = bins[row.origFIndex()];
       for (int b = 0; b < row.size(); b++) {
-        left.append(bins[row.origFIndex()][b]);
-        right.remove(bins[row.origFIndex()][b]);
+        left.append(rowBins[b]);
+        right.remove(rowBins[b]);
         visitor.accept(row.bf(b), left, right);
       }
     }
@@ -133,7 +176,6 @@ public class AggregateDynamic {
         }
       });
     }
-
     try {
       latch.await();
     } catch (InterruptedException e) {
