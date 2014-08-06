@@ -1,5 +1,6 @@
 package com.spbsu.ml.dynamicGrid.impl;
 
+import com.spbsu.commons.func.Converter;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.ml.data.set.DataSet;
@@ -8,6 +9,7 @@ import com.spbsu.ml.data.stats.OrderByFeature;
 import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicRow;
+import com.spbsu.ml.io.DynamicGridStringConverter;
 import gnu.trove.set.hash.TIntHashSet;
 
 public class BFDynamicGrid implements DynamicGrid {
@@ -116,5 +118,36 @@ public class BFDynamicGrid implements DynamicGrid {
     return rows;
   }
 
+
+  public static final Converter<DynamicGrid, CharSequence> CONVERTER = new DynamicGridStringConverter();
+
+  @Override
+  public String toString() {
+    return CONVERTER.convertTo(this).toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof DynamicGrid)) return false;
+
+    DynamicGrid grid = (DynamicGrid) o;
+
+    if (this.rows() != grid.rows()) return false;
+
+    for (int feature = 0; feature < rows(); ++feature) {
+      DynamicRow thisRow = this.row(feature);
+      DynamicRow otherRow = grid.row(feature);
+      if (thisRow.size() != otherRow.size())
+        return false;
+      for (int bin = 0; bin < thisRow.size(); ++bin) {
+        BinaryFeature thisBF = thisRow.bf(bin);
+        BinaryFeature other = otherRow.bf(bin);
+        if (Math.abs(thisBF.condition() - other.condition()) > 1e-9) return false;
+        if (thisBF.fIndex() != other.fIndex()) return false;
+      }
+    }
+    return true;
+  }
 
 }

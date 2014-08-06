@@ -1,10 +1,12 @@
 package com.spbsu.ml;
 
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.ml.io.ModelsSerializationRepository;
-import com.spbsu.ml.func.Linear;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.ml.dynamicGrid.impl.BFDynamicGrid;
+import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.models.FMModel;
 import com.spbsu.ml.models.ObliviousTree;
 
@@ -17,10 +19,12 @@ import java.util.Arrays;
  */
 public class SerializationTest extends GridTest {
   protected static BFGrid grid;
+  protected static DynamicGrid dynamicGrid;
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     grid = GridTools.medianGrid(learn.vecData(), 32);
+    dynamicGrid = new BFDynamicGrid(learn.vecData(), 32);
   }
 
   public void testObliviousTree() {
@@ -37,6 +41,27 @@ public class SerializationTest extends GridTest {
     serialization = new ModelsSerializationRepository(grid);
     assertEquals(ot, serialization.read(serialization.write(ot), ObliviousTree.class));
   }
+
+  public void testObliviousTreeDynamicBin() {
+    ObliviousTreeDynamicBin ot = new ObliviousTreeDynamicBin(Arrays.asList(dynamicGrid.bf(0, 2)), new double[]{0, 1});
+    ModelsSerializationRepository serialization = new ModelsSerializationRepository();
+    boolean caught = false;
+    try {
+      serialization.read(serialization.write(ot), ObliviousTreeDynamicBin.class);
+    } catch (RuntimeException re) {
+      caught = true;
+    }
+    assertTrue(caught);
+    serialization = new ModelsSerializationRepository(dynamicGrid);
+    assertEquals(ot, serialization.read(serialization.write(ot), ObliviousTreeDynamicBin.class));
+  }
+
+  public void testDynamicGrid() {
+    ModelsSerializationRepository serialization = new ModelsSerializationRepository();
+    assertEquals(dynamicGrid.toString(), serialization.read(serialization.write(dynamicGrid), DynamicGrid.class).toString());
+    assertEquals(dynamicGrid, serialization.read(serialization.write(dynamicGrid), DynamicGrid.class));
+  }
+
 
   public void testGrid() {
     ModelsSerializationRepository serialization = new ModelsSerializationRepository();

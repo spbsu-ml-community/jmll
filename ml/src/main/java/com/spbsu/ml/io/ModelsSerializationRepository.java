@@ -26,9 +26,9 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
           new FuncJoinConversionPack(),
           new FactorizationMachinesConversionPack(),
           new MultiClassModelConversionPack(),
+          new ObliviousTreeDynamicBinConversionPack(),
           BFGrid.CONVERTER.getClass(),
-          new BFDynamicGridStringConverter(),
-          new ObliviousTreeDynamicBinConversionPack()
+          (new DynamicGridStringConverter()).getClass()
   );
   private BFGrid grid;
   private DynamicGrid dynamicGrid;

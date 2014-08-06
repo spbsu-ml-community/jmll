@@ -109,6 +109,13 @@ public class MedianRow implements DynamicRow {
   }
 
 
+  private static double diffScore(int start, int end, int split, int n) {
+    double diff = (end - start) * Math.log((end - start) * 1.0 / n)
+            - (end - split) * Math.log((end - split) * 1.0 / n) - (split - start) * Math.log((split - start) * 1.0 / n);
+    diff /= n;
+    return diff;
+  }
+
   private void updateCache() {
     double bestScore = 0;
     double diff = 0;
@@ -127,9 +134,10 @@ public class MedianRow implements DynamicRow {
       if (split > start) {
         if (scoreLeft > bestScore) {
           bestScore = scoreLeft;
-          diff = (end - start) * Math.log((end - start) * 1.0 / feature.length)
-                  - (end - split) * Math.log((end - split) * 1.0 / feature.length) - (split - start) * Math.log((split - start) * 1.0 / feature.length);
-          diff /= feature.length;
+          diff = diffScore(start, end, split, feature.length);//(end - start) * Math.log(end - start) - (end - split) * Math.log(end - split) - (split - start) * Math.log(split - start);
+//          diff = (end - start) * Math.log((end - start) * 1.0 / feature.length)
+//                  - (end - split) * Math.log((end - split) * 1.0 / feature.length) - (split - start) * Math.log((split - start) * 1.0 / feature.length);
+//          diff /= feature.length;
           bestSplit = split;
           bestSplits.clear();
           bestSplits.add(bestSplit);
@@ -145,9 +153,10 @@ public class MedianRow implements DynamicRow {
         if (scoreRight > bestScore) {
           bestScore = scoreRight;
           bestSplit = split;
-          diff = (end - start) * Math.log((end - start) * 1.0 / feature.length)
-                  - (end - split) * Math.log((end - split) * 1.0 / feature.length) - (split - start) * Math.log((split - start) * 1.0 / feature.length);
-          diff /= feature.length;
+//          diff = (end - start) * Math.log((end - start) * 1.0 / feature.length)
+//                  - (end - split) * Math.log((end - split) * 1.0 / feature.length) - (split - start) * Math.log((split - start) * 1.0 / feature.length);
+//          diff /= feature.length;
+          diff = diffScore(start, end, split, feature.length);//(end - start) * Math.log(end - start) - (end - split) * Math.log(end - split) - (split - start) * Math.log(split - start);
           bestSplits.clear();
           bestSplits.add(bestSplit);
         } else if (Math.abs(scoreRight - bestScore) < 1e-8) {
