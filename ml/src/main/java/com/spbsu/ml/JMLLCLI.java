@@ -192,7 +192,8 @@ public class JMLLCLI {
 
           if (command.hasOption(WRITE_BIN_FORMULA)) {
             DataTools.writeBinModel(result, new File(outputFile + ".model"));
-          } else {
+          }
+          else {
             if (serializationRepository.getGrid() == null) {
               @Nullable BFGrid grid = DataTools.grid(result);
               if (grid != null) {
@@ -203,7 +204,7 @@ public class JMLLCLI {
             if (serializationRepository.getDynamicGrid() == null) {
               @Nullable DynamicGrid dynamicGrid = DataTools.dynamicGrid(result);
               if (dynamicGrid != null) {
-                StreamTools.writeChars(DataTools.SERIALIZATION.write(dynamicGrid), new File(outputFile + ".dynamicGrid"));
+                StreamTools.writeChars(DataTools.SERIALIZATION.write(dynamicGrid), new File(outputFile + ".dgrid"));
               }
             }
             DataTools.writeModel(result, new File(outputFile + ".model"));
