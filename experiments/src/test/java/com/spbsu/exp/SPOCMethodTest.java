@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods;
+package com.spbsu.exp;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
@@ -20,6 +20,9 @@ import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.impl.FakeTargetMeta;
+import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.MultiClass;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
 import com.spbsu.ml.methods.spoc.CMLMetricOptimization;
 import com.spbsu.ml.methods.spoc.SPOCMethodClassic;
@@ -29,7 +32,7 @@ import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearningGreedyParallels;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MCModel;
 import com.spbsu.ml.models.MulticlassCodingMatrixModel;
-import com.spbsu.ml.test_utils.TestResourceLoader;
+import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import junit.framework.TestCase;
@@ -39,7 +42,7 @@ import junit.framework.TestSuite;
 * User: qdeee
 * Date: 07.05.14
 */
-public abstract class SPOCMethodTest extends TestSuite {
+public class SPOCMethodTest extends TestSuite {
   private static class WeakOptimization implements VecOptimization<LLLogit> {
     private final int iters;
     private final double step;
@@ -178,7 +181,7 @@ public abstract class SPOCMethodTest extends TestSuite {
 
 
 
-  public abstract static class DefaultDataTests extends Base {
+  public static class DefaultDataTests extends Base {
     private final static double[] hierBorders = new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61};
     public static final double[] classicBorders = new double[]{0.06999, 0.13999, 0.40999, 0.60999, 0.61};
 

@@ -10,7 +10,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.Pool;
-import com.spbsu.ml.test_utils.TestResourceLoader;
+import com.spbsu.ml.testUtils.TestResourceLoader;
 
 /**
  * User: solar

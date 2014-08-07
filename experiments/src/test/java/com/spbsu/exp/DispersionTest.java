@@ -1,4 +1,4 @@
-package com.spbsu.ml;
+package com.spbsu.exp;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
@@ -17,7 +17,7 @@ import static com.spbsu.commons.math.vectors.VecTools.*;
  * Date: 16.04.14
  * Time: 13:24
  */
-public abstract class DispersionTest extends TestCase {
+public class DispersionTest extends TestCase {
   public void testStein() {
     Random rng = new FastRandom();
     for (int n = 1; n < 100; n++) {

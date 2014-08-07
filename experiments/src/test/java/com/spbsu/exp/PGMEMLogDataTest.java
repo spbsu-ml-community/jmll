@@ -1,4 +1,4 @@
-package com.spbsu.ml;
+package com.spbsu.exp;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -24,7 +24,7 @@ import com.spbsu.ml.methods.PGMEM;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.Route;
 import com.spbsu.ml.models.pgm.SimplePGM;
-import com.spbsu.ml.test_utils.TestResourceLoader;
+import com.spbsu.ml.testUtils.TestResourceLoader;
 import junit.framework.TestCase;
 
 import java.io.*;
@@ -34,7 +34,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * Created by inikifor on 12.04.14.
  */
-public abstract class PGMEMLogDataTest extends TestCase {
+public class PGMEMLogDataTest extends TestCase {
   private static final int SIZE = 11;
 
   private FastRandom rng;

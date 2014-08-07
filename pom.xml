@@ -12,6 +12,7 @@
   <modules>
     <module>commons</module>
     <module>ml</module>
+    <module>experiments</module>
   </modules>
 
 </project>

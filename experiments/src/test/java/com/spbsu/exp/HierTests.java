@@ -1,4 +1,4 @@
-package com.spbsu.ml;
+package com.spbsu.exp;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
