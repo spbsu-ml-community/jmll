@@ -1,5 +1,14 @@
 package com.spbsu.ml.data.tools;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -45,13 +54,6 @@ import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.list.array.TIntArrayList;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.zip.GZIPInputStream;
 
 /**
  * User: solar
@@ -383,11 +385,15 @@ public class DataTools {
     }
   }
 
-  public static Pool<? extends DSItem> loadFromFile(String file) throws IOException {
-    try (final InputStreamReader input =
-                 file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file)) {
+  public static Pool<? extends DSItem> loadFromFile(final String fileName) throws IOException {
+    return loadFromFile(new File(fileName));
+  }
+
+  public static Pool<? extends DSItem> loadFromFile(final File file) throws IOException {
+    try (final InputStreamReader input = file.getName().endsWith(".gz") ?
+                                         new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) :
+                                         new FileReader(file)) {
       return readPoolFrom(input);
     }
   }
-
 }
