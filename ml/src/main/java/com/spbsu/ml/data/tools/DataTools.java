@@ -1,5 +1,7 @@
 package com.spbsu.ml.data.tools;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.linked.TIntLinkedList;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -230,8 +232,11 @@ public class DataTools {
           new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
 
   public static int[][] splitAtRandom(final int size, final FastRandom rng, final double... v) {
-    Vec weights = new ArrayVec(v);
-    TIntArrayList[] folds = new TIntArrayList[v.length];
+    final Vec weights = new ArrayVec(v);
+    final TIntList[] folds = new TIntList[v.length];
+    for (int i = 0; i < folds.length; i++) {
+      folds[i] = new TIntLinkedList();
+    }
     for (int i = 0; i < size; i++) {
       folds[rng.nextSimple(weights)].add(i);
     }
