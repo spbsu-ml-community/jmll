@@ -1,8 +1,12 @@
-package com.spbsu.ml;
+package com.spbsu.exp;
 
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.tree.FastTree;
 import com.spbsu.commons.util.tree.Tree;
+import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.GridTools;
+import com.spbsu.ml.TargetFunc;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.HierTools;
 import com.spbsu.ml.data.tools.MCTools;
@@ -20,7 +24,7 @@ import com.spbsu.ml.methods.hierarchical.HierarchicalClassification;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.HierarchicalModel;
 import com.spbsu.ml.models.MCModel;
-import com.spbsu.ml.test_utils.TestResourceLoader;
+import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntIntMap;

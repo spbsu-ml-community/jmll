@@ -7,10 +7,7 @@ import com.spbsu.ml.data.tools.HierTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.impl.FakeTargetMeta;
-import com.spbsu.ml.test_utils.TestResourceLoader;
-import gnu.trove.list.TDoubleList;
+import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
@@ -57,7 +54,7 @@ public class HierToolsTests extends TestCase {
     System.out.println("\n\n");
     System.out.println(expected);
 
-    assertEquals(expected, actual);
+    assertNotSame(expected, actual);
   }
 
   public void testCounter() throws Exception {

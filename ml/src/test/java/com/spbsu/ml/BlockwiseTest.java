@@ -23,7 +23,7 @@ import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.MultiClass;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MCModel;
-import com.spbsu.ml.test_utils.TestResourceLoader;
+import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.array.TDoubleArrayList;
 import junit.framework.TestCase;
 

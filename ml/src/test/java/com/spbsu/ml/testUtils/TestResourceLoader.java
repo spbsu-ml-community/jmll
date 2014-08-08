@@ -1,4 +1,4 @@
-package com.spbsu.ml.test_utils;
+package com.spbsu.ml.testUtils;
 
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;

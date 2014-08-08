@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-public class BFDynamicGridStringConverter implements Converter<DynamicGrid, CharSequence> {
+public class DynamicGridStringConverter implements Converter<DynamicGrid, CharSequence> {
   @Override
   public DynamicGrid convertFrom(CharSequence source) {
     final List<StaticRow> rows = new ArrayList<StaticRow>(1000);

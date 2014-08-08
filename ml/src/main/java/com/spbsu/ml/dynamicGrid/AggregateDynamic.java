@@ -32,6 +32,7 @@ public class AggregateDynamic {
     for (int feat = 0; feat < bins.length; feat++) {
       bins[feat] = new AdditiveStatistics[0];
     }
+
     this.factory = factory;
     rebuild(points, ArrayTools.sequence(0, grid.rows()));
   }

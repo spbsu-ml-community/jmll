@@ -1,4 +1,4 @@
-package com.spbsu.ml.test_utils;
+package com.spbsu.ml.testUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
