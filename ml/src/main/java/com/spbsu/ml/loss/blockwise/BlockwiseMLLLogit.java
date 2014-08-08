@@ -1,6 +1,7 @@
 package com.spbsu.ml.loss.blockwise;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BlockwiseFuncC1;
@@ -25,6 +26,17 @@ public class BlockwiseMLLLogit extends BlockwiseFuncC1.Stub implements TargetFun
     this.target = target;
     this.owner = owner;
     classesCount = ArrayTools.max(target) + 1;
+  }
+
+  public BlockwiseMLLLogit(Vec target, DataSet<?> owner) {
+    final int[] intTarget = new int[target.length()];
+    final VecIterator iter = target.nonZeroes();
+    while (iter.advance()) {
+      intTarget[iter.index()] = (int) iter.value();
+    }
+    this.target = new IntSeq(intTarget);
+    this.owner = owner;
+    this.classesCount = ArrayTools.max(this.target) + 1;
   }
 
   @Override
