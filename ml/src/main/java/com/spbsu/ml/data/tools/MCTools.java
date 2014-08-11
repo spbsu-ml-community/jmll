@@ -203,12 +203,13 @@ public class MCTools {
   //only for boosting of MultiClassModel models
   public static MultiClassModel joinBoostingResults(Ensemble ensemble) {
     if (ensemble.last() instanceof MultiClassModel) {
-      final Func[] joinedModels = new Func[ensemble.ydim()];
-      final Func[][] transpose = new Func[ensemble.ydim()][ensemble.size()];
+      final int internModelCount = ((MultiClassModel) ensemble.last()).getInternModel().ydim();
+      final Func[] joinedModels = new Func[internModelCount];
+      final Func[][] transpose = new Func[internModelCount][ensemble.size()];
       for (int iter = 0; iter < ensemble.size(); iter++) {
         final MultiClassModel model = (MultiClassModel) ensemble.models[iter];
         final Func[] sourceFunctions = model.getInternModel().dirs();
-        for (int c = 0; c < ensemble.ydim(); c++) {
+        for (int c = 0; c < internModelCount; c++) {
           transpose[c][iter] = sourceFunctions[c];
         }
       }
