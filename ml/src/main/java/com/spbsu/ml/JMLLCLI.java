@@ -16,6 +16,7 @@ import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
@@ -25,9 +26,15 @@ import com.spbsu.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic2;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.multiclass.MCMacroF1Score;
+import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
+import com.spbsu.ml.loss.multiclass.MCMacroRecall;
+import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
+import com.spbsu.ml.loss.multiclass.hier.HierLoss;
 import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.MultiClassModel;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -469,8 +476,13 @@ public class JMLLCLI {
         final double step = ensemble.wlast();
         final Trans last = ensemble.last();
         append(learnValues, VecTools.scale(last.transAll(learn.vecData().data()), step));
-        for (final Vec testValues : testValuesArray) {
-          append(testValues, VecTools.scale(last.transAll(test.vecData().data()), step));
+        for (int t = 0; t < testValuesArray.length; ++t) {
+          if (isMultiClassLoss(testMetrics[t])) {
+            final MultiClassModel multiClassModel = MCTools.joinBoostingResults(ensemble);
+            testValuesArray[t] = multiClassModel.bestClassAll(test.vecData().data());
+          } else {
+            append(testValuesArray[t], VecTools.scale(last.transAll(test.vecData().data()), step));
+          }
         }
       } else {
         learnValues = partial.transAll(learn.vecData().data());
@@ -523,6 +535,19 @@ public class JMLLCLI {
     }
     builder.append(arr[arr.length - 1]);
     return builder.toString();
+  }
+
+  private static final Class[] MULTI_CLASS_LOSSES = {
+      MCMacroF1Score.class, MCMacroPrecision.class, MCMacroRecall.class, MCMicroPrecision.class, HierLoss.class
+  };
+
+  private static boolean isMultiClassLoss(Object obj) {
+    for (final Class multiClassLoss : MULTI_CLASS_LOSSES) {
+      if (multiClassLoss.isInstance(obj)) {
+        return true;
+      }
+    }
+    return false;
   }
 
 }
