@@ -1,6 +1,10 @@
 package com.spbsu.ml.loss.multiclass;
 
+import java.util.Arrays;
+
+
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
@@ -21,6 +25,17 @@ public class MCMacroRecall extends Func.Stub implements TargetFunc {
     this.target = target;
     this.owner = owner;
     this.classLabels = MCTools.getClassesLabels(target);
+  }
+
+  public MCMacroRecall(Vec target, DataSet<?> owner) {
+    final int[] intTarget = new int[target.length()];
+    final VecIterator iter = target.nonZeroes();
+    while (iter.advance()) {
+      intTarget[iter.index()] = (int) iter.value();
+    }
+    this.target = new IntSeq(intTarget);
+    this.owner = owner;
+    this.classLabels = MCTools.getClassLabels(target);
   }
 
   @Override

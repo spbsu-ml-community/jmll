@@ -77,6 +77,17 @@ public class MCTools {
     return labels.toArray();
   }
 
+  public static int[] getClassLabels(Vec target) {
+    final TIntList labels = new TIntArrayList();
+    for (int i = 0; i < target.length(); i++) {
+      final int label = target.at(i).intValue();
+      if (!labels.contains(label)) {
+        labels.add(label);
+      }
+    }
+    return labels.toArray();
+  }
+
   /**
    * Normalization of multiclass target. Target may contain any labels
    * @param target Target vec with any class labels.

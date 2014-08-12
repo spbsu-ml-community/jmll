@@ -1,7 +1,12 @@
 package com.spbsu.ml.loss.multiclass;
 
+import java.util.Arrays;
+
+
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.seq.IntSeq;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
@@ -21,6 +26,17 @@ public class MCMacroPrecision extends Func.Stub implements TargetFunc {
     this.target = target;
     this.owner = owner;
     this.classLabels = MCTools.getClassesLabels(target);
+  }
+
+  public MCMacroPrecision(Vec target, DataSet<?> owner) {
+    final int[] intTarget = new int[target.length()];
+    final VecIterator iter = target.nonZeroes();
+    while (iter.advance()) {
+      intTarget[iter.index()] = (int) iter.value();
+    }
+    this.target = new IntSeq(intTarget);
+    this.owner = owner;
+    this.classLabels = MCTools.getClassLabels(target);
   }
 
   @Override
