@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
-
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -39,8 +37,6 @@ import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
-import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
-import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
@@ -56,6 +52,13 @@ import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.list.array.TIntArrayList;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 /**
  * User: solar
@@ -74,7 +77,7 @@ public class DataTools {
     final int[] featuresCount = new int[]{-1};
     CharSeqTools.processLines(in, new Processor<CharSequence>() {
       int lindex = 0;
-
+      
       @Override
       public void process(final CharSequence arg) {
         lindex++;
@@ -91,25 +94,24 @@ public class DataTools {
       }
     });
     return new FeaturesTxtPool(file,
-            new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
-            new VecBasedMx(featuresCount[0], data.build()),
-            target.build());
+        new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
+        new VecBasedMx(featuresCount[0], data.build()),
+        target.build());
   }
 
   public static void writeModel(Computable result, File to) throws IOException {
     BFGrid grid = grid(result);
     StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
-            SERIALIZATION.write(result)), to);
+        SERIALIZATION.write(result)), to);
   }
 
   public static Trans readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(new FileInputStream(fileName)));
     String line = modelReader.readLine();
     CharSequence[] parts = CharSeqTools.split(line, '\t');
-    Class<? extends Trans> modelClazz = (Class<? extends Trans>) Class.forName(parts[0].toString());
+    Class<? extends Trans> modelClazz = (Class<? extends Trans>)Class.forName(parts[0].toString());
     return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }
-
 
   public static void writeBinModel(Computable result, File file) throws IOException {
     if (result instanceof Ensemble) {
@@ -144,38 +146,41 @@ public class DataTools {
     }
     return null;
   }
-
   public static BFGrid grid(Computable<?, Vec> result) {
     if (result instanceof CompositeTrans) {
       final CompositeTrans composite = (CompositeTrans) result;
       BFGrid grid = grid(composite.f);
       grid = grid == null ? grid(composite.g) : grid;
       return grid;
-    } else if (result instanceof FuncJoin) {
+    }
+    else if (result instanceof FuncJoin) {
       final FuncJoin join = (FuncJoin) result;
       for (Func dir : join.dirs()) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    } else if (result instanceof TransJoin) {
+    }
+    else if (result instanceof TransJoin) {
       final TransJoin join = (TransJoin) result;
       for (Trans dir : join.dirs) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    } else if (result instanceof Ensemble) {
+    }
+    else if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
       for (Trans dir : ensemble.models) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    } else if (result instanceof ObliviousTree)
-      return ((ObliviousTree) result).grid();
+    }
+    else if (result instanceof ObliviousTree)
+      return ((ObliviousTree)result).grid();
     if (result instanceof ObliviousMultiClassTree)
-      return ((ObliviousMultiClassTree) result).binaryClassifier().grid();
+      return ((ObliviousMultiClassTree)result).binaryClassifier().grid();
     return null;
   }
 
@@ -222,21 +227,19 @@ public class DataTools {
 
   public static Class<? extends TargetFunc> targetByName(final String name) {
     try {
-      return (Class<? extends TargetFunc>) Class.forName("com.spbsu.ml.loss." + name);
-    } catch (Exception e) {
+      return (Class<? extends TargetFunc>)Class.forName("com.spbsu.ml.loss." + name);
+    }
+    catch (Exception e) {
       throw new RuntimeException("Unable to create requested target: " + name, e);
     }
   }
 
   public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
-          new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
+      new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
 
   public static int[][] splitAtRandom(final int size, final FastRandom rng, final double... v) {
-    final Vec weights = new ArrayVec(v);
-    final TIntList[] folds = new TIntList[v.length];
-    for (int i = 0; i < folds.length; i++) {
-      folds[i] = new TIntLinkedList();
-    }
+    Vec weights = new ArrayVec(v);
+    TIntArrayList[] folds = new TIntArrayList[v.length];
     for (int i = 0; i < size; i++) {
       folds[rng.nextSimple(weights)].add(i);
     }
@@ -318,7 +321,8 @@ public class DataTools {
   }
 
   private static void writeFeature(final Writer out, final JsonFactory jsonFactory,
-                                   final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature) throws IOException {
+                                   final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature) throws IOException
+  {
     {
       StringWriter writer = new StringWriter();
       final JsonGenerator generator = jsonFactory.createGenerator(writer);
@@ -336,55 +340,55 @@ public class DataTools {
     out.append('\n');
   }
 
-  public static Pool<? extends DSItem> readPoolFrom(Reader input) throws IOException {
+  public static Pool<? extends DSItem> readPoolFrom(Reader input) throws IOException{
     try {
       final PoolBuilder builder = new PoolBuilder();
-      CharSeqTools.processLines(input, new Processor<CharSequence>() {
-        @Override
-        public void process(final CharSequence arg) {
-          final CharSequence[] parts = CharSeqTools.split(arg, '\t');
-          try {
-            final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
-            switch (parts[0].toString()) {
-              case "items": {
-                final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
-                builder.setMeta(meta);
+      CharSeqTools.processAndSplitLines(input, new Processor<CharSequence[]>() {
+            @Override
+            public void process(final CharSequence[] parts) {
+              try {
+                final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
+                switch (parts[0].toString()) {
+                  case "items": {
+                    final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
+                    builder.setMeta(meta);
 
-                final JsonParser parseItems = CharSeqTools.parseJSON(parts[2]);
-                final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
-                final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
-                final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
-                for (int i = 0; i < myObjects.size(); i++) {
-                  builder.addItem(myObjects.get(i));
+                    final JsonParser parseItems = CharSeqTools.parseJSON(parts[2]);
+                    final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
+                    final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
+                    final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
+                    for (int i = 0; i < myObjects.size(); i++) {
+                      builder.addItem(myObjects.get(i));
+                    }
+                    break;
+                  }
+                  case "feature": {
+                    JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
+                    Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
+                    builder.newFeature(fmeta, SERIALIZATION.read(
+                        CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
+                        vecClass));
+                    break;
+                  }
+                  case "target": {
+                    JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
+                    Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
+                    builder.newTarget(fmeta, SERIALIZATION.read(
+                        CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
+                        vecClass));
+                    break;
+                  }
                 }
-                break;
-              }
-              case "feature": {
-                JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
-                Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
-                builder.newFeature(fmeta, SERIALIZATION.read(
-                        CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
-                        vecClass));
-                break;
-              }
-              case "target": {
-                JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
-                Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
-                builder.newTarget(fmeta, SERIALIZATION.read(
-                        CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
-                        vecClass));
-                break;
+              } catch (IOException e) {
+                throw new RuntimeException(e);
               }
             }
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }
-      });
+          },
+          "\t", true);
       return builder.create();
     } catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
-        throw (IOException) e.getCause();
+        throw (IOException)e.getCause();
       }
       throw e;
     }
@@ -396,8 +400,8 @@ public class DataTools {
 
   public static Pool<? extends DSItem> loadFromFile(final File file) throws IOException {
     try (final InputStreamReader input = file.getName().endsWith(".gz") ?
-                                         new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) :
-                                         new FileReader(file)) {
+        new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) :
+        new FileReader(file)) {
       return readPoolFrom(input);
     }
   }
