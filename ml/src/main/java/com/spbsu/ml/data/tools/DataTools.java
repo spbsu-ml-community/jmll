@@ -44,7 +44,8 @@ import com.spbsu.ml.meta.impl.JsonTargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
-import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.linked.TIntLinkedList;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -145,32 +146,28 @@ public class DataTools {
       BFGrid grid = grid(composite.f);
       grid = grid == null ? grid(composite.g) : grid;
       return grid;
-    }
-    else if (result instanceof FuncJoin) {
+    } else if (result instanceof FuncJoin) {
       final FuncJoin join = (FuncJoin) result;
       for (Func dir : join.dirs()) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    }
-    else if (result instanceof TransJoin) {
+    } else if (result instanceof TransJoin) {
       final TransJoin join = (TransJoin) result;
       for (Trans dir : join.dirs) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    }
-    else if (result instanceof Ensemble) {
+    } else if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
       for (Trans dir : ensemble.models) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    }
-    else if (result instanceof ObliviousTree)
+    } else if (result instanceof ObliviousTree)
       return ((ObliviousTree)result).grid();
     if (result instanceof ObliviousMultiClassTree)
       return ((ObliviousMultiClassTree)result).binaryClassifier().grid();
@@ -220,9 +217,8 @@ public class DataTools {
 
   public static Class<? extends TargetFunc> targetByName(final String name) {
     try {
-      return (Class<? extends TargetFunc>)Class.forName("com.spbsu.ml.loss." + name);
-    }
-    catch (Exception e) {
+      return (Class<? extends TargetFunc>) Class.forName("com.spbsu.ml.loss." + name);
+    } catch (Exception e) {
       throw new RuntimeException("Unable to create requested target: " + name, e);
     }
   }
@@ -231,8 +227,11 @@ public class DataTools {
       new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
 
   public static int[][] splitAtRandom(final int size, final FastRandom rng, final double... v) {
-    Vec weights = new ArrayVec(v);
-    TIntArrayList[] folds = new TIntArrayList[v.length];
+    final Vec weights = new ArrayVec(v);
+    final TIntList[] folds = new TIntList[v.length];
+    for (int i = 0; i < folds.length; i++) {
+      folds[i] = new TIntLinkedList();
+    }
     for (int i = 0; i < size; i++) {
       folds[rng.nextSimple(weights)].add(i);
     }
@@ -314,8 +313,7 @@ public class DataTools {
   }
 
   private static void writeFeature(final Writer out, final JsonFactory jsonFactory,
-                                   final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature) throws IOException
-  {
+                                   final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature) throws IOException {
     {
       StringWriter writer = new StringWriter();
       final JsonGenerator generator = jsonFactory.createGenerator(writer);
@@ -333,7 +331,7 @@ public class DataTools {
     out.append('\n');
   }
 
-  public static Pool<? extends DSItem> readPoolFrom(Reader input) throws IOException{
+  public static Pool<? extends DSItem> readPoolFrom(Reader input) throws IOException {
     try {
       final PoolBuilder builder = new PoolBuilder();
       CharSeqTools.processAndSplitLines(input, new Processor<CharSequence[]>() {
@@ -381,7 +379,7 @@ public class DataTools {
       return builder.create();
     } catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
-        throw (IOException)e.getCause();
+        throw (IOException) e.getCause();
       }
       throw e;
     }
