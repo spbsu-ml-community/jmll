@@ -2,9 +2,6 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.Trans;
 import gnu.trove.list.TIntList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -19,15 +16,21 @@ import java.util.Arrays;
 public class HierarchicalModel extends MCModel.Stub {
   protected final MCModel basedOn;
   protected final TIntList classLabels;
-  protected final TIntObjectMap<HierarchicalModel> label2childModel = new TIntObjectHashMap<>();
+  protected final TIntObjectMap<HierarchicalModel> label2childModel;
 
   public HierarchicalModel(MCModel basedOn, TIntList classLabels) {
     this.basedOn = basedOn;
     this.classLabels = classLabels;
+    this.label2childModel = new TIntObjectHashMap<>(classLabels.size());
   }
 
   public void addChild(HierarchicalModel child, int label) {
     label2childModel.put(label, child);
+  }
+
+  @Nullable
+  public HierarchicalModel getChild(int label) {
+    return label2childModel.get(label);
   }
 
   @Override

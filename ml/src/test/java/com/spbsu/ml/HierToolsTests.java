@@ -1,94 +1,46 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.commons.util.tree.FastTree;
-import com.spbsu.commons.util.tree.Tree;
+import com.spbsu.commons.util.tree.IntArrayTree;
+import com.spbsu.commons.util.tree.IntTree;
 import com.spbsu.ml.data.tools.HierTools;
 import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.procedure.TIntIntProcedure;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-import junit.framework.TestCase;
 
 /**
  * User: qdeee
  * Date: 25.07.14
  */
-public class HierToolsTests extends TestCase {
-  protected static Pool<?> pool;
-  protected static IntSeq smallTarget;
-  protected static IntSeq bigTarget;
-
-  private synchronized void init() throws Exception {
-    if (pool == null || smallTarget == null || bigTarget == null) {
-      pool = TestResourceLoader.loadPool("features.txt.gz");
-      smallTarget = MCTools.transformRegressionToMC(pool.target(L2.class).target, 5, new TDoubleArrayList(new double[]{0.038125, 0.07625, 0.114375, 0.1525, 0.61}));
-      bigTarget = MCTools.transformRegressionToMC(pool.target(L2.class).target, 16, new TDoubleArrayList());
+public class HierToolsTests extends GridTest {
+  public void testHierBuilder3() throws Exception {
+    final IntArrayTree expectedTree = new IntArrayTree(); //(0)->(1, (2)->((3)->(5, 6), (4)->(7, 8)))
+    {
+      expectedTree.addTo(0); //1 (leaf)
+      expectedTree.addTo(0); //2 (intern)
+      expectedTree.addTo(2); //3 (intern
+      expectedTree.addTo(2); //4 (intern)
+      expectedTree.addTo(3); //5 (leaf)
+      expectedTree.addTo(3); //6 (leaf)
+      expectedTree.addTo(4); //7 (leaf)
+      expectedTree.addTo(4); //8 (leaf)
     }
-  }
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    init();
-  }
+    final IntSeq target = MCTools.transformRegressionToMC(learn.target(L2.class).target, 16, new TDoubleArrayList());
+    final HierTools.TreeBuilder builder = new HierTools.TreeBuilder(450);
+    builder.createFromOrderedMulticlass(target);
 
-  public void testHierBuilder() throws Exception {
-    final FastTree tree = HierTools.loadOrderedMulticlassAsHierarchicalMedian(smallTarget);
-    System.out.println(tree.toString());
-  }
+    final IntTree actualTree = builder.releaseTree();
+    final TIntIntMap actualMapping = builder.releaseMapping();
 
-  public void testHierBuilder2() throws Exception {
-    final FastTree tree = HierTools.loadOrderedMulticlassAsHierarchicalMedian(bigTarget);
-    final FastTree goodTree = HierTools._loadOrderedMulticlassAsHierarchicalMedian(bigTarget);
-
-    final String actual = tree.toString();
-    final String expected = goodTree.toString();
-    System.out.println(actual);
-    System.out.println("\n\n");
-    System.out.println(expected);
-
-    assertNotSame(expected, actual);
-  }
-
-  public void testCounter() throws Exception {
-    final FastTree tree = HierTools.loadOrderedMulticlassAsHierarchicalMedian(smallTarget);
-    final TIntIntMap id2deepCount = HierTools.itemsDeepCounter(tree, smallTarget);
-    System.out.println(id2deepCount.toString());
-
-  }
-
-  public void testPruning() throws Exception {
-    final IntSeq intTarget = MCTools.transformRegressionToMC(pool.target(L2.class).target, 16, new TDoubleArrayList());
-    final FastTree tree = HierTools.loadOrderedMulticlassAsHierarchicalMedian(intTarget);
-    final Tree pruneTree = HierTools.pruneTree(tree, intTarget, 450);
-    System.out.println(pruneTree.toString());
-
-  }
-
-  public void testMapping() throws Exception {
-    final IntSeq intTarget = MCTools.transformRegressionToMC(pool.target(L2.class).target, 16, new TDoubleArrayList());
-    final FastTree tree = HierTools._loadOrderedMulticlassAsHierarchicalMedian(intTarget);
-    final Tree pruneTree = HierTools.pruneTree(tree, intTarget, 450);
-    final TIntIntMap map = new TIntIntHashMap();
-    HierTools.createTreesMapping(tree.getRoot(), pruneTree.getRoot(), map);
-    final TIntSet unprunedNodes = new TIntHashSet(new int[]{0, 1, 2, 3, 16, 17, 18, 19, 20});
-    map.forEachEntry(new TIntIntProcedure() {
-      @Override
-      public boolean execute(final int k, final int v) {
-        if (unprunedNodes.contains(k)) {
-          assertEquals(k, v);
-        } else {
-          assertEquals(20, v);
-        }
-        return true;
-      }
-    });
+    assertEquals(expectedTree, actualTree);
+    assertTrue(actualMapping.get(0) == 1);
+    assertTrue(actualMapping.get(1) == 5);
+    assertTrue(actualMapping.get(2) == 6);
+    assertTrue(actualMapping.get(3) == 7);
+    for (int i = 4; i < 16; i++) {
+      assertTrue(actualMapping.get(i) == 8);
+    }
   }
 }

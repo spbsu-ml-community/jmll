@@ -1,5 +1,19 @@
 package com.spbsu.ml.data.tools;
 
+import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
+import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
+import com.spbsu.commons.util.ArrayTools;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.linked.TIntLinkedList;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -395,5 +409,22 @@ public class DataTools {
         new FileReader(file)) {
       return readPoolFrom(input);
     }
+  }
+
+  public static <S extends Seq<?>> Pair<VecDataSet, S> createSubset(final VecDataSet sourceDS, final S sourceTarget, int[] idxs) {
+    final VecDataSet subSet = new VecDataSetImpl(
+        new VecBasedMx(
+            sourceDS.xdim(),
+            new IndexTransVec(sourceDS.data(),
+                new RowsPermutation(
+                    idxs,
+                    sourceDS.xdim()
+                )
+            )
+        ),
+        sourceDS
+    );
+    final S subTarget = (S) ArrayTools.cut((Seq<?>) sourceTarget, idxs);
+    return Pair.create(subSet, subTarget);
   }
 }

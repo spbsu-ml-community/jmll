@@ -20,6 +20,10 @@ public class JoinedBinClassModel extends MCModel.Stub {
     internalModel = new FuncJoin(dirs);
   }
 
+  public FuncJoin getInternModel() {
+    return internalModel;
+  }
+
   @Override
   public Vec probs(final Vec x) {
     final Vec apply = internalModel.trans(x);
@@ -32,7 +36,7 @@ public class JoinedBinClassModel extends MCModel.Stub {
 
   @Override
   public int bestClass(Vec x) {
-    final double[] trans = trans(x).toArray();
+    final double[] trans = internalModel.trans(x).toArray();
     return ArrayTools.max(trans);
   }
 
