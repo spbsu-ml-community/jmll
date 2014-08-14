@@ -121,7 +121,7 @@ public class JMLLCLI {
 
       String dataFile = command.getOptionValue(LEARN_OPTION, "features.txt");
 
-      Pool data = command.hasOption(JSON_FORMAT) ? DataTools.loadFromFile(dataFile)
+      Pool<?> data = command.hasOption(JSON_FORMAT) ? DataTools.loadFromFile(dataFile)
               : DataTools.loadFromFeaturesTxt(dataFile);
 
 //      if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
@@ -130,8 +130,8 @@ public class JMLLCLI {
       if (dataFile.endsWith(".gz"))
         dataFile = dataFile.substring(0, dataFile.length() - ".gz".length());
 
-      Pool learn = null;
-      Pool test = null;
+      Pool<?> learn = null;
+      Pool<?> test = null;
       if (command.hasOption(CROSS_VALIDATION_OPTION)) {
         final String cvOption = command.getOptionValue(CROSS_VALIDATION_OPTION);
         final String[] cvOptionsSplit = StringUtils.split(cvOption, "/", 2);
@@ -254,7 +254,7 @@ public class JMLLCLI {
     }
   }
 
-  private static <I extends DSItem> Computable process(Pool<I> learn, Pool<I> test) throws Exception {
+  private static Computable process(Pool<? extends DSItem> learn, Pool<? extends DSItem> test) throws Exception {
     final VecDataSet learnDS = learn.vecData();
 
     final FastRandom rnd = new FastRandom();
@@ -322,18 +322,18 @@ public class JMLLCLI {
     return result;
   }
 
-  private static <I extends DSItem> Pair<SubPool<I>, SubPool<I>> splitCV(Pool<I> pool, int folds, FastRandom rnd) {
+  private static Pair<SubPool, SubPool> splitCV(Pool<? extends DSItem> pool, int folds, FastRandom rnd) {
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, 1. / folds, (folds - 1.) / folds);
-    return Pair.create(new SubPool<I>(pool, cvSplit[0]), new SubPool<I>(pool, cvSplit[1]));
+    return Pair.create(new SubPool(pool, cvSplit[0]), new SubPool(pool, cvSplit[1]));
   }
 
-  private static <I extends DSItem> List<SubPool<I>> splitKFoldCV(Pool<I> pool, int folds, FastRandom rnd) {
+  private static List<SubPool> splitKFoldCV(Pool<? extends DSItem> pool, int folds, FastRandom rnd) {
     double[] v = new double[folds];
     Arrays.fill(v, 1. / folds);
 
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, v);
 
-    List<SubPool<I>> subPools = new ArrayList<>();
+    List<SubPool> subPools = new ArrayList<>();
     for (int[] indices : cvSplit) {
       subPools.add(new SubPool<>(pool, indices));
     }
