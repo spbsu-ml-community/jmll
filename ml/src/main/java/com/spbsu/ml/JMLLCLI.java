@@ -1,12 +1,18 @@
 package com.spbsu.ml;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.*;
+
+
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
@@ -16,7 +22,10 @@ import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.tools.*;
+import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.data.tools.MCTools;
+import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.data.tools.SubPool;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic;
@@ -35,18 +44,8 @@ import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MultiClassModel;
-import com.sun.deploy.util.ArrayUtil;
+import gnu.trove.list.linked.TIntLinkedList;
 import org.apache.commons.cli.*;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
-
-
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.lang.reflect.Method;
-import java.util.*;
-
 
 import static com.spbsu.commons.math.vectors.VecTools.append;
 
@@ -174,11 +173,11 @@ public class JMLLCLI {
 
               test = learnFolds.remove(t);
 
-              int[] indices = new int[0];
+              TIntLinkedList indices = new TIntLinkedList();
               for (SubPool fold : learnFolds) {
-                indices = ArrayUtils.addAll(indices, fold.indices);
+                indices.addAll(fold.indices);
               }
-              learn = new SubPool(data, indices);
+              learn = new SubPool(data, indices.toArray());
 
               result = process(learn, test);
 
