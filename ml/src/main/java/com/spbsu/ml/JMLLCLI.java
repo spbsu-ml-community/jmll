@@ -161,7 +161,7 @@ public class JMLLCLI {
             final List<SubPool> subPools = splitKFoldCV(data, k, new FastRandom(seed));
 
             //Оh shit!
-            final Vec classes = ((Pool<? extends DSItem>) data).target(L2.class).target;
+            final Vec classes = data.target(L2.class).target;
 
             int numClasses = MCTools.countClasses(classes);
             final ConfusionMatrixSet matrixSet = new ConfusionMatrixSet();
