@@ -1,5 +1,12 @@
 package com.spbsu.ml;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.*;
+
+
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Factory;
@@ -31,16 +38,14 @@ import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
 import com.spbsu.ml.loss.multiclass.MCMacroRecall;
 import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
 import com.spbsu.ml.loss.multiclass.hier.HierLoss;
+import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
+import com.spbsu.ml.loss.multiclass.util.ConfusionMatrixSet;
 import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MultiClassModel;
+import gnu.trove.list.linked.TIntLinkedList;
 import org.apache.commons.cli.*;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.lang.reflect.Method;
-import java.util.StringTokenizer;
 
 import static com.spbsu.commons.math.vectors.VecTools.append;
 
@@ -71,6 +76,7 @@ public class JMLLCLI {
   private static final String OUTPUT_OPTION = "o";
   private static final String JSON_FORMAT = "j";
   private static final String WRITE_BIN_FORMULA = "mxbin";
+  private static final String K_FOLD_CROSS_VALIDATION_OPTION = "K";
 
   static Options options = new Options();
 
@@ -91,14 +97,17 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("json-format").withDescription("alternative format for features.txt").hasArg(false).create(JSON_FORMAT));
     options.addOption(OptionBuilder.withLongOpt("matrixnetbin").withDescription("write model in matrix-net bin format").hasArg(false).create(WRITE_BIN_FORMULA));
     options.addOption(OptionBuilder.withLongOpt("histogram").withDescription("histogram for dynamic grid").hasArg(false).create(HIST_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("k-fold-cross-validation").withDescription("k folds CV").hasArg().create(K_FOLD_CROSS_VALIDATION_OPTION));
   }
+
+  private static ModelsSerializationRepository serializationRepository;
+  private static CommandLine command;
 
   public static void main(String[] args) throws IOException {
     final CommandLineParser parser = new GnuParser();
-    final ModelsSerializationRepository serializationRepository;
 
     try {
-      final CommandLine command = parser.parse(options, args);
+      command = parser.parse(options, args);
 
       if (command.getArgs().length == 0)
         throw new RuntimeException("Please provide mode to run");
@@ -110,92 +119,88 @@ public class JMLLCLI {
         serializationRepository = new ModelsSerializationRepository();
       }
 
-      String learnFile = command.getOptionValue(LEARN_OPTION, "features.txt");
+      String dataFile = command.getOptionValue(LEARN_OPTION, "features.txt");
 
-      Pool learn = command.hasOption(JSON_FORMAT) ? DataTools.loadFromFile(learnFile)
-              : DataTools.loadFromFeaturesTxt(learnFile);
+      Pool<?> data = command.hasOption(JSON_FORMAT) ? DataTools.loadFromFile(dataFile)
+              : DataTools.loadFromFeaturesTxt(dataFile);
 
 //      if (command.hasOption(NORMALIZE_RELEVANCE_OPTION))
 //        learn = MCTools.normalizeClasses(learn);
 
-      if (learnFile.endsWith(".gz"))
-        learnFile = learnFile.substring(0, learnFile.length() - ".gz".length());
+      if (dataFile.endsWith(".gz"))
+        dataFile = dataFile.substring(0, dataFile.length() - ".gz".length());
 
-      final Pool test;
-      if (!command.hasOption(CROSS_VALIDATION_OPTION)) {
-        test = command.hasOption(TEST_OPTION) ? DataTools.loadFromFeaturesTxt(command.getOptionValue(TEST_OPTION)) : learn;
-      } else {
+      Pool<?> learn = null;
+      Pool<?> test = null;
+      if (command.hasOption(CROSS_VALIDATION_OPTION)) {
         final String cvOption = command.getOptionValue(CROSS_VALIDATION_OPTION);
         final String[] cvOptionsSplit = StringUtils.split(cvOption, "/", 2);
-        final Pair<SubPool, SubPool> learnTest = splitCV(learn, Integer.parseInt(cvOptionsSplit[1]), new FastRandom(Integer.parseInt(cvOptionsSplit[0])));
+        final Pair<SubPool, SubPool> learnTest = splitCV(data, Integer.parseInt(cvOptionsSplit[1]), new FastRandom(Integer.parseInt(cvOptionsSplit[0])));
         learn = learnTest.first;
         test = learnTest.second;
+      } else if (!command.hasOption(K_FOLD_CROSS_VALIDATION_OPTION)) {
+        learn = data;
+        test = command.hasOption(TEST_OPTION) ? DataTools.loadFromFeaturesTxt(command.getOptionValue(TEST_OPTION)) : learn;
       }
 
       final String mode = command.getArgs()[0];
-      final String outputFile = command.hasOption(OUTPUT_OPTION) ? command.getOptionValue(OUTPUT_OPTION) : learnFile;
+      final String outputFile = command.hasOption(OUTPUT_OPTION) ? command.getOptionValue(OUTPUT_OPTION) : dataFile;
 
-      final VecDataSet learnDS = learn.vecData();
+      final VecDataSet dataDS = data.vecData();
       switch (mode) {
         case "fit":
-          final FastRandom rnd = new FastRandom();
-          final Factory<BFGrid> lazyGrid = new Factory<BFGrid>() {
-            BFGrid cooked;
+          Computable result = null;
 
-            @Override
-            public BFGrid create() {
-              if (cooked == null) {
-                if (command.hasOption(GRID_OPTION)) {
-                  cooked = serializationRepository.getGrid();
-                } else {
-                  cooked = GridTools.medianGrid(learnDS, Integer.parseInt(command.getOptionValue(BIN_FOLDS_COUNT_OPTION, "32")));
-                }
+          if (command.hasOption(K_FOLD_CROSS_VALIDATION_OPTION)) {
+            final String cvOption = command.getOptionValue(K_FOLD_CROSS_VALIDATION_OPTION);
+            final String[] cvOptionsSplit = StringUtils.split(cvOption, "/", 2);
+
+            int k = Integer.parseInt(cvOptionsSplit[1]);
+            int seed = Integer.parseInt(cvOptionsSplit[0]);
+
+            final List<SubPool> subPools = splitKFoldCV(data, k, new FastRandom(seed));
+
+            //Оh shit!
+            final Vec classes = data.target(L2.class).target;
+
+            int numClasses = MCTools.countClasses(classes);
+            final ConfusionMatrixSet matrixSet = new ConfusionMatrixSet();
+
+            for (int t = 0; t < subPools.size(); t++) {
+              System.out.println("   === " + (t + 1) + "-fold iteration ===");
+
+              final List<SubPool> learnFolds = new ArrayList<>(subPools);
+
+              test = learnFolds.remove(t);
+
+              TIntLinkedList indices = new TIntLinkedList();
+              for (SubPool fold : learnFolds) {
+                indices.addAll(fold.indices);
               }
-              return cooked;
-            }
-          };
-          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, learn.vecData());
+              learn = new SubPool(data, indices.toArray());
 
-          final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
-          final TargetFunc loss = learn.target(DataTools.targetByName(target));
+              result = process(learn, test);
 
-          final String[] metricNames = command.getOptionValues(METRICS_OPTION);
-          final Func[] metrics;
-          if (metricNames != null) {
-            metrics = new Func[metricNames.length];
-            for (int i = 0; i < metricNames.length; i++) {
-              metrics[i] = test.target(DataTools.targetByName(metricNames[i]));
+              final ConfusionMatrix matrix = new ConfusionMatrix(numClasses);
+              for (int i : ((SubPool) test).indices) {
+                double actual = ((Vec) result.compute(dataDS.at(i))).at(0);
+                matrix.add(classes.at(i).intValue(), (int) actual);
+              }
+
+              matrixSet.add(matrix);
             }
+
+            final ConfusionMatrix mergeMatrix = matrixSet.merge();
+            System.out.println("\n    === " + k + "-fold cross validation evaluation ===\n");
+            System.out.println(mergeMatrix.toSummaryString());
+            System.out.println(mergeMatrix);
+            System.out.println(mergeMatrix.toClassDetailsString());
+            System.out.println("    === Sustainability of " + k + "-fold cross validation ===\n");
+            System.out.println(matrixSet.toSummaryString());
+
           } else {
-            metrics = new Func[]{
-                    test.target(DataTools.targetByName(target))
-            };
+            result = process(learn, test);
           }
-
-          final Action<Trans> progressHandler = new ProgressPrinter(learn, test, loss, metrics);
-          if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION)) {
-            //noinspection unchecked
-            ((WeakListenerHolder) method).addListener(progressHandler);
-          }
-          final Action<Trans> histHandler = new HistPrinter();
-          if (method instanceof WeakListenerHolder && command.hasOption(HIST_OPTION)) {
-            //noinspection unchecked
-            ((WeakListenerHolder) method).addListener(histHandler);
-          }
-
-          Interval.start();
-          Interval.suspend();
-
-          @SuppressWarnings("unchecked")
-          final Computable result = method.fit(learnDS, loss);
-
-          Interval.stopAndPrint("Total fit time:");
-          System.out.print("Learn: " + loss.value(DataTools.calcAll(result, learnDS)) + " Test:");
-          for (final Trans metric : metrics) {
-            System.out.print(" " + metric.trans(DataTools.calcAll(result, test.vecData())));
-          }
-          System.out.println();
-
 
           if (command.hasOption(WRITE_BIN_FORMULA)) {
             DataTools.writeBinModel(result, new File(outputFile + ".model"));
@@ -222,13 +227,13 @@ public class JMLLCLI {
             final Computable model = DataTools.readModel(command.getOptionValue(MODEL_OPTION, "features.txt.model"), serializationRepository);
             final CharSeqBuilder value = new CharSeqBuilder();
 
-            for (int i = 0; i < learnDS.length(); i++) {
+            for (int i = 0; i < dataDS.length(); i++) {
               value.clear();
-              value.append(MathTools.CONVERSION.convert(learnDS.parent().at(i), CharSequence.class));
+              value.append(MathTools.CONVERSION.convert(dataDS.parent().at(i), CharSequence.class));
               value.append('\t');
-              value.append(MathTools.CONVERSION.convert(learnDS.at(i), CharSequence.class));
+              value.append(MathTools.CONVERSION.convert(dataDS.at(i), CharSequence.class));
               value.append('\t');
-              value.append(MathTools.CONVERSION.convert(model.compute(learnDS.at(i)), CharSequence.class));
+              value.append(MathTools.CONVERSION.convert(model.compute(dataDS.at(i)), CharSequence.class));
               writer.append(value).append('\n');
             }
           }
@@ -239,7 +244,7 @@ public class JMLLCLI {
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
-    } catch (Exception e) {
+   } catch (Exception e) {
       HelpFormatter formatter = new HelpFormatter();
       e.printStackTrace();
       System.err.println(e.getLocalizedMessage());
@@ -249,9 +254,90 @@ public class JMLLCLI {
     }
   }
 
-  private static <I extends DSItem> Pair<SubPool<I>, SubPool<I>> splitCV(Pool<I> pool, int folds, FastRandom rnd) {
+  private static Computable process(Pool<? extends DSItem> learn, Pool<? extends DSItem> test) throws Exception {
+    final VecDataSet learnDS = learn.vecData();
+
+    final FastRandom rnd = new FastRandom();
+    final Factory<BFGrid> lazyGrid = new Factory<BFGrid>() {
+      BFGrid cooked;
+
+      @Override
+      public BFGrid create() {
+        if (cooked == null) {
+          if (command.hasOption(GRID_OPTION)) {
+            cooked = serializationRepository.getGrid();
+          } else {
+            cooked = GridTools.medianGrid(learnDS, Integer.parseInt(command.getOptionValue(BIN_FOLDS_COUNT_OPTION, "32")));
+          }
+        }
+        return cooked;
+      }
+    };
+
+    final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, learn.vecData());
+
+    final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
+    final TargetFunc loss = learn.target(DataTools.targetByName(target));
+
+    final String[] metricNames = command.getOptionValues(METRICS_OPTION);
+    final Func[] metrics;
+    if (metricNames != null) {
+      metrics = new Func[metricNames.length];
+      for (int i = 0; i < metricNames.length; i++) {
+        metrics[i] = test.target(DataTools.targetByName(metricNames[i]));
+      }
+    } else {
+      metrics = new Func[]{
+          test.target(DataTools.targetByName(target))
+      };
+    }
+
+    final Action<Trans> progressHandler = new ProgressPrinter(learn, test, loss, metrics);
+    if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION)) {
+      //noinspection unchecked
+      ((WeakListenerHolder) method).addListener(progressHandler);
+    }
+    final Action<Trans> histHandler = new HistPrinter();
+    if (method instanceof WeakListenerHolder && command.hasOption(HIST_OPTION)) {
+      //noinspection unchecked
+      ((WeakListenerHolder) method).addListener(histHandler);
+    }
+
+    Interval.start();
+    Interval.suspend();
+
+    @SuppressWarnings("unchecked")
+    final Computable result = method.fit(learnDS, loss);
+
+    Interval.stopAndPrint("Total fit time:");
+    System.out.print("Learn: " + loss.value(DataTools.calcAll(result, learnDS)) + " Test:");
+    for (final Trans metric : metrics) {
+      System.out.print(" " + metric.trans(DataTools.calcAll(result, test.vecData())));
+    }
+    System.out.println();
+
+    if (result instanceof Ensemble) {
+      return MCTools.joinBoostingResults((Ensemble) result);
+    }
+    return result;
+  }
+
+  private static Pair<SubPool, SubPool> splitCV(Pool<? extends DSItem> pool, int folds, FastRandom rnd) {
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, 1. / folds, (folds - 1.) / folds);
-    return Pair.create(new SubPool<I>(pool, cvSplit[0]), new SubPool<I>(pool, cvSplit[1]));
+    return Pair.create(new SubPool(pool, cvSplit[0]), new SubPool(pool, cvSplit[1]));
+  }
+
+  private static List<SubPool> splitKFoldCV(Pool<? extends DSItem> pool, int folds, FastRandom rnd) {
+    double[] v = new double[folds];
+    Arrays.fill(v, 1. / folds);
+
+    final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, v);
+
+    List<SubPool> subPools = new ArrayList<>();
+    for (int[] indices : cvSplit) {
+      subPools.add(new SubPool<>(pool, indices));
+    }
+    return subPools;
   }
 
   private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd, final VecDataSet learn) {
@@ -548,6 +634,14 @@ public class JMLLCLI {
       }
     }
     return false;
+  }
+
+  private static Set<Double> unique(Vec x) {
+    Set<Double> unique = new HashSet<>();
+    for (int i = 0; i < x.length(); i++) {
+      unique.add(x.get(i));
+    }
+    return unique;
   }
 
 }

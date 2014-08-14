@@ -45,6 +45,14 @@ public class MCTools {
     return classesCount;
   }
 
+  public static int countClasses(Vec target) {
+    double classesCount = 0;
+    for (int i = 0; i < target.length(); i++) {
+      classesCount = max(target.get(i) + 1, classesCount);
+    }
+    return (int) classesCount;
+  }
+
   public static int classEntriesCount(IntSeq target, int classNo) {
     int result = 0;
     for (int i = 0; i < target.length(); i++) {
