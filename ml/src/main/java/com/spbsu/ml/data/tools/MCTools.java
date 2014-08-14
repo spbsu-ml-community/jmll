@@ -13,10 +13,7 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.multiclass.MCMacroF1Score;
-import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
-import com.spbsu.ml.loss.multiclass.MCMacroRecall;
-import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
+import com.spbsu.ml.loss.multiclass.*;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.MCModel;
 import com.spbsu.ml.models.MultiClassModel;
@@ -201,6 +198,8 @@ public class MCTools {
     final Vec predict = model.bestClassAll(ds.vecData().data());
     final Func[] metrics = new Func[] {
         ds.target(MCMicroPrecision.class),
+        ds.target(MCMicroRecall.class),
+        ds.target(MCMicroF1Score.class),
         ds.target(MCMacroPrecision.class),
         ds.target(MCMacroRecall.class),
         ds.target(MCMacroF1Score.class),

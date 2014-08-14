@@ -27,10 +27,7 @@ import com.spbsu.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic2;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.multiclass.MCMacroF1Score;
-import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
-import com.spbsu.ml.loss.multiclass.MCMacroRecall;
-import com.spbsu.ml.loss.multiclass.MCMicroPrecision;
+import com.spbsu.ml.loss.multiclass.*;
 import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
@@ -545,7 +542,7 @@ public class JMLLCLI {
   }
 
   private static final Class[] MULTI_CLASS_LOSSES = {
-      MCMacroF1Score.class, MCMacroPrecision.class, MCMacroRecall.class, MCMicroPrecision.class
+      MCMacroF1Score.class, MCMacroPrecision.class, MCMacroRecall.class, MCMicroPrecision.class, MCMicroRecall.class, MCMicroF1Score.class
   };
 
   private static boolean isMultiClassLoss(Object obj) {
