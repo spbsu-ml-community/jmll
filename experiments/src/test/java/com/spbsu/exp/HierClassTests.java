@@ -82,11 +82,21 @@ public class HierClassTests extends TestCase {
   }
 
   private static class CustomWeakMultiClass extends VecOptimization.Stub<TargetFunc> {
+
+    private final int iters;
+    private final double step;
+
+    public CustomWeakMultiClass() {
+      iters = 100;
+      step = 1.5;
+    }
+
     @Override
     public Trans fit(final VecDataSet learn, final TargetFunc loss) {
       final BFGrid grid = GridTools.medianGrid(learn, 32);
-      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), SatL2.class), 100, 1.5);
+      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), SatL2.class), iters, step);
 
+      final String comment = prepareComment(((BlockwiseMLLLogit) loss).labels());
       final ProgressHandler calcer = new ProgressHandler() {
         int iter = 0;
 
@@ -97,7 +107,7 @@ public class HierClassTests extends TestCase {
               final MultiClassModel model = MCTools.joinBoostingResults((Ensemble) partial);
               final Mx x = model.transAll(learn.data());
               double value = loss.value(x);
-              System.out.print("iter=" + iter + ", [learn]MLLLogitValue=" + value + "\r");
+              System.out.print(comment + ", iter=" + iter + ", [learn]MLLLogitValue=" + value + "\r");
             }
           }
           iter++;
@@ -108,6 +118,18 @@ public class HierClassTests extends TestCase {
       final MCModel model = MCTools.joinBoostingResults(ensemble);
       System.out.println();
       return model;
+    }
+
+    private static String prepareComment(final IntSeq labels) {
+      final StringBuilder builder = new StringBuilder("Class entries count: { ");
+      final int countClasses = MCTools.countClasses(labels);
+      for (int i = 0; i < countClasses; i++) {
+        builder.append(i)
+            .append(" : ")
+            .append(MCTools.classEntriesCount(labels, i))
+            .append(", ");
+      }
+      return builder.append("}").toString();
     }
   }
 
