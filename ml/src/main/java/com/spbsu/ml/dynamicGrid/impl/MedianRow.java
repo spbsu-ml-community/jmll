@@ -102,7 +102,7 @@ public class MedianRow implements DynamicRow {
       for (int i = 0; i < bfs.size(); ++i) {
         bfs.get(i).setBinNo(i);
       }
-
+//      bf.setRegScore(bf.row().regularize(bf));
       return true;
     }
     return false;
@@ -211,6 +211,33 @@ public class MedianRow implements DynamicRow {
     while (index < size() && value > bfs.get(index).condition)
       index++;
     return index;
+  }
+
+
+  @Override
+  public double regularize(BinaryFeature bf) {
+    double entropy = 0;
+    double entropyWithoutFeature = 0;
+    double left = 0;
+    double leftWithoutFeature = 0;
+    final int featureBin = bf.binNo();
+    for (int bin = 0; bin < bfs.size(); ++bin) {
+      BinaryFeatureImpl f = bfs.get(bin);
+      double p = (f.borderIndex - left) / feature.length;
+      entropy -= p * Math.log(p);
+      left = f.borderIndex;
+      if (bin != featureBin) {
+        p = (f.borderIndex - leftWithoutFeature) / feature.length;
+        entropyWithoutFeature -= p * Math.log(p);
+        leftWithoutFeature = f.borderIndex;
+      }
+    }
+
+    double p = (feature.length - left) / feature.length;
+    entropy -= p * Math.log(p);
+    p = (feature.length - leftWithoutFeature) / feature.length;
+    entropyWithoutFeature -= p * Math.log(p);
+    return entropy - entropyWithoutFeature;
   }
 
 //    @Override

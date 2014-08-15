@@ -75,7 +75,7 @@ public class AggregateDynamic {
   }
 
 
-  private static int sequentialLimit = 4;
+//  private static int sequentialLimit = 4;
 //
 //  public <T extends AdditiveStatistics> void visit(final SplitVisitor<T> visitor) {
 //    final CountDownLatch latch = new CountDownLatch(grid.rows());

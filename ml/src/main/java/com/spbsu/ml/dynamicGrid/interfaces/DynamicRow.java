@@ -21,5 +21,7 @@ public interface DynamicRow {
   public void setOwner(DynamicGrid grid);
 
   public short bin(double v);
+
+  double regularize(BinaryFeature bf);
 //    void setActive(BinaryFeature feature);
 }

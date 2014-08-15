@@ -64,4 +64,9 @@ public class StaticRow implements DynamicRow {
       index++;
     return index;
   }
+
+  @Override
+  public double regularize(BinaryFeature bf) {
+    return 0;
+  }
 }

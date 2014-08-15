@@ -19,6 +19,7 @@ import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
+import com.spbsu.ml.dynamicGrid.impl.BFDynamicGrid;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic;
@@ -154,7 +155,15 @@ public class JMLLCLI {
               return cooked;
             }
           };
-          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, learn.vecData());
+
+          final Factory<DynamicGrid> dynamicGridFactory = new Factory<DynamicGrid>() {
+            @Override
+            public DynamicGrid create() {
+              return new BFDynamicGrid(learnDS, Integer.parseInt(command.getOptionValue(BIN_FOLDS_COUNT_OPTION, "1")));
+            }
+          };
+
+          final Optimization method = chooseMethod(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME), lazyGrid, rnd, dynamicGridFactory);
 
           final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
           final TargetFunc loss = learn.target(DataTools.targetByName(target));
@@ -199,8 +208,7 @@ public class JMLLCLI {
 
           if (command.hasOption(WRITE_BIN_FORMULA)) {
             DataTools.writeBinModel(result, new File(outputFile + ".model"));
-          }
-          else {
+          } else {
             if (serializationRepository.getGrid() == null) {
               @Nullable BFGrid grid = DataTools.grid(result);
               if (grid != null) {
@@ -254,9 +262,9 @@ public class JMLLCLI {
     return Pair.create(new SubPool<I>(pool, cvSplit[0]), new SubPool<I>(pool, cvSplit[1]));
   }
 
-  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd, final VecDataSet learn) {
+  private static VecOptimization chooseMethod(String scheme, Factory<BFGrid> grid, FastRandom rnd, Factory<DynamicGrid> dynamicGrid) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
-    final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd, learn);
+    final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart), grid, rnd, dynamicGrid);
     final String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
     final StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
     final Method[] builderMethods = factory.getClass().getMethods();
@@ -283,7 +291,7 @@ public class JMLLCLI {
         } else if (String.class.equals(type)) {
           setter.invoke(factory, value);
         } else if (Optimization.class.isAssignableFrom(type)) {
-          setter.invoke(factory, chooseMethod(value, grid, rnd, learn));
+          setter.invoke(factory, chooseMethod(value, grid, rnd, dynamicGrid));
         } else {
           System.err.println("Can not set up parameter: " + name + " to value: " + value + ". Unknown parameter type: " + type + "");
         }
@@ -294,7 +302,7 @@ public class JMLLCLI {
     return factory.create();
   }
 
-  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd, final VecDataSet learn) {
+  private static Factory<? extends VecOptimization> methodBuilderByName(String name, final Factory<BFGrid> grid, final FastRandom rnd, final Factory<DynamicGrid> dynamicGridFactory) {
     switch (name) {
       case "GradientBoosting":
         return new Factory<VecOptimization>() {
@@ -376,7 +384,7 @@ public class JMLLCLI {
 
           @Override
           public VecOptimization create() {
-            return new BootstrapOptimization(new GreedyObliviousTreeDynamic2(learn, depth, lambda, minSplits), new FastRandom());
+            return new BootstrapOptimization(new GreedyObliviousTreeDynamic2(dynamicGridFactory.create(), depth, lambda), new FastRandom());
           }
         };
       }
@@ -385,11 +393,11 @@ public class JMLLCLI {
         return new Factory<VecOptimization>() {
           public int depth = 6;
           public int lambda = 2;
-          public int minSplits = 1;
+//          public int minSplits = 1;
 
-          public void minSplits(int val) {
-            this.minSplits = val;
-          }
+//          public void minSplits(int val) {
+//            this.minSplits = val;
+//          }
 
           public void depth(int d) {
             this.depth = d;
@@ -401,7 +409,7 @@ public class JMLLCLI {
 
           @Override
           public VecOptimization create() {
-            return new BootstrapOptimization(new GreedyObliviousTreeDynamic(learn, depth, lambda, minSplits), new FastRandom());
+            return new BootstrapOptimization(new GreedyObliviousTreeDynamic(dynamicGridFactory.create(), depth, lambda), new FastRandom());
           }
         };
       }

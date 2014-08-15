@@ -31,11 +31,12 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
   private static double eps = 1e-4;
 
 
-  public GreedyObliviousTreeDynamic(DynamicGrid grid, int depth) {
+  public GreedyObliviousTreeDynamic(DynamicGrid grid, int depth, double lambda) {
     this.depth = depth;
     this.grid = grid;
 //    minSplits = 1;
-    lambda = 1;
+//    lambda = 1;
+    this.lambda = lambda;
   }
 
   public GreedyObliviousTreeDynamic(VecDataSet ds, int depth) {
