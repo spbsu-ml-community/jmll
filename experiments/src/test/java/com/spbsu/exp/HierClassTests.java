@@ -23,10 +23,12 @@ import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.HierarchicalModel;
 import com.spbsu.ml.models.MCModel;
 import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.testUtils.FakePool;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import junit.framework.TestCase;
 
 /**
@@ -37,6 +39,9 @@ public class HierClassTests extends TestCase {
   private static Pool<?> learn;
   private static Pool<?> test;
   private static IntTree tree;
+
+  private static int iters;
+  private static double step;
 
   private synchronized void init() throws Exception {
     if (learn == null || test == null) {
@@ -53,8 +58,11 @@ public class HierClassTests extends TestCase {
       tree = treeBuilder.releaseTree();
       final TIntIntMap map = treeBuilder.releaseMapping();
 
-      learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), mapTarget(learnTarget, map));
-      test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), mapTarget(testTarget, map));
+      learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), MCTools.mapTarget(learnTarget, map));
+      test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), MCTools.mapTarget(testTarget, map));
+
+      iters = 200;
+      step = 1.5;
     }
   }
 
@@ -64,39 +72,51 @@ public class HierClassTests extends TestCase {
     init();
   }
 
+  public void testBaseline() throws Exception {
+    final TIntIntMap labelsMap = new TIntIntHashMap();
+    learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), MCTools.normalizeTarget(learn.target(BlockwiseMLLLogit.class).labels(), labelsMap));
+    test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), MCTools.mapTarget(test.target(BlockwiseMLLLogit.class).labels(), labelsMap));
+    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(iters, step);
+    final MCModel model = (MCModel) customWeakMultiClass.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+  }
+
   public void testHierClass() throws Exception {
-    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass();
+    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(iters, step);
     final HierarchicalClassification hierarchicalClassification = new HierarchicalClassification(customWeakMultiClass, tree);
     final HierarchicalModel model = (HierarchicalModel) hierarchicalClassification.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-    MCTools.evalModel(model, learn, "[LEARN]");
-    MCTools.evalModel(model, test, "[TEST]");
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
   }
 
   public void testHierRefinedClass() throws Exception {
-    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass();
-    final CustomWeakBinClass customWeakBinClass = new CustomWeakBinClass();
+    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(iters, step);
+    final CustomWeakBinClass customWeakBinClass = new CustomWeakBinClass(iters, step);
     final HierarchicalRefinedClassification hierarchicalRefinedClassification = new HierarchicalRefinedClassification(customWeakBinClass, customWeakMultiClass, tree);
     final HierarchicalModel model = (HierarchicalModel) hierarchicalRefinedClassification.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-    MCTools.evalModel(model, learn, "[LEARN]");
-    MCTools.evalModel(model, test, "[TEST]");
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
   }
 
   private static class CustomWeakMultiClass extends VecOptimization.Stub<TargetFunc> {
-
     private final int iters;
     private final double step;
 
-    public CustomWeakMultiClass() {
-      iters = 100;
-      step = 1.5;
+    public CustomWeakMultiClass(int iters, double step) {
+      this.iters = iters;
+      this.step = step;
     }
 
     @Override
-    public Trans fit(final VecDataSet learn, final TargetFunc loss) {
-      final BFGrid grid = GridTools.medianGrid(learn, 32);
+    public Trans fit(final VecDataSet learnData, final TargetFunc loss) {
+      final BFGrid grid = GridTools.medianGrid(learnData, 32);
       final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), SatL2.class), iters, step);
 
-      final String comment = prepareComment(((BlockwiseMLLLogit) loss).labels());
+      final IntSeq intTarget = ((BlockwiseMLLLogit) loss).labels();
+      final FakePool ds = new FakePool(learnData.data(), intTarget);
+
+      System.out.println(prepareComment(intTarget));
       final ProgressHandler calcer = new ProgressHandler() {
         int iter = 0;
 
@@ -105,18 +125,18 @@ public class HierClassTests extends TestCase {
           if ((iter + 1) % 20 == 0) {
             if (((Ensemble) partial).last() instanceof MultiClassModel) {
               final MultiClassModel model = MCTools.joinBoostingResults((Ensemble) partial);
-              final Mx x = model.transAll(learn.data());
+              final Mx x = model.transAll(learnData.data());
               double value = loss.value(x);
-              System.out.print(comment + ", iter=" + iter + ", [learn]MLLLogitValue=" + value + "\r");
+              System.out.println("iter=" + iter + ", [learn]MLLLogitValue=" + String.format("%.10f", value) + ", stats=" + MCTools.evalModel(model, ds, "[LEARN]", true) + "\r");
             }
           }
           iter++;
         }
       };
       boosting.addListener(calcer);
-      final Ensemble ensemble = boosting.fit(learn, loss);
+      final Ensemble ensemble = boosting.fit(learnData, loss);
       final MCModel model = MCTools.joinBoostingResults(ensemble);
-      System.out.println();
+      System.out.println("\n\n");
       return model;
     }
 
@@ -134,20 +154,20 @@ public class HierClassTests extends TestCase {
   }
 
   private static class CustomWeakBinClass extends VecOptimization.Stub<TargetFunc> {
+    private final int iters;
+    private final double step;
+
+    private CustomWeakBinClass(final int iters, final double step) {
+      this.iters = iters;
+      this.step = step;
+    }
+
     @Override
     public Trans fit(final VecDataSet learn, final TargetFunc targetFunc) {
-      final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass();
+      final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(iters, step);
       final MultiClassModel mcm = (MultiClassModel) customWeakMultiClass.fit(learn, targetFunc);
       return mcm.getInternModel().dirs()[0];
     }
-  }
-
-  private static IntSeq mapTarget(final IntSeq intTarget, final TIntIntMap mapping) {
-    final int[] mapped = new int[intTarget.length()];
-    for (int i = 0; i < intTarget.length(); i++) {
-      mapped[i] = mapping.get(intTarget.at(i));
-    }
-    return new IntSeq(mapped);
   }
 
 }

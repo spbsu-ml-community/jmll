@@ -113,8 +113,8 @@ public class SPOCMethodTest extends TestSuite {
         public void invoke(final Trans partial) {
           if ((iter+1) % 20 == 0) {
             final MCModel model = MCTools.joinBoostingResults((Ensemble) partial);
-            MCTools.evalModel(model, learn, iter + "[LEARN] ");
-            MCTools.evalModel(model, test, iter + "[TEST] ");
+            System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+            System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
             System.out.println();
           }
           iter++;
@@ -123,8 +123,8 @@ public class SPOCMethodTest extends TestSuite {
       boosting.addListener(listener);
       final Ensemble ensemble = boosting.fit(learn.vecData(), learnLoss);
       final MCModel model = MCTools.joinBoostingResults(ensemble);
-      MCTools.evalModel(model, learn, "[LEARN] ");
-      MCTools.evalModel(model, test, "[TEST] ");
+      System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+      System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
       System.out.println();
     }
 
@@ -152,8 +152,8 @@ public class SPOCMethodTest extends TestSuite {
 
       final VecOptimization method = new SPOCMethodClassic(codingMatrix, new WeakOptimization(mcIters, mcStep));
       final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) method.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-      MCTools.evalModel(model, learn, "[LEARN] ");
-      MCTools.evalModel(model, test, "[TEST] ");
+      System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+      System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
       System.out.println();
     }
 
@@ -170,8 +170,8 @@ public class SPOCMethodTest extends TestSuite {
 
       final VecOptimization<BlockwiseMLLLogit> method = new SPOCMethodClassic(codingMatrix, new WeakOptimization(mcIters, mcStep));
       final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) method.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-      MCTools.evalModel(model, learn, "[LEARN] ");
-      MCTools.evalModel(model, test, "[TEST] ");
+      System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+      System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
 
       final CMLMetricOptimization metricOptimization = new CMLMetricOptimization(learn.vecData(), learn.target(BlockwiseMLLLogit.class),S, metricC, metricStep);
       final Mx mu = metricOptimization.trainProbs(codingMatrix, model.getInternalModel().dirs());
@@ -225,7 +225,7 @@ public class SPOCMethodTest extends TestSuite {
     }
   }
 
-  public abstract static class GreedyDefaultDS extends DefaultDataTests {
+  public static class GreedyDefaultDS extends DefaultDataTests {
     @Override
     public void setUp() throws Exception {
       super.setUp();
@@ -238,7 +238,7 @@ public class SPOCMethodTest extends TestSuite {
     }
   }
 
-  public abstract static class ParallelGreedyDefaultDS extends DefaultDataTests {
+  public static class ParallelGreedyDefaultDS extends DefaultDataTests {
     @Override
     protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
       return new CodingMatrixLearningGreedyParallels(k, l, lambdaC, lambdaR, lambda1);

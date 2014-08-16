@@ -4,8 +4,10 @@ import com.spbsu.commons.math.metrics.Metric;
 import com.spbsu.commons.math.metrics.impl.CosineDVectorMetric;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.seq.IntSeq;
+import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.Func;
@@ -13,7 +15,8 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.multiclass.*;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.MCModel;
 import com.spbsu.ml.models.MultiClassModel;
@@ -22,10 +25,13 @@ import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import static java.lang.Math.max;
 
@@ -86,25 +92,30 @@ public class MCTools {
   }
 
   /**
-   * Normalization of multiclass target. Target may contain any labels
+   * Normalization of multiclass target. Target may contain any labels. Notice that error class (-1) will be mapped to the class K.
+   * Example: if target contains {10, 10, 6, 4, -1, -1} then result is {2, 2, 1, 0, 3, 3} and map will be filled {(4->0), (6->1), (10->2), (-1->3)}
    * @param target Target vec with any class labels.
-   * @param labels Empty list which will be filled here by classes labels corresponding their order.
-   *               Each label will appear once. There are NPE bug in Trove's implementation of TIntLinkedList, so only TIntArrayList may be passed.
-   * @return new target vec with classes labels from {0..K}.
+   * @param labelsMap Empty map which will be filled here by pairs (label, normalizedLabel).
+   * @return new target with classes labels from {0..K}.
    */
-  public static IntSeq normalizeTarget(IntSeq target, TIntArrayList labels) {
-    final int[] result = new int[target.length()];
+  public static IntSeq normalizeTarget(final IntSeq target, final TIntIntMap labelsMap) {
     for (int i = 0; i < target.length(); i++) {
-      final int oldTargetVal = target.at(i);
-      final int labelPos = labels.indexOf(oldTargetVal);
-      if (labelPos == -1) {
-        result[i] = labels.size();
-        labels.add(oldTargetVal);
-      }
-      else
-        result[i] = labelPos;
+      labelsMap.putIfAbsent(target.arr[i], 0);
     }
-    return new IntSeq(result);
+    labelsMap.remove(-1);
+
+    final int[] labels = labelsMap.keys();
+    Arrays.sort(labels);
+    for (int i = 0; i < labels.length; i++) {
+      labelsMap.put(labels[i], i);
+    }
+    labelsMap.put(-1, labels.length);
+
+    final int[] newTarget = new int[target.length()];
+    for (int i = 0; i < target.length(); i++) {
+      newTarget[i] = labelsMap.get(target.arr[i]);
+    }
+    return new IntSeq(newTarget);
   }
 
   public static TIntObjectMap<TIntList> splitClassesIdxs(IntSeq target) {
@@ -194,19 +205,23 @@ public class MCTools {
     return S;
   }
 
-  public static void evalModel(final MCModel model, final Pool ds, final String prefixComment) {
+  public static String evalModel(final MCModel model, final Pool<?> ds, final String prefixComment, final boolean oneLine) {
     final Vec predict = model.bestClassAll(ds.vecData().data());
-    final Func[] metrics = new Func[] {
-        ds.target(MCMicroPrecision.class),
-        ds.target(MCMicroRecall.class),
-        ds.target(MCMicroF1Score.class),
-        ds.target(MCMacroPrecision.class),
-        ds.target(MCMacroRecall.class),
-        ds.target(MCMacroF1Score.class),
-    };
-    for (Func metric : metrics) {
-      double val = metric.value(predict);
-      System.out.println(prefixComment + metric.getClass().getSimpleName() + ", value = " + val);
+    final TIntIntMap labelsMap = new TIntIntHashMap();
+    final ConfusionMatrix confusionMatrix = new ConfusionMatrix(
+        normalizeTarget(ds.target(BlockwiseMLLLogit.class).labels(), labelsMap),
+        mapTarget(VecTools.toIntSeq(predict), labelsMap)
+    );
+    if (oneLine) {
+      return confusionMatrix.oneLineReport();
+    } else {
+      final StringBuilder sb = new StringBuilder();
+      sb.append("\n==========").append(prefixComment).append(StringUtils.repeatWithDelimeter("", "=", 100 - 10 - prefixComment.length())).append("\n");
+      sb.append(confusionMatrix.toSummaryString());
+      sb.append("\n");
+      sb.append(confusionMatrix.toClassDetailsString());
+      sb.append(StringUtils.repeatWithDelimeter("", "=", 100));
+      return sb.toString();
     }
   }
 
@@ -230,5 +245,13 @@ public class MCTools {
     }
     else
       throw new ClassCastException("Ensemble object does not contain MultiClassModel objects");
+  }
+
+  public static IntSeq mapTarget(final IntSeq intTarget, final TIntIntMap mapping) {
+    final int[] mapped = new int[intTarget.length()];
+    for (int i = 0; i < intTarget.length(); i++) {
+      mapped[i] = mapping.get(intTarget.at(i));
+    }
+    return new IntSeq(mapped);
   }
 }

@@ -1,24 +1,20 @@
 package com.spbsu.ml.data.tools;
 
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.GridTools;
-import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.Linear;
+import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
 import com.spbsu.ml.models.MultiClassModel;
-import com.spbsu.ml.models.ObliviousTree;
-import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import junit.framework.TestCase;
 
 import java.util.Arrays;
@@ -69,19 +65,18 @@ public class MCToolsTest extends TestCase {
   }
 
   public void testNormalizeTarget() throws Exception {
-    final TIntArrayList labels = new TIntArrayList();
-    final IntSeq normalizedTarget = MCTools.normalizeTarget(target, labels);
+    final TIntIntMap labelsMap = new TIntIntHashMap();
+    final IntSeq normalizedTarget = MCTools.normalizeTarget(target, labelsMap);
 
-    final TIntArrayList expectedLabels = new TIntArrayList(new int[]{15, 8, 3, 2, 1, 0});
     final IntSeq expectedTarget = new IntSeq(new int[]{
-        0, 0, 0, 0, 0,
-        1, 1, 1, 1,
-        2, 2, 2,
-        3, 3,
-        4, 5
+        5, 5, 5, 5, 5,
+        4, 4, 4, 4,
+        3, 3, 3,
+        2, 2,
+        1, 0
     });
-    assertEquals(expectedLabels, labels);
     assertEquals(expectedTarget, normalizedTarget);
+
   }
 
   public void testSplitClassesIdxs() throws Exception {
@@ -113,5 +108,22 @@ public class MCToolsTest extends TestCase {
     final MultiClassModel joinedModel = MCTools.joinBoostingResults(multiClassModelEnsemble);
     assertEquals(dirs.length, joinedModel.getInternModel().ydim());
 
+  }
+
+  public void testConfusionMatrix() throws Exception {
+    final IntSeq expected = new IntSeq(new int[] {0, 0, 0, 0, 1, 1, 2, 2});
+    final IntSeq predicted = new IntSeq(new int[]{0, 1, 2, 0, 1, 2, 2, 2});
+    final ConfusionMatrix confusionMatrix = new ConfusionMatrix(expected, predicted);
+    assertEquals(2, confusionMatrix.tp(0));
+    assertEquals(1, confusionMatrix.tp(1));
+    assertEquals(2, confusionMatrix.tp(2));
+
+    assertEquals(0, confusionMatrix.fp(0));
+    assertEquals(1, confusionMatrix.fp(1));
+    assertEquals(2, confusionMatrix.fp(2));
+
+    assertEquals(2, confusionMatrix.fn(0));
+    assertEquals(1, confusionMatrix.fn(1));
+    assertEquals(0, confusionMatrix.fn(2));
   }
 }
