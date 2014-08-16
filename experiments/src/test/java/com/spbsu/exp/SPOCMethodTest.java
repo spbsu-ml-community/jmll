@@ -1,195 +1,55 @@
 package com.spbsu.exp;
 
-import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.*;
-import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.exp.weak.CustomWeakBinClass;
+import com.spbsu.exp.weak.CustomWeakMultiClass;
+import com.spbsu.ml.Trans;
+import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
-import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.FuncEnsemble;
+import com.spbsu.ml.data.tools.SubPool;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.impl.FakeTargetMeta;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.MultiClass;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
-import com.spbsu.ml.methods.spoc.CMLMetricOptimization;
 import com.spbsu.ml.methods.spoc.SPOCMethodClassic;
 import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearning;
 import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearningGreedy;
 import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearningGreedyParallels;
-import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MCModel;
 import com.spbsu.ml.models.MulticlassCodingMatrixModel;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
+
+import java.io.IOException;
 
 /**
 * User: qdeee
 * Date: 07.05.14
 */
-public class SPOCMethodTest extends TestSuite {
-  private static class WeakOptimization implements VecOptimization<LLLogit> {
-    private final int iters;
-    private final double step;
+public class SPOCMethodTest extends TestCase {
+  private static final double[] hierBorders = new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61};
+  private static final double[] classicBorders = new double[]{0.06999, 0.13999, 0.40999, 0.60999, 0.61};
 
-    private WeakOptimization(final int iters, final double step) {
-      this.iters = iters;
-      this.step = step;
-    }
+  protected Pool<?> learn;
+  protected Pool<?> test;
+  protected Mx S;
 
-    @Override
-    public Trans fit(final VecDataSet learn, final LLLogit loss) {
-      final BFGrid grid = GridTools.medianGrid(learn, 32);
-      final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
-          new GreedyObliviousTree<L2>(grid, 5),
-          iters, step
-      );
-      final ProgressHandler calcer = new ProgressHandler() {
-        int index = 0;
+  protected int k;
+  protected int l;
 
-        @Override
-        public void invoke(Trans partial) {
-          if ((index + 1) % 20 == 0) {
-            double lvalue = loss.value(partial.transAll(learn.data()));
-            System.out.print("iter=" + index + ", [learn]LLLogitValue=" + lvalue + "\r");
-          }
-          index++;
-        }
-      };
-      boosting.addListener(calcer);
-      final Ensemble ensemble = boosting.fit(learn, loss);
-      System.out.println();
-      return new FuncEnsemble(ArrayTools.map(ensemble.models, Func.class, new Computable<Trans, Func>() {
-        @Override
-        public Func compute(final Trans argument) {
-          return (Func) argument;
-        }
-      }), ensemble.weights);
-    }
-  }
-
-  private abstract static class Base extends TestCase {
-    protected Pool<?> learn;
-    protected Pool<?> test;
-    protected Mx S;
-
-    protected int k;
-    protected int l;
-
-    protected double lambdaC;
-    protected double lambdaR;
-    protected double lambda1;
-    protected double mxStep;
-
-    protected double mcStep;
-    protected int mcIters;
-
-    protected double metricC;
-    protected int metricIters;
-    protected double metricStep;
-
-    public void testBaseline() {
-      final BlockwiseMLLLogit learnLoss = learn.target(BlockwiseMLLLogit.class);
-      final BFGrid grid = GridTools.medianGrid(learn.vecData(), 32);
-      final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), SatL2.class), mcIters, mcStep);
-      final ProgressHandler listener = new ProgressHandler() {
-        int iter = 0;
-        @Override
-        public void invoke(final Trans partial) {
-          if ((iter+1) % 20 == 0) {
-            final MCModel model = MCTools.joinBoostingResults((Ensemble) partial);
-            System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
-            System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
-            System.out.println();
-          }
-          iter++;
-        }
-      };
-      boosting.addListener(listener);
-      final Ensemble ensemble = boosting.fit(learn.vecData(), learnLoss);
-      final MCModel model = MCTools.joinBoostingResults(ensemble);
-      System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
-      System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
-      System.out.println();
-    }
-
-    public void _testSimilarityMatrix() {
-      final BlockwiseMLLLogit target = learn.target(BlockwiseMLLLogit.class);
-      final Mx similarityMatrix = MCTools.createSimilarityMatrix(learn.vecData(), target.labels());
-      System.out.println(similarityMatrix.toString());
-    }
-
-    public void testFindMx() {
-      final AbstractCodingMatrixLearning codingMatrixLearning = getCodingMatrixLearning();
-      final Mx codingMatrix = codingMatrixLearning.trainCodingMatrix(S);
-      System.out.println(codingMatrix.toString());
-      if (!CodingMatrixLearning.checkConstraints(codingMatrix)) {
-        throw new IllegalStateException("Result is out of constraints");
-      }
-    }
-
-    public void testFit() {
-      final AbstractCodingMatrixLearning cml = getCodingMatrixLearning();
-      final Mx codingMatrix = cml.trainCodingMatrix(S);
-//      if (!CodingMatrixLearning.checkConstraints(codeMatrix)) {
-//        throw new IllegalStateException("Result matrix is out of constraints");
-//      }
-
-      final VecOptimization method = new SPOCMethodClassic(codingMatrix, new WeakOptimization(mcIters, mcStep));
-      final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) method.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-      System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
-      System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
-      System.out.println();
-    }
-
-    protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
-      return new CodingMatrixLearning(k, l, mxStep, lambdaC, lambdaR, lambda1);
-    }
-
-    public void _testFitWithProbs() {
-      final AbstractCodingMatrixLearning cml = getCodingMatrixLearning();
-      final Mx codingMatrix = cml.trainCodingMatrix(S);
-      if (!CodingMatrixLearning.checkConstraints(codingMatrix)) {
-        throw new IllegalStateException("Result matrix is out of constraints");
-      }
-
-      final VecOptimization<BlockwiseMLLLogit> method = new SPOCMethodClassic(codingMatrix, new WeakOptimization(mcIters, mcStep));
-      final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) method.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-      System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
-      System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
-
-      final CMLMetricOptimization metricOptimization = new CMLMetricOptimization(learn.vecData(), learn.target(BlockwiseMLLLogit.class),S, metricC, metricStep);
-      final Mx mu = metricOptimization.trainProbs(codingMatrix, model.getInternalModel().dirs());
-      System.out.println(mu.toString());
-    }
-  }
-
-
-
-  public static class DefaultDataTests extends Base {
-    private final static double[] hierBorders = new double[] {0.038125, 0.07625, 0.114375, 0.1525, 0.61};
-    public static final double[] classicBorders = new double[]{0.06999, 0.13999, 0.40999, 0.60999, 0.61};
-
-    public void setUp() throws Exception {
-      super.setUp();
-      final TDoubleList borders = new TDoubleArrayList();
-//      borders.addAll(classicBorders);
-      borders.addAll(hierBorders);
+  private synchronized void initDefaultData() throws IOException {
+    if (learn == null || test == null) {
+      final TDoubleList borders = new TDoubleArrayList(hierBorders);
       learn = TestResourceLoader.loadPool("features.txt.gz");
       test = TestResourceLoader.loadPool("featuresTest.txt.gz");
       final IntSeq learnTarget = MCTools.transformRegressionToMC(learn.target(L2.class).target, borders.size(), borders);
@@ -203,87 +63,67 @@ public class SPOCMethodTest extends TestSuite {
 
       k = borders.size();
       l = 5;
-
-      lambdaC = 3.0;
-      lambdaR = 2.5;
-      lambda1 = 7.0;
-      mxStep = 1.8;
-
-      mcIters = 100;
-      mcStep = 0.3;
-
-      metricC = 0.5;
-      metricIters = 100;
-      metricStep = 0.3;
-    }
-
-    @Override
-    public void testBaseline() {
-      mcIters = 100;
-      mcStep = 0.5;
-      super.testBaseline();
     }
   }
 
-  public static class GreedyDefaultDS extends DefaultDataTests {
-    @Override
-    public void setUp() throws Exception {
-      super.setUp();
-      mcIters = 200;
-    }
-
-    @Override
-    protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
-      return new CodingMatrixLearningGreedy(k, l, lambdaC, lambdaR, lambda1);
-    }
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    initDefaultData();
   }
 
-  public static class ParallelGreedyDefaultDS extends DefaultDataTests {
-    @Override
-    protected AbstractCodingMatrixLearning getCodingMatrixLearning() {
-      return new CodingMatrixLearningGreedyParallels(k, l, lambdaC, lambdaR, lambda1);
-    }
+  private void fitModel(final AbstractCodingMatrixLearning matrixLearning, final int iters, final double step) {
+    final Mx codingMatrix = matrixLearning.trainCodingMatrix(S);
+//      if (!CodingMatrixLearning.checkConstraints(codeMatrix)) {
+//        throw new IllegalStateException("Result matrix is out of constraints");
+//      }
+    final VecOptimization method = new SPOCMethodClassic(codingMatrix, new CustomWeakBinClass(iters, step));
+    final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) method.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
   }
 
-//  public abstract static class ExternDataTests extends Base {
-//    public void setUp() throws Exception {
-//      super.setUp();
-//      final VecDataSet fullds = DataTools.loadFakePool("./ml/tests/data/multiclass/ds_letter/letter.libfm");
-//      final Pair<DataSet, DataSet> pairDS = MCTools.splitCvMulticlass(fullds, 0.8, new FastRandom(100501));
-//      learn = pairDS.first;
-//      test = pairDS.second;
-//      S = loadMxFromFile("./ml/tests/data/multiclass/ds_letter/letter.similarityMx");
-//
-//      k = S.rows();
-//      l = 10;
-//
-//      lambdaC = 10.0;
-//      lambdaR = 2.5;
-//      lambda1 = 5.0;
-//      mxStep = 1.8;
-//
-//      mcIters = 300;
-//      mcStep = 0.7;
-//
-//      metricC = 1.0;
-//      metricStep = 0.3;
-//      metricIters = 100;
-//    }
-//
-//  }
-
-
-  public void testCreateConstraintsMatrix() throws Exception {
-    final Mx B = new VecBasedMx(
-        2,
-        new ArrayVec(
-            1, -1,
-            -1,  1,
-            0,  1)
-    );
-    final Mx constraintsMatrix = CodingMatrixLearning.createConstraintsMatrix(B);
-    System.out.println("constraints matrix:");
-    System.out.println(constraintsMatrix.toString());
+  public void testBaseline() throws Exception {
+    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(100, 0.5);
+    final MCModel model = (MCModel) customWeakMultiClass.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
   }
 
+  public void testMathFit() throws Exception {
+    fitModel(new CodingMatrixLearning(k, l, 3.0, 2.5, 7.0, 1.8),
+        100, 0.3);
+  }
+
+  public void testGreedyFit() throws Exception {
+    fitModel(new CodingMatrixLearningGreedy(k, l, 3.0, 2.5, 7.0),
+        200, 0.3);
+  }
+
+  public void testParallelsGreedyFit() throws Exception {
+    fitModel(new CodingMatrixLearningGreedyParallels(k, l, 3.0, 2.5, 7.0),
+        200, 0.3);
+  }
+
+  public void _testMathFitBigDS() throws Exception {
+    final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv");
+    pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS),
+        VecTools.toIntSeq(pool.target(L2.class).target));
+
+    final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100501), 0.8, 0.2);
+    final SubPool<?> learn = new SubPool(pool, idxs[0]);
+    final SubPool<?> test = new SubPool(pool, idxs[1]);
+
+    final CharSequence mxStr = StreamTools.readStream(TestResourceLoader.loadResourceAsStream("multiclass/ds_letter/letter.similarityMx"));
+    final Mx similarityMx = MathTools.CONVERSION.convert(mxStr, Mx.class);
+
+
+    final CodingMatrixLearning codingMatrixLearning = new CodingMatrixLearning(26, 10, 10.0, 2.5, 5.0, 1.8);
+    final Mx codeMx = codingMatrixLearning.findMatrixB(similarityMx);
+
+    final SPOCMethodClassic spoc = new SPOCMethodClassic(codeMx, new CustomWeakBinClass(300, 0.7));
+    final MCModel model = (MCModel) spoc.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+  }
 }

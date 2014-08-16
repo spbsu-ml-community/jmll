@@ -32,9 +32,9 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
     this(initB, mxLearnStep, initB.rows(), 1.0, initB.rows());
   }
 
-  public CodingMatrixLearning(final int k, final int l, final double mxLearnStep, final double lambdaC, final double lambdaR, final double lambda1) {
+  public CodingMatrixLearning(final int k, final int l, final double lambdaC, final double lambdaR, final double lambda1, final double mxLearnStep) {
     this(new VecBasedMx(k, l), mxLearnStep, lambdaC, lambdaR, lambda1);
-    final Random rand = new FastRandom(100000);
+    final Random rand = new FastRandom(100500);
     do {
       for (int i = 0; i < k; i++) {
         for (int j = 0; j < l; j++) {
@@ -45,7 +45,7 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
   }
 
   public CodingMatrixLearning(final int k, final int l, final double mxLearnStep) {
-    this(k, l, mxLearnStep, k, 1.0, k);
+    this(k, l, k, 1.0, k, mxLearnStep);
   }
 
   @Override

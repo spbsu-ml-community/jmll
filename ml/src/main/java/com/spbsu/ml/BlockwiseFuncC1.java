@@ -33,7 +33,7 @@ public interface BlockwiseFuncC1 extends FuncC1 {
       return gradient(x instanceof Mx ? (Mx)x : new VecBasedMx(blockSize(), x));
     }
 
-    public double value(final Mx blocks) {
+    protected double value(final Mx blocks) {
       double result = 0.0;
       for (int i = 0; i < blocks.rows(); i ++) {
         result += value(blocks.row(i), i);
