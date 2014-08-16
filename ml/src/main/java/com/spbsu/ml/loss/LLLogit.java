@@ -60,6 +60,10 @@ public class LLLogit extends FuncC1.Stub implements TargetFunc {
     return (int)target.get(idx);
   }
 
+  public Vec labels() {
+    return target;
+  }
+
   @Override
   public DataSet<?> owner() {
     return owner;

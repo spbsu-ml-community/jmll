@@ -24,10 +24,10 @@ import java.util.Stack;
  * Date: 06.02.14
  */
 public class HierarchicalClassification extends VecOptimization.Stub<BlockwiseMLLLogit> {
-  protected final VecOptimization<TargetFunc> weakMultiClass;
+  protected final VecOptimization<BlockwiseMLLLogit> weakMultiClass;
   protected final IntTree tree;
 
-  public HierarchicalClassification(final VecOptimization<TargetFunc> weakMultiClass, final IntTree tree) {
+  public HierarchicalClassification(final VecOptimization<BlockwiseMLLLogit> weakMultiClass, final IntTree tree) {
     this.weakMultiClass = weakMultiClass;
     this.tree = tree;
   }

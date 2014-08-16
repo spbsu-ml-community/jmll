@@ -2,12 +2,7 @@ package com.spbsu.ml.methods.hierarchical;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.tree.IntTree;
 import com.spbsu.commons.util.tree.IntTreeVisitor;
@@ -15,22 +10,20 @@ import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
+import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.HierarchicalModel;
 import com.spbsu.ml.models.JoinedBinClassModel;
 import com.spbsu.ml.models.MCModel;
-import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TIntLinkedList;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Stack;
 
 /**
@@ -39,11 +32,13 @@ import java.util.Stack;
  */
 
 public class HierarchicalRefinedClassification extends VecOptimization.Stub<BlockwiseMLLLogit> {
-  protected final VecOptimization<TargetFunc> weakBinClass;
-  protected final VecOptimization<TargetFunc> weakMultiClass;
+  protected final VecOptimization<LLLogit> weakBinClass;
+  protected final VecOptimization<BlockwiseMLLLogit> weakMultiClass;
   protected final IntTree tree;
 
-  public HierarchicalRefinedClassification(final VecOptimization<TargetFunc> weakBinClass, final VecOptimization<TargetFunc> weakMultiClass, final IntTree tree) {
+  public HierarchicalRefinedClassification(final VecOptimization<LLLogit> weakBinClass,
+                                           final VecOptimization<BlockwiseMLLLogit> weakMultiClass,
+                                           final IntTree tree) {
     this.weakBinClass = weakBinClass;
     this.weakMultiClass = weakMultiClass;
     this.tree = tree;
@@ -87,8 +82,9 @@ public class HierarchicalRefinedClassification extends VecOptimization.Stub<Bloc
         final Func[] models = new Func[uniqClasses.size()];
         for (int j = 0; j < uniqClasses.size(); j++) {
           final VecDataSet dsForLearn;
-          final IntSeq targetForLearn;
-          final IntSeq oneVsRestTarget = MCTools.extractClassForBinary(new IntSeq(localClasses), j);
+          final Vec targetForLearn;
+
+          final Vec oneVsRestTarget = MCTools.extractClassForBinary(new IntSeq(localClasses), j);
           if (node != tree.ROOT) {
             final TIntList dsIdxs = new TIntLinkedList();
             for (int i = 0; i < learn.length(); i++) {
@@ -96,7 +92,7 @@ public class HierarchicalRefinedClassification extends VecOptimization.Stub<Bloc
                 dsIdxs.add(i); //everyone exclude siblings
             }
 
-            final Pair<VecDataSet, IntSeq> pair = DataTools.createSubset(learn, oneVsRestTarget, dsIdxs.toArray());
+            final Pair<VecDataSet, Vec> pair = DataTools.createSubset(learn, oneVsRestTarget, dsIdxs.toArray());
             dsForLearn = pair.first;
             targetForLearn = pair.second;
           }
@@ -104,7 +100,7 @@ public class HierarchicalRefinedClassification extends VecOptimization.Stub<Bloc
             dsForLearn = learn;
             targetForLearn = oneVsRestTarget;
           }
-          models[j] = (Func) weakBinClass.fit(dsForLearn, new BlockwiseMLLLogit(targetForLearn, learn));
+          models[j] = (Func) weakBinClass.fit(dsForLearn, new LLLogit(targetForLearn, learn));
         }
 
         final SpecialHierModel nodeModel = new SpecialHierModel(new JoinedBinClassModel(models), uniqClasses);

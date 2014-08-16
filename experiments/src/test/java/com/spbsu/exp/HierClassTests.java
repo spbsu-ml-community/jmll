@@ -1,6 +1,8 @@
 package com.spbsu.exp;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.tree.IntTree;
 import com.spbsu.ml.*;
@@ -10,6 +12,7 @@ import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.meta.FeatureMeta;
@@ -99,7 +102,7 @@ public class HierClassTests extends TestCase {
     System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
   }
 
-  private static class CustomWeakMultiClass extends VecOptimization.Stub<TargetFunc> {
+  private static class CustomWeakMultiClass extends VecOptimization.Stub<BlockwiseMLLLogit> {
     private final int iters;
     private final double step;
 
@@ -109,7 +112,7 @@ public class HierClassTests extends TestCase {
     }
 
     @Override
-    public Trans fit(final VecDataSet learnData, final TargetFunc loss) {
+    public Trans fit(final VecDataSet learnData, final BlockwiseMLLLogit loss) {
       final BFGrid grid = GridTools.medianGrid(learnData, 32);
       final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), SatL2.class), iters, step);
 
@@ -153,7 +156,7 @@ public class HierClassTests extends TestCase {
     }
   }
 
-  private static class CustomWeakBinClass extends VecOptimization.Stub<TargetFunc> {
+  private static class CustomWeakBinClass extends VecOptimization.Stub<LLLogit> {
     private final int iters;
     private final double step;
 
@@ -163,9 +166,13 @@ public class HierClassTests extends TestCase {
     }
 
     @Override
-    public Trans fit(final VecDataSet learn, final TargetFunc targetFunc) {
+    public Trans fit(final VecDataSet learn, final LLLogit targetFunc) {
+      final Vec binClassTarget = targetFunc.labels();
+      final IntSeq intBinClassTarget = VecTools.toIntSeq(binClassTarget);
+      final IntSeq mcTarget = MCTools.normalizeTarget(intBinClassTarget, new TIntIntHashMap());
+
       final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(iters, step);
-      final MultiClassModel mcm = (MultiClassModel) customWeakMultiClass.fit(learn, targetFunc);
+      final MultiClassModel mcm = (MultiClassModel) customWeakMultiClass.fit(learn, new BlockwiseMLLLogit(mcTarget, learn));
       return mcm.getInternModel().dirs()[0];
     }
   }

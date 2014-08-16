@@ -6,6 +6,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.ArrayTools;
@@ -57,11 +58,11 @@ public class MCTools {
     return result;
   }
 
-  public static IntSeq extractClassForBinary(IntSeq target, int classNo) {
-    final int[] result = new int[target.length()];
+  public static Vec extractClassForBinary(IntSeq target, int classNo) {
+    final Vec result = new ArrayVec(target.length());
     for (int i = 0; i < target.length(); i++)
-      result[i] = (target.at(i) == classNo) ? 0 : 1;
-    return new IntSeq(result);
+      result.set(i, (target.at(i) == classNo) ? 1. : -1.);
+    return result;
   }
 
   /**

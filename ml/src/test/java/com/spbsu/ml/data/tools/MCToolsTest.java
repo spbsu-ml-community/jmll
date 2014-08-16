@@ -48,14 +48,14 @@ public class MCToolsTest extends TestCase {
   }
 
   public void testExtractClassForBinary() throws Exception {
-    final IntSeq binClassTarget = MCTools.extractClassForBinary(target, 8);
-    final IntSeq expectedTarget = new IntSeq(new int[]{
-        1, 1, 1, 1, 1,
-        0, 0, 0, 0,
-        1, 1, 1,
-        1, 1,
-        1, 1
-    });
+    final Vec binClassTarget = MCTools.extractClassForBinary(target, 8);
+    final Vec expectedTarget = new ArrayVec(
+        -1, -1, -1, -1, -1,
+        1, 1, 1, 1,
+        -1, -1, -1,
+        -1, -1,
+        -1, -1
+    );
     assertEquals(expectedTarget, binClassTarget);
   }
 
