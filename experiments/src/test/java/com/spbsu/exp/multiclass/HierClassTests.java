@@ -1,9 +1,9 @@
-package com.spbsu.exp;
+package com.spbsu.exp.multiclass;
 
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.tree.IntTree;
-import com.spbsu.exp.weak.CustomWeakBinClass;
-import com.spbsu.exp.weak.CustomWeakMultiClass;
+import com.spbsu.exp.multiclass.weak.CustomWeakBinClass;
+import com.spbsu.exp.multiclass.weak.CustomWeakMultiClass;
 import com.spbsu.ml.data.tools.HierTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
@@ -19,7 +19,6 @@ import com.spbsu.ml.testUtils.TestResourceLoader;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
 import junit.framework.TestCase;
 
 /**
@@ -63,22 +62,17 @@ public class HierClassTests extends TestCase {
     init();
   }
 
-  public void testBaseline() throws Exception {
-    final TIntIntMap labelsMap = new TIntIntHashMap();
-    learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), MCTools.normalizeTarget(learn.target(BlockwiseMLLLogit.class).labels(), labelsMap));
-    test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), MCTools.mapTarget(test.target(BlockwiseMLLLogit.class).labels(), labelsMap));
-    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(iters, step);
-    final MCModel model = (MCModel) customWeakMultiClass.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
+  private void printResult(final MCModel model) {
     System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
     System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+    System.out.println(MCTools.evalModel(model, learn, getName(), true) + MCTools.evalModel(model, test, "", true));
   }
 
   public void testHierClass() throws Exception {
     final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(iters, step);
     final HierarchicalClassification hierarchicalClassification = new HierarchicalClassification(customWeakMultiClass, tree);
     final HierarchicalModel model = (HierarchicalModel) hierarchicalClassification.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
-    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+    printResult(model);
   }
 
   public void testHierRefinedClass() throws Exception {
@@ -86,7 +80,6 @@ public class HierClassTests extends TestCase {
     final CustomWeakBinClass customWeakBinClass = new CustomWeakBinClass(iters, step);
     final HierarchicalRefinedClassification hierarchicalRefinedClassification = new HierarchicalRefinedClassification(customWeakBinClass, customWeakMultiClass, tree);
     final HierarchicalModel model = (HierarchicalModel) hierarchicalRefinedClassification.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
-    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+    printResult(model);
   }
 }

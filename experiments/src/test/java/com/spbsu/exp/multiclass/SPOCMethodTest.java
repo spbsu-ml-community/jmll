@@ -1,4 +1,4 @@
-package com.spbsu.exp;
+package com.spbsu.exp.multiclass;
 
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.MathTools;
@@ -6,9 +6,8 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.exp.weak.CustomWeakBinClass;
-import com.spbsu.exp.weak.CustomWeakMultiClass;
-import com.spbsu.ml.Trans;
+import com.spbsu.exp.multiclass.weak.CustomWeakBinClass;
+import com.spbsu.exp.multiclass.weak.CustomWeakMultiClass;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
@@ -72,6 +71,12 @@ public class SPOCMethodTest extends TestCase {
     initDefaultData();
   }
 
+  private void printResult(final MCModel model) {
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+    System.out.println(MCTools.evalModel(model, learn, getName(), true) + MCTools.evalModel(model, test, "", true));
+  }
+
   private void fitModel(final AbstractCodingMatrixLearning matrixLearning, final int iters, final double step) {
     final Mx codingMatrix = matrixLearning.trainCodingMatrix(S);
 //      if (!CodingMatrixLearning.checkConstraints(codeMatrix)) {
@@ -79,15 +84,13 @@ public class SPOCMethodTest extends TestCase {
 //      }
     final VecOptimization method = new SPOCMethodClassic(codingMatrix, new CustomWeakBinClass(iters, step));
     final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) method.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
-    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+    printResult(model);
   }
 
   public void testBaseline() throws Exception {
     final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(100, 0.5);
     final MCModel model = (MCModel) customWeakMultiClass.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
-    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
-    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+    printResult(model);
   }
 
   public void testMathFit() throws Exception {

@@ -1,4 +1,4 @@
-package com.spbsu.exp.weak;
+package com.spbsu.exp.multiclass.weak;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.seq.IntSeq;
@@ -57,8 +57,8 @@ public class CustomWeakMultiClass extends VecOptimization.Stub<BlockwiseMLLLogit
     };
     boosting.addListener(calcer);
     final Ensemble ensemble = boosting.fit(learnData, loss);
+    System.out.println();
     final MCModel model = MCTools.joinBoostingResults(ensemble);
-    System.out.println("\n\n");
     return model;
   }
 

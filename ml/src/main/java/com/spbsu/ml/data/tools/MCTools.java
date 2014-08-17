@@ -214,7 +214,7 @@ public class MCTools {
         mapTarget(VecTools.toIntSeq(predict), labelsMap)
     );
     if (oneLine) {
-      return confusionMatrix.oneLineReport();
+      return prefixComment + confusionMatrix.debug();
     } else {
       final StringBuilder sb = new StringBuilder();
       sb.append("\n==========").append(prefixComment).append(StringUtils.repeatWithDelimeter("", "=", 100 - 10 - prefixComment.length())).append("\n");

@@ -207,7 +207,7 @@ public class ConfusionMatrix {
   }
 
   public String debug() {
-    return String.format("{%.6f|%.6f|%.6f|%.6f|%.6f|%.6f}",
+    return String.format("%.6f|%.6f|%.6f|%.6f|%.6f|%.6f|",
         getMicroPrecision(), getMicroRecall(), getMicroF1Measure(), getMacroPrecision(), getMacroRecall(), getMacroF1Measure());
   }
 

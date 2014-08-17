@@ -1,4 +1,4 @@
-package com.spbsu.exp.weak;
+package com.spbsu.exp.multiclass.weak;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
