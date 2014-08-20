@@ -50,7 +50,7 @@ public class OptimizersTest extends TestCase {
         for (int k = 0; k < TESTS_COUNT; k++) {
             PDQuadraticFunction func = createRandomConvexFunc(new FastRandom(k));
             for (Optimize<FuncConvex> method : algs) {
-                assertTrue(method.getClass().toString(), VecTools.distance(func.getExactExtremumForPositiveDef(), method.optimize(func)) < EPS);
+                assertTrue(method.getClass().toString(), VecTools.distance(func.getExactExtremum(), method.optimize(func)) < EPS);
             }
         }
     }
@@ -64,13 +64,13 @@ public class OptimizersTest extends TestCase {
 //
 //        PDQuadraticFunction func = new PDQuadraticFunction(mxA, w, 0);
 //        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(3));
-//        assertTrue(VecTools.distance(func.getExactExtremumForPositiveDef(), customNesterov.optimize(func, EPS)) < EPS);
+//        assertTrue(VecTools.distance(func.getExactExtremum(), customNesterov.optimize(func, EPS)) < EPS);
 //    }
 //
 //    public void testAdaptiveNesterovRandom() {
 //        PDQuadraticFunction func = createRandomConvexFunc(new FastRandom());
 //        ConvexOptimize adaptiveNesterov = new AdaptiveNesterov(new ArrayVec(func.ydim()));
-//        Vec expected = func.getExactExtremumForPositiveDef();
+//        Vec expected = func.getExactExtremum();
 //        Vec actual = adaptiveNesterov.optimize(func, EPS);
 //
 //        LOG.message("|X| = " + VecTools.norm(actual));
@@ -80,7 +80,7 @@ public class OptimizersTest extends TestCase {
 //    public void testCustomNesterovRandom() {
 //        PDQuadraticFunction func = createRandomConvexFunc(new FastRandom());
 //        ConvexOptimize customNesterov = new CustomNesterov(new ArrayVec(func.ydim()));
-//        Vec expected = func.getExactExtremumForPositiveDef();
+//        Vec expected = func.getExactExtremum();
 //        Vec actual = customNesterov.optimize(func, EPS);
 //
 //        LOG.message("|X| = " + VecTools.norm(actual));
@@ -96,7 +96,7 @@ public class OptimizersTest extends TestCase {
 
         PDQuadraticFunction func = new PDQuadraticFunction(mxA, w, 0);
       Optimize<FuncConvex> nesterov1 = new Nesterov1(new ArrayVec(3), EPS);
-        assertTrue(VecTools.distance(func.getExactExtremumForPositiveDef(), nesterov1.optimize(func)) < EPS);
+        assertTrue(VecTools.distance(func.getExactExtremum(), nesterov1.optimize(func)) < EPS);
     }
 
     public void testNesterov2Simple() {
@@ -108,13 +108,13 @@ public class OptimizersTest extends TestCase {
 
         PDQuadraticFunction func = new PDQuadraticFunction(mxA, w, 0);
         Optimize<FuncConvex> nesterov2 = new Nesterov2(new ArrayVec(3), EPS);
-        assertTrue(VecTools.distance(func.getExactExtremumForPositiveDef(), nesterov2.optimize(func)) < EPS);
+        assertTrue(VecTools.distance(func.getExactExtremum(), nesterov2.optimize(func)) < EPS);
     }
 
     public void testNesterov2Random() {
-        PDQuadraticFunction func = createRandomConvexFunc(new FastRandom());
+        PDQuadraticFunction func = createRandomConvexFunc(new FastRandom(N));
         Optimize<FuncConvex> nesterov2 = new Nesterov2(new ArrayVec(N), EPS);
-        Vec expected = func.getExactExtremumForPositiveDef();
+        Vec expected = func.getExactExtremum();
         Vec actual = nesterov2.optimize(func);
 
         LOG.message("|X| = " + VecTools.norm(actual));
@@ -126,7 +126,7 @@ public class OptimizersTest extends TestCase {
                 2, 1,
                 1, 2));
         PDQuadraticFunction func = new PDQuadraticFunction(mxA, new ArrayVec(-1, -11), 0);
-        assertTrue(distance(func.getExactExtremumForPositiveDef(), new ArrayVec(-3, 7)) < 1e-5);
+        assertTrue(distance(func.getExactExtremum(), new ArrayVec(-3, 7)) < 1e-5);
     }
 
     private PDQuadraticFunction createRandomConvexFunc(Random rnd) {

@@ -104,7 +104,7 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
     return m;
   }
 
-  public Vec getExactExtremumForPositiveDef() {
+  public Vec getExactExtremum() {
     Vec b = VecTools.copy(w);
     VecTools.scale(b, -1.0);
     Mx l = MxTools.choleskyDecomposition(mxA);
@@ -113,8 +113,7 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
 
     //stupid cast (VecBasedMx -> ArrayVec) for solution out
     Vec result = new ArrayVec(b.dim());
-    for (int i = 0; i < x.dim(); i++)
-      result.set(i, x.get(i));
+    VecTools.assign(result, x);
     return result;
   }
 }
