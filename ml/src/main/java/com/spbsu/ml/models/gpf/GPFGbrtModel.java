@@ -6,6 +6,7 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
 import gnu.trove.list.array.TIntArrayList;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 
@@ -22,18 +23,19 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
 
   private VecBasedMx clickProbability = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
   
-  Func f_model = new Func.Stub() {
-    @Override
-    public double value(Vec x) {
-      if (x.dim() != NFEATS) throw new IllegalArgumentException("x.dim() != NFEATS: " + x.dim() + " != " + NFEATS);
-      return 1;  
-    }
-
-    @Override
-    public int dim() {
-      return NFEATS;
-    }
-  };
+  Func f_model = null;
+//  Func f_model = new Func.Stub() {
+//    @Override
+//    public double value(Vec x) {
+//      if (x.dim() != NFEATS) throw new IllegalArgumentException("x.dim() != NFEATS: " + x.dim() + " != " + NFEATS);
+//      return 1;
+//    }
+//
+//    @Override
+//    public int dim() {
+//      return NFEATS;
+//    }
+//  };
   
   public GPFGbrtModel() {
   }

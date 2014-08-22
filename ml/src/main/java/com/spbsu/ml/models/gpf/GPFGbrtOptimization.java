@@ -10,17 +10,23 @@ import java.util.concurrent.*;
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import gnu.trove.map.hash.TDoubleDoubleHashMap;
+import gnu.trove.map.hash.TDoubleIntHashMap;
 import org.junit.Test;
+
+import static com.spbsu.commons.math.MathTools.sqr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -106,6 +112,9 @@ public class GPFGbrtOptimization {
     final GPFVectorizedDataset dataset;
     final ExecutorService executorPool;
 
+    private Vec[] fvalue_partial;
+    private int[] fvalue_partial_size;
+
     public GPFLoglikelihood(GPFGbrtModel model, GPFVectorizedDataset dataset) {
       this(model, dataset, 1);
     }
@@ -114,6 +123,12 @@ public class GPFGbrtOptimization {
       this.executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
       this.model = model;
       this.dataset = dataset;
+
+      this.fvalue_partial = new Vec[dataset.sfrList.size()];
+      for (int i = 0; i < dataset.sfrList.size(); i++) {
+        fvalue_partial[i] = new ArrayVec(dataset.sfrList.get(i).f_count);
+      }
+      this.fvalue_partial_size = new int[dataset.sfrList.size()];
     }
 
     @Override
@@ -189,15 +204,36 @@ public class GPFGbrtOptimization {
 
         // old version: Vec f = x.sub(start, sfr.f_count);
         // new non-negative version: f = exp(x)
-        final Vec f = fmodel.transAll(sfr.features);
+        Vec f = null;
+        if (fmodel instanceof Ensemble) {
+          final Ensemble linear = (Ensemble) fmodel;
+          if (linear.size() == fvalue_partial_size[i] + 1) {
+            final Trans increment = linear.last();
+            final double weight_last = linear.wlast();
+            VecTools.incscale(fvalue_partial[i], increment.transAll(sfr.features), weight_last);
+            fvalue_partial_size[i]++;
+            f = fvalue_partial[i];
+          } else if (linear.size() == fvalue_partial_size[i]) {
+            f = fvalue_partial[i];
+          } else {
+            f = fmodel.transAll(sfr.features);
+            throw new IllegalStateException("unexpected state: linear.size() == " + linear.size() + ", fvalue_partial_size[i] == " + fvalue_partial_size[i] + ", you can safely remove this exception call");
+          }
+        } else {
+          f = fmodel.transAll(sfr.features);
+          throw new IllegalStateException("unexpected state: !(fmodel instanceof Ensemble), you can safely remove this exception call");
+        }
+
         if (f.dim() != sfr.f_count) throw new IllegalArgumentException("wrong fmodel: f.dim() != sfr.f_count, " + f.dim() + " != " + sfr.f_count);
+
+        final Vec f_exp = new ArrayVec(f.dim());
         for (int j = 0; j < f.dim(); j++)
-          f.set(j, Math.exp(f.get(j)));
+          f_exp.set(j, Math.exp(f.get(j)));
 
         tasks.add(new Callable<GPFGbrtModel.SessionGradientValue>() {
           @Override
           public GPFGbrtModel.SessionGradientValue call() throws Exception {
-            return model.eval_L_and_dL_df(sfr, false, f);
+            return model.eval_L_and_dL_df(sfr, false, f_exp);
           }
         });
       }
