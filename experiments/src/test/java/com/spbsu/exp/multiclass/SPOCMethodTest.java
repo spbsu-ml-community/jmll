@@ -108,14 +108,30 @@ public class SPOCMethodTest extends TestCase {
         200, 0.3);
   }
 
-  public void _testMathFitBigDS() throws Exception {
-    final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv");
+  public void _testBaselineBigDS() throws Exception {
+    final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv.gz");
     pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS),
         VecTools.toIntSeq(pool.target(L2.class).target));
 
     final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100501), 0.8, 0.2);
     final SubPool<?> learn = new SubPool(pool, idxs[0]);
     final SubPool<?> test = new SubPool(pool, idxs[1]);
+
+    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(300, 0.7);
+    final MCModel model = (MCModel) customWeakMultiClass.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+    System.out.println(MCTools.evalModel(model, learn, getName(), true) + MCTools.evalModel(model, test, "", true));
+  }
+
+  public void _testMathFitBigDS() throws Exception {
+    final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv.gz");
+    pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS),
+        VecTools.toIntSeq(pool.target(L2.class).target));
+
+    final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100500), 0.8, 0.2);
+    final SubPool<?> learn = new SubPool<>(pool, idxs[0]);
+    final SubPool<?> test = new SubPool<>(pool, idxs[1]);
 
     final CharSequence mxStr = StreamTools.readStream(TestResourceLoader.loadResourceAsStream("multiclass/ds_letter/letter.similarityMx"));
     final Mx similarityMx = MathTools.CONVERSION.convert(mxStr, Mx.class);
@@ -128,5 +144,6 @@ public class SPOCMethodTest extends TestCase {
     final MCModel model = (MCModel) spoc.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
     System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
     System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+    System.out.println(MCTools.evalModel(model, learn, getName(), true) + MCTools.evalModel(model, test, "", true));
   }
 }
