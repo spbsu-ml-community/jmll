@@ -20,7 +20,6 @@ public class MedianRow implements DynamicRow {
   private final ArrayList<BinaryFeatureImpl> bfs = new ArrayList<>();
   private final int levels;
 
-
   public MedianRow(DynamicGrid grid, double[] feature, int[] reverse, int origFIndex, int minSplits) {
     this.origFIndex = origFIndex;
     this.feature = feature;
@@ -112,6 +111,7 @@ public class MedianRow implements DynamicRow {
   private static double diffScore(int start, int end, int split, int n) {
     double diff = (end - start) * Math.log((end - start) * 1.0 / n)
             - (end - split) * Math.log((end - split) * 1.0 / n) - (split - start) * Math.log((split - start) * 1.0 / n);
+//    diff /= n;
     diff /= n;
     return diff;
   }
@@ -128,44 +128,29 @@ public class MedianRow implements DynamicRow {
       int split = Math.abs(Arrays.binarySearch(feature, start, end, median));
       while (split > start && Math.abs(feature[split] - median) < eps) // look for first less then median value
         split--;
-      if (Math.abs(feature[split] - median) > 1e-9) split++;
+      if (Math.abs(feature[split] - median) > eps) split++;
 
-      final double scoreLeft = Math.log(end - split) + Math.log(split - start);
-      if (split > start) {
-        if (scoreLeft > bestScore) {
-          bestScore = scoreLeft;
-          diff = diffScore(start, end, split, feature.length);//(end - start) * Math.log(end - start) - (end - split) * Math.log(end - split) - (split - start) * Math.log(split - start);
-//          diff = (end - start) * Math.log((end - start) * 1.0 / feature.length)
-//                  - (end - split) * Math.log((end - split) * 1.0 / feature.length) - (split - start) * Math.log((split - start) * 1.0 / feature.length);
-//          diff /= feature.length;
-          bestSplit = split;
-          bestSplits.clear();
-          bestSplits.add(bestSplit);
-        } else if (Math.abs(scoreLeft - bestScore) < 1e-8) {
-          bestSplits.add(split);
-        }
-      }
+      final double scoreLeft = split > start ? Math.log(end - split) + Math.log(split - start) : 0;
+      final int lb = split;
       while (++split < end && Math.abs(feature[split] - median) < eps)
         ; // first after elements with such value
+      final double scoreRight = split < end ? Math.log(end - split) + Math.log(split - start) : 0;
+      final int ub = split;
+      split = scoreLeft < scoreRight ? ub : lb;
+      double score = scoreLeft < scoreRight ? scoreRight : scoreLeft;
 
-      final double scoreRight = Math.log(end - split) + Math.log(split - start);
-      if (split < end) {
-        if (scoreRight > bestScore) {
-          bestScore = scoreRight;
+      if (split > start && split < end) {
+        if (score > bestScore + eps) {
+          bestScore = score;
           bestSplit = split;
-//          diff = (end - start) * Math.log((end - start) * 1.0 / feature.length)
-//                  - (end - split) * Math.log((end - split) * 1.0 / feature.length) - (split - start) * Math.log((split - start) * 1.0 / feature.length);
-//          diff /= feature.length;
           diff = diffScore(start, end, split, feature.length);//(end - start) * Math.log(end - start) - (end - split) * Math.log(end - split) - (split - start) * Math.log(split - start);
           bestSplits.clear();
           bestSplits.add(bestSplit);
-        } else if (Math.abs(scoreRight - bestScore) < 1e-8) {
+        } else if (Math.abs(score - bestScore) < eps) {
           bestSplits.add(split);
         }
       }
     }
-
-
     bestSplitsCache.clear();
 
     for (int i = 0; i < bestSplits.size(); ++i) {
@@ -216,28 +201,29 @@ public class MedianRow implements DynamicRow {
 
   @Override
   public double regularize(BinaryFeature bf) {
-    double entropy = 0;
-    double entropyWithoutFeature = 0;
-    double left = 0;
-    double leftWithoutFeature = 0;
-    final int featureBin = bf.binNo();
-    for (int bin = 0; bin < bfs.size(); ++bin) {
-      BinaryFeatureImpl f = bfs.get(bin);
-      double p = (f.borderIndex - left) / feature.length;
-      entropy -= p * Math.log(p);
-      left = f.borderIndex;
-      if (bin != featureBin) {
-        p = (f.borderIndex - leftWithoutFeature) / feature.length;
-        entropyWithoutFeature -= p * Math.log(p);
-        leftWithoutFeature = f.borderIndex;
-      }
-    }
-
-    double p = (feature.length - left) / feature.length;
-    entropy -= p * Math.log(p);
-    p = (feature.length - leftWithoutFeature) / feature.length;
-    entropyWithoutFeature -= p * Math.log(p);
-    return entropy - entropyWithoutFeature;
+    return bf.regularization();
+//    double entropy = 0;
+//    double entropyWithoutFeature = 0;
+//    double left = 0;
+//    double leftWithoutFeature = 0;
+//    final int featureBin = bf.binNo();
+//    for (int bin = 0; bin < bfs.size(); ++bin) {
+//      BinaryFeatureImpl f = bfs.get(bin);
+//      double p = (f.borderIndex - left) / feature.length;
+//      entropy -= p * Math.log(p);
+//      left = f.borderIndex;
+//      if (bin != featureBin) {
+//        p = (f.borderIndex - leftWithoutFeature) / feature.length;
+//        entropyWithoutFeature -= p * Math.log(p);
+//        leftWithoutFeature = f.borderIndex;
+//      }
+//    }
+//
+//    double p = (feature.length - left) / feature.length;
+//    entropy -= p * Math.log(p);
+//    p = (feature.length - leftWithoutFeature) / feature.length;
+//    entropyWithoutFeature -= p * Math.log(p);
+//    return entropy - entropyWithoutFeature;
   }
 
 //    @Override

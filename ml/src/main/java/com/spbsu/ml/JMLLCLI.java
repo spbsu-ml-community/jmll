@@ -363,7 +363,7 @@ public class JMLLCLI {
       case "GreedyObliviousTreeDynamic2": {
         return new Factory<VecOptimization>() {
           public int depth = 6;
-          public int lambda = 2;
+          public double lambda = 2;
           public int minSplits = 1;
 
           public void minSplits(int val) {
@@ -374,7 +374,7 @@ public class JMLLCLI {
             this.depth = d;
           }
 
-          public void lambda(int l) {
+          public void lambda(double l) {
             this.lambda = l;
           }
 
@@ -388,7 +388,7 @@ public class JMLLCLI {
       case "GreedyObliviousTreeDynamic": {
         return new Factory<VecOptimization>() {
           public int depth = 6;
-          public int lambda = 2;
+          public double lambda = 2;
 //          public int minSplits = 1;
 
 //          public void minSplits(int val) {
@@ -399,7 +399,7 @@ public class JMLLCLI {
             this.depth = d;
           }
 
-          public void lambda(int l) {
+          public void lambda(double l) {
             this.lambda = l;
           }
 
