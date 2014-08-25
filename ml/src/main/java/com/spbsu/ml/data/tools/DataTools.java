@@ -1,10 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
-import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
-import com.spbsu.commons.util.ArrayTools;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.linked.TIntLinkedList;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -29,14 +24,17 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxIterator;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
+import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.system.RuntimeUtils;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
@@ -60,13 +58,6 @@ import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.zip.GZIPInputStream;
 
 /**
  * User: solar
@@ -113,12 +104,24 @@ public class DataTools {
         SERIALIZATION.write(result)), to);
   }
 
-  public static Trans readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
-    final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(new FileInputStream(fileName)));
-    String line = modelReader.readLine();
-    CharSequence[] parts = CharSeqTools.split(line, '\t');
-    Class<? extends Trans> modelClazz = (Class<? extends Trans>)Class.forName(parts[0].toString());
+  public static Trans readModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+    final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(inputStream));
+    final String line = modelReader.readLine();
+    final CharSequence[] parts = CharSeqTools.split(line, '\t');
+    //noinspection unchecked
+    final Class<? extends Trans> modelClazz = (Class<? extends Trans>) Class.forName(parts[0].toString());
     return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
+  }
+
+  public static Trans readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+    return readModel(new FileInputStream(fileName), serializationRepository);
+  }
+
+  public static Trans readModel(final InputStream modelInputStream, final InputStream gridInputStream) throws IOException, ClassNotFoundException {
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository();
+    final BFGrid grid = repository.read(StreamTools.readStream(gridInputStream), BFGrid.class);
+    final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
+    return readModel(modelInputStream, customizedRepository);
   }
 
   public static void writeBinModel(Computable result, File file) throws IOException {
