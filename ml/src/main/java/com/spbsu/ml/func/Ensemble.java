@@ -44,7 +44,7 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
 
   @Override
   public int xdim() {
-    return models[0].xdim() * models.length;
+    return models[0].xdim();// * models.length;
   }
 
   @Override
