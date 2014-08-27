@@ -61,5 +61,10 @@ public interface VecDataSet extends DataSet<Vec> {
     public final FeatureMeta fmeta(final int findex) {
       return vec().meta(findex);
     }
+
+    @Override
+    public Class<Vec> elementType() {
+      return Vec.class;
+    }
   }
 }

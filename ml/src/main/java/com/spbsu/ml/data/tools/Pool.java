@@ -76,6 +76,11 @@ public class Pool<I extends DSItem> {
         public int index(final I obj) {
           return indices.get(obj);
         }
+
+        @Override
+        public Class<I> elementType() {
+          return items.elementType();
+        }
       };
     }
     return data;
@@ -135,8 +140,6 @@ public class Pool<I extends DSItem> {
       final TIntArrayList toJoin = new TIntArrayList(features.length);
       for (int i = 0; i < features.length; i++) {
         Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = features[i];
-        //TODO[solar]: troubles in SubPool with uncommented line
-        //if (feature.getFirst().associated() == ds) {
         for (final Class clazz : supportedFeatureTypes) {
           if (clazz.isAssignableFrom(feature.getFirst().type().clazz())) {
             toJoin.add(i);
