@@ -5,29 +5,13 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.data.tools.Pool;
-import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.MLLLogit;
-import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseSatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseWeightedLoss;
-import com.spbsu.ml.loss.multiclass.MCMacroPrecision;
-import com.spbsu.ml.meta.impl.FakeTargetMeta;
-import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.MultiClass;
-import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.MCModel;
-import com.spbsu.ml.testUtils.TestResourceLoader;
-import gnu.trove.list.array.TDoubleArrayList;
 import junit.framework.TestCase;
-
-import java.io.IOException;
 
 /**
 * User: qdeee
@@ -55,30 +39,7 @@ public class BlockwiseTest extends TestCase {
     }
   }
 
-  public void testMulticlass() throws IOException {
-    final TDoubleArrayList borders = new TDoubleArrayList(new double[]{0.038125, 0.07625, 0.114375, 0.1525, 0.61});
-    final Pool<?> pool = TestResourceLoader.loadPool("features.txt.gz");
-    final IntSeq mcTarget = MCTools.transformRegressionToMC(pool.target(L2.class).target, borders.size(), borders);
-    pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS), mcTarget);
-
-    final VecDataSet ds = pool.vecData();
-
-    final BlockwiseMLLLogit newTarget = pool.target(BlockwiseMLLLogit.class);
-    final MLLLogit oldTarget = pool.target(MLLLogit.class);
-
-    final BFGrid grid = GridTools.medianGrid(ds, 32);
-
-    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
-        new MultiClass(new GreedyObliviousTree(grid, 5), SatL2.class),
-        20, 0.5);
-    final Ensemble ensemble = boosting.fit(ds, newTarget);
-    final MCModel model = MCTools.joinBoostingResults(ensemble);
-    final Func mcMacroPrecision = new MCMacroPrecision(newTarget.labels(), ds);
-    final double value = mcMacroPrecision.value(model.bestClassAll(ds.data()));
-    System.out.println(value);
-  }
-
-  public void testMLLLogit() throws Exception {
+  public void testBlockwiseMLLLogit() throws Exception {
     final MLLLogit oldMLLLogit = new MLLLogit(intTarget, null);
     final BlockwiseMLLLogit newMLLLogit = new BlockwiseMLLLogit(intTarget, null);
 

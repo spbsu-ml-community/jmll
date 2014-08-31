@@ -1,14 +1,11 @@
 package com.spbsu.ml.methods;
 
-import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.models.MultiClassModel;
 
 /**
  * User: solar
@@ -25,13 +22,13 @@ public class MultiClass extends VecOptimization.Stub<L2> {
   }
 
   @Override
-  public MultiClassModel fit(VecDataSet learn, L2 mllLogitGradient) {
+  public FuncJoin fit(VecDataSet learn, L2 mllLogitGradient) {
     final Mx gradient = (Mx)mllLogitGradient.target;
     final Func[] models = new Func[gradient.columns()];
     for (int c = 0; c < models.length; c++) {
       final L2 loss = DataTools.newTarget(local, gradient.col(c), learn);
       models[c] = (Func)inner.fit(learn, loss);
     }
-    return new MultiClassModel(models);
+    return new FuncJoin(models); //not MultiClassModel, for boosting compatibility
   }
 }
