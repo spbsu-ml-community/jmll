@@ -1,4 +1,4 @@
-package com.spbsu.ml.cli.builders.output;
+package com.spbsu.ml.cli.output;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;

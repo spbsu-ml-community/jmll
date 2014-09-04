@@ -11,10 +11,12 @@ import com.spbsu.ml.methods.VecOptimization;
  * Date: 03.09.14
  */
 public class BootstrapOptimizationBuilder implements Factory<VecOptimization> {
+  public static FastRandom defaultRandom;
+
   private GreedyObliviousTreeBuilder defaultWeakBuilder = new GreedyObliviousTreeBuilder();
 
   private VecOptimization<WeightedLoss> weak;
-  private FastRandom random = new FastRandom();
+  private FastRandom random = defaultRandom;
 
   public void setWeak(final VecOptimization<WeightedLoss> vecOptimization) {
     this.weak = vecOptimization;

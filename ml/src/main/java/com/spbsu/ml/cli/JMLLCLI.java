@@ -1,6 +1,7 @@
 package com.spbsu.ml.cli;
 
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.random.FastRandom;
@@ -8,22 +9,24 @@ import com.spbsu.commons.seq.CharSeqBuilder;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
-import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.TargetFunc;
-import com.spbsu.ml.Trans;
+import com.spbsu.ml.*;
 import com.spbsu.ml.cli.builders.data.DataBuilder;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderCrossValidation;
 import com.spbsu.ml.cli.builders.methods.MethodsBuilder;
 import com.spbsu.ml.cli.builders.methods.grid.DynamicGridBuilder;
 import com.spbsu.ml.cli.builders.methods.grid.GridBuilder;
-import com.spbsu.ml.cli.builders.output.ModelWriter;
+import com.spbsu.ml.cli.output.ModelWriter;
+import com.spbsu.ml.cli.output.printers.DefaultProgressPrinter;
+import com.spbsu.ml.cli.output.printers.HistogramPrinter;
+import com.spbsu.ml.cli.output.printers.MulticlassProgressPrinter;
+import com.spbsu.ml.cli.output.printers.ResultsPrinter;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.io.ModelsSerializationRepository;
-import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.spbsu.ml.methods.VecOptimization;
 import org.apache.commons.cli.*;
 
 import java.io.*;
@@ -156,10 +159,11 @@ public class JMLLCLI {
 
 
     //choose optimization method
-    final MethodsBuilder methodsBuilder = new MethodsBuilder(new FastRandom());
+    final MethodsBuilder methodsBuilder = new MethodsBuilder();
+    methodsBuilder.setRandom(new FastRandom());
     methodsBuilder.setGridBuilder(gridBuilder);
     methodsBuilder.setDynamicGridBuilder(dynamicGridBuilder);
-    final Optimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
+    final VecOptimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
 
     //set target
     final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
@@ -177,26 +181,41 @@ public class JMLLCLI {
       metrics = new Func[]{test.target(DataTools.targetByName(target))};
     }
 
-    //fitting
-    //add listeners
+    //added progress handlers
+    if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION)) {
+      final ProgressHandler progressPrinter;
+      if (loss instanceof BlockwiseMLLLogit) {
+        progressPrinter = new MulticlassProgressPrinter(learn, test); //f*ck you with your custom different-dimensional metrics
+      } else {
+        progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics);
+      }
+      //noinspection unchecked
+      ((WeakListenerHolder) method).addListener(progressPrinter);
+    }
 
+    if (method instanceof WeakListenerHolder && command.hasOption(HIST_OPTION)) {
+      final ProgressHandler histogramPrinter = new HistogramPrinter();
+      //noinspection unchecked
+      ((WeakListenerHolder) method).addListener(histogramPrinter);
+    }
+
+    //fitting
     Interval.start();
     Interval.suspend();
-
-    @SuppressWarnings("unchecked")
-    final Computable result = method.fit(learn.vecData(), loss);
-
+    final Trans result = method.fit(learn.vecData(), loss);
     Interval.stopAndPrint("Total fit time:");
-    System.out.print("Learn: " + loss.value(DataTools.calcAll(result, learn.vecData())) + " Test:");
-    for (final Trans metric : metrics) {
-      System.out.print(" " + metric.trans(DataTools.calcAll(result, test.vecData())));
+
+
+    //calc & print scores
+    ResultsPrinter.printResults(result, learn, test, loss, metrics);
+
+    if (loss instanceof BlockwiseMLLLogit) {
+      ResultsPrinter.printMulticlassResults(result, learn, test);
     }
-    System.out.println();
 
 
-    //write results
+    //write model
     final String outName = getOutputName(command);
-
     final ModelWriter modelWriter = new ModelWriter(outName);
 
     if (command.hasOption(WRITE_BIN_FORMULA)) {
@@ -219,7 +238,7 @@ public class JMLLCLI {
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
     final Pool pool = dataBuilder.create().getFirst();
-    final VecDataSet dataSet = pool.vecData();
+    final VecDataSet vecDataSet = pool.vecData();
 
     final ModelsSerializationRepository serializationRepository;
     if (command.hasOption(GRID_OPTION)) {
@@ -236,11 +255,11 @@ public class JMLLCLI {
 
       for (int i = 0; i < pool.size(); i++) {
         value.clear();
-        value.append(MathTools.CONVERSION.convert(dataSet.parent().at(i), CharSequence.class));
+//        value.append(MathTools.CONVERSION.convert(vecDataSet.parent().at(i), CharSequence.class));
+//        value.append('\t');
+        value.append(MathTools.CONVERSION.convert(vecDataSet.at(i), CharSequence.class));
         value.append('\t');
-        value.append(MathTools.CONVERSION.convert(dataSet.at(i), CharSequence.class));
-        value.append('\t');
-        value.append(MathTools.CONVERSION.convert(model.compute(dataSet.at(i)), CharSequence.class));
+        value.append(MathTools.CONVERSION.convert(model.compute(vecDataSet.at(i)), CharSequence.class));
         writer.append(value).append('\n');
       }
     }
