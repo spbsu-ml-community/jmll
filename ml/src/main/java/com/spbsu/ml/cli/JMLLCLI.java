@@ -100,6 +100,9 @@ public class JMLLCLI {
         case "convert-pool":
           modeConvertPool(command);
           break;
+        case "validate-model":
+          modeValidateModel(command);
+          break;
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
@@ -241,6 +244,24 @@ public class JMLLCLI {
         writer.append(value).append('\n');
       }
     }
+  }
+
+  private static void modeValidateModel(final CommandLine command) throws MissingArgumentException, IOException {
+    if (!command.hasOption(MODEL_OPTION)) {
+      throw new MissingArgumentException("Please provide 'MODEL_OPTION'");
+    }
+
+    final ModelsSerializationRepository serializationRepository;
+    if (command.hasOption(GRID_OPTION)) {
+      final GridBuilder gridBuilder = new GridBuilder();
+      gridBuilder.setGrid(BFGrid.CONVERTER.convertFrom(StreamTools.readFile(new File(command.getOptionValue(GRID_OPTION)))));
+      serializationRepository = new ModelsSerializationRepository(gridBuilder.create());
+    } else {
+      serializationRepository = new ModelsSerializationRepository();
+    }
+
+    final Pair<Boolean, String> validationResults = DataTools.validateModel(command.getOptionValue(MODEL_OPTION), serializationRepository);
+    System.out.println(validationResults.getSecond());
   }
 
   private static void modeConvertPool(final CommandLine command) throws MissingArgumentException, IOException {

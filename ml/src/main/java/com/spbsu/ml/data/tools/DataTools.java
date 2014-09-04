@@ -1,15 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import com.spbsu.ml.models.MultiClassModel;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.zip.GZIPInputStream;
-
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -55,10 +45,18 @@ import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 import com.spbsu.ml.meta.impl.JsonFeatureMeta;
 import com.spbsu.ml.meta.impl.JsonTargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
+import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 /**
  * User: solar
@@ -148,6 +146,18 @@ public class DataTools {
     }
   }
 
+  public static Pair<Boolean, String> validateModel(final InputStream modelInputStream, final ModelsSerializationRepository repository) throws IOException {
+    try {
+      final Trans trans = readModel(modelInputStream, repository);
+      return Pair.create(true, "Valid model : " + trans.getClass().getSimpleName());
+    } catch (ClassNotFoundException e) {
+      return Pair.create(false, "Invalid model : " + e.getCause());
+    }
+  }
+
+  public static Pair<Boolean, String> validateModel(final String filePath, final ModelsSerializationRepository repository) throws IOException {
+    return validateModel(new FileInputStream(filePath), repository);
+  }
 
   public static DynamicGrid dynamicGrid(Computable<?, Vec> result) {
     if (result instanceof Ensemble) {
