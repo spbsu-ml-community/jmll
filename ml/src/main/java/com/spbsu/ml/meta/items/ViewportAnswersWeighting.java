@@ -2,6 +2,7 @@ package com.spbsu.ml.meta.items;
 
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.vectors.CommonBasisVec;
 import com.spbsu.commons.math.vectors.impl.vectors.DVector;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.meta.DSItem;
@@ -17,7 +18,7 @@ public class ViewportAnswersWeighting implements DSItem {
   public String[] answers;
   public double[] weights;
 
-  public ViewportAnswersWeighting(final String reqId, String vpName, final DVector<String> answers) {
+  public ViewportAnswersWeighting(final String reqId, String vpName, final CommonBasisVec<String> answers) {
     this.vpName = vpName;
     final VecIterator nzIt = answers.nonZeroes();
     int[] order = new int[VecTools.l0(answers)];
