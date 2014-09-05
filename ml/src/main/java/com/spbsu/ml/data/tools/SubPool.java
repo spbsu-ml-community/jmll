@@ -1,15 +1,11 @@
 package com.spbsu.ml.data.tools;
 
 
-import java.util.Arrays;
-
-
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.meta.PoolFeatureMeta;
-import com.spbsu.ml.meta.TargetMeta;
 
 /**
  * User: solar
@@ -17,14 +13,12 @@ import com.spbsu.ml.meta.TargetMeta;
  * Time: 22:57
  */
 public class SubPool<I extends DSItem> extends Pool<I> {
-  public final int[] indices;
 
   public SubPool(final Pool<I> original, int[] indices) {
     super(original.meta,
         ArrayTools.cut(original.items, indices),
         cutFeatures(original.features, indices),
         cutFeatures(original.targets.toArray(new Pair[original.targets.size()]), indices));
-    this.indices = indices;
   }
 
   private static <T extends PoolFeatureMeta> Pair<? extends T, ? extends Seq<?>>[] cutFeatures(Pair<? extends T, ? extends Seq<?>>[] original, int[] indices) {

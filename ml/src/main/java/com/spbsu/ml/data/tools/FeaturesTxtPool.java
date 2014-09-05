@@ -1,10 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -24,12 +19,15 @@ import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.PoolFeatureMeta;
 import com.spbsu.ml.meta.TargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
 * User: solar
 * Date: 07.07.14
 * Time: 20:55
 */
+// TODO: Why FeaturesTxtPool duplicates FakePool?
 public class FeaturesTxtPool extends Pool<QURLItem> {
   private final Mx data;
 
@@ -55,7 +53,6 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
     return features.toArray(new Pair[features.size()]);
   }
 
-
   public VecDataSet vecData() {
     final DataSet<QURLItem> ds = data();
     return new VecDataSetImpl(ds, data, new Vectorization<QURLItem>() {
@@ -74,6 +71,22 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
         return data.columns();
       }
     });
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == this)
+      return true;
+    if (obj == null || obj.getClass() != getClass())
+      return false;
+
+    final FeaturesTxtPool other = (FeaturesTxtPool) obj;
+    return new EqualsBuilder().appendSuper(super.equals(obj)).append(data, other.data).isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder().appendSuper(super.hashCode()).append(data).toHashCode();
   }
 
   private static class FakeFeatureMeta implements PoolFeatureMeta {

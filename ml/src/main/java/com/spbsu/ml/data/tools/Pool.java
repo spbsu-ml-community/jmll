@@ -1,5 +1,11 @@
 package com.spbsu.ml.data.tools;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
+
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
@@ -17,11 +23,8 @@ import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.meta.*;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
  * User: solar
@@ -177,5 +180,30 @@ public class Pool<I extends DSItem> {
     if (data.meta().id().equals(dsId))
       return data;
     throw new IllegalArgumentException("No such dataset in the pool");
+  }
+
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == this)
+      return true;
+    if (obj == null || obj.getClass() != getClass())
+      return false;
+
+    final Pool other = (Pool) obj;
+    return new EqualsBuilder().append(meta, other.meta).
+        append(targets, other.targets).
+        append(items, other.items).
+        append(features, other.features).
+        isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder().append(meta).
+        append(targets).
+        append(items).
+        append(features).
+        toHashCode();
   }
 }

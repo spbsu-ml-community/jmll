@@ -5,6 +5,8 @@ import java.util.Date;
 
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.meta.DataSetMeta;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
  * User: solar
@@ -61,5 +63,33 @@ public class JsonDataSetMeta implements DataSetMeta {
   @Override
   public ItemType type() {
     return type;
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == this)
+      return true;
+    if (obj == null || obj.getClass() != getClass())
+      return false;
+
+    final JsonDataSetMeta other = (JsonDataSetMeta)obj;
+    return new EqualsBuilder().
+        append(id, other.id).
+        append(source, other.source).
+        append(author, other.author).
+        append(created, other.created).
+        append(type, other.type).
+        isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder().
+        append(id).
+        append(source).
+        append(author).
+        append(created).
+        append(type).
+        toHashCode();
   }
 }

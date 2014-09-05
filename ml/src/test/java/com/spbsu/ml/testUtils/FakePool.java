@@ -17,6 +17,8 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.meta.*;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
  * User: solar
@@ -48,7 +50,6 @@ public class FakePool extends Pool<FakePool.FakeItem> {
     return features.toArray(new Pair[features.size()]);
   }
 
-
   public VecDataSet vecData() {
     final DataSet<FakeItem> ds = data();
     return new VecDataSetImpl(ds, data, new Vectorization<FakeItem>() {
@@ -67,6 +68,22 @@ public class FakePool extends Pool<FakePool.FakeItem> {
         return data.columns();
       }
     });
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == this)
+      return true;
+    if (obj == null || obj.getClass() != getClass())
+      return false;
+
+    final FakePool other = (FakePool) obj;
+    return new EqualsBuilder().appendSuper(super.equals(obj)).append(data, other.data).isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder().appendSuper(super.hashCode()).append(data).toHashCode();
   }
 
   private static class FakeFeatureMeta implements PoolFeatureMeta {

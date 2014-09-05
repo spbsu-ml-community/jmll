@@ -36,16 +36,15 @@ public interface FeatureMeta {
   }
 
   abstract class Stub implements FeatureMeta{
-
     @Override
     public final boolean equals(final Object o) {
-      if (this == o) {
+      if (this == o)
         return true;
-      }
       if (!(o instanceof FeatureMeta))
         return false;
 
-      return this == o || ((o instanceof FeatureMeta) && id().equals(((FeatureMeta) o).id()));
+      final FeatureMeta other = (FeatureMeta) o;
+      return id().equals(other.id());
     }
 
     @Override

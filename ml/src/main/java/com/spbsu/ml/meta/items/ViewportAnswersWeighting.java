@@ -12,7 +12,7 @@ import com.spbsu.ml.meta.DSItem;
  * Date: 18.07.14
  * Time: 17:01
  */
-public class ViewportAnswersWeighting implements DSItem {
+public class ViewportAnswersWeighting extends DSItem.Stub implements DSItem {
   public String reqId;
   public String vpName;
   public String[] answers;
