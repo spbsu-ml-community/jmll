@@ -1,5 +1,6 @@
 package com.spbsu.ml.data.tools;
 
+import com.spbsu.ml.models.MultiClassModel;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -184,10 +185,13 @@ public class DataTools {
         if (grid != null)
           return grid;
       }
-    } else if (result instanceof ObliviousTree)
+    } else if (result instanceof MultiClassModel) {
+      return grid(((MultiClassModel) result).getInternModel());
+    } else if (result instanceof ObliviousTree) {
       return ((ObliviousTree)result).grid();
-    if (result instanceof ObliviousMultiClassTree)
-      return ((ObliviousMultiClassTree)result).binaryClassifier().grid();
+    } else if (result instanceof ObliviousMultiClassTree) {
+      return ((ObliviousMultiClassTree) result).binaryClassifier().grid();
+    }
     return null;
   }
 

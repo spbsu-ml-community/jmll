@@ -6,6 +6,7 @@ import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
@@ -35,7 +36,7 @@ public class CustomWeakMultiClass extends VecOptimization.Stub<BlockwiseMLLLogit
     final BFGrid grid = GridTools.medianGrid(learnData, 32);
     final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), SatL2.class), iters, step);
 
-    final IntSeq intTarget = ((BlockwiseMLLLogit) loss).labels();
+    final IntSeq intTarget = loss.labels();
     final FakePool ds = new FakePool(learnData.data(), intTarget);
 
     System.out.println(prepareComment(intTarget));
@@ -45,12 +46,11 @@ public class CustomWeakMultiClass extends VecOptimization.Stub<BlockwiseMLLLogit
       @Override
       public void invoke(Trans partial) {
         if ((iter + 1) % 20 == 0) {
-          if (((Ensemble) partial).last() instanceof MultiClassModel) {
-            final MultiClassModel model = MCTools.joinBoostingResults((Ensemble) partial);
-            final Mx x = model.transAll(learnData.data());
-            double value = loss.value(x);
-            System.out.println("iter=" + iter + ", [learn]MLLLogitValue=" + String.format("%.10f", value) + ", stats=" + MCTools.evalModel(model, ds, "[LEARN]", true) + "\r");
-          }
+          final FuncJoin internModel = MCTools.joinBoostingResult((Ensemble) partial);
+          final MultiClassModel multiClassModel = new MultiClassModel(internModel);
+          final Mx x = internModel.transAll(learnData.data());
+          System.out.println("iter=" + iter + ", [learn]MLLLogitValue=" + String.format("%.10f", loss.value(x)) + ", stats=" + MCTools.evalModel(multiClassModel, ds, "[LEARN]", true) + "\r");
+
         }
         iter++;
       }
@@ -58,7 +58,7 @@ public class CustomWeakMultiClass extends VecOptimization.Stub<BlockwiseMLLLogit
     boosting.addListener(calcer);
     final Ensemble ensemble = boosting.fit(learnData, loss);
     System.out.println();
-    final MCModel model = MCTools.joinBoostingResults(ensemble);
+    final MCModel model = new MultiClassModel(MCTools.joinBoostingResult(ensemble));
     return model;
   }
 

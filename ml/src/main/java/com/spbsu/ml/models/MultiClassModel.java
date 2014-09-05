@@ -1,6 +1,5 @@
 package com.spbsu.ml.models;
 
-import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
@@ -17,6 +16,10 @@ public class MultiClassModel extends MCModel.Stub {
 
   public MultiClassModel(Func[] dirs) {
     this.model = new FuncJoin(dirs);
+  }
+
+  public MultiClassModel(final FuncJoin model) {
+    this.model = model;
   }
 
   public FuncJoin getInternModel() {
@@ -51,20 +54,6 @@ public class MultiClassModel extends MCModel.Stub {
     final double[] trans = model.trans(x).toArray();
     final int bestClass = ArrayTools.max(trans);
     return trans[bestClass] > 0 ? bestClass : model.ydim();
-  }
-
-  @Override
-  public Vec bestClassAll(final Mx x) {
-    final Vec result = new ArrayVec(x.rows());
-    for (int i = 0; i < x.rows(); i++) {
-      result.set(i, bestClass(x.row(i)));
-    }
-    return result;
-  }
-
-  @Override
-  public Mx transAll(final Mx ds) {
-    return model.transAll(ds);
   }
 
   @Override

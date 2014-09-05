@@ -3,11 +3,7 @@ package com.spbsu.ml.data.tools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
-import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -98,16 +94,6 @@ public class MCToolsTest extends TestCase {
     final TDoubleList expectedBorders = new TDoubleArrayList(new double[]{0.25, 0.5, 0.75, 1.0});
     assertEquals(expectedMCTarget, mcTarget);
     assertEquals(expectedBorders, borders);
-  }
-
-  public void testJoinBoostingResult() throws Exception {
-    final Linear func = new Linear(3, 0.5);
-    final Func[] dirs = {func, func, func};
-    final MultiClassModel model = new MultiClassModel(dirs);
-    final Ensemble<MultiClassModel> multiClassModelEnsemble = new Ensemble<>(new MultiClassModel[]{model, model}, new ArrayVec(1.0, 1.0));
-    final MultiClassModel joinedModel = MCTools.joinBoostingResults(multiClassModelEnsemble);
-    assertEquals(dirs.length, joinedModel.getInternModel().ydim());
-
   }
 
   public void testConfusionMatrix() throws Exception {

@@ -102,4 +102,8 @@ public class SerializationTest extends GridTest {
     ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     assertEquals(model, serialization.read(serialization.write(model), FMModel.class));
   }
+
+  public void testJoinedMultiClassModel() throws Exception {
+    //TODO[qdeee]: make a test
+  }
 }

@@ -15,12 +15,12 @@ import com.spbsu.ml.Func;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
+import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.MCModel;
-import com.spbsu.ml.models.MultiClassModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
@@ -226,26 +226,26 @@ public class MCTools {
     }
   }
 
-  //only for boosting of MultiClassModel models
-  public static MultiClassModel joinBoostingResults(Ensemble ensemble) {
-    if (ensemble.last() instanceof MultiClassModel) {
-      final int internModelCount = ((MultiClassModel) ensemble.last()).getInternModel().ydim();
-      final Func[] joinedModels = new Func[internModelCount];
-      final Func[][] transpose = new Func[internModelCount][ensemble.size()];
+  //only for FuncJoin models
+  public static FuncJoin joinBoostingResult(final Ensemble ensemble) {
+    if (ensemble.last() instanceof FuncJoin) {
+      final int modelsCount = ensemble.ydim();
+      final Func[] joinedModels = new Func[modelsCount];
+      final Func[][] transpose = new Func[modelsCount][ensemble.size()];
       for (int iter = 0; iter < ensemble.size(); iter++) {
-        final MultiClassModel model = (MultiClassModel) ensemble.models[iter];
-        final Func[] sourceFunctions = model.getInternModel().dirs();
-        for (int c = 0; c < internModelCount; c++) {
+        final FuncJoin model = (FuncJoin) ensemble.models[iter];
+        final Func[] sourceFunctions = model.dirs();
+        for (int c = 0; c < modelsCount; c++) {
           transpose[c][iter] = sourceFunctions[c];
         }
       }
       for (int i = 0; i < joinedModels.length; i++) {
         joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights);
       }
-      return new MultiClassModel(joinedModels);
+      return new FuncJoin(joinedModels);
     }
     else
-      throw new ClassCastException("Ensemble object does not contain MultiClassModel objects");
+      throw new ClassCastException("Ensemble object does not contain FuncJoin objects");
   }
 
   public static IntSeq mapTarget(final IntSeq intTarget, final TIntIntMap mapping) {

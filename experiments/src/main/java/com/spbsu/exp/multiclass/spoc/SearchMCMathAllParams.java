@@ -26,6 +26,7 @@ import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.spoc.SPOCMethodClassic;
+import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearning;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MCModel;
 import gnu.trove.list.TDoubleList;
@@ -33,7 +34,7 @@ import gnu.trove.list.array.TDoubleArrayList;
 import org.apache.commons.cli.MissingArgumentException;
 
 import java.io.*;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -43,16 +44,16 @@ import java.util.concurrent.*;
  * User: qdeee
  * Date: 18.08.14
  */
-public class SearchMCParams {
+public class SearchMCMathAllParams {
   private final static int UNITS = Runtime.getRuntime().availableProcessors();
 
   public static void main(String[] args) throws MissingArgumentException, IOException {
     final Properties properties = new Properties();
     properties.load(new FileInputStream(new File(args[0])));
 
-    final String mxPath = properties.getProperty("code_mx_path");
+    final String mxPath = properties.getProperty("sim_mx_path");
     final CharSequence mxStr = StreamTools.readStream(new BufferedInputStream(new FileInputStream(mxPath)));
-    final Mx codeMx = MathTools.CONVERSION.convert(mxStr, Mx.class);
+    final Mx S = MathTools.CONVERSION.convert(mxStr, Mx.class);
 
     final String[] strBorders = properties.getProperty("borders").split(";");
     final TDoubleList borders = new TDoubleArrayList();
@@ -80,25 +81,51 @@ public class SearchMCParams {
     final int itersFrom = Integer.valueOf(properties.getProperty("iters_from"));
     final int itersTo = Integer.valueOf(properties.getProperty("iters_to"));
     final int itersDelta = Integer.valueOf(properties.getProperty("iters_delta"));
+
     final double stepFrom = Double.valueOf(properties.getProperty("step_from"));
     final double stepTo = Double.valueOf(properties.getProperty("step_to"));
     final double stepDelta = Double.valueOf(properties.getProperty("step_delta"));
 
+    final String[] strMlsArr = properties.getProperty("mls_arr").split(";");
+    final TDoubleList mlsArr = new TDoubleArrayList();
+    for (String strMls : strMlsArr) {
+      mlsArr.add(Double.valueOf(strMls));
+    }
+    final double[] mlSteps = mlsArr.toArray();
+
+
     final PrintWriter printWriter = new PrintWriter(new FileWriter(properties.getProperty("log_filename")), true);
+
 
     final BFGrid grid = GridTools.medianGrid(learn.vecData(), 32);
     learn.vecData().cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+
+    final List<Callable<String>> tasks = new LinkedList<>();
+    final int k = borders.size();
+    for (double mls : mlSteps) {
+      for (double lambdaC = 1.0; lambdaC < 1.5 * k; lambdaC += 1.0) {
+        for (double lambdaR = 0.5; lambdaR < 3.0; lambdaR += 0.5) {
+          for (double lambda1 = 1.0; lambda1 < 1.5 * k; lambda1 += 1.0) {
+            for (int iters = itersFrom; iters < itersTo; iters += itersDelta) {
+              for (double step = stepFrom; step < stepTo; step += stepDelta) {
+                tasks.add(new Task(learn, test, grid, S, k, iters, step, lambdaC, lambdaR, lambda1, mls));
+              }
+            }
+          }
+        }
+      }
+    }
+    Collections.shuffle(tasks);
 
     final ExecutorService pool = Executors.newFixedThreadPool(UNITS);
     final ExecutorCompletionService<String> completionService = new ExecutorCompletionService<>(pool);
 
     double time = System.currentTimeMillis();
 
-    for (int iters = itersFrom; iters < itersTo; iters += itersDelta) {
-      for (double step = stepFrom; step < stepTo; step += stepDelta) {
-        completionService.submit(new Task(learn, test, codeMx, grid, iters, step));
-      }
+    for (Callable<String> task : tasks) {
+      completionService.submit(task);
     }
+
     pool.shutdown();
 
     while (!pool.isTerminated()) {
@@ -117,18 +144,33 @@ public class SearchMCParams {
   private static final class Task implements Callable<String> {
     private final Pool<?> learn;
     private final Pool<?> test;
-    private final Mx codeMx;
     private final BFGrid grid;
+    private final Mx S;
+
+    private final int classCount;
+
     private final int iters;
     private final double step;
 
-    private Task(final Pool<?> learn, final Pool<?> test, final Mx codeMx, final BFGrid grid, final int iters, final double step) {
+    private final double lac;
+    private final double lar;
+    private final double la1;
+    private final double mls;
+
+
+    private Task(final Pool<?> learn, final Pool<?> test, final BFGrid grid, final Mx s, final int classCount,
+                 final int iters, final double step, final double lac, final double lar, final double la1, final double mls) {
       this.learn = learn;
       this.test = test;
-      this.codeMx = codeMx;
       this.grid = grid;
+      S = s;
+      this.classCount = classCount;
       this.iters = iters;
       this.step = step;
+      this.lac = lac;
+      this.lar = lar;
+      this.la1 = la1;
+      this.mls = mls;
     }
 
     @Override
@@ -147,8 +189,11 @@ public class SearchMCParams {
         }
       };
 
-      final SPOCMethodClassic spocMethodClassic = new SPOCMethodClassic(codeMx, weak);
+      final CodingMatrixLearning codingMatrixLearning = new CodingMatrixLearning(classCount, 5, lac, lar, la1, mls);
+      final Mx mxB = codingMatrixLearning.findMatrixB(S);
+      final SPOCMethodClassic spocMethodClassic = new SPOCMethodClassic(mxB, weak);
       final MCModel model = (MCModel) spocMethodClassic.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
+
       final Vec predict = model.bestClassAll(test.vecData().data());
       final ConfusionMatrix cm = new ConfusionMatrix(
           test.target(BlockwiseMLLLogit.class).labels(),
@@ -156,10 +201,12 @@ public class SearchMCParams {
 
       final double[] scores = {cm.getMicroPrecision(), cm.getMacroPrecision(), cm.getMacroRecall(), cm.getMacroF1Measure()};
       if (BaselineComparator.getInstance().isBetterThanBaseline(scores)) {
-        return String.format("i=%d, s=%f : %.6f | %.6f | %.6f | %.6f\n",
-            iters, step, scores[0], scores[1], scores[2], scores[3]);
+        return String.format("i=%d, s=%f, lac=%f, lar=%f, la1=%f, mls=%f : %.6f | %.6f | %.6f | %.6f\n",
+            iters, step, lac, lar, la1, mls, scores[0], scores[1], scores[2], scores[3]);
       }
-      else return String.format("i=%d, s=%f : fail\n", iters, step);
+      else
+        return String.format("i=%d, s=%f, lac=%f, lar=%f, la1=%f, mls=%f : fail\n",
+            iters, step, lac, lar, la1, mls);
     }
   }
 

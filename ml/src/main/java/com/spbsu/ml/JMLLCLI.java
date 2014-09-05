@@ -482,7 +482,7 @@ public class JMLLCLI {
         append(learnValues, VecTools.scale(last.transAll(learn.vecData().data()), step));
         for (int t = 0; t < testValuesArray.length; ++t) {
           if (isMultiClassLoss(testMetrics[t])) {
-            final MultiClassModel multiClassModel = MCTools.joinBoostingResults(ensemble);
+            final MultiClassModel multiClassModel = new MultiClassModel(MCTools.joinBoostingResult(ensemble));
             testValuesArray[t] = multiClassModel.bestClassAll(test.vecData().data());
           } else {
             append(testValuesArray[t], VecTools.scale(last.transAll(test.vecData().data()), step));
