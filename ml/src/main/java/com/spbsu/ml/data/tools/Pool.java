@@ -4,6 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecSeqMx;
+import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.VecSeq;
 import com.spbsu.commons.system.RuntimeUtils;
@@ -76,6 +77,11 @@ public class Pool<I extends DSItem> {
         public int index(final I obj) {
           return indices.get(obj);
         }
+
+        @Override
+        public Class<I> elementType() {
+          return items.elementType();
+        }
       };
     }
     return data;
@@ -87,7 +93,7 @@ public class Pool<I extends DSItem> {
     for (int i = 0; i < indices.length; i++) {
       final Seq<?> val = features[indices[i]].second;
       cols.add(val);
-      if (!hasVecFeatures && val instanceof VecSeq) {
+      if (!hasVecFeatures && (val instanceof VecSeq || val instanceof ArraySeq)) {
         hasVecFeatures = true;
       }
     }
@@ -100,6 +106,8 @@ public class Pool<I extends DSItem> {
           seqs.add(new VecSeq(new Vec[]{(Vec) col}));
         } else if (col instanceof VecSeq) {
           seqs.add(col);
+        } else if (col instanceof ArraySeq) {
+          seqs.add(new VecSeq((ArraySeq)col));
         } else {
           throw new IllegalArgumentException("unexpected feature type " + col.getClass().getSimpleName());
         }
@@ -135,8 +143,6 @@ public class Pool<I extends DSItem> {
       final TIntArrayList toJoin = new TIntArrayList(features.length);
       for (int i = 0; i < features.length; i++) {
         Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = features[i];
-        //TODO[solar]: troubles in SubPool with uncommented line
-        //if (feature.getFirst().associated() == ds) {
         for (final Class clazz : supportedFeatureTypes) {
           if (clazz.isAssignableFrom(feature.getFirst().type().clazz())) {
             toJoin.add(i);
