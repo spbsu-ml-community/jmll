@@ -32,10 +32,8 @@ import org.apache.commons.cli.*;
 import java.io.*;
 
 /**
- * User: solar
- * User: starlight
- * Date: 08.08.13
- * Time: 17:38
+ * User: qdeee
+ * Date: 03.09.14
  */
 @SuppressWarnings("UnusedDeclaration,AccessStaticViaInstance")
 public class JMLLCLI {
@@ -105,6 +103,9 @@ public class JMLLCLI {
           break;
         case "validate-model":
           modeValidateModel(command);
+          break;
+        case "validate-pool":
+          modeValidatePool(command);
           break;
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
@@ -293,6 +294,22 @@ public class JMLLCLI {
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     final Pool pool = dataBuilder.create().getFirst();
     DataTools.writePoolTo(pool, new FileWriter(getOutputName(command) + ".pool"));
+  }
+
+  private static void modeValidatePool(final CommandLine command) throws MissingArgumentException {
+    if (!command.hasOption(LEARN_OPTION)) {
+      throw new MissingArgumentException("Please provide 'LEARN_OPTION'");
+    }
+
+    final DataBuilder dataBuilder = new DataBuilderClassic();
+    dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
+    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    try {
+      final Pool pool = dataBuilder.create().getFirst();
+      System.out.println("Valid pool");
+    } catch (Exception e) {
+      System.out.println("Invalid pool: can't even load");
+    }
   }
 
   private static String getOutputName(final CommandLine command) {
