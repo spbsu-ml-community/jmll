@@ -293,7 +293,8 @@ public class JMLLCLI {
     dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     final Pool pool = dataBuilder.create().getFirst();
-    DataTools.writePoolTo(pool, new FileWriter(getOutputName(command) + ".pool"));
+    final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".pool";
+    DataTools.writePoolTo(pool, new FileWriter(outputName));
   }
 
   private static void modeValidatePool(final CommandLine command) throws MissingArgumentException {
