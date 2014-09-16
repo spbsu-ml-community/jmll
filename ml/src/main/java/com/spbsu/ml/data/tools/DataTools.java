@@ -341,6 +341,7 @@ public class DataTools {
       out.append("target").append('\t');
       writeFeature(out, jsonFactory, pool.targets.get(i));
     }
+    out.flush();
   }
 
   private static void writeFeature(final Writer out, final JsonFactory jsonFactory,
