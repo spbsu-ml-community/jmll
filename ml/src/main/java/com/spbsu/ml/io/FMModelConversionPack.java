@@ -13,7 +13,7 @@ import com.spbsu.ml.models.FMModel;
  * User: qdeee
  * Date: 31.03.14
  */
-public class FactorizationMachinesConversionPack implements ConversionPack<FMModel, CharSequence> {
+public class FMModelConversionPack implements ConversionPack<FMModel, CharSequence> {
   public static class To implements TypeConverter<FMModel, CharSequence> {
     @Override
     public CharSequence convert(final FMModel from) {

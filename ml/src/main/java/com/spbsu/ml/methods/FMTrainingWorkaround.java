@@ -91,8 +91,13 @@ public class FMTrainingWorkaround extends VecOptimization.Stub<L2> {
       final Vec2StringConverter converter = new Vec2StringConverter();
       for (int i = 0; i < learn.length(); i++) {
         String target = String.valueOf(func.target.get(i));
-        final String entry = String.format("%s %s\n", target, converter.convertToSparse(learn.data().row(i)));
-        writer.write(entry);
+        try {
+          final String entry = String.format("%s %s\n", target, converter.convertToSparse(learn.data().row(i)));
+          writer.write(entry);
+        } catch (Exception e) {
+          System.out.println(i);
+          throw new RuntimeException(e);
+        }
       }
       writer.flush();
 
