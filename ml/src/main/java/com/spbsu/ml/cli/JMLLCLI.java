@@ -53,6 +53,7 @@ public class JMLLCLI {
   private static final String OPTIMIZATION_OPTION = "O";
 
   private static final String VERBOSE_OPTION = "v";
+  private static final String FAST_OPTION = "fast";
   private static final String HIST_OPTION = "h";
   private static final String OUTPUT_OPTION = "o";
   private static final String WRITE_BIN_FORMULA = "mxbin";
@@ -78,6 +79,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("matrixnetbin").withDescription("write model in matrix-net bin format").hasArg(false).create(WRITE_BIN_FORMULA));
 
     options.addOption(OptionBuilder.withLongOpt("verbose").withDescription("verbose output").create(VERBOSE_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("fast-run").withDescription("fast run without model evaluation").create(FAST_OPTION));
     options.addOption(OptionBuilder.withLongOpt("histogram").withDescription("histogram for dynamic grid").hasArg(false).create(HIST_OPTION));
 
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
@@ -183,7 +185,7 @@ public class JMLLCLI {
     }
 
     //added progress handlers
-    if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION)) {
+    if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION) && !command.hasOption(FAST_OPTION)) {
       final ProgressHandler progressPrinter;
       if (loss instanceof BlockwiseMLLLogit) {
         progressPrinter = new MulticlassProgressPrinter(learn, test); //f*ck you with your custom different-dimensional metrics
@@ -208,10 +210,11 @@ public class JMLLCLI {
 
 
     //calc & print scores
-    ResultsPrinter.printResults(result, learn, test, loss, metrics);
-
-    if (loss instanceof BlockwiseMLLLogit) {
-      ResultsPrinter.printMulticlassResults(result, learn, test);
+    if (!command.hasOption(FAST_OPTION)) {
+      ResultsPrinter.printResults(result, learn, test, loss, metrics);
+      if (loss instanceof BlockwiseMLLLogit) {
+        ResultsPrinter.printMulticlassResults(result, learn, test);
+      }
     }
 
 
