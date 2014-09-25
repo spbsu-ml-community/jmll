@@ -109,6 +109,12 @@ public class JMLLCLI {
         case "validate-pool":
           modeValidatePool(command);
           break;
+        case "split-json-pool":
+          modeSplitJsonPool(command);
+          break;
+        case "print-pool-info":
+          modePrintPoolInfo(command);
+          break;
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
@@ -314,6 +320,37 @@ public class JMLLCLI {
     } catch (Exception e) {
       System.out.println("Invalid pool: can't even load");
     }
+  }
+
+  private static void modeSplitJsonPool(final CommandLine command) throws MissingArgumentException, IOException {
+    if (!command.hasOption(LEARN_OPTION) && !command.hasOption(JSON_FORMAT) && !command.hasOption(CROSS_VALIDATION_OPTION)) {
+      throw new MissingArgumentException("Please provide: learn_option, json_flag and cross_validation_option");
+    }
+
+    final DataBuilderCrossValidation builder = new DataBuilderCrossValidation();
+    builder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    builder.setLearnPath(command.getOptionValue(LEARN_OPTION));
+    final String[] cvOptions = StringUtils.split(command.getOptionValue(CROSS_VALIDATION_OPTION), "/", 2);
+    builder.setRandomSeed(Integer.valueOf(cvOptions[0]));
+    builder.setPartition(Double.valueOf(cvOptions[1]));
+
+    final Pair<? extends Pool, ? extends Pool> pools = builder.create();
+
+    final String outputName = getOutputName(command);
+    DataTools.writePoolTo(pools.getFirst(), new FileWriter(outputName + ".learn"));
+    DataTools.writePoolTo(pools.getSecond(), new FileWriter(outputName + ".test"));
+  }
+
+  private static void modePrintPoolInfo(final CommandLine command) throws MissingArgumentException {
+    if (!command.hasOption(LEARN_OPTION)) {
+      throw new MissingArgumentException("Please provide: learn_option");
+    }
+
+    final DataBuilder builder = new DataBuilderClassic();
+    builder.setLearnPath(command.getOptionValue(LEARN_OPTION));
+    builder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    final Pool pool = builder.create().getFirst();
+    System.out.println(DataTools.getPoolInfo(pool));
   }
 
   private static String getOutputName(final CommandLine command) {

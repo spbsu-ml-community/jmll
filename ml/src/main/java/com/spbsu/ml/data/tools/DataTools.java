@@ -445,4 +445,21 @@ public class DataTools {
     final S subTarget = (S) ArrayTools.cut((Seq<?>) sourceTarget, idxs);
     return Pair.create(subSet, subTarget);
   }
+
+  public static String getPoolInfo(final Pool pool) {
+    final VecDataSet vecDataSet = pool.vecData();
+
+    final StringBuilder builder = new StringBuilder()
+        .append("Pool size = ").append(pool.size())
+        .append("\n")
+        .append("VecDS features count = ").append(vecDataSet.xdim())
+        .append("\n");
+    for (int i = 0; i < pool.features.length; i++) {
+      builder
+          .append("\n")
+          .append("feature #").append(i)
+          .append(": type = ").append(vecDataSet.fmeta(i).type());
+    }
+    return builder.toString();
+  }
 }
