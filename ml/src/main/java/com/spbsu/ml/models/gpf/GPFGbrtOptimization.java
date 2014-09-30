@@ -24,7 +24,6 @@ import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
-import org.junit.Test;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 
@@ -36,44 +35,7 @@ import static com.spbsu.commons.math.MathTools.sqr;
  * To change this template use File | Settings | File Templates.
  */
 public class GPFGbrtOptimization {
-  @Test
-  public void testGbrtOptimization() throws IOException {
-    FastRandom rng = new FastRandom(0);
-    GPFGbrtModel model = new GPFGbrtModel();
-
-    int rows_limit = 1000;
-    double step = 0.2;
-    int parallel_processors = Runtime.getRuntime().availableProcessors();
-
-    System.out.println("" + new Date() + "\tload dataset");
-    GPFVectorizedDataset learn = GPFVectorizedDataset.load("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand1.dat.gz", model, rows_limit);
-    GPFVectorizedDataset validate = GPFVectorizedDataset.load("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand2.dat.gz", model, rows_limit);
-
-    System.out.println("" + new Date() + "\ttrainClickProbability");
-    model.trainClickProbability(learn.sessionList);
-
-    System.out.println("" + new Date() + "\tset up boosting");
-    System.out.println("" + new Date() + "\tset up boosting, step=\t" + step);
-    GradientBoosting<GPFLoglikelihood> boosting = new GradientBoosting<GPFLoglikelihood>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 20000, step);
-//    GradientBoosting<GPFLoglikelihood> boosting = new GradientBoosting<GPFLoglikelihood>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), 20, 0.02);
-    GPFLoglikelihood learn_loss = new GPFLoglikelihood(model, learn, parallel_processors);
-    GPFLoglikelihood validate_loss = new GPFLoglikelihood(model, validate);
-
-    System.out.println("learn dataset:\t" + learn.sfrList.size() + "\tsessions, " + "feature matrix:\t" + learn.data().rows() + " * " + learn.data().columns());
-
-    Action iterationListener = new IterationListener(learn_loss, validate_loss);
-    boosting.addListener(iterationListener);
-
-    System.out.println("" + new Date() + "\tstart learn");
-    Ensemble ans = boosting.fit(learn, learn_loss);
-
-    System.out.println("" + (new Date()) +
-            "\tfinal" +
-            "\tlearnL=" + Math.exp( -learn_loss.evalAverageLL(ans) ) +
-            "\tvalidL=" + Math.exp( -validate_loss.evalAverageLL(ans)) );
-  }
-
-  static class GPFVectorizedDataset extends VecDataSetImpl {
+  public static class GPFVectorizedDataset extends VecDataSetImpl {
     final List<Session> sessionList;
     final List<GPFGbrtModel.SessionFeatureRepresentation> sfrList;
     final int[] sessionPositions; // data[sessionPositions[i]] is the first row for session sfrList[i]
@@ -107,7 +69,7 @@ public class GPFGbrtOptimization {
     }
   }
 
-  static class GPFLoglikelihood extends FuncC1.Stub implements TargetFunc {
+  public static class GPFLoglikelihood extends FuncC1.Stub implements TargetFunc {
     final GPFGbrtModel model;
     final GPFVectorizedDataset dataset;
     final ExecutorService executorPool;
@@ -266,14 +228,14 @@ public class GPFGbrtOptimization {
     }
   }
 
-  private static class IterationListener implements ProgressHandler {
+  public static class PrintProgressIterationListener implements ProgressHandler {
     private int index = 0;
     private double learn_min = Double.POSITIVE_INFINITY;
     private double valid_min = Double.POSITIVE_INFINITY;
     private GPFLoglikelihood learn_loss;
     private GPFLoglikelihood validate_loss;
 
-    private IterationListener(GPFLoglikelihood learn_loss, GPFLoglikelihood validate_loss) {
+    public PrintProgressIterationListener(GPFLoglikelihood learn_loss, GPFLoglikelihood validate_loss) {
       this.learn_loss = learn_loss;
       this.validate_loss = validate_loss;
     }
@@ -291,9 +253,5 @@ public class GPFGbrtOptimization {
               "\tvalidL=" + valid_eL +
               "\tmin_validL=" + valid_min);
     }
-  }
-
-  public static void main(String[] args) throws Exception {
-    new GPFGbrtOptimization().testGbrtOptimization();
   }
 }
