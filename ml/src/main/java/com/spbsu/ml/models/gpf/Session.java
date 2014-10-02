@@ -48,6 +48,11 @@ public class Session {
     int position;
     ResultGrade resultGrade;
 
+    public Block(BlockType blockType, int position) {
+      this.blockType = blockType;
+      this.position = position;
+    }
+
     public Block(BlockType blockType, ResultType resultType, int position, ResultGrade resultGrade) {
       this.blockType = blockType;
       this.resultType = resultType;

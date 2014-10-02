@@ -2,11 +2,12 @@ package com.spbsu.ml.models.gpf;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Func;
 import gnu.trove.list.array.TIntArrayList;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 
 import java.util.*;
 
@@ -23,7 +24,7 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
 
   private VecBasedMx clickProbability = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
   
-  Func f_model = null;
+  final Func f_model = null;
 //  Func f_model = new Func.Stub() {
 //    @Override
 //    public double value(Vec x) {
@@ -56,9 +57,9 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
 
   public static class SessionFeatureRepresentation {
     final Session ses;
-    final int f_count; // number of different attractiveness functions "f", roughly it is (number of edges) * (2 = click_s)
+    public final int f_count; // number of different attractiveness functions "f", roughly it is (number of edges) * (2 = click_s)
     final ArrayList<FeatureKey> keys; // f_count rows, 4 columns; keys.get(i) == [start, end, click_s]
-    final VecBasedMx features;   // f_count rows, NFEATS columns; features.row(i) is a feature representation of attractiveness
+    public final VecBasedMx features;   // f_count rows, NFEATS columns; features.row(i) is a feature representation of attractiveness
     final int blocks_length; // ses.getBlocks().length;
 
     private final Map<FeatureKey, Integer> keys_hash; // i == keys_hash.get(keys.get(i))
@@ -123,6 +124,37 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
         TIntArrayList nonzeroFeats = model.getNonzeroFeats(ses.getBlock(key.s), ses.getBlock(key.e), key.click_s);
         for (int j = 0; j < nonzeroFeats.size(); j++)
           features.set(i, nonzeroFeats.getQuick(j), 1.);
+      }
+
+      keys_hash = new HashMap<FeatureKey, Integer>();
+      for (int i = 0; i < keys.size(); i++) {
+        keys_hash.put(keys.get(i), i);
+      }
+
+      blocks_length = ses.getBlocks().length;
+    }
+
+    public SessionFeatureRepresentation(Session ses, List<Vec> edgeFeatures) {
+      this.ses = ses;
+      keys = new ArrayList<FeatureKey>();
+
+      for (int i = 0; i < ses.getBlocks().length; i++) {
+        for (int j: ses.getEdgesFrom(i))
+          keys.add(new FeatureKey(i, j, 0));
+        if (ses.hasClickOn(i)) {
+          for (int j: ses.getEdgesFrom(i))
+            keys.add(new FeatureKey(i, j, 1));
+        }
+      }
+      keys.trimToSize();
+      f_count = keys.size();
+
+      //if (edgeFeatures.size() != f_count) throw new IllegalArgumentException("edgeFeatures.size() != f_count, " + edgeFeatures.size() + " != " + f_count);
+      features = new VecBasedMx(f_count, edgeFeatures.get(0).dim());
+      for (int i = 0; i < keys.size(); i++) {
+        //@todo add correct edges
+        for (VecIterator it = edgeFeatures.get(0).nonZeroes(); it.advance(); )
+          features.set(i, it.index(), it.value());
       }
 
       keys_hash = new HashMap<FeatureKey, Integer>();

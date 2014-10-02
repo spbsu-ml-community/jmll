@@ -26,8 +26,8 @@ import com.spbsu.ml.func.Ensemble;
  */
 public class GPFGbrtOptimization {
   public static class GPFVectorizedDataset extends VecDataSetImpl {
-    final List<Session> sessionList;
-    final List<GPFGbrtModel.SessionFeatureRepresentation> sfrList;
+    public final List<Session> sessionList;
+    public final List<GPFGbrtModel.SessionFeatureRepresentation> sfrList;
     final int[] sessionPositions; // data[sessionPositions[i]] is the first row for session sfrList[i]
 
     public GPFVectorizedDataset(List<Session> sessionList, List<GPFGbrtModel.SessionFeatureRepresentation> sfrList, int[] sessionPositions, Mx data) {
