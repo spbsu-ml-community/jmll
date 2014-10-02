@@ -9,6 +9,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.*;
 
+
+import static junit.framework.Assert.assertEquals;
+
 /**
  * User: irlab
  * Date: 22.05.14
@@ -18,7 +21,7 @@ public class GPFTestLinear {
 
   @Test
   public void testArtificialClicks() throws IOException {
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand1.dat.gz", new GPFLinearModel(), 1000);
+    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
     System.out.println("dataset size: " + dataset.size());
 
     FastRandom rand = new FastRandom(random_seed);
@@ -71,7 +74,7 @@ public class GPFTestLinear {
       nObservations += ses.getClick_indexes().length + 1;
     final int fullds_nobservations_all = nObservations;
 
-    for (int random_seed_local = 0; random_seed_local < 20; random_seed_local++) {
+    for (int random_seed_local = 1; random_seed_local < 2; random_seed_local++) {
       System.out.println("\n############################################################################");
       System.out.println("random_seed_local =\t" + random_seed_local);
       rand = new FastRandom(random_seed_local);
@@ -82,10 +85,14 @@ public class GPFTestLinear {
         model0.theta.set(i, rand.nextGaussian());
 
       final GPFLinearOptimization optimizer = new GPFLinearOptimization();
-      System.out.println("model_true loglikelihood: " + Math.exp( -optimizer.evalDatasetGradientValue(model_true, dataset, false).loglikelihood ));
+      final double model_true_expll = Math.exp(-optimizer.evalDatasetGradientValue(model_true, dataset, false).loglikelihood);
+      System.out.println("model_true loglikelihood: " + model_true_expll);
+      assertEquals(8.4, model_true_expll, 0.1);
 
       long t1 = System.currentTimeMillis();
-      System.out.println("model0 loglikelihood:     " + Math.exp( -optimizer.evalDatasetGradientValue(model0, dataset, false).loglikelihood ));
+      final double model0_expll = Math.exp(-optimizer.evalDatasetGradientValue(model0, dataset, false).loglikelihood);
+      System.out.println("model0 loglikelihood:     " + model0_expll);
+      assertEquals(97.9, model0_expll, 0.1);
       final long t2 = System.currentTimeMillis();
       System.out.println("time loglikelihood eval: " + (t2-t1) + " ms");
 
@@ -139,14 +146,16 @@ public class GPFTestLinear {
 
       long t3 = System.currentTimeMillis();
       System.out.println("time optimization: " + (t3-t2)/1000 + " sec");
-      System.out.println("final loglikelihood:      " + Math.exp( -optimizer.evalDatasetGradientValue(model_optimized, dataset, false).loglikelihood) );
+      final double model_final_expll = Math.exp(-optimizer.evalDatasetGradientValue(model_optimized, dataset, false).loglikelihood);
+      System.out.println("final loglikelihood:      " + model_final_expll);
+      assertEquals(10.3, model_final_expll, 0.1);
     }
   }
 
   @Test
   public void testOptimizeSGD() throws IOException {
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand1.dat.gz", new GPFLinearModel(), 1000);
-    final List<Session> test_dataset = GPFData.loadDatasetFromJSON("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand2.dat.gz", new GPFLinearModel(), 1000);
+    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
+    final List<Session> test_dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand2_h10k.dat.gz", new GPFLinearModel(), 100);
 
     boolean test_sorted_clicks_model = false;
     if (test_sorted_clicks_model) {
@@ -170,7 +179,8 @@ public class GPFTestLinear {
     FastRandom rand = new FastRandom(random_seed);
 
     double best_ll = 1111;
-    for (int ntry = 0; ntry < 100; ntry++) {
+    double test_ll = 1111;
+    for (int ntry = 0; ntry < 1; ntry++) {
       System.out.println("########################################################\n");
       System.out.println("" + new Date() + ": ntry: " + ntry + "\n");
 
@@ -183,11 +193,13 @@ public class GPFTestLinear {
       final GPFLinearOptimization optimizer = new GPFLinearOptimization();
 
       long t1 = System.currentTimeMillis();
-      System.out.println("model0 loglikelihood:     " + Math.exp( -optimizer.evalDatasetGradientValue(model0, dataset, false).loglikelihood ));
+      final double model0_expll = Math.exp(-optimizer.evalDatasetGradientValue(model0, dataset, false).loglikelihood);
+      System.out.println("model0 loglikelihood:     " + model0_expll);
+      assertEquals(13.3, model0_expll, 0.1);
       final long t2 = System.currentTimeMillis();
       System.out.println("time loglikelihood eval: " + (t2-t1) + " ms");
 
-      final int iteration_dataset_pass_count = 100;
+      final int iteration_dataset_pass_count = 10;
 
       optimizer.SGD_BLOCK_SIZE = 1;
       final int iteration_count = iteration_dataset_pass_count * dataset.size() / optimizer.SGD_BLOCK_SIZE;
@@ -237,7 +249,7 @@ public class GPFTestLinear {
                   (optimizer.do_ignore_improbable_sessions ? "" : "\timprobable_obs=" + (fullds_nobservations_all - fullds_nobservations_correct) + "(" + (fullds_nobservations_all - fullds_nobservations_correct)/(float)fullds_nobservations_all + ")") +
                   "\tL_partial=" + Math.exp(-e.loglikelihood) +
                   "\tgrad_norm=" + VecTools.norm(e.gradient) +
-                  "\tgrad=[" + e.gradient + "]");
+                  ""); //"\tgrad=[" + e.gradient + "]");
           if (e.iter % (iterations_per_dataset * 20) == 0)
             System.out.println(">>current model: " + e.model.explainTheta());
         }
@@ -257,16 +269,21 @@ public class GPFTestLinear {
       System.out.println("final theta: " + model_optimized.theta );
       System.out.println("final theta explain: " + model_optimized.explainTheta() );
 
-      best_ll = Math.min(ll, best_ll);
+      if (ll < best_ll) {
+        best_ll = ll;
+        test_ll = Math.exp(-optimizer.evalDatasetGradientValue(model_optimized, test_dataset, false).loglikelihood);
+      }
     }
 
     System.out.println("" + new Date() + ": best ll: " + best_ll);
+    assertEquals(5.2, best_ll, 0.1);
+    assertEquals(4.9, test_ll, 0.1);
   }
 
   @Test
   public void testSERPProbs() throws IOException {
     GPFLinearModel model = new GPFLinearModel();
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./ml/src/test/data/pgmem/f100/ses_100k_simple_rand1.dat.gz", model, 0);
+    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", model, 0);
 
     // init model
     model.trainClickProbability(dataset);

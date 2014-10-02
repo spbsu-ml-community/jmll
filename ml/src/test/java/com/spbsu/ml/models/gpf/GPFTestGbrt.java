@@ -15,6 +15,7 @@ import java.util.*;
 import static com.spbsu.ml.models.gpf.GPFGbrtOptimization.GPFVectorizedDataset;
 import static com.spbsu.ml.models.gpf.GPFGbrtOptimization.GPFLoglikelihood;
 import static com.spbsu.ml.models.gpf.GPFGbrtOptimization.PrintProgressIterationListener;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -59,8 +60,7 @@ public class GPFTestGbrt {
                        "\tlearnL=" + exp_learn_loss +
                        "\tvalidL=" + Math.exp(-validate_loss.evalAverageLL(ans)));
 
-    assertTrue("learn loss is too big (must be ~5.69)", exp_learn_loss < 5.7);
-    assertTrue("learn loss is too small (must be ~5.69)", exp_learn_loss > 5.6);
+    assertEquals(exp_learn_loss, 5.7, 0.1);
   }
 
   public static void main(String[] args) throws Exception {

@@ -7,25 +7,15 @@ import java.util.List;
 import java.util.concurrent.*;
 
 
-import com.spbsu.commons.func.Action;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
-import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.methods.BootstrapOptimization;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import gnu.trove.map.hash.TDoubleDoubleHashMap;
-import gnu.trove.map.hash.TDoubleIntHashMap;
-
-import static com.spbsu.commons.math.MathTools.sqr;
 
 /**
  * Created with IntelliJ IDEA.
