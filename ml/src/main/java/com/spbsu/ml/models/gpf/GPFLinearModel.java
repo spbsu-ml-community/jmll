@@ -22,7 +22,7 @@ public class GPFLinearModel extends GPFModel.Stub implements GPFModel {
 
   public ArrayVec theta = new ArrayVec(NFEATS);
 
-  private VecBasedMx clickProbability = new VecBasedMx(Session.SessionOnV1WebData.ResultType.values().length, Session.SessionOnV1WebData.ResultGrade.values().length);
+  private VecBasedMx clickProbability = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
 
   public GPFLinearModel() {
   }
@@ -42,7 +42,7 @@ public class GPFLinearModel extends GPFModel.Stub implements GPFModel {
    * @param click_s in {0,1} - флаг клика на блоке bs
    * @return список индексов ненулевых фич
    */
-  private TIntArrayList getNonzeroFeats(Session.SessionOnV1WebData.BlockV1 bs, Session.SessionOnV1WebData.BlockV1 be, int click_s) {
+  private TIntArrayList getNonzeroFeats(Session.Block bs, Session.Block be, int click_s) {
     TIntArrayList ret = new TIntArrayList(MAX_NONZERO_FEATS);
     int index = 0;
     //  бинарные фичи для каждого типа блока $e$: [WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER]
@@ -83,7 +83,7 @@ public class GPFLinearModel extends GPFModel.Stub implements GPFModel {
   }
 
   public double eval_f(Session ses, int s, int e, int click_s) {
-    return eval_f(getNonzeroFeats((Session.SessionOnV1WebData.BlockV1)ses.getBlock(s), (Session.SessionOnV1WebData.BlockV1)ses.getBlock(e), click_s));
+    return eval_f(getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s));
   }
 
   protected double eval_f(TIntArrayList nonzeroFeats) {
@@ -96,7 +96,7 @@ public class GPFLinearModel extends GPFModel.Stub implements GPFModel {
   }
 
   ArrayVec eval_df_dTheta(Session.Block bs, Session.Block be, int click_s) {
-    TIntArrayList nonzeroFeats = getNonzeroFeats((Session.SessionOnV1WebData.BlockV1)bs, (Session.SessionOnV1WebData.BlockV1)be, click_s);
+    TIntArrayList nonzeroFeats = getNonzeroFeats(bs, be, click_s);
     double f_value = eval_f(nonzeroFeats);
     return eval_df_dTheta(nonzeroFeats, f_value);
   }
@@ -345,19 +345,18 @@ public class GPFLinearModel extends GPFModel.Stub implements GPFModel {
     return ret;
   }
 
-  @Override
   public String explainTheta() {
     StringBuffer ret = new StringBuffer();
     ret.append("theta: {\n");
 
     int index = 0;
     //  бинарные фичи для каждого типа блока $e$: [WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER]
-    for (Session.SessionOnV1WebData.ResultType x: Session.SessionOnV1WebData.ResultType.values()) {
+    for (Session.ResultType x: Session.ResultType.values()) {
       ret.append("  w(" + x.name() + ")\t" + theta.get(index) + "\n");
       index++;
     }
     // бинарные фичи асессорской релевантности для блока $e$, 5 градаций + NOT\_ASED
-    for (Session.SessionOnV1WebData.ResultGrade x: Session.SessionOnV1WebData.ResultGrade.values()) {
+    for (Session.ResultGrade x: Session.ResultGrade.values()) {
       ret.append("  w(" + x.name() + ")\t" + theta.get(index) + "\n");
       index++;
     }
@@ -391,21 +390,21 @@ public class GPFLinearModel extends GPFModel.Stub implements GPFModel {
   }
 
   public void trainClickProbability(List<Session> dataset) {
-    VecBasedMx shows = new VecBasedMx(Session.SessionOnV1WebData.ResultType.values().length, Session.SessionOnV1WebData.ResultGrade.values().length);
-    VecBasedMx clicks = new VecBasedMx(Session.SessionOnV1WebData.ResultType.values().length, Session.SessionOnV1WebData.ResultGrade.values().length);
+    VecBasedMx shows = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
+    VecBasedMx clicks = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
     for (Session ses: dataset) {
-      Session.SessionOnV1WebData.BlockV1 block1 = (Session.SessionOnV1WebData.BlockV1)ses.getBlock(Session.R0_ind);
+      Session.Block block1 = ses.getBlock(Session.R0_ind);
       shows.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
       if (ses.hasClickOn(Session.R0_ind))
         clicks.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
     }
 
-    double[] shows_result_type = new double[Session.SessionOnV1WebData.ResultType.values().length];
-    double[] clicks_result_type = new double[Session.SessionOnV1WebData.ResultType.values().length];
+    double[] shows_result_type = new double[Session.ResultType.values().length];
+    double[] clicks_result_type = new double[Session.ResultType.values().length];
     double shows_all = 0;
     double clicks_all = 0;
-    for (int i = 0; i < Session.SessionOnV1WebData.ResultType.values().length; i++) {
-      for (int j = 0; j < Session.SessionOnV1WebData.ResultGrade.values().length; j++) {
+    for (int i = 0; i < Session.ResultType.values().length; i++) {
+      for (int j = 0; j < Session.ResultGrade.values().length; j++) {
         shows_result_type[i] += shows.get(i, j);
         clicks_result_type[i] += clicks.get(i, j);
       }
@@ -414,17 +413,16 @@ public class GPFLinearModel extends GPFModel.Stub implements GPFModel {
     }
 
     double ctr_all = clicks_all / shows_all;
-    for (int i = 0; i < Session.SessionOnV1WebData.ResultType.values().length; i++) {
+    for (int i = 0; i < Session.ResultType.values().length; i++) {
       double prob_click_result_type = (clicks_result_type[i] + 10 * ctr_all) / (shows_result_type[i] + 10);
-      for (int j = 0; j < Session.SessionOnV1WebData.ResultGrade.values().length; j++) {
+      for (int j = 0; j < Session.ResultGrade.values().length; j++) {
         double prob = (clicks.get(i, j) + 10 * prob_click_result_type) / (shows.get(i, j) + 10);
         clickProbability.set(i, j, prob);
       }
     }
   }
 
-  public double getClickGivenViewProbability(Session.Block b_) {
-    Session.SessionOnV1WebData.BlockV1 b = (Session.SessionOnV1WebData.BlockV1)b_;
+  public double getClickGivenViewProbability(Session.Block b) {
     if (b.blockType == Session.BlockType.RESULT) {
       return clickProbability.get(b.resultType.ordinal(), b.resultGrade.ordinal());
     } else {

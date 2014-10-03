@@ -1,8 +1,5 @@
 package com.spbsu.ml.models.gpf;
 
-import org.jetbrains.annotations.NotNull;
-
-
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
@@ -25,7 +22,7 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
   // parameters for eval_L_and_Gradient
   public double PRUNE_A_THRESHOLD = 1E-5; //0.01;
 
-  private VecBasedMx clickProbability = new VecBasedMx(Session.SessionOnV1WebData.ResultType.values().length, Session.SessionOnV1WebData.ResultGrade.values().length);
+  private VecBasedMx clickProbability = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
   
   final Func f_model = null;
 //  Func f_model = new Func.Stub() {
@@ -51,7 +48,7 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
   }
 
   public double eval_f(Session ses, int s, int e, int click_s) {
-    TIntArrayList nonzeroFeats = getNonzeroFeats(((Session.SessionOnV1WebData)ses).getBlock(s), ((Session.SessionOnV1WebData)ses).getBlock(e), click_s);
+    TIntArrayList nonzeroFeats = getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s);
     Vec features = new ArrayVec(NFEATS);
     for (int j = 0; j < nonzeroFeats.size(); j++)
       features.set(nonzeroFeats.getQuick(j), 1.);
@@ -124,7 +121,7 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
       features = new VecBasedMx(f_count, model.NFEATS);
       for (int i = 0; i < keys.size(); i++) {
         FeatureKey key = keys.get(i);
-        TIntArrayList nonzeroFeats = model.getNonzeroFeats(((Session.SessionOnV1WebData)ses).getBlock(key.s), ((Session.SessionOnV1WebData)ses).getBlock(key.e), key.click_s);
+        TIntArrayList nonzeroFeats = model.getNonzeroFeats(ses.getBlock(key.s), ses.getBlock(key.e), key.click_s);
         for (int j = 0; j < nonzeroFeats.size(); j++)
           features.set(i, nonzeroFeats.getQuick(j), 1.);
       }
@@ -177,17 +174,17 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
    * @param click_s in {0,1} - флаг клика на блоке bs
    * @return список индексов ненулевых фич
    */
-  private TIntArrayList getNonzeroFeats(Session.SessionOnV1WebData.BlockV1 bs, Session.SessionOnV1WebData.BlockV1 be, int click_s) {
+  private TIntArrayList getNonzeroFeats(Session.Block bs, Session.Block be, int click_s) {
     TIntArrayList ret = new TIntArrayList(MAX_NONZERO_FEATS);
     int index = 0;
     //  бинарные фичи для каждого типа блока $e$: [WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER]
     if (be.resultType != null)
       ret.add(index + be.resultType.ordinal());
-    index += 6; // Session.SessionOnV1WebData.ResultType.values().length
+    index += 6; // Session.ResultType.values().length
     // бинарные фичи асессорской релевантности для блока $e$, 5 градаций + NOT\_ASED
     if (be.resultGrade != null)
       ret.add(index + be.resultGrade.ordinal());
-    index += 6; // Session.SessionOnV1WebData.ResultGrade.values().length
+    index += 6; // Session.ResultGrade.values().length
     if (bs.blockType == Session.BlockType.RESULT && be.blockType == Session.BlockType.RESULT) {
       // бинарная фича ``переход к следующему блоку'' $R_i \to R_{i+1}$
       if (bs.position + 1 == be.position)
@@ -381,21 +378,21 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
   }
 
   public void trainClickProbability(List<Session> dataset) {
-    VecBasedMx shows = new VecBasedMx(Session.SessionOnV1WebData.ResultType.values().length, Session.SessionOnV1WebData.ResultGrade.values().length);
-    VecBasedMx clicks = new VecBasedMx(Session.SessionOnV1WebData.ResultType.values().length, Session.SessionOnV1WebData.ResultGrade.values().length);
+    VecBasedMx shows = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
+    VecBasedMx clicks = new VecBasedMx(Session.ResultType.values().length, Session.ResultGrade.values().length);
     for (Session ses: dataset) {
-      Session.SessionOnV1WebData.BlockV1 block1 = ((Session.SessionOnV1WebData)ses).getBlock(Session.R0_ind);
+      Session.Block block1 = ses.getBlock(Session.R0_ind);
       shows.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
       if (ses.hasClickOn(Session.R0_ind))
         clicks.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
     }
 
-    double[] shows_result_type = new double[Session.SessionOnV1WebData.ResultType.values().length];
-    double[] clicks_result_type = new double[Session.SessionOnV1WebData.ResultType.values().length];
+    double[] shows_result_type = new double[Session.ResultType.values().length];
+    double[] clicks_result_type = new double[Session.ResultType.values().length];
     double shows_all = 0;
     double clicks_all = 0;
-    for (int i = 0; i < Session.SessionOnV1WebData.ResultType.values().length; i++) {
-      for (int j = 0; j < Session.SessionOnV1WebData.ResultGrade.values().length; j++) {
+    for (int i = 0; i < Session.ResultType.values().length; i++) {
+      for (int j = 0; j < Session.ResultGrade.values().length; j++) {
         shows_result_type[i] += shows.get(i, j);
         clicks_result_type[i] += clicks.get(i, j);
       }
@@ -404,9 +401,9 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
     }
 
     double ctr_all = clicks_all / shows_all;
-    for (int i = 0; i < Session.SessionOnV1WebData.ResultType.values().length; i++) {
+    for (int i = 0; i < Session.ResultType.values().length; i++) {
       double prob_click_result_type = (clicks_result_type[i] + 10 * ctr_all) / (shows_result_type[i] + 10);
-      for (int j = 0; j < Session.SessionOnV1WebData.ResultGrade.values().length; j++) {
+      for (int j = 0; j < Session.ResultGrade.values().length; j++) {
         double prob = (clicks.get(i, j) + 10 * prob_click_result_type) / (shows.get(i, j) + 10);
         clickProbability.set(i, j, prob);
       }
@@ -416,7 +413,7 @@ public class GPFGbrtModel extends GPFModel.Stub implements GPFModel {
   public double getClickGivenViewProbability(Session.Block b) {
     switch (b.blockType) {
       case RESULT:
-        return clickProbability.get(((Session.SessionOnV1WebData.BlockV1)b).resultType.ordinal(), ((Session.SessionOnV1WebData.BlockV1)b).resultGrade.ordinal());
+        return clickProbability.get(b.resultType.ordinal(), b.resultGrade.ordinal());
       case Q:
         return 1. - 1e-6; // always observed
       case S:

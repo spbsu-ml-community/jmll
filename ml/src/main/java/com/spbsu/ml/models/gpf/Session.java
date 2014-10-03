@@ -21,79 +21,49 @@ public class Session {
   public static enum BlockType {
     RESULT, Q, S, E
   }
+  public static enum ResultType {
+    WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER
+  }
+  public static enum ResultGrade {
+    VITAL           (0.61), //0.69),
+    USEFUL          (0.41), //0.47),
+    RELEVANT_PLUS   (0.14), //0.45),
+    RELEVANT_MINUS  (0.07), //0.44),
+    IRRELEVANT      (0.03), //0.24),
+    NOT_ASED        (0.10); //0.39);
 
-  public static class SessionOnV1WebData extends Session {
-    public SessionOnV1WebData(final String uid, final String reqid, final int user_region, final String query,
-                              final String source_string)
-    {
-      super(uid, reqid, user_region, query, source_string);
+    private final double pfound_value;
+    //private final double ctr1_value;
+    ResultGrade(double pfound_value) {
+      this.pfound_value = pfound_value;
     }
 
-    public static enum ResultType {
-      WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER
-    }
-    public static enum ResultGrade {
-      VITAL           (0.61), //0.69),
-      USEFUL          (0.41), //0.47),
-      RELEVANT_PLUS   (0.14), //0.45),
-      RELEVANT_MINUS  (0.07), //0.44),
-      IRRELEVANT      (0.03), //0.24),
-      NOT_ASED        (0.10); //0.39);
-
-      private final double pfound_value;
-      //private final double ctr1_value;
-      ResultGrade(double pfound_value) {
-        this.pfound_value = pfound_value;
-      }
-
-      public double getPfound_value() {
-        return pfound_value;
-      }
-    }
-
-    public static class BlockV1 extends Block {
-      final ResultType resultType;
-      final ResultGrade resultGrade;
-
-      public BlockV1(BlockType blockType, ResultType resultType, int position, ResultGrade resultGrade) {
-        super(blockType, position);
-        this.resultType = resultType;
-        this.resultGrade = resultGrade;
-      }
-
-      @Override
-      public String toString() {
-        return "Block{" + blockType +
-               ", " + resultType +
-               ", " + resultGrade +
-               ", position=" + position +
-               '}';
-      }
-    }
-
-    @Override
-    public BlockV1 getBlock(int index) {
-      return (BlockV1)blocks[index];
+    public double getPfound_value() {
+      return pfound_value;
     }
   }
-
   public static class Block {
-    final BlockType blockType;
-    final int position;
+    BlockType blockType;
+    ResultType resultType;
+    int position;
+    ResultGrade resultGrade;
 
-    public Block(BlockType blockType, int position) {
+    public Block(BlockType blockType, ResultType resultType, int position, ResultGrade resultGrade) {
       this.blockType = blockType;
+      this.resultType = resultType;
       this.position = position;
+      this.resultGrade = resultGrade;
     }
 
     @Override
     public String toString() {
       return "Block{" + blockType +
+              ", " + resultType +
+              ", " + resultGrade +
               ", position=" + position +
               '}';
     }
   }
-
   public static class Edge {
     int block_index_from; // position of block in blocks array
     int block_index_to;   // position of block in blocks array
@@ -105,7 +75,7 @@ public class Session {
     }
   }
 
-  protected Block[] blocks;
+  private Block[] blocks;
   private int[][] edge_from; // there is an Edge blocks[i] -> blocks[edge_from[i][j]]
   private int[][] edge_to;   // there is an Edge blocks[edge_from[i][j]] -> blocks[i]
   private int[] click_indexes;

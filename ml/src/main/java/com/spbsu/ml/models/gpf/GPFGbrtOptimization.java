@@ -26,7 +26,7 @@ import com.spbsu.ml.func.Ensemble;
  */
 public class GPFGbrtOptimization {
   public static class GPFVectorizedDataset extends VecDataSetImpl {
-    public final List<Session> sessionList;
+    final List<Session> sessionList;
     public final List<GPFGbrtModel.SessionFeatureRepresentation> sfrList;
     final int[] sessionPositions; // data[sessionPositions[i]] is the first row for session sfrList[i]
 
@@ -38,7 +38,7 @@ public class GPFGbrtOptimization {
     }
 
     public static GPFVectorizedDataset load(String filename, GPFGbrtModel model, int rows_limit) throws IOException {
-      List<Session> sessionList = GPFDataOnV1WebData.loadDatasetFromJSON(filename, model, rows_limit);
+      List<Session> sessionList = GPFData.loadDatasetFromJSON(filename, model, rows_limit);
 
       List<GPFGbrtModel.SessionFeatureRepresentation> sfrList = new ArrayList<GPFGbrtModel.SessionFeatureRepresentation>(sessionList.size());
       int[] sessionPositions = new int[sessionList.size()];
