@@ -21,7 +21,7 @@ public class GPFTestLinear {
 
   @Test
   public void testArtificialClicks() throws IOException {
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
+    final List<Session> dataset = GPFDataOnV1WebData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
     System.out.println("dataset size: " + dataset.size());
 
     FastRandom rand = new FastRandom(random_seed);
@@ -154,8 +154,8 @@ public class GPFTestLinear {
 
   @Test
   public void testOptimizeSGD() throws IOException {
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
-    final List<Session> test_dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand2_h10k.dat.gz", new GPFLinearModel(), 100);
+    final List<Session> dataset = GPFDataOnV1WebData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
+    final List<Session> test_dataset = GPFDataOnV1WebData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand2_h10k.dat.gz", new GPFLinearModel(), 100);
 
     boolean test_sorted_clicks_model = false;
     if (test_sorted_clicks_model) {
@@ -283,7 +283,7 @@ public class GPFTestLinear {
   @Test
   public void testSERPProbs() throws IOException {
     GPFLinearModel model = new GPFLinearModel();
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", model, 0);
+    final List<Session> dataset = GPFDataOnV1WebData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", model, 0);
 
     // init model
     model.trainClickProbability(dataset);

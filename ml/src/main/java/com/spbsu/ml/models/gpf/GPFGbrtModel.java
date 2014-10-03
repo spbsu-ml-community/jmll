@@ -1,5 +1,8 @@
 package com.spbsu.ml.models.gpf;
 
+import org.jetbrains.annotations.NotNull;
+
+
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;

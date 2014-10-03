@@ -16,7 +16,6 @@ import static com.spbsu.ml.models.gpf.GPFGbrtOptimization.GPFVectorizedDataset;
 import static com.spbsu.ml.models.gpf.GPFGbrtOptimization.GPFLoglikelihood;
 import static com.spbsu.ml.models.gpf.GPFGbrtOptimization.PrintProgressIterationListener;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * User: irlab

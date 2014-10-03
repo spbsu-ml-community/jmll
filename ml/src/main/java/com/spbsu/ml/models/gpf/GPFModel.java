@@ -77,9 +77,9 @@ public interface GPFModel {
       int max_result_pos = -1;
       int min_result_pos = 1000;
 
-      blocks[Session.Q_ind] = new Session.Block(Session.BlockType.Q, null, -1, null);
-      blocks[Session.S_ind] = new Session.Block(Session.BlockType.S, null, -1, null);
-      blocks[Session.E_ind] = new Session.Block(Session.BlockType.E, null, -1, null);
+      blocks[Session.Q_ind] = new Session.Block(Session.BlockType.Q, -1);
+      blocks[Session.S_ind] = new Session.Block(Session.BlockType.S, -1);
+      blocks[Session.E_ind] = new Session.Block(Session.BlockType.E, -1);
       for (int i = 0; i < result_blocks.length; i++) {
         blocks[i + Session.R0_ind] = result_blocks[i];
         max_result_pos = Math.max(max_result_pos, result_blocks[i].position);
@@ -276,7 +276,10 @@ public interface GPFModel {
           }
         }
         //ret.append("pos\tsntype\trel\tclick\t");
-        ret.append("" + bi.position + "\t" + bi.resultType.name() + "\t" + bi.resultGrade.name() + "\t" + (click_position >= 0 ? click_position : "-") + "\t");
+        ret.append("" + bi.position + "\t" +
+                   (bi instanceof Session.SessionOnV1WebData.BlockV1 ? ((Session.SessionOnV1WebData.BlockV1) bi).resultType.name() : "?") + "\t" +
+                   (bi instanceof Session.SessionOnV1WebData.BlockV1 ? ((Session.SessionOnV1WebData.BlockV1) bi).resultGrade.name() : "?") + "\t" +
+                   (click_position >= 0 ? click_position : "-") + "\t");
 
         //ret.append("P(has_click)\tP(has_view)\tAtt\t\t");
         ret.append("" + hasClickProbabilities[i] + "\t" + hasViewProbabilities[i] + "\t" + attentionExpectation[i] + "\t\t");

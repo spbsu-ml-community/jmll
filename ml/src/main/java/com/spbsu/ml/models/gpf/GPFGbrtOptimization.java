@@ -38,7 +38,7 @@ public class GPFGbrtOptimization {
     }
 
     public static GPFVectorizedDataset load(String filename, GPFGbrtModel model, int rows_limit) throws IOException {
-      List<Session> sessionList = GPFData.loadDatasetFromJSON(filename, model, rows_limit);
+      List<Session> sessionList = GPFDataOnV1WebData.loadDatasetFromJSON(filename, model, rows_limit);
 
       List<GPFGbrtModel.SessionFeatureRepresentation> sfrList = new ArrayList<GPFGbrtModel.SessionFeatureRepresentation>(sessionList.size());
       int[] sessionPositions = new int[sessionList.size()];

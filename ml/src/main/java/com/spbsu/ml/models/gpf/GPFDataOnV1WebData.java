@@ -11,7 +11,7 @@ import com.google.gson.*;
  * User: irlab
  * Date: 22.05.14
  */
-public class GPFData {
+public class GPFDataOnV1WebData {
   public static List<Session> loadDatasetFromJSON(String filename, GPFModel model, int rows_limit) throws IOException {
     List<Session> dataset = new ArrayList<Session>();
 
@@ -33,13 +33,13 @@ public class GPFData {
 
       JsonSes ses = gson.fromJson(json_ses_str, JsonSes.class);
 
-      Session.Block[] blocks = new Session.Block[ses.sntypes.length];
+      Session.SessionOnV1WebData.BlockV1[] blocks = new Session.SessionOnV1WebData.BlockV1[ses.sntypes.length];
       for (int i = 0; i < blocks.length; i++) {
-        Session.Block block = new Session.Block(
+        Session.SessionOnV1WebData.BlockV1 block = new Session.SessionOnV1WebData.BlockV1(
                 Session.BlockType.RESULT,
-                Session.ResultType.valueOf(ses.sntypes[i]),
+                Session.SessionOnV1WebData.ResultType.valueOf(ses.sntypes[i]),
                 i,
-                Session.ResultGrade.valueOf(ses.rel[i]));
+                Session.SessionOnV1WebData.ResultGrade.valueOf(ses.rel[i]));
         blocks[i] = block;
       }
 
