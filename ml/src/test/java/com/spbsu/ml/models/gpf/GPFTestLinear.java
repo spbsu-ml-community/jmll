@@ -301,11 +301,11 @@ public class GPFTestLinear {
     Session session = new Session();
     Session.Block[] blocks = new Session.Block[11];
     for (int i = 0; i < blocks.length; i++) {
-      Session.Block block = new Session.Block(
+      Session.Block block = new Session.SessionOnV1WebData.BlockV1(
               Session.BlockType.RESULT,
-              i == 3 ? Session.ResultType.IMAGES : Session.ResultType.WEB,
+              i == 3 ? Session.SessionOnV1WebData.ResultType.IMAGES : Session.SessionOnV1WebData.ResultType.WEB,
               i,
-              i <= 3 ? Session.ResultGrade.RELEVANT_PLUS : Session.ResultGrade.NOT_ASED);
+              i <= 3 ? Session.SessionOnV1WebData.ResultGrade.RELEVANT_PLUS : Session.SessionOnV1WebData.ResultGrade.NOT_ASED);
       blocks[i] = block;
     }
     int[] clicks = new int[] {3, 2, 6, 10};

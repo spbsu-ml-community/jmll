@@ -23,6 +23,12 @@ public class Session {
   }
 
   public static class SessionOnV1WebData extends Session {
+    public SessionOnV1WebData(final String uid, final String reqid, final int user_region, final String query,
+                              final String source_string)
+    {
+      super(uid, reqid, user_region, query, source_string);
+    }
+
     public static enum ResultType {
       WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER
     }

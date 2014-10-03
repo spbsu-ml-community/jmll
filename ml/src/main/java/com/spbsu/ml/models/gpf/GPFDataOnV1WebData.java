@@ -44,7 +44,7 @@ public class GPFDataOnV1WebData {
       }
 
       String source_string = gson_prettyprint.toJson(ses);
-      Session session = new Session(ses.uid, ses.reqid, ses.user_region, ses.query, source_string);
+      Session session = new Session.SessionOnV1WebData(ses.uid, ses.reqid, ses.user_region, ses.query, source_string);
       model.setSessionData(session, blocks, ses.clicks);
       dataset.add(session);
     }
