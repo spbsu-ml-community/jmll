@@ -1,10 +1,11 @@
 package com.spbsu.ml.models;
 
-import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.basis.IntBasis;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.ml.FuncC1;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * User: qdeee
@@ -43,13 +44,18 @@ public class FMModel extends FuncC1.Stub {
 
   @Override
   public Vec gradient(final Vec x) {
-    return new ArrayVec(x.dim());
+    throw new NotImplementedException();
   }
 
   @Override
   public double value(final Vec x) {
     assert(x.dim() != V.columns());
-    double value = w0 + VecTools.multiply(x, w);
+    double value = w0;
+    final VecIterator iter = x.nonZeroes();
+    while (iter.advance()) {
+      value += iter.value() * w.get(iter.index());
+    }
+
     for (int k = 0; k < V.rows(); k++) {
       double sum = 0.;
       double sumSqr = 0.;
@@ -67,7 +73,7 @@ public class FMModel extends FuncC1.Stub {
 
   @Override
   public int dim() {
-    return V.rows();
+    return w.dim();
   }
 
   @Override
