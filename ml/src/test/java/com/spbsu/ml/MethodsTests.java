@@ -1,16 +1,20 @@
 package com.spbsu.ml;
 
+import java.util.Random;
+
+
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.math.vectors.*;
+import com.spbsu.commons.math.vectors.MxTools;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecIterator;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
-import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.Pool;
@@ -21,14 +25,13 @@ import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.*;
+import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
+import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
-
-
-import java.util.Random;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 
