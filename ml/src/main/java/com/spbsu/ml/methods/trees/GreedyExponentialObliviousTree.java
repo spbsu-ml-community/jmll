@@ -2,14 +2,14 @@ package com.spbsu.ml.methods.trees;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.methods.GreedyPolynomialExponentRegion;
 import com.spbsu.ml.methods.VecOptimization;
+import com.spbsu.ml.methods.greedyRegion.GreedyPolynomialExponentRegion;
 import com.spbsu.ml.models.ExponentialObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
 
@@ -115,7 +115,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
       System.out.println("Oblivious Tree bug");
       try {
         PrintWriter printWriter = new PrintWriter(new File("badloss.txt"));
-        for(int i = 0; i < ds.length(); i++)
+        for (int i = 0; i < ds.length(); i++)
           printWriter.println(loss.target.get(i));
         printWriter.close();
       } catch (FileNotFoundException e) {
@@ -146,7 +146,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
         out[index][0] = linearMissCoefficient[index][0] / quadraticMissCoefficient[index][0][0];*/
       //out[index][0] = base.values()[index];
       //for (int i = 0; i < out[index].length; i++)
-        //System.out.println(out[index][i]);
+      //System.out.println(out[index][i]);
     }
     //for(int i =0 ; i < gradLambdas.size();i++)
     //    System.out.println(serializeCondtion(i));

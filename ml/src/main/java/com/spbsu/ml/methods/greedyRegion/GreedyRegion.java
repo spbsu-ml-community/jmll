@@ -1,13 +1,4 @@
-package com.spbsu.ml.methods;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
+package com.spbsu.ml.methods.greedyRegion;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ArrayTools;
@@ -17,7 +8,16 @@ import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.Region;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: solar

@@ -2,8 +2,8 @@ package com.spbsu.ml.cli.builders.methods.impl;
 
 import com.spbsu.commons.func.Factory;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.methods.GreedyTDRegion;
 import com.spbsu.ml.methods.VecOptimization;
+import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 
 /**
  * User: qdeee

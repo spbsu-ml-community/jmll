@@ -189,10 +189,9 @@ public class JMLLCLI {
     } else {
       metrics = new Func[]{test.target(DataTools.targetByName(target))};
     }
-
+    ProgressHandler progressPrinter = null;
     //added progress handlers
     if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION) && !command.hasOption(FAST_OPTION)) {
-      final ProgressHandler progressPrinter;
       if (loss instanceof BlockwiseMLLLogit) {
         progressPrinter = new MulticlassProgressPrinter(learn, test); //f*ck you with your custom different-dimensional metrics
       } else {

@@ -1,14 +1,15 @@
-package com.spbsu.ml.methods;
+package com.spbsu.ml.methods.greedyRegion;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.PolynomialExponentRegion;
 import com.spbsu.ml.models.Region;
 
@@ -85,7 +86,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
       for (int i = 0; i < mx.rows(); i++)
         for (int j = i + 1; j < mx.rows(); j++)
           if (l.get(i, j) > 1e-5)
-            System.out.println("bad l" + l.get(i,j));
+            System.out.println("bad l" + l.get(i, j));
       printWriter.println(mx);
       printWriter.println(right);
       printWriter.close();
