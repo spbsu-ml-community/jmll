@@ -10,10 +10,14 @@ import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
 import com.spbsu.ml.models.gpf.weblogmodel.SessionV1AttractivenessModel;
 import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1ClickProbabilityModel;
+import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1GPFSession;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
+
 
 import static com.spbsu.ml.models.gpf.GPFGbrtOptimization.GPFVectorizedDataset;
 import static com.spbsu.ml.models.gpf.GPFGbrtOptimization.GPFLoglikelihood;
@@ -38,8 +42,14 @@ public class GPFTestGbrt {
     int parallel_processors = Runtime.getRuntime().availableProcessors();
 
     System.out.println("" + new Date() + "\tload dataset");
-    GPFVectorizedDataset learn = GPFVectorizedDataset.load("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", model, rows_limit);
-    GPFVectorizedDataset validate = GPFVectorizedDataset.load("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand2_h10k.dat.gz", model, rows_limit);
+    GPFVectorizedDataset learn;
+    GPFVectorizedDataset validate;
+    try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1_h10k.dat.gz"))) {
+      learn = GPFVectorizedDataset.load(is, model, rows_limit);
+    }
+    try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand2_h10k.dat.gz"))) {
+      validate = GPFVectorizedDataset.load(is, model, rows_limit);
+    }
 
     System.out.println("" + new Date() + "\ttrainClickProbability");
     model.getClickProbabilityModel().trainClickProbability(learn.sessionList);

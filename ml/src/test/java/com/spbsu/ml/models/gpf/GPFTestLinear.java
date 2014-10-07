@@ -9,7 +9,9 @@ import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1GPFSession;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 
 import static junit.framework.Assert.assertEquals;
@@ -23,7 +25,12 @@ public class GPFTestLinear {
 
   @Test
   public void testArtificialClicks() throws IOException {
-    final List<Session<BlockV1>> dataset = WebLogV1GPFSession.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
+    List<Session<BlockV1>> dataset_nonfinal;
+    try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1_h10k.dat.gz"))) {
+      dataset_nonfinal = WebLogV1GPFSession.loadDatasetFromJSON(is, new GPFLinearModel(), 100);
+    }
+    final List<Session<BlockV1>> dataset = dataset_nonfinal;
+
     System.out.println("dataset size: " + dataset.size());
 
     FastRandom rand = new FastRandom(random_seed);
@@ -156,8 +163,16 @@ public class GPFTestLinear {
 
   @Test
   public void testOptimizeSGD() throws IOException {
-    final List<Session<BlockV1>> dataset = WebLogV1GPFSession.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
-    final List<Session<BlockV1>> test_dataset = WebLogV1GPFSession.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand2_h10k.dat.gz", new GPFLinearModel(), 100);
+    List<Session<BlockV1>> dataset_nonfinal;
+    try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1_h10k.dat.gz"))) {
+      dataset_nonfinal = WebLogV1GPFSession.loadDatasetFromJSON(is, new GPFLinearModel(), 100);
+    }
+    final List<Session<BlockV1>> dataset = dataset_nonfinal;
+    List<Session<BlockV1>> test_dataset_nonfinal;
+    try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand2_h10k.dat.gz"))) {
+      test_dataset_nonfinal = WebLogV1GPFSession.loadDatasetFromJSON(is, new GPFLinearModel(), 100);
+    }
+    final List<Session<BlockV1>> test_dataset = test_dataset_nonfinal;
 
     boolean test_sorted_clicks_model = false;
     if (test_sorted_clicks_model) {
@@ -285,7 +300,10 @@ public class GPFTestLinear {
   @Test
   public void testSERPProbs() throws IOException {
     GPFLinearModel model = new GPFLinearModel();
-    final List<Session<BlockV1>> dataset = WebLogV1GPFSession.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", model, 0);
+    List<Session<BlockV1>> dataset;
+    try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1_h10k.dat.gz"))) {
+      dataset = WebLogV1GPFSession.loadDatasetFromJSON(is, new GPFLinearModel(), 100);
+    }
 
     // init model
     model.trainClickProbability(dataset);

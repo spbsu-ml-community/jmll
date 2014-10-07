@@ -1,10 +1,12 @@
 package com.spbsu.ml.models.gpf;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.zip.GZIPInputStream;
 
 
 import com.spbsu.commons.math.vectors.Mx;
@@ -39,8 +41,8 @@ public class GPFGbrtOptimization {
       this.sessionPositions = sessionPositions;
     }
 
-    public static GPFVectorizedDataset<BlockV1> load(String filename, GPFGbrtModel<BlockV1> model, int rows_limit) throws IOException {
-      List<Session<BlockV1>> sessionList = WebLogV1GPFSession.loadDatasetFromJSON(filename, model, rows_limit);
+    public static GPFVectorizedDataset<BlockV1> load(InputStream is, GPFGbrtModel<BlockV1> model, int rows_limit) throws IOException {
+      List<Session<BlockV1>> sessionList = WebLogV1GPFSession.loadDatasetFromJSON(is, model, rows_limit);
 
       List<GPFGbrtModel.SessionFeatureRepresentation<BlockV1>> sfrList = new ArrayList<>(sessionList.size());
       int[] sessionPositions = new int[sessionList.size()];

@@ -17,15 +17,9 @@ import gnu.trove.list.array.TIntArrayList;
  * Date: 22.05.14
  */
 public class WebLogV1GPFSession {
-  public static List<Session<BlockV1>> loadDatasetFromJSON(String filename, GPFModel model, int rows_limit) throws IOException {
+  public static List<Session<BlockV1>> loadDatasetFromJSON(InputStream is, GPFModel model, int rows_limit) throws IOException {
     List<Session<BlockV1>> dataset = new ArrayList<>();
 
-    InputStream is;
-    if (filename.endsWith(".gz")) {
-      is = new GZIPInputStream(new FileInputStream(filename));
-    } else {
-      is = new FileInputStream(filename);
-    }
     LineNumberReader lnr = new LineNumberReader(new InputStreamReader(is, "UTF8"));
     Gson gson = new Gson();
     Gson gson_prettyprint = new GsonBuilder().setPrettyPrinting().create();
@@ -52,7 +46,6 @@ public class WebLogV1GPFSession {
       setSessionData(session, blocks, ses.clicks);
       dataset.add(session);
     }
-    is.close();
     return dataset;
   }
 
@@ -141,7 +134,7 @@ public class WebLogV1GPFSession {
   public static void main(String[] args) throws IOException {
     // test
     long t1 = System.currentTimeMillis();
-    List<Session<BlockV1>> dataset = loadDatasetFromJSON("C:\\PRG\\2013\\metric\\data\\20140105_gpf\\f100\\ses_100k_simple_rand1.dat", new GPFLinearModel(), 0);
+    List<Session<BlockV1>> dataset = loadDatasetFromJSON(new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1.dat.gz")), new GPFLinearModel(), 0);
     System.out.println("dataset size: " + dataset.size());
     System.out.println("time: " + (System.currentTimeMillis() - t1));
     System.out.println("dataset[0]: " + dataset.get(0));
