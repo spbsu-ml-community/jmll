@@ -7,6 +7,9 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
+import com.spbsu.ml.models.gpf.weblogmodel.SessionV1AttractivenessModel;
+import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1ClickProbabilityModel;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -25,7 +28,9 @@ public class GPFTestGbrt {
   @Test
   public void testGbrtOptimization() throws IOException {
     FastRandom rng = new FastRandom(0);
-    GPFGbrtModel model = new GPFGbrtModel();
+    GPFGbrtModel<BlockV1> model = new GPFGbrtModel<>();
+    model.setAttractivenessModel(new SessionV1AttractivenessModel());
+    model.setClickProbabilityModel(new WebLogV1ClickProbabilityModel());
 
     int rows_limit = 100;
     double step = 0.2;
@@ -37,7 +42,7 @@ public class GPFTestGbrt {
     GPFVectorizedDataset validate = GPFVectorizedDataset.load("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand2_h10k.dat.gz", model, rows_limit);
 
     System.out.println("" + new Date() + "\ttrainClickProbability");
-    model.trainClickProbability(learn.sessionList);
+    model.getClickProbabilityModel().trainClickProbability(learn.sessionList);
 
     System.out.println("" + new Date() + "\tset up boosting");
     System.out.println("" + new Date() + "\tset up boosting, step=\t" + step);

@@ -16,6 +16,8 @@ import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
+import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1GPFSession;
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,53 +27,53 @@ import com.spbsu.ml.func.Ensemble;
  * To change this template use File | Settings | File Templates.
  */
 public class GPFGbrtOptimization {
-  public static class GPFVectorizedDataset extends VecDataSetImpl {
-    final List<Session> sessionList;
-    public final List<GPFGbrtModel.SessionFeatureRepresentation> sfrList;
+  public static class GPFVectorizedDataset<Blk extends Session.Block> extends VecDataSetImpl {
+    final List<Session<Blk>> sessionList;
+    public final List<GPFGbrtModel.SessionFeatureRepresentation<Blk>> sfrList;
     final int[] sessionPositions; // data[sessionPositions[i]] is the first row for session sfrList[i]
 
-    public GPFVectorizedDataset(List<Session> sessionList, List<GPFGbrtModel.SessionFeatureRepresentation> sfrList, int[] sessionPositions, Mx data) {
+    public GPFVectorizedDataset(List<Session<Blk>> sessionList, List<GPFGbrtModel.SessionFeatureRepresentation<Blk>> sfrList, int[] sessionPositions, Mx data) {
       super(data, null);
       this.sessionList = sessionList;
       this.sfrList = sfrList;
       this.sessionPositions = sessionPositions;
     }
 
-    public static GPFVectorizedDataset load(String filename, GPFGbrtModel model, int rows_limit) throws IOException {
-      List<Session> sessionList = GPFData.loadDatasetFromJSON(filename, model, rows_limit);
+    public static GPFVectorizedDataset<BlockV1> load(String filename, GPFGbrtModel<BlockV1> model, int rows_limit) throws IOException {
+      List<Session<BlockV1>> sessionList = WebLogV1GPFSession.loadDatasetFromJSON(filename, model, rows_limit);
 
-      List<GPFGbrtModel.SessionFeatureRepresentation> sfrList = new ArrayList<GPFGbrtModel.SessionFeatureRepresentation>(sessionList.size());
+      List<GPFGbrtModel.SessionFeatureRepresentation<BlockV1>> sfrList = new ArrayList<>(sessionList.size());
       int[] sessionPositions = new int[sessionList.size()];
       int datasetSize = 0;
       for (int i = 0; i < sessionList.size(); i++) {
-        GPFGbrtModel.SessionFeatureRepresentation sfr = new GPFGbrtModel.SessionFeatureRepresentation(sessionList.get(i), model);
+        GPFGbrtModel.SessionFeatureRepresentation<BlockV1> sfr = new GPFGbrtModel.SessionFeatureRepresentation<>(sessionList.get(i), model);
         sfrList.add(sfr);
         sessionPositions[i] = datasetSize;
         datasetSize += sfr.f_count;
       }
-      double[] data = new double[datasetSize * model.NFEATS];
+      double[] data = new double[datasetSize * model.getEdgeFeatCount()];
       for (int i = 0; i < sessionList.size(); i++) {
         GPFGbrtModel.SessionFeatureRepresentation sfr = sfrList.get(i);
-        System.arraycopy(sfr.features.toArray(), 0, data, sessionPositions[i] * model.NFEATS, sfr.features.dim());
+        System.arraycopy(sfr.features.toArray(), 0, data, sessionPositions[i] * model.getEdgeFeatCount(), sfr.features.dim());
       }
 
-      return new GPFVectorizedDataset(sessionList, sfrList, sessionPositions, new VecBasedMx(model.NFEATS, new ArrayVec(data)));
+      return new GPFVectorizedDataset<>(sessionList, sfrList, sessionPositions, new VecBasedMx(model.getEdgeFeatCount(), new ArrayVec(data)));
     }
   }
 
-  public static class GPFLoglikelihood extends FuncC1.Stub implements TargetFunc {
-    final GPFGbrtModel model;
-    final GPFVectorizedDataset dataset;
+  public static class GPFLoglikelihood<Blk extends Session.Block> extends FuncC1.Stub implements TargetFunc {
+    final GPFGbrtModel<Blk> model;
+    final GPFVectorizedDataset<Blk> dataset;
     final ExecutorService executorPool;
 
     private Vec[] fvalue_partial;
     private int[] fvalue_partial_size;
 
-    public GPFLoglikelihood(GPFGbrtModel model, GPFVectorizedDataset dataset) {
+    public GPFLoglikelihood(GPFGbrtModel<Blk> model, GPFVectorizedDataset<Blk> dataset) {
       this(model, dataset, 1);
     }
 
-    public GPFLoglikelihood(GPFGbrtModel model, GPFVectorizedDataset dataset, int threadCount) {
+    public GPFLoglikelihood(GPFGbrtModel<Blk> model, GPFVectorizedDataset<Blk> dataset, int threadCount) {
       this.executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
       this.model = model;
       this.dataset = dataset;

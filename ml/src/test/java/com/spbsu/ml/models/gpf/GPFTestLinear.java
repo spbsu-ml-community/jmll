@@ -4,6 +4,8 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
+import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1GPFSession;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -21,7 +23,7 @@ public class GPFTestLinear {
 
   @Test
   public void testArtificialClicks() throws IOException {
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
+    final List<Session<BlockV1>> dataset = WebLogV1GPFSession.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
     System.out.println("dataset size: " + dataset.size());
 
     FastRandom rand = new FastRandom(random_seed);
@@ -37,7 +39,7 @@ public class GPFTestLinear {
     int n_sum_clicks = 0;
     for (int nSes = 0; nSes < dataset.size(); nSes++) {
       //System.out.println("session " + nSes);
-      Session ses = dataset.get(nSes);
+      Session<BlockV1> ses = dataset.get(nSes);
       List<Integer> click_indexes = new ArrayList<Integer>();
       int state = Session.Q_ind;
       int click_s = 0;
@@ -154,8 +156,8 @@ public class GPFTestLinear {
 
   @Test
   public void testOptimizeSGD() throws IOException {
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
-    final List<Session> test_dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand2_h10k.dat.gz", new GPFLinearModel(), 100);
+    final List<Session<BlockV1>> dataset = WebLogV1GPFSession.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", new GPFLinearModel(), 100);
+    final List<Session<BlockV1>> test_dataset = WebLogV1GPFSession.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand2_h10k.dat.gz", new GPFLinearModel(), 100);
 
     boolean test_sorted_clicks_model = false;
     if (test_sorted_clicks_model) {
@@ -283,7 +285,7 @@ public class GPFTestLinear {
   @Test
   public void testSERPProbs() throws IOException {
     GPFLinearModel model = new GPFLinearModel();
-    final List<Session> dataset = GPFData.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", model, 0);
+    final List<Session<BlockV1>> dataset = WebLogV1GPFSession.loadDatasetFromJSON("./jmll/ml/src/test/data/pgmem/f100/ses_100k_simple_rand1_h10k.dat.gz", model, 0);
 
     // init model
     model.trainClickProbability(dataset);
@@ -299,17 +301,16 @@ public class GPFTestLinear {
 
     // init session
     Session session = new Session();
-    Session.Block[] blocks = new Session.Block[11];
+    BlockV1[] blocks = new BlockV1[11];
     for (int i = 0; i < blocks.length; i++) {
-      Session.Block block = new Session.Block(
+      blocks[i] = new BlockV1(
               Session.BlockType.RESULT,
-              i == 3 ? Session.ResultType.IMAGES : Session.ResultType.WEB,
+              i == 3 ? BlockV1.ResultType.IMAGES : BlockV1.ResultType.WEB,
               i,
-              i <= 3 ? Session.ResultGrade.RELEVANT_PLUS : Session.ResultGrade.NOT_ASED);
-      blocks[i] = block;
+              i <= 3 ? BlockV1.ResultGrade.RELEVANT_PLUS : BlockV1.ResultGrade.NOT_ASED);
     }
     int[] clicks = new int[] {3, 2, 6, 10};
-    model.setSessionData(session, blocks, clicks);
+    WebLogV1GPFSession.setSessionData(session, blocks, clicks);
 
     System.out.println(model.explainTheta() + "\n");
     System.out.println("selected session");

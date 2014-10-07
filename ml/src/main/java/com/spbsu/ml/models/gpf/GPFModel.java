@@ -5,6 +5,8 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,42 +18,32 @@ import java.util.List;
  * Time: 13:31
  * To change this template use File | Settings | File Templates.
  */
-public interface GPFModel {
-  /**
-   * this function sets up a structure of a Session: a set of vertices (blocks and virtual blocks), and a set of edges
-   * @param ses - a Session to set up (write-only)
-   * @param result_blocks - a set of 'real' (observed) blocks (read-only)
-   * @param clicks_block_indexes - list of clicks (clicks_block_indexes[i] is a i'th click on result_blocks[clicks_block_indexes[i]])
-   */
-  void setSessionData(Session ses, Session.Block[] result_blocks, int[] clicks_block_indexes);
-
-  double eval_f(Session ses, int s, int e, int click_s);
-
+public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel<Blk> {
   String explainTheta();
 
-  String explainSessionProb(Session ses);
+  String explainSessionProb(Session<Blk> ses);
 
-  double getClickGivenViewProbability(Session.Block b);
+  double getClickGivenViewProbability(Blk b);
 
   /**
    * @param ses - session
    * @return transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
    */
-  VecBasedMx evalSessionTransitionProbs(Session ses);
+  VecBasedMx evalSessionTransitionProbs(Session<Blk> ses);
 
   /**
    * for each block in ses.getBlocks(), evaluates probability that a user has one or more clicks on the block, given the behavior model
    * @param ses - viewport structure
    * @return double[ses.getBlocks().length] - array of probabilities
    */
-  double[] evalHasClickProbabilities(Session ses);
+  double[] evalHasClickProbabilities(Session<Blk> ses);
 
   /**
    * for each block in ses.getBlocks(), evaluates probability that a user has one or more views on the block, given the behavior model
    * @param ses - viewport structure
    * @return double[ses.getBlocks().length] - array of probabilities
    */
-  double[] evalHasViewProbabilities(Session ses);
+  double[] evalHasViewProbabilities(Session<Blk> ses);
 
   /**
    * for each block in ses.getBlocks(), evaluates expected number of steps when a user looks at the block, given the behavior model
@@ -59,68 +51,18 @@ public interface GPFModel {
    * @param ses - viewport structure
    * @return double[ses.getBlocks().length] - array of expected number of steps
    */
-  double[] evalExpectedAttention(Session ses);
+  double[] evalExpectedAttention(Session<Blk> ses);
 
-  abstract class Stub implements GPFModel {
+  abstract class Stub<Blk extends Session.Block> implements GPFModel<Blk> {
     public int MAX_PATH_LENGTH = 15;
-
-    /**
-     * this function sets up the structure of a Session: a set of vertices (blocks and virtual blocks), and a set of edges
-     * @param ses - a Session to set up (write-only)
-     * @param result_blocks - a set of 'real' (observed) blocks (read-only)
-     * @param clicks_block_indexes - list of clicks (clicks_block_indexes[i] is a i'th click on result_blocks[clicks_block_indexes[i]])
-     */
-    public void setSessionData(Session ses, Session.Block[] result_blocks, int[] clicks_block_indexes) {
-      // init blocks
-      Session.Block[] blocks = new Session.Block[result_blocks.length + Session.R0_ind];
-//    int[] result_pos2block_ind = new int[100];
-      int max_result_pos = -1;
-      int min_result_pos = 1000;
-
-      blocks[Session.Q_ind] = new Session.Block(Session.BlockType.Q, null, -1, null);
-      blocks[Session.S_ind] = new Session.Block(Session.BlockType.S, null, -1, null);
-      blocks[Session.E_ind] = new Session.Block(Session.BlockType.E, null, -1, null);
-      for (int i = 0; i < result_blocks.length; i++) {
-        blocks[i + Session.R0_ind] = result_blocks[i];
-        max_result_pos = Math.max(max_result_pos, result_blocks[i].position);
-        min_result_pos = Math.min(min_result_pos, result_blocks[i].position);
-      }
-      ses.setBlocks(blocks);
-
-      int[] click_indexes = new int[clicks_block_indexes.length];
-      for (int i = 0; i < click_indexes.length; i++)
-        click_indexes[i] = clicks_block_indexes[i] + Session.R0_ind;
-      ses.setClick_indexes(click_indexes);
-
-      // init edges
-      List<Session.Edge> edges = new ArrayList<Session.Edge>();
-      for (int i = Session.R0_ind; i < blocks.length; i++) {
-        // R_i -> R_{i+1}
-        if (i + 1 < blocks.length)
-          edges.add(new Session.Edge(i, i+1));
-        // R_i -> R_{i-1}
-        if (i > Session.R0_ind)
-          edges.add(new Session.Edge(i, i-1));
-        // Q -> R_i
-        edges.add(new Session.Edge(Session.Q_ind, i));
-        // S -> R_i
-        edges.add(new Session.Edge(Session.S_ind, i));
-        // R_i -> S
-        edges.add(new Session.Edge(i, Session.S_ind));
-        // R_i -> E
-        edges.add(new Session.Edge(i, Session.E_ind));
-        // E -> E
-        edges.add(new Session.Edge(Session.E_ind, Session.E_ind));
-      }
-      ses.setEdges(edges);
-    }
 
     /**
      * @param ses - session
      * @return transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
      */
-    public VecBasedMx evalSessionTransitionProbs(Session ses) {
-      final Session.Block[] blocks = ses.getBlocks();
+    @Override
+    public VecBasedMx evalSessionTransitionProbs(Session<Blk> ses) {
+      final Blk[] blocks = ses.getBlocks();
 
       // 1 & для каждой пары блоков $i$, $j$ вычислить $f(i,j)$; третья координата - наличие клика c_i
       Tensor3 f = new Tensor3(blocks.length, blocks.length, 2);
@@ -158,7 +100,8 @@ public interface GPFModel {
      * @param ses - viewport structure
      * @return double[ses.getBlocks().length] - array of probabilities
      */
-    public double[] evalHasClickProbabilities(Session ses) {
+    @Override
+    public double[] evalHasClickProbabilities(Session<Blk> ses) {
       final Session.Block[] blocks = ses.getBlocks();
       // transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
       VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
@@ -190,7 +133,8 @@ public interface GPFModel {
      * @param ses - viewport structure
      * @return double[ses.getBlocks().length] - array of probabilities
      */
-    public double[] evalHasViewProbabilities(Session ses) {
+    @Override
+    public double[] evalHasViewProbabilities(Session<Blk> ses) {
       final Session.Block[] blocks = ses.getBlocks();
       // transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
       VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
@@ -226,7 +170,8 @@ public interface GPFModel {
      * @param ses - viewport structure
      * @return double[ses.getBlocks().length] - array of expected number of steps
      */
-    public double[] evalExpectedAttention(Session ses) {
+    @Override
+    public double[] evalExpectedAttention(Session<Blk> ses) {
       final Session.Block[] blocks = ses.getBlocks();
       // transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
       VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
@@ -245,7 +190,8 @@ public interface GPFModel {
       return expectedAttention;
     }
 
-    public String explainSessionProb(Session ses) {
+    @Override
+    public String explainSessionProb(Session<Blk> ses) {
       VecBasedMx sum_f = new VecBasedMx(ses.getBlocks().length, 2);
       for (int i = 0; i < ses.getBlocks().length; i++) {
         for (int j: ses.getEdgesFrom(i)) {
@@ -267,7 +213,7 @@ public interface GPFModel {
       ret.append("P(i->i+1|c=1)\tP(i->i-1|c=1)\tP(i->E|c=1)\tP(i->S|c=1)\n");
 
       for (int i = Session.R0_ind; i < ses.getBlocks().length; i++) {
-        Session.Block bi = ses.getBlock(i);
+        Blk bi = ses.getBlock(i);
         int click_position = -1;
         for (int ci = 0; ci < ses.getClick_indexes().length; ci++) {
           if (ses.getClick_indexes()[ci] == i) {
@@ -276,7 +222,10 @@ public interface GPFModel {
           }
         }
         //ret.append("pos\tsntype\trel\tclick\t");
-        ret.append("" + bi.position + "\t" + bi.resultType.name() + "\t" + bi.resultGrade.name() + "\t" + (click_position >= 0 ? click_position : "-") + "\t");
+        ret.append("" + bi.position + "\t" +
+                   (bi instanceof BlockV1 ? ((BlockV1)bi).resultType.name() : "?") + "\t" +
+                   (bi instanceof BlockV1 ? ((BlockV1)bi).resultGrade.name() : "?") + "\t" +
+                   (click_position >= 0 ? click_position : "-") + "\t");
 
         //ret.append("P(has_click)\tP(has_view)\tAtt\t\t");
         ret.append("" + hasClickProbabilities[i] + "\t" + hasViewProbabilities[i] + "\t" + attentionExpectation[i] + "\t\t");

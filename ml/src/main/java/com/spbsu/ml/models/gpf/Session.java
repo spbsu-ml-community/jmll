@@ -3,6 +3,8 @@ package com.spbsu.ml.models.gpf;
 import com.spbsu.commons.filters.FalseFilter;
 import gnu.trove.list.array.TIntArrayList;
 
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,70 +14,44 @@ import java.util.List;
  * User: irlab
  * Date: 14.05.14
  */
-public class Session {
-  static final int Q_ind = 0;
-  static final int S_ind = 1;
-  static final int E_ind = 2;
-  static final int R0_ind = 3;
+public class Session<Blk extends Session.Block> {
+  public static final int Q_ind = 0;
+  public static final int S_ind = 1;
+  public static final int E_ind = 2;
+  public static final int R0_ind = 3;
 
   public static enum BlockType {
     RESULT, Q, S, E
   }
-  public static enum ResultType {
-    WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER
-  }
-  public static enum ResultGrade {
-    VITAL           (0.61), //0.69),
-    USEFUL          (0.41), //0.47),
-    RELEVANT_PLUS   (0.14), //0.45),
-    RELEVANT_MINUS  (0.07), //0.44),
-    IRRELEVANT      (0.03), //0.24),
-    NOT_ASED        (0.10); //0.39);
 
-    private final double pfound_value;
-    //private final double ctr1_value;
-    ResultGrade(double pfound_value) {
-      this.pfound_value = pfound_value;
-    }
-
-    public double getPfound_value() {
-      return pfound_value;
-    }
-  }
   public static class Block {
-    BlockType blockType;
-    ResultType resultType;
-    int position;
-    ResultGrade resultGrade;
+    public final BlockType blockType;
+    public final int position;
 
-    public Block(BlockType blockType, ResultType resultType, int position, ResultGrade resultGrade) {
+    public Block(final BlockType blockType, final int position) {
       this.blockType = blockType;
-      this.resultType = resultType;
       this.position = position;
-      this.resultGrade = resultGrade;
     }
 
     @Override
     public String toString() {
       return "Block{" + blockType +
-              ", " + resultType +
-              ", " + resultGrade +
               ", position=" + position +
               '}';
     }
   }
-  public static class Edge {
-    int block_index_from; // position of block in blocks array
-    int block_index_to;   // position of block in blocks array
-//    float[] feats;
 
-    public Edge(int block_index_from, int block_index_to) {
+  public static class Edge {
+    public final int block_index_from; // position of block in blocks array
+    public final int block_index_to;   // position of block in blocks array
+
+    public Edge(final int block_index_from, final int block_index_to) {
       this.block_index_from = block_index_from;
       this.block_index_to = block_index_to;
     }
   }
 
-  private Block[] blocks;
+  private Blk[] blocks;
   private int[][] edge_from; // there is an Edge blocks[i] -> blocks[edge_from[i][j]]
   private int[][] edge_to;   // there is an Edge blocks[edge_from[i][j]] -> blocks[i]
   private int[] click_indexes;
@@ -97,14 +73,19 @@ public class Session {
     this.source_string = source_string;
   }
 
-  public void setBlocks(Block[] blocks) {
+  public void setBlocks(Blk[] blocks) {
     this.blocks = blocks;
   }
-  public Block getBlock(int index) {
+  public Blk getBlock(int index) {
     return blocks[index];
   }
-  public Block[] getBlocks() {
+
+  public Blk[] getBlocks() {
     return blocks;
+  }
+
+  public int getBlocksCount() {
+    return blocks.length;
   }
 
   public int[] getClick_indexes() {
@@ -130,7 +111,9 @@ public class Session {
   }
 
   public void setEdges(List<Edge> edges) {
+    @SuppressWarnings("unchecked")
     List<Integer>[] edge_from_v = (List<Integer>[])new List[blocks.length];
+    @SuppressWarnings("unchecked")
     List<Integer>[] edge_to_v = (List<Integer>[])new List[blocks.length];
     for (int i = 0; i < blocks.length; i++) {
       edge_from_v[i] = new ArrayList<Integer>();

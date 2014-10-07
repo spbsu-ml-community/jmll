@@ -2,6 +2,8 @@ package com.spbsu.ml.models.gpf;
 
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
+
 
 import java.util.*;
 
@@ -29,26 +31,26 @@ public class GPFLinearOptimization {
 
   IterationEventListener listener;
 
-  public GPFLinearModel StochasticGradientDescent(GPFLinearModel model0, List<Session> dataset, int nIterations) {
+  public GPFLinearModel StochasticGradientDescent(GPFLinearModel model0, List<Session<BlockV1>> dataset, int nIterations) {
     if (dataset.size() < SGD_BLOCK_SIZE)
       throw new IllegalArgumentException("dataset.size() < SGD_BLOCK_SIZE: dataset.size()=" + dataset.size() + ", SGD_BLOCK_SIZE=" + SGD_BLOCK_SIZE);
 
     GPFLinearModel model = new GPFLinearModel(model0);
     Random random = new Random(1);
-    List<Session> dataset_shuffled = new ArrayList<Session>(dataset);
+    List<Session<BlockV1>> dataset_shuffled = new ArrayList<>(dataset);
     Collections.shuffle(dataset_shuffled, random);
     int dataset_position = 0;
     ArrayVec last_theta = new ArrayVec(model.theta.toArray());
     double last_ll = Double.NEGATIVE_INFINITY;
     for (int iter = 0; iter < nIterations; iter++) {
-      List<Session> dataset_chunk = null;
+      List<Session<BlockV1>> dataset_chunk = null;
       double dataset_ll = 0;
       int fullds_nobservations_correct = 0;
       if (dataset_position + SGD_BLOCK_SIZE <= dataset.size()) {
         dataset_chunk = dataset_shuffled.subList(dataset_position, dataset_position + SGD_BLOCK_SIZE);
         dataset_position += SGD_BLOCK_SIZE;
       } else {
-        dataset_chunk = new ArrayList<Session>(dataset_shuffled.subList(dataset_position, dataset_shuffled.size()));
+        dataset_chunk = new ArrayList<>(dataset_shuffled.subList(dataset_position, dataset_shuffled.size()));
         Collections.shuffle(dataset_shuffled, random);
         dataset_position = SGD_BLOCK_SIZE - dataset_chunk.size();
         dataset_chunk.addAll(dataset_shuffled.subList(0, dataset_position));
@@ -190,7 +192,7 @@ public class GPFLinearOptimization {
     int nObservations = 0;
   }
 
-  DatasetGradientValue evalDatasetGradientValue(GPFLinearModel model, final List<Session> dataset, final boolean do_eval_gradient) {
+  DatasetGradientValue evalDatasetGradientValue(GPFLinearModel model, final List<Session<BlockV1>> dataset, final boolean do_eval_gradient) {
     DatasetGradientValue ret = new DatasetGradientValue();
     if (do_eval_gradient)
       ret.gradient = new ArrayVec(model.NFEATS);
