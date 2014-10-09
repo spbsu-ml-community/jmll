@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
  * User: irlab
  * Date: 11.07.2014
  */
-public class GPFTestGbrt {
+public class GPFGbrtTest {
   @Test
   public void testGbrtOptimization() throws IOException {
     FastRandom rng = new FastRandom(0);
@@ -78,6 +78,6 @@ public class GPFTestGbrt {
   }
 
   public static void main(String[] args) throws Exception {
-    new GPFTestGbrt().testGbrtOptimization();
+    new GPFGbrtTest().testGbrtOptimization();
   }
 }

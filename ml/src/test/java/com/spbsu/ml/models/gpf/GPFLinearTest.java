@@ -20,7 +20,7 @@ import static junit.framework.Assert.assertEquals;
  * User: irlab
  * Date: 22.05.14
  */
-public class GPFTestLinear {
+public class GPFLinearTest {
   private int random_seed = 0;
 
   @Test
