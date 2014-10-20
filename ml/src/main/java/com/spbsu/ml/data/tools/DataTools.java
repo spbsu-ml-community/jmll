@@ -22,6 +22,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
+import com.spbsu.commons.seq.CharBufferSeq;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.system.RuntimeUtils;
@@ -54,7 +55,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -257,6 +257,9 @@ public class DataTools {
   public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
       new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
 
+  public static final SerializationRepository<CharBufferSeq> BUFFER_SERIALIZATION = new SerializationRepository<>(
+      new TypeConvertersCollection("com.spbsu.commons.math.cbio"), CharBufferSeq.class);
+
   public static int[][] splitAtRandom(final int size, final FastRandom rng, final double... v) {
     final Vec weights = new ArrayVec(v);
     final TIntList[] folds = new TIntList[v.length];
@@ -363,12 +366,13 @@ public class DataTools {
     out.append('\n');
   }
 
+
   public static Pool<? extends DSItem> readPoolFrom(Reader input) throws IOException {
     try {
       final PoolBuilder builder = new PoolBuilder();
-      CharSeqTools.processAndSplitLines(input, new Processor<CharSequence[]>() {
+      CharSeqTools.processAndSplitLinesNIO(input, new Processor<CharBufferSeq[]>() {
             @Override
-            public void process(final CharSequence[] parts) {
+            public void process(final CharBufferSeq[] parts) {
               try {
                 final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
                 switch (parts[0].toString()) {
@@ -388,16 +392,16 @@ public class DataTools {
                   case "feature": {
                     JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
                     Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
-                    builder.newFeature(fmeta, SERIALIZATION.read(
-                        CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
+                    builder.newFeature(fmeta, BUFFER_SERIALIZATION.read(
+                        parts[2],
                         vecClass));
                     break;
                   }
                   case "target": {
                     JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
                     Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
-                    builder.newTarget(fmeta, SERIALIZATION.read(
-                        CharSeqTools.concatWithDelimeter("\t", Arrays.asList(parts).subList(2, parts.length)),
+                    builder.newTarget(fmeta, BUFFER_SERIALIZATION.read(
+                        parts[2],
                         vecClass));
                     break;
                   }
@@ -407,7 +411,7 @@ public class DataTools {
               }
             }
           },
-          "\t", true);
+          "\t", 2);
       return builder.create();
     } catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
