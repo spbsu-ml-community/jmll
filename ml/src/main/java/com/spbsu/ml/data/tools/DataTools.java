@@ -27,6 +27,7 @@ import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.util.JSONTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
@@ -374,13 +375,13 @@ public class DataTools {
             @Override
             public void process(final CharBufferSeq[] parts) {
               try {
-                final JsonParser parser = CharSeqTools.parseJSON(parts[1]);
+                final JsonParser parser = JSONTools.parseJSON(parts[1]);
                 switch (parts[0].toString()) {
                   case "items": {
                     final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
                     builder.setMeta(meta);
 
-                    final JsonParser parseItems = CharSeqTools.parseJSON(parts[2]);
+                    final JsonParser parseItems = JSONTools.parseJSON(parts[2]);
                     final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
                     final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
                     final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
