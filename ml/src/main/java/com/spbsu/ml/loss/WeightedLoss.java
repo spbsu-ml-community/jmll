@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * Time: 9:54
  */
 public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub implements StatBasedLoss<WeightedLoss.Stat> {
-  private final BasedOn metric;
+  public final BasedOn metric;
   private final int[] weights;
 
   public WeightedLoss(BasedOn metric, int[] weights) {
@@ -45,23 +45,23 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   @Override
   public double value(Stat comb) {
     return metric.value(comb.inside);
-    }
+  }
 
-    @Override
-    public int dim() {
-      return metric.xdim();
-    }
+  @Override
+  public int dim() {
+    return metric.xdim();
+  }
 
   @Nullable
-    @Override
+  @Override
   public Trans gradient() {
     return metric.gradient();
-    }
+  }
 
-    @Override
-    public double value(Vec x) {
-      return metric.trans(x).get(0);
-    }
+  @Override
+  public double value(Vec x) {
+    return metric.trans(x).get(0);
+  }
 
   public double weight(final int index) {
     return weights[index];
@@ -71,10 +71,10 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     return metric;
   }
 
-    @Override
-    public DataSet<?> owner() {
-      return metric.owner();
-    }
+  @Override
+  public DataSet<?> owner() {
+    return metric.owner();
+  }
 
   public static class Stat implements AdditiveStatistics {
     public AdditiveStatistics inside;
@@ -93,6 +93,19 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     }
 
     @Override
+    public Stat append(int index, double prob, int times) {
+      int count = weights[index];
+      inside.append(index, prob, count * times);
+      return this;
+    }
+
+    @Override
+    public Stat append(int index, double prob) {
+      return append(index, prob, 1);
+    }
+
+
+    @Override
     public Stat append(AdditiveStatistics other) {
       inside.append(((Stat) other).inside);
       return this;
@@ -109,6 +122,22 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     public Stat remove(AdditiveStatistics other) {
       inside.remove(((Stat) other).inside);
       return this;
+    }
+
+    @Override
+    public AdditiveStatistics remove(int index, double p, int times) {
+      int count = weights[index];
+      inside.remove(index, p, count * times);
+      return this;
+    }
+
+    public Vec getTargets() {
+      return inside.getTargets();
+    }
+
+    @Override
+    public AdditiveStatistics remove(int index, double p) {
+      return remove(index, p, 1);
     }
   }
 }

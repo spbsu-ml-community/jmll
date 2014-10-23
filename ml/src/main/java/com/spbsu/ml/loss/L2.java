@@ -66,7 +66,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
   }
 
   public double bestIncrement(MSEStats stats) {
-    return stats.weight > MathTools.EPSILON ? stats.sum/stats.weight : 0;
+    return stats.weight > MathTools.EPSILON ? stats.sum / stats.weight : 0;
   }
 
   public double get(final int i) {
@@ -82,7 +82,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
   public static class MSEStats implements AdditiveStatistics {
     public volatile double sum;
     public volatile double sum2;
-    public volatile int weight;
+    public volatile double weight;
 
     private final Vec targets;
 
@@ -99,9 +99,41 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       return this;
     }
 
+    public Vec getTargets() {
+      return targets;
+    }
+
+    @Override
+    public MSEStats remove(int index, double p, int times) {
+      final double v = targets.get(index);
+      sum -= times * p * v;
+      sum2 -= times * p * v * v;
+      weight -= times * p;
+      return this;
+    }
+
+    @Override
+    public MSEStats remove(int index, double p) {
+      return remove(index, p, 1);
+    }
+
+    @Override
+    public MSEStats append(int index, double prob, int times) {
+      final double v = targets.get(index);
+      sum += times * prob * v;
+      sum2 += times * prob * v * v;
+      weight += times * prob;
+      return this;
+    }
+
+    @Override
+    public MSEStats append(int index, double prob) {
+      return append(index, prob, 1);
+    }
+
     @Override
     public MSEStats remove(AdditiveStatistics otheras) {
-      MSEStats other = (MSEStats)otheras;
+      MSEStats other = (MSEStats) otheras;
       sum -= other.sum;
       sum2 -= other.sum2;
       weight -= other.weight;
@@ -119,11 +151,13 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
 
     @Override
     public MSEStats append(AdditiveStatistics otheras) {
-      MSEStats other = (MSEStats)otheras;
+      MSEStats other = (MSEStats) otheras;
       sum += other.sum;
       sum2 += other.sum2;
       weight += other.weight;
       return this;
     }
   }
+
+
 }

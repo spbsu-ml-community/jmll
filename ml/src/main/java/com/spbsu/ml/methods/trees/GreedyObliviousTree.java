@@ -1,11 +1,11 @@
 package com.spbsu.ml.methods.trees;
 
 import com.spbsu.commons.func.AdditiveStatistics;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.data.Aggregate;
-import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
@@ -25,6 +25,7 @@ import java.util.ListIterator;
 public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   private final int depth;
   private final BFGrid grid;
+  private final FastRandom rand = new FastRandom();
 
   public GreedyObliviousTree(BFGrid grid, int depth) {
     this.grid = grid;
@@ -56,7 +57,7 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
       if (bestSplit < 0 || scores[bestSplit] >= currentScore)
         break;
       final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
-      final List<BFOptimizationSubset> next = new ArrayList<BFOptimizationSubset>(leaves.size() * 2);
+      final List<BFOptimizationSubset> next = new ArrayList<>(leaves.size() * 2);
       final ListIterator<BFOptimizationSubset> iter = leaves.listIterator();
       while (iter.hasNext()) {
         final BFOptimizationSubset subset = iter.next();
@@ -70,7 +71,9 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
     double[] step = new double[leaves.size()];
     double[] based = new double[leaves.size()];
     for (int i = 0; i < step.length; i++) {
-      step[i] = loss.bestIncrement(leaves.get(i).total());
+//      step[i] = loss.bestIncrement(leaves.get(i).total());
+      step[i] = leaves.get(i).size() > 0 ? leaves.get(i).regularizedIncrement(((AdditiveStatistics) loss.statsFactory().create()).getTargets()) : 0;
+//      step[i] = leaves.get(i).size() > 0 ? leaves.get(i).regularizedIncrement(((AdditiveStatistics) loss.statsFactory().create()).getTargets()) : 0;
     }
     return new ObliviousTree(conditions, step, based);
   }
