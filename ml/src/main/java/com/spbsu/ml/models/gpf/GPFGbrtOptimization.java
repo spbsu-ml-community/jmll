@@ -30,7 +30,7 @@ import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1GPFSession;
  */
 public class GPFGbrtOptimization {
   public static class GPFVectorizedDataset<Blk extends Session.Block> extends VecDataSetImpl {
-    final List<Session<Blk>> sessionList;
+    public final List<Session<Blk>> sessionList;
     public final List<GPFGbrtModel.SessionFeatureRepresentation<Blk>> sfrList;
     final int[] sessionPositions; // data[sessionPositions[i]] is the first row for session sfrList[i]
 

@@ -62,6 +62,8 @@ public class Session<Blk extends Session.Block> {
   private String query;
   private String source_string;
 
+  public long timestamp;
+
   public Session() {
   }
 
@@ -176,7 +178,7 @@ public class Session<Blk extends Session.Block> {
   @Override
   public String toString() {
     return "Session{" +
-            "source_string='" + source_string + '\'' +
+           "source_string='" + source_string + '\'' +
             ",\nclick_indexes=" + Arrays.toString(click_indexes) +
             '}';
   }
