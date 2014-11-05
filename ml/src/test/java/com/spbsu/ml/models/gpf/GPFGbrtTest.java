@@ -74,7 +74,7 @@ public class GPFGbrtTest {
                        "\tlearnL=" + exp_learn_loss +
                        "\tvalidL=" + Math.exp(-validate_loss.evalAverageLL(ans)));
 
-    assertEquals(exp_learn_loss, 5.7, 0.1);
+    assertEquals(5.7, exp_learn_loss, 0.1);
   }
 
   public static void main(String[] args) throws Exception {
