@@ -11,6 +11,9 @@ import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
  */
 public class GreedyTDRegionBuilder implements Factory<VecOptimization> {
   public static Factory<BFGrid> defaultGridBuilder;
+  private double alpha = 0.02;
+  private double beta = 0.5;
+  private int maxFailed = 1;
 
   private Factory<BFGrid> gridBuilder = defaultGridBuilder;
 
@@ -18,8 +21,20 @@ public class GreedyTDRegionBuilder implements Factory<VecOptimization> {
     this.gridBuilder = gridBuilder;
   }
 
+  public void setAlpha(double alpha) {
+    this.alpha = alpha;
+  }
+
+  public void setBeta(double beta) {
+    this.beta = beta;
+  }
+
+  public void setMaxFailed(int maxFailed) {
+    this.maxFailed = maxFailed;
+  }
+
   @Override
   public VecOptimization create() {
-    return new GreedyTDRegion(gridBuilder.create());
+    return new GreedyTDRegion(gridBuilder.create(), alpha, beta, maxFailed);
   }
 }
