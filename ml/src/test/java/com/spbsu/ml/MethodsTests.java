@@ -1,8 +1,5 @@
 package com.spbsu.ml;
 
-import java.util.Random;
-
-
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.MxTools;
@@ -15,7 +12,6 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.logging.Interval;
-
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.Pool;
@@ -32,6 +28,7 @@ import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
+import java.util.Random;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 
@@ -40,7 +37,7 @@ import static com.spbsu.commons.math.MathTools.sqr;
  * Date: 26.11.12
  * Time: 15:50
  */
-public  class MethodsTests extends GridTest {
+public abstract class MethodsTests extends GridTest {
   private FastRandom rng;
 
   @Override
@@ -219,7 +216,6 @@ public  class MethodsTests extends GridTest {
     final GradientBoosting<L2> boosting = new GradientBoosting
             (new BootstrapOptimization(
                     new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.004);
-
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -268,6 +264,7 @@ public  class MethodsTests extends GridTest {
         current.set(i, f);
       }
       System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
+
     }
   }
 
