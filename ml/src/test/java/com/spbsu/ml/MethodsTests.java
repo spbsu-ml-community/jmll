@@ -35,6 +35,7 @@ import static com.spbsu.commons.math.MathTools.sqr;
 /**
  * User: solar
  * Date: 26.11.12
+ *
  * Time: 15:50
  */
 public abstract class MethodsTests extends GridTest {
@@ -57,11 +58,11 @@ public abstract class MethodsTests extends GridTest {
 
   public void testPGMFit5x5() {
     SimplePGM original = new SimplePGM(new VecBasedMx(5, new ArrayVec(new double[]{
-            0, 0.2, 0.3,  0.1,  0.4,
-            0, 0,   0.25, 0.25, 0.5,
-            0, 0,   0,    0.1,  0.9,
-            0, 0,   0.5,  0,    0.5,
-            0, 0,   0,    0,    0
+            0, 0.2, 0.3, 0.1, 0.4,
+            0, 0, 0.25, 0.25, 0.5,
+            0, 0, 0, 0.1, 0.9,
+            0, 0, 0.5, 0, 0.5,
+            0, 0, 0, 0, 0
     })));
 
 
@@ -70,15 +71,16 @@ public abstract class MethodsTests extends GridTest {
 
   public void testPGMFit5x5RandSkip() {
     final SimplePGM original = new SimplePGM(new VecBasedMx(5, new ArrayVec(new double[]{
-            0, 0.2, 0.3,  0.1,  0.4,
-            0, 0,   0.25, 0.25, 0.5,
-            0, 0,   0,    0.1,  0.9,
-            0, 0,   0.5,  0,    0.5,
-            0, 0,   0,    0,    0
+            0, 0.2, 0.3, 0.1, 0.4,
+            0, 0, 0.25, 0.25, 0.5,
+            0, 0, 0, 0.1, 0.9,
+            0, 0, 0.5, 0, 0.5,
+            0, 0, 0, 0, 0
     })));
 
     checkRestoreFixedTopology(original, PGMEM.GAMMA_PRIOR_PATH, 0.8, 100, 0.01);
   }
+
   public void testPGMFit10x10Rand() {
     final VecBasedMx originalMx = new VecBasedMx(10, new ArrayVec(100));
     for (int i = 0; i < originalMx.rows() - 1; i++) {
@@ -131,6 +133,7 @@ public abstract class MethodsTests extends GridTest {
 
     final Action<SimplePGM> listener = new Action<SimplePGM>() {
       int iteration = 0;
+
       @Override
       public void invoke(SimplePGM pgm) {
         Interval.stopAndPrint("Iteration " + ++iteration);
@@ -166,8 +169,8 @@ public abstract class MethodsTests extends GridTest {
 
   public void testGRBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-        new BootstrapOptimization<L2>(
-            new GreedyRegion(new FastRandom(),GridTools.medianGrid(learn.vecData(), 32)), rng), L2.class, 10000, 0.02);
+            new BootstrapOptimization<L2>(
+                    new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn.vecData(), 32)), rng), L2.class, 10000, 0.02);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -214,8 +217,11 @@ public abstract class MethodsTests extends GridTest {
 
   public void testGTDRBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting
-            (new BootstrapOptimization(
+            (new BootstrapOptimization<>(
                     new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.004);
+//    final GradientBoosting<L2> boosting = new GradientBoosting
+//            (new RandomForest<>(
+//                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -260,7 +266,7 @@ public abstract class MethodsTests extends GridTest {
       for (int i = 0; i < _validate.size(); i++) {
         double f = 0;
         for (int j = 0; j < ans.models.length; j++)
-          f += ans.weights.get(j) * ((Func)ans.models[j]).value(((VecDataSet) _validate).data().row(i));
+          f += ans.weights.get(j) * ((Func) ans.models[j]).value(((VecDataSet) _validate).data().row(i));
         current.set(i, f);
       }
       System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
@@ -295,7 +301,11 @@ public abstract class MethodsTests extends GridTest {
         final Ensemble linear = (Ensemble) partial;
         final Trans increment = linear.last();
         for (int i = 0; i < ds.length(); i++) {
-          current.adjust(i, linear.wlast() * ((Func) increment).value(ds.data().row(i)));
+          if (increment instanceof Ensemble) {
+            current.adjust(i, linear.wlast() * (increment.trans(ds.data().row(i)).get(0)));
+          } else {
+            current.adjust(i, linear.wlast() * ((Func) increment).value(ds.data().row(i)));
+          }
         }
       } else {
         for (int i = 0; i < ds.length(); i++) {
@@ -336,7 +346,12 @@ public abstract class MethodsTests extends GridTest {
         int index = 0;
         final VecDataSet ds = learn.vecData();
         for (int i = 0; i < ds.data().rows(); i++) {
-          final double value = ((Func) increment).value(ds.data().row(i));
+          double value;
+          if (increment instanceof Ensemble) {
+            value = increment.trans(ds.data().row(i)).get(0);
+          } else {
+            value = ((Func) increment).value(ds.data().row(i));
+          }
           values.adjustOrPutValue(value, 1, 1);
           final double ddiff = sqr(residues.get(index)) - sqr(residues.get(index) - value);
           residues.adjust(index, -model.wlast() * value);

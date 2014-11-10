@@ -104,7 +104,11 @@ class ScoresCalcer {
         final Ensemble linear = (Ensemble) partial;
         final Trans increment = linear.last();
         for (int i = 0; i < ds.length(); i++) {
-          current.adjust(i, linear.wlast() * ((Func) increment).value(ds.data().row(i)));
+          if (increment instanceof Ensemble) {
+            current.adjust(i, linear.wlast() * (increment.trans(ds.data().row(i)).get(0)));
+          } else {
+            current.adjust(i, linear.wlast() * ((Func) increment).value(ds.data().row(i)));
+          }
         }
       } else {
         for (int i = 0; i < ds.length(); i++) {
@@ -138,7 +142,7 @@ public class ExperimentsRunner {
       switch (args[0]) {
         case "Region": {
           ScoresCalcer calcer = new ScoresCalcer(learn, validate);
-          final double[] scores = calcer.run(6);
+          final double[] scores = calcer.run(16);
           System.out.println(String.format("Min scores for runs with parametrs iter = %d, step = %f", calcer.iterations, calcer.step));
           System.out.println(Arrays.toString(scores));
           break;

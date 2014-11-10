@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 
 public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
-  enum MeanMethod {
+  public enum MeanMethod {
     MTAConst, Stein, Naive, MTAMinMax
   }
 
@@ -36,19 +36,23 @@ public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.St
   }
 
   public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, double alpha, double beta) {
-    this(grid, rnd, weakCount, MeanMethod.Naive, alpha, beta);
+    this(grid, rnd, weakCount, MeanMethod.Naive, alpha, beta, 1);
   }
 
   public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, MeanMethod meanMethod) {
-    this(grid, rnd, weakCount, meanMethod, 0.02, 0.05);
+    this(grid, rnd, weakCount, meanMethod, 0.02, 0.05, 1);
   }
 
-  public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, MeanMethod meanMethod, double alpha, double beta) {
-    this.weak = new GreedyTDRegion<>(grid, alpha, beta);
+  public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, MeanMethod meanMethod, double alpha, double beta, int maxFailed) {
+    this.weak = new GreedyTDRegion<>(grid, alpha, beta, maxFailed);
     this.weakCount = weakCount;
     this.rnd = rnd;
     pool = ThreadTools.createBGExecutor("RF pool", weakCount);
     this.meanMethod = meanMethod;
+  }
+
+  public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, double alpha, double beta, int maxFailed) {
+    this(grid, rnd, weakCount, MeanMethod.Naive, alpha, beta, maxFailed);
   }
 
 
