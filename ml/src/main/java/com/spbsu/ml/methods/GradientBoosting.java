@@ -42,7 +42,6 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
   public Ensemble fit(VecDataSet learn, GlobalLoss globalLoss) {
     final Vec cursor = new ArrayVec(globalLoss.xdim());
     List<Trans> weakModels = new ArrayList<>(iterationsCount);
-    List<Vec> modelsTrans = new ArrayList<>(iterationsCount);
     final Trans gradient = globalLoss.gradient();
 
     for (int t = 0; t < iterationsCount; t++) {
@@ -51,9 +50,7 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
       final Trans weakModel = weak.fit(learn, localLoss);
       weakModels.add(weakModel);
       invoke(new Ensemble(weakModels, -step));
-      Vec pred = VecTools.scale(weakModel.transAll(learn.data()), -step);
-      modelsTrans.add(pred);
-      VecTools.append(cursor, pred);
+      VecTools.append(cursor, VecTools.scale(weakModel.transAll(learn.data()), -step));
     }
     return new Ensemble(weakModels, -step);
   }
