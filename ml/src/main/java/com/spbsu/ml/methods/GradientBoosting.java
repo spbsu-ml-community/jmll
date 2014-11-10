@@ -1,9 +1,5 @@
 package com.spbsu.ml.methods;
 
-import java.util.ArrayList;
-import java.util.List;
-
-
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -16,11 +12,14 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.SatL2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
-* User: solar
-* Date: 21.12.2010
-* Time: 22:13:54
-*/
+ * User: solar
+ * Date: 21.12.2010
+ * Time: 22:13:54
+ */
 public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListenerHolderImpl<Trans> implements VecOptimization<GlobalLoss> {
   protected final VecOptimization<L2> weak;
   private final Class<? extends L2> factory;
@@ -43,6 +42,7 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
   public Ensemble fit(VecDataSet learn, GlobalLoss globalLoss) {
     final Vec cursor = new ArrayVec(globalLoss.xdim());
     List<Trans> weakModels = new ArrayList<>(iterationsCount);
+    List<Vec> modelsTrans = new ArrayList<>(iterationsCount);
     final Trans gradient = globalLoss.gradient();
 
     for (int t = 0; t < iterationsCount; t++) {
@@ -51,7 +51,9 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
       final Trans weakModel = weak.fit(learn, localLoss);
       weakModels.add(weakModel);
       invoke(new Ensemble(weakModels, -step));
-      VecTools.append(cursor, VecTools.scale(weakModel.transAll(learn.data()), -step));
+      Vec pred = VecTools.scale(weakModel.transAll(learn.data()), -step);
+      modelsTrans.add(pred);
+      VecTools.append(cursor, pred);
     }
     return new Ensemble(weakModels, -step);
   }

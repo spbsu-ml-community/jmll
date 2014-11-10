@@ -29,7 +29,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
   public GreedyPolynomialExponentRegion(BFGrid grid, double distCoeffiecent, double regulationCoeffiecent) {
     this.distCoeffiecent = distCoeffiecent;
     this.regulationCoeffiecent = regulationCoeffiecent;
-    this.greedyTDRegion = new GreedyTDRegion<L2>(grid);
+    this.greedyTDRegion = new GreedyTDRegion<L2>(grid, 0.02, 0.5, 0);
   }
 
   double getDistanseFromRegion(Vec x) {

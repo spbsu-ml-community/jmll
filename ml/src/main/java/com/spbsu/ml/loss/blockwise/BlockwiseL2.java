@@ -116,19 +116,6 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
       return this;
     }
 
-    @Override
-    public AdditiveStatistics remove(int index, double p, int times) {
-      double v = targets.get(index);
-      sum -= times * p * v;
-      sum2 -= times * p * v * v;
-      weight -= times * p;
-      return this;
-    }
-
-    @Override
-    public AdditiveStatistics remove(int index, double p) {
-      return remove(index, p, 1);
-    }
 
     @Override
     public MSEStats append(int index, int times) {
@@ -139,19 +126,6 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
       return this;
     }
 
-    @Override
-    public AdditiveStatistics append(int index, double prob, int times) {
-      final double v = targets.get(index);
-      sum += times * prob * v;
-      sum2 += times * prob * v * v;
-      weight += times * prob;
-      return this;
-    }
-
-    @Override
-    public AdditiveStatistics append(int index, double prob) {
-      return append(index, prob, 1);
-    }
 
     @Override
     public MSEStats append(AdditiveStatistics otheras) {
@@ -162,8 +136,5 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
       return this;
     }
 
-    public Vec getTargets() {
-      return targets;
-    }
   }
 }

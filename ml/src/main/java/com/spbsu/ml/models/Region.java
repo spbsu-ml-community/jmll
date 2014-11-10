@@ -86,7 +86,8 @@ public class Region extends Func.Stub implements BinOptimizedModel {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append(inside).append("/").append(basedOn);
+    builder.append(maxFailed).append(":");
+    builder.append(inside).append("/").append(outside).append("/").append(basedOn);
     builder.append(" ->");
     for (int i = 0; i < features.length; i++) {
       builder.append(" ")

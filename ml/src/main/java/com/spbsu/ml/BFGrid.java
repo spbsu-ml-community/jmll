@@ -51,7 +51,7 @@ public class BFGrid {
 
   public void binarize(Vec x, byte[] folds) {
     for (int i = 0; i < x.dim(); i++) {
-      folds[i] = (byte)rows[i].bin(x.get(i));
+      folds[i] = (byte) rows[i].bin(x.get(i));
     }
   }
 
