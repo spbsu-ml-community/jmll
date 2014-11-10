@@ -6,8 +6,8 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-
 
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.List;
  * Date: 26.11.12
  * Time: 15:56
  */
-public class Ensemble<F extends Trans> extends Trans.Stub {
+public class Ensemble<F extends Trans> extends Trans.Stub implements Func {
   public final F[] models;
   public final Vec weights;
 
@@ -27,7 +27,7 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   }
 
   public Ensemble(List<F> weakModels, double step) {
-    this(weakModels.toArray((F[])new Trans[weakModels.size()]), VecTools.fill(new ArrayVec(weakModels.size()), step));
+    this(weakModels.toArray((F[]) new Trans[weakModels.size()]), VecTools.fill(new ArrayVec(weakModels.size()), step));
   }
 
   public F last() {
@@ -99,5 +99,15 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
     int result = Arrays.hashCode(models);
     result = 31 * result + weights.hashCode();
     return result;
+  }
+
+  @Override
+  public double value(Vec x) {
+    return trans(x).get(0);
+  }
+
+  @Override
+  public int dim() {
+    return 0;
   }
 }

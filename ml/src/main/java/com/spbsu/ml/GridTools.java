@@ -1,8 +1,5 @@
 package com.spbsu.ml;
 
-import java.util.Arrays;
-
-
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.spbsu.ml.data.set.DataSet;
@@ -11,6 +8,8 @@ import com.spbsu.ml.data.stats.OrderByFeature;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
+
+import java.util.Arrays;
 
 /**
  * User: solar

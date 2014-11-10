@@ -33,6 +33,11 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   }
 
   @Override
+  public Vec target() {
+    return metric.target();
+  }
+
+  @Override
   public double bestIncrement(Stat comb) {
     return metric.bestIncrement(comb.inside);
   }
@@ -45,23 +50,23 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   @Override
   public double value(Stat comb) {
     return metric.value(comb.inside);
-    }
+  }
 
-    @Override
-    public int dim() {
-      return metric.xdim();
-    }
+  @Override
+  public int dim() {
+    return metric.xdim();
+  }
 
   @Nullable
-    @Override
+  @Override
   public Trans gradient() {
     return metric.gradient();
-    }
+  }
 
-    @Override
-    public double value(Vec x) {
-      return metric.trans(x).get(0);
-    }
+  @Override
+  public double value(Vec x) {
+    return metric.trans(x).get(0);
+  }
 
   public double weight(final int index) {
     return weights[index];
@@ -71,10 +76,10 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     return metric;
   }
 
-    @Override
-    public DataSet<?> owner() {
-      return metric.owner();
-    }
+  @Override
+  public DataSet<?> owner() {
+    return metric.owner();
+  }
 
   public static class Stat implements AdditiveStatistics {
     public AdditiveStatistics inside;

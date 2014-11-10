@@ -15,23 +15,23 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.logging.Interval;
+
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.NormalizedLinear;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.SatL2;
-import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.loss.*;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
+import com.spbsu.ml.methods.greedyRegion.RegionForest;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
+
 
 import static com.spbsu.commons.math.MathTools.sqr;
 
@@ -40,7 +40,7 @@ import static com.spbsu.commons.math.MathTools.sqr;
  * Date: 26.11.12
  * Time: 15:50
  */
-public abstract class MethodsTests extends GridTest {
+public  class MethodsTests extends GridTest {
   private FastRandom rng;
 
   @Override
@@ -192,8 +192,34 @@ public abstract class MethodsTests extends GridTest {
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
 
+  public void testGTDRForestBoost() {
+    final GradientBoosting<L2> boosting = new GradientBoosting
+            (new RegionForest<>(GridTools.medianGrid(learn.vecData(), 32), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
+    final Action counter = new ProgressHandler() {
+      int index = 0;
+
+      @Override
+      public void invoke(Trans partial) {
+        System.out.print("\n" + index++);
+      }
+    };
+    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
+    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
+    final Action modelPrinter = new ModelPrinter();
+    final Action qualityCalcer = new QualityCalcer();
+    boosting.addListener(counter);
+    boosting.addListener(learnListener);
+    boosting.addListener(validateListener);
+    boosting.addListener(qualityCalcer);
+//    boosting.addListener(modelPrinter);
+    boosting.fit(learn.vecData(), learn.target(L2.class));
+  }
+
   public void testGTDRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<>(new BootstrapOptimization<>(new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng), 10000, 0.02);
+    final GradientBoosting<L2> boosting = new GradientBoosting
+            (new BootstrapOptimization(
+                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.004);
+
     final Action counter = new ProgressHandler() {
       int index = 0;
 
@@ -242,7 +268,6 @@ public abstract class MethodsTests extends GridTest {
         current.set(i, f);
       }
       System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
-
     }
   }
 
@@ -353,7 +378,7 @@ public abstract class MethodsTests extends GridTest {
       System.out.println("\t" + d / 100000);
     }
   }
-  
+
   public void testFMRun() {
     FMTrainingWorkaround fm = new FMTrainingWorkaround("r", "1,1,8", "10");
     fm.fit(learn.vecData(), learn.<L2>target(L2.class));

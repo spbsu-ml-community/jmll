@@ -18,7 +18,7 @@ public class BFOptimizationSubset {
   private final BinarizedDataSet bds;
   private int[] points;
   private final StatBasedLoss<AdditiveStatistics> oracle;
-  private final Aggregate aggregate;
+  public final Aggregate aggregate;
 
   public BFOptimizationSubset(BinarizedDataSet bds, StatBasedLoss oracle, int[] points) {
     this.bds = bds;
@@ -54,8 +54,8 @@ public class BFOptimizationSubset {
   }
 
   public <T extends AdditiveStatistics> void visitSplit(BFGrid.BinaryFeature bf, Aggregate.SplitVisitor<T> visitor) {
-    final T left = (T)aggregate.combinatorForFeature(bf.bfIndex);
-    final T right = (T)oracle.statsFactory().create().append(aggregate.total()).remove(left);
+    final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
+    final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
     visitor.accept(bf, left, right);
   }
 

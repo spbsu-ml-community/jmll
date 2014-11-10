@@ -2,7 +2,7 @@ package com.spbsu.ml.loss;
 
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.TargetFunc;
 
 /**
@@ -12,8 +12,15 @@ import com.spbsu.ml.TargetFunc;
  */
 public interface StatBasedLoss<T extends AdditiveStatistics> extends TargetFunc {
   Factory<T> statsFactory();
+
+  Vec target();
+
   double value(T comb);
-  /** score MUST be additive to value :) */
+
+  /**
+   * score MUST be additive to value :)
+   */
   double score(T comb);
+
   double bestIncrement(T comb);
 }

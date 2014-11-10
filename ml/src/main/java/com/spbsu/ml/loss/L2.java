@@ -56,6 +56,11 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     };
   }
 
+  @Override
+  public Vec target() {
+    return target;
+  }
+
   public double value(MSEStats stats) {
     return stats.sum2;
   }
@@ -66,7 +71,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
   }
 
   public double bestIncrement(MSEStats stats) {
-    return stats.weight > MathTools.EPSILON ? stats.sum/stats.weight : 0;
+    return stats.weight > MathTools.EPSILON ? stats.sum / stats.weight : 0;
   }
 
   public double get(final int i) {
@@ -82,7 +87,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
   public static class MSEStats implements AdditiveStatistics {
     public volatile double sum;
     public volatile double sum2;
-    public volatile int weight;
+    public volatile double weight;
 
     private final Vec targets;
 
@@ -101,7 +106,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
 
     @Override
     public MSEStats remove(AdditiveStatistics otheras) {
-      MSEStats other = (MSEStats)otheras;
+      MSEStats other = (MSEStats) otheras;
       sum -= other.sum;
       sum2 -= other.sum2;
       weight -= other.weight;
@@ -119,11 +124,13 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
 
     @Override
     public MSEStats append(AdditiveStatistics otheras) {
-      MSEStats other = (MSEStats)otheras;
+      MSEStats other = (MSEStats) otheras;
       sum += other.sum;
       sum2 += other.sum2;
       weight += other.weight;
       return this;
     }
   }
+
+
 }

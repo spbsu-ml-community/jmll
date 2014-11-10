@@ -5,7 +5,6 @@ import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.data.Aggregate;
-import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
