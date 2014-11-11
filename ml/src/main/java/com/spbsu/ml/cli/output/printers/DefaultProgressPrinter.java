@@ -63,9 +63,9 @@ public class DefaultProgressPrinter implements ProgressHandler {
     }
 
     System.out.print(iteration);
-    System.out.print(" " + loss.trans(learnValues));
+    System.out.print(" " + loss.value(learnValues));
     for (int i = 0; i < testMetrics.length; i++) {
-      System.out.print("\t" + testMetrics[i].trans(testValuesArray[i]));
+      System.out.print("\t" + testMetrics[i].value(testValuesArray[i]));
     }
     System.out.println();
   }
