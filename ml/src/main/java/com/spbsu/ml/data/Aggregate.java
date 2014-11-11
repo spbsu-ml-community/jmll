@@ -98,27 +98,6 @@ public class Aggregate {
     }
   }
 
-  public <T extends AdditiveStatistics> void visit(SplitVisitor<T> visitor, AdditiveStatistics nonCritical) {
-    final T total = (T) total();
-    for (int f = 0; f < grid.rows(); f++) {
-      final T left = (T) factory.create();
-      final T right = (T) factory.create().append(total);
-      final BFGrid.BFRow row = grid.row(f);
-      final int offset = starts[row.origFIndex];
-      for (int b = 0; b < row.size(); b++) {
-        left.append(bins[offset + b]);
-        right.remove(bins[offset + b]);
-        final T leftRegion = (T) factory.create();
-        leftRegion.append(nonCritical);
-        leftRegion.append(left);
-        final T rightRegion = (T) factory.create();
-        rightRegion.append(nonCritical);
-        rightRegion.append(right);
-        visitor.accept(row.bf(b), leftRegion, rightRegion);
-      }
-    }
-  }
-
 
   private void build(final int[] indices) {
     if (indices.length == 0)

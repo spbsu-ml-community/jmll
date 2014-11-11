@@ -102,8 +102,8 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
   @Override
   public PolynomialExponentRegion fit(VecDataSet learn, L2 loss) {
     Region base = greedyTDRegion.fit(learn, loss);
-    features = base.getFeatures();
-    mask = base.getMask();
+    features = base.features();
+    mask = base.masks();
     double baseMse = 0;
     for (int i = 0; i < learn.length(); i++)
       baseMse += sqr(base.value(learn.data().row(i)) - loss.target.get(i));

@@ -6,6 +6,7 @@ import com.spbsu.ml.BinOptimizedModel;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -16,18 +17,18 @@ import java.util.List;
 public class Region extends Func.Stub implements BinOptimizedModel {
   private final BFGrid.BinaryFeature[] features;
   private final boolean[] mask;
-  private final double inside;
-  private final double outside;
-  private final int maxFailed;
-  private final int basedOn;
-  private final double score;
+  public final double inside;
+  public final double outside;
+  public final int maxFailed;
+  public final int basedOn;
+  public final double score;
   private final BFGrid grid;
 
-  public BFGrid.BinaryFeature[] getFeatures() {
+  public BFGrid.BinaryFeature[] features() {
     return features.clone();
   }
 
-  public boolean[] getMask() {
+  public boolean[] masks() {
     return mask.clone();
   }
 
@@ -96,6 +97,21 @@ public class Region extends Func.Stub implements BinOptimizedModel {
               .append(features[i].condition);
     }
     return builder.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Region)) return false;
+    Region that = (Region) o;
+    if (!Arrays.equals(features, that.features)) return false;
+    if (!Arrays.equals(mask, that.mask)) return false;
+    if (this.inside != that.inside) return false;
+    if (this.outside != that.outside) return false;
+    if (this.maxFailed != that.maxFailed) return false;
+    if (this.score != that.score) return false;
+    if (this.basedOn != that.basedOn) return false;
+    return true;
   }
 
   public double score() {

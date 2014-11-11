@@ -9,6 +9,7 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.models.FMModel;
 import com.spbsu.ml.models.ObliviousTree;
+import com.spbsu.ml.models.Region;
 
 import java.util.Arrays;
 
@@ -40,6 +41,22 @@ public class SerializationTest extends GridTest {
     assertTrue(caught);
     serialization = new ModelsSerializationRepository(grid);
     assertEquals(ot, serialization.read(serialization.write(ot), ObliviousTree.class));
+  }
+
+
+  public void testRegion() {
+    Region region = new Region(Arrays.asList(grid.bf(20), grid.bf(5), grid.bf(50),grid.bf(22)), new boolean[]{true,false,false,true}, 42,0,3,101.1,1);
+    ModelsSerializationRepository serialization = new ModelsSerializationRepository();
+    boolean caught = false;
+    try {
+      serialization.read(serialization.write(region), Region.class);
+    }
+    catch (RuntimeException re) {
+      caught = true;
+    }
+    assertTrue(caught);
+    serialization = new ModelsSerializationRepository(grid);
+    assertEquals(region, serialization.read(serialization.write(region), Region.class));
   }
 
   public void testObliviousTreeDynamicBin() {

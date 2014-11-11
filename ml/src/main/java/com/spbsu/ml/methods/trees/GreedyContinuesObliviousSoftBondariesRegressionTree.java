@@ -7,6 +7,7 @@ import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.optimization.FuncConvex;
 import com.spbsu.ml.optimization.Optimize;
@@ -27,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  * Date: 14.05.13
  * Time: 21:09
  */
-public class GreedyContinuesObliviousSoftBondariesRegressionTree {
+public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyTDRegion {
   protected final int depth;
   protected final int numberOfVariables;
   protected List<BFGrid.BinaryFeature> features;
@@ -38,9 +39,9 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree {
   private final boolean softBoundary;
   private final double linearFineLambda, constFineLambda, quadraticFineLambda;
   private final double lipshicParametr;
-  private final BFGrid grid;
+
   public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth) {
-    this.grid = grid;
+    super(grid);
     got = new GreedyObliviousTree(grid, depth);
     numberOfVariablesByLeaf = (depth + 1) * (depth + 2) / 2;
     numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
@@ -55,7 +56,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree {
 
   public GreedyContinuesObliviousSoftBondariesRegressionTree(Random rng, DataSet ds, BFGrid grid, int depth, double regulation,
                                                              boolean softBoundary, double constFineLambda, double linearFineLambda, double quadraticFineLambda, double lipshicParametr) {
-    this.grid = grid;
+    super(grid);
     this.regulationCoefficient = regulation;
     this.softBoundary = softBoundary;
     this.linearFineLambda = linearFineLambda;

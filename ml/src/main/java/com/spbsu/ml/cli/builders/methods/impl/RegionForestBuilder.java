@@ -17,7 +17,7 @@ public class RegionForestBuilder implements Factory<VecOptimization> {
   private double beta = 0.5;
   private int maxFailed = 1;
   private int regionsCount = 5;
-  private RegionForest.MeanMethod meanMethod = RegionForest.MeanMethod.Naive;
+  private String meanMethod = "Naive";
 
   private Factory<BFGrid> gridBuilder = defaultGridBuilder;
 
@@ -42,12 +42,12 @@ public class RegionForestBuilder implements Factory<VecOptimization> {
   }
 
   public void setMeanMethod(String method) {
-    this.meanMethod = RegionForest.MeanMethod.valueOf(method);
+    this.meanMethod = method;
   }
 
 
   @Override
   public VecOptimization create() {
-    return new RegionForest(gridBuilder.create(), new FastRandom(), regionsCount, meanMethod, alpha, beta, maxFailed);
+    return new RegionForest(gridBuilder.create(), new FastRandom(), regionsCount, RegionForest.MeanMethod.valueOf(meanMethod), alpha, beta, maxFailed);
   }
 }

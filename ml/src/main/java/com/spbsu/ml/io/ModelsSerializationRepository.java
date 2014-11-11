@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 public class ModelsSerializationRepository extends SerializationRepository<CharSequence> {
   private static ConversionRepository conversion = new TypeConvertersCollection(MathTools.CONVERSION,
           new ObliviousTreeConversionPack(),
+          new RegionConversionPack(),
           new ObliviousMultiClassTreeConversionPack(),
           new EnsembleModelConversionPack(),
           new TransJoinConversionPack(),
