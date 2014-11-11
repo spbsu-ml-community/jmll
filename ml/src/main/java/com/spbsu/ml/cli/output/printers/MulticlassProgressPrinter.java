@@ -41,8 +41,8 @@ public class MulticlassProgressPrinter implements ProgressHandler {
     this.testMLLLogit = test.target(BlockwiseMLLLogit.class);
     assert learnMLLLogit.classesCount() == testMLLLogit.classesCount();
 
-    this.learnValues = new VecBasedMx(learnMLLLogit.classesCount() - 1, learnMLLLogit.xdim());
-    this.testValues = new VecBasedMx(testMLLLogit.classesCount() - 1, testMLLLogit.xdim());
+    this.learnValues = new VecBasedMx(learn.size(), learnMLLLogit.classesCount() - 1);
+    this.testValues = new VecBasedMx(test.size(), testMLLLogit.classesCount() - 1);
   }
 
   @Override
@@ -73,8 +73,8 @@ public class MulticlassProgressPrinter implements ProgressHandler {
 
       System.out.print(iteration);
 
-      System.out.print(" " + learnMLLLogit.trans(learnValues));
-      System.out.print(" " + testMLLLogit.trans(testValues));
+      System.out.print(" " + learnMLLLogit.value(learnValues));
+      System.out.print(" " + testMLLLogit.value(testValues));
 
       final ConfusionMatrix learnConfusionMatrix = new ConfusionMatrix(learnMLLLogit.labels(), learnPredicted);
       System.out.print("\t" + learnConfusionMatrix.oneLineReport());
