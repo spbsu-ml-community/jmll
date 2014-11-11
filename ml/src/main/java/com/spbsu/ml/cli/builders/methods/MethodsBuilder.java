@@ -19,6 +19,7 @@ public class MethodsBuilder {
   public void setGridBuilder(final Factory<BFGrid> gridFactory) {
     GreedyObliviousTreeBuilder.defaultGridBuilder = gridFactory;
     GreedyTDRegionBuilder.defaultGridBuilder = gridFactory;
+    RegionForestBuilder.defaultGridBuilder = gridFactory;
   }
 
   public void setDynamicGridBuilder(final Factory<DynamicGrid> dynamicGridFactory) {
@@ -44,7 +45,33 @@ public class MethodsBuilder {
       final String param = paramsTok.nextToken();
       final int splitPos = param.indexOf('=');
       final String name = param.substring(0, splitPos).trim();
-      final String value = param.substring(splitPos + 1, param.length()).trim();
+
+      StringBuilder valueBuilder = new StringBuilder();
+      {
+        int open = 0;
+        String token = param.substring(splitPos + 1, param.length()).trim();
+        while (true) {
+          valueBuilder.append(token);
+          for (int i = 0; i < token.length(); ++i) {
+            final char c = token.charAt(i);
+            if (c == '(') {
+              ++open;
+            } else if (c == ')') {
+              if (open <= 0) {
+                throw new RuntimeException("Can not set up parameter: bad stack");
+              } else {
+                --open;
+              }
+            }
+          }
+          if (open == 0) {
+            break;
+          } else {
+            token = ',' + paramsTok.nextToken();
+          }
+        }
+      }
+      final String value = valueBuilder.toString();
       Method setter = null;
       for (int m = 0; m < builderMethods.length; m++) {
         if (builderMethods[m].getName().equalsIgnoreCase("set" + name)) {
