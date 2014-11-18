@@ -1,13 +1,13 @@
 package com.spbsu.ml.methods.spoc;
 
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.MxIterator;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
-import com.spbsu.ml.*;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;
@@ -34,17 +34,7 @@ public class SPOCMethodClassic extends VecOptimization.Stub<BlockwiseMLLLogit> {
   public SPOCMethodClassic(final Mx codeMatrix, final VecOptimization<LLLogit> weak) {
     this.weak = weak;
     this.codeMatrix = VecTools.copy(codeMatrix);
-    normalizeMx(this.codeMatrix);
-  }
-
-  private static void normalizeMx(final Mx codingMatrix) {
-    for (MxIterator iter = codingMatrix.nonZeroes(); iter.advance(); ) {
-      final double value = iter.value();
-      if (Math.abs(value) > MX_IGNORE_THRESHOLD)
-        iter.setValue(Math.signum(value));
-      else
-        iter.setValue(0.0);
-    }
+    CMLHelper.normalizeMx(this.codeMatrix, MX_IGNORE_THRESHOLD);
   }
 
   protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final BlockwiseMLLLogit llLogit) {
@@ -53,7 +43,7 @@ public class SPOCMethodClassic extends VecOptimization.Stub<BlockwiseMLLLogit> {
 
   @Override
   public Trans fit(final VecDataSet learn, final BlockwiseMLLLogit llLogit) {
-    System.out.println("coding matrix: \n" + codeMatrix.toString());
+//    System.out.println("coding matrix: \n" + codeMatrix.toString());
 
     final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(llLogit.labels());
     final int k = codeMatrix.rows();

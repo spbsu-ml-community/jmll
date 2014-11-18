@@ -1,9 +1,12 @@
 package com.spbsu.ml.methods.spoc.impl;
 
-import com.spbsu.commons.math.vectors.*;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.Combinatorics;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
+import com.spbsu.ml.methods.spoc.CMLHelper;
 
 /**
  * User: qdeee
@@ -37,7 +40,7 @@ public class CodingMatrixLearningGreedy extends AbstractCodingMatrixLearning {
           mxB.set(i, j, 2 * perm[i] - 1);
         }
         final Mx sub = mxB.sub(0, 0, k, j + 1);
-        if (checkConstraints(sub) && checkColumnsIndependence(sub)) {
+        if (CMLHelper.checkConstraints(sub) && CMLHelper.checkColumnsIndependence(sub)) {
           final double loss = calcLoss(sub, S);
           if (loss < bestLoss) {
             bestLoss = loss;
@@ -52,28 +55,8 @@ public class CodingMatrixLearningGreedy extends AbstractCodingMatrixLearning {
       }
       else
         throw new IllegalStateException("Not found appreciate column #" + j);
-      System.out.println("Column " + j + " is over!");
+//      System.out.println("Column " + j + " is over!");
     }
     return mxB;
-  }
-
-  //check pairwise columns independence
-  public static boolean checkColumnsIndependence(final Mx B) {
-    for (int j1 = 0; j1 < B.columns(); j1++) {
-      final Vec col1 = B.col(j1);
-      final double norm1 = VecTools.norm(col1);
-      if (norm1 == 0)
-        return false;
-      for (int j2 = j1 + 1; j2 < B.columns(); j2++) {
-        final Vec col2 = B.col(j2);
-        final double norm2 = VecTools.norm(col2);
-        if (norm2 == 0)
-          return false;
-        final double cosine = VecTools.multiply(col1, col2) / (norm1 * norm2);
-        if (Math.abs(cosine) > 0.999)
-          return false;
-      }
-    }
-    return true;
   }
 }

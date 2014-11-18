@@ -1,10 +1,11 @@
 package com.spbsu.ml.methods.spoc.impl;
 
 import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
+import com.spbsu.ml.methods.spoc.CMLHelper;
 
 import java.util.Random;
 
@@ -41,7 +42,7 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
           initB.set(i, j, rand.nextInt(3) - 1);
         }
       }
-    } while (!checkConstraints(initB));
+    } while (!CMLHelper.checkConstraints(initB));
   }
 
   public CodingMatrixLearning(final int k, final int l, final double mxLearnStep) {

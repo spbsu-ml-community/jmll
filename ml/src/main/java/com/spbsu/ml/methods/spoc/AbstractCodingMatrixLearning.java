@@ -1,7 +1,6 @@
 package com.spbsu.ml.methods.spoc;
 
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
@@ -23,29 +22,6 @@ public abstract class AbstractCodingMatrixLearning {
     this.lambdaC = lambdaC;
     this.lambdaR = lambdaR;
     this.lambda1 = lambda1;
-  }
-
-  public static boolean checkConstraints(final Mx B) {
-    for (int l = 0; l < B.columns(); l++) {
-      double sumPositive = 0;
-      double sumNegative = 0;
-      for (int k = 0; k < B.rows(); k++) {
-        final double code = B.get(k, l);
-        final double absCode = Math.abs(code);
-        if (absCode > 1)
-          return false;
-        sumPositive += absCode + code;
-        sumNegative += absCode - code;
-      }
-      if (sumPositive < 2 || sumNegative < 2)
-        return false;
-    }
-    for (int k = 0; k < B.rows(); k++) {
-      final double sum = VecTools.l1(B.row(k));
-      if (sum < 1)
-        return false;
-    }
-    return true;
   }
 
   public Mx trainCodingMatrix(final Mx similarityMatrix) {
