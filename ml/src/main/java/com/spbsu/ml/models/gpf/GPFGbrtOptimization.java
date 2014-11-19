@@ -66,7 +66,7 @@ public class GPFGbrtOptimization {
   public static class GPFLoglikelihood<Blk extends Session.Block> extends FuncC1.Stub implements TargetFunc {
     final GPFGbrtModel<Blk> model;
     final GPFVectorizedDataset<Blk> dataset;
-    final ExecutorService executorPool;
+    final int threadCount;
 
     private Vec[] fvalue_partial;
     private int[] fvalue_partial_size;
@@ -76,7 +76,7 @@ public class GPFGbrtOptimization {
     }
 
     public GPFLoglikelihood(GPFGbrtModel<Blk> model, GPFVectorizedDataset<Blk> dataset, int threadCount) {
-      this.executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
+      this.threadCount = threadCount;
       this.model = model;
       this.dataset = dataset;
 
@@ -114,6 +114,7 @@ public class GPFGbrtOptimization {
       }
 
       ArrayVec ret = new ArrayVec(dataset.data().rows());
+      ExecutorService executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
       try {
         List<Future<GPFGbrtModel.SessionGradientValue>> result = executorPool.invokeAll(tasks);
 
@@ -126,6 +127,8 @@ public class GPFGbrtOptimization {
         }
       } catch (InterruptedException|ExecutionException e) {
         throw new RuntimeException(e);
+      } finally {
+        executorPool.shutdown();
       }
 
       ret.scale(-1); // optimize for maximization
@@ -173,11 +176,11 @@ public class GPFGbrtOptimization {
             f = fvalue_partial[i];
           } else {
             f = fmodel.transAll(sfr.features);
-            throw new IllegalStateException("unexpected state: linear.size() == " + linear.size() + ", fvalue_partial_size[i] == " + fvalue_partial_size[i] + ", you can safely remove this exception call");
+            //throw new IllegalStateException("unexpected state: linear.size() == " + linear.size() + ", fvalue_partial_size[i] == " + fvalue_partial_size[i] + ", you can safely remove this exception call");
           }
         } else {
           f = fmodel.transAll(sfr.features);
-          throw new IllegalStateException("unexpected state: !(fmodel instanceof Ensemble), you can safely remove this exception call");
+          //throw new IllegalStateException("unexpected state: !(fmodel instanceof Ensemble), you can safely remove this exception call");
         }
 
         if (f.dim() != sfr.f_count) throw new IllegalArgumentException("wrong fmodel: f.dim() != sfr.f_count, " + f.dim() + " != " + sfr.f_count);
@@ -196,6 +199,8 @@ public class GPFGbrtOptimization {
 
       double loglikelihood = 0.;
       int nObservations = 0;
+
+      ExecutorService executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
       try {
         List<Future<GPFGbrtModel.SessionGradientValue>> result = executorPool.invokeAll(tasks);
 
@@ -206,6 +211,8 @@ public class GPFGbrtOptimization {
         }
       } catch (InterruptedException|ExecutionException e) {
         throw new RuntimeException(e);
+      } finally {
+        executorPool.shutdown();
       }
 
       return loglikelihood / nObservations;

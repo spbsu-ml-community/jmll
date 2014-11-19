@@ -1,11 +1,15 @@
 package com.spbsu.ml.models.gpf.weblogmodel;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 
 
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.models.gpf.ClickProbabilityModel;
 import com.spbsu.ml.models.gpf.Session;
+import org.apache.commons.lang3.NotImplementedException;
 
 /**
  * Created by irlab on 03.10.2014.
@@ -61,4 +65,13 @@ public class WebLogV1ClickProbabilityModel implements ClickProbabilityModel<Bloc
     throw new IllegalStateException("unknown ResultType: " + b);
   }
 
+  @Override
+  public void save(final OutputStream os) throws IOException {
+    throw new NotImplementedException("not implemented");
+  }
+
+  @Override
+  public void load(final InputStream is) throws IOException {
+    throw new NotImplementedException("not implemented");
+  }
 }

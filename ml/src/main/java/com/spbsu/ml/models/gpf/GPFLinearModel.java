@@ -7,8 +7,12 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
 import gnu.trove.list.array.TIntArrayList;
+import org.apache.commons.lang3.NotImplementedException;
 
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -458,5 +462,16 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
   @Override
   public int getEdgeFeatCount() {
     return NFEATS;
+  }
+
+
+  @Override
+  public void save(final OutputStream os) throws IOException {
+    throw new NotImplementedException("not implemented");
+  }
+
+  @Override
+  public void load(final InputStream is) throws IOException {
+    throw new NotImplementedException("not implemented");
   }
 }

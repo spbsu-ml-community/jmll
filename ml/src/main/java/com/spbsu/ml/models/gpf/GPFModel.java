@@ -1,5 +1,6 @@
 package com.spbsu.ml.models.gpf;
 
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -52,6 +53,13 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
    * @return double[ses.getBlocks().length] - array of expected number of steps
    */
   double[] evalExpectedAttention(Session<Blk> ses);
+
+  /**
+   * evaluates expected number of clicks on the SERP, given the behavior model
+   * @param ses - viewport structure
+   * @return double - array of expected number of steps
+   */
+  double evalExpectedNumberOfClicks(Session<Blk> ses);
 
   abstract class Stub<Blk extends Session.Block> implements GPFModel<Blk> {
     public int MAX_PATH_LENGTH = 15;
@@ -188,6 +196,32 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
       }
 
       return expectedAttention;
+    }
+
+    /**
+     * for each block in ses.getBlocks(), evaluates expected number of steps when a user looks at the block, given the behavior model
+     * this is not distribution, sum of values is not equal to 1
+     * @param ses - viewport structure
+     * @return double[ses.getBlocks().length] - array of expected number of steps
+     */
+    @Override
+    public double evalExpectedNumberOfClicks(Session<Blk> ses) {
+      final Session.Block[] blocks = ses.getBlocks();
+      // transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
+      VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
+
+      double expectedNumberOfClicks = 0.;
+      // сначала пользователь в состоянии (Q, no_click)
+      Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
+      state_probabilities.set(0, Session.Q_ind, 1.);
+
+      for (int t = 0; t < MAX_PATH_LENGTH; t++) {
+        state_probabilities = MxTools.multiply(state_probabilities, transmx_0);
+        for (int i = Session.R0_ind; i < blocks.length; i++)
+          expectedNumberOfClicks += state_probabilities.get(blocks.length + i);
+      }
+
+      return expectedNumberOfClicks;
     }
 
     @Override

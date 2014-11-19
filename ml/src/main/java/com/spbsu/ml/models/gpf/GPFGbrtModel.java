@@ -34,6 +34,7 @@ public class GPFGbrtModel<Blk extends Session.Block> extends GPFModel.Stub<Blk> 
     this.MAX_PATH_LENGTH = model.MAX_PATH_LENGTH;
     this.PRUNE_A_THRESHOLD = model.PRUNE_A_THRESHOLD;
     this.clickProbabilityModel = model.clickProbabilityModel;
+    this.attractivenessModel = model.attractivenessModel;
   }
 
   public static class SessionFeatureRepresentation<Blk extends Session.Block> {
