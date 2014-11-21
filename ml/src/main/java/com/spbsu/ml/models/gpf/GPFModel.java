@@ -123,11 +123,11 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
         transmx_ci.set(1 * blocks.length + ci, 1 * blocks.length + ci, 1.);
 
         // сначала пользователь в состоянии (Q, no_click)
-        Vec state_probabilities = new ArrayVec(transmx_ci.columns);
-        state_probabilities.set(Session.Q_ind, 1.);
+        Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
+        state_probabilities.set(0, Session.Q_ind, 1.);
 
         for (int t = 0; t < MAX_PATH_LENGTH; t++)
-          state_probabilities = MxTools.multiply(transmx_ci, state_probabilities);
+          state_probabilities = MxTools.multiply(state_probabilities, transmx_ci);
 
         // вероятность через MAX_PATH_LENGTH шагов остаться в состоянии (ci, click)
         hasClickProbabilities[ci] = state_probabilities.get(1 * blocks.length + ci);
@@ -159,11 +159,11 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
         transmx_ci.set(1 * blocks.length + ci, 1 * blocks.length + ci, 1.);
 
         // сначала пользователь в состоянии (Q, no_click)
-        Vec state_probabilities = new ArrayVec(transmx_ci.columns);
-        state_probabilities.set(Session.Q_ind, 1.);
+        Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
+        state_probabilities.set(0, Session.Q_ind, 1.);
 
         for (int t = 0; t < MAX_PATH_LENGTH; t++)
-          state_probabilities = MxTools.multiply(transmx_ci, state_probabilities);
+          state_probabilities = MxTools.multiply(state_probabilities, transmx_0);
 
         // вероятность через MAX_PATH_LENGTH шагов остаться в состоянии (ci, click) или (ci, noclick)
         hasViewProbabilities[ci] = state_probabilities.get(0 * blocks.length + ci) + state_probabilities.get(1 * blocks.length + ci);
@@ -186,11 +186,11 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
 
       double[] expectedAttention = new double[blocks.length];
       // сначала пользователь в состоянии (Q, no_click)
-      Vec state_probabilities = new ArrayVec(transmx_0.columns);
-      state_probabilities.set(Session.Q_ind, 1.);
+      Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
+      state_probabilities.set(0, Session.Q_ind, 1.);
 
       for (int t = 0; t < MAX_PATH_LENGTH; t++) {
-        state_probabilities = MxTools.multiply(transmx_0, state_probabilities);
+        state_probabilities = MxTools.multiply(state_probabilities, transmx_0);
         for (int i = Session.R0_ind; i < blocks.length; i++)
           expectedAttention[i] += state_probabilities.get(0 * blocks.length + i) + state_probabilities.get(1 * blocks.length + i);
       }
