@@ -194,7 +194,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return knownRoutesProBab;
   }
 
-  public class MyLWRoute extends Route {
+  public class MyLWRoute implements Route {
     private int start, end;
     private double probab;
 
@@ -230,7 +230,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     }
   }
 
-  public class MyRoute extends Route {
+  public class MyRoute implements Route {
     private final byte[] route;
     private final double probab;
     private double maxClosedProbab;
