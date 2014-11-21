@@ -74,6 +74,9 @@ public class CherryRegion extends Func.Stub implements BinOptimizedModel {
         good = good | condition.get(starts[i] + point[i]);
       }
       contains &= good;
+      if (!contains) {
+        break;
+      }
     }
     return contains;
   }
