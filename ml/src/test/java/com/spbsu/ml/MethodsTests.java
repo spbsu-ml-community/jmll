@@ -119,9 +119,11 @@ public abstract class MethodsTests extends GridTest {
   private void checkRestoreFixedTopology(final SimplePGM original, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, double lossProbab, int iterations, double accuracy) {
     Vec[] ds = new Vec[100000];
     for (int i = 0; i < ds.length; i++) {
-      Vec vec;
+      //TODO: @solar, please, fix it
+      Vec vec = null;
 //      do {
-      vec = breakV(original.next(rng), lossProbab);
+//
+//      vec = breakV(original.next(rng), lossProbab);
 //      }
 //      while (VecTools.norm(vec) < MathTools.EPSILON);
       ds[i] = vec;
