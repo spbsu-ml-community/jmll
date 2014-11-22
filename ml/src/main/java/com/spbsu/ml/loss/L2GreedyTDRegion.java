@@ -24,7 +24,8 @@ public class L2GreedyTDRegion extends L2 {
 
   @Override
   public double score(MSEStats stats) {
-    return stats.weight > 1 ? (-stats.sum * stats.sum / stats.weight) * stats.weight * (stats.weight - 2) / (stats.weight * stats.weight - 3 * stats.weight + 1) : stats.sum2;
+    return stats.weight > 1 ? (-stats.sum * stats.sum / stats.weight) * stats.weight * (stats.weight - 2) / (stats.weight * stats.weight - 3 * stats.weight + 1)
+            : 0;
   }
 
 

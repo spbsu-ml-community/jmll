@@ -54,6 +54,7 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
     int[] points = ArrayTools.sequence(0, learn.length());
 
     double currentScore = Double.POSITIVE_INFINITY;
+    AdditiveStatistics inside = (AdditiveStatistics) loss.statsFactory().create();
     while (true) {
       Pair<BitSet, int[]> result = pick.build(new Evaluator<AdditiveStatistics>() {
         @Override
@@ -62,15 +63,33 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
         }
       }, points, 2);
 
-      if (currentScore <= pick.currentScore + 1e-9) {
+      double candidateScore = pick.currentScore;// * (1 + 2.0 / (1 + Math.log(conditions.size() + 1)));
+      if (currentScore <= candidateScore + 1e-9) {
         break;
       }
+      System.out.println("\n" + result.getFirst());
 
       points = result.getSecond();
       conditions.add(result.getFirst());
-      currentScore = pick.currentScore;
+      currentScore = candidateScore;
+      inside = pick.inside;
     }
-    return new CherryRegion(conditions.toArray(new BitSet[conditions.size()]),loss.bestIncrement(pick.inside),grid);
+
+
+    CherryRegion region = new CherryRegion(conditions.toArray(new BitSet[conditions.size()]), 1, grid);
+//    Vec target = loss.target();
+//    double sum = 0;
+//    double weight = 0;
+//    AdditiveStatistics inside2 = (AdditiveStatistics) loss.statsFactory().create();
+//    for (int i = 0; i < bds.original().length(); ++i) {
+//      if (region.value(bds, i) == 1) {
+//        sum += target.get(i);
+//        ++weight;
+//      }
+//    }
+//    System.out.println("\nFound cherry region with " + weight + " points");
+//    return new CherryRegion(conditions.toArray(new BitSet[conditions.size()]), weight > 0 ? sum / weight : 0, grid);
+    return new CherryRegion(conditions.toArray(new BitSet[conditions.size()]), loss.bestIncrement(inside), grid);
   }
 
 

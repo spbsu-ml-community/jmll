@@ -22,9 +22,9 @@ public class CherryPick {
   private final BinarizedDataSet bds;
   private final BFGrid grid;
   private final Factory<AdditiveStatistics> factory;
-//  private final int[] starts;
+  //  private final int[] starts;
   private final int[][] binsIndex;
-//  private final int[] inverseIndex;
+  //  private final int[] inverseIndex;
 //  private final byte[] inverseBinIndex;
   public double currentScore = 0;
   final int binsCount;
@@ -39,8 +39,8 @@ public class CherryPick {
 
     int current = 0;
     for (int i = 0; i < grid.rows(); i++) {
-     this.binsIndex[i] =new int[grid.row(i).size()+1];
-      for (int bin =0 ; bin <= grid.row(i).size();++bin) {
+      this.binsIndex[i] = new int[grid.row(i).size() + 1];
+      for (int bin = 0; bin <= grid.row(i).size(); ++bin) {
         this.binsIndex[i][bin] = current;
         ++current;
       }
@@ -58,7 +58,7 @@ public class CherryPick {
     int[][] base = new int[grid.rows()][];
     {
       for (int feature = 0; feature < grid.rows(); feature++) {
-        base[feature] = new int[grid.row(feature).size()+1];
+        base[feature] = new int[grid.row(feature).size() + 1];
         final byte[] bin = bds.bins(feature);
         for (int j = 0; j < points.length; j++) {
           base[feature][bin[points[j]]]++;
@@ -79,7 +79,7 @@ public class CherryPick {
       final int[] candidates = indices2include;
 
       for (int f = 0; f < grid.rows(); ++f) {
-        scores[f] = new double[grid.row(f).size()+1];
+        scores[f] = new double[grid.row(f).size() + 1];
         for (int bin = 0; bin <= grid.row(f).size(); ++bin) {
           scores[f][bin] = Double.POSITIVE_INFINITY;
           if (conditions.get(binsIndex[f][bin])) {
@@ -87,7 +87,7 @@ public class CherryPick {
           }
 
           conditions.set(binsIndex[f][bin]);
-          scores[f][bin] =  regularization(conditions, base);
+          scores[f][bin] = regularization(conditions, base);
           conditions.clear(binsIndex[f][bin]);
           final int finalBinIndex = bin;
           final int finalFeature = f;
@@ -102,7 +102,7 @@ public class CherryPick {
                 if (finalBinIndex == bin[index])
                   stat.append(index, 1);
               }
-              scores[finalFeature][finalBinIndex] = eval.value(stat) * (1+ lambda * scores[finalFeature][finalBinIndex]);
+              scores[finalFeature][finalBinIndex] = eval.value(stat) * (1 + lambda * scores[finalFeature][finalBinIndex]);
               latch.countDown();
             }
           });
@@ -117,9 +117,9 @@ public class CherryPick {
 
       double minScore = Double.POSITIVE_INFINITY;
       int bestFeature = -1;
-      int bestBin  = -1;
-      for (int f=0; f < grid.rows();++f) {
-        for (int bin =0 ;bin < grid.row(f).size();++bin) {
+      int bestBin = -1;
+      for (int f = 0; f < grid.rows(); ++f) {
+        for (int bin = 0; bin < grid.row(f).size(); ++bin) {
           if (scores[f][bin] < minScore) {
             minScore = scores[f][bin];
             bestFeature = f;
@@ -157,62 +157,6 @@ public class CherryPick {
   }
 
 
-  private double regularization(BitSet conditions, int[] base) {
-    double result = 0;
-    int index = 0;
-    int count = 0;
-    int excluded = 0;
-    int total = 0;
-    int realCardinality = 0;
-//    boolean current = conditions.get(index);
-    for (int f = 0; f < grid.rows(); ++f) {
-      int bin = 0;
-      excluded = 0;
-      count = base[index];
-      ++index;
-      ++bin;
-      while (bin <= grid.row(f).size()) {
-        total += base[index];
-        if (conditions.get(index) == conditions.get(index - 1)) {
-          count += base[index];
-          ++index;
-          ++bin;
-        } else {
-          if (conditions.get(index - 1)) {
-            result += Math.log(count+1);
-          } else {
-            excluded += count;
-          }
-          realCardinality++;
-          count = base[index];
-          ++index;
-          ++bin;
-        }
-      }
-      if (conditions.get(index - 1)) {
-        result +=  Math.log(count + 1);
-      } else {
-        excluded += count;
-      }
-      realCardinality++;
-    }
-    return  realCardinality;//(result +  Math.log(excluded+1));// + Math.log(excluded+1);
-
-//    double weight = 0;
-//    int index = 0;
-//    int count = 0;
-////    boolean current = conditions.get(index);
-//    for (int f = 0; f < grid.rows(); ++f) {
-//      for (int bin = 0; bin < grid.row(f).size(); ++bin, ++index) {
-//        if (conditions.get(index)) {
-//          weight += base[index];
-//        }
-//      }
-//    }
-//    return Math.log(weight + 1);
-  }
-
-
   private double regularization(BitSet conditions, int[][] base) {
 ////    return 0;
 //    double result = 0;
@@ -240,41 +184,37 @@ public class CherryPick {
     double result = 0;
     int index = 0;
     int count = 0;
-    int excluded = 0;
     int total = 0;
     int realCardinality = 0;
+    int inside = 0;
+    for (int bin = 0; bin < grid.row(0).size(); ++bin) {
+      total += base[0][bin];
+    }
 //    boolean current = conditions.get(index);
+//    for (int f= 0; f < grid.rows();++f)
+//      for (int bin =0; bin < grid.row(f).size();++bin) {
+//        if (conditions.get(binsIndex[f][bin])) {
+//          result += Math.log(base[f][bin]+1);
+//          inside += base[f][bin];
+//        }
+//      }
+    int cardinality = 0;
     for (int f = 0; f < grid.rows(); ++f) {
-      int bin = 0;
-      excluded = 0;
-      count = base[f][bin];
-      ++index;
-      ++bin;
-      while (bin <= grid.row(f).size()) {
-        total += base[f][bin];
-        if (conditions.get(index) == conditions.get(index - 1)) {
+      for (int bin = 0; bin <= grid.row(f).size(); ++bin) {
+        if (conditions.get(binsIndex[f][bin])) {
           count += base[f][bin];
-          ++index;
-          ++bin;
+          inside += base[f][bin];
+          cardinality = 1;
         } else {
-          if (conditions.get(index - 1)) {
-            result += Math.log(count+1);
-          } else {
-            excluded += count;
-          }
-          realCardinality++;
-          count = base[f][bin];
-          ++index;
-          ++bin;
+          result += Math.log(count + 1);
+          realCardinality += cardinality;
+          count = 0;
+          cardinality = 0;
         }
       }
-      if (conditions.get(index - 1)) {
-        result +=  Math.log(count + 1);
-      } else {
-        excluded += count;
-      }
-      realCardinality++;
+      result += Math.log(count + 1);
+      realCardinality += cardinality;
     }
-    return  realCardinality;
+    return 1.0 / (1 + cardinality) + result;// + Math.log(total - inside + 1);// +  Math.log(excluded+1);// / (1 + realCardinality);
   }
 }
