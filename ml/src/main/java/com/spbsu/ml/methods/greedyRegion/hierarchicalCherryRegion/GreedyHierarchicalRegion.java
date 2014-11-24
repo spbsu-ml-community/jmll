@@ -34,7 +34,7 @@ public class GreedyHierarchicalRegion<Loss extends StatBasedLoss> extends VecOpt
     final List<RegionLayer> layers = new ArrayList<>(10);
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 
-    HierarchicalPick pick = new HierarchicalPick(bds,loss.statsFactory(),5);
+    HierarchicalPick pick = new HierarchicalPick(bds,loss.statsFactory(),7,4.0);
     int[] points = ArrayTools.sequence(0, learn.length());
 
     double information = 0;
@@ -46,12 +46,12 @@ public class GreedyHierarchicalRegion<Loss extends StatBasedLoss> extends VecOpt
           return loss.score(stat);
         }
       }, points);
-      if (currentScore * (1.0 + 1.0 / (1 + information)) <= layer.score * (1.0 + 1.0 / (1 + layer.information + information)) + 1e-9) {// * (1 + 1.0 / (1  + Math.log(layers.size()+2))) + 1e-9) {
+      if (currentScore * (1.0 / (1 +information + Math.log(layers.size()+1))) <=loss.score(layer.inside)* (1.0 / (1 + layer.information + information + Math.log(layers.size()+2))) + 1e-9) {// * (1 + 1.0 / (1  + Math.log(layers.size()+2))) + 1e-9) {
         break;
       }
       System.out.println("\n"  + layer.conditions);
       layers.add(layer);
-      currentScore = layer.score;// * (1 + 1.0 / (1  + Math.log(layers.size()+1)));
+      currentScore = loss.score(layer.inside);//layer.score;// * (1 + 1.0 / (1  + Math.log(layers.size()+1)));
       information += layer.information;
       points = layer.insidePoints;
     }
@@ -72,6 +72,6 @@ public class GreedyHierarchicalRegion<Loss extends StatBasedLoss> extends VecOpt
     }
     System.out.println("\nFound cherry region with " + weight + " points");
 //    return new CherryRegion(conditions.toArray(new BitSet[conditions.size()]), weight > 0 ? sum / weight : 0, grid);
-    return new CherryRegion(conditions, loss.bestIncrement(layers.get(layers.size()-1).inside), grid);
+    return new CherryRegion(conditions, sum / weight,grid); //loss.bestIncrement(layers.get(layers.size()-1).inside), grid);
   }
 }

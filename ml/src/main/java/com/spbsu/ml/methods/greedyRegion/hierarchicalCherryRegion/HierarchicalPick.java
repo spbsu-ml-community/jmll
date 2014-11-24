@@ -28,8 +28,10 @@ public class HierarchicalPick {
   final int binsCount;
   final int take2grow;
   final CategoricalAggregate aggregate;
+  double lambda;
 
-  public HierarchicalPick(BinarizedDataSet bds, Factory<AdditiveStatistics> factory, int take2grow) {
+  public HierarchicalPick(BinarizedDataSet bds, Factory<AdditiveStatistics> factory, int take2grow, double lambda) {
+    this.lambda = lambda;
     this.bds = bds;
     this.grid = bds.grid();
     this.factory = factory;
@@ -165,7 +167,7 @@ public class HierarchicalPick {
     if (bestModel == null) {
       return model;
     }
-    if (bestModel.score * (1.0 / (1 + 2 * bestModel.information)) < model.score *(1.0 / (1 + 2 * model.information))) {
+    if (bestModel.score * (1.0 / (1 + lambda * bestModel.information)) < model.score *(1.0 / (1 + lambda * model.information))) {
 //    if (bestModel.score * (1.0 - 8 * bestModel.information) < model.score * (1.0 - 8 * bestModel.information)) {
 //    if (bestModel.score < model.score || model.information == Double.POSITIVE_INFINITY) {
       return bestModel;
@@ -177,7 +179,7 @@ public class HierarchicalPick {
     if (bestModel == null) {
       return model;
     }
-    if (bestModel.score * (1.0 / (1 + 2* bestModel.information)) < model.score *( 1.0 / (1 + 2 *model.information))) {
+    if (bestModel.score * (1.0 / (1 + lambda* bestModel.information)) < model.score *( 1.0 / (1 + lambda *model.information))) {
 //    if (bestModel.score * (1.0 - 8 * bestModel.information) < model.score * (1.0 - 8 * bestModel.information)) {
 //    if (bestModel.score < model.score || model.information == Double.POSITIVE_INFINITY) {
       return bestModel;
@@ -315,10 +317,10 @@ public class HierarchicalPick {
         entropy += count > 0 ? count * Math.log(count) : 0;
         entropy /= total;
         entropy = Math.log(total) - entropy;
-        bits += entropy + 16*Math.log(2 * realCardinality);
+        bits += entropy + 32*Math.log(2 * realCardinality);
       }
       bits += Math.log(usedFeatures) * Math.log(grid.rows());
-      return bits * total;
+      return bits;
     }
 
 //    public double calculate(BitSet conditions) {
