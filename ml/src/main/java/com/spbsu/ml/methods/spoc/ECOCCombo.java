@@ -145,6 +145,7 @@ public class ECOCCombo extends WeakListenerHolderImpl<MulticlassCodingMatrixMode
             MX_IGNORE_THRESHOLD)
       );
     }
+    executor.shutdown();
 
     return new MulticlassCodingMatrixModel(mxB, classifiers.toArray(new Func[classifiers.size()]), MX_IGNORE_THRESHOLD);
   }
