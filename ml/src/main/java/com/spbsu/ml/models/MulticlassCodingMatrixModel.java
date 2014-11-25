@@ -6,11 +6,11 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.func.FuncJoin;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -61,7 +61,12 @@ public class MulticlassCodingMatrixModel extends MCModel.Stub {
 
   @Override
   public Vec probs(final Vec x) {
-    throw new NotImplementedException();
+    final Vec trans = binaryClassifiers.trans(x);
+    final double[] dist = calcDistances(trans);
+    for (int i = 0; i < dist.length; i++) {
+      dist[i] = 1 - dist[i];
+    }
+    return new ArrayVec(dist);
   }
 
   @Override
@@ -90,5 +95,9 @@ public class MulticlassCodingMatrixModel extends MCModel.Stub {
       }
       return 1 - exp(result / trans.dim());
     }
+  }
+
+  public Mx getCodingMatrix() {
+    return codingMatrix;
   }
 }
