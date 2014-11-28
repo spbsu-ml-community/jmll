@@ -1,6 +1,6 @@
 \documentclass[12pt,a4paper]{article}
 
-%\textwidth=5.2in
+%\textwidth=5in
 %\addtolength{\oddsidemargin}{-1in}
 %\addtolength{\evensidemargin}{-1in}
 \usepackage[utf8]{inputenc}
@@ -311,6 +311,20 @@ Dataset $D$ разбиваем на случайные блоки размеро
  \item на dataset with sorted clicks -- улучшение $L$ по сравнению с PFound
  \item разумные значения предсказанных вероятностей переходов
 \end{itemize}
+
+\subsection{Нелинейная модель аттрактивности}
+
+\begin{itemize}
+ \item $P(R_i \to R_j; \Theta) = \frac{f(r_i, r_j; \Theta)}{\sum_k f(r_i, r_k; \Theta)}$ -- вероятность перехода взгляда пользователя с блока $R_i$ на блок $R_j$, зависит от всех блоков на SERP;
+ \item $f(r_i, r_j; \Theta)=\exp\left(GBRT(r_i, r_j; \Theta)\right)$ -- относительная аттрактивность блока $r_j$ при условии просмотра блока $r_i$ -- нелинейная GBRT-функция от фич блоков $r_i$, $r_j$;
+ \item Подбор параметров функции аттрактивности: градиентная оптимизация вероятности выполнить наблюдаемый набор кликов:
+\begin{align*}
+L(D) = & \sum_{d \in D} \sum_{O_{d,\nu} \in O_d}
+  \log \sum_{t=1}^T \sum_{V^t \to O_{d,\nu}} \prod_{i=1}^t
+     \frac{f(r_{d,v_{i-1}}, r_{d,v_i})}{\sum_k f(r_{d,v_{i-1}}, r_{d,k})}  \cdot P(c_{v_i} | r_{v_i})
+\end{align*}
+\end{itemize}
+
 
 \subsection{Related work}
 
