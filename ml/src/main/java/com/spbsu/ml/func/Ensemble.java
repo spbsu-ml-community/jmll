@@ -26,7 +26,7 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   }
 
   public Ensemble(List<F> weakModels, double step) {
-    this(weakModels.toArray((F[]) new Trans[weakModels.size()]), VecTools.fill(new ArrayVec(weakModels.size()), step));
+    this(ArrayTools.toArray(weakModels), VecTools.fill(new ArrayVec(weakModels.size()), step));
   }
 
   public F last() {
