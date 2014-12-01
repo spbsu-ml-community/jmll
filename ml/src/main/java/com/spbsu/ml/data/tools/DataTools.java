@@ -39,6 +39,7 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.io.ModelsSerializationRepository;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.meta.DSItem;
@@ -466,5 +467,23 @@ public class DataTools {
           .append(": type = ").append(vecDataSet.fmeta(i).type());
     }
     return builder.toString();
+  }
+
+  public static void writePoolInLibfmFormat(final Pool<?> pool, final Writer out) throws IOException {
+    final Mx data = pool.vecData().data();
+    final Vec target = pool.target(L2.class).target;
+    for (int i = 0; i < pool.size(); i++) {
+      final double t = target.get(i);
+      out.append(String.valueOf(t));
+      final VecIterator vecIterator = data.row(i).nonZeroes();
+      while (vecIterator.advance()) {
+        out.append("\t")
+           .append(String.valueOf(vecIterator.index()))
+           .append(":")
+           .append(String.valueOf(vecIterator.value()));
+      }
+      out.append("\n");
+    }
+    out.flush();
   }
 }
