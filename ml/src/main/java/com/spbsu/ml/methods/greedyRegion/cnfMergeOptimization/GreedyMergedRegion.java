@@ -24,7 +24,7 @@ import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.wei
 /**
  * Created by noxoomo on 30/11/14.
  */
-public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> extends VecOptimization.Stub<Loss> {
+public class GreedyMergedRegion<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   protected final BFGrid grid;
   private double lambda;
 
@@ -40,13 +40,14 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
   @Override
   public CNF fit(final VecDataSet learn, final Loss loss) {
     final List<CNF.Clause> clauses = new ArrayList<>(10);
-    CherryOptimizationSubsetMerger merger = new CherryOptimizationSubsetMerger(loss);
+    @SuppressWarnings("unchecked")
+    CherryOptimizationSubsetMerger merger = new CherryOptimizationSubsetMerger(loss.statsFactory());
     int[] points = ArrayTools.sequence(0, learn.length());
     GreedyMergePick<CherryOptimizationSubset, RegularizedLossComparator<CherryOptimizationSubset, RegularizedLoss<CherryOptimizationSubset>>>
             pick = new GreedyMergePick<>(merger);
 //    final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     double current = Double.POSITIVE_INFINITY;
-    AdditiveStatistics inside = loss.statsFactory().create();
+    AdditiveStatistics inside = (AdditiveStatistics) loss.statsFactory().create();
 
     final BitSet[] used = new BitSet[grid.rows()];
     for (int i = 0; i < grid.rows(); ++i)
@@ -65,13 +66,14 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
 
         @Override
         public double regularization(CherryOptimizationSubset subset) {
-//          if (!subset.isRegularizationKnown) {
+          if (!subset.isRegularizationKnown) {
+            double weight = weight(subset.stat);
+            double cardinality = cardinality(subset.clause, used);
+            subset.regularization = cardinality == Double.POSITIVE_INFINITY ? 0 : -Math.log(weight + 1) / cardinality;
 //            subset.regularization = calcer.calculate(subset.layer);
-//            subset.isRegularizationKnown = true;
-//          }
-//          return subset.regularization;
-          double weight = weight(subset.stat);
-          return -lambda * Math.log(weight + 1);
+            subset.isRegularizationKnown = true;
+          }
+          return subset.regularization;
         }
 
         @Override
@@ -113,7 +115,7 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
   public double score(AdditiveStatistics stats) {
     double sum = sum(stats);
     double weight = weight(stats);
-    return weight > 1 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight)) : 0;
+    return weight > 1 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;
   }
 
 
@@ -134,6 +136,28 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
       }
     }
     return result;
+  }
+
+  public double cardinality(CNF.Clause clause, BitSet[] used) {
+    double cardinality = 0;
+    for (CNF.Condition condition : clause.conditions) {
+      double count = 0;
+      int f = condition.feature;
+      for (int bin = 0; bin <= grid.row(f).size(); ++bin) {
+        //don't use features, which was used on previous levels
+        if (condition.used.get(bin) && used[f].get(bin)) {
+          return Double.POSITIVE_INFINITY;
+        }
+        if (condition.used.get(bin)) {
+          count = 1;
+        } else {
+          cardinality += count;
+          count = 0;
+        }
+      }
+      cardinality += count;
+    }
+    return cardinality;
   }
 
   class ModelComplexityCalcer {
@@ -160,6 +184,7 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
         total += base[0][bin];
       }
     }
+
 
     public double calculate(CNF.Clause clause) {
       double reg = Double.POSITIVE_INFINITY;
@@ -191,7 +216,6 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
         reg = Math.min(information, reg);
       }
       return -reg / clause.conditions.length;//reg / layer.conditions.length;
-
     }
   }
 

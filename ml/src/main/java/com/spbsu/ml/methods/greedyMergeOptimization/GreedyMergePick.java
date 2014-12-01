@@ -2,7 +2,6 @@ package com.spbsu.ml.methods.greedyMergeOptimization;
 
 import com.spbsu.commons.util.ThreadTools;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -33,10 +32,10 @@ public class GreedyMergePick<Model, Comparator extends ModelComparators<Model>> 
       //lower index means model is better (from regularization point of view)
       Collections.sort(models, comparator.regularizationComparator());
       boolean updated = false;
-      List<Model> newModels = new ArrayList<>(models.size());
-//      for (int i = models.size() - 1; i > models.size()*0.85; --i) {
+//      for (int i = models.size() - 1; i > 0.8*models.size(); --i) {
       for (int i = models.size() - 1; i > 0; --i) {
         final Model last = models.get(i);
+        models.remove(i);
 
         @SuppressWarnings("unchecked")
         final Model[] result = (Model[]) new Object[i];
@@ -63,26 +62,27 @@ public class GreedyMergePick<Model, Comparator extends ModelComparators<Model>> 
 
 
         Model best = result[0];
+        int bestIndex = 0;
         for (int k = 1; k < result.length; ++k) {
           if (comparator.targetComparator().compare(result[k], best) < 0) {
             best = result[k];
+            bestIndex = k;
+          }
+          if (comparator.scoreComparator().compare(result[k], current) < 0) {
+            current = result[k];
+            updated = true;
           }
         }
 
-        if (comparator.scoreComparator().compare(best, current) < 0) {
-          current = best;
-          updated = true;
-        }
-
-        if (comparator.targetComparator().compare(best, last) < 0) {
-          newModels.add(best);
+        if (comparator.targetComparator().compare(best, last) < 0 && comparator.targetComparator().compare(best, models.get(bestIndex)) < 0) {
+          //newModels.add(best);
+          models.set(bestIndex, best);
+          break;
         }
       }
       if (!updated) {
         break;
       }
-      newModels.add(current);
-      models = newModels;
     }
     return current;
   }

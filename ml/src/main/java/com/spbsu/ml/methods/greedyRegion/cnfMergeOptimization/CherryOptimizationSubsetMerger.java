@@ -3,7 +3,6 @@ package com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization;
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.methods.greedyMergeOptimization.MergeOptimization;
 import com.spbsu.ml.models.CNF;
 import gnu.trove.list.array.TIntArrayList;
@@ -17,8 +16,8 @@ import java.util.BitSet;
 public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryOptimizationSubset> {
   private final Factory<AdditiveStatistics> factory;
 
-  public CherryOptimizationSubsetMerger(StatBasedLoss<AdditiveStatistics> loss) {
-    this.factory = loss.statsFactory();
+  public CherryOptimizationSubsetMerger(Factory<AdditiveStatistics> factory) {
+    this.factory =  factory;
   }
 
   private CNF.Condition[] merge(CNF.Condition[] leftConditions, CNF.Condition[] rightConditions) {
@@ -65,14 +64,14 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
 
   }
 
-//  ThreadPoolExecutor exec = ThreadTools.createBGExecutor("merge thread", -1);
+//  static ThreadPoolExecutor exec = ThreadTools.createBGExecutor("merge thread", -1);
 
   @Override
   public CherryOptimizationSubset merge(CherryOptimizationSubset first, CherryOptimizationSubset second) {
     if (first.outside.length == 0 && second.outside.length == 0) {
       return first;
     }
-    if (first.regularization == Double.POSITIVE_INFINITY || second.regularization == Double.POSITIVE_INFINITY) { //skip bad subsets
+    if (first.regularization >= 0 || second.regularization >= 0) { //skip bad subsets
       return first;
     }
     CNF.Condition[] conditions = merge(first.clause.conditions, second.clause.conditions);
@@ -99,7 +98,7 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
 //      exec.submit(new Runnable() {
 //        @Override
 //        public void run() {
-//          inside[fIndex] = layer.value(bds, points[fIndex]) == 1.0;
+//          inside[fIndex] = clause.value(bds, points[fIndex]) == 1.0;
 //          latch.countDown();
 //        }
 //      });

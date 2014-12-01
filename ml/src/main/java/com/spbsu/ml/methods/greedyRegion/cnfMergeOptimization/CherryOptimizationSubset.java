@@ -14,7 +14,7 @@ public class CherryOptimizationSubset {
   public int[] outside;
   public int[] inside;
   public AdditiveStatistics stat;
-  public double regularization;
+  public double regularization = Double.POSITIVE_INFINITY;
   public boolean isRegularizationKnown = false;
 
   CherryOptimizationSubset(BinarizedDataSet bds, CNF.Clause clause, int[] inside, int[] outside, AdditiveStatistics stat) {
