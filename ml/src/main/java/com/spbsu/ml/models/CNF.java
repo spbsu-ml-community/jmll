@@ -87,7 +87,7 @@ public class CNF extends Func.Stub implements BinOptimizedModel {
 
   public static class Clause extends Func.Stub implements BinOptimizedModel {
     private final BFGrid grid;
-    public Condition[] conditions;
+    public final Condition[] conditions;
 
     public Clause(BFGrid grid, Condition[] conditions) {
       this.grid = grid;
@@ -96,11 +96,12 @@ public class CNF extends Func.Stub implements BinOptimizedModel {
 
     @Override
     public double value(BinarizedDataSet bds, int index) {
-      byte[] binarization = new byte[grid.rows()];
-      for (int f = 0; f < grid.rows(); ++f) {
-        binarization[f] = bds.bins(f)[index];
+      for (Condition condition : conditions) {
+        if (condition.used.get(bds.bins(condition.feature)[index])) {
+          return 1.0;
+        }
       }
-      return value(binarization);
+      return 0;
     }
 
     public double value(byte[] point) {

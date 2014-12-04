@@ -73,18 +73,18 @@ public class CherryOptimizationSubset {
       this.isMinimumOutside = isMinimumOutside;
     }
 
-    for (int i = 0, j = 0; i < all.length; i++) {
-      final boolean value = clause.value(bds, all[i]) == 1.;
-      if (j < minimumIndices.length && minimumIndices[j] == all[i]) {
-        if (value && isMinimumOutside)
-          System.out.println();
-        j++;
-      }
-      else {
-        if (!value && isMinimumOutside)
-          System.out.println();
-      }
-    }
+//    for (int i = 0, j = 0; i < all.length; i++) {
+//      final boolean value = clause.value(bds, all[i]) == 1.;
+//      if (j < minimumIndices.length && minimumIndices[j] == all[i]) {
+//        if (value && isMinimumOutside)
+//          System.out.println();
+//        j++;
+//      }
+//      else {
+//        if (!value && isMinimumOutside)
+//          System.out.println();
+//      }
+//    }
 
 
     this.cardinality = ModelComplexityCalcer.cardinality(bds.grid(), clause);
