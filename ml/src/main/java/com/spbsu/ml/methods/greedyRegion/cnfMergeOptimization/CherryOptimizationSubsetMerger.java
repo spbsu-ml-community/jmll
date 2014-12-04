@@ -2,7 +2,6 @@ package com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization;
 
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
-import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.methods.greedyMergeOptimization.MergeOptimization;
 import com.spbsu.ml.models.CNF;
 import gnu.trove.list.array.TIntArrayList;
@@ -117,6 +116,14 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
           }
         }
       }
+
+//      AdditiveStatistics test = factory.create();
+//      for (int i=0; i < first.all.length;++i) {
+//        test.append(first.all[i],1);
+//      }
+//      for (int j=0; j < mergedOutside.size();++j) {
+//        test.remove(mergedOutside.get(j),1);
+//      }
       return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
     }
     else if (!first.isMinimumOutside && second.isMinimumOutside) {
@@ -139,10 +146,20 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
           }
         }
       }
+
+//      AdditiveStatistics test = factory.create();
+//      for (int i=0; i < first.all.length;++i) {
+//        test.append(first.all[i],1);
+//      }
+//      for (int j=0; j < mergedOutside.size();++j) {
+//        test.remove(mergedOutside.get(j),1);
+//      }
+
       return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
     }
     else if (!first.isMinimumOutside && !second.isMinimumOutside) {
       stat.append(first.stat);
+      AdditiveStatistics inside = factory.create();
       final int[] firstInside = first.minimumIndices;
       final int[] secondInside = second.minimumIndices;
       final TIntArrayList mergedInside = new TIntArrayList(second.minimumIndices.length);
@@ -152,16 +169,23 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
         final int next = !last ? firstInside[i] : Integer.MAX_VALUE;
         while (secondIndex < secondInside.length && secondInside[secondIndex] < next) {
           mergedInside.add(secondInside[secondIndex]);
+          inside.append(secondInside[secondIndex], 1);
           secondIndex++;
         }
         if (!last) {
-          stat.append(next, 1);
+          inside.append(next, 1);
           mergedInside.add(next);
           if (secondIndex < secondInside.length && secondInside[secondIndex] == next)
             secondIndex++;
         }
       }
-      return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, stat);
+//      AdditiveStatistics test = factory.create();
+//      for (int i=0; i < mergedInside.size();++i) {
+//        test.append(mergedInside.get(i),1);
+//      }
+
+//        stat.append(inside);
+      return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, inside);
     }
     throw new RuntimeException("Never happen");
   }
