@@ -57,7 +57,7 @@ public class CherryOptimizationSubset {
       int oldIndex = 0;
       int newIndex = 0;
       for(int i = 0; i < all.length; i++) {
-        if (all[i] == minimumIndices[oldIndex])
+        if (oldIndex < minimumIndices.length && all[i] == minimumIndices[oldIndex])
           oldIndex++;
         else
           this.minimumIndices[newIndex++] = all[i];
@@ -68,6 +68,19 @@ public class CherryOptimizationSubset {
       this.minimumIndices = minimumIndices;
       this.isMinimumOutside = isMinimumOutside;
     }
+
+//    for (int i = 0, j = 0; i < all.length; i++) {
+//      final boolean value = clause.value(bds, all[i]) == 1.;
+//      if (j < minimumIndices.length && minimumIndices[j] == all[i]) {
+//        if (value && isMinimumOutside)
+//          System.out.println();
+//        j++;
+//      }
+//      else {
+//        if (!value && isMinimumOutside)
+//          System.out.println();
+//      }
+//    }
   }
 
   public int[] inside() {

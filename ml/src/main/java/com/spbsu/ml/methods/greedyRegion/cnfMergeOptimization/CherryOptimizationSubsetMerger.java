@@ -70,59 +70,99 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
     final CNF.Condition[] conditions = merge(first.clause.conditions, second.clause.conditions);
 
     final CNF.Clause clause = new CNF.Clause(first.bds.grid(), conditions);
-    final BinarizedDataSet bds = first.bds;
+
     final AdditiveStatistics stat = factory.create();
-    if (first.minimumIndices.length > second.minimumIndices.length) {
+    if (first.minimumIndices.length < second.minimumIndices.length) {
       final CherryOptimizationSubset tmp = first;
       first = second;
       second = tmp;
     }
-    stat.append(first.stat);
-    if (first.isMinimumOutside) {
-      final TIntArrayList mergedOutside = new TIntArrayList(first.minimumIndices.length);
-      final int[] outside = first.minimumIndices;
-      for(int i = 0; i < outside.length; i++) {
-        if (second.clause.value(bds, outside[i]) != 1.) {
-          mergedOutside.add(outside[i]);
-        } else {
-          stat.append(outside[i], 1);
+    if (first.isMinimumOutside && second.isMinimumOutside) { // intersection of outer
+      stat.append(second.stat);
+      final int[] firstOutside = first.minimumIndices;
+      final int[] secondOutside = second.minimumIndices;
+      final TIntArrayList mergedOutside = new TIntArrayList(second.minimumIndices.length);
+      int firstIndex = 0;
+      for (int i = 0; i <= secondOutside.length; i++) {
+        final boolean last = i == secondOutside.length;
+        final int next = !last ? secondOutside[i] : Integer.MAX_VALUE;
+        while (firstIndex < firstOutside.length && firstOutside[firstIndex] < next) {
+          firstIndex++;
+        }
+        if (!last) {
+          if (firstIndex < firstOutside.length && firstOutside[firstIndex] == next)
+            mergedOutside.add(next);
+          else stat.remove(next, 1);
         }
       }
       return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
     }
-    else {
-      final int[] secondInside = second.inside();
-      final int[] firstInside = first.minimumIndices;
-      stat.append(second.stat);
-      int left =0;
-      int right = 0;
-      final TIntArrayList mergedInside = new TIntArrayList(secondInside.length + firstInside.length);
-      while (left < firstInside.length && right < secondInside.length) {
-        if (firstInside[left] == secondInside[right]) {
-          stat.remove(firstInside[left],1);
-          mergedInside.add(firstInside[left]);
-          ++left;
-          ++right;
-        }  else if (firstInside[left] < secondInside[right]) {
-          mergedInside.add(firstInside[left]);
-          ++left;
-        } else {
-          mergedInside.add(secondInside[right]);
-          ++right;
+    else if (first.isMinimumOutside && !second.isMinimumOutside) {
+      stat.append(first.stat);
+      final int[] firstOutside = first.minimumIndices;
+      final int[] secondInside = second.minimumIndices;
+      final TIntArrayList mergedOutside = new TIntArrayList(first.minimumIndices.length);
+      int firstIndex = 0;
+      for (int i = 0; i <= secondInside.length; i++) {
+        final boolean last = i == secondInside.length;
+        final int next = !last ? secondInside[i] : Integer.MAX_VALUE;
+        while (firstIndex < firstOutside.length && firstOutside[firstIndex] < next) {
+          mergedOutside.add(firstOutside[firstIndex]);
+          firstIndex++;
+        }
+        if (!last) {
+          if (firstIndex < firstOutside.length && firstOutside[firstIndex] == next) {
+            stat.append(next, 1);
+            firstIndex++;
+          }
         }
       }
-      while (left < firstInside.length) {
-        mergedInside.add(firstInside[left]);
-        ++left;
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
+    }
+    else if (!first.isMinimumOutside && second.isMinimumOutside) {
+      stat.append(second.stat);
+      final int[] firstInside = first.minimumIndices;
+      final int[] secondOutside = second.minimumIndices;
+      final TIntArrayList mergedOutside = new TIntArrayList(second.minimumIndices.length);
+      int secondIndex = 0;
+      for (int i = 0; i <= firstInside.length; i++) {
+        final boolean last = i == firstInside.length;
+        final int next = !last ? firstInside[i] : Integer.MAX_VALUE;
+        while (secondIndex < secondOutside.length && secondOutside[secondIndex] < next) {
+          mergedOutside.add(secondOutside[secondIndex]);
+          secondIndex++;
+        }
+        if (!last) {
+          if (secondIndex < secondOutside.length && secondOutside[secondIndex] == next) {
+            stat.append(next, 1);
+            secondIndex++;
+          }
+        }
       }
-      while (right < secondInside.length) {
-        mergedInside.add(secondInside[right]);
-        ++right;
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
+    }
+    else if (!first.isMinimumOutside && !second.isMinimumOutside) {
+      stat.append(first.stat);
+      final int[] firstInside = first.minimumIndices;
+      final int[] secondInside = second.minimumIndices;
+      final TIntArrayList mergedInside = new TIntArrayList(second.minimumIndices.length);
+      int secondIndex = 0;
+      for (int i = 0; i <= firstInside.length; i++) {
+        final boolean last = i == firstInside.length;
+        final int next = !last ? firstInside[i] : Integer.MAX_VALUE;
+        while (secondIndex < secondInside.length && secondInside[secondIndex] < next) {
+          mergedInside.add(secondInside[secondIndex]);
+          secondIndex++;
+        }
+        if (!last) {
+          stat.append(next, 1);
+          mergedInside.add(next);
+          if (secondIndex < secondInside.length && secondInside[secondIndex] == next)
+            secondIndex++;
+        }
       }
-
       return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, stat);
     }
+    throw new RuntimeException("Never happen");
   }
-
-
 }

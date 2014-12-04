@@ -37,12 +37,16 @@ public class GreedyMergePick<Model, Comparator extends ModelComparators<Model>> 
         exec.submit(new Runnable() {
           @Override
           public void run() {
-            Model merged = merger.merge(current, model);
-            synchronized (best) {
-              if (!best.filled() || comparator.targetComparator().compare(best.getValue(), merged) > 0)
-                best.setValue(merged);
+            try {
+              Model merged = merger.merge(current, model);
+              synchronized (best) {
+                if (!best.filled() || comparator.targetComparator().compare(best.getValue(), merged) > 0)
+                  best.setValue(merged);
+              }
             }
-            latch.countDown();
+            finally {
+              latch.countDown();
+            }
           }
         });
       }
