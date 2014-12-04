@@ -1,9 +1,9 @@
 package com.spbsu.ml.methods.greedyMergeOptimization;
 
+import com.spbsu.commons.util.Holder;
 import com.spbsu.commons.util.ThreadTools;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -19,72 +19,45 @@ public class GreedyMergePick<Model, Comparator extends ModelComparators<Model>> 
     this.merger = merger;
   }
 
-  public Model pick(List<Model> startModels, Comparator comparator) {
-    List<Model> models = startModels;
-    Model current = models.get(0);
-    for (int k = 1; k < models.size(); ++k) {
-      if (comparator.targetComparator().compare(models.get(k), current) < 0) {
-        current = models.get(k);
+  public Model pick(List<Model> startModels, final Comparator comparator) {
+    if (startModels.isEmpty())
+      throw new IllegalArgumentException("Models list must be not empty");
+    final TreeSet<Model> models = new TreeSet<>(comparator.regularizationComparator());
+    models.addAll(startModels);
+    while (models.size() > 1) {
+      final Model current;
+      {
+        final Iterator<Model> iterator = models.descendingIterator();
+        current = iterator.next();
+        iterator.remove();
       }
-    }
-
-    while (true) {
-      //lower index means model is better (from regularization point of view)
-      Collections.sort(models, comparator.regularizationComparator());
-      boolean updated = false;
-//      for (int i = models.size() - 1; i > 0.8*models.size(); --i) {
-      for (int i = models.size() - 1; i > 0; --i) {
-        final Model last = models.get(i);
-        models.remove(i);
-
-        @SuppressWarnings("unchecked")
-        final Model[] result = (Model[]) new Object[i];
-
-        final CountDownLatch latch = new CountDownLatch(result.length);
-        for (int j = 0; j < i; ++j) {
-          final int index = j;
-          final Model toMerge = models.get(index);
-          exec.submit(new Runnable() {
-            @Override
-            public void run() {
-              Model merged = merger.merge(last, toMerge);
-              result[index] = merged;
-              latch.countDown();
+      final CountDownLatch latch = new CountDownLatch(models.size());
+      final Holder<Model> best = new Holder<>(current);
+      for (final Model model : models) {
+        exec.submit(new Runnable() {
+          @Override
+          public void run() {
+            Model merged = merger.merge(current, model);
+            synchronized (best) {
+              if (!best.filled() || comparator.targetComparator().compare(best.getValue(), merged) > 0)
+                best.setValue(merged);
             }
-          });
-        }
-
-        try {
-          latch.await();
-        } catch (InterruptedException e) {
-          //skip
-        }
-
-
-        Model best = result[0];
-        int bestIndex = 0;
-        for (int k = 1; k < result.length; ++k) {
-          if (comparator.targetComparator().compare(result[k], best) < 0) {
-            best = result[k];
-            bestIndex = k;
+            latch.countDown();
           }
-          if (comparator.scoreComparator().compare(result[k], current) < 0) {
-            current = result[k];
-            updated = true;
-          }
-        }
-
-        if (comparator.targetComparator().compare(best, last) < 0 && comparator.targetComparator().compare(best, models.get(bestIndex)) < 0) {
-          //newModels.add(best);
-          models.set(bestIndex, best);
-          break;
-        }
+        });
       }
-      if (!updated) {
-        break;
+
+      try {
+        latch.await();
+      } catch (InterruptedException e) {
+        //skip
+      }
+
+      if (comparator.scoreComparator().compare(best.getValue(), current) < 0) {
+        models.add(best.getValue());
       }
     }
-    return current;
+    return models.first();
   }
 }
 

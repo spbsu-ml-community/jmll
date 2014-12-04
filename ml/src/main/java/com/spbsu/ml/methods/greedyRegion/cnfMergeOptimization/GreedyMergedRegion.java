@@ -91,7 +91,7 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss> extends VecOptimizat
       for (CNF.Condition condition : best.clause.conditions) {
         used[condition.feature].or(condition.used);
       }
-      points = best.inside;
+      points = best.inside();
       inside = best.stat;
       current = score(best.stat);
     }

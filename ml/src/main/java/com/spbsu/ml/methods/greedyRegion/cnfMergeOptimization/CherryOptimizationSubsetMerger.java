@@ -64,65 +64,64 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
 
   }
 
-//  static ThreadPoolExecutor exec = ThreadTools.createBGExecutor("merge thread", -1);
 
   @Override
   public CherryOptimizationSubset merge(CherryOptimizationSubset first, CherryOptimizationSubset second) {
-    if (first.outside.length == 0 && second.outside.length == 0) {
-      return first;
-    }
-    if (first.regularization >= 0 || second.regularization >= 0) { //skip bad subsets
-      return first;
-    }
-    CNF.Condition[] conditions = merge(first.clause.conditions, second.clause.conditions);
-
-
-    AdditiveStatistics stat = factory.create();
-    if (first.outside.length < second.outside.length) {
-      CherryOptimizationSubset tmp = first;
-      first = second;
-      second = tmp;
-    }
+    final CNF.Condition[] conditions = merge(first.clause.conditions, second.clause.conditions);
 
     final CNF.Clause clause = new CNF.Clause(first.bds.grid(), conditions);
     final BinarizedDataSet bds = first.bds;
-    final boolean inside[] = new boolean[first.outside.length];
-    final int[] points = first.outside;
-//    final CountDownLatch latch = new CountDownLatch(first.outside.length);
-    for (int i = 0; i < points.length; ++i) {
-      inside[i] = clause.value(bds, points[i]) == 1.0;
+    final AdditiveStatistics stat = factory.create();
+    if (first.minimumIndices.length > second.minimumIndices.length) {
+      final CherryOptimizationSubset tmp = first;
+      first = second;
+      second = tmp;
     }
-
-//    for (int i = 0; i < points.length; ++i) {
-//      final int fIndex = i;
-//      exec.submit(new Runnable() {
-//        @Override
-//        public void run() {
-//          inside[fIndex] = clause.value(bds, points[fIndex]) == 1.0;
-//          latch.countDown();
-//        }
-//      });
-//    }
-//
-//    try {
-//      latch.await();
-//    } catch (InterruptedException e) {
-//      //skip
-//    }
-
     stat.append(first.stat);
-    TIntArrayList mergedOutside = new TIntArrayList();
-    TIntArrayList mergedInside = new TIntArrayList(first.inside);
-
-    for (int i = 0; i < points.length; ++i) {
-      if (inside[i]) {
-        stat.append(points[i], 1);
-        mergedInside.add(points[i]);
-      } else {
-        mergedOutside.add(points[i]);
+    if (first.isMinimumOutside) {
+      final TIntArrayList mergedOutside = new TIntArrayList(first.minimumIndices.length);
+      final int[] outside = first.minimumIndices;
+      for(int i = 0; i < outside.length; i++) {
+        if (second.clause.value(bds, outside[i]) != 1.) {
+          mergedOutside.add(outside[i]);
+        } else {
+          stat.append(outside[i], 1);
+        }
       }
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
     }
-    return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), mergedOutside.toArray(), stat);
+    else {
+      final int[] secondInside = second.inside();
+      final int[] firstInside = first.minimumIndices;
+      stat.append(second.stat);
+      int left =0;
+      int right = 0;
+      final TIntArrayList mergedInside = new TIntArrayList(secondInside.length + firstInside.length);
+      while (left < firstInside.length && right < secondInside.length) {
+        if (firstInside[left] == secondInside[right]) {
+          stat.remove(firstInside[left],1);
+          mergedInside.add(firstInside[left]);
+          ++left;
+          ++right;
+        }  else if (firstInside[left] < secondInside[right]) {
+          mergedInside.add(firstInside[left]);
+          ++left;
+        } else {
+          mergedInside.add(secondInside[right]);
+          ++right;
+        }
+      }
+      while (left < firstInside.length) {
+        mergedInside.add(firstInside[left]);
+        ++left;
+      }
+      while (right < secondInside.length) {
+        mergedInside.add(secondInside[right]);
+        ++right;
+      }
+
+      return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, stat);
+    }
   }
 
 
