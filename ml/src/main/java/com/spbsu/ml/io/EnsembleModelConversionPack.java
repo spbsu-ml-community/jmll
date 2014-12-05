@@ -47,6 +47,9 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
 
     @Override
     public Ensemble convert(CharSequence from) {
+      if (from.toString().indexOf('\r') >= 0)
+        from = from.toString().replace("\r", ""); // fix windows newlines created by GIT
+
       CharSequence[] elements = CharSeqTools.split(from, "\n\n");
       Trans[] models;
       double[] weights;
