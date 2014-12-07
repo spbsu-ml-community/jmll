@@ -22,6 +22,7 @@ import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
+import com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization.GreedyMergedRegion;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.SimplePGM;
@@ -38,7 +39,7 @@ import static com.spbsu.commons.math.MathTools.sqr;
  *
  * Time: 15:50
  */
-public abstract class MethodsTests extends GridTest {
+public class MethodsTests extends GridTest {
   private FastRandom rng;
 
   @Override
@@ -207,24 +208,32 @@ public abstract class MethodsTests extends GridTest {
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
-    boosting.addListener(qualityCalcer);
+    boosting.addListener(new Action<Trans>() {
+      @Override
+      public void invoke(Trans trans) {
+        System.out.println();
+      }
+    });
 //    boosting.addListener(modelPrinter);
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
 
   public void testGTDRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting
-            (new BootstrapOptimization<>(
-                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.004);
+//    final GradientBoosting<L2> boosting = new GradientBoosting
+//            (new BootstrapOptimization<>(
+//                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.004);
 //    final GradientBoosting<L2> boosting = new GradientBoosting
 //            (new RandomForest<>(
-//                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
-    final Action counter = new ProgressHandler() {
+//                    new GreedyMergedRegion<WeightedLoss<? extends StatBasedLoss>>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
+    final GradientBoosting<L2> boosting = new GradientBoosting
+            (new BootstrapOptimization<>(
+                    new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.004);
+    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
+    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
+    final Action<Trans> counter = new Action<Trans>() {
       int index = 0;
 
       @Override
@@ -232,15 +241,18 @@ public abstract class MethodsTests extends GridTest {
         System.out.print("\n" + index++);
       }
     };
-    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
-    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
+    final Action<Trans> nl = new Action<Trans>() {
+      @Override
+      public void invoke(Trans trans) {
+        System.out.println();
+      }
+    };
+
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
-    boosting.addListener(qualityCalcer);
-//    boosting.addListener(modelPrinter);
+    boosting.addListener(nl);
+
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
 

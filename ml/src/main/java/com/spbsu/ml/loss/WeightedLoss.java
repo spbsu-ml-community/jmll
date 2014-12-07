@@ -6,6 +6,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.DataSet;
+import gnu.trove.list.array.TIntArrayList;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -79,6 +80,15 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   @Override
   public DataSet<?> owner() {
     return metric.owner();
+  }
+
+  public int[] points() {
+    final TIntArrayList result = new TIntArrayList(weights.length + 1000);
+    for(int i = 0; i < weights.length; i++) {
+      if (weights[i] > 0)
+        result.add(i);
+    }
+    return result.toArray();
   }
 
   public static class Stat implements AdditiveStatistics {

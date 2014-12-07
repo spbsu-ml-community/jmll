@@ -2,12 +2,10 @@ package com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization;
 
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.methods.greedyMergeOptimization.MergeOptimization;
 import com.spbsu.ml.models.CNF;
 import gnu.trove.list.array.TIntArrayList;
-
-import java.util.ArrayList;
-import java.util.BitSet;
 
 /**
  * Created by noxoomo on 30/11/14.
@@ -19,56 +17,10 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
     this.factory =  factory;
   }
 
-  private CNF.Condition[] merge(CNF.Condition[] leftConditions, CNF.Condition[] rightConditions) {
-    int left = 0;
-    int right = 0;
-    ArrayList<CNF.Condition> conditions = new ArrayList<>(leftConditions.length + rightConditions.length);
-    while (left != leftConditions.length && right != rightConditions.length) {
-      if (leftConditions[left].feature == rightConditions[right].feature) {
-        BitSet used = (BitSet) rightConditions[right].used.clone();
-        used.or(leftConditions[left].used);
-        CNF.Condition newCondition = new CNF.Condition(rightConditions[right].feature, used);
-        ++left;
-        ++right;
-        conditions.add(newCondition);
-        continue;
-      }
-
-      if (leftConditions[left].feature < rightConditions[right].feature) {
-        BitSet used = (BitSet) leftConditions[left].used.clone();
-        CNF.Condition newCondition = new CNF.Condition(leftConditions[left].feature, used);
-        ++left;
-        conditions.add(newCondition);
-      } else {
-        BitSet used = (BitSet) rightConditions[right].used.clone();
-        CNF.Condition newCondition = new CNF.Condition(rightConditions[right].feature, used);
-        ++right;
-        conditions.add(newCondition);
-      }
-    }
-
-    while (left < leftConditions.length) {
-      BitSet used = (BitSet) leftConditions[left].used.clone();
-      CNF.Condition newCondition = new CNF.Condition(leftConditions[left].feature, used);
-      ++left;
-      conditions.add(newCondition);
-    }
-    while (right < rightConditions.length) {
-      BitSet used = (BitSet) rightConditions[right].used.clone();
-      CNF.Condition newCondition = new CNF.Condition(rightConditions[right].feature, used);
-      ++right;
-      conditions.add(newCondition);
-    }
-    return (conditions.toArray(new CNF.Condition[conditions.size()]));
-
-  }
-
 
   @Override
   public CherryOptimizationSubset merge(CherryOptimizationSubset first, CherryOptimizationSubset second) {
-    final CNF.Condition[] conditions = merge(first.clause.conditions, second.clause.conditions);
-
-    final CNF.Clause clause = new CNF.Clause(first.bds.grid(), conditions);
+    final CNF.Clause clause = new CNF.Clause(first.bds.grid(), ArrayTools.concat(first.clause.conditions, second.clause.conditions));
 
     final AdditiveStatistics stat = factory.create();
     if (first.minimumIndices.length < second.minimumIndices.length) {
@@ -117,13 +69,6 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
         }
       }
 
-//      AdditiveStatistics test = factory.create();
-//      for (int i=0; i < first.all.length;++i) {
-//        test.append(first.all[i],1);
-//      }
-//      for (int j=0; j < mergedOutside.size();++j) {
-//        test.remove(mergedOutside.get(j),1);
-//      }
       return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
     }
     else if (!first.isMinimumOutside && second.isMinimumOutside) {
@@ -146,14 +91,6 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
           }
         }
       }
-
-//      AdditiveStatistics test = factory.create();
-//      for (int i=0; i < first.all.length;++i) {
-//        test.append(first.all[i],1);
-//      }
-//      for (int j=0; j < mergedOutside.size();++j) {
-//        test.remove(mergedOutside.get(j),1);
-//      }
 
       return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
     }
@@ -179,12 +116,6 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
             secondIndex++;
         }
       }
-//      AdditiveStatistics test = factory.create();
-//      for (int i=0; i < mergedInside.size();++i) {
-//        test.append(mergedInside.get(i),1);
-//      }
-
-//        stat.append(inside);
       return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, inside);
     }
     throw new RuntimeException("Never happen");

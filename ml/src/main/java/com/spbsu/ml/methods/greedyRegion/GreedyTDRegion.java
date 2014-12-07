@@ -269,7 +269,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     TDoubleArrayList sample = new TDoubleArrayList();
 
     for (int i = 0; i < bds.original().length(); ++i) {
-      if (region.value(bds, i) == 1) {
+      if (region.contains(bds, i)) {
         sample.add(target.get(i));
       }
     }
