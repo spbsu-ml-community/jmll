@@ -46,7 +46,7 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
           else stat.remove(next, 1);
         }
       }
-      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
     }
     else if (first.isMinimumOutside && !second.isMinimumOutside) {
       stat.append(first.stat);
@@ -69,7 +69,7 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
         }
       }
 
-      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
     }
     else if (!first.isMinimumOutside && second.isMinimumOutside) {
       stat.append(second.stat);
@@ -92,7 +92,7 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
         }
       }
 
-      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat);
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
     }
     else if (!first.isMinimumOutside && !second.isMinimumOutside) {
       stat.append(first.stat);
@@ -116,7 +116,7 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
             secondIndex++;
         }
       }
-      return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, inside);
+      return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, inside, first.initialCardinality);
     }
     throw new RuntimeException("Never happen");
   }

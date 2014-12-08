@@ -30,6 +30,7 @@ import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.wei
  * Time: 15:31
  */
 public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> extends VecOptimization.Stub<Loss> {
+  public static final int CARDINALITY_FACTOR = 5;
   protected final BFGrid grid;
   private double lambda;
 
@@ -47,6 +48,10 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
     final List<CNF.Clause> clauses = new ArrayList<>(10);
     final CherryOptimizationSubsetMerger merger = new CherryOptimizationSubsetMerger(loss.statsFactory());
     final GreedyMergePick<CherryOptimizationSubset> pick = new GreedyMergePick<>(merger);
+    int[] points = loss instanceof WeightedLoss ? ((WeightedLoss) loss).points(): ArrayTools.sequence(0, learn.length());
+    final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+    CherryOptimizationSubset last = new CherryOptimizationSubset(bds, loss.statsFactory(), new CNF.Clause(grid), points, 0);
+    final double totalPower = last.power();
     final RegularizedLoss<CherryOptimizationSubset> regLoss = new RegularizedLoss<CherryOptimizationSubset>() {
       @Override
       public double target(CherryOptimizationSubset subset) {
@@ -55,7 +60,7 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
 
       @Override
       public double regularization(CherryOptimizationSubset subset) {
-        return -Math.log(subset.power() + 1) / (subset.cardinality() + 1);
+        return (-Math.log(subset.power() + 1) -Math.log(totalPower - subset.power() + 1)) * CARDINALITY_FACTOR / (subset.cardinality() + CARDINALITY_FACTOR);
       }
 
       @Override
@@ -64,12 +69,9 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
       }
     };
 
-    int[] points = loss instanceof WeightedLoss ? ((WeightedLoss) loss).points(): ArrayTools.sequence(0, learn.length());
-    final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
-    CherryOptimizationSubset last = new CherryOptimizationSubset(bds, loss.statsFactory(), new CNF.Clause(grid), points);
     double score = regLoss.score(last);
     while (true) {
-      final List<CherryOptimizationSubset> models = init(bds, points, loss);
+      final List<CherryOptimizationSubset> models = init(bds, points, loss, last.cardinality());
       final CherryOptimizationSubset best = pick.pick(models, regLoss);
       best.checkIntegrity();
       if (score - regLoss.score(best) < MathTools.EPSILON)
@@ -90,15 +92,9 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
   }
 
 
-  public double score(AdditiveStatistics stats) {
-    double sum = sum(stats);
-    double weight = weight(stats);
-    return weight > 1 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;
-  }
-
   static ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Init CNF thread", -1);
 
-  private List<CherryOptimizationSubset> init(final BinarizedDataSet bds, final int[] points, final Loss loss) {
+  private List<CherryOptimizationSubset> init(final BinarizedDataSet bds, final int[] points, final Loss loss, final double cardinality) {
     int binsTotal = 0;
     for (int feature = 0; feature < grid.rows(); ++feature)
       binsTotal += grid.row(feature).size() > 1 ? grid.row(feature).size() + 1 : 0;
@@ -118,7 +114,7 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
             final CNF.Condition[] conditions = new CNF.Condition[1];
             conditions[0] = new CNF.Condition(row, used);
             final CNF.Clause clause = new CNF.Clause(grid, conditions);
-            final CherryOptimizationSubset subset = new CherryOptimizationSubset(bds, loss.statsFactory(), clause, points);
+            final CherryOptimizationSubset subset = new CherryOptimizationSubset(bds, loss.statsFactory(), clause, points, cardinality);
             synchronized (result) {
               result.add(subset);
             }

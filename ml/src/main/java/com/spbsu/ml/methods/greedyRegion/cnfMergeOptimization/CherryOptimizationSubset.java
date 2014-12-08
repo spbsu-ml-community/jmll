@@ -16,6 +16,7 @@ import java.util.BitSet;
 @SuppressWarnings("UnusedDeclaration")
 public class CherryOptimizationSubset {
   private final int power;
+  final double initialCardinality;
   CNF.Clause clause;
   BinarizedDataSet bds;
   public int[] all;
@@ -24,7 +25,8 @@ public class CherryOptimizationSubset {
 
   boolean isMinimumOutside;
 
-  public CherryOptimizationSubset(BinarizedDataSet bds, Factory<AdditiveStatistics> statFactory, CNF.Clause clause, int[] points) {
+  public CherryOptimizationSubset(BinarizedDataSet bds, Factory<AdditiveStatistics> statFactory, CNF.Clause clause, int[] points, double cardinality) {
+    initialCardinality = cardinality;
     final TIntArrayList inside = new TIntArrayList(points.length);
     final TIntArrayList outside = new TIntArrayList(points.length);
     stat = statFactory.create();
@@ -44,11 +46,12 @@ public class CherryOptimizationSubset {
     this.power = inside.size();
   }
 
-  CherryOptimizationSubset(BinarizedDataSet bds, CNF.Clause clause, int[] minimumIndices, boolean isMinimumOutside, int[] all, AdditiveStatistics stat) {
+  CherryOptimizationSubset(BinarizedDataSet bds, CNF.Clause clause, int[] minimumIndices, boolean isMinimumOutside, int[] all, AdditiveStatistics stat, double initialCardinality) {
     this.all = all;
     this.bds = bds;
     this.stat = stat;
     this.clause = clause;
+    this.initialCardinality = initialCardinality;
     if (minimumIndices.length > all.length / 2) {
       this.minimumIndices = new int[all.length - minimumIndices.length];
       int oldIndex = 0;
@@ -102,7 +105,7 @@ public class CherryOptimizationSubset {
   }
 
   public double cardinality() {
-    return clause.cardinality();
+    return initialCardinality + clause.cardinality();
   }
 
   public int power() {
