@@ -60,7 +60,7 @@ public class Region extends RegionBase {
       if (features[i].value(x) != mask[i])
         ++failed;
     }
-    return failed > maxFailed;
+    return failed < maxFailed;
   }
 
   @Override

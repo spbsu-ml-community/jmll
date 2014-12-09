@@ -178,7 +178,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     double weight = 0;
 
     for (int i = 0; i < bds.original().length(); ++i) {
-      if (region.value(bds, i) == 1) {
+      if (region.contains(bds, i)) {
         double samplWeight = 1.0;// current.size() > 10 ? rand.nextPoisson(1.0) : 1.0;
         weight += samplWeight;
         sum += target.get(i) * samplWeight;
