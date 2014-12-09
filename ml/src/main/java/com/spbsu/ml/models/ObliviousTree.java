@@ -1,14 +1,18 @@
 package com.spbsu.ml.models;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.BinOptimizedModel;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * User: solar
@@ -50,7 +54,7 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
     builder.append("->(");
     for (int i = 0; i < features.length; i++) {
       builder.append(i > 0 ? ", " : "")
-              .append(features[i]).append("@").append(basedOn[i]);
+          .append(features[i]).append("@").append(basedOn[i]);
     }
     builder.append(")");
     builder.append("+[");
@@ -121,5 +125,74 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
         index++;
     }
     return values[index];
+  }
+
+  @Nullable
+  public static ObliviousTree removeFeatures(@NotNull final ObliviousTree tree, final int ... indexes) {
+    final int[] sortedIndexes = Arrays.copyOf(indexes, indexes.length);
+    Arrays.sort(sortedIndexes);
+    return removeFeaturesNoSort(tree, sortedIndexes);
+  }
+
+  @Nullable
+  public static ObliviousTree removeFeaturesNoSort(@Nullable final ObliviousTree tree, final int ... indexes) {
+    if (indexes.length == 0)
+      return tree;
+    if (tree == null)
+      return null;
+
+    for (int i = 0; i < tree.features.length; i++) {
+      final BFGrid.BinaryFeature bf = tree.features[i];
+      final int findex = Arrays.binarySearch(indexes, bf.findex);
+      if (findex >= 0) {
+        return removeFeaturesNoSort(removeBF(tree, bf), indexes);
+      }
+    }
+    return tree;
+  }
+
+  @Nullable
+  private static ObliviousTree removeBF(@NotNull final ObliviousTree tree, @NotNull final BFGrid.BinaryFeature bf) {
+    final double[] values = new double[tree.values.length >> 1];
+    final double[] basedOn = new double[tree.basedOn.length >> 1];
+    final BFGrid.BinaryFeature[] features = new BFGrid.BinaryFeature[tree.features.length - 1];
+
+    int findex = -1;
+    int idx = 0;
+    for (int i = 0; i < tree.features.length; i++) {
+      if (!tree.features[i].equals(bf)) {
+        features[idx++] = tree.features[i];
+      } else {
+        assert findex == -1;
+        findex = i;
+      }
+    }
+
+    assert findex != -1;
+
+    final int mask = 1 << (tree.features.length - findex - 1);
+
+    final int border = (1 << tree.features.length) - 1;
+
+    int heighMask = (1 << features.length) - 1;
+    if (mask < heighMask) {
+      heighMask = (heighMask - (mask << 1) - 1) & mask;
+    }
+    final int lowMask = border ^ heighMask;
+
+    for (int i = 0; i < values.length; i++) {
+      final int left = (2 * (i & heighMask) + (i & lowMask)) & border;
+      final int right = (left + mask) & border;
+      final double leftBase = tree.basedOn[left];
+      final double rightBase = tree.basedOn[right];
+      assert leftBase > 0 && rightBase > 0;
+      double lk = leftBase / (leftBase + rightBase);
+      basedOn[i] = leftBase + rightBase;
+      if (basedOn[i] == 0)
+        lk = .5;
+      values[i] = tree.values[left] * lk + tree.values[right] * (1 - lk);
+    }
+
+    return features.length > 0 ? new ObliviousTree(Arrays.asList(features), values, basedOn) : null;
   }
 }

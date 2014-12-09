@@ -1,5 +1,11 @@
 package com.spbsu.ml.methods.trees;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ListIterator;
+
+
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
@@ -10,11 +16,6 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.ObliviousTree;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ListIterator;
 
 /**
  * User: solar
@@ -70,6 +71,7 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
     double[] based = new double[leaves.size()];
     for (int i = 0; i < step.length; i++) {
       step[i] = loss.bestIncrement(leaves.get(i).total());
+      based[i] = leaves.get(i).size();
     }
     return new ObliviousTree(conditions, step, based);
   }
