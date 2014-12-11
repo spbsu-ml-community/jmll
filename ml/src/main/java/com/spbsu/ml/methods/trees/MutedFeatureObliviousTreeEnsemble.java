@@ -2,13 +2,11 @@ package com.spbsu.ml.methods.trees;
 
 import org.jetbrains.annotations.NotNull;
 
-
 import java.util.Arrays;
 
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.models.ObliviousTree;
 
@@ -20,12 +18,12 @@ public class MutedFeatureObliviousTreeEnsemble extends Ensemble<ObliviousTree> {
     super(models, weights);
   }
 
-  public static MutedFeatureObliviousTreeEnsemble from(@NotNull final Ensemble<Trans> origin, @NotNull final int ... mutedFeaturesIndexes) throws ClassCastException {
+  public static MutedFeatureObliviousTreeEnsemble from(@NotNull final Ensemble<ObliviousTree> origin, @NotNull final int ... mutedFeaturesIndexes) throws ClassCastException {
     final ObliviousTree[] newModels = new ObliviousTree[origin.models.length];
     final Vec weights = new ArrayVec(origin.weights.length());
     int realIdx = 0;
     for (int i = 0; i < origin.models.length; i++) {
-      final ObliviousTree model = ObliviousTree.removeFeatures((ObliviousTree) origin.models[i], mutedFeaturesIndexes);
+      final ObliviousTree model = ObliviousTree.removeFeatures(origin.models[i], mutedFeaturesIndexes);
       if (model != null) {
         newModels[realIdx] = model;
         weights.set(realIdx++, origin.weights.get(i));
