@@ -39,7 +39,7 @@ import static com.spbsu.commons.math.MathTools.sqr;
  *
  * Time: 15:50
  */
-public class MethodsTests extends GridTest {
+public abstract class MethodsTests extends GridTest {
   private FastRandom rng;
 
   @Override
