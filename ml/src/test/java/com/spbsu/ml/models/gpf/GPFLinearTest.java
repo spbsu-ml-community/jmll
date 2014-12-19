@@ -6,6 +6,7 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
 import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1GPFSession;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ import static junit.framework.Assert.assertEquals;
  * User: irlab
  * Date: 22.05.14
  */
+@Ignore
 public class GPFLinearTest {
   private int random_seed = 0;
 

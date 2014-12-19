@@ -11,6 +11,7 @@ import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
 import com.spbsu.ml.models.gpf.weblogmodel.SessionV1AttractivenessModel;
 import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1ClickProbabilityModel;
 import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1GPFSession;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ import static org.junit.Assert.assertEquals;
  * User: irlab
  * Date: 11.07.2014
  */
+@Ignore
 public class GPFGbrtTest {
   @Test
   public void testGbrtOptimization() throws IOException {
