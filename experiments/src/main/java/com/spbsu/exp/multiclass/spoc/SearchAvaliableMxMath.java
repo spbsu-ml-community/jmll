@@ -7,6 +7,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
+import com.spbsu.ml.methods.spoc.CMLHelper;
 import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearning;
 import org.apache.commons.cli.MissingArgumentException;
 
@@ -62,7 +63,7 @@ public class SearchAvaliableMxMath {
               for (double lambda1 = 1.0; lambda1 < 1.5 * k; lambda1 += 1.0) {
                 final AbstractCodingMatrixLearning cml = new CodingMatrixLearning(k, l, 0.5, lambdaCCopy, lambdaR, lambda1);
                 final Mx matrixB = cml.trainCodingMatrix(S);
-                if (CodingMatrixLearning.checkConstraints(matrixB)) {
+                if (CMLHelper.checkConstraints(matrixB)) {
                   synchronized (logger) {
                     logger.info(stepCopy + " " + lambdaCCopy + " " + lambdaR + " " + lambda1 + "\n" + matrixB.toString() + "\n");
                   }

@@ -1,16 +1,18 @@
 package com.spbsu.ml;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-
-
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.meta.DSItem;
+import com.spbsu.ml.testUtils.FakePool;
+
+import java.io.StringReader;
+import java.io.StringWriter;
 
 /**
  * User: solar
@@ -79,5 +81,17 @@ public class DataToolsTest extends GridTest {
     for (int i = 0; i < extDs.length(); i++) {
       System.out.println(target.get(i) + "\t" + extDs.at(i).toString());
     }
+  }
+
+  public void testLibfmWrite() throws Exception {
+    final Mx data = new VecBasedMx(2, new ArrayVec(
+        0.0, 1.0,
+        1.0, 0.0
+    ));
+    final Vec target = new ArrayVec(0.5, 0.7);
+    final FakePool pool = new FakePool(data, target);
+    final StringWriter out = new StringWriter();
+    DataTools.writePoolInLibfmFormat(pool, out);
+    assertEquals("0.5\t1:1.0\n0.7\t0:1.0\n", out.toString());
   }
 }

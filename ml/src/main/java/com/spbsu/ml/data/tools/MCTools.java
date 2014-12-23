@@ -33,6 +33,9 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.max;
 
@@ -178,6 +181,48 @@ public class MCTools {
   public static Pair<VecDataSet, IntSeq> loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{
     final Pool<QURLItem> pool = DataTools.loadFromFeaturesTxt(file);
     return Pair.create(pool.vecData(), transformRegressionToMC(pool.target(L2.class).target, classCount, borders));
+  }
+
+  public static Mx createSimilarityMatrixParallels(final VecDataSet learn, final IntSeq target, final Metric<Vec> metric) {
+    final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    final TIntObjectMap<TIntList> indexes = splitClassesIdxs(target);
+    final int k = indexes.keys().length;
+    final Mx S = new VecBasedMx(k, k);
+    for (int i = 0; i < k; i++) {
+      final TIntList classIdxsI = indexes.get(i);
+
+      for (int j = i; j < k; j++) {
+        final TIntList classIdxsJ = indexes.get(j);
+        final int iCopy = i;
+        final int jCopy = j;
+
+        executor.submit(new Runnable() {
+          @Override
+          public void run() {
+            double value = 0.;
+
+            for (TIntIterator iterI = classIdxsI.iterator(); iterI.hasNext(); ) {
+              final int i1 = iterI.next();
+              for (TIntIterator iterJ = classIdxsJ.iterator(); iterJ.hasNext(); ) {
+                final int i2 = iterJ.next();
+                value += 1 - metric.distance(learn.data().row(i1), learn.data().row(i2));
+              }
+            }
+            value /= classIdxsI.size() * classIdxsJ.size();
+            S.set(iCopy, jCopy, value);
+            S.set(jCopy, iCopy, value);
+          }
+        });
+      }
+    }
+
+    executor.shutdown();
+    try {
+      executor.awaitTermination(1000, TimeUnit.HOURS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    return S;
   }
 
   public static Mx createSimilarityMatrix(VecDataSet learn, IntSeq target) {
