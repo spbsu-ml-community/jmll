@@ -50,6 +50,7 @@ public class FakePool extends Pool<FakePool.FakeItem> {
     return features.toArray(new Pair[features.size()]);
   }
 
+  @Override
   public VecDataSet vecData() {
     final DataSet<FakeItem> ds = data();
     return new VecDataSetImpl(ds, data, new Vectorization<FakeItem>() {

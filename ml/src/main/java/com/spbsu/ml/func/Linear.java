@@ -46,12 +46,14 @@ public class Linear extends Func.Stub {
         return weights.dim();
       }
 
+      @Override
       public int ydim() {
         return weights.dim();
       }
     };
   }
 
+  @Override
   public double value(final Vec point) {
     return VecTools.multiply(weights, point);
   }

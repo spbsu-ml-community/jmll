@@ -55,6 +55,7 @@ public class BFDynamicGrid implements DynamicGrid {
   }
 
 
+  @Override
   public DynamicRow row(final int feature) {
     return feature < rows.length ? rows[feature] : null;
   }
@@ -93,6 +94,7 @@ public class BFDynamicGrid implements DynamicGrid {
   }
 
 
+  @Override
   public int rows() {
     return rows.length;
   }

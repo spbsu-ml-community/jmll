@@ -24,6 +24,7 @@ public class LLX2 extends FuncC1.Stub implements TargetFunc {
     this.owner = owner;
   }
 
+  @Override
   public Vec gradient(final Vec point) {
     final Vec result = new ArrayVec(point.dim());
     for (int i = 0; i < point.dim(); i++) {
@@ -41,6 +42,7 @@ public class LLX2 extends FuncC1.Stub implements TargetFunc {
     return target.dim();
   }
 
+  @Override
   public double value(final Vec point) {
     double result = 0;
     for (int i = 0; i < point.dim(); i++) {

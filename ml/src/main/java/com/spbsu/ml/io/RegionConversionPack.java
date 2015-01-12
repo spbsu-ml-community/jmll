@@ -65,6 +65,7 @@ public class RegionConversionPack implements ConversionPack<Region, CharSequence
   public static class From implements GridEnabled, TypeConverter<CharSequence, Region> {
     private BFGrid grid;
 
+    @Override
     public BFGrid getGrid() {
       return grid;
     }

@@ -130,6 +130,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
   public double p(final int... controlPoints) {
     final double[] result = new double[]{0.};
     visit(new Filter<Route>() {
+      @Override
       public boolean accept(final Route route) {
         result[0] += route.p();
         return false;
@@ -155,6 +156,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return toInt.toArray();
   }
 
+  @Override
   public Route next(final FastRandom rng) {
     final TByteArrayList result = new TByteArrayList(100);
     byte next = 0;
@@ -186,10 +188,12 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return routes.length;
   }
 
+  @Override
   public Route knownRoute(final int randRoute) {
     return routes[randRoute];
   }
 
+  @Override
   public double knownRoutesWeight() {
     return knownRoutesProBab;
   }

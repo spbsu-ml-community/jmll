@@ -70,6 +70,7 @@ public class ObliviousMultiClassTreeConversionPack implements ConversionPack<Obl
   public static class From implements GridEnabled, TypeConverter<CharSequence, ObliviousMultiClassTree> {
     private BFGrid grid;
 
+    @Override
     public BFGrid getGrid() {
       return grid;
     }

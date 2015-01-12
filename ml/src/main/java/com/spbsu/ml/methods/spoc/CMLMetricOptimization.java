@@ -49,6 +49,7 @@ public class CMLMetricOptimization {
       this.binClassifier = binClassifier;
     }
 
+    @Override
     public Vec gradient(final Vec mu) {
       final Vec grad = new ArrayVec(mu.dim());
       for (int k = 0; k < grad.dim(); k++) {

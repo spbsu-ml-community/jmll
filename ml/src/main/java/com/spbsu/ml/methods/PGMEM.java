@@ -63,6 +63,7 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
     @Override
     public Policy compute(final ProbabilisticGraphicalModel argument) {
       return new Policy(argument) {
+        @Override
         public boolean accept(final Route route) {
           addOption(route, 1.);
           return true;

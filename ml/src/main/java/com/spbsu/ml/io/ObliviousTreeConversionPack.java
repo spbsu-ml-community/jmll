@@ -65,6 +65,7 @@ public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree
   public static class From implements GridEnabled, TypeConverter<CharSequence, ObliviousTree> {
     private BFGrid grid;
 
+    @Override
     public BFGrid getGrid() {
       return grid;
     }

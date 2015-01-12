@@ -34,10 +34,12 @@ public class CELogit extends FuncC1.Stub implements TargetFunc{
     return result;
   }
 
+  @Override
   public int dim() {
     return target.dim();
   }
 
+  @Override
   public double value(final Vec point) {
     double result = 0;
     for (int i = 0; i < point.dim(); i++) {

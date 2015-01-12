@@ -24,6 +24,7 @@ public class LLLogit extends FuncC1.Stub implements TargetFunc {
     this.owner = owner;
   }
 
+  @Override
   public Vec gradient(final Vec x) {
     final Vec result = new ArrayVec(x.dim());
     for (int i = 0; i < x.dim(); i++) {
@@ -42,6 +43,7 @@ public class LLLogit extends FuncC1.Stub implements TargetFunc {
     return target.dim();
   }
 
+  @Override
   public double value(final Vec point) {
     double result = 0;
     for (int i = 0; i < point.dim(); i++) {

@@ -22,6 +22,7 @@ public class CNF extends RegionBase {
     this.clauses = conditions;
   }
 
+  @Override
   public boolean contains(final Vec point) {
     for (final Clause clause : clauses) {
       if (!clause.contains(point)) {
@@ -31,6 +32,7 @@ public class CNF extends RegionBase {
     return true;
   }
 
+  @Override
   public boolean contains(final BinarizedDataSet bds, final int pindex) {
     for (final Clause clause : clauses) {
       if (!clause.contains(bds, pindex)) {

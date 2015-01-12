@@ -35,10 +35,12 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     return result;
   }
 
+  @Override
   public int dim() {
     return target.dim();
   }
 
+  @Override
   public double value(final Vec point) {
     final Vec temp = copy(point);
     scale(temp, -1);
@@ -61,6 +63,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     return target;
   }
 
+  @Override
   public double value(final MSEStats stats) {
     return stats.sum2;
   }
@@ -70,6 +73,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     return stats.weight > MathTools.EPSILON ? (stats.sum2 - stats.sum * stats.sum / stats.weight) : stats.sum2;
   }
 
+  @Override
   public double bestIncrement(final MSEStats stats) {
     return stats.weight > MathTools.EPSILON ? stats.sum / stats.weight : 0;
   }

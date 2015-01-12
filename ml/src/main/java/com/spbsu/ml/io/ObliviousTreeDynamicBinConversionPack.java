@@ -59,6 +59,7 @@ public class ObliviousTreeDynamicBinConversionPack implements ConversionPack<Obl
   public static class From implements DynamicGridEnabled, TypeConverter<CharSequence, ObliviousTreeDynamicBin> {
     private DynamicGrid grid;
 
+    @Override
     public DynamicGrid getGrid() {
       return grid;
     }

@@ -19,6 +19,7 @@ public class FuncEnsemble<X extends Func> extends Ensemble<X> implements Func{
     super(models, step);
   }
 
+  @Override
   public double value(final Vec x) {
     double result = 0.;
     for (int i = 0; i < size(); i++) {

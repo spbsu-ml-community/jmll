@@ -59,6 +59,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
     this.growGrid = false;
   }
 
+  @Override
   public ObliviousTreeDynamicBin fit(final VecDataSet ds, final Loss loss) {
     final BinarizedDynamicDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 

@@ -24,6 +24,7 @@ public class Nesterov2 implements Optimize<FuncConvex> {
     this.eps = eps;
   }
 
+  @Override
   public Vec optimize(final FuncConvex func) {
     final double m = func.getGlobalConvexParam();
     final double lk = func.getGradLipParam();

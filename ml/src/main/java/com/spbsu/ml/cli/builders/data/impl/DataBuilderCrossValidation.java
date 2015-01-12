@@ -19,10 +19,12 @@ public class DataBuilderCrossValidation implements DataBuilder {
   private long randomSeed = System.currentTimeMillis();
   private double partition = 0.8;
 
+  @Override
   public void setLearnPath(final String learnPath) {
     this.learnPath = learnPath;
   }
 
+  @Override
   public void setJsonFormat(final boolean isJsonFormat) {
     this.isJsonFormat = isJsonFormat;
   }

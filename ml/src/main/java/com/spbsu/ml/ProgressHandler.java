@@ -8,5 +8,6 @@ import com.spbsu.commons.func.Action;
  * Time: 17:17:41
  */
 public interface ProgressHandler extends Action<Trans> {
+  @Override
   void invoke(Trans partial);
 }

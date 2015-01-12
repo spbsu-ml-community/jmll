@@ -28,6 +28,7 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
     super(bds, oracle, points, features, masks, maxFailed);
   }
 
+  @Override
   public BFOptimizationSubset split(final BFGrid.BinaryFeature feature, final boolean mask) {
     final TIntArrayList out = new TIntArrayList(points.length);
     final byte[] bins = bds.bins(feature.findex);

@@ -34,6 +34,7 @@ public interface DataSet<Item> extends Seq<Item>, CacheHolder {
       return parent.meta();
     }
 
+    @Override
     public int index(final T obj) {
       for (int i = 0; i < length(); i++) {
         if (at(i).equals(obj))

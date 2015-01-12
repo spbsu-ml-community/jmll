@@ -51,6 +51,7 @@ public class WebLogV1ClickProbabilityModel implements ClickProbabilityModel<Bloc
     }
   }
 
+  @Override
   public double getClickGivenViewProbability(final BlockV1 b) {
     switch (b.blockType) {
       case RESULT:

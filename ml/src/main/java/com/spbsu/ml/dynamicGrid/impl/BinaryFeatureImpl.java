@@ -38,6 +38,7 @@ public class BinaryFeatureImpl implements BinaryFeature {
   }
 
 
+  @Override
   public void setActive(final boolean status) {
     this.active = status;
   }
@@ -53,10 +54,12 @@ public class BinaryFeatureImpl implements BinaryFeature {
     return this.condition;
   }
 
+  @Override
   public boolean value(final Vec vec) {
     return vec.get(origFIndex) > condition;
   }
 
+  @Override
   public DynamicRow row() {
     return bfRow;
   }

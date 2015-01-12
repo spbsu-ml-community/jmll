@@ -23,6 +23,7 @@ public interface Trans extends Computable<Vec,Vec> {
   Mx transAll(Mx x);
 
   abstract class Stub implements Trans {
+    @Override
     public Trans gradient() {
       return null;
     }
@@ -32,6 +33,7 @@ public interface Trans extends Computable<Vec,Vec> {
       return trans(argument);
     }
 
+    @Override
     public Mx transAll(final Mx ds) {
       final Mx result = new VecBasedMx(ydim(), new ArrayVec(ds.rows() * ydim()));
       for (int i = 0; i < ds.rows(); i++) {

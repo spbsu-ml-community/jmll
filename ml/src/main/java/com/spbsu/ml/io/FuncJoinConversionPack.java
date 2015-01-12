@@ -33,6 +33,7 @@ public class FuncJoinConversionPack implements ConversionPack<FuncJoin, CharSequ
     }
   }
 
+  @Override
   public Class<To> to() {
     return To.class;
   }

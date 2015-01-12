@@ -32,6 +32,7 @@ public class LARSMethod extends VecOptimization.Stub<L2> {
     }
   }
 
+  @Override
   public NormalizedLinear fit(final VecDataSet origDS, final L2 loss) {
     final Mx orig = origDS.data();
     final int featuresCount = orig.columns();

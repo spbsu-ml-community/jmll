@@ -42,10 +42,12 @@ public interface VecDataSet extends DataSet<Vec> {
       return data().rows();
     }
 
+    @Override
     public final int xdim() {
       return data().columns();
     }
 
+    @Override
     public int[] order(final int featureIndex) {
       final int[] result = ArrayTools.sequence(0, length());
       ArrayTools.parallelSort(data().col(featureIndex).toArray(), result);

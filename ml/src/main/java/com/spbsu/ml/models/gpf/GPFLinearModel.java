@@ -88,6 +88,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     return ret;
   }
 
+  @Override
   public double eval_f(final Session<BlockV1> ses, final int s, final int e, final int click_s) {
     return eval_f(getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s));
   }
@@ -351,6 +352,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     return ret;
   }
 
+  @Override
   public String explainTheta() {
     final StringBuffer ret = new StringBuffer();
     ret.append("theta: {\n");

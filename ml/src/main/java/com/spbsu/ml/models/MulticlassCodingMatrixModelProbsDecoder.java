@@ -18,6 +18,7 @@ public class MulticlassCodingMatrixModelProbsDecoder extends MulticlassCodingMat
     this.mu = mu;
   }
 
+  @Override
   protected double[] calcDistances(final Vec trans) {
     final double[] dist = new double[codingMatrix.rows()];
     for (int k = 0; k < dist.length; k++) {

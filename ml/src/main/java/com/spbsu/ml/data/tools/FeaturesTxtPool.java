@@ -53,6 +53,7 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
     return features.toArray(new Pair[features.size()]);
   }
 
+  @Override
   public VecDataSet vecData() {
     final DataSet<QURLItem> ds = data();
     return new VecDataSetImpl(ds, data, new Vectorization<QURLItem>() {

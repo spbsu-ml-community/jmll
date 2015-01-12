@@ -22,6 +22,7 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
     this.owner = owner;
   }
 
+  @Override
   public int dim() {
     return target.dim();
   }
@@ -65,6 +66,7 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
     };
   }
 
+  @Override
   public double value(final MSEStats stats) {
     return stats.sum2;
   }
@@ -74,6 +76,7 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
     return stats.weight > MathTools.EPSILON ? (stats.sum2 - stats.sum * stats.sum / stats.weight) : stats.sum2;
   }
 
+  @Override
   public double bestIncrement(final MSEStats stats) {
     return stats.weight > MathTools.EPSILON ? stats.sum / stats.weight : 0;
   }
