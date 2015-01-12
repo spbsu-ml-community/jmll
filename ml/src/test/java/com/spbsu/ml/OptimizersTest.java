@@ -4,15 +4,15 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Logger;
+import com.spbsu.ml.factorization.impl.ALS;
 import com.spbsu.ml.optimization.FuncConvex;
 import com.spbsu.ml.optimization.Optimize;
 import com.spbsu.ml.optimization.PDQuadraticFunction;
-import com.spbsu.ml.optimization.TensorNetFunction;
-import com.spbsu.ml.optimization.impl.ALS;
 import com.spbsu.ml.optimization.impl.GradientDescent;
 import com.spbsu.ml.optimization.impl.Nesterov1;
 import com.spbsu.ml.optimization.impl.Nesterov2;
@@ -160,27 +160,20 @@ public class OptimizersTest extends TestCase {
     }
 
     public void testALS() throws Exception {
-        final int dim = 4;
+        final int m = 3;
+        final int n = 4;
 
-        final Mx X = new VecBasedMx(dim, new ArrayVec(4, 3, 2, 1,
+        final Mx X = new VecBasedMx(n, new ArrayVec(
                 8, 6, 4, 2,
                 12, 9, 6, 3,
                 16, 12, 8, 4));
-        final double c1 = 6;
-        final double c2 = 6;
-        final TensorNetFunction func = new TensorNetFunction(X, c1, c2);
 
-        final Vec z0 = new ArrayVec(1, 1, 1, 1, 1, 1, 1, 1);
+        final Vec z0 = VecTools.fill(new ArrayVec(m + n), 1.0);
         final ALS als = new ALS(z0, 1);
-        final Vec zMin = als.optimize(func);
+        final Pair<Vec, Vec> zMin = als.factorize(X);
 
-        final Vec u = new ArrayVec(dim);
-        final Vec v = new ArrayVec(dim);
-
-        for (int i = 0; i < dim; i++) {
-            u.set(i, zMin.get(i));
-            v.set(i, zMin.get(i + dim));
-        }
+        final Vec u = zMin.getFirst();
+        final Vec v = zMin.getSecond();
 
         System.out.println("u: " + u.toString());
         System.out.println("v: " + v.toString());
