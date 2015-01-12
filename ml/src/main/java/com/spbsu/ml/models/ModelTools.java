@@ -21,17 +21,17 @@ public class ModelTools {
   private static class ConditionEntry{
     public final int[] features;
 
-    private ConditionEntry(int[] features) {
+    private ConditionEntry(final int[] features) {
       this.features = features;
     }
 
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
 
-      ConditionEntry that = (ConditionEntry) o;
+      final ConditionEntry that = (ConditionEntry) o;
       return Arrays.equals(features, that.features);
     }
 
@@ -40,7 +40,7 @@ public class ModelTools {
       return Arrays.hashCode(features);
     }
   }
-  public static Func compile(Ensemble<ObliviousTree> input) {
+  public static Func compile(final Ensemble<ObliviousTree> input) {
     final BFGrid grid = input.size() > 0 ? input.models[0].grid() : null;
     final TObjectDoubleHashMap<ConditionEntry> scores = new TObjectDoubleHashMap<ConditionEntry>();
     for (int i = 0; i < input.size(); i++) {
@@ -50,9 +50,9 @@ public class ModelTools {
         final Set<BFGrid.BinaryFeature> currentSet = new HashSet<BFGrid.BinaryFeature>();
         final double[] values = model.values();
         double value = 0;
-        int bitsB = MathTools.bits(b);
+        final int bitsB = MathTools.bits(b);
         for (int a = 0; a < values.length; a++) {
-          int bitsA = MathTools.bits(a);
+          final int bitsA = MathTools.bits(a);
           if (MathTools.bits(a & b) >= bitsA)
             value += (((bitsA + bitsB) & 1) > 0 ? -1 : 1) * values[a];
         }
@@ -62,7 +62,7 @@ public class ModelTools {
           }
         }
         if (value != 0.) {
-          int[] currentSetA = new int[currentSet.size()];
+          final int[] currentSetA = new int[currentSet.size()];
           final Iterator<BFGrid.BinaryFeature> it = currentSet.iterator();
           for (int j = 0; j < currentSetA.length; j++) {
             currentSetA[j] = it.next().bfIndex;
@@ -80,14 +80,14 @@ public class ModelTools {
 
     scores.forEachEntry(new TObjectDoubleProcedure<ConditionEntry>() {
       @Override
-      public boolean execute(ConditionEntry a, double b) {
+      public boolean execute(final ConditionEntry a, final double b) {
         sortedScores.add(Pair.create(a, b));
         return true;
       }
     });
     Collections.sort(sortedScores, new Comparator<Pair<ConditionEntry, Double>>() {
       @Override
-      public int compare(Pair<ConditionEntry, Double> o1, Pair<ConditionEntry, Double> o2) {
+      public int compare(final Pair<ConditionEntry, Double> o1, final Pair<ConditionEntry, Double> o2) {
         if (o1.first.features.length > o2.first.features.length)
           return 1;
         else if (o1.first.features.length == o2.first.features.length) {
@@ -103,9 +103,9 @@ public class ModelTools {
 
     final List<int[]> entries = new ArrayList<>(scores.size());
     final TDoubleArrayList values = new TDoubleArrayList(scores.size());
-    int[] freqs = new int[grid.size()];
+    final int[] freqs = new int[grid.size()];
 
-    for (Pair<ConditionEntry, Double> score : sortedScores) {
+    for (final Pair<ConditionEntry, Double> score : sortedScores) {
       entries.add(score.first.features);
       for (int i = 0; i < score.first.features.length; i++) {
         freqs[score.first.features[i]]++;
@@ -115,7 +115,7 @@ public class ModelTools {
     return new Func.Stub() {
       byte[] binary = new byte[grid.rows()];
       @Override
-      public synchronized double value(Vec x) {
+      public synchronized double value(final Vec x) {
         if (grid == null)
           return 0.;
 

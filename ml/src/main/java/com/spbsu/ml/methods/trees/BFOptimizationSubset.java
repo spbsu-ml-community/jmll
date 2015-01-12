@@ -20,18 +20,18 @@ public class BFOptimizationSubset {
   private final StatBasedLoss<AdditiveStatistics> oracle;
   public final Aggregate aggregate;
 
-  public BFOptimizationSubset(BinarizedDataSet bds, StatBasedLoss oracle, int[] points) {
+  public BFOptimizationSubset(final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points) {
     this.bds = bds;
     this.points = points;
     this.oracle = oracle;
     this.aggregate = new Aggregate(bds, oracle.statsFactory(), points);
   }
 
-  public BFOptimizationSubset split(BFGrid.BinaryFeature feature) {
-    TIntArrayList left = new TIntArrayList(points.length);
-    TIntArrayList right = new TIntArrayList(points.length);
+  public BFOptimizationSubset split(final BFGrid.BinaryFeature feature) {
+    final TIntArrayList left = new TIntArrayList(points.length);
+    final TIntArrayList right = new TIntArrayList(points.length);
     final byte[] bins = bds.bins(feature.findex);
-    for (int i : points) {
+    for (final int i : points) {
       if (bins[i] <= feature.binNo) {
         left.add(i);
       } else {
@@ -49,11 +49,11 @@ public class BFOptimizationSubset {
     return points.length;
   }
 
-  public void visitAllSplits(Aggregate.SplitVisitor<? extends AdditiveStatistics> visitor) {
+  public void visitAllSplits(final Aggregate.SplitVisitor<? extends AdditiveStatistics> visitor) {
     aggregate.visit(visitor);
   }
 
-  public <T extends AdditiveStatistics> void visitSplit(BFGrid.BinaryFeature bf, Aggregate.SplitVisitor<T> visitor) {
+  public <T extends AdditiveStatistics> void visitSplit(final BFGrid.BinaryFeature bf, final Aggregate.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
     final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
     visitor.accept(bf, left, right);

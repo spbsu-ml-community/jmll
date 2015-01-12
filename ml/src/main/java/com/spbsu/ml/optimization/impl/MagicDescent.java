@@ -17,23 +17,23 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  */
 @Deprecated
 public class MagicDescent implements Optimize<FuncConvex> {
-    private static Logger LOG = Logger.create(GradientDescent.class);
+    private static final Logger LOG = Logger.create(GradientDescent.class);
     private final Vec x0;
     private final double eps;
 
-    public MagicDescent(Vec x0, double eps) {
+    public MagicDescent(final Vec x0, final double eps) {
         this.x0 = x0;
         this.eps = eps;
     }
 
-    Vec addXtoCY(Vec x, Vec y, double c) {
-        Vec ans = copy(x);
+    Vec addXtoCY(final Vec x, final Vec y, final double c) {
+        final Vec ans = copy(x);
         for (int i = 0; i < x.dim(); i++)
             ans.set(i, x.get(i) + y.get(i) * c);
         return ans;
     }
 
-    double scaleMultiply(Vec x, Vec y) {
+    double scaleMultiply(final Vec x, final Vec y) {
         double ans = 0;
         for (int i = 0; i < x.dim(); i++)
             ans += x.get(i) * y.get(i);
@@ -41,7 +41,7 @@ public class MagicDescent implements Optimize<FuncConvex> {
     }
 
     @Override
-    public Vec optimize(FuncConvex func) {
+    public Vec optimize(final FuncConvex func) {
         Vec x1 = copy(x0);
         Vec grad = func.gradient().trans(x0);
         double distance = 1;

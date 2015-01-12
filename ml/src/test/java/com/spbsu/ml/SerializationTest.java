@@ -29,7 +29,7 @@ public class SerializationTest extends GridTest {
   }
 
   public void testObliviousTree() {
-    ObliviousTree ot = new ObliviousTree(Arrays.asList(grid.bf(20)), new double[]{0, 1}, new double[]{10, 3});
+    final ObliviousTree ot = new ObliviousTree(Arrays.asList(grid.bf(20)), new double[]{0, 1}, new double[]{10, 3});
     ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     boolean caught = false;
     try {
@@ -45,7 +45,7 @@ public class SerializationTest extends GridTest {
 
 
   public void testRegion() {
-    Region region = new Region(Arrays.asList(grid.bf(20), grid.bf(5), grid.bf(50),grid.bf(22)), new boolean[]{true,false,false,true}, 42,0,3,101.1,1);
+    final Region region = new Region(Arrays.asList(grid.bf(20), grid.bf(5), grid.bf(50),grid.bf(22)), new boolean[]{true,false,false,true}, 42,0,3,101.1,1);
     ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     boolean caught = false;
     try {
@@ -60,7 +60,7 @@ public class SerializationTest extends GridTest {
   }
 
   public void testObliviousTreeDynamicBin() {
-    ObliviousTreeDynamicBin ot = new ObliviousTreeDynamicBin(Arrays.asList(dynamicGrid.bf(0, 2)), new double[]{0, 1});
+    final ObliviousTreeDynamicBin ot = new ObliviousTreeDynamicBin(Arrays.asList(dynamicGrid.bf(0, 2)), new double[]{0, 1});
     ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     boolean caught = false;
     try {
@@ -74,21 +74,21 @@ public class SerializationTest extends GridTest {
   }
 
   public void testDynamicGrid() {
-    ModelsSerializationRepository serialization = new ModelsSerializationRepository();
+    final ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     assertEquals(dynamicGrid.toString(), serialization.read(serialization.write(dynamicGrid), DynamicGrid.class).toString());
     assertEquals(dynamicGrid, serialization.read(serialization.write(dynamicGrid), DynamicGrid.class));
   }
 
 
   public void testGrid() {
-    ModelsSerializationRepository serialization = new ModelsSerializationRepository();
+    final ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     assertEquals(grid.toString(), serialization.read(serialization.write(grid), BFGrid.class).toString());
     assertEquals(grid, serialization.read(serialization.write(grid), BFGrid.class));
   }
 
   public void testAdditiveModel() {
-    ObliviousTree ot = new ObliviousTree(Arrays.asList(grid.bf(20)), new double[]{0, 1}, new double[]{10, 3});
-    Ensemble sum = new Ensemble(Arrays.<Trans>asList(ot, ot, ot), 0.1);
+    final ObliviousTree ot = new ObliviousTree(Arrays.asList(grid.bf(20)), new double[]{0, 1}, new double[]{10, 3});
+    final Ensemble sum = new Ensemble(Arrays.<Trans>asList(ot, ot, ot), 0.1);
     ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     boolean caught = false;
     try {
@@ -116,7 +116,7 @@ public class SerializationTest extends GridTest {
         ),
         0.5
     );
-    ModelsSerializationRepository serialization = new ModelsSerializationRepository();
+    final ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     assertEquals(model, serialization.read(serialization.write(model), FMModel.class));
   }
 

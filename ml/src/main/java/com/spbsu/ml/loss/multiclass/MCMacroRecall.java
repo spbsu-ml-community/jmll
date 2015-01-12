@@ -21,13 +21,13 @@ public class MCMacroRecall extends Func.Stub implements TargetFunc {
   private final DataSet<?> owner;
   private final int[] classLabels;
 
-  public MCMacroRecall(final IntSeq target, DataSet<?> owner) {
+  public MCMacroRecall(final IntSeq target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
     this.classLabels = MCTools.getClassesLabels(target);
   }
 
-  public MCMacroRecall(Vec target, DataSet<?> owner) {
+  public MCMacroRecall(final Vec target, final DataSet<?> owner) {
     final int[] intTarget = new int[target.length()];
     final VecIterator iter = target.nonZeroes();
     while (iter.advance()) {
@@ -39,7 +39,7 @@ public class MCMacroRecall extends Func.Stub implements TargetFunc {
   }
 
   @Override
-  public double value(Vec x) {
+  public double value(final Vec x) {
     final TIntIntHashMap id2tp = new TIntIntHashMap();
     final TIntIntHashMap id2fn = new TIntIntHashMap();
     for (int i = 0; i < target.length(); i++) {

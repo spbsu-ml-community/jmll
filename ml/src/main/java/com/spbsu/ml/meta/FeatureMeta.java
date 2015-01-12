@@ -26,7 +26,7 @@ public interface FeatureMeta {
 
     private final Class<? extends Seq<?>> type;
 
-    private ValueType(Class<? extends Seq<?>> type) {
+    private ValueType(final Class<? extends Seq<?>> type) {
       this.type = type;
     }
 

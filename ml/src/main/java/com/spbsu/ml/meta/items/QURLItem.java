@@ -15,7 +15,7 @@ public class QURLItem implements DSItem {
   public QURLItem() {
   }
 
-  public QURLItem(int queryId, String url, int groupId) {
+  public QURLItem(final int queryId, final String url, final int groupId) {
     this.queryId = queryId;
     this.url = url;
     this.groupId = groupId;

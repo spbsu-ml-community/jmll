@@ -14,11 +14,11 @@ import java.util.Collection;
  * Date: 16.01.2010
  */
 public class NearestNeighborDRAlgorithm<X> implements ClusterizationAlgorithm<X> {
-  private Metric<Vec> metric;
-  private double acceptanceDistance;
-  private double distanceRatio;
+  private final Metric<Vec> metric;
+  private final double acceptanceDistance;
+  private final double distanceRatio;
 
-  public NearestNeighborDRAlgorithm(Metric<Vec> metric, double acceptanceDistance, double distanceRatio) {
+  public NearestNeighborDRAlgorithm(final Metric<Vec> metric, final double acceptanceDistance, final double distanceRatio) {
     this.metric = metric;
     this.acceptanceDistance = acceptanceDistance;
     this.distanceRatio = distanceRatio;
@@ -26,7 +26,7 @@ public class NearestNeighborDRAlgorithm<X> implements ClusterizationAlgorithm<X>
 
   @NotNull
   @Override
-  public Collection<? extends Collection<X>> cluster(Collection<X> dataSet, Computable<X, Vec> data2DVector) {
+  public Collection<? extends Collection<X>> cluster(final Collection<X> dataSet, final Computable<X, Vec> data2DVector) {
     final Collection<Collection<X>> clusters = Factories.hashSet();
     for (final X data : dataSet) {
       final Vec dataVector = data2DVector.compute(data);

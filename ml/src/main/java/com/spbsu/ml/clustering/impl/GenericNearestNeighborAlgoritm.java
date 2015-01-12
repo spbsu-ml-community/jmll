@@ -13,11 +13,11 @@ import java.util.Collection;
  * Date: 16.01.2010
  */
 public class GenericNearestNeighborAlgoritm<X,V> implements GenericClusterizationAlgorithm<X, V> {
-  private Metric<V> metric;
-  private double acceptanceDistance;
-  private double rejectionDistance;
+  private final Metric<V> metric;
+  private final double acceptanceDistance;
+  private final double rejectionDistance;
 
-  public GenericNearestNeighborAlgoritm(Metric<V> metric, double acceptanceDistance, double rejectionDistance) {
+  public GenericNearestNeighborAlgoritm(final Metric<V> metric, final double acceptanceDistance, final double rejectionDistance) {
     this.metric = metric;
     this.acceptanceDistance = acceptanceDistance;
     this.rejectionDistance = rejectionDistance;
@@ -25,7 +25,7 @@ public class GenericNearestNeighborAlgoritm<X,V> implements GenericClusterizatio
 
   @NotNull
   @Override
-  public Collection<? extends Collection<X>> cluster(Collection<X> dataSet, Computable<X, V> data2DVector) {
+  public Collection<? extends Collection<X>> cluster(final Collection<X> dataSet, final Computable<X, V> data2DVector) {
     final Collection<Collection<X>> clusters = Factories.hashSet();
     for (final X data : dataSet) {
       final V dataVector = data2DVector.compute(data);

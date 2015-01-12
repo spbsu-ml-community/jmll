@@ -10,26 +10,26 @@ import com.spbsu.ml.methods.VecOptimization;
  * Date: 03.09.14
  */
 public class GradientBoostingBuilder implements Factory<VecOptimization> {
-  private Factory<VecOptimization> defaultWeakBuilder = new BootstrapOptimizationBuilder();
+  private final Factory<VecOptimization> defaultWeakBuilder = new BootstrapOptimizationBuilder();
 
   private VecOptimization weak;
   private String lossName = "LogL2";
   private double step = 0.005;
   private int iters = 200;
 
-  public void setStep(double s) {
+  public void setStep(final double s) {
     this.step = s;
   }
 
-  public void setIterations(int icount) {
+  public void setIterations(final int icount) {
     this.iters = icount;
   }
 
-  public void setLocal(String lossName) {
+  public void setLocal(final String lossName) {
     this.lossName = lossName;
   }
 
-  public void setWeak(VecOptimization weak) {
+  public void setWeak(final VecOptimization weak) {
     this.weak = weak;
   }
 

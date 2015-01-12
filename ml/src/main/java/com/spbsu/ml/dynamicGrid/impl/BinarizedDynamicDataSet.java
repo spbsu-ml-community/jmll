@@ -21,15 +21,15 @@ public class BinarizedDynamicDataSet {
   private final short[][] bins;
   public final List<BinaryFeature> queue = new ArrayList<>();
 
-  public BinarizedDynamicDataSet(DataSet base, DynamicGrid grid) {
+  public BinarizedDynamicDataSet(final DataSet base, final DynamicGrid grid) {
     this.base = base;
     this.grid = grid;
-    int xdim = ((VecDataSet) base).xdim();
+    final int xdim = ((VecDataSet) base).xdim();
     bins = new short[xdim][];
     for (int f = 0; f < bins.length; f++) {
       bins[f] = new short[base.length()];
     }
-    short[] binarization = new short[grid.rows()];
+    final short[] binarization = new short[grid.rows()];
     for (int t = 0; t < base.length(); t++) {
       grid.binarize(((VecDataSet) base).data().row(t), binarization);
       for (int f = 0; f < bins.length; f++) {
@@ -38,7 +38,7 @@ public class BinarizedDynamicDataSet {
     }
   }
 
-  public boolean addSplit(int f) {
+  public boolean addSplit(final int f) {
     if (grid.addSplit(f)) {
       updateBins(f);
       return true;
@@ -50,7 +50,7 @@ public class BinarizedDynamicDataSet {
     for (int f1 = 0; f1 < bins.length; f1++) {
       bins[f1] = new short[base.length()];
     }
-    short[] binarization = new short[grid.rows()];
+    final short[] binarization = new short[grid.rows()];
     for (int t = 0; t < base.length(); t++) {
       grid.binarize(((VecDataSet) base).data().row(t), binarization);
       for (int f1 = 0; f1 < bins.length; f1++) {
@@ -59,8 +59,8 @@ public class BinarizedDynamicDataSet {
     }
   }
 
-  private void updateBins(int f) {
-    DynamicRow row = grid.row(f);
+  private void updateBins(final int f) {
+    final DynamicRow row = grid.row(f);
     for (int t = 0; t < bins[f].length; ++t) {
       bins[f][t] = row.bin(((VecDataSet) base).at(t).get(f));
     }
@@ -75,32 +75,32 @@ public class BinarizedDynamicDataSet {
     return grid;
   }
 
-  public short[] bins(int findex) {
+  public short[] bins(final int findex) {
     return bins[findex];
   }
 
-  public void queueSplit(BinaryFeature bf) {
+  public void queueSplit(final BinaryFeature bf) {
     queue.add(bf);
   }
 
 
-  public boolean acceptQueue(List<BFDynamicOptimizationSubset> leaves) {
+  public boolean acceptQueue(final List<BFDynamicOptimizationSubset> leaves) {
     if (queue.size() > 0) {
-      int[] origFIndexes = new int[queue.size()];
+      final int[] origFIndexes = new int[queue.size()];
       for (int i = 0; i < queue.size(); ++i) {
         origFIndexes[i] = queue.get(i).fIndex();
       }
 
-      for (BinaryFeature feature : queue) {
+      for (final BinaryFeature feature : queue) {
         feature.row().addSplit();
         feature.setActive(true);
       }
-      for (BinaryFeature feature : queue)
+      for (final BinaryFeature feature : queue)
         updateBins(feature.fIndex());
       queue.clear();
 //            java 8 parallel version
 //            leaves.parallelStream().forEach((leave) -> leave.rebuild(origFIndexes));
-      for (BFDynamicOptimizationSubset leave : leaves)
+      for (final BFDynamicOptimizationSubset leave : leaves)
         leave.rebuild(origFIndexes);
 
       return true;

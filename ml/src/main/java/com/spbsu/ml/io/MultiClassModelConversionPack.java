@@ -40,7 +40,7 @@ public class MultiClassModelConversionPack implements ConversionPack<MultiClassM
       final TransJoin internModel = repository.convert(from, TransJoin.class);
       final Func[] dirs = ArrayTools.map(internModel.dirs, Func.class, new Computable<Trans, Func>() {
         @Override
-        public Func compute(Trans argument) {
+        public Func compute(final Trans argument) {
           return (Func) argument;
         }
       });

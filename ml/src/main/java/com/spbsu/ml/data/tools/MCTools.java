@@ -44,7 +44,7 @@ import static java.lang.Math.max;
  * Date: 04.06.14
  */
 public class MCTools {
-  public static int countClasses(IntSeq target) {
+  public static int countClasses(final IntSeq target) {
     int classesCount = 0;
     for (int i = 0; i < target.length(); i++) {
       classesCount = max(target.at(i) + 1, classesCount);
@@ -52,7 +52,7 @@ public class MCTools {
     return classesCount;
   }
 
-  public static int classEntriesCount(IntSeq target, int classNo) {
+  public static int classEntriesCount(final IntSeq target, final int classNo) {
     int result = 0;
     for (int i = 0; i < target.length(); i++) {
       if (target.at(i) == classNo)
@@ -61,7 +61,7 @@ public class MCTools {
     return result;
   }
 
-  public static Vec extractClassForBinary(IntSeq target, int classNo) {
+  public static Vec extractClassForBinary(final IntSeq target, final int classNo) {
     final Vec result = new ArrayVec(target.length());
     for (int i = 0; i < target.length(); i++)
       result.set(i, (target.at(i) == classNo) ? 1. : -1.);
@@ -73,7 +73,7 @@ public class MCTools {
    * @param target MC target with any classes labels
    * @return classes labels corresponding their order (uniq)
    */
-  public static int[] getClassesLabels(IntSeq target) {
+  public static int[] getClassesLabels(final IntSeq target) {
     final TIntList labels = new TIntArrayList();
     for (int i = 0; i < target.length(); i++) {
       final int label = target.at(i);
@@ -84,7 +84,7 @@ public class MCTools {
     return labels.toArray();
   }
 
-  public static int[] getClassLabels(Vec target) {
+  public static int[] getClassLabels(final Vec target) {
     final TIntList labels = new TIntArrayList();
     for (int i = 0; i < target.length(); i++) {
       final int label = target.at(i).intValue();
@@ -122,7 +122,7 @@ public class MCTools {
     return new IntSeq(newTarget);
   }
 
-  public static TIntObjectMap<TIntList> splitClassesIdxs(IntSeq target) {
+  public static TIntObjectMap<TIntList> splitClassesIdxs(final IntSeq target) {
     final TIntObjectMap<TIntList> indexes = new TIntObjectHashMap<TIntList>();
     for (int i = 0; i < target.length(); i++) {
       final int label = target.at(i);
@@ -138,7 +138,7 @@ public class MCTools {
     return indexes;
   }
 
-  private static double normalizeRelevance(double y) {
+  private static double normalizeRelevance(final double y) {
     if (y <= 0.0)
       return 0.;
 //    else if (y < 0.14)
@@ -153,7 +153,7 @@ public class MCTools {
   }
 
 
-  public static IntSeq transformRegressionToMC(Vec regressionTarget, int classCount, TDoubleList borders) throws IOException {
+  public static IntSeq transformRegressionToMC(final Vec regressionTarget, final int classCount, final TDoubleList borders) throws IOException {
     final double[] target = regressionTarget.toArray();
     final int[] idxs = ArrayTools.sequence(0, target.length);
     ArrayTools.parallelSort(target, idxs);
@@ -178,7 +178,7 @@ public class MCTools {
     return new IntSeq(resultTarget);
   }
 
-  public static Pair<VecDataSet, IntSeq> loadRegressionAsMC(String file, int classCount, TDoubleList borders)  throws IOException{
+  public static Pair<VecDataSet, IntSeq> loadRegressionAsMC(final String file, final int classCount, final TDoubleList borders)  throws IOException{
     final Pool<QURLItem> pool = DataTools.loadFromFeaturesTxt(file);
     return Pair.create(pool.vecData(), transformRegressionToMC(pool.target(L2.class).target, classCount, borders));
   }
@@ -201,9 +201,9 @@ public class MCTools {
           public void run() {
             double value = 0.;
 
-            for (TIntIterator iterI = classIdxsI.iterator(); iterI.hasNext(); ) {
+            for (final TIntIterator iterI = classIdxsI.iterator(); iterI.hasNext(); ) {
               final int i1 = iterI.next();
-              for (TIntIterator iterJ = classIdxsJ.iterator(); iterJ.hasNext(); ) {
+              for (final TIntIterator iterJ = classIdxsJ.iterator(); iterJ.hasNext(); ) {
                 final int i2 = iterJ.next();
                 value += 1 - metric.distance(learn.data().row(i1), learn.data().row(i2));
               }
@@ -225,7 +225,7 @@ public class MCTools {
     return S;
   }
 
-  public static Mx createSimilarityMatrix(VecDataSet learn, IntSeq target) {
+  public static Mx createSimilarityMatrix(final VecDataSet learn, final IntSeq target) {
     final TIntObjectMap<TIntList> indexes = splitClassesIdxs(target);
     final Metric<Vec> metric = new CosineDVectorMetric();
     final int k = indexes.keys().length;
@@ -235,9 +235,9 @@ public class MCTools {
       for (int j = i; j < k; j++) {
         final TIntList classIdxsJ = indexes.get(j);
         double value = 0.;
-        for (TIntIterator iterI = classIdxsI.iterator(); iterI.hasNext(); ) {
+        for (final TIntIterator iterI = classIdxsI.iterator(); iterI.hasNext(); ) {
           final int i1 = iterI.next();
-          for (TIntIterator iterJ = classIdxsJ.iterator(); iterJ.hasNext(); ) {
+          for (final TIntIterator iterJ = classIdxsJ.iterator(); iterJ.hasNext(); ) {
             final int i2 = iterJ.next();
             value += 1 - metric.distance(learn.data().row(i1), learn.data().row(i2));
           }

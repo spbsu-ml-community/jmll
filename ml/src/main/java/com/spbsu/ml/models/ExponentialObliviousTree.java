@@ -16,16 +16,16 @@ import java.util.List;
 public class ExponentialObliviousTree extends ContinousObliviousTree {
   private final double DistCoef;
 
-  public ExponentialObliviousTree(final List<BFGrid.BinaryFeature> features, double[][] values, double _distCoef) {
+  public ExponentialObliviousTree(final List<BFGrid.BinaryFeature> features, final double[][] values, final double _distCoef) {
     super(features, values);
     DistCoef = _distCoef;
   }
 
-  double sqr(double x) {
+  double sqr(final double x) {
     return x * x;
   }
 
-  double calcDistanseToRegion(int index, Vec point) {
+  double calcDistanseToRegion(final int index, final Vec point) {
     double ans = 0;
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(point) != ((index >> i) == 1)) {
@@ -36,14 +36,14 @@ public class ExponentialObliviousTree extends ContinousObliviousTree {
   }
 
   @Override
-  public double value(Vec _x) {
+  public double value(final Vec _x) {
     double sum = 0;
 
-    double x[] = new double[features.length + 1];
+    final double[] x = new double[features.length + 1];
     for (int i = 0; i < features.length; i++)
       x[i + 1] = _x.get(features[i].findex);
     x[0] = 1;
-    double sumWeights = 0;
+    final double sumWeights = 0;
     //for (int index = 0; index < 1 << lines.length; index++) {
     //double weight = Math.exp(-calcDistanseToRegion(index, _x));
     //sumWeights += weight;

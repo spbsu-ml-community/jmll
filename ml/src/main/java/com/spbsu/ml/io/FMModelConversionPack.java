@@ -19,7 +19,7 @@ public class FMModelConversionPack implements ConversionPack<FMModel, CharSequen
     @Override
     public CharSequence convert(final FMModel from) {
       final Vec2StringConverter vec2StringConverter = new Vec2StringConverter();
-      StringBuilder builder = new StringBuilder();
+      final StringBuilder builder = new StringBuilder();
       builder.append(String.valueOf(from.getW0()));
       builder.append("\n");
       builder.append(vec2StringConverter.convertTo(from.getW()));

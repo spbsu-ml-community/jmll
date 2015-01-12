@@ -16,19 +16,19 @@ public abstract class RegionBase extends Func.Stub implements BinOptimizedModel 
   public final double outside;
   public final BFGrid grid;
 
-  public RegionBase(BFGrid grid, double inside, double outside) {
+  public RegionBase(final BFGrid grid, final double inside, final double outside) {
     this.grid = grid;
     this.inside = inside;
     this.outside = outside;
   }
 
   @Override
-  public final double value(BinarizedDataSet bds, int pindex) {
+  public final double value(final BinarizedDataSet bds, final int pindex) {
     return contains(bds, pindex) ? inside : outside;
   }
 
   @Override
-  public final double value(Vec x) {
+  public final double value(final Vec x) {
     return contains(x)? inside : outside;
   }
 

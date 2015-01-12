@@ -20,12 +20,12 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   public final F[] models;
   public final Vec weights;
 
-  public Ensemble(F[] models, Vec weights) {
+  public Ensemble(final F[] models, final Vec weights) {
     this.models = models;
     this.weights = weights;
   }
 
-  public Ensemble(List<F> weakModels, double step) {
+  public Ensemble(final List<F> weakModels, final double step) {
     this(ArrayTools.toArray(weakModels), VecTools.fill(new ArrayVec(weakModels.size()), step));
   }
 
@@ -50,7 +50,7 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   public int ydim() {
     return models[ArrayTools.max(models, new Evaluator<F>() {
       @Override
-      public double value(F f) {
+      public double value(final F f) {
         return f.ydim();
       }
     })].ydim();
@@ -60,15 +60,15 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   public Trans gradient() {
     return new Ensemble<Trans>(ArrayTools.map(models, Trans.class, new Computable<F, Trans>() {
       @Override
-      public Trans compute(F argument) {
+      public Trans compute(final F argument) {
         return argument.gradient();
       }
     }), weights);
   }
 
   @Override
-  public Vec trans(Vec x) {
-    Vec result = new ArrayVec(ydim());
+  public Vec trans(final Vec x) {
+    final Vec result = new ArrayVec(ydim());
     for (int i = 0; i < models.length; i++) {
       VecTools.append(result, VecTools.scale(models[i].trans(x), weights.get(i)));
     }

@@ -16,7 +16,7 @@ public abstract class AbstractCodingMatrixLearning {
   protected final double lambdaR;
   protected final double lambda1;
 
-  public AbstractCodingMatrixLearning(int k, int l, double lambdaC, double lambdaR, double lambda1) {
+  public AbstractCodingMatrixLearning(final int k, final int l, final double lambdaC, final double lambdaR, final double lambda1) {
     this.k = k;
     this.l = l;
     this.lambdaC = lambdaC;
@@ -28,7 +28,7 @@ public abstract class AbstractCodingMatrixLearning {
     return findMatrixB(similarityMatrix);
   }
 
-  public Mx trainCodingMatrix(final VecDataSet learn, BlockwiseMLLLogit target) {
+  public Mx trainCodingMatrix(final VecDataSet learn, final BlockwiseMLLLogit target) {
     final Mx similarityMatrix = MCTools.createSimilarityMatrix(learn, target.labels());
     return findMatrixB(similarityMatrix);
   }

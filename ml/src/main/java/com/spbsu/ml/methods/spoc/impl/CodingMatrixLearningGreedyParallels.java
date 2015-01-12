@@ -81,7 +81,7 @@ public class CodingMatrixLearningGreedyParallels extends CodingMatrixLearningGre
         final List<Future<Pair<Double,int[]>>> futures = executor.invokeAll(tasks);
         double totalMinLoss = Double.MAX_VALUE;
         int[] totalBestPerm = null;
-        for (Future<Pair<Double, int[]>> future : futures) {
+        for (final Future<Pair<Double, int[]>> future : futures) {
           final Pair<Double, int[]> pair = future.get();
           final Double loss = pair.first;
           final int[] perm = pair.second;

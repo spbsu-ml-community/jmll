@@ -27,11 +27,11 @@ public class Region extends RegionBase {
     return mask.clone();
   }
 
-  public Region(final List<BFGrid.BinaryFeature> conditions, boolean[] mask, double inside, int basedOn, double score) {
+  public Region(final List<BFGrid.BinaryFeature> conditions, final boolean[] mask, final double inside, final int basedOn, final double score) {
     this(conditions, mask, inside, 0, basedOn, score, 0);
   }
 
-  public Region(final List<BFGrid.BinaryFeature> conditions, boolean[] mask, double inside, double outside, int basedOn, double score, int maxFailed) {
+  public Region(final List<BFGrid.BinaryFeature> conditions, final boolean[] mask, final double inside, final double outside, final int basedOn, final double score, final int maxFailed) {
     super(conditions.get(0).row().grid(), inside, outside);
     this.basedOn = basedOn;
     this.score = score;
@@ -41,7 +41,7 @@ public class Region extends RegionBase {
   }
 
   @Override
-  public boolean contains(BinarizedDataSet bds, int pindex) {
+  public boolean contains(final BinarizedDataSet bds, final int pindex) {
     int failed = 0;
     for (int i = 0; i < features.length; i++) {
       if (bds.bins(features[i].findex)[pindex] > features[i].binNo != mask[i]) {
@@ -54,7 +54,7 @@ public class Region extends RegionBase {
   }
 
   @Override
-  public boolean contains(Vec x) {
+  public boolean contains(final Vec x) {
     int failed = 0;
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(x) != mask[i])
@@ -65,7 +65,7 @@ public class Region extends RegionBase {
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
+    final StringBuilder builder = new StringBuilder();
     builder.append(maxFailed).append(":");
     builder.append(inside).append("/").append(outside).append("/").append(basedOn);
     builder.append(" ->");
@@ -79,10 +79,10 @@ public class Region extends RegionBase {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (!(o instanceof Region)) return false;
-    Region that = (Region) o;
+    final Region that = (Region) o;
     return Arrays.equals(features, that.features) && Arrays.equals(mask, that.mask) && this.inside == that.inside && this.outside == that.outside && this.maxFailed == that.maxFailed && this.score == that.score && this.basedOn == that.basedOn;
   }
 

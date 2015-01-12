@@ -15,12 +15,12 @@ public class MCMicroRecall extends Func.Stub implements TargetFunc {
   protected final IntSeq target;
   private final DataSet<?> owner;
 
-  public MCMicroRecall(final IntSeq target, DataSet<?> owner) {
+  public MCMicroRecall(final IntSeq target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
   }
 
-  public MCMicroRecall(final Vec target, DataSet<?> owner) {
+  public MCMicroRecall(final Vec target, final DataSet<?> owner) {
     final int[] intTarget = new int[target.length()];
     final VecIterator iter = target.nonZeroes();
     while (iter.advance()) {

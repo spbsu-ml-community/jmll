@@ -85,7 +85,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(final String[] args) throws IOException {
     final CommandLineParser parser = new GnuParser();
     try {
       final CommandLine command = parser.parse(options, args);
@@ -122,10 +122,10 @@ public class JMLLCLI {
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
     } catch (Exception e) {
-      HelpFormatter formatter = new HelpFormatter();
+      final HelpFormatter formatter = new HelpFormatter();
       e.printStackTrace();
       System.err.println(e.getLocalizedMessage());
-      String columns = System.getenv("COLUMNS");
+      final String columns = System.getenv("COLUMNS");
 
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
     }

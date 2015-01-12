@@ -48,7 +48,7 @@ public class HierTools {
       }
     }
 
-    private void splitAndCreate(int[] counts, int from, int to, int parentNode) {
+    private void splitAndCreate(final int[] counts, final int from, final int to, final int parentNode) {
       if (to - from == 1) {
         return;
       }
@@ -60,7 +60,7 @@ public class HierTools {
       int curSum = 0;
       for (int split = from; split < to - 1; split++) {
         curSum += counts[split];
-        int subtract = Math.abs((sum - curSum) - curSum);
+        final int subtract = Math.abs((sum - curSum) - curSum);
         if (subtract < minSubtract) {
           minSubtract = subtract;
           bestSplit = split;

@@ -16,7 +16,7 @@ import java.util.Arrays;
  */
 public class ModelsTest extends TestCase {
   public void testOTlvl2Compile() {
-    BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
+    final BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
             new BFGrid.BFRow(0, 0, new double[]{1, 2, 3, 4, 5}),
             new BFGrid.BFRow(5, 1, new double[]{1, 2, 3, 4, 5}),
     });
@@ -39,7 +39,7 @@ public class ModelsTest extends TestCase {
   }
 
   public void testOTlvl3Compile() {
-    BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
+    final BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
             new BFGrid.BFRow(0, 0, new double[]{1}),
             new BFGrid.BFRow(1, 1, new double[]{1}),
             new BFGrid.BFRow(2, 2, new double[]{1}),
@@ -71,7 +71,7 @@ public class ModelsTest extends TestCase {
   }
 
   public void testOTlvl4Compile() {
-    BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
+    final BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
             new BFGrid.BFRow(0, 0, new double[]{1}),
             new BFGrid.BFRow(1, 1, new double[]{1}),
             new BFGrid.BFRow(2, 2, new double[]{1}),

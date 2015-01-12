@@ -33,14 +33,14 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
     return create(meta.type().clazz());
   }
 
-  public <Item extends DSItem> Pool<Item> create(Class<Item> clazz) {
+  public <Item extends DSItem> Pool<Item> create(final Class<Item> clazz) {
     final Pool<Item> result = new Pool<>(
         meta,
         new ArraySeq<>(items.toArray((Item[])Array.newInstance(items.get(0).getClass(), items.size()))),
         features.toArray((Pair<JsonFeatureMeta, Seq<?>>[]) new Pair[features.size()]),
         targets.toArray((Pair<JsonTargetMeta, Seq<?>>[]) new Pair[targets.size()]));
     { // verifying lines
-      for (Pair<JsonFeatureMeta, Seq<?>> entry : features) {
+      for (final Pair<JsonFeatureMeta, Seq<?>> entry : features) {
         entry.getFirst().owner = result;
         if (entry.second.length() != items.size())
           throw new RuntimeException(
@@ -48,7 +48,7 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
       }
     }
     { // checking targets
-      for (Pair<JsonTargetMeta, Seq<?>> entry : targets) {
+      for (final Pair<JsonTargetMeta, Seq<?>> entry : targets) {
         entry.getFirst().owner = result;
         if (entry.second.length() != items.size())
           throw new RuntimeException(
@@ -57,7 +57,7 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
     }
 
     final Set<String> itemIds = new HashSet<>();
-    for (Item item : (List<Item>)items) {
+    for (final Item item : (List<Item>)items) {
       if (itemIds.contains(item.id()))
         throw new RuntimeException(
             "Contain duplicates! Id = " + item.id()
@@ -79,11 +79,11 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
     items.add(read);
   }
 
-  public void newFeature(final JsonFeatureMeta meta, Seq<?> values) {
+  public void newFeature(final JsonFeatureMeta meta, final Seq<?> values) {
     features.add(Pair.<JsonFeatureMeta, Seq<?>>create(meta, values));
   }
 
-  public void newTarget(final JsonTargetMeta meta, Seq<?> target) {
+  public void newTarget(final JsonTargetMeta meta, final Seq<?> target) {
     this.targets.add(Pair.<JsonTargetMeta, Seq<?>>create(meta, target));
   }
 }

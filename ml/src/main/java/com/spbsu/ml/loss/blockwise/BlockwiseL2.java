@@ -17,7 +17,7 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
   public final Vec target;
   private final DataSet<?> owner;
 
-  public BlockwiseL2(Vec target, DataSet<?> owner) {
+  public BlockwiseL2(final Vec target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
   }
@@ -39,7 +39,7 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
     double result = 0.0;
     final int blockSize = blockSize();
     for (int i = 0; i < blockSize; i++) {
-      double val = pointBlock.get(i) - target.get(index * blockSize + i);
+      final double val = pointBlock.get(i) - target.get(index * blockSize + i);
       result += val * val;
     }
     return result;
@@ -65,16 +65,16 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
     };
   }
 
-  public double value(MSEStats stats) {
+  public double value(final MSEStats stats) {
     return stats.sum2;
   }
 
   @Override
-  public double score(MSEStats stats) {
+  public double score(final MSEStats stats) {
     return stats.weight > MathTools.EPSILON ? (stats.sum2 - stats.sum * stats.sum / stats.weight) : stats.sum2;
   }
 
-  public double bestIncrement(MSEStats stats) {
+  public double bestIncrement(final MSEStats stats) {
     return stats.weight > MathTools.EPSILON ? stats.sum / stats.weight : 0;
   }
 
@@ -94,12 +94,12 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
 
     private final Vec targets;
 
-    public MSEStats(Vec target) {
+    public MSEStats(final Vec target) {
       this.targets = target;
     }
 
     @Override
-    public MSEStats remove(int index, int times) {
+    public MSEStats remove(final int index, final int times) {
       final double v = targets.get(index);
       sum -= times * v;
       sum2 -= times * v * v;
@@ -108,8 +108,8 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
     }
 
     @Override
-    public MSEStats remove(AdditiveStatistics otheras) {
-      MSEStats other = (MSEStats) otheras;
+    public MSEStats remove(final AdditiveStatistics otheras) {
+      final MSEStats other = (MSEStats) otheras;
       sum -= other.sum;
       sum2 -= other.sum2;
       weight -= other.weight;
@@ -118,7 +118,7 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
 
 
     @Override
-    public MSEStats append(int index, int times) {
+    public MSEStats append(final int index, final int times) {
       final double v = targets.get(index);
       sum += times * v;
       sum2 += times * v * v;
@@ -128,8 +128,8 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
 
 
     @Override
-    public MSEStats append(AdditiveStatistics otheras) {
-      MSEStats other = (MSEStats) otheras;
+    public MSEStats append(final AdditiveStatistics otheras) {
+      final MSEStats other = (MSEStats) otheras;
       sum += other.sum;
       sum2 += other.sum2;
       weight += other.weight;

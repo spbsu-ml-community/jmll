@@ -125,13 +125,13 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
         final Vec m1 = MxTools.multiply(A, vecB);
         final Vec sub = VecTools.subtract(b, m1);
         VecTools.incscale(gamma, sub, -1 * mxLearnStep);
-        for (VecIterator iterator = gamma.nonZeroes(); iterator.advance(); ) {
+        for (final VecIterator iterator = gamma.nonZeroes(); iterator.advance(); ) {
           if (iterator.value() < 0)
             iterator.setValue(0);
         }
 
         VecTools.incscale(mu, vecB, -1 * mxLearnStep);
-        for (VecIterator iterator = mu.nonZeroes(); iterator.advance(); ) {
+        for (final VecIterator iterator = mu.nonZeroes(); iterator.advance(); ) {
           if (Math.abs(iterator.value()) > lambda1) {
             iterator.setValue(lambda1);
           }
@@ -149,7 +149,7 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
   }
 
   private static void normalizeMx(final Mx codingMatrix) {
-    for (MxIterator iter = codingMatrix.nonZeroes(); iter.advance(); ) {
+    for (final MxIterator iter = codingMatrix.nonZeroes(); iter.advance(); ) {
       final double value = iter.value();
       if (Math.abs(value) > MX_IGNORE_THRESHOLD)
         iter.setValue(Math.signum(value));
@@ -158,7 +158,7 @@ public class CodingMatrixLearning extends AbstractCodingMatrixLearning {
     }
   }
 
-  protected static Mx vec2mx(final Vec vec, int columns) {
+  protected static Mx vec2mx(final Vec vec, final int columns) {
     final Mx result = new VecBasedMx(columns, new ArrayVec(vec.dim()));
     final int rows = result.rows();
     for (int i = 0; i < vec.dim(); i++) {

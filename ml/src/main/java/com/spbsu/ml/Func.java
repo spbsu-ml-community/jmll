@@ -23,12 +23,12 @@ public interface Func extends Trans {
       return dim();
     }
 
-    public final Vec trans(Vec x) {
+    public final Vec trans(final Vec x) {
       return new ArrayVec(new double[]{value(x)});
     }
 
-    public Mx transAll(Mx ds) {
-      Mx result = new VecBasedMx(1, new ArrayVec(ds.rows()));
+    public Mx transAll(final Mx ds) {
+      final Mx result = new VecBasedMx(1, new ArrayVec(ds.rows()));
       for (int i = 0; i < ds.rows(); i++) {
         result.set(i, value(ds.row(i)));
       }

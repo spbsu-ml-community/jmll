@@ -17,7 +17,7 @@ public class ObliviousMultiClassTree extends Trans.Stub {
   private final ObliviousTree binaryClassifier;
   private final boolean[][] masks;
 
-  public ObliviousMultiClassTree(final List<BFGrid.BinaryFeature> features, double[] values, double[] basedOn, boolean[][] masks) {
+  public ObliviousMultiClassTree(final List<BFGrid.BinaryFeature> features, final double[] values, final double[] basedOn, final boolean[][] masks) {
     binaryClassifier = new ObliviousTree(features, values, basedOn);
     this.masks = masks;
   }
@@ -32,15 +32,15 @@ public class ObliviousMultiClassTree extends Trans.Stub {
     return binaryClassifier.xdim();
   }
 
-  public double value(Vec x, int classNo) {
+  public double value(final Vec x, final int classNo) {
     final int bin = binaryClassifier.bin(x);
     final double v = binaryClassifier.values()[bin];
     return masks[bin][classNo] ? v : -v;
   }
 
   @Override
-  public Vec trans(Vec x) {
-    Vec result = new ArrayVec(ydim());
+  public Vec trans(final Vec x) {
+    final Vec result = new ArrayVec(ydim());
     for (int c = 0; c < ydim(); c++) {
       result.set(c, value(x, c));
     }
@@ -49,11 +49,11 @@ public class ObliviousMultiClassTree extends Trans.Stub {
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
+    final StringBuilder builder = new StringBuilder();
     builder.append(binaryClassifier.toString());
     builder.append('<');
     for (int i = 0; i < masks.length; i++) {
-      boolean[] mask = masks[i];
+      final boolean[] mask = masks[i];
       if (i > 0)
         builder.append(", ");
       for (int j = 0; j < mask.length; j++) {
@@ -65,7 +65,7 @@ public class ObliviousMultiClassTree extends Trans.Stub {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (!(o instanceof ObliviousMultiClassTree)) return false;
     return binaryClassifier.equals(((ObliviousMultiClassTree) o).binaryClassifier) && Arrays.equals(masks, ((ObliviousMultiClassTree) o).masks);
@@ -80,7 +80,7 @@ public class ObliviousMultiClassTree extends Trans.Stub {
     return binaryClassifier;
   }
 
-  public boolean[] mask(int i) {
+  public boolean[] mask(final int i) {
     return masks[i];
   }
 }

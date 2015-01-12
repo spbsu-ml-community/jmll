@@ -21,15 +21,15 @@ public class GreedyTDRegionBuilder implements Factory<VecOptimization> {
     this.gridBuilder = gridBuilder;
   }
 
-  public void setAlpha(double alpha) {
+  public void setAlpha(final double alpha) {
     this.alpha = alpha;
   }
 
-  public void setBeta(double beta) {
+  public void setBeta(final double beta) {
     this.beta = beta;
   }
 
-  public void setMaxFailed(int maxFailed) {
+  public void setMaxFailed(final int maxFailed) {
     this.maxFailed = maxFailed;
   }
 

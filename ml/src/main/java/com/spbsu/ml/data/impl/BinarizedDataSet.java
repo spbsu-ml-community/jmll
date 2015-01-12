@@ -14,14 +14,14 @@ public class BinarizedDataSet {
   private final BFGrid grid;
   private final byte[][] bins;
 
-  public BinarizedDataSet(DataSet base, BFGrid grid) {
+  public BinarizedDataSet(final DataSet base, final BFGrid grid) {
     this.base = base;
     this.grid = grid;
     bins = new byte[((VecDataSet) base).xdim()][];
     for (int f = 0; f < bins.length; f++) {
       bins[f] = new byte[base.length()];
     }
-    byte[] binarization = new byte[grid.rows()];
+    final byte[] binarization = new byte[grid.rows()];
     for (int t = 0; t < base.length(); t++) {
       grid.binarize(((VecDataSet) base).data().row(t), binarization);
       for (int f = 0; f < bins.length; f++) {
@@ -39,7 +39,7 @@ public class BinarizedDataSet {
     return grid;
   }
 
-  public byte[] bins(int findex) {
+  public byte[] bins(final int findex) {
     return bins[findex];
   }
 }

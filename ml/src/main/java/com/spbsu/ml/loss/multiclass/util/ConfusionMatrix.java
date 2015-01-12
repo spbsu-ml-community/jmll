@@ -14,7 +14,7 @@ public class ConfusionMatrix {
   private final int[] fp;
   private final int[] fn;
 
-  public ConfusionMatrix(int numClasses) {
+  public ConfusionMatrix(final int numClasses) {
     counts = new int[numClasses][numClasses];
     fp = new int[numClasses];
     fn = new int[numClasses];
@@ -40,7 +40,7 @@ public class ConfusionMatrix {
     }
   }
 
-  public void add(int expected, int actual) {
+  public void add(final int expected, final int actual) {
     counts[expected][actual]++;
     if (expected != actual) {
       fn[expected]++;
@@ -49,15 +49,15 @@ public class ConfusionMatrix {
     }
   }
 
-  public double getPrecision(int c) {
+  public double getPrecision(final int c) {
     return (tp(c) + fp(c) > 0) ? tp(c) / (tp(c) + fp(c) + 0.) : 0;
   }
 
-  public double getRecall(int c) {
+  public double getRecall(final int c) {
     return (tp(c) + fn(c) > 0) ? tp(c) / (tp(c) + fn(c) + 0.) : 0;
   }
 
-  public double getF1Measure(int clazz) {
+  public double getF1Measure(final int clazz) {
     final double p = getPrecision(clazz);
     final double r = getRecall(clazz);
     if (p + r == 0) {
@@ -149,15 +149,15 @@ public class ConfusionMatrix {
     }
   }
 
-  public int tp(int clazz) {
+  public int tp(final int clazz) {
     return counts[clazz][clazz];
   }
 
-  public int fp(int clazz) {
+  public int fp(final int clazz) {
     return fp[clazz];
   }
 
-  public int fn(int clazz) {
+  public int fn(final int clazz) {
     return fn[clazz];
   }
 

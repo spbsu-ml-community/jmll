@@ -15,22 +15,22 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  */
 
 public class Nesterov2 implements Optimize<FuncConvex> {
-  private static Logger LOG = Logger.create(Nesterov2.class);
+  private static final Logger LOG = Logger.create(Nesterov2.class);
   private final Vec x0;
   private final double eps;
 
-  public Nesterov2(Vec x0, double eps) {
+  public Nesterov2(final Vec x0, final double eps) {
     this.x0 = x0;
     this.eps = eps;
   }
 
-  public Vec optimize(FuncConvex func) {
-    double m = func.getGlobalConvexParam();
-    double lk = func.getGradLipParam();
+  public Vec optimize(final FuncConvex func) {
+    final double m = func.getGlobalConvexParam();
+    final double lk = func.getGradLipParam();
 
-    Vec y = copy(x0);
+    final Vec y = copy(x0);
     Vec x1 = copy(x0);
-    Vec x2 = copy(x0);
+    final Vec x2 = copy(x0);
     Vec currentGrad;
 
     double a1 = 0.5;
@@ -50,8 +50,8 @@ public class Nesterov2 implements Optimize<FuncConvex> {
       }
 
       //find 0<a[k+1]<1 : "a[k+1]^2 = (1 - a[k+1])*a[k]^2 + q*a[k+1]"
-      double root1 = 0.5 * (q - a1*a1 - Math.sqrt(a1*a1 * (a1*a1 - 2*q + 4) + q*q));
-      double root2 = 0.5 * (q - a1*a1 + Math.sqrt(a1*a1 * (a1*a1 - 2*q + 4) + q*q));
+      final double root1 = 0.5 * (q - a1*a1 - Math.sqrt(a1*a1 * (a1*a1 - 2*q + 4) + q*q));
+      final double root2 = 0.5 * (q - a1*a1 + Math.sqrt(a1*a1 * (a1*a1 - 2*q + 4) + q*q));
 
       if (root1 > 0 && root1 < 1)
         a2 = root1;

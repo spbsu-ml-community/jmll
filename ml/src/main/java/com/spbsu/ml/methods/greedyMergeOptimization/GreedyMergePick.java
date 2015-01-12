@@ -19,20 +19,20 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class GreedyMergePick<Model extends CherryOptimizationSubset> {
   static ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Greedy merge pick thread", -1);
-  private MergeOptimization<Model> merger;
+  private final MergeOptimization<Model> merger;
 
-  public GreedyMergePick(MergeOptimization<Model> merger) {
+  public GreedyMergePick(final MergeOptimization<Model> merger) {
     this.merger = merger;
   }
 
-  public Model pick(List<Model> startModels, final RegularizedLoss<Model> loss) {
+  public Model pick(final List<Model> startModels, final RegularizedLoss<Model> loss) {
     final NumberFormat pp = MathTools.numberFormatter();
     if (startModels.isEmpty())
       throw new IllegalArgumentException("Models list must be not empty");
 
     final Comparator<Model> comparator = new Comparator<Model>() {
       @Override
-      public int compare(Model left, Model right) {
+      public int compare(final Model left, final Model right) {
         final int cmp = Double.compare(loss.score(left), loss.score(right));
         return cmp != 0 ? cmp : Integer.compare(left.index(), right.index());
       }
@@ -46,7 +46,7 @@ public class GreedyMergePick<Model extends CherryOptimizationSubset> {
     return models.first();
   }
 
-  private void foo(final RegularizedLoss<Model> loss, NumberFormat pp, TreeSet<Model> models) {
+  private void foo(final RegularizedLoss<Model> loss, final NumberFormat pp, final TreeSet<Model> models) {
     final Model current;
     {
       final Iterator<Model> iterator = models.descendingIterator();
@@ -62,7 +62,7 @@ public class GreedyMergePick<Model extends CherryOptimizationSubset> {
         @Override
         public void run() {
           try {
-            Model merged = merger.merge(current, model);
+            final Model merged = merger.merge(current, model);
             if (merged.power() > model.power() && merged.power() > current.power() || model.power() == 0 || current.power() == 0) {
               final double mergedScore = loss.score(merged);
               final double modelScore = loss.score(model);

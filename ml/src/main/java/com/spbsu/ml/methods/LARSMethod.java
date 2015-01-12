@@ -26,30 +26,30 @@ public class LARSMethod extends VecOptimization.Stub<L2> {
   private class Direction {
     double sign;
     int index;
-    private Direction(double sign, int index) {
+    private Direction(final double sign, final int index) {
       this.sign = sign;
       this.index = index;
     }
   }
 
-  public NormalizedLinear fit(VecDataSet origDS, L2 loss) {
-    Mx orig = origDS.data();
+  public NormalizedLinear fit(final VecDataSet origDS, final L2 loss) {
+    final Mx orig = origDS.data();
     final int featuresCount = orig.columns();
-    Vec betas = new ArrayVec(featuresCount);
-    double avg = VecTools.sum(loss.target) / loss.xdim();
+    final Vec betas = new ArrayVec(featuresCount);
+    final double avg = VecTools.sum(loss.target) / loss.xdim();
     final MxTools.NormalizationProperties props = new MxTools.NormalizationProperties();
-    Mx learn = MxTools.normalize(orig, MxTools.NormalizationType.SCALE, props);
-    Vec values = new ArrayVec(orig.rows());
+    final Mx learn = MxTools.normalize(orig, MxTools.NormalizationType.SCALE, props);
+    final Vec values = new ArrayVec(orig.rows());
     fill(values, -avg);
     append(values, loss.target);
 
     for (int t = 0; t < featuresCount; t++) {
-      Vec correlations = MxTools.multiply(MxTools.transpose(learn), values);
-      double bestCorr;
+      final Vec correlations = MxTools.multiply(MxTools.transpose(learn), values);
+      final double bestCorr;
       final List<Direction> selectedDirections = new ArrayList<Direction>(featuresCount);
       {
         final int[] order = ArrayTools.sequence(0, correlations.dim());
-        Vec absCorr = abs(correlations);
+        final Vec absCorr = abs(correlations);
         ArrayTools.parallelSort(absCorr.toArray(), order);
         bestCorr = Math.abs(correlations.get(order[0]));
         for (int i = 0; i < correlations.dim(); i++) {
@@ -73,10 +73,10 @@ public class LARSMethod extends VecOptimization.Stub<L2> {
         inverseCo = MxTools.inverseCholesky(covariance);
       }
       final Vec ones = fill(new ArrayVec(selectedDirections.size()), 1.);
-      double norm = Math.sqrt(multiply(ones, MxTools.multiply(inverseCo, ones)));
+      final double norm = Math.sqrt(multiply(ones, MxTools.multiply(inverseCo, ones)));
       scale(ones, norm);
-      Vec w = MxTools.multiply(inverseCo, ones);
-      double[] equiangular = new double[learn.rows()];
+      final Vec w = MxTools.multiply(inverseCo, ones);
+      final double[] equiangular = new double[learn.rows()];
       {
         for (int r = 0; r < learn.rows(); r++) {
           for (int i = 0; i < selectedDirections.size(); i++) {
@@ -86,7 +86,7 @@ public class LARSMethod extends VecOptimization.Stub<L2> {
         }
       }
 
-      double[] a = new double[featuresCount];
+      final double[] a = new double[featuresCount];
       {
         for (int r = 0; r < learn.rows(); r++) {
           final double eqaComponent = equiangular[r];
@@ -99,7 +99,7 @@ public class LARSMethod extends VecOptimization.Stub<L2> {
       double step = Double.MAX_VALUE;
       {
         for (final Direction direction : selectedDirections) {
-          int j = direction.index;
+          final int j = direction.index;
           final double s1 = (bestCorr - correlations.get(j))/(norm - a[j]);
           final double s2 = (bestCorr + correlations.get(j))/(norm + a[j]);
           if (s1 > 0)

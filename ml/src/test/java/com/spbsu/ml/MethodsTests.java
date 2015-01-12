@@ -49,7 +49,7 @@ public abstract class MethodsTests extends GridTest {
   }
 
   public void testPGMFit3x3() {
-    SimplePGM original = new SimplePGM(new VecBasedMx(3, new ArrayVec(new double[]{
+    final SimplePGM original = new SimplePGM(new VecBasedMx(3, new ArrayVec(new double[]{
             0, 0.2, 0.8,
             0, 0, 1.,
             0, 0, 0
@@ -58,7 +58,7 @@ public abstract class MethodsTests extends GridTest {
   }
 
   public void testPGMFit5x5() {
-    SimplePGM original = new SimplePGM(new VecBasedMx(5, new ArrayVec(new double[]{
+    final SimplePGM original = new SimplePGM(new VecBasedMx(5, new ArrayVec(new double[]{
             0, 0.2, 0.3, 0.1, 0.4,
             0, 0, 0.25, 0.25, 0.5,
             0, 0, 0, 0.1, 0.9,
@@ -90,7 +90,7 @@ public abstract class MethodsTests extends GridTest {
       VecTools.normalizeL1(originalMx.row(i));
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
-    SimplePGM original = new SimplePGM(originalMx);
+    final SimplePGM original = new SimplePGM(originalMx);
     checkRestoreFixedTopology(original, PGMEM.POISSON_PRIOR_PATH, 0.5, 100, 0.01);
   }
 
@@ -102,12 +102,12 @@ public abstract class MethodsTests extends GridTest {
       VecTools.normalizeL1(originalMx.row(i));
     }
     VecTools.fill(originalMx.row(originalMx.rows() - 1), 0);
-    SimplePGM original = new SimplePGM(originalMx);
+    final SimplePGM original = new SimplePGM(originalMx);
     checkRestoreFixedTopology(original, PGMEM.POISSON_PRIOR_PATH, 0.5, 100, 0.01);
   }
 
-  private Vec breakV(Vec next, double lossProbab) {
-    Vec result = new SparseVec(next.dim());
+  private Vec breakV(final Vec next, final double lossProbab) {
+    final Vec result = new SparseVec(next.dim());
     final VecIterator it = next.nonZeroes();
     int resIndex = 0;
     while (it.advance()) {
@@ -117,11 +117,11 @@ public abstract class MethodsTests extends GridTest {
     return result;
   }
 
-  private void checkRestoreFixedTopology(final SimplePGM original, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, double lossProbab, int iterations, double accuracy) {
-    Vec[] ds = new Vec[100000];
+  private void checkRestoreFixedTopology(final SimplePGM original, final Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, final double lossProbab, final int iterations, final double accuracy) {
+    final Vec[] ds = new Vec[100000];
     for (int i = 0; i < ds.length; i++) {
       //TODO: @solar, please, fix it
-      Vec vec = null;
+      final Vec vec = null;
 //      do {
 //
 //      vec = breakV(original.next(rng), lossProbab);
@@ -138,7 +138,7 @@ public abstract class MethodsTests extends GridTest {
       int iteration = 0;
 
       @Override
-      public void invoke(SimplePGM pgm) {
+      public void invoke(final SimplePGM pgm) {
         Interval.stopAndPrint("Iteration " + ++iteration);
         System.out.println();
         System.out.print(VecTools.distance(pgm.topology, original.topology));
@@ -178,7 +178,7 @@ public abstract class MethodsTests extends GridTest {
       int index = 0;
 
       @Override
-      public void invoke(Trans partial) {
+      public void invoke(final Trans partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -202,7 +202,7 @@ public abstract class MethodsTests extends GridTest {
       int index = 0;
 
       @Override
-      public void invoke(Trans partial) {
+      public void invoke(final Trans partial) {
         System.out.print("\n" + index++);
       }
     };
@@ -213,7 +213,7 @@ public abstract class MethodsTests extends GridTest {
     boosting.addListener(validateListener);
     boosting.addListener(new Action<Trans>() {
       @Override
-      public void invoke(Trans trans) {
+      public void invoke(final Trans trans) {
         System.out.println();
       }
     });
@@ -237,13 +237,13 @@ public abstract class MethodsTests extends GridTest {
       int index = 0;
 
       @Override
-      public void invoke(Trans partial) {
+      public void invoke(final Trans partial) {
         System.out.print("\n" + index++);
       }
     };
     final Action<Trans> nl = new Action<Trans>() {
       @Override
-      public void invoke(Trans trans) {
+      public void invoke(final Trans trans) {
         System.out.println();
       }
     };
@@ -257,12 +257,12 @@ public abstract class MethodsTests extends GridTest {
   }
 
   public class addBoostingListeners<GlobalLoss extends TargetFunc> {
-    addBoostingListeners(GradientBoosting<GlobalLoss> boosting, GlobalLoss loss, Pool<?> _learn, Pool<?> _validate) {
+    addBoostingListeners(final GradientBoosting<GlobalLoss> boosting, final GlobalLoss loss, final Pool<?> _learn, final Pool<?> _validate) {
       final Action counter = new ProgressHandler() {
         int index = 0;
 
         @Override
-        public void invoke(Trans partial) {
+        public void invoke(final Trans partial) {
           System.out.print("\n" + index++);
         }
       };
@@ -276,7 +276,7 @@ public abstract class MethodsTests extends GridTest {
       boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
       final Ensemble ans = boosting.fit(_learn.vecData(), loss);
-      Vec current = new ArrayVec(_validate.size());
+      final Vec current = new ArrayVec(_validate.size());
       for (int i = 0; i < _validate.size(); i++) {
         double f = 0;
         for (int j = 0; j < ans.models.length; j++)
@@ -300,7 +300,7 @@ public abstract class MethodsTests extends GridTest {
     private final VecDataSet ds;
     private final L2 target;
 
-    public ScoreCalcer(String message, VecDataSet ds, L2 target) {
+    public ScoreCalcer(final String message, final VecDataSet ds, final L2 target) {
       this.message = message;
       this.ds = ds;
       this.target = target;
@@ -310,7 +310,7 @@ public abstract class MethodsTests extends GridTest {
     double min = 1e10;
 
     @Override
-    public void invoke(Trans partial) {
+    public void invoke(final Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble linear = (Ensemble) partial;
         final Trans increment = linear.last();
@@ -326,7 +326,7 @@ public abstract class MethodsTests extends GridTest {
           current.set(i, ((Func) partial).value(ds.data().row(i)));
         }
       }
-      double curLoss = VecTools.distance(current, target.target) / Math.sqrt(ds.length());
+      final double curLoss = VecTools.distance(current, target.target) / Math.sqrt(ds.length());
       System.out.print(message + curLoss);
       min = Math.min(curLoss, min);
       System.out.print(" minimum = " + min);
@@ -335,7 +335,7 @@ public abstract class MethodsTests extends GridTest {
 
   private static class ModelPrinter implements ProgressHandler {
     @Override
-    public void invoke(Trans partial) {
+    public void invoke(final Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble model = (Ensemble) partial;
         final Trans increment = model.last();
@@ -350,7 +350,7 @@ public abstract class MethodsTests extends GridTest {
     int index = 0;
 
     @Override
-    public void invoke(Trans partial) {
+    public void invoke(final Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble model = (Ensemble) partial;
         final Trans increment = model.last();
@@ -360,7 +360,7 @@ public abstract class MethodsTests extends GridTest {
         int index = 0;
         final VecDataSet ds = learn.vecData();
         for (int i = 0; i < ds.data().rows(); i++) {
-          double value;
+          final double value;
           if (increment instanceof Ensemble) {
             value = increment.trans(ds.data().row(i)).get(0);
           } else {
@@ -374,7 +374,7 @@ public abstract class MethodsTests extends GridTest {
         }
 //          double totalDispersion = VecTools.multiply(residues, residues);
         double score = 0;
-        for (double key : values.keys()) {
+        for (final double key : values.keys()) {
           final double regularizer = 1 - 2 * Math.log(2) / Math.log(values.get(key) + 1);
           score += dispersionDiff.get(key) * regularizer;
         }
@@ -387,7 +387,7 @@ public abstract class MethodsTests extends GridTest {
   }
 
   public void testDGraph() {
-    Random rng = new FastRandom();
+    final Random rng = new FastRandom();
     for (int n = 1; n < 100; n++) {
       System.out.print("" + n);
       double d = 0;
@@ -395,7 +395,7 @@ public abstract class MethodsTests extends GridTest {
         double sum = 0;
         double sum2 = 0;
         for (int i = 0; i < n; i++) {
-          double v = learn.<L2>target(L2.class).target.get(rng.nextInt(learn.size()));
+          final double v = learn.<L2>target(L2.class).target.get(rng.nextInt(learn.size()));
           sum += v;
           sum2 += v * v;
         }
@@ -406,7 +406,7 @@ public abstract class MethodsTests extends GridTest {
   }
 
   public void testFMRun() {
-    FMTrainingWorkaround fm = new FMTrainingWorkaround("r", "1,1,8", "10");
+    final FMTrainingWorkaround fm = new FMTrainingWorkaround("r", "1,1,8", "10");
     fm.fit(learn.vecData(), learn.<L2>target(L2.class));
   }
 }

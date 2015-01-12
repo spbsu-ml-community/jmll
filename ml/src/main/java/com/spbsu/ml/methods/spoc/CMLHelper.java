@@ -36,7 +36,7 @@ public class CMLHelper {
   }
 
   static void normalizeMx(final Mx codingMatrix, final double mxIgnoreThreshold) {
-    for (MxIterator iter = codingMatrix.nonZeroes(); iter.advance(); ) {
+    for (final MxIterator iter = codingMatrix.nonZeroes(); iter.advance(); ) {
       final double value = iter.value();
       if (Math.abs(value) > mxIgnoreThreshold)
         iter.setValue(Math.signum(value));

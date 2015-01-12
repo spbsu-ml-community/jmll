@@ -59,7 +59,7 @@ public class FMModel extends FuncC1.Stub {
     for (int k = 0; k < V.rows(); k++) {
       double sum = 0.;
       double sumSqr = 0.;
-      VecIterator i = x.nonZeroes();
+      final VecIterator i = x.nonZeroes();
       final Vec row = V.row(k);
       while (i.advance()) {
         final double d = row.get(i.index()) * i.value();
@@ -93,7 +93,7 @@ public class FMModel extends FuncC1.Stub {
   @Override
   public int hashCode() {
     int result;
-    long temp;
+    final long temp;
     result = V.hashCode();
     result = 31 * result + w.hashCode();
     temp = Double.doubleToLongBits(w0);

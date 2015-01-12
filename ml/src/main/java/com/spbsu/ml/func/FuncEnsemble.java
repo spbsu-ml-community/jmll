@@ -11,15 +11,15 @@ import java.util.List;
  */
 
 public class FuncEnsemble<X extends Func> extends Ensemble<X> implements Func{
-  public FuncEnsemble(X[] models, Vec weights) {
+  public FuncEnsemble(final X[] models, final Vec weights) {
     super(models, weights);
   }
 
-  public FuncEnsemble(List<X> models, double step) {
+  public FuncEnsemble(final List<X> models, final double step) {
     super(models, step);
   }
 
-  public double value(Vec x) {
+  public double value(final Vec x) {
     double result = 0.;
     for (int i = 0; i < size(); i++) {
       result += models[i].value(x) * weights.get(i);

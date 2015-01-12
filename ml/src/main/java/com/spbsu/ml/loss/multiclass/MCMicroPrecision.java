@@ -16,12 +16,12 @@ public class MCMicroPrecision extends Func.Stub implements TargetFunc {
   protected final IntSeq target;
   private final DataSet<?> owner;
 
-  public MCMicroPrecision(final IntSeq target, DataSet<?> owner) {
+  public MCMicroPrecision(final IntSeq target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
   }
 
-  public MCMicroPrecision(final Vec target, DataSet<?> owner) {
+  public MCMicroPrecision(final Vec target, final DataSet<?> owner) {
     final int[] intTarget = new int[target.length()];
     final VecIterator iter = target.nonZeroes();
     while (iter.advance()) {

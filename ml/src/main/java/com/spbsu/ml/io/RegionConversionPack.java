@@ -28,7 +28,7 @@ public class RegionConversionPack implements ConversionPack<Region, CharSequence
   private static final MessageFormat FEATURE_LINE_PATTERN = new MessageFormat("feature: {0, number}, bin: {1, number}, ge: {2, number,#.#####}, mask : {3, number}", Locale.US);
 
   static {
-    DecimalFormat format = new DecimalFormat();
+    final DecimalFormat format = new DecimalFormat();
     format.setDecimalSeparatorAlwaysShown(false);
     format.setGroupingUsed(false);
     format.setDecimalFormatSymbols(new DecimalFormatSymbols(Locale.US));
@@ -42,10 +42,10 @@ public class RegionConversionPack implements ConversionPack<Region, CharSequence
 
   public static class To implements TypeConverter<Region, CharSequence> {
     @Override
-    public CharSequence convert(Region region) {
-      StringBuilder result = new StringBuilder();
-      BFGrid.BinaryFeature[] features = region.features();
-      boolean[] masks = region.masks();
+    public CharSequence convert(final Region region) {
+      final StringBuilder result = new StringBuilder();
+      final BFGrid.BinaryFeature[] features = region.features();
+      final boolean[] masks = region.masks();
       for (int i = 0; i < features.length; ++i) {
         result.append(FEATURE_LINE_PATTERN.format(new Object[]{features[i].findex, features[i].binNo, features[i].condition, masks[i] ? 1 : 0})).append("\n");
       }
@@ -70,23 +70,23 @@ public class RegionConversionPack implements ConversionPack<Region, CharSequence
     }
 
     @Override
-    public void setGrid(BFGrid grid) {
+    public void setGrid(final BFGrid grid) {
       this.grid = grid;
     }
 
     @Override
-    public Region convert(CharSequence source) {
+    public Region convert(final CharSequence source) {
       if (grid == null)
         throw new RuntimeException("Grid must be setup for serialization of oblivious trees, use SerializationRepository.customize!");
       String line;
-      LineNumberReader lnr = new LineNumberReader(new CharSeqReader(source));
-      List<BFGrid.BinaryFeature> splits = new ArrayList<BFGrid.BinaryFeature>(10);
-      TLongArrayList mask = new TLongArrayList();
+      final LineNumberReader lnr = new LineNumberReader(new CharSeqReader(source));
+      final List<BFGrid.BinaryFeature> splits = new ArrayList<BFGrid.BinaryFeature>(10);
+      final TLongArrayList mask = new TLongArrayList();
       try {
         while ((line = lnr.readLine()) != null) {
           if (line.startsWith("feature")) {
             final Object[] parts = FEATURE_LINE_PATTERN.parse(line);
-            BFGrid.BinaryFeature bf = grid.row(((Long) parts[0]).intValue()).bf(((Long) parts[1]).intValue());
+            final BFGrid.BinaryFeature bf = grid.row(((Long) parts[0]).intValue()).bf(((Long) parts[1]).intValue());
             splits.add(bf);
             if (Math.abs(bf.condition - ((Number) parts[2]).doubleValue()) > 1e-4)
               throw new RuntimeException("Inconsistent grid set, conditions do not match! Grid: " + bf.condition + " Found: " + parts[2]);
@@ -100,7 +100,7 @@ public class RegionConversionPack implements ConversionPack<Region, CharSequence
         final int maxFailed = Integer.parseInt(pattern2ValueBased[2].toString());
         final int basedOn = Integer.parseInt(pattern2ValueBased[3].toString());
         final double score = Double.parseDouble(pattern2ValueBased[4].toString());
-        boolean[] masks = new boolean[mask.size()];
+        final boolean[] masks = new boolean[mask.size()];
         for (int i = 0; i < masks.length; ++i)
           masks[i] = mask.get(i) == 1;
         return new Region(splits, masks, inside, outside, basedOn, score, maxFailed);

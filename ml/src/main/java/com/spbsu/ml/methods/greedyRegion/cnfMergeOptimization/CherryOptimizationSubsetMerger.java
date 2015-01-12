@@ -13,7 +13,7 @@ import gnu.trove.list.array.TIntArrayList;
 public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryOptimizationSubset> {
   private final Factory<AdditiveStatistics> factory;
 
-  public CherryOptimizationSubsetMerger(Factory<AdditiveStatistics> factory) {
+  public CherryOptimizationSubsetMerger(final Factory<AdditiveStatistics> factory) {
     this.factory =  factory;
   }
 
@@ -96,7 +96,7 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
     }
     else if (!first.isMinimumOutside && !second.isMinimumOutside) {
       stat.append(first.stat);
-      AdditiveStatistics inside = factory.create();
+      final AdditiveStatistics inside = factory.create();
       final int[] firstInside = first.minimumIndices;
       final int[] secondInside = second.minimumIndices;
       final TIntArrayList mergedInside = new TIntArrayList(second.minimumIndices.length);

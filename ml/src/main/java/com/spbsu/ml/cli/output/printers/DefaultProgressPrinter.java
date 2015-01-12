@@ -22,9 +22,9 @@ public class DefaultProgressPrinter implements ProgressHandler {
   private final Func loss;
   private final Func[] testMetrics;
   private Vec learnValues;
-  private Vec[] testValuesArray;
+  private final Vec[] testValuesArray;
 
-  public DefaultProgressPrinter(Pool learn, Pool test, Func learnMetric, Func[] testMetrics) {
+  public DefaultProgressPrinter(final Pool learn, final Pool test, final Func learnMetric, final Func[] testMetrics) {
     this.learn = learn;
     this.test = test;
     this.loss = learnMetric;
@@ -39,7 +39,7 @@ public class DefaultProgressPrinter implements ProgressHandler {
   int iteration = 0;
 
   @Override
-  public void invoke(Trans partial) {
+  public void invoke(final Trans partial) {
     if (partial instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) partial;
       final double step = ensemble.wlast();

@@ -31,11 +31,11 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class FeaturesTxtPool extends Pool<QURLItem> {
   private final Mx data;
 
-  public FeaturesTxtPool(final String file, Seq<QURLItem> items, final Mx data, Vec target) {
+  public FeaturesTxtPool(final String file, final Seq<QURLItem> items, final Mx data, final Vec target) {
     super(new FakeDataSetMeta(file), items, genFakeFeatures(data), new Pair[]{Pair.create(new FakeTargetMeta(), target)});
     this.data = data;
     for (int i = 0; i < features.length; i++) {
-      Pair<? extends FeatureMeta, ? extends Seq<?>> feature = features[i];
+      final Pair<? extends FeatureMeta, ? extends Seq<?>> feature = features[i];
       ((FakeFeatureMeta)feature.first).owner = this;
     }
     ((FakeTargetMeta)this.targets.get(0).first).owner = this;
@@ -43,7 +43,7 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
   }
 
   private static Pair<PoolFeatureMeta, Vec>[] genFakeFeatures(final Mx data) {
-    List<Pair<PoolFeatureMeta, Vec>> features = new ArrayList<>();
+    final List<Pair<PoolFeatureMeta, Vec>> features = new ArrayList<>();
     for (int i = 0; i < data.columns(); i++) {
       final int finalI = i;
       final PoolFeatureMeta.ValueType type = VecTools.isSparse(data.col(i), 0.1) ? PoolFeatureMeta.ValueType.SPARSE_VEC : PoolFeatureMeta.ValueType.VEC;

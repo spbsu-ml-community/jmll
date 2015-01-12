@@ -35,7 +35,7 @@ public class JoinedBinClassModel extends MCModel.Stub {
   }
 
   @Override
-  public int bestClass(Vec x) {
+  public int bestClass(final Vec x) {
     final double[] trans = internalModel.trans(x).toArray();
     return ArrayTools.max(trans);
   }

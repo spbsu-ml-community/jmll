@@ -18,12 +18,12 @@ public class OrderByFeature implements Computable<DataSet, OrderByFeature> {
   VecDataSet set;
 
   @Override
-  public OrderByFeature compute(DataSet argument) {
+  public OrderByFeature compute(final DataSet argument) {
     set = (VecDataSet)argument;
     return this;
   }
 
-  public synchronized ArrayPermutation orderBy(int featureNo) {
+  public synchronized ArrayPermutation orderBy(final int featureNo) {
     ArrayPermutation result = orders.get(featureNo);
     if (result == null)
       orders.put(featureNo, result = new ArrayPermutation(set.order(featureNo)));

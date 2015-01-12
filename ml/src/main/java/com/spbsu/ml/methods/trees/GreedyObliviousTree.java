@@ -26,13 +26,13 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
   private final int depth;
   private final BFGrid grid;
 
-  public GreedyObliviousTree(BFGrid grid, int depth) {
+  public GreedyObliviousTree(final BFGrid grid, final int depth) {
     this.grid = grid;
     this.depth = depth;
   }
 
   @Override
-  public ObliviousTree fit(VecDataSet ds, final Loss loss) {
+  public ObliviousTree fit(final VecDataSet ds, final Loss loss) {
     List<BFOptimizationSubset> leaves = new ArrayList<BFOptimizationSubset>(1 << depth);
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(depth);
     double currentScore = Double.POSITIVE_INFINITY;
@@ -44,15 +44,15 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
     final double[] scores = new double[grid.size()];
     for (int level = 0; level < depth; level++) {
       Arrays.fill(scores, 0.);
-      for (BFOptimizationSubset leaf : leaves) {
+      for (final BFOptimizationSubset leaf : leaves) {
         leaf.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
           @Override
-          public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+          public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
             scores[bf.bfIndex] += loss.score(left) + loss.score(right);
           }
         });
       }
-      int bestSplit = ArrayTools.min(scores);
+      final int bestSplit = ArrayTools.min(scores);
       if (bestSplit < 0 || scores[bestSplit] >= currentScore)
         break;
       final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
@@ -67,8 +67,8 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
       leaves = next;
       currentScore = scores[bestSplit];
     }
-    double[] step = new double[leaves.size()];
-    double[] based = new double[leaves.size()];
+    final double[] step = new double[leaves.size()];
+    final double[] based = new double[leaves.size()];
     for (int i = 0; i < step.length; i++) {
       step[i] = loss.bestIncrement(leaves.get(i).total());
       based[i] = leaves.get(i).size();

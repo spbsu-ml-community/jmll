@@ -25,7 +25,7 @@ public class CherryOptimizationSubset {
 
   boolean isMinimumOutside;
 
-  public CherryOptimizationSubset(BinarizedDataSet bds, Factory<AdditiveStatistics> statFactory, CNF.Clause clause, int[] points, double cardinality) {
+  public CherryOptimizationSubset(final BinarizedDataSet bds, final Factory<AdditiveStatistics> statFactory, final CNF.Clause clause, final int[] points, final double cardinality) {
     initialCardinality = cardinality;
     final TIntArrayList inside = new TIntArrayList(points.length);
     final TIntArrayList outside = new TIntArrayList(points.length);
@@ -46,7 +46,7 @@ public class CherryOptimizationSubset {
     this.power = inside.size();
   }
 
-  CherryOptimizationSubset(BinarizedDataSet bds, CNF.Clause clause, int[] minimumIndices, boolean isMinimumOutside, int[] all, AdditiveStatistics stat, double initialCardinality) {
+  CherryOptimizationSubset(final BinarizedDataSet bds, final CNF.Clause clause, final int[] minimumIndices, final boolean isMinimumOutside, final int[] all, final AdditiveStatistics stat, final double initialCardinality) {
     this.all = all;
     this.bds = bds;
     this.stat = stat;
@@ -117,7 +117,7 @@ public class CherryOptimizationSubset {
     return clause.toString() + ": (power:" + power + ")";
   }
 
-  public boolean nextTo(CherryOptimizationSubset current) {
+  public boolean nextTo(final CherryOptimizationSubset current) {
     if(clause.conditions.length != 1 || current.clause.conditions.length != 1)
       return false;
     if (clause.conditions[0].findex != current.clause.conditions[0].findex)

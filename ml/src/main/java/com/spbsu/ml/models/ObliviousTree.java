@@ -25,11 +25,11 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
   private final double[] basedOn;
   private final BFGrid grid;
 
-  public ObliviousTree(final List<BFGrid.BinaryFeature> features, double[] values) {
+  public ObliviousTree(final List<BFGrid.BinaryFeature> features, final double[] values) {
     this(features, values, new double[values.length]);
   }
 
-  public ObliviousTree(final List<BFGrid.BinaryFeature> features, double[] values, double[] basedOn) {
+  public ObliviousTree(final List<BFGrid.BinaryFeature> features, final double[] values, final double[] basedOn) {
     grid = features.get(0).row().grid();
     this.basedOn = basedOn;
     this.features = features.toArray(new BFGrid.BinaryFeature[features.size()]);
@@ -42,14 +42,14 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
   }
 
   @Override
-  public double value(Vec x) {
-    int index = bin(x);
+  public double value(final Vec x) {
+    final int index = bin(x);
     return values[index];
   }
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
+    final StringBuilder builder = new StringBuilder();
     builder.append(values.length);
     builder.append("->(");
     for (int i = 0; i < features.length; i++) {
@@ -58,7 +58,7 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
     }
     builder.append(")");
     builder.append("+[");
-    for (double feature : values) {
+    for (final double feature : values) {
       builder.append(feature).append(", ");
     }
     builder.delete(builder.length() - 2, builder.length());
@@ -66,7 +66,7 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
     return builder.toString();
   }
 
-  public int bin(Vec x) {
+  public int bin(final Vec x) {
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;
@@ -77,7 +77,7 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
   }
 
   public List<BFGrid.BinaryFeature> features() {
-    List<BFGrid.BinaryFeature> ret = new ArrayList<BFGrid.BinaryFeature>();
+    final List<BFGrid.BinaryFeature> ret = new ArrayList<BFGrid.BinaryFeature>();
     for (int i = 0; i < features.length; i++)
       ret.add(features[i]);
     return ret;
@@ -92,11 +92,11 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (!(o instanceof ObliviousTree)) return false;
 
-    ObliviousTree that = (ObliviousTree) o;
+    final ObliviousTree that = (ObliviousTree) o;
 
     if (!Arrays.equals(features, that.features)) return false;
     if (!Arrays.equals(values, that.values)) return false;
@@ -117,7 +117,7 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
   }
 
   @Override
-  public double value(BinarizedDataSet bds, int pindex) {
+  public double value(final BinarizedDataSet bds, final int pindex) {
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;

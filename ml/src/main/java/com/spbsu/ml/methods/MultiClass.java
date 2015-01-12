@@ -16,13 +16,13 @@ public class MultiClass extends VecOptimization.Stub<L2> {
   private final VecOptimization<L2> inner;
   private final Class<? extends L2> local;
 
-  public MultiClass(VecOptimization<L2> inner, Class<? extends L2> local) {
+  public MultiClass(final VecOptimization<L2> inner, final Class<? extends L2> local) {
     this.inner = inner;
     this.local = local;
   }
 
   @Override
-  public FuncJoin fit(VecDataSet learn, L2 mllLogitGradient) {
+  public FuncJoin fit(final VecDataSet learn, final L2 mllLogitGradient) {
     final Mx gradient = (Mx)mllLogitGradient.target;
     final Func[] models = new Func[gradient.columns()];
     for (int c = 0; c < models.length; c++) {

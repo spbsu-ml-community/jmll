@@ -28,7 +28,7 @@ public class BFWeakConditionsOptimizationRegion {
   public final AdditiveStatistics excluded;
   protected final int[] failedBorders;
 
-  public BFWeakConditionsOptimizationRegion(BinarizedDataSet bds, StatBasedLoss oracle, int[] points, BFGrid.BinaryFeature[] features, boolean[] masks, int maxFailed) {
+  public BFWeakConditionsOptimizationRegion(final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points, final BFGrid.BinaryFeature[] features, final boolean[] masks, final int maxFailed) {
     this.bds = bds;
     this.excluded = (AdditiveStatistics) oracle.statsFactory().create();
     this.points = points;
@@ -38,9 +38,9 @@ public class BFWeakConditionsOptimizationRegion {
       bins[f] = bds.bins(features[f].findex);
 
     this.nonCriticalTotal = (AdditiveStatistics) oracle.statsFactory().create();
-    TIntArrayList maxFailedPoints = new TIntArrayList();
+    final TIntArrayList maxFailedPoints = new TIntArrayList();
     for (int i = 0; i < points.length; ++i) {
-      int index = points[i];
+      final int index = points[i];
       int failed = 0;
       for (int f = 0; f < features.length; ++f) {
         if (bins[f][index] > features[f].binNo != masks[f]) {
@@ -66,8 +66,8 @@ public class BFWeakConditionsOptimizationRegion {
     updateFailedBorders(failedCount, failedBorders);
   }
 
-  protected void updateFailedBorders(int[] failedCount, int[] failedBorders) {
-    int rightLimit = failedBorders[maxFailed];
+  protected void updateFailedBorders(final int[] failedCount, final int[] failedBorders) {
+    final int rightLimit = failedBorders[maxFailed];
     failedBorders[maxFailed] = upperBound(failedCount, maxFailed, 0, rightLimit);
     for (int i = maxFailed - 1; i >= 0; --i) {
       failedBorders[i] = upperBound(failedCount, i, 0, failedBorders[i + 1]);
@@ -75,7 +75,7 @@ public class BFWeakConditionsOptimizationRegion {
   }
 
   //java version doesn't guarantee, that we'll find last or first entry
-  private int upperBound(int[] arr, int key, int fromIndex, int toIndex) {
+  private int upperBound(final int[] arr, final int key, final int fromIndex, final int toIndex) {
     int left = fromIndex;
     int right = toIndex;
     while (right - left > 1) {
@@ -93,11 +93,11 @@ public class BFWeakConditionsOptimizationRegion {
   }
 
 
-  public BFOptimizationSubset split(BFGrid.BinaryFeature feature, boolean mask) {
-    TIntArrayList out = new TIntArrayList(points.length);
+  public BFOptimizationSubset split(final BFGrid.BinaryFeature feature, final boolean mask) {
+    final TIntArrayList out = new TIntArrayList(points.length);
     final byte[] bins = bds.bins(feature.findex);
-    TIntArrayList newCriticalPoints = new TIntArrayList();
-    AdditiveStatistics newCritical = oracle.statsFactory().create();
+    final TIntArrayList newCriticalPoints = new TIntArrayList();
+    final AdditiveStatistics newCritical = oracle.statsFactory().create();
 
     for (int i = 0; i < failedBorders[maxFailed]; ++i) {
       final int index = points[i];
@@ -126,11 +126,11 @@ public class BFWeakConditionsOptimizationRegion {
     return failedBorders[maxFailed];
   }
 
-  public void visitAllSplits(Aggregate.SplitVisitor<? extends AdditiveStatistics> visitor) {
+  public void visitAllSplits(final Aggregate.SplitVisitor<? extends AdditiveStatistics> visitor) {
     aggregate.visit(visitor);
   }
 
-  public <T extends AdditiveStatistics> void visitSplit(BFGrid.BinaryFeature bf, Aggregate.SplitVisitor<T> visitor) {
+  public <T extends AdditiveStatistics> void visitSplit(final BFGrid.BinaryFeature bf, final Aggregate.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
     final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
     visitor.accept(bf, left, right);

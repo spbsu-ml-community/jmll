@@ -44,7 +44,7 @@ public class BlockV1 extends Session.Block {
 
     private final double pfound_value;
     //private final double ctr1_value;
-    ResultGrade(double pfound_value) {
+    ResultGrade(final double pfound_value) {
       this.pfound_value = pfound_value;
     }
 

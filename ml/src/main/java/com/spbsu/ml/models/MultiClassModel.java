@@ -14,7 +14,7 @@ import com.spbsu.ml.func.FuncJoin;
 public class MultiClassModel extends MCModel.Stub {
   protected final FuncJoin model;
 
-  public MultiClassModel(Func[] dirs) {
+  public MultiClassModel(final Func[] dirs) {
     this.model = new FuncJoin(dirs);
   }
 

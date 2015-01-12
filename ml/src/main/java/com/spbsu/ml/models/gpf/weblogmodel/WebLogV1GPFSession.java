@@ -17,22 +17,22 @@ import gnu.trove.list.array.TIntArrayList;
  * Date: 22.05.14
  */
 public class WebLogV1GPFSession {
-  public static List<Session<BlockV1>> loadDatasetFromJSON(InputStream is, GPFModel model, int rows_limit) throws IOException {
-    List<Session<BlockV1>> dataset = new ArrayList<>();
+  public static List<Session<BlockV1>> loadDatasetFromJSON(final InputStream is, final GPFModel model, final int rows_limit) throws IOException {
+    final List<Session<BlockV1>> dataset = new ArrayList<>();
 
-    LineNumberReader lnr = new LineNumberReader(new InputStreamReader(is, "UTF8"));
-    Gson gson = new Gson();
-    Gson gson_prettyprint = new GsonBuilder().setPrettyPrinting().create();
+    final LineNumberReader lnr = new LineNumberReader(new InputStreamReader(is, "UTF8"));
+    final Gson gson = new Gson();
+    final Gson gson_prettyprint = new GsonBuilder().setPrettyPrinting().create();
     for (String line = lnr.readLine(); line != null; line = lnr.readLine()) {
       if (rows_limit > 0 && dataset.size() >= rows_limit)
         break;
 
-      String[] split = line.split("\t");
-      String json_ses_str = split[2];
+      final String[] split = line.split("\t");
+      final String json_ses_str = split[2];
 
-      JsonSes ses = gson.fromJson(json_ses_str, JsonSes.class);
+      final JsonSes ses = gson.fromJson(json_ses_str, JsonSes.class);
 
-      BlockV1[] blocks = new BlockV1[ses.sntypes.length];
+      final BlockV1[] blocks = new BlockV1[ses.sntypes.length];
       for (int i = 0; i < blocks.length; i++) {
         blocks[i] = new BlockV1(
                 Session.BlockType.RESULT,
@@ -41,8 +41,8 @@ public class WebLogV1GPFSession {
                 BlockV1.ResultGrade.valueOf(ses.rel[i]));
       }
 
-      String source_string = gson_prettyprint.toJson(ses);
-      Session<BlockV1> session = new Session<BlockV1>(ses.uid, ses.reqid, ses.user_region, ses.query, source_string);
+      final String source_string = gson_prettyprint.toJson(ses);
+      final Session<BlockV1> session = new Session<BlockV1>(ses.uid, ses.reqid, ses.user_region, ses.query, source_string);
       setSessionData(session, blocks, ses.clicks);
       dataset.add(session);
     }
@@ -55,9 +55,9 @@ public class WebLogV1GPFSession {
    * @param result_blocks - a set of 'real' (observed) blocks (read-only)
    * @param clicks_block_indexes - list of clicks (clicks_block_indexes[i] is a i'th click on result_blocks[clicks_block_indexes[i]])
    */
-  public static void setSessionData(Session<BlockV1> ses, BlockV1[] result_blocks, int[] clicks_block_indexes) {
+  public static void setSessionData(final Session<BlockV1> ses, final BlockV1[] result_blocks, final int[] clicks_block_indexes) {
     // init blocks
-    BlockV1[] blocks = new BlockV1[result_blocks.length + Session.R0_ind];
+    final BlockV1[] blocks = new BlockV1[result_blocks.length + Session.R0_ind];
 //    int[] result_pos2block_ind = new int[100];
     int max_result_pos = -1;
     int min_result_pos = 1000;
@@ -72,13 +72,13 @@ public class WebLogV1GPFSession {
     }
     ses.setBlocks(blocks);
 
-    int[] click_indexes = new int[clicks_block_indexes.length];
+    final int[] click_indexes = new int[clicks_block_indexes.length];
     for (int i = 0; i < click_indexes.length; i++)
       click_indexes[i] = clicks_block_indexes[i] + Session.R0_ind;
     ses.setClick_indexes(click_indexes);
 
     // init edges
-    List<Session.Edge> edges = new ArrayList<>();
+    final List<Session.Edge> edges = new ArrayList<>();
     for (int i = Session.R0_ind; i < blocks.length; i++) {
       // R_i -> R_{i+1}
       if (i + 1 < blocks.length)
@@ -131,10 +131,10 @@ public class WebLogV1GPFSession {
     }
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(final String[] args) throws IOException {
     // test
-    long t1 = System.currentTimeMillis();
-    List<Session<BlockV1>> dataset = loadDatasetFromJSON(new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1.dat.gz")), new GPFLinearModel(), 0);
+    final long t1 = System.currentTimeMillis();
+    final List<Session<BlockV1>> dataset = loadDatasetFromJSON(new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1.dat.gz")), new GPFLinearModel(), 0);
     System.out.println("dataset size: " + dataset.size());
     System.out.println("time: " + (System.currentTimeMillis() - t1));
     System.out.println("dataset[0]: " + dataset.get(0));

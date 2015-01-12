@@ -9,10 +9,10 @@ import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
  * Created by noxoomo on 31/07/14.
  */
 public class DynamicBinModelBuilder {
-  private FullMatrixClassifierInfo result;
-  private int[] rowStarts;
+  private final FullMatrixClassifierInfo result;
+  private final int[] rowStarts;
 
-  public DynamicBinModelBuilder(DynamicGrid grid) {
+  public DynamicBinModelBuilder(final DynamicGrid grid) {
     rowStarts = new int[grid.rows()];
     int gridSize = 0;
     for (int i = 0; i < grid.rows(); ++i)
@@ -21,9 +21,9 @@ public class DynamicBinModelBuilder {
     int currentIndex = 0;
     for (int rowIndex = 0; rowIndex < grid.rows(); ++rowIndex) {
       rowStarts[rowIndex] = currentIndex;
-      DynamicRow row = grid.row(rowIndex);
+      final DynamicRow row = grid.row(rowIndex);
       for (int bin = 0; bin < row.size(); ++bin) {
-        BinaryFeature bf = row.bf(bin);
+        final BinaryFeature bf = row.bf(bin);
         result.binFeatures[currentIndex] = new BinaryFeatureStat(rowIndex, bf.condition());
         ++currentIndex;
       }
@@ -31,17 +31,17 @@ public class DynamicBinModelBuilder {
   }
 
 
-  public void append(ObliviousTreeDynamicBin tree, Double weight) {
-    int[] conditions = new int[tree.depth()];
-    double[][] values;
+  public void append(final ObliviousTreeDynamicBin tree, final Double weight) {
+    final int[] conditions = new int[tree.depth()];
+    final double[][] values;
 
-    BinaryFeature[] features = tree.features();
+    final BinaryFeature[] features = tree.features();
     for (int i = 0; i < tree.depth(); ++i) {
-      int depth = tree.depth() - i - 1;
+      final int depth = tree.depth() - i - 1;
       conditions[i] = rowStarts[features[depth].fIndex()] + features[depth].binNo();
     }
     values = new double[1][1 << conditions.length];
-    double[] leaveValues = tree.values();
+    final double[] leaveValues = tree.values();
 
     for (int i = 0; i < (1 << conditions.length); ++i) {
       values[0][i] = leaveValues[i];

@@ -16,7 +16,7 @@ public class BlockwiseWeightedLoss<BasedOn extends BlockwiseFuncC1 & TargetFunc>
   private final BasedOn metric;
   private final int[] weights;
 
-  public BlockwiseWeightedLoss(BasedOn metric, int[] weights) {
+  public BlockwiseWeightedLoss(final BasedOn metric, final int[] weights) {
     if (metric.dim() / metric.blockSize() != weights.length)
       throw new IllegalArgumentException("weights.length must be equal to blocks count");
     this.metric = metric;

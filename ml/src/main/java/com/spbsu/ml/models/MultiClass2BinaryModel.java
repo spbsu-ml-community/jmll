@@ -18,7 +18,7 @@ public class MultiClass2BinaryModel extends MultiClassModel {
   private final Func[] binaryClassifiers;
   private final int dim;
 
-  public MultiClass2BinaryModel(final Mx codingMatrix, Func[] binaryClassifiers) {
+  public MultiClass2BinaryModel(final Mx codingMatrix, final Func[] binaryClassifiers) {
     super(createStub(codingMatrix.rows(), binaryClassifiers[0].dim()));
     LOG.assertTrue(codingMatrix.columns() == binaryClassifiers.length, "Coding matrix columns count must match binary classifiers.");
 //    final MxIterator mxIterator = codeMatrix.nonZeroes();
@@ -36,7 +36,7 @@ public class MultiClass2BinaryModel extends MultiClassModel {
   }
 
   private static Func[] createStub(final int count, final int dim) {
-    Func[] result = new Func[count];
+    final Func[] result = new Func[count];
     for (int i = 0; i < result.length; i++) {
       result[i] = new Func.Stub() {
         @Override
@@ -56,12 +56,12 @@ public class MultiClass2BinaryModel extends MultiClassModel {
   private class DecodeFunc extends Func.Stub {
     private final int classNo;
 
-    public DecodeFunc(int classNo) {
+    public DecodeFunc(final int classNo) {
       this.classNo = classNo;
     }
 
     @Override
-    public double value(Vec x) {
+    public double value(final Vec x) {
       double result = 0;
       for (int l = 0; l < codingMatrix.columns(); l++) {
         final double m = codingMatrix.get(l, classNo);

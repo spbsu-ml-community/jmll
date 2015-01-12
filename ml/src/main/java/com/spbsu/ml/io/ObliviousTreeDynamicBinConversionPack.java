@@ -23,7 +23,7 @@ public class ObliviousTreeDynamicBinConversionPack implements ConversionPack<Obl
   private static final MessageFormat FEATURE_LINE_PATTERN = new MessageFormat("feature: {0, number}, bin: {1, number}, ge: {2, number,#.#####}", Locale.US);
 
   static {
-    DecimalFormat format = new DecimalFormat();
+    final DecimalFormat format = new DecimalFormat();
     format.setDecimalSeparatorAlwaysShown(false);
     format.setGroupingUsed(false);
     format.setDecimalFormatSymbols(new DecimalFormatSymbols(Locale.US));
@@ -36,13 +36,13 @@ public class ObliviousTreeDynamicBinConversionPack implements ConversionPack<Obl
 
   public static class To implements TypeConverter<ObliviousTreeDynamicBin, CharSequence> {
     @Override
-    public CharSequence convert(ObliviousTreeDynamicBin ot) {
+    public CharSequence convert(final ObliviousTreeDynamicBin ot) {
       StringBuilder result = new StringBuilder();
-      for (BinaryFeature feature : ot.features()) {
+      for (final BinaryFeature feature : ot.features()) {
         result.append(FEATURE_LINE_PATTERN.format(new Object[]{feature.fIndex(), feature.binNo(), feature.condition()}))
                 .append("\n");
       }
-      int leafsCount = 1 << ot.features().length;
+      final int leafsCount = 1 << ot.features().length;
       for (int i = 0; i < leafsCount; i++) {
         if (ot.values()[i] != 0.) {
           result.append(Integer.toBinaryString(i))
@@ -64,30 +64,30 @@ public class ObliviousTreeDynamicBinConversionPack implements ConversionPack<Obl
     }
 
     @Override
-    public void setGrid(DynamicGrid grid) {
+    public void setGrid(final DynamicGrid grid) {
       this.grid = grid;
     }
 
     @Override
-    public ObliviousTreeDynamicBin convert(CharSequence source) {
+    public ObliviousTreeDynamicBin convert(final CharSequence source) {
       if (grid == null)
         throw new RuntimeException("DynamicGrid must be setup for serialization of oblivious trees with dynamicGrid, use SerializationRepository.customize!");
       String line;
-      LineNumberReader lnr = new LineNumberReader(new CharSeqReader(source));
-      List<BinaryFeature> splits = new ArrayList<BinaryFeature>(10);
+      final LineNumberReader lnr = new LineNumberReader(new CharSeqReader(source));
+      final List<BinaryFeature> splits = new ArrayList<BinaryFeature>(10);
       try {
         while ((line = lnr.readLine()) != null) {
           if (line.startsWith("feature")) {
             final Object[] parts = FEATURE_LINE_PATTERN.parse(line);
-            BinaryFeature bf = grid.row(((Long) parts[0]).intValue()).bf(((Long) parts[1]).intValue());
+            final BinaryFeature bf = grid.row(((Long) parts[0]).intValue()).bf(((Long) parts[1]).intValue());
             splits.add(bf);
             if (Math.abs(bf.condition() - ((Number) parts[2]).doubleValue()) > 1e-4)
               throw new RuntimeException("Inconsistent grid set, conditions do not match! Grid: " + bf.condition() + " Found: " + parts[2]);
           } else break;
         }
-        double[] values = new double[1 << splits.size()];
-        CharSequence[] valuesStr = CharSeqTools.split(line, ' ');
-        for (CharSequence value : valuesStr) {
+        final double[] values = new double[1 << splits.size()];
+        final CharSequence[] valuesStr = CharSeqTools.split(line, ' ');
+        for (final CharSequence value : valuesStr) {
           final CharSequence[] pattern2ValueBased = CharSeqTools.split(value, ':');
           final int leafIndex = Integer.parseInt(pattern2ValueBased[0].toString(), 2);
           values[leafIndex] = Double.parseDouble(pattern2ValueBased[1].toString());

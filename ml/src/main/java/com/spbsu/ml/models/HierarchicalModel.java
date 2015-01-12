@@ -18,18 +18,18 @@ public class HierarchicalModel extends MCModel.Stub {
   protected final TIntList classLabels;
   protected final TIntObjectMap<HierarchicalModel> label2childModel;
 
-  public HierarchicalModel(MCModel basedOn, TIntList classLabels) {
+  public HierarchicalModel(final MCModel basedOn, final TIntList classLabels) {
     this.basedOn = basedOn;
     this.classLabels = classLabels;
     this.label2childModel = new TIntObjectHashMap<>(classLabels.size());
   }
 
-  public void addChild(HierarchicalModel child, int label) {
+  public void addChild(final HierarchicalModel child, final int label) {
     label2childModel.put(label, child);
   }
 
   @Nullable
-  public HierarchicalModel getChild(int label) {
+  public HierarchicalModel getChild(final int label) {
     return label2childModel.get(label);
   }
 
@@ -39,9 +39,9 @@ public class HierarchicalModel extends MCModel.Stub {
   }
 
   @Override
-  public int bestClass(Vec x) {
-    int c = basedOn.bestClass(x);
-    int label = classLabels.get(c);
+  public int bestClass(final Vec x) {
+    final int c = basedOn.bestClass(x);
+    final int label = classLabels.get(c);
     return label2childModel.containsKey(label)? label2childModel.get(label).bestClass(x) : label;
   }
 

@@ -66,11 +66,11 @@ import java.util.zip.GZIPInputStream;
  * Time: 19:05
  */
 public class DataTools {
-  public static Pool<QURLItem> loadFromFeaturesTxt(String file) throws IOException {
+  public static Pool<QURLItem> loadFromFeaturesTxt(final String file) throws IOException {
     return loadFromFeaturesTxt(file, file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
   }
 
-  public static FeaturesTxtPool loadFromFeaturesTxt(String file, Reader in) throws IOException {
+  public static FeaturesTxtPool loadFromFeaturesTxt(final String file, final Reader in) throws IOException {
     final List<QURLItem> items = new ArrayList<>();
     final VecBuilder target = new VecBuilder();
     final VecBuilder data = new VecBuilder();
@@ -99,8 +99,8 @@ public class DataTools {
         target.build());
   }
 
-  public static void writeModel(Computable result, File to) throws IOException {
-    BFGrid grid = grid(result);
+  public static void writeModel(final Computable result, final File to) throws IOException {
+    final BFGrid grid = grid(result);
     StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
         SERIALIZATION.write(result)), to);
   }
@@ -114,7 +114,7 @@ public class DataTools {
     return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }
 
-  public static Trans readModel(String fileName, ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+  public static Trans readModel(final String fileName, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     return readModel(new FileInputStream(fileName), serializationRepository);
   }
 
@@ -125,21 +125,21 @@ public class DataTools {
     return readModel(modelInputStream, customizedRepository);
   }
 
-  public static void writeBinModel(Computable result, File file) throws IOException {
+  public static void writeBinModel(final Computable result, final File file) throws IOException {
     if (result instanceof Ensemble) {
-      Ensemble<Trans> ensemble = (Ensemble) result;
+      final Ensemble<Trans> ensemble = (Ensemble) result;
       if (ensemble.models.length == 0)
         return;
       if (ensemble.models[0] instanceof ObliviousTreeDynamicBin) {
-        DynamicGrid grid = dynamicGrid(ensemble);
-        DynamicBinModelBuilder builder = new DynamicBinModelBuilder(grid);
+        final DynamicGrid grid = dynamicGrid(ensemble);
+        final DynamicBinModelBuilder builder = new DynamicBinModelBuilder(grid);
         for (int i = 0; i < ensemble.models.length; ++i) {
           builder.append((ObliviousTreeDynamicBin) ensemble.models[i], ensemble.weights.at(i));
         }
         builder.build().toFile(file);
       } else if (ensemble.models[0] instanceof ObliviousTree) {
-        BFGrid grid = grid(ensemble);
-        BinModelBuilder builder = new BinModelBuilder(grid);
+        final BFGrid grid = grid(ensemble);
+        final BinModelBuilder builder = new BinModelBuilder(grid);
         for (int i = 0; i < ensemble.models.length; ++i) {
           builder.append((ObliviousTree) ensemble.models[i], ensemble.weights.at(i));
         }
@@ -161,7 +161,7 @@ public class DataTools {
     return validateModel(new FileInputStream(filePath), repository);
   }
 
-  public static DynamicGrid dynamicGrid(Computable<?, Vec> result) {
+  public static DynamicGrid dynamicGrid(final Computable<?, Vec> result) {
     if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
       return dynamicGrid(ensemble.last());
@@ -170,7 +170,7 @@ public class DataTools {
     }
     return null;
   }
-  public static BFGrid grid(Computable<?, Vec> result) {
+  public static BFGrid grid(final Computable<?, Vec> result) {
     if (result instanceof CompositeTrans) {
       final CompositeTrans composite = (CompositeTrans) result;
       BFGrid grid = grid(composite.f);
@@ -178,21 +178,21 @@ public class DataTools {
       return grid;
     } else if (result instanceof FuncJoin) {
       final FuncJoin join = (FuncJoin) result;
-      for (Func dir : join.dirs()) {
+      for (final Func dir : join.dirs()) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
     } else if (result instanceof TransJoin) {
       final TransJoin join = (TransJoin) result;
-      for (Trans dir : join.dirs) {
+      for (final Trans dir : join.dirs) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
     } else if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
-      for (Trans dir : ensemble.models) {
+      for (final Trans dir : ensemble.models) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
@@ -207,41 +207,41 @@ public class DataTools {
     return null;
   }
 
-  public static DataSet extendDataset(VecDataSet sourceDS, Mx addedColumns) {
-    Vec[] columns = new Vec[addedColumns.columns()];
+  public static DataSet extendDataset(final VecDataSet sourceDS, final Mx addedColumns) {
+    final Vec[] columns = new Vec[addedColumns.columns()];
     for (int i = 0; i < addedColumns.columns(); i++) {
       columns[i] = addedColumns.col(i);
     }
     return extendDataset(sourceDS, columns);
   }
 
-  public static VecDataSet extendDataset(VecDataSet sourceDS, Vec... addedColumns) {
+  public static VecDataSet extendDataset(final VecDataSet sourceDS, final Vec... addedColumns) {
     if (addedColumns.length == 0)
       return sourceDS;
 
-    Mx oldData = sourceDS.data();
-    Mx newData = new VecBasedMx(oldData.rows(), oldData.columns() + addedColumns.length);
-    for (MxIterator iter = oldData.nonZeroes(); iter.advance(); ) {
+    final Mx oldData = sourceDS.data();
+    final Mx newData = new VecBasedMx(oldData.rows(), oldData.columns() + addedColumns.length);
+    for (final MxIterator iter = oldData.nonZeroes(); iter.advance(); ) {
       newData.set(iter.row(), iter.column(), iter.value());
     }
     for (int i = 0; i < addedColumns.length; i++) {
-      for (VecIterator iter = addedColumns[i].nonZeroes(); iter.advance(); ) {
+      for (final VecIterator iter = addedColumns[i].nonZeroes(); iter.advance(); ) {
         newData.set(iter.index(), oldData.columns() + i, iter.value());
       }
     }
     return new VecDataSetImpl(newData, sourceDS);
   }
 
-  public static Vec value(Mx ds, Func f) {
-    Vec result = new ArrayVec(ds.rows());
+  public static Vec value(final Mx ds, final Func f) {
+    final Vec result = new ArrayVec(ds.rows());
     for (int i = 0; i < ds.rows(); i++) {
       result.set(i, f.value(ds.row(i)));
     }
     return result;
   }
 
-  public static <LocalLoss extends StatBasedLoss> WeightedLoss<LocalLoss> bootstrap(LocalLoss loss, FastRandom rnd) {
-    int[] poissonWeights = new int[loss.xdim()];
+  public static <LocalLoss extends StatBasedLoss> WeightedLoss<LocalLoss> bootstrap(final LocalLoss loss, final FastRandom rnd) {
+    final int[] poissonWeights = new int[loss.xdim()];
     for (int i = 0; i < loss.xdim(); i++) {
       poissonWeights[i] = rnd.nextPoisson(1.);
     }
@@ -271,7 +271,7 @@ public class DataTools {
     for (int i = 0; i < size; i++) {
       folds[rng.nextSimple(weights)].add(i);
     }
-    int[][] result = new int[folds.length][];
+    final int[][] result = new int[folds.length][];
     for (int i = 0; i < folds.length; i++) {
       result[i] = folds[i].toArray();
     }
@@ -279,7 +279,7 @@ public class DataTools {
   }
 
   public static <T> Vec calcAll(final Computable<T, Vec> result, final DataSet<T> data) {
-    VecBuilder results = new VecBuilder(data.length());
+    final VecBuilder results = new VecBuilder(data.length());
     int dim = 0;
     for (int i = 0; i < data.length(); i++) {
       final Vec vec = result.compute(data.at(i));
@@ -300,14 +300,14 @@ public class DataTools {
     throw new RuntimeException("No proper constructor!");
   }
 
-  public static <T extends DSItem> void writePoolTo(final Pool<T> pool, Writer out) throws IOException {
+  public static <T extends DSItem> void writePoolTo(final Pool<T> pool, final Writer out) throws IOException {
     final JsonFactory jsonFactory = new JsonFactory();
     jsonFactory.disable(JsonGenerator.Feature.QUOTE_FIELD_NAMES);
     jsonFactory.configure(JsonParser.Feature.ALLOW_COMMENTS, false);
     { // meta
       out.append("items").append('\t');
       {
-        StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter();
         final JsonGenerator generator = jsonFactory.createGenerator(writer);
         generator.writeStartObject();
         generator.writeStringField("id", pool.meta().id());
@@ -322,7 +322,7 @@ public class DataTools {
 
       out.append('\t');
       {
-        StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter();
         final JsonGenerator generator = jsonFactory.createGenerator(writer);
         generator.setCodec(new ObjectMapper(jsonFactory));
         generator.writeStartArray();
@@ -352,7 +352,7 @@ public class DataTools {
   private static void writeFeature(final Writer out, final JsonFactory jsonFactory,
                                    final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature) throws IOException {
     {
-      StringWriter writer = new StringWriter();
+      final StringWriter writer = new StringWriter();
       final JsonGenerator generator = jsonFactory.createGenerator(writer);
       generator.writeStartObject();
       generator.writeStringField("id", feature.first.id());
@@ -369,7 +369,7 @@ public class DataTools {
   }
 
 
-  public static Pool<? extends DSItem> readPoolFrom(Reader input) throws IOException {
+  public static Pool<? extends DSItem> readPoolFrom(final Reader input) throws IOException {
     try {
       final PoolBuilder builder = new PoolBuilder();
       CharSeqTools.processAndSplitLinesNIO(input, new Processor<CharBufferSeq[]>() {
@@ -392,16 +392,16 @@ public class DataTools {
                     break;
                   }
                   case "feature": {
-                    JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
-                    Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
+                    final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
+                    final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
                     builder.newFeature(fmeta, BUFFER_SERIALIZATION.read(
                         parts[2],
                         vecClass));
                     break;
                   }
                   case "target": {
-                    JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
-                    Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
+                    final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
+                    final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
                     builder.newTarget(fmeta, BUFFER_SERIALIZATION.read(
                         parts[2],
                         vecClass));
@@ -435,7 +435,7 @@ public class DataTools {
     }
   }
 
-  public static <S extends Seq<?>> Pair<VecDataSet, S> createSubset(final VecDataSet sourceDS, final S sourceTarget, int[] idxs) {
+  public static <S extends Seq<?>> Pair<VecDataSet, S> createSubset(final VecDataSet sourceDS, final S sourceTarget, final int[] idxs) {
     final VecDataSet subSet = new VecDataSetImpl(
         new VecBasedMx(
             sourceDS.xdim(),

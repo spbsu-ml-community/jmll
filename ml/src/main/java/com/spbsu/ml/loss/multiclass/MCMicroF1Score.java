@@ -14,20 +14,20 @@ public class MCMicroF1Score extends Func.Stub implements TargetFunc {
   private final MCMicroPrecision precision;
   private final MCMicroRecall recall;
 
-  public MCMicroF1Score(final IntSeq target, DataSet<?> owner) {
+  public MCMicroF1Score(final IntSeq target, final DataSet<?> owner) {
     precision = new MCMicroPrecision(target, owner);
     recall = new MCMicroRecall(target, owner);
   }
 
-  public MCMicroF1Score(Vec target, DataSet<?> owner) {
+  public MCMicroF1Score(final Vec target, final DataSet<?> owner) {
     precision = new MCMicroPrecision(target, owner);
     recall = new MCMicroRecall(target, owner);
   }
 
   @Override
   public double value(final Vec x) {
-    double p = precision.value(x);
-    double r = recall.value(x);
+    final double p = precision.value(x);
+    final double r = recall.value(x);
     return (p + r) > 0 ? 2 * p * r / (p + r) : 0.;
   }
 

@@ -27,7 +27,7 @@ public class MulticlassCodingMatrixModel extends MCModel.Stub {
   protected final double ignoreThreshold;
   protected final Metric<Vec> metric;
 
-  public MulticlassCodingMatrixModel(final Mx codingMatrix, Func[] binaryClassifiers, double ignoreTreshold) {
+  public MulticlassCodingMatrixModel(final Mx codingMatrix, final Func[] binaryClassifiers, final double ignoreTreshold) {
     LOG.assertTrue(codingMatrix.columns() == binaryClassifiers.length, "Coding matrix columns count must match binary classifiers.");
     this.binaryClassifiers = new FuncJoin(binaryClassifiers);
     this.codingMatrix = codingMatrix;
@@ -41,7 +41,7 @@ public class MulticlassCodingMatrixModel extends MCModel.Stub {
 
   private Vec binarize(final Vec trans) {
     final Vec copy = VecTools.copy(trans);
-    for (VecIterator it = copy.nonZeroes(); it.advance(); ) {
+    for (final VecIterator it = copy.nonZeroes(); it.advance(); ) {
       if (Math.abs(it.value()) > ignoreThreshold)
         it.setValue(Math.signum(it.value()));
       else
@@ -50,7 +50,7 @@ public class MulticlassCodingMatrixModel extends MCModel.Stub {
     return copy;
   }
 
-  protected double[] calcDistances(Vec trans) {
+  protected double[] calcDistances(final Vec trans) {
     final double[] dist = new double[codingMatrix.rows()];
     final Vec binarize = binarize(trans);
     for (int i = 0; i < dist.length; i++) {

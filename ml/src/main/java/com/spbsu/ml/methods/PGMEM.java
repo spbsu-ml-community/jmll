@@ -36,16 +36,16 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
     private Double len;
     private int index = 0;
 
-    protected Policy(ProbabilisticGraphicalModel pgm) {
+    protected Policy(final ProbabilisticGraphicalModel pgm) {
       weights = new ArrayVec(pgm.knownRoutesCount());
       routes = new Route[pgm.knownRoutesCount()];
     }
-    protected void addOption(Route r, double w) {
+    protected void addOption(final Route r, final double w) {
       weights.set(index, w);
       routes[index++] = r;
     }
 
-    public Route next(FastRandom rng) {
+    public Route next(final FastRandom rng) {
       if (len == null)
         len = VecTools.l1(weights);
       return index == 0 ? null : routes[rng.nextSimple(weights, len)];
@@ -61,9 +61,9 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
 
   public static final Computable<ProbabilisticGraphicalModel, Policy> MOST_PROBABLE_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
     @Override
-    public Policy compute(ProbabilisticGraphicalModel argument) {
+    public Policy compute(final ProbabilisticGraphicalModel argument) {
       return new Policy(argument) {
-        public boolean accept(Route route) {
+        public boolean accept(final Route route) {
           addOption(route, 1.);
           return true;
         }
@@ -76,11 +76,11 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
     public Policy compute(final ProbabilisticGraphicalModel argument) {
       return new Policy(argument) {
         @Override
-        public boolean accept(Route route) {
+        public boolean accept(final Route route) {
           addOption(route, route.p() * prior(route.length()));
           return false;
         }
-        private double prior(int length) {
+        private double prior(final int length) {
           return Math.exp(-length-1);
         }
       }.clear();
@@ -92,11 +92,11 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
     public Policy compute(final ProbabilisticGraphicalModel argument) {
       return new Policy(argument) {
         @Override
-        public boolean accept(Route route) {
+        public boolean accept(final Route route) {
           addOption(route, route.p() * prior(route.length()));
           return false;
         }
-        private double prior(int length) {
+        private double prior(final int length) {
           final double meanERouteLength = ((SimplePGM) argument).meanERouteLength;
           return meanERouteLength > 1 ? length * length * Math.exp(-length/ (meanERouteLength/ 3 * 0.7)) : 1;
         }
@@ -106,15 +106,15 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
 
   public static final Computable<ProbabilisticGraphicalModel, Policy> POISSON_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
     @Override
-    public Policy compute(ProbabilisticGraphicalModel argument) {
+    public Policy compute(final ProbabilisticGraphicalModel argument) {
       final double meanLen = ((SimplePGM)argument).meanERouteLength;
       return new Policy(argument) {
         @Override
-        public boolean accept(Route route) {
+        public boolean accept(final Route route) {
           addOption(route, route.p() * prior(route.length()));
           return false;
         }
-        private double prior(int length) {
+        private double prior(final int length) {
           return meanLen > 1 ? MathTools.poissonProbability((meanLen - 1) * 0.5, length - 1) : Math.exp(-length);
         }
       }.clear();
@@ -124,12 +124,12 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
   public static final Computable<ProbabilisticGraphicalModel, Policy> FREQ_DENSITY_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
     final WeakHashMap<ProbabilisticGraphicalModel, Vec> cache = new WeakHashMap<ProbabilisticGraphicalModel, Vec>();
     @Override
-    public Policy compute(ProbabilisticGraphicalModel argument) {
+    public Policy compute(final ProbabilisticGraphicalModel argument) {
       Vec freqs = cache.get(argument);
       if (freqs == null) {
         freqs = new ArrayVec(10000);
         for (int i = 0; i < argument.knownRoutesCount(); i++) {
-          Route r = argument.knownRoute(i);
+          final Route r = argument.knownRoute(i);
           if (r.length() < freqs.dim())
             freqs.adjust(r.length(), r.p());
         }
@@ -143,7 +143,7 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
       final Vec finalFreqs = freqs;
       return new Policy(argument) {
         @Override
-        public boolean accept(Route route) {
+        public boolean accept(final Route route) {
           final double prior = finalFreqs.get(route.length());
           addOption(route, route.p() * (prior > 0 ? prior : 2 * unknownWeight / knownRootsCount));
           return false;
@@ -155,14 +155,14 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
   private final Computable<ProbabilisticGraphicalModel, Policy> policyFactory;
   private final Mx topology;
   private final int iterations;
-  private double step;
+  private final double step;
   private final FastRandom rng;
 
-  public PGMEM(Mx topology, double smoothing, int iterations) {
+  public PGMEM(final Mx topology, final double smoothing, final int iterations) {
     this(topology, smoothing, iterations, new FastRandom(), MOST_PROBABLE_PATH);
   }
 
-  public PGMEM(Mx topology, double smoothing, int iterations, FastRandom rng, Computable<ProbabilisticGraphicalModel, Policy> policy) {
+  public PGMEM(final Mx topology, final double smoothing, final int iterations, final FastRandom rng, final Computable<ProbabilisticGraphicalModel, Policy> policy) {
     this.policyFactory = policy;
     this.topology = topology;
     this.iterations = iterations;
@@ -171,7 +171,7 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
   }
 
   @Override
-  public SimplePGM fit(VecDataSet learn, LLLogit ll) {
+  public SimplePGM fit(final VecDataSet learn, final LLLogit ll) {
     final ThreadPoolExecutor executor = ThreadTools.createBGExecutor(PGMEM.class.getName(), learn.length());
 
     SimplePGM currentPGM = new SimplePGM(topology);
@@ -227,7 +227,7 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
       }
       double meanLen = 0;
       { // M-step
-        for (Route eroute : eroutes) {
+        for (final Route eroute : eroutes) {
           if (eroute == null)
             continue;
           meanLen += eroute.length();

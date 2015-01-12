@@ -13,39 +13,39 @@ import com.spbsu.ml.optimization.Optimize;
  * Time: 16:45
  */
 public class Nesterov1 implements Optimize<FuncConvex> {
-  private static Logger LOG = Logger.create(Nesterov1.class);
+  private static final Logger LOG = Logger.create(Nesterov1.class);
 
   private final Vec x0;
   private final double eps;
 
-  public Nesterov1(Vec x0, double eps) {
+  public Nesterov1(final Vec x0, final double eps) {
     this.x0 = x0;
     this.eps = eps;
   }
 
   @Override
-  public Vec optimize(FuncConvex func) {
+  public Vec optimize(final FuncConvex func) {
     final int n = func.xdim();
     double alpha;
-    double L = func.getGradLipParam();
-    double m = func.getGlobalConvexParam();
+    final double L = func.getGradLipParam();
+    final double m = func.getGlobalConvexParam();
     double gamma1 = L;
     double gamma2;
 
     Vec x1 = VecTools.copy(x0);
-    Vec x2 = new ArrayVec(n);
+    final Vec x2 = new ArrayVec(n);
     Vec v1 = VecTools.copy(x0);
-    Vec v2 = new ArrayVec(n);
-    Vec y = new ArrayVec(n);
+    final Vec v2 = new ArrayVec(n);
+    final Vec y = new ArrayVec(n);
     Vec grad;
 
     int iter = 0;
     do {
 //            compute alpha
       {
-        double D = m * m - 2 * gamma1 * m + 4 * gamma1 * L + gamma1 * gamma1;
-        double root1 = ((m - gamma1) - Math.sqrt(D)) / (2 * L);
-        double root2 = ((m - gamma1) + Math.sqrt(D)) / (2 * L);
+        final double D = m * m - 2 * gamma1 * m + 4 * gamma1 * L + gamma1 * gamma1;
+        final double root1 = ((m - gamma1) - Math.sqrt(D)) / (2 * L);
+        final double root2 = ((m - gamma1) + Math.sqrt(D)) / (2 * L);
         if (0 <= root2 && root2 <= 1)
           alpha = root2;
         else {

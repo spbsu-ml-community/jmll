@@ -24,14 +24,14 @@ import java.util.ListIterator;
  */
 public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   private final int depth;
-  private DynamicGrid grid;
+  private final DynamicGrid grid;
   private boolean growGrid = true;
   //  private final int minSplits;
   private final double lambda;
-  private static double eps = 1e-4;
+  private static final double eps = 1e-4;
 
 
-  public GreedyObliviousTreeDynamic(DynamicGrid grid, int depth, double lambda) {
+  public GreedyObliviousTreeDynamic(final DynamicGrid grid, final int depth, final double lambda) {
     this.depth = depth;
     this.grid = grid;
 //    minSplits = 1;
@@ -39,15 +39,15 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
     this.lambda = lambda;
   }
 
-  public GreedyObliviousTreeDynamic(VecDataSet ds, int depth) {
+  public GreedyObliviousTreeDynamic(final VecDataSet ds, final int depth) {
     this(ds, depth, 0, 1);
   }
 
-  public GreedyObliviousTreeDynamic(VecDataSet ds, int depth, double lambda) {
+  public GreedyObliviousTreeDynamic(final VecDataSet ds, final int depth, final double lambda) {
     this(ds, depth, lambda, 1);
   }
 
-  public GreedyObliviousTreeDynamic(VecDataSet ds, int depth, double lambda, int minSplits) {
+  public GreedyObliviousTreeDynamic(final VecDataSet ds, final int depth, final double lambda, final int minSplits) {
 //    this.minSplits = minSplits;
     this.depth = depth;
     this.lambda = lambda;
@@ -59,12 +59,12 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
     this.growGrid = false;
   }
 
-  public ObliviousTreeDynamicBin fit(VecDataSet ds, final Loss loss) {
-    BinarizedDynamicDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+  public ObliviousTreeDynamicBin fit(final VecDataSet ds, final Loss loss) {
+    final BinarizedDynamicDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 
     List<BFDynamicOptimizationSubset> leaves = new ArrayList<>(1 << depth);
-    TIntArrayList nonActiveF = new TIntArrayList(grid.rows());
-    TIntArrayList nonActiveBin = new TIntArrayList(grid.rows());
+    final TIntArrayList nonActiveF = new TIntArrayList(grid.rows());
+    final TIntArrayList nonActiveBin = new TIntArrayList(grid.rows());
     final List<BinaryFeature> conditions = new ArrayList<>(depth);
     final double[][] scores = new double[grid.rows()][];
     for (int i = 0; i < scores.length; ++i) {
@@ -86,10 +86,10 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
         }
 
 
-        for (BFDynamicOptimizationSubset leaf : leaves) {
+        for (final BFDynamicOptimizationSubset leaf : leaves) {
           leaf.visitAllSplits(new AggregateDynamic.SplitVisitor<AdditiveStatistics>() {
             @Override
-            public void accept(BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+            public void accept(final BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
               final double leftScore = loss.score(left);
               final double rightScore = loss.score(right);
               scores[bf.fIndex()][bf.binNo()] += leftScore + rightScore;
@@ -108,7 +108,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
         nonActiveBin.clear();
         for (int f = 0; f < scores.length; ++f) {
           for (int bin = 0; bin < scores[f].length; ++bin) {
-            BinaryFeature bf = grid.bf(f, bin);
+            final BinaryFeature bf = grid.bf(f, bin);
             if (bf.isActive()) {
               if (bestSplitScore > scores[f][bin]) {
                 bestSplitF = f;
@@ -122,12 +122,12 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
           }
         }
         if (growGrid) {
-          double threshold = bestSplitScore < currentScore ? bestSplitScore : currentScore;
+          final double threshold = bestSplitScore < currentScore ? bestSplitScore : currentScore;
           for (int j = 0; j < nonActiveF.size(); ++j) {
-            int feature = nonActiveF.get(j);
-            int bin = nonActiveBin.get(j);
-            BinaryFeature bf = grid.bf(feature, bin);
-            double reg = lambda != 0 ? bf.regularization() : 0;
+            final int feature = nonActiveF.get(j);
+            final int bin = nonActiveBin.get(j);
+            final BinaryFeature bf = grid.bf(feature, bin);
+            final double reg = lambda != 0 ? bf.regularization() : 0;
             final double score = threshold - scores[feature][bin] - lambda * reg;
             if (score > eps) {
               bds.queueSplit(bf);
@@ -175,7 +175,7 @@ public class GreedyObliviousTreeDynamic<Loss extends StatBasedLoss> extends VecO
 
 //      updated = false;
       if (!updated) {
-        double[] values = new double[leaves.size()];
+        final double[] values = new double[leaves.size()];
         for (int i = 0; i < values.length; i++) {
           values[i] = loss.bestIncrement(leaves.get(i).total());
         }

@@ -7,11 +7,11 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.ml.Func;
 
 public class QuadraticModel extends Func.Stub {
-  private Mx M;
-  private Vec b;
-  private double c;
+  private final Mx M;
+  private final Vec b;
+  private final double c;
 
-  public QuadraticModel(Mx m, Vec b, double c) {
+  public QuadraticModel(final Mx m, final Vec b, final double c) {
     M = m;
     this.b = b;
     this.c = c;
@@ -23,7 +23,7 @@ public class QuadraticModel extends Func.Stub {
   }
 
   @Override
-  public double value(Vec x) {
+  public double value(final Vec x) {
     return VecTools.multiply(x, MxTools.multiply(M, x)) + VecTools.multiply(x, b) + c;
   }
 

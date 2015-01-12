@@ -30,7 +30,7 @@ public class CherryPick {
   final int binsCount;
   public AdditiveStatistics inside;
 
-  public CherryPick(BinarizedDataSet bds, Factory<AdditiveStatistics> factory) {
+  public CherryPick(final BinarizedDataSet bds, final Factory<AdditiveStatistics> factory) {
     this.bds = bds;
     this.grid = bds.grid();
     this.factory = factory;
@@ -52,10 +52,10 @@ public class CherryPick {
   private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("CherryPick thread", -1);
 
   @SuppressWarnings("unchecked")
-  public <T extends AdditiveStatistics> Pair<BitSet, int[]> build(final Evaluator<T> eval, int[] points, final double lambda) {
-    TIntArrayList included = new TIntArrayList();
+  public <T extends AdditiveStatistics> Pair<BitSet, int[]> build(final Evaluator<T> eval, final int[] points, final double lambda) {
+    final TIntArrayList included = new TIntArrayList();
 
-    int[][] base = new int[grid.rows()][];
+    final int[][] base = new int[grid.rows()][];
     {
       for (int feature = 0; feature < grid.rows(); feature++) {
         base[feature] = new int[grid.row(feature).size() + 1];
@@ -157,7 +157,7 @@ public class CherryPick {
   }
 
 
-  private double regularization(BitSet conditions, int[][] base) {
+  private double regularization(final BitSet conditions, final int[][] base) {
 ////    return 0;
 //    double result = 0;
 //    int index = 0;
@@ -182,7 +182,7 @@ public class CherryPick {
 
 
     double result = 0;
-    int index = 0;
+    final int index = 0;
     int count = 0;
     int total = 0;
     int realCardinality = 0;

@@ -21,17 +21,17 @@ import static com.spbsu.commons.math.vectors.VecTools.scale;
  */
 public class ForelAlgorithm<T> implements ClusterizationAlgorithm<T> {
   Logger LOG = Logger.create(ForelAlgorithm.class);
-  private double maxDist0;
+  private final double maxDist0;
 
-  public ForelAlgorithm(double maxDist0) {
+  public ForelAlgorithm(final double maxDist0) {
     this.maxDist0 = maxDist0;
   }//  @Required
 
   @NotNull
   @Override
-  public Collection<? extends Collection<T>> cluster(Collection<T> dataSet, Computable<T, Vec> data2DVector) {
+  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Computable<T, Vec> data2DVector) {
     int count = 0;
-    List<Set<T>> clusters = new ArrayList<Set<T>>();
+    final List<Set<T>> clusters = new ArrayList<Set<T>>();
     final Set<T> unclassified = new HashSet<T>(dataSet);
     while (!unclassified.isEmpty()) {
       final T first = unclassified.iterator().next();
@@ -46,7 +46,7 @@ public class ForelAlgorithm<T> implements ClusterizationAlgorithm<T> {
         final Vec nextCentroid = copy(centroid);
         cluster.add(first);
         unclassified.remove(first);
-        for (T currentTerm : unclassified) {
+        for (final T currentTerm : unclassified) {
           final Vec currentVec = data2DVector.compute(currentTerm);
           final double distance = 1 - VecTools.cosine(centroid, currentVec);
           count ++;

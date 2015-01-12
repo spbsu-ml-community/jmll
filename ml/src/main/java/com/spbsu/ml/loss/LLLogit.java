@@ -19,16 +19,16 @@ public class LLLogit extends FuncC1.Stub implements TargetFunc {
   private final Vec target;
   private final DataSet<?> owner;
 
-  public LLLogit(Vec target, final DataSet<?> owner) {
+  public LLLogit(final Vec target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
   }
 
-  public Vec gradient(Vec x) {
-    Vec result = new ArrayVec(x.dim());
+  public Vec gradient(final Vec x) {
+    final Vec result = new ArrayVec(x.dim());
     for (int i = 0; i < x.dim(); i++) {
-      double expX = exp(x.get(i));
-      double pX = expX / (1 + expX);
+      final double expX = exp(x.get(i));
+      final double pX = expX / (1 + expX);
       if (target.get(i) > 0) // positive example
         result.set(i, pX - 1);
       else // negative
@@ -42,11 +42,11 @@ public class LLLogit extends FuncC1.Stub implements TargetFunc {
     return target.dim();
   }
 
-  public double value(Vec point) {
+  public double value(final Vec point) {
     double result = 0;
     for (int i = 0; i < point.dim(); i++) {
-      double expMX = exp(-point.get(i));
-      double pX = 1. / (1. + expMX);
+      final double expMX = exp(-point.get(i));
+      final double pX = 1. / (1. + expMX);
       if (target.get(i) > 0) // positive example
         result += log(pX);
       else // negative

@@ -16,24 +16,24 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  * Idea please stop making my code yellow
  */
 public class FlexStepDescent implements Optimize<FuncConvex> {
-    private static Logger LOG = Logger.create(FlexStepDescent.class);
+    private static final Logger LOG = Logger.create(FlexStepDescent.class);
     private final Vec x0;
     private final double eps;
 
-    public FlexStepDescent(Vec x0, double eps) {
+    public FlexStepDescent(final Vec x0, final double eps) {
         this.x0 = x0;
         this.eps = eps;
     }
 
-    Vec addXtoCY(Vec x, Vec y, double c) {
-        Vec ans = copy(x);
+    Vec addXtoCY(final Vec x, final Vec y, final double c) {
+        final Vec ans = copy(x);
         for (int i = 0; i < x.dim(); i++)
             ans.set(i, x.get(i) + y.get(i) * c);
         return ans;
     }
 
     @Override
-    public Vec optimize(FuncConvex func) {
+    public Vec optimize(final FuncConvex func) {
         Vec x1 = copy(x0);
         Vec grad = func.gradient().trans(x0);
         double distance = 1;
@@ -41,7 +41,7 @@ public class FlexStepDescent implements Optimize<FuncConvex> {
         int iter = 0;
         while (distance > eps && iter < 5000000) {
             iter++;
-            double currentValue = func.value(x1);
+            final double currentValue = func.value(x1);
             while (func.value(addXtoCY(x1, grad, -step)) >= currentValue) {
                 //System.out.println(scaleMultiply(func.gradient().trans(addXtoCY(x1, grad, -step)), grad));
                 step *= 2;

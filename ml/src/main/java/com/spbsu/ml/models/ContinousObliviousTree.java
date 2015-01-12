@@ -19,7 +19,7 @@ public class ContinousObliviousTree extends Func.Stub {
     //private final double[] basedOn;
     //private final double score;
 
-    public ContinousObliviousTree(final List<BFGrid.BinaryFeature> features, double[][] values)/*, double[] basedOn, double bestScore)*/ {
+    public ContinousObliviousTree(final List<BFGrid.BinaryFeature> features, final double[][] values)/*, double[] basedOn, double bestScore)*/ {
         //For every leaf you must make pass 1 value for 0 degree coefficient, n - for 1 degree coefficient, n^2 for 2 degree, and so on
         assert values.length == 1 << features.size();
         for (int i = 0; i < values.length; i++)
@@ -36,10 +36,10 @@ public class ContinousObliviousTree extends Func.Stub {
     }
 
     @Override
-    public double value(Vec _x) {
-        int index = bin(_x);
+    public double value(final Vec _x) {
+        final int index = bin(_x);
         double sum = 0;
-        double x[] = new double[features.length + 1];
+        final double[] x = new double[features.length + 1];
         for (int i = 0; i < features.length; i++)
             x[i + 1] = _x.get(features[i].findex);
         x[0] = 1;
@@ -49,7 +49,7 @@ public class ContinousObliviousTree extends Func.Stub {
         return sum;
     }
 
-    String indexToTexLetteral(int i) {
+    String indexToTexLetteral(final int i) {
         if (i == 0)
             return "1";
         else
@@ -58,7 +58,7 @@ public class ContinousObliviousTree extends Func.Stub {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
         for (int mask = 0; mask < 1 << features.length; mask++) {
 
             for (int i = 0; i < features.length; i++)
@@ -75,7 +75,7 @@ public class ContinousObliviousTree extends Func.Stub {
         return builder.toString();
     }
 
-    public int bin(Vec x) {
+    public int bin(final Vec x) {
         int index = 0;
         for (int i = 0; i < features.length; i++) {
             index <<= 1;

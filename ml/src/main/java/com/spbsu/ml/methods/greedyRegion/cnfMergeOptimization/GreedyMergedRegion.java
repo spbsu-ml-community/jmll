@@ -32,14 +32,14 @@ import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.wei
 public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> extends VecOptimization.Stub<Loss> {
   public static final int CARDINALITY_FACTOR = 5;
   protected final BFGrid grid;
-  private double lambda;
+  private final double lambda;
 
-  public GreedyMergedRegion(BFGrid grid, double lambda) {
+  public GreedyMergedRegion(final BFGrid grid, final double lambda) {
     this.lambda = lambda;
     this.grid = grid;
   }
 
-  public GreedyMergedRegion(BFGrid grid) {
+  public GreedyMergedRegion(final BFGrid grid) {
     this(grid, 2);
   }
 
@@ -54,17 +54,17 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
     final double totalPower = last.power();
     final RegularizedLoss<CherryOptimizationSubset> regLoss = new RegularizedLoss<CherryOptimizationSubset>() {
       @Override
-      public double target(CherryOptimizationSubset subset) {
+      public double target(final CherryOptimizationSubset subset) {
         return loss.score(subset.stat);
       }
 
       @Override
-      public double regularization(CherryOptimizationSubset subset) {
+      public double regularization(final CherryOptimizationSubset subset) {
         return (-Math.log(subset.power() + 1) -Math.log(totalPower - subset.power() + 1)) * CARDINALITY_FACTOR / (subset.cardinality() + CARDINALITY_FACTOR);
       }
 
       @Override
-      public double score(CherryOptimizationSubset subset) {
+      public double score(final CherryOptimizationSubset subset) {
         return loss.score(subset.stat) * (1 - lambda * regularization(subset)) + MathTools.EPSILON * regularization(subset);
       }
     };

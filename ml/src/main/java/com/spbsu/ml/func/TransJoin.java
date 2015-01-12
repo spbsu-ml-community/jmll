@@ -20,26 +20,26 @@ import java.util.List;
  */
 public class TransJoin extends Trans.Stub {
   public final Trans[] dirs;
-  private int xdim;
-  private int ydim;
+  private final int xdim;
+  private final int ydim;
 
-  public TransJoin(Trans[] dirs) {
+  public TransJoin(final Trans[] dirs) {
     this.dirs = dirs;
     xdim = dirs[ArrayTools.max(dirs, new Evaluator<Trans>() {
       @Override
-      public double value(Trans trans) {
+      public double value(final Trans trans) {
         return trans.xdim();
       }
     })].xdim();
     ydim = dirs.length * dirs[ArrayTools.max(dirs, new Evaluator<Trans>() {
       @Override
-      public double value(Trans trans) {
+      public double value(final Trans trans) {
         return trans.ydim();
       }
     })].ydim();
   }
 
-  public TransJoin(List<Trans> models) {
+  public TransJoin(final List<Trans> models) {
     this(models.toArray(new Trans[models.size()]));
   }
 
@@ -81,8 +81,8 @@ public class TransJoin extends Trans.Stub {
       }
 
       @Override
-      public Vec trans(Vec x) {
-        Mx result = new VecBasedMx(xdim(), new ArrayVec(ydim()));
+      public Vec trans(final Vec x) {
+        final Mx result = new VecBasedMx(xdim(), new ArrayVec(ydim()));
         for (int i = 0; i < dirs.length; i++) {
           VecTools.assign(result.row(i), gradients[i].trans(x));
         }
@@ -93,7 +93,7 @@ public class TransJoin extends Trans.Stub {
 
   @Override
   public Vec trans(final Vec x) {
-    Mx result = new VecBasedMx(ydim / dirs.length, new ArrayVec(ydim));
+    final Mx result = new VecBasedMx(ydim / dirs.length, new ArrayVec(ydim));
     for (int c = 0; c < dirs.length; c++) {
       VecTools.assign(result.row(c), dirs[c].trans(x));
     }

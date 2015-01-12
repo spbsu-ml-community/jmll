@@ -20,7 +20,7 @@ public class ViewportAnswersWeighting extends DSItem.Stub implements DSItem {
   public String[] answers;
   public double[] weights;
 
-  public ViewportAnswersWeighting(final String reqId, String vpName, final CommonBasisVec<String> answers) {
+  public ViewportAnswersWeighting(final String reqId, final String vpName, final CommonBasisVec<String> answers) {
     this.vpName = vpName;
     final VecIterator nzIt = answers.nonZeroes();
     final Integer[] order = new Integer[VecTools.l0(answers)];

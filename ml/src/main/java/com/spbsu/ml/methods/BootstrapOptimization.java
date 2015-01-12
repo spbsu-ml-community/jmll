@@ -19,13 +19,13 @@ public class BootstrapOptimization<Loss extends StatBasedLoss> extends WeakListe
   protected final FastRandom rnd;
   private final VecOptimization<WeightedLoss<? extends Loss>> weak;
 
-  public BootstrapOptimization(VecOptimization<WeightedLoss<? extends Loss>> weak, FastRandom rnd) {
+  public BootstrapOptimization(final VecOptimization<WeightedLoss<? extends Loss>> weak, final FastRandom rnd) {
     this.weak = weak;
     this.rnd = rnd;
   }
 
   @Override
-  public Trans fit(VecDataSet learn, Loss globalLoss) {
+  public Trans fit(final VecDataSet learn, final Loss globalLoss) {
     return weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
   }
 }

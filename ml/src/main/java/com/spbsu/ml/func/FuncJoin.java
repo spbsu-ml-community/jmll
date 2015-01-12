@@ -11,14 +11,14 @@ import com.spbsu.ml.Trans;
  * Time: 22:07:07
  */
 public class FuncJoin extends TransJoin {
-  public FuncJoin(Func[] dirs) {
+  public FuncJoin(final Func[] dirs) {
     super(dirs);
   }
 
   public Func[] dirs() {
     return ArrayTools.map(this.dirs, Func.class, new Computable<Trans, Func>() {
       @Override
-      public Func compute(Trans argument) {
+      public Func compute(final Trans argument) {
         return (Func)argument;
       }
     });

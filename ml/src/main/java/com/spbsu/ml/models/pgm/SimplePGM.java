@@ -45,7 +45,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     final List<MyRoute> order = new LinkedList<MyRoute>();
     final TreeSet<MyRoute> increment = new TreeSet<MyRoute>(new Comparator<MyRoute>() {
       @Override
-      public int compare(MyRoute o1, MyRoute o2) {
+      public int compare(final MyRoute o1, final MyRoute o2) {
         return o2.p() >= o1.p() ? 1 : -1;
       }
     });
@@ -102,7 +102,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
   public void visit(final Filter<Route> act, final int... controlPoints) {
     visit(new Filter<Route>() {
       @Override
-      public boolean accept(Route route) {
+      public boolean accept(final Route route) {
         int index = 0;
         int controlPoint = controlPoints[index];
         for (int t = 0; t < route.length(); t++) {
@@ -120,17 +120,17 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
 
   @Override
   public void visit(final Filter<Route> act) {
-    for (MyLWRoute route : routes) {
+    for (final MyLWRoute route : routes) {
       if (act.accept(route))
         return;
     }
   }
 
   @Override
-  public double p(int... controlPoints) {
+  public double p(final int... controlPoints) {
     final double[] result = new double[]{0.};
     visit(new Filter<Route>() {
-      public boolean accept(Route route) {
+      public boolean accept(final Route route) {
         result[0] += route.p();
         return false;
       }
@@ -139,12 +139,12 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
   }
 
   @Override
-  public double value(Vec x) {
+  public double value(final Vec x) {
     return p(extractControlPoints(x));
   }
 
-  public int[] extractControlPoints(Vec x) {
-    TIntArrayList toInt = new TIntArrayList(x.dim() + 1);
+  public int[] extractControlPoints(final Vec x) {
+    final TIntArrayList toInt = new TIntArrayList(x.dim() + 1);
     toInt.add(0);
     for (int i = 0; i < x.dim(); i++) {
       final double next = x.get(i);
@@ -155,8 +155,8 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return toInt.toArray();
   }
 
-  public Route next(FastRandom rng) {
-    TByteArrayList result = new TByteArrayList(100);
+  public Route next(final FastRandom rng) {
+    final TByteArrayList result = new TByteArrayList(100);
     byte next = 0;
     double p = 1;
 
@@ -177,7 +177,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
   }
 
   @Override
-  public boolean isFinal(int node) {
+  public boolean isFinal(final int node) {
     return isFinalState[node];
   }
 
@@ -186,7 +186,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     return routes.length;
   }
 
-  public Route knownRoute(int randRoute) {
+  public Route knownRoute(final int randRoute) {
     return routes[randRoute];
   }
 
@@ -195,10 +195,11 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
   }
 
   public class MyLWRoute implements Route {
-    private int start, end;
-    private double probab;
+    private final int start;
+    private final int end;
+    private final double probab;
 
-    private MyLWRoute(int start, int end, double probab) {
+    private MyLWRoute(final int start, final int end, final double probab) {
       this.start = start;
       this.end = end;
       this.probab = probab;
@@ -220,12 +221,12 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     }
 
     @Override
-    public ProbabilisticGraphicalModel dstOwner(int stepNo) {
+    public ProbabilisticGraphicalModel dstOwner(final int stepNo) {
       return SimplePGM.this;
     }
 
     @Override
-    public int dst(int stepNo) {
+    public int dst(final int stepNo) {
       return nodes[stepNo + start];
     }
   }
@@ -235,7 +236,7 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     private final double probab;
     private double maxClosedProbab;
 
-    public MyRoute(byte[] route, double probab) {
+    public MyRoute(final byte[] route, final double probab) {
       this.route = route;
       this.probab = probab;
 
@@ -246,8 +247,8 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
       }
     }
 
-    void disclose(Mx topology, TreeSet<MyRoute> container, double minProbab) {
-      double lowerBound = maxClosedProbab;
+    void disclose(final Mx topology, final TreeSet<MyRoute> container, final double minProbab) {
+      final double lowerBound = maxClosedProbab;
       maxClosedProbab = 0.;
 
       for (int next = 0; next < topology.columns(); next++) {
@@ -282,12 +283,12 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     }
 
     @Override
-    public ProbabilisticGraphicalModel dstOwner(int stepNo) {
+    public ProbabilisticGraphicalModel dstOwner(final int stepNo) {
       return SimplePGM.this;
     }
 
     @Override
-    public int dst(int stepNo) {
+    public int dst(final int stepNo) {
       return route[stepNo];
     }
   }

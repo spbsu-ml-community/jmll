@@ -205,10 +205,10 @@ public class HierarchicalRefinedClassification extends VecOptimization.Stub<Bloc
     }
 
     //we need to accumulate signals from bottom levels
-    private Vec deepTrans(Vec x) {
+    private Vec deepTrans(final Vec x) {
       final Vec trans = ((JoinedBinClassModel) basedOn).getInternModel().trans(x);
       for (int i = 0; i < classLabels.size(); i++) {
-        int label = classLabels.get(i);
+        final int label = classLabels.get(i);
         final SpecialHierModel model = (SpecialHierModel) label2childModel.get(label);
         if (model != null) {
           final double val = VecTools.sum(model.deepTrans(x));

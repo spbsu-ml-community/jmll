@@ -14,7 +14,7 @@ import com.spbsu.ml.models.ObliviousTree;
  * Created by vkokarev on 09.12.14.
  */
 public class MutedFeatureObliviousTreeEnsemble extends Ensemble<ObliviousTree> {
-  private MutedFeatureObliviousTreeEnsemble(ObliviousTree[] models, Vec weights) {
+  private MutedFeatureObliviousTreeEnsemble(final ObliviousTree[] models, final Vec weights) {
     super(models, weights);
   }
 

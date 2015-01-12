@@ -17,13 +17,13 @@ import java.util.*;
 public class CNF extends RegionBase {
   private final Clause[] clauses;
 
-  public CNF(Clause[] conditions, double inside, BFGrid grid) {
+  public CNF(final Clause[] conditions, final double inside, final BFGrid grid) {
     super(grid, inside, 0.);
     this.clauses = conditions;
   }
 
-  public boolean contains(Vec point) {
-    for (Clause clause : clauses) {
+  public boolean contains(final Vec point) {
+    for (final Clause clause : clauses) {
       if (!clause.contains(point)) {
         return false;
       }
@@ -31,8 +31,8 @@ public class CNF extends RegionBase {
     return true;
   }
 
-  public boolean contains(BinarizedDataSet bds, int pindex) {
-    for (Clause clause : clauses) {
+  public boolean contains(final BinarizedDataSet bds, final int pindex) {
+    for (final Clause clause : clauses) {
       if (!clause.contains(bds, pindex)) {
         return false;
       }
@@ -43,7 +43,7 @@ public class CNF extends RegionBase {
   public static class Clause extends RegionBase implements BinOptimizedModel {
     public final Condition[] conditions;
 
-    public Clause(BFGrid grid, Condition... conditions) {
+    public Clause(final BFGrid grid, final Condition... conditions) {
       super(grid, 1., 0);
       @SuppressWarnings("unchecked")
       final List<Condition> optimizedConditions = new ArrayList<>(conditions.length);
@@ -64,7 +64,7 @@ public class CNF extends RegionBase {
     }
 
     @Override
-    public boolean contains(BinarizedDataSet bds, int pindex) {
+    public boolean contains(final BinarizedDataSet bds, final int pindex) {
       if (conditions.length == 0)
         return true;
       for(int i = 0; i < conditions.length; i++) {
@@ -76,7 +76,7 @@ public class CNF extends RegionBase {
     }
 
     @Override
-    public boolean contains(Vec x) {
+    public boolean contains(final Vec x) {
       if (conditions.length == 0)
         return true;
       for(int i = 0; i < conditions.length; i++) {
@@ -106,7 +106,7 @@ public class CNF extends RegionBase {
     public final BFGrid.BFRow feature;
     public final BitSet used;
 
-    public Condition(BFGrid.BFRow feature, BitSet bins) {
+    public Condition(final BFGrid.BFRow feature, final BitSet bins) {
       this.findex = feature.origFIndex;
       this.feature = feature;
       this.used = bins;
@@ -153,11 +153,11 @@ public class CNF extends RegionBase {
       return builder.toString();
     }
 
-    public boolean contains(BinarizedDataSet bds, int pindex) {
+    public boolean contains(final BinarizedDataSet bds, final int pindex) {
       return used.get(bds.bins(findex)[pindex]);
     }
 
-    public boolean contains(Vec x) {
+    public boolean contains(final Vec x) {
       final double val = x.get(findex);
       return used.get(feature.bin(val));
     }

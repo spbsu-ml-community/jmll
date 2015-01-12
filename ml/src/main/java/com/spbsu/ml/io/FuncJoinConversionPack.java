@@ -25,7 +25,7 @@ public class FuncJoinConversionPack implements ConversionPack<FuncJoin, CharSequ
     public FuncJoin convert(final CharSequence from) {
       final Func[] dirs = ArrayTools.map(convertModels(from), Func.class, new Computable<Trans, Func>() {
         @Override
-        public Func compute(Trans argument) {
+        public Func compute(final Trans argument) {
           return (Func) argument;
         }
       });

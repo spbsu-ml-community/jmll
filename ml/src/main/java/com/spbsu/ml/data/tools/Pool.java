@@ -91,7 +91,7 @@ public class Pool<I extends DSItem> {
   }
 
   private <T extends DSItem> VecDataSet joinFeatures(final int[] indices, final DataSet<T> ds) {
-    List<Seq<?>> cols = new ArrayList<>();
+    final List<Seq<?>> cols = new ArrayList<>();
     boolean hasVecFeatures = false;
     for (int i = 0; i < indices.length; i++) {
       final Seq<?> val = features[indices[i]].second;
@@ -104,7 +104,7 @@ public class Pool<I extends DSItem> {
     final Mx data;
     if (hasVecFeatures) {
       final List<Seq<?>> seqs = new ArrayList<>(cols.size());
-      for (Seq<?> col : cols) {
+      for (final Seq<?> col : cols) {
         if (col instanceof Vec) {
           seqs.add(new VecSeq(new Vec[]{(Vec) col}));
         } else if (col instanceof VecSeq) {
@@ -145,7 +145,7 @@ public class Pool<I extends DSItem> {
       final DataSet<I> ds = data();
       final TIntArrayList toJoin = new TIntArrayList(features.length);
       for (int i = 0; i < features.length; i++) {
-        Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = features[i];
+        final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = features[i];
         for (final Class clazz : supportedFeatureTypes) {
           if (clazz.isAssignableFrom(feature.getFirst().type().clazz())) {
             toJoin.add(i);
@@ -158,11 +158,11 @@ public class Pool<I extends DSItem> {
     return vecDataSet;
   }
 
-  public void addTarget(TargetMeta meta, Seq<?> target) {
+  public void addTarget(final TargetMeta meta, final Seq<?> target) {
     targets.add(Pair.create(meta, target));
   }
 
-  public <T extends TargetFunc> T target(Class<T> targetClass) {
+  public <T extends TargetFunc> T target(final Class<T> targetClass) {
     for (int i = targets.size() - 1; i >= 0; i--) {
       final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targets.get(i).second, targets.get(i).getFirst().associated());
       if (target != null)

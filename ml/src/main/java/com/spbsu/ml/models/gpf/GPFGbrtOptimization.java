@@ -34,28 +34,28 @@ public class GPFGbrtOptimization {
     public final List<GPFGbrtModel.SessionFeatureRepresentation<Blk>> sfrList;
     final int[] sessionPositions; // data[sessionPositions[i]] is the first row for session sfrList[i]
 
-    public GPFVectorizedDataset(List<Session<Blk>> sessionList, List<GPFGbrtModel.SessionFeatureRepresentation<Blk>> sfrList, int[] sessionPositions, Mx data) {
+    public GPFVectorizedDataset(final List<Session<Blk>> sessionList, final List<GPFGbrtModel.SessionFeatureRepresentation<Blk>> sfrList, final int[] sessionPositions, final Mx data) {
       super(data, null);
       this.sessionList = sessionList;
       this.sfrList = sfrList;
       this.sessionPositions = sessionPositions;
     }
 
-    public static GPFVectorizedDataset<BlockV1> load(InputStream is, GPFGbrtModel<BlockV1> model, int rows_limit) throws IOException {
-      List<Session<BlockV1>> sessionList = WebLogV1GPFSession.loadDatasetFromJSON(is, model, rows_limit);
+    public static GPFVectorizedDataset<BlockV1> load(final InputStream is, final GPFGbrtModel<BlockV1> model, final int rows_limit) throws IOException {
+      final List<Session<BlockV1>> sessionList = WebLogV1GPFSession.loadDatasetFromJSON(is, model, rows_limit);
 
-      List<GPFGbrtModel.SessionFeatureRepresentation<BlockV1>> sfrList = new ArrayList<>(sessionList.size());
-      int[] sessionPositions = new int[sessionList.size()];
+      final List<GPFGbrtModel.SessionFeatureRepresentation<BlockV1>> sfrList = new ArrayList<>(sessionList.size());
+      final int[] sessionPositions = new int[sessionList.size()];
       int datasetSize = 0;
       for (int i = 0; i < sessionList.size(); i++) {
-        GPFGbrtModel.SessionFeatureRepresentation<BlockV1> sfr = new GPFGbrtModel.SessionFeatureRepresentation<>(sessionList.get(i), model);
+        final GPFGbrtModel.SessionFeatureRepresentation<BlockV1> sfr = new GPFGbrtModel.SessionFeatureRepresentation<>(sessionList.get(i), model);
         sfrList.add(sfr);
         sessionPositions[i] = datasetSize;
         datasetSize += sfr.f_count;
       }
-      double[] data = new double[datasetSize * model.getEdgeFeatCount()];
+      final double[] data = new double[datasetSize * model.getEdgeFeatCount()];
       for (int i = 0; i < sessionList.size(); i++) {
-        GPFGbrtModel.SessionFeatureRepresentation sfr = sfrList.get(i);
+        final GPFGbrtModel.SessionFeatureRepresentation sfr = sfrList.get(i);
         System.arraycopy(sfr.features.toArray(), 0, data, sessionPositions[i] * model.getEdgeFeatCount(), sfr.features.dim());
       }
 
@@ -68,14 +68,14 @@ public class GPFGbrtOptimization {
     final GPFVectorizedDataset<Blk> dataset;
     final int threadCount;
 
-    private Vec[] fvalue_partial;
-    private int[] fvalue_partial_size;
+    private final Vec[] fvalue_partial;
+    private final int[] fvalue_partial_size;
 
-    public GPFLoglikelihood(GPFGbrtModel<Blk> model, GPFVectorizedDataset<Blk> dataset) {
+    public GPFLoglikelihood(final GPFGbrtModel<Blk> model, final GPFVectorizedDataset<Blk> dataset) {
       this(model, dataset, 1);
     }
 
-    public GPFLoglikelihood(GPFGbrtModel<Blk> model, GPFVectorizedDataset<Blk> dataset, int threadCount) {
+    public GPFLoglikelihood(final GPFGbrtModel<Blk> model, final GPFVectorizedDataset<Blk> dataset, final int threadCount) {
       this.threadCount = threadCount;
       this.model = model;
       this.dataset = dataset;
@@ -88,15 +88,15 @@ public class GPFGbrtOptimization {
     }
 
     @Override
-    public Vec gradient(Vec x) {
+    public Vec gradient(final Vec x) {
       if (x.dim() != dataset.data().rows())
         throw new IllegalArgumentException("x.dim() != dataset.data().rows():" + x.dim() + " != " + dataset.data().rows());
 
-      List<Callable<GPFGbrtModel.SessionGradientValue>> tasks = new ArrayList<>(dataset.sfrList.size());
-      List<Vec> sessions_f = new ArrayList<>(dataset.sfrList.size());
+      final List<Callable<GPFGbrtModel.SessionGradientValue>> tasks = new ArrayList<>(dataset.sfrList.size());
+      final List<Vec> sessions_f = new ArrayList<>(dataset.sfrList.size());
       for (int i = 0; i < dataset.sfrList.size(); i++) {
         final GPFGbrtModel.SessionFeatureRepresentation sfr = dataset.sfrList.get(i);
-        int start = dataset.sessionPositions[i];
+        final int start = dataset.sessionPositions[i];
 
         // old version: Vec f = x.sub(start, sfr.f_count);
         // new non-negative version: f = exp(x)
@@ -113,15 +113,15 @@ public class GPFGbrtOptimization {
         });
       }
 
-      ArrayVec ret = new ArrayVec(dataset.data().rows());
-      ExecutorService executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
+      final ArrayVec ret = new ArrayVec(dataset.data().rows());
+      final ExecutorService executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
       try {
-        List<Future<GPFGbrtModel.SessionGradientValue>> result = executorPool.invokeAll(tasks);
+        final List<Future<GPFGbrtModel.SessionGradientValue>> result = executorPool.invokeAll(tasks);
 
         for (int i = 0; i < dataset.sfrList.size(); i++) {
-          int start = dataset.sessionPositions[i];
-          Vec gradient = result.get(i).get().gradient;
-          Vec f = sessions_f.get(i);
+          final int start = dataset.sessionPositions[i];
+          final Vec gradient = result.get(i).get().gradient;
+          final Vec f = sessions_f.get(i);
           for (int j = 0; j < gradient.dim(); j++)
             ret.set(start + j, gradient.get(j) * f.get(j));
         }
@@ -136,28 +136,28 @@ public class GPFGbrtOptimization {
     }
 
     @Override
-    public double value(Vec x) {
+    public double value(final Vec x) {
       double loglikelihood = 0.;
       int nObservations = 0;
       for (int i = 0; i < dataset.sfrList.size(); i++) {
-        GPFGbrtModel.SessionFeatureRepresentation sfr = dataset.sfrList.get(i);
-        int start = dataset.sessionPositions[i];
+        final GPFGbrtModel.SessionFeatureRepresentation sfr = dataset.sfrList.get(i);
+        final int start = dataset.sessionPositions[i];
 
         // old version: Vec f = x.sub(start, sfr.f_count);
         // new non-negative version: f = exp(x)
-        ArrayVec f = new ArrayVec(sfr.f_count);
+        final ArrayVec f = new ArrayVec(sfr.f_count);
         for (int j = 0; j < sfr.f_count; j++)
           f.set(j, Math.exp(x.get(start + j)));
 
-        GPFGbrtModel.SessionGradientValue ses_grad = model.eval_L_and_dL_df(sfr, false, f);
+        final GPFGbrtModel.SessionGradientValue ses_grad = model.eval_L_and_dL_df(sfr, false, f);
         loglikelihood += ses_grad.loglikelihood;
         nObservations += ses_grad.nObservations;
       }
       return -loglikelihood;
     }
 
-    public double evalAverageLL(Trans fmodel) {
-      List<Callable<GPFGbrtModel.SessionGradientValue>> tasks = new ArrayList<>(dataset.sfrList.size());
+    public double evalAverageLL(final Trans fmodel) {
+      final List<Callable<GPFGbrtModel.SessionGradientValue>> tasks = new ArrayList<>(dataset.sfrList.size());
       for (int i = 0; i < dataset.sfrList.size(); i++) {
         final GPFGbrtModel.SessionFeatureRepresentation sfr = dataset.sfrList.get(i);
 
@@ -200,12 +200,12 @@ public class GPFGbrtOptimization {
       double loglikelihood = 0.;
       int nObservations = 0;
 
-      ExecutorService executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
+      final ExecutorService executorPool = threadCount == 1 ? Executors.newSingleThreadExecutor() : Executors.newFixedThreadPool(threadCount);
       try {
-        List<Future<GPFGbrtModel.SessionGradientValue>> result = executorPool.invokeAll(tasks);
+        final List<Future<GPFGbrtModel.SessionGradientValue>> result = executorPool.invokeAll(tasks);
 
         for (int i = 0; i < dataset.sfrList.size(); i++) {
-          GPFGbrtModel.SessionGradientValue ses_grad = result.get(i).get();
+          final GPFGbrtModel.SessionGradientValue ses_grad = result.get(i).get();
           loglikelihood += ses_grad.loglikelihood;
           nObservations += ses_grad.nObservations;
         }
@@ -233,18 +233,18 @@ public class GPFGbrtOptimization {
     private int index = 0;
     private double learn_min = Double.POSITIVE_INFINITY;
     private double valid_min = Double.POSITIVE_INFINITY;
-    private GPFLoglikelihood learn_loss;
-    private GPFLoglikelihood validate_loss;
+    private final GPFLoglikelihood learn_loss;
+    private final GPFLoglikelihood validate_loss;
 
-    public PrintProgressIterationListener(GPFLoglikelihood learn_loss, GPFLoglikelihood validate_loss) {
+    public PrintProgressIterationListener(final GPFLoglikelihood learn_loss, final GPFLoglikelihood validate_loss) {
       this.learn_loss = learn_loss;
       this.validate_loss = validate_loss;
     }
 
     @Override
-    public void invoke(Trans partial) {
-      double learn_eL = Math.exp(-learn_loss.evalAverageLL(partial));
-      double valid_eL = Math.exp(-validate_loss.evalAverageLL(partial));
+    public void invoke(final Trans partial) {
+      final double learn_eL = Math.exp(-learn_loss.evalAverageLL(partial));
+      final double valid_eL = Math.exp(-validate_loss.evalAverageLL(partial));
       learn_min = Math.min(learn_min, learn_eL);
       valid_min = Math.min(valid_min, valid_eL);
       System.out.println("" + (new Date()) +

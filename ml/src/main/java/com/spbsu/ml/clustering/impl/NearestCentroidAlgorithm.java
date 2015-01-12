@@ -18,8 +18,8 @@ import java.util.Collection;
  * Date: 16.01.2010
  */
 public class NearestCentroidAlgorithm<X> implements ClusterizationAlgorithm<X> {
-  private Metric<Vec> metric;
-  private double acceptanceDistance;
+  private final Metric<Vec> metric;
+  private final double acceptanceDistance;
 
   public NearestCentroidAlgorithm(final Metric<Vec> metric, final double acceptanceDistance) {
     this.metric = metric;
@@ -28,7 +28,7 @@ public class NearestCentroidAlgorithm<X> implements ClusterizationAlgorithm<X> {
 
   @NotNull
   @Override
-  public Collection<? extends Collection<X>> cluster(Collection<X> dataSet, Computable<X, Vec> data2DVector) {
+  public Collection<? extends Collection<X>> cluster(final Collection<X> dataSet, final Computable<X, Vec> data2DVector) {
     final Collection<Pair<Collection<X>,Vec>> clusters = Factories.hashSet();
     for (final X data : dataSet) {
       final Vec dataVector = data2DVector.compute(data);

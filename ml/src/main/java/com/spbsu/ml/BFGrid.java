@@ -17,9 +17,9 @@ public class BFGrid {
   final int bfCount;
   final BFRow leastNonEmptyRow;
 
-  public BFGrid(BFRow[] rows) {
+  public BFGrid(final BFRow[] rows) {
     this.rows = rows;
-    for (BFRow row : rows) {
+    for (final BFRow row : rows) {
       row.setOwner(this);
     }
     final BFRow lastRow = rows[rows.length - 1];
@@ -41,15 +41,15 @@ public class BFGrid {
     this.leastNonEmptyRow = leastNonEmptyRow;
   }
 
-  public BFRow row(int feature) {
+  public BFRow row(final int feature) {
     return feature < rows.length ? rows[feature] : new BFRow(this, bfCount, feature, new double[0]);
   }
 
-  public BinaryFeature bf(int bfIndex) {
+  public BinaryFeature bf(final int bfIndex) {
     return features[bfIndex];
   }
 
-  public void binarize(Vec x, byte[] folds) {
+  public void binarize(final Vec x, final byte[] folds) {
     for (int i = 0; i < x.dim(); i++) {
       folds[i] = (byte) rows[i].bin(x.get(i));
     }
@@ -80,7 +80,7 @@ public class BFGrid {
     public final double[] borders;
     public final BinaryFeature[] bfs;
 
-    public BFRow(BFGrid owner, int bfStart, int origFIndex, double[] borders) {
+    public BFRow(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders) {
       this.owner = owner;
       this.bfStart = bfStart;
       this.bfEnd = bfStart + borders.length;
@@ -92,11 +92,11 @@ public class BFGrid {
       }
     }
 
-    public BFRow(int bfStart, int origFIndex, double[] borders) {
+    public BFRow(final int bfStart, final int origFIndex, final double[] borders) {
       this(null, bfStart, origFIndex, borders);
     }
 
-    public int bin(double val) {
+    public int bin(final double val) {
       int index = 0;
 //      final int index = Arrays.binarySearch(borders, val);
 //      return bfStart + (index >= 0 ? index : -index-1);
@@ -106,11 +106,11 @@ public class BFGrid {
       return index;
     }
 
-    public BinaryFeature bf(int index) {
+    public BinaryFeature bf(final int index) {
       return bfs[index];
     }
 
-    public double condition(int border) {
+    public double condition(final int border) {
       return borders[border];
     }
 
@@ -123,11 +123,11 @@ public class BFGrid {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) return true;
       if (!(o instanceof BFRow)) return false;
 
-      BFRow bfRow = (BFRow) o;
+      final BFRow bfRow = (BFRow) o;
 
       return bfStart == bfRow.bfStart && origFIndex == bfRow.origFIndex && Arrays.equals(borders, bfRow.borders);
 
@@ -145,7 +145,7 @@ public class BFGrid {
       return owner;
     }
 
-    private void setOwner(BFGrid owner) {
+    private void setOwner(final BFGrid owner) {
       this.owner = owner;
     }
   }
@@ -157,7 +157,7 @@ public class BFGrid {
     public final int binNo;
     public final double condition;
 
-    public BinaryFeature(BFRow bfRow, int bfIndex, int findex, int binNo, double condition) {
+    public BinaryFeature(final BFRow bfRow, final int bfIndex, final int findex, final int binNo, final double condition) {
       this.bfRow = bfRow;
       this.bfIndex = bfIndex;
       this.findex = findex;
@@ -165,11 +165,11 @@ public class BFGrid {
       this.condition = condition;
     }
 
-    public boolean value(byte[] folds) {
+    public boolean value(final byte[] folds) {
       return folds[findex] > binNo;
     }
 
-    public boolean value(Vec vec) {
+    public boolean value(final Vec vec) {
       return vec.get(findex) > condition;
     }
 
@@ -178,11 +178,11 @@ public class BFGrid {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) return true;
       if (!(o instanceof BinaryFeature)) return false;
 
-      BinaryFeature that = (BinaryFeature) o;
+      final BinaryFeature that = (BinaryFeature) o;
 
       return bfIndex == that.bfIndex && bfRow.equals(that.bfRow);
 
@@ -204,11 +204,11 @@ public class BFGrid {
   public static final Converter<BFGrid, CharSequence> CONVERTER = new BFGridStringConverter();
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (!(o instanceof BFGrid)) return false;
 
-    BFGrid bfGrid = (BFGrid) o;
+    final BFGrid bfGrid = (BFGrid) o;
 
     return Arrays.equals(rows, bfGrid.rows);
 

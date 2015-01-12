@@ -15,15 +15,15 @@ import org.jetbrains.annotations.Nullable;
 public class Linear extends Func.Stub {
   public final Vec weights;
 
-  public Linear(double[] weights) {
+  public Linear(final double[] weights) {
     this(new ArrayVec(weights));
   }
 
-  public Linear(Vec weights) {
+  public Linear(final Vec weights) {
     this.weights = weights;
   }
 
-  public Linear(int size, double step) {
+  public Linear(final int size, final double step) {
     this.weights = VecTools.fill(new ArrayVec(size), step);
   }
 
@@ -37,7 +37,7 @@ public class Linear extends Func.Stub {
   public Trans gradient() {
     return new Trans.Stub() {
       @Override
-      public Vec trans(Vec x) {
+      public Vec trans(final Vec x) {
         return weights;
       }
 
@@ -52,16 +52,16 @@ public class Linear extends Func.Stub {
     };
   }
 
-  public double value(Vec point) {
+  public double value(final Vec point) {
     return VecTools.multiply(weights, point);
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (!(o instanceof Linear)) return false;
 
-    Linear that = (Linear) o;
+    final Linear that = (Linear) o;
     return that.weights.equals(weights);
   }
 

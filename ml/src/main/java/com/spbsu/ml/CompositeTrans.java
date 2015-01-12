@@ -15,7 +15,7 @@ public class CompositeTrans<F extends Trans, G extends Trans> extends Trans.Stub
   public final F f;
   public final G g;
 
-  public CompositeTrans(F f, G g) {
+  public CompositeTrans(final F f, final G g) {
     this.f = f;
     this.g = g;
   }
@@ -31,7 +31,7 @@ public class CompositeTrans<F extends Trans, G extends Trans> extends Trans.Stub
   }
 
   @Override
-  public Vec trans(Vec x) {
+  public Vec trans(final Vec x) {
     return f.trans(g.trans(x));
   }
 
@@ -56,7 +56,7 @@ public class CompositeTrans<F extends Trans, G extends Trans> extends Trans.Stub
       }
 
       @Override
-      public Vec trans(Vec x) {
+      public Vec trans(final Vec x) {
         return MxTools.multiply((Mx) f.gradient().trans(g.trans(x)), (Mx) g.gradient().trans(x));
       }
     };

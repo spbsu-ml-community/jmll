@@ -10,7 +10,7 @@ import com.spbsu.ml.data.set.DataSet;
 public class PLogit extends LLLogit {
   private final Vec target;
 
-  public PLogit(final Vec target, DataSet<?> base) {
+  public PLogit(final Vec target, final DataSet<?> base) {
     super(target, base);
     this.target = target;
   }

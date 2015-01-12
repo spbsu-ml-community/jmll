@@ -10,7 +10,7 @@ import com.spbsu.ml.data.set.DataSet;
 public class RLogit extends LLLogit {
   private final Vec target;
 
-  public RLogit(final Vec target, DataSet<?> base) {
+  public RLogit(final Vec target, final DataSet<?> base) {
     super(target, base);
     this.target = target;
   }

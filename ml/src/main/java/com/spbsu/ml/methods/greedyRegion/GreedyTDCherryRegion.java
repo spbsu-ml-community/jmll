@@ -30,18 +30,18 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
   private final double beta;
   private final int maxFailed;
 
-  public GreedyTDCherryRegion(BFGrid grid) {
+  public GreedyTDCherryRegion(final BFGrid grid) {
     this(grid, 0.02, 0.5, 1);
   }
 
-  public GreedyTDCherryRegion(BFGrid grid, double alpha, double beta, int maxFailed) {
+  public GreedyTDCherryRegion(final BFGrid grid, final double alpha, final double beta, final int maxFailed) {
     this.grid = grid;
     this.alpha = alpha;
     this.beta = beta;
     this.maxFailed = maxFailed;
   }
 
-  public GreedyTDCherryRegion(BFGrid grid, double alpha, double beta) {
+  public GreedyTDCherryRegion(final BFGrid grid, final double alpha, final double beta) {
     this(grid, alpha, beta, 1);
   }
 
@@ -50,20 +50,20 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
   public CherryRegion fit(final VecDataSet learn, final Loss loss) {
     final List<BitSet> conditions = new ArrayList<>(100);
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
-    CherryPick pick = new CherryPick(bds, loss.statsFactory());
+    final CherryPick pick = new CherryPick(bds, loss.statsFactory());
     int[] points = ArrayTools.sequence(0, learn.length());
 
     double currentScore = Double.POSITIVE_INFINITY;
     AdditiveStatistics inside = (AdditiveStatistics) loss.statsFactory().create();
     while (true) {
-      Pair<BitSet, int[]> result = pick.build(new Evaluator<AdditiveStatistics>() {
+      final Pair<BitSet, int[]> result = pick.build(new Evaluator<AdditiveStatistics>() {
         @Override
-        public double value(AdditiveStatistics stat) {
+        public double value(final AdditiveStatistics stat) {
           return loss.score(stat);
         }
       }, points, 2);
 
-      double candidateScore = pick.currentScore;// * (1 + 2.0 / (1 + Math.log(conditions.size() + 1)));
+      final double candidateScore = pick.currentScore;// * (1 + 2.0 / (1 + Math.log(conditions.size() + 1)));
       if (currentScore <= candidateScore + 1e-9) {
         break;
       }
@@ -76,7 +76,7 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
     }
 
 
-    CherryRegion region = new CherryRegion(conditions.toArray(new BitSet[conditions.size()]), 1, grid);
+    final CherryRegion region = new CherryRegion(conditions.toArray(new BitSet[conditions.size()]), 1, grid);
 //    Vec target = loss.target();
 //    double sum = 0;
 //    double weight = 0;

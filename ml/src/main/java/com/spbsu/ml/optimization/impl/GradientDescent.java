@@ -16,30 +16,30 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  * Time: 23:41
  */
 public class GradientDescent implements Optimize<FuncConvex> {
-  private static Logger LOG = Logger.create(GradientDescent.class);
-  private Vec x0;
+  private static final Logger LOG = Logger.create(GradientDescent.class);
+  private final Vec x0;
   private final double eps;
 
-  public GradientDescent(Vec x0, double eps) {
+  public GradientDescent(final Vec x0, final double eps) {
       this.x0 = x0;
       this.eps = eps;
   }
 
     @Override
-    public Vec optimize(FuncConvex func) {
-        boolean isQuadraticFunc = func instanceof PDQuadraticFunction;
+    public Vec optimize(final FuncConvex func) {
+        final boolean isQuadraticFunc = func instanceof PDQuadraticFunction;
 
-        double constStep = 1.0 / func.getGradLipParam();
+        final double constStep = 1.0 / func.getGradLipParam();
 
         Vec x1 = copy(x0);
-        Vec x2 = new ArrayVec(x0.dim());
+        final Vec x2 = new ArrayVec(x0.dim());
         Vec grad = func.gradient().trans(x0);
 
         int iter = 0;
 
         double distance = 1;
         while (distance > eps && iter < 5000000) {
-            double step = isQuadraticFunc? getStepSizeForQuadraticFunc(func, grad) : constStep;
+            final double step = isQuadraticFunc? getStepSizeForQuadraticFunc(func, grad) : constStep;
             for (int i = 0; i < x2.dim(); i++) {
                 x2.set(i, x1.get(i) - grad.get(i) * step);
             }
@@ -54,7 +54,7 @@ public class GradientDescent implements Optimize<FuncConvex> {
         return x2;
     }
 
-    private double getStepSizeForQuadraticFunc(FuncConvex func, Vec grad) {
+    private double getStepSizeForQuadraticFunc(final FuncConvex func, final Vec grad) {
             return VecTools.multiply(grad, grad) / ((PDQuadraticFunction) func).getQuadrPartValue(grad);
     }
 }

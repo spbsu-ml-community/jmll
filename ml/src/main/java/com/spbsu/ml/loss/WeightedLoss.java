@@ -18,7 +18,7 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   private final BasedOn metric;
   private final int[] weights;
 
-  public WeightedLoss(BasedOn metric, int[] weights) {
+  public WeightedLoss(final BasedOn metric, final int[] weights) {
     this.metric = metric;
     this.weights = weights;
   }
@@ -39,17 +39,17 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   }
 
   @Override
-  public double bestIncrement(Stat comb) {
+  public double bestIncrement(final Stat comb) {
     return metric.bestIncrement(comb.inside);
   }
 
   @Override
-  public double score(Stat comb) {
+  public double score(final Stat comb) {
     return metric.score(comb.inside);
   }
 
   @Override
-  public double value(Stat comb) {
+  public double value(final Stat comb) {
     return metric.value(comb.inside);
   }
 
@@ -65,7 +65,7 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   }
 
   @Override
-  public double value(Vec x) {
+  public double value(final Vec x) {
     return metric.trans(x).get(0);
   }
 
@@ -95,33 +95,33 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     public AdditiveStatistics inside;
     private final int[] weights;
 
-    public Stat(int[] weights, AdditiveStatistics inside) {
+    public Stat(final int[] weights, final AdditiveStatistics inside) {
       this.weights = weights;
       this.inside = inside;
     }
 
     @Override
-    public Stat append(int index, int times) {
-      int count = weights[index];
+    public Stat append(final int index, final int times) {
+      final int count = weights[index];
       inside.append(index, count * times);
       return this;
     }
 
     @Override
-    public Stat append(AdditiveStatistics other) {
+    public Stat append(final AdditiveStatistics other) {
       inside.append(((Stat) other).inside);
       return this;
     }
 
     @Override
-    public Stat remove(int index, int times) {
-      int count = weights[index];
+    public Stat remove(final int index, final int times) {
+      final int count = weights[index];
       inside.remove(index, count * times);
       return this;
     }
 
     @Override
-    public Stat remove(AdditiveStatistics other) {
+    public Stat remove(final AdditiveStatistics other) {
       inside.remove(((Stat) other).inside);
       return this;
     }

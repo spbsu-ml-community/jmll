@@ -22,7 +22,7 @@ public class Aggregate {
   private final int[] starts;
   private final Factory<AdditiveStatistics> factory;
 
-  public Aggregate(BinarizedDataSet bds, Factory<AdditiveStatistics> factory, int[] points) {
+  public Aggregate(final BinarizedDataSet bds, final Factory<AdditiveStatistics> factory, final int[] points) {
     this.bds = bds;
     this.grid = bds.grid();
     this.starts = new int[grid.rows()];
@@ -39,7 +39,7 @@ public class Aggregate {
     build(points);
   }
 
-  public AdditiveStatistics combinatorForFeature(int bf) {
+  public AdditiveStatistics combinatorForFeature(final int bf) {
     final AdditiveStatistics result = factory.create();
     final BFGrid.BFRow row = grid.bf(bf).row();
     final int binNo = grid.bf(bf).binNo;
@@ -51,7 +51,7 @@ public class Aggregate {
   }
 
   public AdditiveStatistics total() {
-    AdditiveStatistics myTotal = factory.create();
+    final AdditiveStatistics myTotal = factory.create();
     final BFGrid.BFRow row = grid.nonEmptyRow();
     final int offset = starts[row.origFIndex];
     final AdditiveStatistics[] myBins = bins;
@@ -83,7 +83,7 @@ public class Aggregate {
     void accept(BFGrid.BinaryFeature bf, T left, T right);
   }
 
-  public <T extends AdditiveStatistics> void visit(SplitVisitor<T> visitor) {
+  public <T extends AdditiveStatistics> void visit(final SplitVisitor<T> visitor) {
     final T total = (T) total();
     for (int f = 0; f < grid.rows(); f++) {
       final T left = (T) factory.create();

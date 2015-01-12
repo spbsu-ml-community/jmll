@@ -15,7 +15,7 @@ class ModelComplexityCalcer {
   BitSet[] used;
   public double total;
 
-  public ModelComplexityCalcer(BinarizedDataSet bds, int[] points, BitSet[] used) {
+  public ModelComplexityCalcer(final BinarizedDataSet bds, final int[] points, final BitSet[] used) {
     this.grid = bds.grid();
     this.used = used;
     base = new int[grid.rows()][];

@@ -61,7 +61,7 @@ public class DataToolsTest extends GridTest {
     final StringWriter out = new StringWriter();
     DataTools.writePoolTo(learn, out);
     final Pool<? extends DSItem> pool = DataTools.readPoolFrom(new StringReader(out.toString()));
-    StringWriter out1 = new StringWriter();
+    final StringWriter out1 = new StringWriter();
     DataTools.writePoolTo(pool, out1);
     assertEquals(out.toString(), out1.toString());
   }
@@ -69,7 +69,7 @@ public class DataToolsTest extends GridTest {
   public void testExtendDataset() throws Exception {
     final ArrayVec target = new ArrayVec(0.1,
         0.2);
-    VecDataSet ds = new VecDataSetImpl(
+    final VecDataSet ds = new VecDataSetImpl(
         new VecBasedMx(2,
             new ArrayVec(1, 2,
                          3, 4)

@@ -21,22 +21,22 @@ public class LASSOMethod extends VecOptimization.Stub<L2> {
   private final int iterations;
   private final double step;
 
-  public LASSOMethod(int iterations, double step) {
+  public LASSOMethod(final int iterations, final double step) {
     this.iterations = iterations;
     this.step = step;
   }
 
   @Override
-  public Trans fit(VecDataSet ds, L2 loss) {
+  public Trans fit(final VecDataSet ds, final L2 loss) {
     final Mx learn = ds.data();
     final Vec betas = new ArrayVec(learn.columns());
-    Vec values = copy(loss.target);
+    final Vec values = copy(loss.target);
 
     for (int t = 0; t < iterations; t++) {
       int bestDirection = 0;
       double sign = 0;
       {
-        double[] correlations = new double[learn.columns()];
+        final double[] correlations = new double[learn.columns()];
         for (int i = 0; i < learn.rows(); i++) {
           for (int j = 0; j < correlations.length; j++) {
             correlations[j] += learn.get(i, j) * values.get(i);

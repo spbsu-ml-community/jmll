@@ -36,7 +36,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
   private final GreedyObliviousTree<L2> got;
   private List<BFGrid.BinaryFeature> features;
 
-  public GreedyExponentialObliviousTree(BFGrid grid, int depth, double distCoef) {
+  public GreedyExponentialObliviousTree(final BFGrid grid, final int depth, final double distCoef) {
     got = new GreedyObliviousTree(grid, depth);
     DistCoef = distCoef;
     this.depth = depth;
@@ -44,9 +44,9 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
     numberOfVariables = (1 << depth) * numberOfVariablesByLeaf;
   }
 
-  public int getIndex(int mask, int i, int j) {
+  public int getIndex(final int mask, int i, int j) {
     if (i < j) {
-      int temp = i;
+      final int temp = i;
       i = j;
       j = temp;
     }
@@ -54,11 +54,11 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
     return mask * (depth + 1) * (depth + 2) / 2 + i * (i + 1) / 2 + j;
   }
 
-  double sqr(double x) {
+  double sqr(final double x) {
     return x * x;
   }
 
-  double calcDistanseToRegion(int index, Vec point) {
+  double calcDistanseToRegion(final int index, final Vec point) {
     double ans = 0;
     for (int i = 0; i < features.size(); i++) {
       if (features.get(i).value(point) != ((index >> i) == 1)) {
@@ -69,11 +69,11 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
     return DistCoef * ans;
   }
 
-  void precalculateMissCoefficients(DataSet ds, final L2 loss) {
+  void precalculateMissCoefficients(final DataSet ds, final L2 loss) {
     quadraticMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf][numberOfVariablesByLeaf];
     linearMissCoefficient = new double[1 << depth][numberOfVariablesByLeaf];
     for (int i = 0; i < ds.length(); i++) {
-      double data[] = new double[depth + 1];
+      final double[] data = new double[depth + 1];
       data[0] = 1;
       for (int s = 0; s < features.size(); s++) {
         data[s + 1] = ((VecDataSet) ds).data().get(i, features.get(s).findex);
@@ -86,8 +86,8 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
       }
       //if(index == 1)
       //  System.out.println(lines.at(0).condition);
-      double f = loss.target.get(i);
-      double weight = 1; //Math.exp(-calcDistanseToRegion(index, ds.data().row(i)));
+      final double f = loss.target.get(i);
+      final double weight = 1; //Math.exp(-calcDistanseToRegion(index, ds.data().row(i)));
       //System.out.println(weight);
       for (int x = 0; x <= depth; x++)
         for (int y = 0; y <= x; y++) {
@@ -103,8 +103,8 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
 
 
   @Override
-  public ExponentialObliviousTree fit(VecDataSet ds, final L2 loss) {
-    ObliviousTree base = got.fit(ds, loss);
+  public ExponentialObliviousTree fit(final VecDataSet ds, final L2 loss) {
+    final ObliviousTree base = got.fit(ds, loss);
     features = base.features();
     double baseMse = 0;
     for (int i = 0; i < ds.length(); i++)
@@ -114,7 +114,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
     if (features.size() != depth) {
       System.out.println("Oblivious Tree bug");
       try {
-        PrintWriter printWriter = new PrintWriter(new File("badloss.txt"));
+        final PrintWriter printWriter = new PrintWriter(new File("badloss.txt"));
         for (int i = 0; i < ds.length(); i++)
           printWriter.println(loss.target.get(i));
         printWriter.close();
@@ -126,10 +126,10 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
 
     precalculateMissCoefficients(ds, loss);
     //System.out.println("Precalc is over");
-    double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
+    final double[][] out = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
     for (int index = 0; index < 1 << depth; index++) {
-      Mx a = new VecBasedMx(numberOfVariablesByLeaf, numberOfVariablesByLeaf);
-      Vec b = new ArrayVec(numberOfVariablesByLeaf);
+      final Mx a = new VecBasedMx(numberOfVariablesByLeaf, numberOfVariablesByLeaf);
+      final Vec b = new ArrayVec(numberOfVariablesByLeaf);
       for (int i = 0; i < numberOfVariablesByLeaf; i++)
         b.set(i, -linearMissCoefficient[index][i]);
       for (int i = 0; i < numberOfVariablesByLeaf; i++)
@@ -137,7 +137,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
           a.set(i, j, quadraticMissCoefficient[index][i][j]);
       for (int i = 0; i < numberOfVariablesByLeaf; i++)
         a.adjust(i, i, 1e-1);
-      Vec value = GreedyPolynomialExponentRegion.solveLinearEquationUsingLQ(a, b);
+      final Vec value = GreedyPolynomialExponentRegion.solveLinearEquationUsingLQ(a, b);
       //System.out.println(a);
       for (int k = 0; k <= depth; k++)
         for (int j = 0; j <= k; j++)
@@ -150,7 +150,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
     }
     //for(int i =0 ; i < gradLambdas.size();i++)
     //    System.out.println(serializeCondtion(i));
-    ExponentialObliviousTree ret = new ExponentialObliviousTree(features, out, DistCoef);
+    final ExponentialObliviousTree ret = new ExponentialObliviousTree(features, out, DistCoef);
     double mse = 0;
     for (int i = 0; i < ds.length(); i++)
       mse += sqr(ret.value(ds.data().row(i)) - loss.target.get(i));

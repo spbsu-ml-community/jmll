@@ -13,7 +13,7 @@ import com.spbsu.ml.methods.spoc.CMLHelper;
  * Date: 07.05.14
  */
 public class CodingMatrixLearningGreedy extends AbstractCodingMatrixLearning {
-  public CodingMatrixLearningGreedy(int k, int l, double lambdaC, double lambdaR, double lambda1) {
+  public CodingMatrixLearningGreedy(final int k, final int l, final double lambdaC, final double lambdaR, final double lambda1) {
     super(k, l, lambdaC, lambdaR, lambda1);
   }
 

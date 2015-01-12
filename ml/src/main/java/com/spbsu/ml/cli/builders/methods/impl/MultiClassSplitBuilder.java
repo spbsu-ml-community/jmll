@@ -11,16 +11,16 @@ import com.spbsu.ml.methods.VecOptimization;
  * Date: 03.09.14
  */
 public class MultiClassSplitBuilder implements Factory<MultiClass> {
-  private Factory<VecOptimization> defaultWeakBuilder = new BootstrapOptimizationBuilder();
+  private final Factory<VecOptimization> defaultWeakBuilder = new BootstrapOptimizationBuilder();
 
   private VecOptimization weak;
   private String localName = "SatL2";
 
-  public void setWeak(VecOptimization weak) {
+  public void setWeak(final VecOptimization weak) {
     this.weak = weak;
   }
 
-  public void setLocal(String localName) {
+  public void setLocal(final String localName) {
     this.localName = localName;
   }
 

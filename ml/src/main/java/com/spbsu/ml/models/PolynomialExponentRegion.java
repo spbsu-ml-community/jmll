@@ -13,15 +13,15 @@ public class PolynomialExponentRegion extends Func.Stub {
   private final double[] value;
   private final double distCoeffiecent;
 
-  public PolynomialExponentRegion(BFGrid.BinaryFeature[] features, boolean[] mask, double[] value, double distCoeffiecent) {
+  public PolynomialExponentRegion(final BFGrid.BinaryFeature[] features, final boolean[] mask, final double[] value, final double distCoeffiecent) {
     this.features = features;
     this.mask = mask;
     this.value = value;
     this.distCoeffiecent = distCoeffiecent;
   }
 
-  double getDistanseFromRegion(Vec x) {
-    double distanse = 0;
+  double getDistanseFromRegion(final Vec x) {
+    final double distanse = 0;
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(x) != mask[i])
         return 0;
@@ -32,8 +32,8 @@ public class PolynomialExponentRegion extends Func.Stub {
   }
 
   @Override
-  public double value(Vec x) {
-    double data[] = new double[features.length + 1];
+  public double value(final Vec x) {
+    final double[] data = new double[features.length + 1];
     double ans = 0;
     data[0] = 1;
     for(int i = 0; i < features.length;i++)

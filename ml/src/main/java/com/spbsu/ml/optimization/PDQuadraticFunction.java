@@ -25,8 +25,8 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
   private final double m;
   private final double l;
 
-  public PDQuadraticFunction(Mx mxA, Vec w, double w0) {
-    double[] params = getConvAndLipConstants(mxA, w);
+  public PDQuadraticFunction(final Mx mxA, final Vec w, final double w0) {
+    final double[] params = getConvAndLipConstants(mxA, w);
 
     this.mxA = mxA;
     this.w = w;
@@ -38,9 +38,9 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
 
   // result[0] = m (convex param),
   // result[1] = l (lipshitz const);
-  private static double[] getConvAndLipConstants(Mx mxA, Vec w) {
-    Mx q = new VecBasedMx(mxA.rows(), mxA.columns());
-    Mx sigma = new VecBasedMx(mxA.rows(), mxA.columns());
+  private static double[] getConvAndLipConstants(final Mx mxA, final Vec w) {
+    final Mx q = new VecBasedMx(mxA.rows(), mxA.columns());
+    final Mx sigma = new VecBasedMx(mxA.rows(), mxA.columns());
     MxTools.eigenDecomposition(mxA, q, sigma);
 
     double minEigenValue = sigma.get(0, 0);
@@ -60,11 +60,11 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
   }
 
   @Override
-  public double value(Vec x) {
+  public double value(final Vec x) {
     return VecTools.multiply(MxTools.multiply(mxA, x), x) + VecTools.multiply(w, x) + w0;
   }
 
-  public double getQuadrPartValue(Vec x) {
+  public double getQuadrPartValue(final Vec x) {
     return VecTools.multiply(MxTools.multiply(mxA, x), x);
   }
 
@@ -73,7 +73,7 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
   public Trans gradient() {
     return new Trans.Stub() {
       @Override
-      public Vec trans(Vec x) {
+      public Vec trans(final Vec x) {
         return VecTools.append(MxTools.multiply(mxA, x), w);
       }
 
@@ -105,14 +105,14 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
   }
 
   public Vec getExactExtremum() {
-    Vec b = VecTools.copy(w);
+    final Vec b = VecTools.copy(w);
     VecTools.scale(b, -1.0);
-    Mx l = MxTools.choleskyDecomposition(mxA);
-    Mx inverse = MxTools.inverseLTriangle(l);
-    Vec x = MxTools.multiply(MxTools.multiply(MxTools.transpose(inverse), inverse), b);
+    final Mx l = MxTools.choleskyDecomposition(mxA);
+    final Mx inverse = MxTools.inverseLTriangle(l);
+    final Vec x = MxTools.multiply(MxTools.multiply(MxTools.transpose(inverse), inverse), b);
 
     //stupid cast (VecBasedMx -> ArrayVec) for solution out
-    Vec result = new ArrayVec(b.dim());
+    final Vec result = new ArrayVec(b.dim());
     VecTools.assign(result, x);
     return result;
   }

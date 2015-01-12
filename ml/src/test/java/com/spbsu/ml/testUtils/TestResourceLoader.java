@@ -14,7 +14,7 @@ import java.util.zip.GZIPInputStream;
 public final class TestResourceLoader {
   private TestResourceLoader() {}
 
-  public static InputStream loadResourceAsStream(String localPath) throws IOException{
+  public static InputStream loadResourceAsStream(final String localPath) throws IOException{
     final InputStream resource = TestResourceLoader.class.getClassLoader().getResourceAsStream("com/spbsu/ml/" + localPath);
     if (resource == null) {
       throw new IOException("Resource \"" + localPath + "\" not found");
@@ -22,7 +22,7 @@ public final class TestResourceLoader {
     return resource;
   }
 
-  public static String getFullPath(String localPath) throws IOException {
+  public static String getFullPath(final String localPath) throws IOException {
     final URL resource = TestResourceLoader.class.getClassLoader().getResource("com/spbsu/ml/" + localPath);
     if (resource == null) {
       throw new IOException("Resource \"" + localPath + "\" not found");
@@ -30,7 +30,7 @@ public final class TestResourceLoader {
     return resource.getPath();
   }
 
-  public static Pool<?> loadPool(String localPath) throws IOException {
+  public static Pool<?> loadPool(final String localPath) throws IOException {
     final InputStream stream = loadResourceAsStream(localPath);
     final InputStreamReader reader = localPath.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(stream))
                                                                : new InputStreamReader(stream);

@@ -15,15 +15,15 @@ public class NormalizedLinear extends Linear {
   private final double avg;
   private final MxTools.NormalizationProperties props;
 
-  public NormalizedLinear(double avg, Vec weights, final MxTools.NormalizationProperties props) {
+  public NormalizedLinear(final double avg, final Vec weights, final MxTools.NormalizationProperties props) {
     super(weights);
     this.avg = avg;
     this.props = props;
   }
 
   @Override
-  public double value(Vec point) {
-    Vec x = MxTools.multiply(props.xTrans, point);
+  public double value(final Vec point) {
+    final Vec x = MxTools.multiply(props.xTrans, point);
     append(x, props.xMean);
     return super.value(point) + avg;
   }

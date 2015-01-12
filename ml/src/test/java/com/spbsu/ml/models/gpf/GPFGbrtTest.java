@@ -33,19 +33,19 @@ import static org.junit.Assert.assertEquals;
 public class GPFGbrtTest {
   @Test
   public void testGbrtOptimization() throws IOException {
-    FastRandom rng = new FastRandom(0);
-    GPFGbrtModel<BlockV1> model = new GPFGbrtModel<>();
+    final FastRandom rng = new FastRandom(0);
+    final GPFGbrtModel<BlockV1> model = new GPFGbrtModel<>();
     model.setAttractivenessModel(new SessionV1AttractivenessModel());
     model.setClickProbabilityModel(new WebLogV1ClickProbabilityModel());
 
-    int rows_limit = 100;
-    double step = 0.2;
-    int iterationsCount = 20;
-    int parallel_processors = Runtime.getRuntime().availableProcessors();
+    final int rows_limit = 100;
+    final double step = 0.2;
+    final int iterationsCount = 20;
+    final int parallel_processors = Runtime.getRuntime().availableProcessors();
 
     System.out.println("" + new Date() + "\tload dataset");
-    GPFVectorizedDataset learn;
-    GPFVectorizedDataset validate;
+    final GPFVectorizedDataset learn;
+    final GPFVectorizedDataset validate;
     try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1_h10k.dat.gz"))) {
       learn = GPFVectorizedDataset.load(is, model, rows_limit);
     }
@@ -58,19 +58,19 @@ public class GPFGbrtTest {
 
     System.out.println("" + new Date() + "\tset up boosting");
     System.out.println("" + new Date() + "\tset up boosting, step=\t" + step);
-    GradientBoosting<GPFLoglikelihood> boosting = new GradientBoosting<GPFGbrtOptimization.GPFLoglikelihood>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), iterationsCount, step);
-    GPFLoglikelihood learn_loss = new GPFLoglikelihood(model, learn, parallel_processors);
-    GPFLoglikelihood validate_loss = new GPFLoglikelihood(model, validate);
+    final GradientBoosting<GPFLoglikelihood> boosting = new GradientBoosting<GPFGbrtOptimization.GPFLoglikelihood>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn, 32), 6), rng), iterationsCount, step);
+    final GPFLoglikelihood learn_loss = new GPFLoglikelihood(model, learn, parallel_processors);
+    final GPFLoglikelihood validate_loss = new GPFLoglikelihood(model, validate);
 
     System.out.println("learn dataset:\t" + learn.sfrList.size() + "\tsessions, " + "feature matrix:\t" + learn.data().rows() + " * " + learn.data().columns());
 
-    Action iterationListener = new PrintProgressIterationListener(learn_loss, validate_loss);
+    final Action iterationListener = new PrintProgressIterationListener(learn_loss, validate_loss);
     boosting.addListener(iterationListener);
 
     System.out.println("" + new Date() + "\tstart learn");
-    Ensemble ans = boosting.fit(learn, learn_loss);
+    final Ensemble ans = boosting.fit(learn, learn_loss);
 
-    double exp_learn_loss = Math.exp(-learn_loss.evalAverageLL(ans));
+    final double exp_learn_loss = Math.exp(-learn_loss.evalAverageLL(ans));
     System.out.println("" + (new Date()) +
                        "\tfinal" +
                        "\tlearnL=" + exp_learn_loss +
@@ -79,7 +79,7 @@ public class GPFGbrtTest {
     assertEquals(5.7, exp_learn_loss, 0.1);
   }
 
-  public static void main(String[] args) throws Exception {
+  public static void main(final String[] args) throws Exception {
     new GPFGbrtTest().testGbrtOptimization();
   }
 }

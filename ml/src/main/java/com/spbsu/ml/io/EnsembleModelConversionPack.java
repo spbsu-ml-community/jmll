@@ -21,12 +21,12 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
     private ConversionRepository repository;
 
     @Override
-    public CharSequence convert(Ensemble from) {
-      StringBuilder builder = new StringBuilder();
+    public CharSequence convert(final Ensemble from) {
+      final StringBuilder builder = new StringBuilder();
       builder.append(from.size());
       builder.append("\n\n");
       for (int i = 0; i < from.size(); i++) {
-        Trans model = from.models[i];
+        final Trans model = from.models[i];
         builder.append(from.models[i].getClass().getCanonicalName()).append(" ");
         builder.append(from.weights.get(i)).append("\n");
         builder.append(repository.convert(model, CharSequence.class));
@@ -37,7 +37,7 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
     }
 
     @Override
-    public void setConversionRepository(ConversionRepository repository) {
+    public void setConversionRepository(final ConversionRepository repository) {
       this.repository = repository;
     }
   }
@@ -50,18 +50,18 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
       if (from.toString().indexOf('\r') >= 0)
         from = from.toString().replace("\r", ""); // fix windows newlines created by GIT
 
-      CharSequence[] elements = CharSeqTools.split(from, "\n\n");
-      Trans[] models;
-      double[] weights;
+      final CharSequence[] elements = CharSeqTools.split(from, "\n\n");
+      final Trans[] models;
+      final double[] weights;
 
       try {
-        int count = Integer.parseInt(elements[0].toString());
+        final int count = Integer.parseInt(elements[0].toString());
         models = new Trans[count];
         weights = new double[count];
         for (int i = 0; i < count; i++) {
           final CharSequence[] lines = CharSeqTools.split(elements[i + 1], "\n");
-          StringTokenizer tok = new StringTokenizer(lines[0].toString(), " ");
-          Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(tok.nextToken());
+          final StringTokenizer tok = new StringTokenizer(lines[0].toString(), " ");
+          final Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(tok.nextToken());
           weights[i] = Double.parseDouble(tok.nextToken());
           models[i] = repository.convert(elements[i + 1].subSequence(lines[0].length() + 1, elements[i + 1].length()), elementClass);
         }
@@ -72,7 +72,7 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
     }
 
     @Override
-    public void setConversionRepository(ConversionRepository repository) {
+    public void setConversionRepository(final ConversionRepository repository) {
       this.repository = repository;
     }
   }
