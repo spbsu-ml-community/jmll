@@ -1,13 +1,10 @@
 package com.spbsu.ml.models.gpf;
 
-import com.spbsu.commons.filters.FalseFilter;
 import gnu.trove.list.array.TIntArrayList;
 
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**

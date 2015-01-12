@@ -10,7 +10,6 @@ import com.spbsu.ml.models.gpf.GPFLinearModel;
 import com.spbsu.ml.models.gpf.GPFModel;
 import com.spbsu.ml.models.gpf.Session;
 import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
-import gnu.trove.list.array.TIntArrayList;
 
 /**
  * User: irlab

@@ -20,7 +20,6 @@ import com.spbsu.ml.func.NormalizedLinear;
 import com.spbsu.ml.loss.*;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
-import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
 import com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization.GreedyMergedRegion;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;

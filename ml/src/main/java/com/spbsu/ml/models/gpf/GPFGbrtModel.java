@@ -9,9 +9,6 @@ import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
-import gnu.trove.list.array.TIntArrayList;
 
 
 import java.util.*;

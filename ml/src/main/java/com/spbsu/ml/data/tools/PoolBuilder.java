@@ -8,7 +8,6 @@ import java.util.Set;
 
 
 import com.spbsu.commons.func.Factory;
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.Pair;

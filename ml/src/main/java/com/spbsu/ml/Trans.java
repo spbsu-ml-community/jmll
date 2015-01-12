@@ -2,7 +2,6 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;

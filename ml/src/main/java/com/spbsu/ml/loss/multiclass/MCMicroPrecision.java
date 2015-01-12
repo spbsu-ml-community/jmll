@@ -6,7 +6,6 @@ import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
-import com.spbsu.ml.data.tools.MCTools;
 
 /**
  * User: qdeee

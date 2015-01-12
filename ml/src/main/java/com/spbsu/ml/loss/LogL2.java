@@ -1,6 +1,5 @@
 package com.spbsu.ml.loss;
 
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.data.set.DataSet;
 

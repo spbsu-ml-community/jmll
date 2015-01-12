@@ -8,7 +8,6 @@ import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.models.MultiClassModel;
 

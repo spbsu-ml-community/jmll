@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.zip.GZIPInputStream;
 
 
 import com.spbsu.commons.math.vectors.Mx;

@@ -1,7 +1,5 @@
 package com.spbsu.ml.loss.multiclass;
 
-import java.util.Arrays;
-
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;

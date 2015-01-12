@@ -1,10 +1,8 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.StatBasedLoss;

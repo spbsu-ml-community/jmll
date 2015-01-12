@@ -2,7 +2,6 @@ package com.spbsu.ml.io;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.types.ConversionPack;
-import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;

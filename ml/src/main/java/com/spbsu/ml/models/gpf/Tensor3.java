@@ -2,7 +2,6 @@ package com.spbsu.ml.models.gpf;
 
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.util.ArrayTools;
 
 /**
  * Created with IntelliJ IDEA.

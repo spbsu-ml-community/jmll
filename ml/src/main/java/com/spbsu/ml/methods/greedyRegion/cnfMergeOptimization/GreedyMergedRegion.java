@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.sum;
-import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.weight;
-
 /**
  * User: noxoomo
  * Date: 30/11/14

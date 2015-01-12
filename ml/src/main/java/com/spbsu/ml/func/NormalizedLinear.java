@@ -4,7 +4,6 @@ import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 
 import static com.spbsu.commons.math.vectors.VecTools.append;
-import static com.spbsu.commons.math.vectors.MxTools.multiply;
 
 /**
  * User: solar

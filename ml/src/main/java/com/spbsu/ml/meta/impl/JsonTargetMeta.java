@@ -1,6 +1,5 @@
 package com.spbsu.ml.meta.impl;
 
-import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.TargetMeta;
 
 /**

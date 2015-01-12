@@ -5,8 +5,6 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.L2;
 

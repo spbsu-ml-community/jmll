@@ -2,7 +2,7 @@ package com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization;
 
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.models.CNF;
+
 
 import java.util.BitSet;
 
