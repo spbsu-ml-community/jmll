@@ -7,28 +7,38 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.IntSeq;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.exp.multiclass.spoc.full.mx.optimization.ECOCMulticlass;
 import com.spbsu.exp.multiclass.spoc.full.mx.optimization.SeparatedMLLLogit;
 import com.spbsu.exp.multiclass.weak.CustomWeakBinClass;
+import com.spbsu.exp.multiclass.weak.CustomWeakMultiClass;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.GridTools;
+import com.spbsu.ml.TargetFunc;
+import com.spbsu.ml.cli.output.printers.MulticlassProgressPrinter;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
+import com.spbsu.ml.factorization.impl.ALS;
+import com.spbsu.ml.factorization.impl.SVD;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.impl.FakeTargetMeta;
 import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.multiclass.GradFacMulticlass;
 import com.spbsu.ml.methods.spoc.ECOCCombo;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MCModel;
+import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.MulticlassCodingMatrixModel;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import junit.framework.TestCase;
@@ -191,5 +201,67 @@ public class ECOCComboTest extends TestCase {
       final int bestClass = model.bestClass(features);
       assertEquals(bestClass, VecTools.argmax(probs));
     }
+  }
+
+  public void testGradFacALS() throws Exception {
+    final VecDataSet vecDataSet = learn.vecData();
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final BFGrid bfGrid = GridTools.medianGrid(vecDataSet, 32);
+    final int factorIters = 15;
+    final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GradFacMulticlass(new GreedyObliviousTree<L2>(bfGrid, 5),
+        new ALS(factorIters), SatL2.class), 500, 0.7);
+    boosting.addListener(new MulticlassProgressPrinter(learn, test));
+
+    final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+
+    final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
+    final MultiClassModel multiclassModel = new MultiClassModel(joined);
+    final String learnResult = MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false);
+    final String testResult = MCTools.evalModel(multiclassModel, test, "[TEST] ", false);
+    System.out.println(learnResult);
+    System.out.println(testResult);
+
+  }
+
+  public void testBaseline() throws Exception {
+    final VecDataSet vecDataSet = learn.vecData();
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(300, 0.3);
+    final MCModel model = (MCModel) customWeakMultiClass.fit(vecDataSet, globalLoss);
+    System.out.println(MCTools.evalModel(model, learn, "[LEARN]", false));
+    System.out.println(MCTools.evalModel(model, test, "[TEST]", false));
+  }
+
+  public void testGradMxApproxALS() throws Exception {
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
+
+    final int factorIters = 25;
+    final ALS als = new ALS(factorIters);
+    final Action<Pair<Vec, Vec>> action = new Action<Pair<Vec, Vec>>() {
+      @Override
+      public void invoke(final Pair<Vec, Vec> pair) {
+        final Vec h = pair.getFirst();
+        final Vec b = pair.getSecond();
+        System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", RMSE = " + rmse(gradient, VecTools.outer(h, b)));
+      }
+    };
+    als.addListener(action);
+    als.factorize(gradient);
+  }
+
+  public void testGradMxApproxSVD() throws Exception {
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
+
+    final SVD svd = new SVD();
+    final Pair<Vec, Vec> pair = svd.factorize(gradient);
+    final Vec h = pair.getFirst();
+    final Vec b = pair.getSecond();
+    System.out.println(rmse(gradient, VecTools.outer(h, b)));
+  }
+
+  private static double rmse(final Vec target, final Vec approx) {
+    return Math.sqrt(VecTools.sum2(VecTools.subtract(target, approx)) / target.length());
   }
 }

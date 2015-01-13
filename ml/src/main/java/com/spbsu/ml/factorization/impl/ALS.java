@@ -5,7 +5,6 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.math.vectors.impl.vectors.ConcatVec;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.factorization.OuterFactorization;
 
@@ -13,7 +12,7 @@ import com.spbsu.ml.factorization.OuterFactorization;
  * User: qdeee
  * Date: 09.09.13
  */
-public class ALS extends WeakListenerHolderImpl<Vec> implements OuterFactorization {
+public class ALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements OuterFactorization {
     private final int iterCount;
     private Vec x0;
 
@@ -58,7 +57,7 @@ public class ALS extends WeakListenerHolderImpl<Vec> implements OuterFactorizati
         v.set(j, sum / squareNormU);
       }
 
-      invoke(new ConcatVec(u, v));
+      invoke(Pair.create(u, v));
     }
 
     return Pair.create(u, v);

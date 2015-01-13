@@ -1,4 +1,4 @@
-package com.spbsu.exp.multiclass.spoc.boosting.based;
+package com.spbsu.ml.methods.multiclass;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -36,7 +36,9 @@ public class GradFacMulticlass implements VecOptimization<L2> {
     final Vec h = pair.getFirst();
     final Vec b = pair.getSecond();
 
-    System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", RMSE = " + VecTools.distance(gradient, VecTools.outer(h, b)));
+    final double normB = VecTools.norm(b);
+    VecTools.scale(b, 1 / normB);
+    VecTools.scale(h, normB);
 
     final L2 loss = DataTools.newTarget(local, h, learn);
     final Func model = (Func) inner.fit(learn, loss);
