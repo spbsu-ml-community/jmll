@@ -17,9 +17,18 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
   private VecOptimization weak;
   private String localName = "SatL2";
   private int alsIters = 15;
+  private double alsLambda = 0.0;
 
   public void setWeak(final VecOptimization weak) {
     this.weak = weak;
+  }
+
+  public void setIters(final int alsIters) {
+    this.alsIters = alsIters;
+  }
+
+  public void setLambda(final double alsLambda) {
+    this.alsLambda = alsLambda;
   }
 
   public void setLocal(final String localName) {
@@ -31,5 +40,5 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
-    return new GradFacMulticlass(weak, new ALS(alsIters), (Class<? extends L2>) DataTools.targetByName(localName));
+    return new GradFacMulticlass(weak, new ALS(alsIters, alsLambda), (Class<? extends L2>) DataTools.targetByName(localName));
   }}

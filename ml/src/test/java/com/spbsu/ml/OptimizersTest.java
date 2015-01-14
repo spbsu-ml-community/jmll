@@ -168,8 +168,7 @@ public class OptimizersTest extends TestCase {
                 12, 9, 6, 3,
                 16, 12, 8, 4));
 
-        final Vec z0 = VecTools.fill(new ArrayVec(m + n), 1.0);
-        final ALS als = new ALS(z0, 1);
+        final ALS als = new ALS(1);
         final Pair<Vec, Vec> zMin = als.factorize(X);
 
         final Vec u = zMin.getFirst();

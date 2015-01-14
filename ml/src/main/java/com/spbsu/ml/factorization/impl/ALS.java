@@ -13,16 +13,22 @@ import com.spbsu.ml.factorization.OuterFactorization;
  * Date: 09.09.13
  */
 public class ALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements OuterFactorization {
-    private final int iterCount;
-    private Vec x0;
+  private final int iterCount;
+  private final double lambda;
+  private Vec x0;
+
+  public ALS(final int iterCount, final double lambda, final Vec x0) {
+    this.iterCount = iterCount;
+    this.lambda = lambda;
+    this.x0 = x0;
+  }
+
+  public ALS(final int iterCount, final double lambda) {
+    this(iterCount, lambda, null);
+  }
 
   public ALS(final int iterCount) {
-    this.iterCount = iterCount;
-    this.x0 = null;
-  }
-  public ALS(Vec x0, int iterCount) {
-    this.x0 = x0;
-    this.iterCount = iterCount;
+    this(iterCount, 0.0);
   }
 
   @Override
@@ -46,7 +52,7 @@ public class ALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements Outer
         for (int j = 0; j < n; j++) {
           sum += v.get(j) * X.get(i, j);
         }
-        u.set(i, sum / squareNormV);
+        u.set(i, sum / (squareNormV + lambda));
       }
       double squareNormU = Math.pow(VecTools.norm(u), 2);
       for (int j = 0; j < n; j++) {
@@ -54,7 +60,7 @@ public class ALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements Outer
         for (int i = 0; i < m; i++) {
           sum += u.get(i) * X.get(i, j);
         }
-        v.set(j, sum / squareNormU);
+        v.set(j, sum / (squareNormU + lambda));
       }
 
       invoke(Pair.create(u, v));
