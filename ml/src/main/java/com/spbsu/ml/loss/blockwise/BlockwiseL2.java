@@ -123,8 +123,9 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
     @Override
     public MSEStats append(final int index, final int times) {
       final double v = targets.get(index);
-      sum += times * v;
-      sum2 += times * v * v;
+      final double v1 = times * v;
+      sum += v1;
+      sum2 += v1 * v;
       weight += times;
       return this;
     }

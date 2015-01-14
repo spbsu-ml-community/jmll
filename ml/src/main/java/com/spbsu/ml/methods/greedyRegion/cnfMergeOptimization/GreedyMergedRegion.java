@@ -21,13 +21,17 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.sum;
+import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.weight;
+import static java.lang.Math.log;
+
 /**
  * User: noxoomo
  * Date: 30/11/14
  * Time: 15:31
  */
 public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> extends VecOptimization.Stub<Loss> {
-  public static final int CARDINALITY_FACTOR = 5;
+  public static final double CARDINALITY_FACTOR = 2;
   protected final BFGrid grid;
   private final double lambda;
 
@@ -51,18 +55,19 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
     final double totalPower = last.power();
     final RegularizedLoss<CherryOptimizationSubset> regLoss = new RegularizedLoss<CherryOptimizationSubset>() {
       @Override
-      public double target(final CherryOptimizationSubset subset) {
-        return loss.score(subset.stat);
+      public double target(CherryOptimizationSubset subset) {
+        return -loss.score(subset.stat);
       }
 
       @Override
-      public double regularization(final CherryOptimizationSubset subset) {
-        return (-Math.log(subset.power() + 1) -Math.log(totalPower - subset.power() + 1)) * CARDINALITY_FACTOR / (subset.cardinality() + CARDINALITY_FACTOR);
+      public double regularization(CherryOptimizationSubset subset) {
+        return -log(subset.power() + 1);
       }
 
       @Override
-      public double score(final CherryOptimizationSubset subset) {
-        return loss.score(subset.stat) * (1 - lambda * regularization(subset)) + MathTools.EPSILON * regularization(subset);
+      public double score(CherryOptimizationSubset subset) {
+        final double cardinalityDiscount = CARDINALITY_FACTOR / (subset.cardinality() + CARDINALITY_FACTOR - 1);
+        return loss.score(subset.stat) * (1 - lambda * regularization(subset)) * cardinalityDiscount;
       }
     };
 
@@ -70,21 +75,21 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
     while (true) {
       final List<CherryOptimizationSubset> models = init(bds, points, loss, last.cardinality());
       final CherryOptimizationSubset best = pick.pick(models, regLoss);
-      best.checkIntegrity();
+
+      System.out.print("\tClause " + clauses.size() + " score: " + regLoss.score(best) + " target: " + regLoss.target(best) + best.clause.toString());
       if (score - regLoss.score(best) < MathTools.EPSILON)
         break;
+      System.out.println(" accepted");
+
       clauses.add(best.clause);
       points = best.inside();
       score = regLoss.score(best);
       last = best;
     }
 
+    System.out.println(" rejected");
 
-    for (int i = 0; i < clauses.size(); ++i) {
-      System.out.println("Clause " + i + " " + clauses.get(i).toString());
-    }
-
-    System.out.println("Region weight: " + last.power());
+    System.out.println("Region weight: " + last.power() + " score: " + score + " target: " + regLoss.target(last));
     return new CNF(clauses.toArray(new CNF.Clause[clauses.size()]), loss.bestIncrement(last.stat), grid);
   }
 

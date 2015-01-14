@@ -63,10 +63,10 @@ public class GreedyMergePick<Model extends CherryOptimizationSubset> {
         public void run() {
           try {
             final Model merged = merger.merge(current, model);
-            if (merged.power() > model.power() && merged.power() > current.power() || model.power() == 0 || current.power() == 0) {
+            if (merged.power() > model.power() && merged.power() > current.power()) {
               final double mergedScore = loss.score(merged);
               final double modelScore = loss.score(model);
-              final double gain = merged.power() * ((modelScore + currentScore) / (model.power() + current.power())) - mergedScore + MathTools.EPSILON;
+              final double gain = merged.power() * ((modelScore + currentScore) / (model.power() + current.power())) - mergedScore;
               bestHolder.update(merged, gain);
             }
           }
