@@ -58,7 +58,7 @@ public class MethodsBuilder {
               ++open;
             } else if (c == ')') {
               if (open <= 0) {
-                throw new RuntimeException("Can not set up parameter: bad stack");
+                throw new RuntimeException("Can not set up parameter \"" + name + "\" because of bad parsing stack");
               } else {
                 --open;
               }
