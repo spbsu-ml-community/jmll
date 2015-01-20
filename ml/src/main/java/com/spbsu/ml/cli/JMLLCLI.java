@@ -320,7 +320,7 @@ public class JMLLCLI {
     dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     final Pool pool = dataBuilder.create().getFirst();
-    final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".tsv.gz";
+    final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".tsv";
     DataTools.writeClassicPoolTo(pool, outputName);
   }
 
