@@ -9,12 +9,13 @@ import com.spbsu.ml.factorization.OuterFactorization;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.factory.DecompositionFactory;
 import org.ejml.interfaces.decomposition.SingularValueDecomposition;
+import org.ejml.ops.SingularOps;
 
 /**
  * User: qdeee
  * Date: 12.01.15
  */
-public class SVD implements OuterFactorization {
+public class SVDAdapterEjml implements OuterFactorization {
   @Override
   public Pair<Vec, Vec> factorize(final Mx X) {
     final int m = X.rows();
@@ -32,21 +33,22 @@ public class SVD implements OuterFactorization {
       throw new IllegalStateException("Decomposition failed");
     }
 
-    final DenseMatrix64F huectorU = svd.getU(null, false);
-    huectorU.reshape(huectorU.getNumRows(), 1);
-    final Vec u = new ArrayVec(huectorU.getNumRows());
-    for (int i = 0; i < huectorU.getNumRows(); i++) {
-      u.set(i, huectorU.get(i, 0));
+    final DenseMatrix64F U = svd.getU(null, false);
+    final DenseMatrix64F W = svd.getW(null);
+    final DenseMatrix64F V = svd.getV(null, false);
+    SingularOps.descendingOrder(U, false, W, V, false);
+
+    final Vec u = new ArrayVec(m);
+    for (int i = 0; i < m; i++) {
+      u.set(i, U.get(i, 0));
     }
 
-    final double maxSingularValue = svd.getW(null).get(0, 0);
+    final double maxSingularValue = W.get(0, 0);
     VecTools.scale(u, maxSingularValue);
 
-    final DenseMatrix64F huectorV = svd.getV(null, false);
-    huectorV.reshape(1, huectorV.getNumCols());
-    final Vec v = new ArrayVec(huectorV.getNumCols());
-    for (int i = 0; i < huectorV.getNumCols(); i++) {
-      v.set(i, huectorV.get(0, i));
+    final Vec v = new ArrayVec(n);
+    for (int i = 0; i < n; i++) {
+      v.set(i, V.get(i, 0));
     }
 
     return Pair.create(u, v);

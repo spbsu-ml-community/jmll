@@ -2,7 +2,9 @@ package com.spbsu.ml.cli.builders.methods.impl;
 
 import com.spbsu.commons.func.Factory;
 import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.factorization.OuterFactorization;
 import com.spbsu.ml.factorization.impl.ALS;
+import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.multiclass.GradFacMulticlass;
@@ -18,6 +20,7 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
   private String localName = "SatL2";
   private int alsIters = 15;
   private double alsLambda = 0.0;
+  private String method = "als";
 
   public void setWeak(final VecOptimization weak) {
     this.weak = weak;
@@ -35,10 +38,20 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
     this.localName = localName;
   }
 
+  public void setMethod(final String method) {
+    this.method = method;
+  }
+
   @Override
   public GradFacMulticlass create() {
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
-    return new GradFacMulticlass(weak, new ALS(alsIters, alsLambda), (Class<? extends L2>) DataTools.targetByName(localName));
+    final OuterFactorization factorization;
+    if (method.equals("svd")) {
+      factorization = new SVDAdapterEjml();
+    } else {
+      factorization = new ALS(alsIters, alsLambda);
+    }
+    return new GradFacMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName));
   }}

@@ -24,8 +24,9 @@ import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
+import com.spbsu.ml.factorization.OuterFactorization;
 import com.spbsu.ml.factorization.impl.ALS;
-import com.spbsu.ml.factorization.impl.SVD;
+import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
@@ -251,14 +252,22 @@ public class ECOCComboTest extends TestCase {
   }
 
   public void testGradMxApproxSVD() throws Exception {
+    applyFactorMethod(new ALS(15));
+    applyFactorMethod(new SVDAdapterEjml());
+  }
+
+  private static void applyFactorMethod(final OuterFactorization method) {
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
     final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
-
-    final SVD svd = new SVD();
-    final Pair<Vec, Vec> pair = svd.factorize(gradient);
+    double time = System.currentTimeMillis();
+    final Pair<Vec, Vec> pair = method.factorize(gradient);
+    System.out.println((System.currentTimeMillis() - time) / 1000);
     final Vec h = pair.getFirst();
     final Vec b = pair.getSecond();
-    System.out.println(rmse(gradient, VecTools.outer(h, b)));
+    final double normB = VecTools.norm(b);
+    VecTools.scale(b, 1 / normB);
+    VecTools.scale(h, normB);
+    System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", RMSE = " + VecTools.distance(gradient, VecTools.outer(h, b)));
   }
 
   private static double rmse(final Vec target, final Vec approx) {
