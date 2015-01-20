@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * User: solar
@@ -488,6 +489,12 @@ public class DataTools {
       out.append("\n");
     }
     out.flush();
+  }
+
+  public static void writeClassicPoolTo(final Pool<?> pool, final String fileName) throws IOException {
+    DataTools.writeClassicPoolTo(pool, fileName.endsWith(".gz")
+        ? new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(fileName), 8192))
+        : new BufferedWriter(new FileWriter(fileName)));
   }
 
   public static void writeClassicPoolTo(final Pool<?> pool, final Writer out) throws IOException {

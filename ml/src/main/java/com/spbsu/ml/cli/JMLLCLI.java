@@ -320,8 +320,8 @@ public class JMLLCLI {
     dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     final Pool pool = dataBuilder.create().getFirst();
-    final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".pool";
-    DataTools.writeClassicPoolTo(pool, new FileWriter(outputName));
+    final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".tsv.gz";
+    DataTools.writeClassicPoolTo(pool, outputName);
   }
 
   private static void modeConvertPoolLibfm(final CommandLine command) throws MissingArgumentException, IOException {
