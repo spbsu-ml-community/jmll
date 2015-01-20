@@ -56,8 +56,11 @@ import gnu.trove.list.linked.TIntLinkedList;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -70,7 +73,7 @@ public class DataTools {
     return loadFromFeaturesTxt(file, file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
   }
 
-  public static FeaturesTxtPool loadFromFeaturesTxt(final String file, final Reader in) throws IOException {
+  public static FeaturesTxtPool loadFromFeaturesTxt(final String fileName, final Reader in) throws IOException {
     final List<QURLItem> items = new ArrayList<>();
     final VecBuilder target = new VecBuilder();
     final VecBuilder data = new VecBuilder();
@@ -93,7 +96,7 @@ public class DataTools {
         }
       }
     });
-    return new FeaturesTxtPool(file,
+    return new FeaturesTxtPool(fileName,
         new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
         new VecBasedMx(featuresCount[0], data.build()),
         target.build());
@@ -483,6 +486,22 @@ public class DataTools {
            .append(String.valueOf(vecIterator.value()));
       }
       out.append("\n");
+    }
+    out.flush();
+  }
+
+  public static void writeClassicPoolTo(final Pool<?> pool, final Writer out) throws IOException {
+    final DecimalFormat preciseFormatter = new DecimalFormat("###.########", new DecimalFormatSymbols(Locale.US));
+
+    final Mx vecData = pool.vecData().data();
+    final Vec target = pool.target(L2.class).target;
+
+    for (int i = 0; i < vecData.rows(); i++) {
+      out.write(String.format("%d\t%s\turl\t0", i, preciseFormatter.format(target.get(i))));
+      for (int j = 0; j < vecData.columns(); j++) {
+        out.append("\t").append(preciseFormatter.format(vecData.get(i, j)));
+      }
+      out.write("\n");
     }
     out.flush();
   }

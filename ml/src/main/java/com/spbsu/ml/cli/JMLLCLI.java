@@ -103,6 +103,9 @@ public class JMLLCLI {
         case "convert-pool":
           modeConvertPool(command);
           break;
+        case "convert-pool-json2classic":
+          modeConvertPoolJson2Classic(command);
+          break;
         case "convert-pool-libfm":
           modeConvertPoolLibfm(command);
           break;
@@ -306,6 +309,19 @@ public class JMLLCLI {
     final Pool pool = dataBuilder.create().getFirst();
     final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".pool";
     DataTools.writePoolTo(pool, new FileWriter(outputName));
+  }
+
+  private static void modeConvertPoolJson2Classic(final CommandLine command) throws MissingArgumentException, IOException {
+    if (!command.hasOption(LEARN_OPTION)) {
+      throw new MissingArgumentException("Please provide 'LEARN_OPTION'");
+    }
+
+    final DataBuilder dataBuilder = new DataBuilderClassic();
+    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
+    final Pool pool = dataBuilder.create().getFirst();
+    final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".pool";
+    DataTools.writeClassicPoolTo(pool, new FileWriter(outputName));
   }
 
   private static void modeConvertPoolLibfm(final CommandLine command) throws MissingArgumentException, IOException {

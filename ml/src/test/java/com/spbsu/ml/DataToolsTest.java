@@ -2,13 +2,16 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.meta.DSItem;
+import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.testUtils.FakePool;
 
 import java.io.StringReader;
@@ -93,5 +96,13 @@ public class DataToolsTest extends GridTest {
     final StringWriter out = new StringWriter();
     DataTools.writePoolInLibfmFormat(pool, out);
     assertEquals("0.5\t1:1.0\n0.7\t0:1.0\n", out.toString());
+  }
+
+  public void testClassicWrite() throws Exception {
+    final StringWriter out = new StringWriter();
+    DataTools.writeClassicPoolTo(learn, out);
+    final Pool<QURLItem> pool = DataTools.loadFromFeaturesTxt("file", new StringReader(out.toString()));
+    assertTrue(VecTools.equals(learn.target(L2.class).target, pool.target(L2.class).target));
+    assertTrue(VecTools.equals(learn.vecData().data(), pool.vecData().data()));
   }
 }
