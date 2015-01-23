@@ -5,7 +5,6 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import gnu.trove.map.hash.TIntIntHashMap;
@@ -14,7 +13,7 @@ import gnu.trove.map.hash.TIntIntHashMap;
  * User: qdeee
  * Date: 09.04.14
  */
-public class MCMacroRecall extends Func.Stub implements TargetFunc {
+public class MCMacroRecall extends Func.Stub implements ClassicMulticlassLoss {
   private final IntSeq target;
   private final DataSet<?> owner;
   private final int[] classLabels;
@@ -71,5 +70,10 @@ public class MCMacroRecall extends Func.Stub implements TargetFunc {
   @Override
   public DataSet<?> owner() {
     return owner;
+  }
+
+  @Override
+  public IntSeq labels() {
+    return target;
   }
 }
