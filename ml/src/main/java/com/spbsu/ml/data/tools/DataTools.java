@@ -459,7 +459,7 @@ public class DataTools {
     return Pair.create(subSet, subTarget);
   }
 
-  public static String getPoolInfo(final Pool pool) {
+  public static String getPoolInfo(final Pool<?> pool) {
     final VecDataSet vecDataSet = pool.vecData();
 
     final StringBuilder builder = new StringBuilder()
@@ -471,7 +471,7 @@ public class DataTools {
       builder
           .append("\n")
           .append("feature #").append(i)
-          .append(": type = ").append(vecDataSet.fmeta(i).type());
+          .append(": type = ").append(pool.features[i].getFirst().type());
     }
     return builder.toString();
   }

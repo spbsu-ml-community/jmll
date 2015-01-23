@@ -1,11 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-
-
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
@@ -14,6 +8,7 @@ import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.VecSeq;
 import com.spbsu.commons.system.RuntimeUtils;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.Vectorization;
@@ -25,6 +20,11 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * User: solar
@@ -102,15 +102,27 @@ public class Pool<I extends DSItem> {
     }
 
     final Mx data;
+    final int[] cumulativeFeatureLengths;
     if (hasVecFeatures) {
       final List<Seq<?>> seqs = new ArrayList<>(cols.size());
-      for (final Seq<?> col : cols) {
+      cumulativeFeatureLengths = new int[cols.size()];
+
+      for (int i = 0; i < cols.size(); i++) {
+        final Seq<?> col = cols.get(i);
+        final int prevFeaturesLength = i > 0 ? cumulativeFeatureLengths[i - 1] : 0;
+
         if (col instanceof Vec) {
           seqs.add(new VecSeq(new Vec[]{(Vec) col}));
+          cumulativeFeatureLengths[i] = prevFeaturesLength + 1;
+
         } else if (col instanceof VecSeq) {
           seqs.add(col);
+          cumulativeFeatureLengths[i] = prevFeaturesLength + col.length();
+
         } else if (col instanceof ArraySeq) {
-          seqs.add(new VecSeq((ArraySeq)col));
+          seqs.add(new VecSeq((ArraySeq) col));
+          cumulativeFeatureLengths[i] = prevFeaturesLength + col.length();
+
         } else {
           throw new IllegalArgumentException("unexpected feature type " + col.getClass().getSimpleName());
         }
@@ -119,6 +131,7 @@ public class Pool<I extends DSItem> {
       data = new ColsVecSeqMx(seqs.toArray(new VecSeq[seqs.size()]));
     } else {
       data = new ColsVecArrayMx(cols.toArray(new Vec[cols.size()]));
+      cumulativeFeatureLengths = ArrayTools.sequence(0, cols.size());
     }
 
     return new VecDataSetImpl(ds, data, new Vectorization<T>() {
@@ -129,7 +142,9 @@ public class Pool<I extends DSItem> {
 
       @Override
       public FeatureMeta meta(final int findex) {
-        return features[indices[findex]].first;
+        final int search = Arrays.binarySearch(cumulativeFeatureLengths, findex);
+        final int sourceFeatureIdx = search >= 0 ? search + 1 : -search - 1;
+        return features[indices[sourceFeatureIdx]].first;
       }
 
       @Override
