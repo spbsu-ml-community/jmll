@@ -89,6 +89,8 @@ public class MethodsBuilder {
           setter.invoke(factory, Integer.parseInt(value));
         } else if (Double.class.equals(type) || double.class.equals(type)) {
           setter.invoke(factory, Double.parseDouble(value));
+        } else if (Boolean.class.equals(type) || boolean.class.equals(type)) {
+          setter.invoke(factory, Boolean.parseBoolean(value));
         } else if (String.class.equals(type)) {
           setter.invoke(factory, value);
         } else if (Optimization.class.isAssignableFrom(type)) {
