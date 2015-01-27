@@ -375,53 +375,48 @@ public class DataTools {
   public static Pool<? extends DSItem> readPoolFrom(final Reader input) throws IOException {
     try {
       final PoolBuilder builder = new PoolBuilder();
-      final Processor<String[]> seqProcessor = new Processor<String[]>() {
-        @Override
-        public void process(final String[] parts) {
-          try {
-            final JsonParser parser = JSONTools.parseJSON(parts[1]);
-            switch (parts[0].toString()) {
-              case "items": {
-                final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
-                builder.setMeta(meta);
+      CharSeqTools.processAndSplitLinesNIO(input, new Processor<CharBufferSeq[]>() {
+            @Override
+            public void process(final CharBufferSeq[] parts) {
+              try {
+                final JsonParser parser = JSONTools.parseJSON(parts[1]);
+                switch (parts[0].toString()) {
+                  case "items": {
+                    final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
+                    builder.setMeta(meta);
 
-                final JsonParser parseItems = JSONTools.parseJSON(parts[2]);
-                final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
-                final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
-                final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
-                for (int i = 0; i < myObjects.size(); i++) {
-                  builder.addItem(myObjects.get(i));
+                    final JsonParser parseItems = JSONTools.parseJSON(parts[2]);
+                    final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
+                    final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
+                    final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
+                    for (int i = 0; i < myObjects.size(); i++) {
+                      builder.addItem(myObjects.get(i));
+                    }
+                    break;
+                  }
+                  case "feature": {
+                    final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
+                    final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
+                    builder.newFeature(fmeta, BUFFER_SERIALIZATION.read(
+                        parts[2],
+                        vecClass));
+                    break;
+                  }
+                  case "target": {
+                    final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
+                    final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
+                    builder.newTarget(fmeta, BUFFER_SERIALIZATION.read(
+                        parts[2],
+                        vecClass));
+                    break;
+                  }
                 }
-                break;
-              }
-              case "feature": {
-                final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
-                final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
-                builder.newFeature(fmeta, BUFFER_SERIALIZATION.read(
-                        new CharBufferSeq(parts[2]),
-                        vecClass));
-                break;
-              }
-              case "target": {
-                final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
-                final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
-                builder.newTarget(fmeta, BUFFER_SERIALIZATION.read(
-                        new CharBufferSeq(parts[2]),
-                        vecClass));
-                break;
+              } catch (IOException e) {
+                throw new RuntimeException(e);
               }
             }
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }
-      };
-      final LineNumberReader lineNumberReader = new LineNumberReader(input);
-      for (String line = lineNumberReader.readLine(); line != null; line = lineNumberReader.readLine()) {
-        final String[] split = line.split("\t", 3);
-        seqProcessor.process(split);
-      }
-//      CharSeqTools.processAndSplitLinesNIO(input, seqProcessor, "\t", 2);
+          },
+          "\t", 2);
       return builder.create();
     } catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
