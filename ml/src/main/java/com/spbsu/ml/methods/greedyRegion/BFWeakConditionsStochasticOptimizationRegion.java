@@ -85,7 +85,7 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
     final double[] ranks = rank(values);
     final int split = upperBound(values, feature.condition);
     for (int i = 0; i < values.length; ++i) {
-      if (values[i] > feature.condition != mask) {
+      if ((values[i] > feature.condition) != mask) {
         //if !mask, than diff = #points <= point - #points in left
         //if mask, than diff = #points in left - #points < point
         //points in left = split
@@ -107,12 +107,28 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
     for (int i = 0; i < sortedSample.length; ++i) {
       int j = i + 1;
       while (j < sortedSample.length && Math.abs(sortedSample[j] - sortedSample[j - 1]) < 1e-9) ++j;
-      final double rk = i + 0.5 * (j - i + 1);
+      final double rk = i + 0.5 * (j - i);
       for (; i < j; ++i) {
         ranks[i] = rk;
       }
       --i;
     }
+//    {
+//      for (int i = 0; i < sortedSample.length; ++i) {
+//        int less = 0;
+//        int equals = 0;
+//        for (int j = 0; j < sortedSample.length; ++j) {
+//          if (Math.abs(sortedSample[i] - sortedSample[j]) < 1e-9)
+//            ++equals;
+//          else if (sortedSample[i] > sortedSample[j]) {
+//            ++less;
+//          }
+//        }
+//        if (ranks[i] != less + equals * 0.5) {
+//          System.out.println("error");
+//        }
+//      }
+//    }
     return ranks;
   }
 
