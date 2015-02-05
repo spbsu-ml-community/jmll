@@ -65,6 +65,19 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
     }
     Vec prev = copy(betas);
 
+    for (int k=0; k < betas.dim();++k) {
+      if (betas.get(k) != 0 && !cached[k]) {
+        for (int j = 0; j < k + 1; ++j) {
+          featuresProducts[k][j] = VecTools.multiply(learn.col(k), learn.col(j));
+        }
+        for (int j = k+1; j < betas.dim(); ++j) {
+          if (!cached[j])
+            featuresProducts[j][k] = VecTools.multiply(learn.col(k), learn.col(j));
+        }
+        cached[k] = true;
+      }
+    }
+
     double[] cachedGradient = new double[betas.dim()];
     {
       for (int i = 0; i < betas.dim(); ++i) {
