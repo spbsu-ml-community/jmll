@@ -13,8 +13,8 @@ import java.util.List;
  * Time: 5:35
  */
 public class Region extends RegionBase {
-  private final BFGrid.BinaryFeature[] features;
-  private final boolean[] mask;
+  public final BFGrid.BinaryFeature[] features;
+  public final boolean[] mask;
   public final int maxFailed;
   public final int basedOn;
   public final double score;
@@ -32,7 +32,7 @@ public class Region extends RegionBase {
   }
 
   public Region(final List<BFGrid.BinaryFeature> conditions, final boolean[] mask, final double inside, final double outside, final int basedOn, final double score, final int maxFailed) {
-    super(conditions.get(0).row().grid(), inside, outside);
+    super(conditions.size() > 0 ? conditions.get(0).row().grid() : null, inside, outside);
     this.basedOn = basedOn;
     this.score = score;
     this.features = conditions.toArray(new BFGrid.BinaryFeature[conditions.size()]);
@@ -45,8 +45,9 @@ public class Region extends RegionBase {
     int failed = 0;
     for (int i = 0; i < features.length; i++) {
       if (bds.bins(features[i].findex)[pindex] > features[i].binNo != mask[i]) {
-        if (++failed > maxFailed)
+        if (++failed > maxFailed) {
           return false;
+        }
       }
     }
 

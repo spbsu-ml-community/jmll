@@ -2,22 +2,26 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.math.vectors.MxTools;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecIterator;
-import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
+import com.spbsu.ml.data.tools.FeaturesTxtPool;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.func.NormalizedLinear;
-import com.spbsu.ml.loss.*;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.L2GreedyTDRegion;
+import com.spbsu.ml.loss.LLLogit;
+import com.spbsu.ml.loss.SatL2;
+import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
@@ -31,6 +35,7 @@ import gnu.trove.map.hash.TDoubleIntHashMap;
 import java.util.Random;
 
 import static com.spbsu.commons.math.MathTools.sqr;
+import static com.spbsu.commons.math.vectors.VecTools.copy;
 
 /**
  * User: solar
@@ -158,6 +163,118 @@ public abstract class MethodsTests extends GridTest {
     System.out.println(MxTools.prettyPrint(original.topology));
 
     assertTrue(VecTools.distance(fit.topology, original.topology) < accuracy * fit.topology.dim());
+  }
+
+
+
+  public void testElasticNet() {
+    {
+      final ElasticNetMethod net = new ElasticNetMethod(1e-7f, 0.5, 0);
+      final int N = 100;
+      final int p = 100;
+      Vec beta = new ArrayVec(p);
+      for (int i = 0; i < p; ++i) {
+        beta.set(i, rng.nextDouble());
+      }
+      Mx learn = new VecBasedMx(N, p);
+      for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < p; ++j)
+          learn.set(i, j, rng.nextDouble());
+      }
+      Vec target = MxTools.multiply(learn, beta);
+      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
+      final L2 loss = (L2) pool.target(L2.class);
+      Linear result = (Linear) net.fit(pool.vecData(), loss);
+      assertTrue(VecTools.distance(MxTools.multiply(learn, result.weights), target) < 1e-5f);
+      assertTrue(VecTools.distance(beta, result.weights) < 1e-2f);
+    }
+
+    //
+    {
+      final ElasticNetMethod net = new ElasticNetMethod(1e-5f, 0.0, 0.00007);
+      final int N = 140;
+      final int TestN = 2000;
+      final int p = 150;
+      Vec beta = new ArrayVec(p);
+      for (int i = 0; i < p; ++i) {
+        beta.set(i, rng.nextGaussian());
+      }
+      Mx learn = new VecBasedMx(N, p);
+      Mx test = new VecBasedMx(TestN, p);
+      for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < p; ++j) {
+          learn.set(i, j, rng.nextDouble());
+        }
+      }
+      for (int i = 0; i < TestN; ++i) {
+        for (int j = 0; j < p; ++j) {
+          test.set(i, j, rng.nextDouble());
+        }
+      }
+      Vec realTarget = MxTools.multiply(learn, beta);
+      Vec testTarget = MxTools.multiply(test, beta);
+      Vec target = copy(realTarget);
+      for (int i=0; i < target.dim();++i) {
+        target.adjust(i, rng.nextGaussian()*0.001);
+      }
+      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
+      final L2 loss = (L2) pool.target(L2.class);
+      Linear result = (Linear) net.fit(pool.vecData(), loss);
+      System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
+    System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
+    System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
+    System.out.println("Fit weights " + result.weights);
+    System.out.println("Real weights " + beta);
+    }
+
+
+    //check shrinkage
+    {
+      final ElasticNetMethod net = new ElasticNetMethod(1e-7f, 0.9, 0.005);
+      final int N = 100;
+      final int NTest = 10000;
+      final int p = 500;
+      Vec beta = new ArrayVec(p);
+      for (int i = 0; i < p; ++i) {
+        if (i % 17 == 0) {
+          beta.set(i, rng.nextGaussian());
+        } else {
+          beta.set(i,0);
+        }
+      }
+      Mx learn = new VecBasedMx(N, p);
+      Mx test = new VecBasedMx(NTest, p);
+      for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < p; ++j) {
+          learn.set(i, j, rng.nextDouble());
+
+        }
+      }
+      for (int i = 0; i < NTest; ++i) {
+        for (int j = 0; j < p; ++j) {
+          test.set(i, j, rng.nextDouble());
+        }
+      }
+      Vec realTarget = MxTools.multiply(learn, beta);
+      Vec testTarget = MxTools.multiply(test, beta);
+      Vec target = copy(realTarget);
+      for (int i=0; i < target.dim();++i) {
+        target.adjust(i, rng.nextGaussian() * 0.001);
+      }
+      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
+      final L2 loss = (L2) pool.target(L2.class);
+      Linear result = (Linear) net.fit(pool.vecData(), loss);
+//      for (int i=0; i < beta.dim();++i) {
+//        if (beta.get(i) == 0)
+//          assertTrue(Math. abs(result.weights.get(i)-0.0) < 1e-9);
+//      }
+      System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
+      System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
+      System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
+//      System.out.println("Fit weights " + result.weights);
+//      System.out.println("Real weights " + beta);
+
+    }
   }
 
   public void testLARS() {
