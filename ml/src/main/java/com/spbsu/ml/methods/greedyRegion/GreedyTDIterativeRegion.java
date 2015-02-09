@@ -9,7 +9,6 @@ import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
-import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.BFOptimizationSubset;
 import com.spbsu.ml.models.Region;
 
@@ -23,7 +22,7 @@ import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.wei
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyTDIterativeRegion<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyTDIterativeRegion<Loss extends StatBasedLoss> extends RegionBasedOptimization<Loss> {
   protected final BFGrid grid;
   private final FastRandom rand = new FastRandom();
   private final double alpha;

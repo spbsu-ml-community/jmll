@@ -40,6 +40,16 @@ public class Region extends RegionBase {
     this.maxFailed = maxFailed;
   }
 
+
+  public Region(final Region base, final double inside, final double outside) {
+    super(base.grid, inside, outside);
+    this.basedOn = base.basedOn;
+    this.score = base.score();
+    this.features = base.features;
+    this.mask = base.mask;
+    this.maxFailed = base.maxFailed;
+  }
+
   @Override
   public boolean contains(final BinarizedDataSet bds, final int pindex) {
     int failed = 0;
