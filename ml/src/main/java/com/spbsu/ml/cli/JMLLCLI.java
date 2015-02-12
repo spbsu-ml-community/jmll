@@ -131,6 +131,7 @@ public class JMLLCLI {
       final String columns = System.getenv("COLUMNS");
 
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
+      formatter.printHelp("JMLLCLI", options);
     }
   }
 
