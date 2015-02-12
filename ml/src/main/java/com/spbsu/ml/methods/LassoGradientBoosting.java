@@ -26,8 +26,8 @@ public class LassoGradientBoosting<GlobalLoss extends L2> extends WeakListenerHo
   protected final VecOptimization<L2> weak;
   private final Class<? extends L2> factory;
   int iterationsCount;
-  double lambda = 1.0;
-  double alpha = 0.95;
+  double lambda = 1e-3;
+  double alpha = 1.0;
 
   public  void setAlpha(double alpha) {
     this.alpha = alpha;
@@ -51,7 +51,7 @@ public class LassoGradientBoosting<GlobalLoss extends L2> extends WeakListenerHo
   public Ensemble fit(final VecDataSet learn, final GlobalLoss globalLoss) {
     Mx transformedData = new VecBasedMx(learn.data().rows(), iterationsCount);
     ElasticNetMethod.ElasticNetCache lassoCache = new ElasticNetMethod.ElasticNetCache(transformedData, globalLoss.target, 0, alpha, lambda);
-    ElasticNetMethod lasso = new ElasticNetMethod(1e-5,alpha, lambda);
+    ElasticNetMethod lasso = new ElasticNetMethod(1e-5, alpha, lambda);
 
     final Vec cursor = new ArrayVec(globalLoss.xdim());
     final List<Trans> weakModels = new ArrayList<>(iterationsCount);
@@ -67,22 +67,16 @@ public class LassoGradientBoosting<GlobalLoss extends L2> extends WeakListenerHo
       for (int row = 0; row < learn.data().rows(); ++row) {
         transformedData.set(row, t, -applied.get(row));
       }
-//      if (t % 10 == 0) {
-        lassoCache.updateDim(t + 1);
-        Vec currentWeights = lasso.fit(lassoCache).weights;
-        {
-          VecTools.fill(cursor, 0.0);
-          for (int observation = 0; observation < cursor.dim(); ++observation) {
-            for (int weakFeature = 0; weakFeature < weakModels.size(); ++weakFeature)
-              cursor.adjust(observation, currentWeights.get(weakFeature) * transformedData.get(observation, weakFeature));
-          }
+      lassoCache.updateDim(t + 1);
+      Vec currentWeights = lasso.fit(lassoCache).weights;
+      {
+        VecTools.fill(cursor, 0.0);
+        for (int observation = 0; observation < cursor.dim(); ++observation) {
+          for (int weakFeature = 0; weakFeature < weakModels.size(); ++weakFeature)
+            cursor.adjust(observation, currentWeights.get(weakFeature) * transformedData.get(observation, weakFeature));
         }
+      }
       invoke(new LassoGBIterationResult(weakModel, cursor, currentWeights));
-
-//      } else {
-//        VecTools.append(cursor, VecTools.scale(applied, -0.1));
-//      }
-
     }
     return new Ensemble(ArrayTools.toArray(weakModels), weights);
   }
