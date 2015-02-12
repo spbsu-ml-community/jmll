@@ -1,9 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import java.lang.reflect.Array;
-import java.util.*;
-
-
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVecBuilder;
@@ -20,6 +16,9 @@ import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.PoolFeatureMeta;
 import com.spbsu.ml.meta.impl.JsonDataSetMeta;
+
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * User: solar
@@ -60,6 +59,11 @@ public class PoolByRowsBuilder implements Factory<Pool<? extends DSItem>> {
         @Override
         public ValueType type() {
           return entry.getKey().type();
+        }
+
+        @Override
+        public String toString() {
+          return id();
         }
       };
       features[index++] = Pair.<PoolFeatureMeta, Seq<?>>create(key, entry.getValue().build());
