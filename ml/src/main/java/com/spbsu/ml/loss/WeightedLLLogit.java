@@ -1,27 +1,33 @@
 package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.FuncC1;
-import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
 /**
- * We use value representation = \frac{e^x}{e^x + 1}.
- * User: solar
- * Date: 21.12.2010
- * Time: 22:37:55
+ * Created by irlab on 13.02.2015.
  */
-public class LLLogit extends FuncC1.Stub implements TargetFunc {
-  protected final Vec target;
-  private final DataSet<?> owner;
+public class WeightedLLLogit extends LLLogit {
+  private Vec weights;
+  private double sumWeights;
 
-  public LLLogit(final Vec target, final DataSet<?> owner) {
-    this.target = target;
-    this.owner = owner;
+  public WeightedLLLogit(final Vec target, final DataSet<?> owner) {
+    this(target, owner, VecTools.fill(new ArrayVec(target.dim()), 1));
+  }
+
+  public WeightedLLLogit(final Vec target, final DataSet<?> owner, final Vec weights) {
+    super(target, owner);
+    this.weights = weights;
+    this.sumWeights = VecTools.sum(weights);
+  }
+
+  public void setWeights(final Vec weights) {
+    this.weights = weights;
+    this.sumWeights = VecTools.sum(weights);
   }
 
   @Override
@@ -35,12 +41,8 @@ public class LLLogit extends FuncC1.Stub implements TargetFunc {
       else // negative
         result.set(i, pX);
     }
+    VecTools.scale(result, weights);
     return result;
-  }
-
-  @Override
-  public int dim() {
-    return target.dim();
   }
 
   @Override
@@ -50,24 +52,11 @@ public class LLLogit extends FuncC1.Stub implements TargetFunc {
       final double expMX = exp(-point.get(i));
       final double pX = 1. / (1. + expMX);
       if (target.get(i) > 0) // positive example
-        result += log(pX);
+        result += log(pX) * weights.get(i);
       else // negative
-        result += log(1 - pX);
+        result += log(1 - pX) * weights.get(i);
     }
 
-    return exp(result / point.dim());
-  }
-
-  public int label(final int idx) {
-    return (int)target.get(idx);
-  }
-
-  public Vec labels() {
-    return target;
-  }
-
-  @Override
-  public DataSet<?> owner() {
-    return owner;
+    return exp(result / sumWeights);
   }
 }

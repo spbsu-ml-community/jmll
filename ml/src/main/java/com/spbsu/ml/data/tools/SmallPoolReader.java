@@ -3,6 +3,7 @@ package com.spbsu.ml.data.tools;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.math.vectors.Vec;
@@ -23,7 +24,10 @@ import java.util.zip.GZIPInputStream;
 /**
  * Created by irlab on 27.01.2015.
  */
-public class SmallPoolReader {
+public final class SmallPoolReader {
+  private SmallPoolReader() {
+  }
+
   public static final TypeConverter<String, SparseVec> string2SparseVecConverter = new String2SparseVecConverter();
   public static final TypeConverter<String, Vec> string2VecConverter = new String2VecConverter();
 
@@ -68,6 +72,10 @@ public class SmallPoolReader {
   }
 
   public static Pool<? extends DSItem> readPoolFrom(final Reader input) throws IOException {
+    return readPoolFrom(input, null);
+  }
+
+  public static Pool<? extends DSItem> readPoolFrom(final Reader input, final Filter<JsonFeatureMeta> featureFilter) throws IOException {
     try {
       final PoolBuilder builder = new PoolBuilder();
       final Processor<String[]> seqProcessor = new Processor<String[]>() {
@@ -84,13 +92,15 @@ public class SmallPoolReader {
                 final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
                 final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
                 final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
-                for (DSItem myObject : myObjects) {
+                for (final DSItem myObject : myObjects) {
                   builder.addItem(myObject);
                 }
                 break;
               }
               case "feature": {
                 final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
+                if (featureFilter != null && !featureFilter.accept(fmeta))
+                  break;
                 final TypeConverter<String, ? extends Vec> typeConverter = fmeta.type() == FeatureMeta.ValueType.SPARSE_VEC ? string2SparseVecConverter : string2VecConverter;
                 builder.newFeature(fmeta, typeConverter.convert(parts[2]));
                 break;
@@ -122,14 +132,22 @@ public class SmallPoolReader {
   }
 
   public static Pool<? extends DSItem> loadFromFile(final String fileName) throws IOException {
-    return loadFromFile(new File(fileName));
+    return loadFromFile(new File(fileName), null);
+  }
+
+  public static Pool<? extends DSItem> loadFromFile(final String fileName, final Filter<JsonFeatureMeta> featureFilter) throws IOException {
+    return loadFromFile(new File(fileName), featureFilter);
   }
 
   public static Pool<? extends DSItem> loadFromFile(final File file) throws IOException {
+    return loadFromFile(file, null);
+  }
+
+  public static Pool<? extends DSItem> loadFromFile(final File file, final Filter<JsonFeatureMeta> featureFilter) throws IOException {
     try (final InputStreamReader input = file.getName().endsWith(".gz") ?
             new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) :
             new FileReader(file)) {
-      return readPoolFrom(input);
+      return readPoolFrom(input, featureFilter);
     }
   }
 }
