@@ -1,8 +1,20 @@
 package com.spbsu.ml.data.tools;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.zip.GZIPInputStream;
+
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.spbsu.commons.func.Computable;
@@ -53,15 +65,6 @@ import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.zip.GZIPInputStream;
 
 /**
  * User: solar
@@ -387,6 +390,7 @@ public class DataTools {
 
                     final JsonParser parseItems = JSONTools.parseJSON(parts[2]);
                     final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
+                    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                     final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
                     final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
                     for (int i = 0; i < myObjects.size(); i++) {
