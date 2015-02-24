@@ -90,7 +90,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.spbsu.exp.tools.Runner</mainClass>
+                                    <mainClass>com.spbsu.Main</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
