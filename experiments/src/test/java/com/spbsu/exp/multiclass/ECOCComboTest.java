@@ -290,7 +290,7 @@ public class ECOCComboTest extends TestCase {
       System.out.println("factor dim: " + factorDim);
       System.out.println("time: " + ((System.currentTimeMillis() - time) / 1000));
       final Mx afterFactor = MxTools.multiply(h, MxTools.transpose(b));
-      System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
+//      System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
       System.out.println();
     }
   }
@@ -305,7 +305,7 @@ public class ECOCComboTest extends TestCase {
     VecTools.scale(b, 1 / normB);
     VecTools.scale(h, normB);
     final Mx afterFactor = VecTools.outer(h, b);
-    System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
+//    System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
   }
 
   private static double rmse(final Vec target, final Vec approx) {
