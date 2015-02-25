@@ -369,7 +369,7 @@ public abstract class MethodsTests extends GridTest {
     final Class<L2> targetClass = L2.class;
     final L2 target = learn.target(targetClass);
     final NormalizedLinear model = lars.fit(learn.vecData(), target);
-    System.out.println(validate.target(L2.class).value(model.transAll(((VecDataSet) validate).data())));
+    System.out.println(validate.target(L2.class).value(model.transAll((validate.vecData()).data())));
   }
 
 
@@ -411,7 +411,7 @@ public abstract class MethodsTests extends GridTest {
       System.out.print(" minimum = " + min);
       ++iterations;
       Vec applied = iterationResult.addedModel.transAll(test.data()).col(0);
-      VecTools.scale(applied,-1.0);
+      VecTools.scale(applied, -1.0);
       transformedTest.add(applied);
       if (iterations % 10 == 0) {
         Mx currentTest = new ColsVecArrayMx(transformedTest.toArray(new Vec[transformedTest.size()]));
