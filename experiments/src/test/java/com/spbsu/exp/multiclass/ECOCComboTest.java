@@ -4,6 +4,7 @@ import com.spbsu.commons.func.Action;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -36,6 +37,7 @@ import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.impl.FakeTargetMeta;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.multiclass.GradFacMulticlass;
+import com.spbsu.ml.methods.multiclass.GradFacSvdNMulticlass;
 import com.spbsu.ml.methods.spoc.ECOCCombo;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MCModel;
@@ -54,7 +56,7 @@ public class ECOCComboTest extends TestCase {
 
   private synchronized static void init() throws IOException {
     if (learn == null || test == null) {
-      final Pool<?> pool = TestResourceLoader.loadPool("multiclass/catalog.tsv");
+      final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv.gz");
       pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS),
                      VecTools.toIntSeq(pool.target(L2.class).target)
       );
@@ -224,6 +226,25 @@ public class ECOCComboTest extends TestCase {
 
   }
 
+  public void testGradFacSvdN() throws Exception {
+    final VecDataSet vecDataSet = learn.vecData();
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final BFGrid bfGrid = GridTools.medianGrid(vecDataSet, 32);
+    final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GradFacSvdNMulticlass(new GreedyObliviousTree<L2>(bfGrid, 5),
+        SatL2.class, 2), 500, 0.7);
+    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(learn, test);
+    boosting.addListener(multiclassProgressPrinter);
+
+    final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+
+    final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
+    final MultiClassModel multiclassModel = new MultiClassModel(joined);
+    final String learnResult = MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false);
+    final String testResult = MCTools.evalModel(multiclassModel, test, "[TEST] ", false);
+    System.out.println(learnResult);
+    System.out.println(testResult);
+  }
+
   public void testBaseline() throws Exception {
     final VecDataSet vecDataSet = learn.vecData();
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
@@ -256,21 +277,40 @@ public class ECOCComboTest extends TestCase {
     applyFactorMethod(new SVDAdapterEjml());
   }
 
-  private static void applyFactorMethod(final OuterFactorization method) {
+  public void testGradMxApproxSVDN() throws Exception {
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
     final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
     double time = System.currentTimeMillis();
+
+    for (int factorDim = gradient.columns(); factorDim >= 1; factorDim--)
+    {
+      final Pair<Vec, Vec> pair = new SVDAdapterEjml(factorDim, true).factorize(gradient);
+      final Mx h = (Mx) pair.getFirst();
+      final Mx b = (Mx) pair.getSecond();
+      System.out.println("factor dim: " + factorDim);
+      System.out.println("time: " + ((System.currentTimeMillis() - time) / 1000));
+      final Mx afterFactor = MxTools.multiply(h, MxTools.transpose(b));
+      System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
+      System.out.println();
+    }
+  }
+
+  private static void applyFactorMethod(final OuterFactorization method) {
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
     final Pair<Vec, Vec> pair = method.factorize(gradient);
-    System.out.println((System.currentTimeMillis() - time) / 1000);
     final Vec h = pair.getFirst();
     final Vec b = pair.getSecond();
     final double normB = VecTools.norm(b);
     VecTools.scale(b, 1 / normB);
     VecTools.scale(h, normB);
-    System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", RMSE = " + VecTools.distance(gradient, VecTools.outer(h, b)));
+    final Mx afterFactor = VecTools.outer(h, b);
+    System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
   }
 
   private static double rmse(final Vec target, final Vec approx) {
     return Math.sqrt(VecTools.sum2(VecTools.subtract(target, approx)) / target.length());
   }
+
+
 }

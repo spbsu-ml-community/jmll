@@ -43,7 +43,7 @@ public class MultiClassOneVsRest implements VecOptimization<ClassicMulticlassLos
     return new JoinedBinClassModel(models);
   }
 
-  private static Func extractFunc(final Trans model) {
+  public static Func extractFunc(final Trans model) {
     if (model instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) model;
       if (ensemble.last() instanceof Func) {
