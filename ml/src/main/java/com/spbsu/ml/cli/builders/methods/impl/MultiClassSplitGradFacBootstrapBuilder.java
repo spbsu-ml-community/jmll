@@ -7,13 +7,13 @@ import com.spbsu.ml.factorization.impl.ALS;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.multiclass.GradFacMulticlass;
+import com.spbsu.ml.methods.multiclass.GradFacBootstrapMulticlass;
 
 /**
  * User: qdeee
  * Date: 03.09.14
  */
-public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass> {
+public class MultiClassSplitGradFacBootstrapBuilder implements Factory<GradFacBootstrapMulticlass> {
   private final Factory<VecOptimization> defaultWeakBuilder = new BootstrapOptimizationBuilder();
 
   private VecOptimization weak;
@@ -48,7 +48,7 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
   }
 
   @Override
-  public GradFacMulticlass create() {
+  public GradFacBootstrapMulticlass create() {
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
@@ -58,5 +58,5 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
     } else {
       factorization = new SVDAdapterEjml();
     }
-    return new GradFacMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);
+    return new GradFacBootstrapMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);
   }}

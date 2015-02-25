@@ -1,5 +1,6 @@
 package com.spbsu.ml.data.tools;
 
+import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.metrics.Metric;
 import com.spbsu.commons.math.metrics.impl.CosineDVectorMetric;
 import com.spbsu.commons.math.vectors.Mx;
@@ -12,14 +13,17 @@ import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.spbsu.ml.loss.multiclass.MCMicroF1Score;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
 import com.spbsu.ml.meta.items.QURLItem;
+import com.spbsu.ml.models.JoinedBinClassModel;
 import com.spbsu.ml.models.MCModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TDoubleList;
@@ -261,13 +265,11 @@ public class MCTools {
     if (oneLine) {
       return prefixComment + confusionMatrix.debug();
     } else {
-      final StringBuilder sb = new StringBuilder();
-      sb.append("\n==========").append(prefixComment).append(StringUtils.repeatWithDelimeter("", "=", 100 - 10 - prefixComment.length())).append("\n");
-      sb.append(confusionMatrix.toSummaryString());
-      sb.append("\n");
-      sb.append(confusionMatrix.toClassDetailsString());
-      sb.append(StringUtils.repeatWithDelimeter("", "=", 100));
-      return sb.toString();
+      return "\n==========" + prefixComment +
+          StringUtils.repeatWithDelimeter("", "=", 100 - 10 - prefixComment.length()) + "\n" +
+          confusionMatrix.toSummaryString() + "\n" +
+          confusionMatrix.toClassDetailsString() +
+          StringUtils.repeatWithDelimeter("", "=", 100);
     }
   }
 
@@ -299,5 +301,58 @@ public class MCTools {
       mapped[i] = mapping.get(intTarget.at(i));
     }
     return new IntSeq(mapped);
+  }
+
+  public static void makeOneVsRestReport(final Pool<?> learn, final Pool<?> test, final JoinedBinClassModel joinedBinClassModel, final int period) {
+    if (!(joinedBinClassModel.getInternModel().dirs[0] instanceof FuncEnsemble)) {
+      throw new IllegalArgumentException("Provided model must contain array of FuncEnsemble objects");
+    }
+
+    final IntSeq learnLabels = learn.target(MCMicroF1Score.class).labels();
+    final IntSeq testLabels = test.target(MCMicroF1Score.class).labels();
+
+    final FuncEnsemble<?>[] perClassModels = ArrayTools.map(joinedBinClassModel.getInternModel().dirs, FuncEnsemble.class, new Computable<Trans, FuncEnsemble>() {
+      @Override
+      public FuncEnsemble compute(final Trans argument) {
+        return (FuncEnsemble<?>) argument;
+      }
+    });
+    final int ensembleSize = perClassModels[0].size();
+    final int classesCount = perClassModels.length;
+
+    final Mx learnCache = new VecBasedMx(learn.size(), classesCount);
+    final Mx testCache = new VecBasedMx(test.size(), classesCount);
+
+    for (int t = 0; t < ensembleSize; t += period) {
+      final Func[] functions = new Func[classesCount];
+      for (int c = 0; c < classesCount; c++) {
+        functions[c] = new FuncEnsemble<>(
+            Arrays.copyOfRange(perClassModels[c].models, t, Math.min(t + period, ensembleSize), Func[].class),
+            perClassModels[c].weights.sub(0, t)
+        );
+      }
+      final FuncJoin deltaFuncJoin = new FuncJoin(functions);
+
+      VecTools.append(learnCache, deltaFuncJoin.transAll(learn.vecData().data()));
+      VecTools.append(testCache, deltaFuncJoin.transAll(test.vecData().data()));
+
+      final IntSeq learnPredict = convertTransOneVsRestResults(learnCache);
+      final IntSeq testPredict = convertTransOneVsRestResults(testCache);
+
+      final ConfusionMatrix learnConfusionMatrix = new ConfusionMatrix(learnLabels, learnPredict);
+      final ConfusionMatrix testConfusionMatrix = new ConfusionMatrix(testLabels, testPredict);
+      System.out.print("\t" + learnConfusionMatrix.oneLineReport());
+      System.out.print("\t" + testConfusionMatrix.oneLineReport());
+      System.out.println();
+    }
+  }
+
+  private static IntSeq convertTransOneVsRestResults(final Mx trans) {
+    final int[] result = new int[trans.rows()];
+    for (int i = 0; i < trans.rows(); i++) {
+      final Vec row = trans.row(i);
+      result[i] = VecTools.argmax(row);
+    }
+    return new IntSeq(result);
   }
 }

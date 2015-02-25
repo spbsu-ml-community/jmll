@@ -15,6 +15,7 @@ public class MultiClassSplitBuilder implements Factory<MultiClass> {
 
   private VecOptimization weak;
   private String localName = "SatL2";
+  private boolean printErr = false;
 
   public void setWeak(final VecOptimization weak) {
     this.weak = weak;
@@ -24,10 +25,14 @@ public class MultiClassSplitBuilder implements Factory<MultiClass> {
     this.localName = localName;
   }
 
+  public void setOut(final boolean printErr) {
+    this.printErr = printErr;
+  }
+
   @Override
   public MultiClass create() {
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
-    return new MultiClass(weak, (Class<? extends L2>) DataTools.targetByName(localName));
+    return new MultiClass(weak, (Class<? extends L2>) DataTools.targetByName(localName), printErr);
   }}
