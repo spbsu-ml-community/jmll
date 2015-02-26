@@ -79,7 +79,7 @@ public class PoolByRowsBuilder implements Factory<Pool<? extends DSItem>> {
       for (final Pair<PoolFeatureMeta, Seq<?>> entry : features) {
         if (entry.second.length() != items.size())
           throw new RuntimeException(
-              "Feature " + entry.first.toString() + " has " + entry.second.length() + " entries " + " expected " + items.size());
+              "Feature " + entry.first.id() + " has " + entry.second.length() + " entries " + " expected " + items.size());
       }
     }
 
