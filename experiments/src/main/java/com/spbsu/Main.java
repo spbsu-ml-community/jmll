@@ -1,6 +1,7 @@
 package com.spbsu;
 
 import com.spbsu.ml.cuda.JcublasHelper;
+import com.spbsu.ml.cuda.JcudaHelper;
 import com.spbsu.ml.cuda.JcudaVectorInscale;
 import com.spbsu.ml.cuda.data.FMatrix;
 import com.spbsu.ml.cuda.data.impl.FArrayMatrix;
@@ -22,23 +23,25 @@ public class Main {
   }
 
   private static void second() {
-    for (int i = 1000; i < 10_000_000; i += 10_000) {
-      final float[] cpu = new float[i];
+    for (int i = 1; i < 100; i++) {
       final float[] gpu = new float[i];
       for (int j = 0; j < i; j++) {
-        cpu[j] = -1;
         gpu[j] = -1;
       }
-      long begin = System.currentTimeMillis();
+      long begin = System.nanoTime();
       JcudaVectorInscale.fExp(gpu);
-      System.out.print("Iter: " + i + "\tTime: GPU=" + (System.currentTimeMillis() - begin));
+      System.out.println("Iter: " + i + "\tTime: GPU=" + (System.nanoTime() - begin));
 
-      begin = System.currentTimeMillis();
-      for (int j = 0; j < i; j++) {
-        cpu[j] = (float)Math.exp(cpu[j]);
-      }
-      System.out.println("\tCPU=" + (System.currentTimeMillis() - begin));
+      begin = System.nanoTime();
+      JcudaVectorInscale.fSigmoid(gpu);
+      System.out.println("Iter: " + i + "\tTime: GPU=" + (System.nanoTime() - begin));
+
+      begin = System.nanoTime();
+      JcudaVectorInscale.fTanh(gpu);
+      System.out.println("Iter: " + i + "\tTime: GPU=" + (System.nanoTime() - begin));
     }
+
+    JcudaHelper.destroy();
   }
 
   private static void first() {

@@ -34,6 +34,23 @@ public class JcudaHelper {
   private static File LOCAL_PTX_DIRECTORY;
   private static final Cache<String, CUfunction> CACHE = new FixedSizeCache<>(100, CacheStrategy.Type.LRU);
 
+  private static CUcontext CONTEXT;
+
+  public static void init() {
+    JCudaDriver.setExceptionsEnabled(true);
+
+    JCudaDriver.cuInit(0);
+    final CUdevice device = new CUdevice();
+    JCudaDriver.cuDeviceGet(device, 0);
+
+    CONTEXT = new CUcontext();
+    JCudaDriver.cuCtxCreate(CONTEXT, 0, device);
+  }
+
+  public static void destroy() {
+    JCudaDriver.cuCtxDestroy(CONTEXT);
+  }
+
   @NotNull
   public static CUfunction getFunction(final @NotNull String fileName, final @NotNull String functionName) {
     final String key = fileName + '.' + functionName;
@@ -43,15 +60,6 @@ public class JcudaHelper {
       return function;
     }
     final File ptxFile = new File(LOCAL_PTX_DIRECTORY, cuNameToPtx(fileName));
-
-    JCudaDriver.setExceptionsEnabled(true);
-
-    JCudaDriver.cuInit(0);
-    final CUdevice device = new CUdevice();
-    JCudaDriver.cuDeviceGet(device, 0);
-
-    final CUcontext context = new CUcontext();
-    JCudaDriver.cuCtxCreate(context, 0, device);
 
     final CUmodule module = new CUmodule();
     JCudaDriver.cuModuleLoad(module, ptxFile.getAbsolutePath());
@@ -71,24 +79,7 @@ public class JcudaHelper {
     return cuFileName.substring(0, extensionPoint + 1) + "ptx";
   }
 
-  public static void warmUp() {
-    cuInit(0);
-    final CUdevice device = new CUdevice();
-    cuDeviceGet(device, 0);
-    final CUcontext context = new CUcontext();
-    cuCtxCreate(context, 0, device);
-
-    final int N = 1_000;
-    final int size = Sizeof.DOUBLE * N;
-    final double[] hData = new double[N];
-
-    final CUdeviceptr dData = new CUdeviceptr();
-    cuMemAlloc(dData, size);
-
-    cuMemcpyHtoD(dData, Pointer.to(hData), size);
-    cuMemcpyDtoH(Pointer.to(hData), dData, size);
-    cuMemFree(dData);
-  }
+  public static void hook() {}
 
   static {
     final ClassLoader classLoader = JcudaHelper.class.getClassLoader();
@@ -105,6 +96,8 @@ public class JcudaHelper {
 
       LOCAL_PTX_DIRECTORY = compileCuFiles(localCuDirectory, tempDirectory);
       LOG.info("Local storage for a *.ptx files " + LOCAL_PTX_DIRECTORY.getAbsolutePath());
+
+      init();
     }
     catch (Exception e) {
       LOG.error(

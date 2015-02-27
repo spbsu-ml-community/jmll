@@ -17,7 +17,7 @@ import jcuda.jcublas.JCublas;
 public class JcublasHelper { //todo(ksen): row-major support
 
   static {
-    JcudaHelper.warmUp();
+    JcudaHelper.hook();
   }
 
   public static FMatrix fMult(

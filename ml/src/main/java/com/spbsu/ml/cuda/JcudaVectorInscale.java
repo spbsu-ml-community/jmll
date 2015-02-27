@@ -23,7 +23,7 @@ import static jcuda.runtime.JCuda.*;
 public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
 
   static {
-    JcudaHelper.warmUp();
+    JcudaHelper.hook();
   }
 
   public static FMatrix fSigmoid(final @NotNull FMatrix A) {
@@ -62,7 +62,6 @@ public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
   }
 
   public static void fExp(final float[] ha) {
-
     final CUfunction function = JcudaHelper.getFunction("VectorInscale.cu", "fExp");
 
     final int length = ha.length;
@@ -92,20 +91,9 @@ public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
     JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.FLOAT);
 
     JCudaDriver.cuMemFree(da);
-
-    //JCudaDriver.cuCtxDestroy(context);
   }
 
   public static void fSigmoid(final float[] ha) {
-    JCudaDriver.setExceptionsEnabled(true);
-
-    JCudaDriver.cuInit(0);
-    final CUdevice device = new CUdevice();
-    JCudaDriver.cuDeviceGet(device, 0);
-
-    final CUcontext context = new CUcontext();
-    JCudaDriver.cuCtxCreate(context, 0, device);
-
     final CUfunction function = JcudaHelper.getFunction("VectorInscale.cu", "fSigmoid");
 
     final int length = ha.length;
@@ -135,20 +123,9 @@ public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
     JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.FLOAT);
 
     JCudaDriver.cuMemFree(da);
-
-    JCudaDriver.cuCtxDestroy(context);
   }
 
-  private static void fTanh(final float[] ha) {
-    JCudaDriver.setExceptionsEnabled(true);
-
-    JCudaDriver.cuInit(0);
-    final CUdevice device = new CUdevice();
-    JCudaDriver.cuDeviceGet(device, 0);
-
-    final CUcontext context = new CUcontext();
-    JCudaDriver.cuCtxCreate(context, 0, device);
-
+  public static void fTanh(final float[] ha) {
     final CUfunction function = JcudaHelper.getFunction("VectorInscale.cu", "fTanh");
 
     final int length = ha.length;
@@ -178,8 +155,6 @@ public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
     JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.FLOAT);
 
     JCudaDriver.cuMemFree(da);
-
-    JCudaDriver.cuCtxDestroy(context);
   }
 
   private static void fRndSigmoid(final float[] ha) {
