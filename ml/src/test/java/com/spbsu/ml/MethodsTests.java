@@ -202,8 +202,8 @@ public void testElasticNetBenchmark() {
 
       double lambda = 1;
       Linear result;
-      final ElasticNetMethodSlow.ElasticNetCache cache = new ElasticNetMethodSlow.ElasticNetCache(pool.vecData().data(), loss.target,0.95, lambda);
-      final ElasticNetMethodSlow net = new ElasticNetMethodSlow(1e-7f, 0.95, 0);
+      final ElasticNetMethod.ElasticNetCache cache = new ElasticNetMethod.ElasticNetCache(pool.vecData().data(), loss.target,0.95, lambda);
+      final ElasticNetMethod net = new ElasticNetMethod(1e-7f, 0.95, 0);
       while (lambda > 1e-9) {
         cache.setLambda(lambda);
         result = net.fit(cache);
