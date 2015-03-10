@@ -166,7 +166,77 @@ public abstract class MethodsTests extends GridTest {
     assertTrue(VecTools.distance(fit.topology, original.topology) < accuracy * fit.topology.dim());
   }
 
+public void testElasticNetBenchmark() {
+    //
+      final int N = 20000;
+      final int TestN = 20000;
+      final int p = 2000;
+      Vec beta = new ArrayVec(p);
+      for (int i = 0; i < p; ++i) {
+        beta.set(i, rng.nextGaussian());
+      }
+      Mx learn = new VecBasedMx(N, p);
+      Mx test = new VecBasedMx(TestN, p);
+      for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < p; ++j) {
+          learn.set(i, j, rng.nextDouble());
+        }
+      }
+      for (int i = 0; i < TestN; ++i) {
+        for (int j = 0; j < p; ++j) {
+          test.set(i, j, rng.nextDouble());
+        }
+      }
+      Vec realTarget = MxTools.multiply(learn, beta);
+      Vec testTarget = MxTools.multiply(test, beta);
+      Vec target = copy(realTarget);
+      for (int i=0; i < target.dim();++i) {
+        target.adjust(i, rng.nextGaussian()*0.005);
+      }
+      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
 
+
+      final L2 loss = (L2) pool.target(L2.class);
+      long start_time = System.currentTimeMillis();
+
+
+      double lambda = 1;
+      Linear result;
+      final ElasticNetMethodSlow.ElasticNetCache cache = new ElasticNetMethodSlow.ElasticNetCache(pool.vecData().data(), loss.target,0.95, lambda);
+      final ElasticNetMethodSlow net = new ElasticNetMethodSlow(1e-7f, 0.95, 0);
+      while (lambda > 1e-9) {
+        cache.setLambda(lambda);
+        result = net.fit(cache);
+        System.out.println("Current lambda " + lambda);
+        System.out.println("Current Fit time " + (System.currentTimeMillis() - start_time));
+        System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
+        System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
+        System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
+        System.out.println("");
+        lambda *= 0.9;
+      }
+
+
+
+      System.out.println("Current lambda " + 0);
+      final ElasticNetMethod unregNet = new ElasticNetMethod(1e-7f, 0.95, 0);
+      result = (Linear) unregNet.fit(pool.vecData(), loss);
+      System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
+      System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
+      System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
+      System.out.println("");
+
+      {
+        System.out.println("Classic linear regression");
+        final Mx trLearn = MxTools.transpose(learn);
+        Vec classic = MxTools.multiply(MxTools.inverse(MxTools.multiply(trLearn, learn)), MxTools.multiply(trLearn,target));
+        System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, classic), realTarget)) / target.dim());
+        System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn,  classic), target)) / target.dim());
+        System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test,  classic), testTarget)) / testTarget.dim());
+      }
+//      System.out.println("Fit weights " + result.weights);
+//      System.out.println("Real weights " + beta);
+  }
 
   public void testElasticNet() {
     {
