@@ -37,11 +37,20 @@ public class BernoulliTest extends TestCase {
       double[] means = new double[N];
       Arrays.fill(total, n);
       for (int j=0; j < N;++j) {
-        final double coin = rand.nextDouble();
-        final int k = Math.abs(Arrays.binarySearch(cum,coin)) -2;
-        means[j] = theta[k];
+//        final double coin = rand.nextDouble() ;
+//        final int k = Math.abs(Arrays.binarySearch(cum,coin)) -2;
+//        means[j] = theta[k];
+        if (j > 0 && rand.nextDouble() > 0.3) {
+          double m = means[rand.nextInt(j)];
+          double s = Math.min(1-m,m) / 8;
+          s *= (1-s);
+          means[j] = m + (2*rand.nextDouble() * s - s);
+        } else {
+          means[j] = rand.nextDouble();
+        }
+//        means[j] = 0.1 + rand.nextDouble()*0.8;
         for (int s = 0; s < n;++s) {
-          sums[j] += (rand.nextDouble() > theta[k]) ? 1.0 : 0;
+          sums[j] += (rand.nextDouble() < means[j]) ? 1.0 : 0;
         }
       }
       return new Result(sums,total,means);
@@ -58,17 +67,17 @@ public class BernoulliTest extends TestCase {
     return sum;
   }
   public void testMixture() {
-    final int k = 5;
-    final int from = 200;
+    final int k = 50;
+    final int from = 500;
     final int to = 1000;
-    final int step = 50;
+    final int step = 20;
     final int tries = 1000;
     BernoulliRand brand = new BernoulliRand();
 
 
     double[] theta = new double[k];
     double[] q = new double[k];
-    for (int n = 15; n < 110; n += 10)
+    for (int n = 50; n < 110; n += 10)
     for (int N = from; N < to; N += step) {
       double sumAvgMixture = 0;
       double sumAvgNaive = 0;
@@ -85,7 +94,7 @@ public class BernoulliTest extends TestCase {
         }
         {
           for (int i = 0; i < theta.length; ++i) {
-            theta[i] = rand.nextDouble();
+            theta[i] = rand.nextDouble() / 4;
           }
         }
         BernoulliRand.Result experiment = brand.simulate(theta, q, N, n);

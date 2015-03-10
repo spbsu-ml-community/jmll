@@ -35,7 +35,7 @@ public class BernoulliMixture {
   //means of i-estimation
   public double[] estimate(final double[] sums,final double[] total,final int k) {
     final BestHolder<EMBernoulli> bestHolder = new BestHolder<>();
-    final int tries = 10;
+    final int tries = 3;
     final CountDownLatch latch = new CountDownLatch(tries);
     for (int i=0; i < tries; ++i) {
       exec.submit(new Runnable() {
@@ -60,7 +60,7 @@ public class BernoulliMixture {
     for (int j=0; j < sums.length;++j) {
       double prob = 0;
       for (int i=0; i < k;++i) {
-        prob = em.dummy.get(i,j) * em.theta[i];
+        prob += em.dummy.get(i,j) * em.theta[i];
       }
       p[j] = prob;
     }
@@ -195,7 +195,7 @@ class EMBernoulli {
       expectation();
       if (maximization())
         break;
-      if (i % 5 == 0) {
+      if (i % 2 == 0) {
         double dist = l2(prev,theta);
         if (dist < 1e-9) {
           break;
