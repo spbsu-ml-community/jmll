@@ -83,6 +83,13 @@ public class Aggregate {
     void accept(BFGrid.BinaryFeature bf, T left, T right);
   }
 
+
+  //take bf and next (length-1) binary features as one
+  public interface IntervalVisitor<T> {
+    void accept(BFGrid.BinaryFeature bf, int length, T inside, T outside);
+  }
+
+
   public <T extends AdditiveStatistics> void visit(final SplitVisitor<T> visitor) {
     final T total = (T) total();
     for (int f = 0; f < grid.rows(); f++) {
@@ -97,6 +104,28 @@ public class Aggregate {
       }
     }
   }
+
+  public <T extends AdditiveStatistics> void visit(final IntervalVisitor<T> visitor) {
+    final T total = (T) total();
+    for (int f = 0; f < grid.rows(); f++) {
+      final BFGrid.BFRow row = grid.row(f);
+      final int offset = starts[row.origFIndex];
+      int bin = 0;
+      while (bin < row.size()) {
+        BFGrid.BinaryFeature bf = row.bf(bin);
+        final T inside = (T) factory.create();
+        final T outside = (T) factory.create().append(total);
+        int len = 0;
+        while (len <= row.size() - bin) {
+          inside.append(bins[offset+bin+len]);
+          outside.remove(bins[offset+bin + len]);
+          visitor.accept(bf,len+1,inside,outside);
+          ++len;
+        }
+        ++bin;
+      }
+    }
+ }
 
 
   private void build(final int[] indices) {

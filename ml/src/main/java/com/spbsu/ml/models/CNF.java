@@ -7,7 +7,10 @@ import com.spbsu.ml.BinOptimizedModel;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
 
 /**
  * User: solar
@@ -144,12 +147,12 @@ public class CNF extends RegionBase {
           builder.append("(").append(pp.format(feature.condition(next - 1)));
         }
         else if (prev < 0) {
-          builder.append("(-\\infty");
+          builder.append("(-∞");
         }
         prev = next;
       }
       if (prev == feature.size())
-        builder.append(",+\\infty)");
+        builder.append(",+∞)");
       else
         builder.append(",").append(pp.format(feature.condition(prev))).append("]");
       return builder.toString();
