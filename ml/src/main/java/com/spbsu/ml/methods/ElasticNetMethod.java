@@ -12,11 +12,11 @@ import com.spbsu.ml.loss.L2;
 import static com.spbsu.commons.math.vectors.VecTools.copy;
 
 /**
-* User: noxoomo
-* Date: 5.02.2015
-* Time: 13:58
-* Pathwise coordinate descent (for more details see articles by Friedman, Hastie, Tibshirani)
-*/
+ * User: noxoomo
+ * Date: 5.02.2015
+ * Time: 13:58
+ * Pathwise coordinate descent (for more details see articles by Friedman, Hastie, Tibshirani)
+ */
 
 public class ElasticNetMethod extends VecOptimization.Stub<L2> {
   private final double tolerance;
@@ -145,22 +145,21 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
 
 
 
-    //this functions gave ≈20% speedup
     private double dot(Mx data, int i, int j) {
       final int rows = data.rows();
       final int length = 4*(rows / 4);
       double result = 0;
       final double[] cache = new double[4];
       for (int k=0; k < length; k+=4) {
-        final double l1 = data.get(i,k);
-        final double l2 = data.get(i,k+1);
-        final double l3 = data.get(i,k+2);
-        final double l4 = data.get(i,k+3);
+        final double l1 = data.get(k,i);
+        final double l2 = data.get(k+1,i);
+        final double l3 = data.get(k+2,i);
+        final double l4 = data.get(k+3,i);
 
-        final double r1 = data.get(j,k);
-        final double r2 = data.get(j,k+1);
-        final double r3 = data.get(j,k+2);
-        final double r4 = data.get(j,k+3);
+        final double r1 = data.get(k,j);
+        final double r2 = data.get(k+1,j);
+        final double r3 = data.get(k+2,j);
+        final double r4 = data.get(k+3,j);
 
         cache[0] = l1 * r1;
         cache[1] = l2 * r2;
@@ -172,20 +171,21 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
         result += cache[0];
       }
       for (int k=length; k < rows;++k) {
-        result += data.get(i,k) * data.get(j,k);
+        result += data.get(k,i) * data.get(k,j);
       }
       return result;
     }
+
     private double targetDot(Mx data, int i, Vec target) {
       final int rows = data.rows();
       final int length = 4*(rows / 4);
       double result = 0;
       final double[] cache = new double[4];
       for (int k=0; k < length; k+=4) {
-        final double l1 = data.get(i,k);
-        final double l2 = data.get(i,k+1);
-        final double l3 = data.get(i,k+2);
-        final double l4 = data.get(i,k+3);
+        final double l1 = data.get(k,i);
+        final double l2 = data.get(k+1,i);
+        final double l3 = data.get(k+2,i);
+        final double l4 = data.get(k+3,i);
 
         final double r1 = target.get(k);
         final double r2 = target.get(k+1);
@@ -202,7 +202,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
         result += cache[0];
       }
       for (int k=length; k < rows;++k) {
-        result += data.get(i,k) * target.get(k);
+        result += data.get(k,i) * target.get(k);
       }
       return result;
     }
@@ -220,7 +220,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
 
     private double targetProduct(int k) {
       if (!isTargetCached[k]) {
-        targetProducts[k] = targetDot(data,k,target);
+        targetProducts[k] = targetDot(data, k, target);
         isTargetCached[k] = true;
       }
       return targetProducts[k];
