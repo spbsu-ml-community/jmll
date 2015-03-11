@@ -284,7 +284,7 @@ public class ECOCComboTest extends TestCase {
 
     for (int factorDim = gradient.columns(); factorDim >= 1; factorDim--)
     {
-      final Pair<Vec, Vec> pair = new SVDAdapterEjml(factorDim, true).factorize(gradient);
+      final Pair<Vec, Vec> pair = new SVDAdapterEjml(factorDim).factorize(gradient);
       final Mx h = (Mx) pair.getFirst();
       final Mx b = (Mx) pair.getSecond();
       System.out.println("factor dim: " + factorDim);
