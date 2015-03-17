@@ -1,12 +1,11 @@
 package com.spbsu.ml.data;
 
 import com.spbsu.commons.func.AdditiveStatistics;
-import com.spbsu.commons.func.Evaluator;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.util.BestHolder;
-import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
+import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.models.CNF;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -21,36 +20,43 @@ import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.wei
  */
 
 
-class CherryBestHolder extends BestHolder<BFGrid.BinaryFeature> {
-  private int length;
+class CherryBestHolder extends BestHolder<BFGrid.BFRow> {
+  private int startBin;
+  private int endBin;
 
-  public synchronized boolean update(final BFGrid.BinaryFeature update, final double score, final int length) {
+  public synchronized boolean update(final BFGrid.BFRow update, final double score, final int startBin, final int endBin) {
     if (update(update, score)) {
-      this.length = length;
+      this.startBin = startBin;
+      this.endBin = endBin;
       return true;
     }
     return false;
   }
 
-  public int getLength() {
-    return length;
+  public int startBin() {
+    return startBin;
+  }
+  public int endBin() {
+    return endBin;
   }
 }
 
 public class CherryPick {
   public class ClauseComplexity {
-    public final AdditiveStatistics total;
     public final AdditiveStatistics inside;
+    public final AdditiveStatistics outside;
     public final int complexity;
-    public final double logsSum;
+    public final double reg;
 
-    ClauseComplexity(AdditiveStatistics total, AdditiveStatistics inside, int complexity, double logsSums) {
-      this.total = total;
+    ClauseComplexity(AdditiveStatistics outside, AdditiveStatistics inside, int complexity, double reg) {
+      this.outside = outside;
       this.inside = inside;
       this.complexity = complexity;
-      this.logsSum = logsSums;
+      this.reg = reg;
     }
   }
+
+
 
   public class Result {
     public final int[] points;
@@ -74,55 +80,79 @@ public class CherryPick {
     this.factory = factory;
   }
 
-  public Result fit(final int[] points, final Evaluator<AdditiveStatistics> eval) {
-    List<Pair<BFGrid.BinaryFeature, Integer>> features = new ArrayList<>(100);
+  public Result fit(final int[] points, final AdditiveStatistics priorOut,final double startReg, final StatBasedLoss<AdditiveStatistics> loss) {
+    List<CherryBestHolder> features = new ArrayList<>(100);
     final CherrySubset subset = new CherrySubset(bds, factory, points);
     double currentScore = Double.NEGATIVE_INFINITY;
     final AdditiveStatistics total = subset.total();
     int complexity = 0;
-    double currentReg = 0;
-    final double totalWeight = weight(total);
+    double currentReg = startReg;
+    final double ideaSplit = Math.log(1.0 / 2);
+    final double totalWeight = weight(total) + weight(priorOut);
+    final double startWeight = weight(total);
     while (true) {
       final CherryBestHolder bestHolder = new CherryBestHolder();
       final double fCurrentReg = currentReg;
       final int finalComplexity = complexity;
       subset.visitAll(new Aggregate.IntervalVisitor<AdditiveStatistics>() {
         @Override
-        public void accept(BFGrid.BinaryFeature bf, int length, AdditiveStatistics added, AdditiveStatistics out) {
+        public void accept(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out) {
           final AdditiveStatistics inside = subset.inside();
           inside.append(added);
-          double reg = Math.log(weight(inside)) + Math.log(weight(added));// + fCurrentReg + Math.log(weight(out));
-          reg /= (finalComplexity+2);
-          final double score = eval.value(inside) * (1 + 32*reg);
-          bestHolder.update(bf, score, length);
+          AdditiveStatistics outside = loss.statsFactory().create().append(out).append(priorOut);
+          double score = loss.score(inside) + loss.score(outside);
+//          double p = weight(added) / totalWeight;
+//          double score;
+//          {
+//            double sumIn = sum(inside);
+//            double sum2In = sum2(inside);
+//            double sum2Out = sum2(out);
+//            double wIn = weight(inside);
+            double wAdded = weight(added);
+            double wOut = weight(out);
+            double p = wAdded /  (totalWeight);
+          double p2 = wAdded / totalWeight;
+            double borders = (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0);
+            double reg = fCurrentReg +   (borders-ideaSplit + p*Math.log(p)+ (1-p) * Math.log(1-p));
+//            + p2*Math.log(p2)+ (1-p2) * Math.log(1-p2));
+//            double var= wOut * ( sum2Out / (wOut - 1))
+//                    + MathTools.sqr(wIn / (wIn - 1)) * (sum2In - sumIn * sumIn / wIn);
+//            score = -var * (1 + 0.1*reg);
+//          }
+          score /= reg;
+          bestHolder.update(feature, score, start,end);
         }
       });
-      if (bestHolder.getScore() <= currentScore)
+      if (bestHolder.getScore() <= currentScore )
         break;
-      BFGrid.BinaryFeature feature = bestHolder.getValue();
-      features.add(new Pair<>(feature, bestHolder.getLength()));
-      AdditiveStatistics added = subset.add(feature, bestHolder.getLength());
-      currentReg += Math.log(weight(added));
+      features.add(bestHolder);
+      AdditiveStatistics added = subset.add(bestHolder.getValue(), bestHolder.startBin(),bestHolder.endBin());
+      double wAdded = weight(added);
+      double wOut =  weight(subset.total());
+      double p = (wAdded) / (totalWeight);
+//      double p2 = (wAdded) / (totalWeight);
+      double borders = (bestHolder.startBin() != 0 ? 1 : 0) + (bestHolder.endBin() != bestHolder.getValue().size() ? 1 : 0);
+      currentReg +=  (borders- ideaSplit + p*Math.log(p) + (1-p)*Math.log(1-p));
+//      currentReg += (2* Math.log( (wIn + wOut) / 2) - Math.log(wIn) - Math.log(wOut));
       currentScore = bestHolder.getScore();
       ++complexity;
     }
-    double outWeight = weight(factory.create().append(total).remove(subset.inside()));
-    return new Result(subset.pointsInside(), createClause(features), new ClauseComplexity(total, subset.inside(), complexity, currentReg + Math.log(outWeight)));
+    return new Result(subset.pointsInside(), createClause(features), new ClauseComplexity(factory.create().append(total).remove(subset.inside()), subset.inside(), complexity, currentReg));
   }
 
-  private CNF.Clause createClause(List<Pair<BFGrid.BinaryFeature, Integer>> features) {
-    Collections.sort(features, new Comparator<Pair<BFGrid.BinaryFeature, Integer>>() {
+  private CNF.Clause createClause(List<CherryBestHolder> features) {
+    Collections.sort(features, new Comparator<CherryBestHolder>() {
       @Override
-      public int compare(Pair<BFGrid.BinaryFeature, Integer> first, Pair<BFGrid.BinaryFeature, Integer> second) {
-        int firstIndex = first.getFirst().findex;
-        int secondIndex = second.getFirst().findex;
+      public int compare(CherryBestHolder first, CherryBestHolder second) {
+        int firstIndex = first.getValue().origFIndex;
+        int secondIndex = second.getValue().origFIndex;
 
         if (firstIndex < secondIndex) {
           return -1;
         } else if (firstIndex > secondIndex) {
           return 1;
         } else {
-          return Integer.compare(first.getSecond(), second.getSecond());
+          return Integer.compare(first.startBin(), second.startBin());
         }
       }
     });
@@ -130,16 +160,16 @@ public class CherryPick {
     List<CNF.Condition> conditions = new ArrayList<>(features.size());
     for (int i = 0; i < features.size(); ++i) {
       int j = i + 1;
-      BFGrid.BFRow row = features.get(i).first.row();
+      BFGrid.BFRow row = features.get(i).getValue();
       int findex = row.origFIndex;
-      while (j < features.size() && features.get(j).first.findex == findex) {
+      while (j < features.size() && features.get(j).getValue().origFIndex == findex) {
         ++j;
       }
-      BitSet used = new BitSet(row.size());
+      BitSet used = new BitSet(row.size()+1);
       for (int k = i; k < j; ++k) {
-        final int offset = features.get(k).getFirst().binNo;
-        final int len = features.get(k).getSecond();
-        used.set(offset, offset + len);
+        final int startBin = features.get(k).startBin();
+        final int end = features.get(k).endBin()+1;
+        used.set(startBin, end);
       }
       conditions.add(new CNF.Condition(row, used));
     }
@@ -164,18 +194,18 @@ class CherrySubset {
     this.outsideAggregate = new Aggregate(bds, factory, points);
   }
 
-  public AdditiveStatistics add(BFGrid.BinaryFeature bf, int len) {
+  public AdditiveStatistics add(BFGrid.BFRow row, int startBin, int endBin) {
     final TIntArrayList outsidePoints = new TIntArrayList(points.length);
     int insideStart = pointsInside.size();
-    final byte[] bins = bds.bins(bf.findex);
+    final byte[] bins = bds.bins(row.origFIndex);
     AdditiveStatistics added = factory.create();
     for (final int i : points) {
       final int bin = bins[i];
-      if (!(bf.binNo <= bin && bin < bf.binNo + len)) {
-        outsidePoints.add(i);
-      } else {
+      if (startBin <= bin && bin <= endBin) {
         added.append(i, 1);
         pointsInside.add(i);
+      } else {
+        outsidePoints.add(i);
       }
     }
 

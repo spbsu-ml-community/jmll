@@ -24,6 +24,10 @@ public class CNF extends RegionBase {
     super(grid, inside, 0.);
     this.clauses = conditions;
   }
+  public CNF(final Clause[] conditions, final double inside, final double outside, final BFGrid grid) {
+    super(grid, inside, outside);
+    this.clauses = conditions;
+  }
 
   @Override
   public boolean contains(final Vec point) {

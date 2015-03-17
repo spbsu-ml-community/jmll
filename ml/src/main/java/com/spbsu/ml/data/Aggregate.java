@@ -86,7 +86,7 @@ public class Aggregate {
 
   //take bf and next (length-1) binary features as one
   public interface IntervalVisitor<T> {
-    void accept(BFGrid.BinaryFeature bf, int length, T inside, T outside);
+    void accept(BFGrid.BFRow row,int startBin, int endBin, T inside, T outside);
   }
 
 
@@ -110,19 +110,15 @@ public class Aggregate {
     for (int f = 0; f < grid.rows(); f++) {
       final BFGrid.BFRow row = grid.row(f);
       final int offset = starts[row.origFIndex];
-      int bin = 0;
-      while (bin < row.size()) {
-        BFGrid.BinaryFeature bf = row.bf(bin);
+      for (int startBin =0;  startBin <= row.size(); ++ startBin) {
         final T inside = (T) factory.create();
         final T outside = (T) factory.create().append(total);
-        int len = 0;
-        while (len <= row.size() - bin) {
-          inside.append(bins[offset+bin+len]);
-          outside.remove(bins[offset+bin + len]);
-          visitor.accept(bf,len+1,inside,outside);
-          ++len;
+        for (int endBin = startBin; endBin <= row.size();++endBin) {
+          inside.append(bins[offset+endBin]);
+          outside.remove(bins[offset+endBin]);
+          visitor.accept(row,startBin,endBin,inside,outside);
         }
-        ++bin;
+        ++startBin;
       }
     }
  }
