@@ -375,6 +375,8 @@ public class DataTools {
       final ReaderChopper chopper = new ReaderChopper(input);
       CharSequence name;
       while ((name = chopper.chop('\t')) != null) {
+        if (name.length() == 0)
+          continue;
         final JsonParser parser = JSONTools.parseJSON(chopper.chop('\t'));
 
         switch (name.toString()) {
