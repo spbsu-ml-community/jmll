@@ -55,8 +55,8 @@ public class GradFacTest extends TestCase {
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
     final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
     double time = System.currentTimeMillis();
-
-    for (int factorDim = gradient.columns(); factorDim >= 1; factorDim--)
+    int factorDim = 1;
+//    for (int factorDim = gradient.columns(); factorDim >= 1; factorDim--)
     {
       final Pair<Vec, Vec> pair = new SVDAdapterEjml(factorDim).factorize(gradient);
       final Mx h = (Mx) pair.getFirst();
@@ -71,13 +71,67 @@ public class GradFacTest extends TestCase {
   public void testElasticNetGradFac() throws Exception {
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
     final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
-    final ElasticNetFactorization elasticNetFactorization = new ElasticNetFactorization(1, 1e-2, 0.0, 0.0);
+    final ElasticNetFactorization elasticNetFactorization = new ElasticNetFactorization(20, 1e-2, 0.95, 0.15 * 1e-6);
     final Pair<Vec, Vec> pair = elasticNetFactorization.factorize(gradient);
     final Vec h = pair.getFirst();
     final Vec b = pair.getSecond();
     final Mx afterFactor = VecTools.outer(h, b);
     System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
     System.out.println();
+  }
+
+  private static class ParameterCollector {
+    double lambda;
+    double alpha;
+    double l2;
+    double l1;
+
+    public ParameterCollector(final double lambda, final double alpha, final double l2, final double l1) {
+      this.lambda = lambda;
+      this.alpha = alpha;
+      this.l2 = l2;
+      this.l1 = l1;
+    }
+
+    @Override
+    public String toString() {
+      return "ParameterCollector{" +
+          "lambda=" + lambda +
+          ", alpha=" + alpha +
+          ", l2=" + l2 +
+          ", l1=" + l1 +
+          '}';
+    }
+  }
+
+  public void testElasticNetGradFacGridSearch() throws Exception {
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
+
+    ParameterCollector minL1ParameterCollector = new ParameterCollector(0, 0, Double.MAX_VALUE, Double.MAX_VALUE);
+    ParameterCollector minL2ParameterCollector = new ParameterCollector(0, 0, Double.MAX_VALUE, Double.MAX_VALUE);
+
+    for (double lambda = 0.15 * 1e-7; lambda < 1e-4; lambda += 1e-6) {
+      for (double alpha = 0.1; alpha < 1.0; alpha += 0.01) {
+        final ElasticNetFactorization elasticNetFactorization = new ElasticNetFactorization(20, 1e-2, 0.95, 0.15 * 1e-6);
+        final Pair<Vec, Vec> pair = elasticNetFactorization.factorize(gradient);
+        final Vec h = pair.getFirst();
+        final Vec b = pair.getSecond();
+        final Mx afterFactor = VecTools.outer(h, b);
+        final double l2 = VecTools.distance(gradient, afterFactor);
+        final double l1 = VecTools.distanceL1(gradient, afterFactor);
+
+        if (l2 < minL2ParameterCollector.l2) {
+          minL2ParameterCollector = new ParameterCollector(lambda, alpha, l2, l1);
+        }
+        if (l1 < minL1ParameterCollector.l1) {
+          minL1ParameterCollector = new ParameterCollector(lambda, alpha, l2, l1);
+        }
+
+      }
+    }
+    System.out.println(minL2ParameterCollector.toString());
+    System.out.println(minL1ParameterCollector.toString());
   }
 
   public void testSimpleMx() throws Exception {
@@ -101,12 +155,12 @@ public class GradFacTest extends TestCase {
   }
 
   public void testDifferentMethods() throws Exception {
-    final Mx mx = genUniformRandMx(50, 30, 100500);
+    final Mx mx = genUniformRandMx(500, 300, 100500);
 
     applyFactorMethod(mx, new ALS(15));
     applyFactorMethod(mx, new SVDAdapterEjml());
-    final double lambda = 0.0000015;
-    applyFactorMethod(mx, new ElasticNetFactorization(20, 1e-10, 0, 0));
+    final double lambda = 0.0015;
+    applyFactorMethod(mx, new ElasticNetFactorization(20, 1e-4, 0.5, lambda));
   }
 
   private static void applyFactorMethod(final Mx x, final OuterFactorization method) {
