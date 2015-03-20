@@ -105,4 +105,9 @@ public class DataToolsTest extends GridTest {
     assertTrue(VecTools.equals(learn.target(L2.class).target, pool.target(L2.class).target));
     assertTrue(VecTools.equals(learn.vecData().data(), pool.vecData().data()));
   }
+
+  @Override
+  protected boolean isJDK8DependResult() {
+    return true;
+  }
 }
