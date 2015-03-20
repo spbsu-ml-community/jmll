@@ -32,6 +32,7 @@ public class BernoulliMixture {
 
   private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("EM thread", -1);
 
+
   //means of i-estimation
   public double[] estimate(final double[] sums,final double[] total,final int k) {
     final BestHolder<EMBernoulli> bestHolder = new BestHolder<>();
