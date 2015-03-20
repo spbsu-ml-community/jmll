@@ -2,8 +2,10 @@ package com.spbsu.ml.data.tools;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecSeqMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.VecSeq;
@@ -199,6 +201,26 @@ public class Pool<I extends DSItem> {
 
   public Seq<?> target(int index) {
     return targets.get(index).second;
+  }
+
+  public <T extends TargetFunc> T multiTarget(final Class<T> targetClass) {
+    final Mx targetsValues = new VecBasedMx(size(), targets.size());
+    for (int j = 0; j < targets.size(); j++) {
+      final Seq<?> target = targets.get(j).second;
+      if (target instanceof Vec) {
+        VecTools.assign(targetsValues.col(j), (Vec) target);
+      } else {
+        throw new RuntimeException("Unsupported target type: " + target.getClass().getName());
+      }
+
+    }
+
+    final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targetsValues);
+    if (target != null) {
+      return target;
+    } else {
+      throw new RuntimeException("No proper constructor found");
+    }
   }
 
   public int size() {
