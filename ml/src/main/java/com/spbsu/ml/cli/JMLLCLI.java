@@ -58,6 +58,7 @@ public class JMLLCLI {
   private static final String VERBOSE_OPTION = "v";
   private static final String PRINT_PERIOD = "printperiod";
   private static final String FAST_OPTION = "fast";
+  private static final String SKIP_FINAL_EVAL_OPTION = "fastfinal";
   private static final String HIST_OPTION = "h";
   private static final String OUTPUT_OPTION = "o";
   private static final String WRITE_BIN_FORMULA = "mxbin";
@@ -85,6 +86,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("verbose").withDescription("verbose output").create(VERBOSE_OPTION));
     options.addOption(OptionBuilder.withLongOpt("print-period").withDescription("number of iterations to evaluate and print scores").hasArg().create(PRINT_PERIOD));
     options.addOption(OptionBuilder.withLongOpt("fast-run").withDescription("fast run without model evaluation").create(FAST_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("skip-final-eval").withDescription("skip model evaluation on last step (faster)").create(SKIP_FINAL_EVAL_OPTION));
     options.addOption(OptionBuilder.withLongOpt("histogram").withDescription("histogram for dynamic grid").hasArg(false).create(HIST_OPTION));
 
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
@@ -231,7 +233,7 @@ public class JMLLCLI {
 
 
     //calc & print scores
-    if (!command.hasOption(FAST_OPTION)) {
+    if (!command.hasOption(FAST_OPTION) && !command.hasOption(SKIP_FINAL_EVAL_OPTION)) {
       ResultsPrinter.printResults(result, learn, test, loss, metrics);
       if (loss instanceof BlockwiseMLLLogit) {
         ResultsPrinter.printMulticlassResults(result, learn, test);
