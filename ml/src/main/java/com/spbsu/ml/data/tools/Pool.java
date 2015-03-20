@@ -15,6 +15,7 @@ import com.spbsu.ml.Vectorization;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.meta.*;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
@@ -54,6 +55,8 @@ public class Pool<I extends DSItem> {
   public DataSetMeta meta() {
     return meta;
   }
+
+
   public synchronized DataSet<I> data() {
     if (data == null) {
       final TObjectIntHashMap<I> indices = new TObjectIntHashMap<>((int) (items.length() * 2), 0.7f);
@@ -90,7 +93,7 @@ public class Pool<I extends DSItem> {
     return data;
   }
 
-  private <T extends DSItem> VecDataSet joinFeatures(final int[] indices, final DataSet<T> ds) {
+  public <T extends DSItem> VecDataSet joinFeatures(final int[] indices, final DataSet<T> ds) {
     final List<Seq<?>> cols = new ArrayList<>();
     boolean hasVecFeatures = false;
     for (int i = 0; i < indices.length; i++) {
@@ -186,6 +189,18 @@ public class Pool<I extends DSItem> {
     throw new RuntimeException("No proper constructor found");
   }
 
+  public Seq<?> target(String name) {
+    for (int i = targets.size() - 1; i >= 0; i--) {
+      if (targets.get(i).first.id().equals(name))
+        return targets.get(i).second;
+    }
+    throw new RuntimeException("No such target: " + name);
+  }
+
+  public Seq<?> target(int index) {
+    return targets.get(index).second;
+  }
+
   public int size() {
     return items.length();
   }
@@ -220,5 +235,26 @@ public class Pool<I extends DSItem> {
         append(items).
         append(features).
         toHashCode();
+  }
+
+  public PoolFeatureMeta[] features() {
+    final PoolFeatureMeta[] result = new PoolFeatureMeta[features.length];
+    for(int i = 0; i < result.length; i++) {
+      result[i] = features[i].first;
+    }
+    return result;
+  }
+
+  public <T extends TargetFunc> T target(String name, Class<T> targetClass) {
+    for (int i = targets.size() - 1; i >= 0; i--) {
+      final Pair<? extends TargetMeta, ? extends Seq<?>> current = targets.get(i);
+      if (!current.first.id().equals(name))
+        continue;
+      final T target = RuntimeUtils.newInstanceByAssignable(targetClass, current.second, current.getFirst().associated());
+      if (target != null)
+        return target;
+    }
+
+    throw new RuntimeException("No such target: " + name + " of type " + targetClass.getSimpleName());
   }
 }
