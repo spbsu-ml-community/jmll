@@ -1,20 +1,13 @@
 package com.spbsu.ml.factorization.impl;
 
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
-import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.iterators.SkipVecNZIterator;
-import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.factorization.OuterFactorization;
-import com.spbsu.ml.func.Linear;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.methods.ElasticNetMethod;
-import com.spbsu.ml.methods.ElasticNetMethod2;
-import com.spbsu.ml.methods.VecOptimization;
 
 /**
  * User: qdeee
