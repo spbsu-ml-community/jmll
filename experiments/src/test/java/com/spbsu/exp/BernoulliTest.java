@@ -3,7 +3,7 @@ package com.spbsu.exp;
 import com.spbsu.bernulli.*;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.GridTest;
+import junit.framework.TestCase;
 import org.apache.commons.math3.special.Gamma;
 
 import java.util.Arrays;
@@ -13,14 +13,9 @@ import java.util.Arrays;
  * User: noxoomo
  * Date: 09.03.2015
  */
-public class BernoulliTest extends GridTest {
-  FastRandom rand;
+public class BernoulliTest extends TestCase {
+  FastRandom rand  = new FastRandom(42);
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    rand = new FastRandom(42);
-  }
 
   class BernoulliRand {
     class Result {
@@ -79,8 +74,8 @@ public class BernoulliTest extends GridTest {
 
   public void testBetaBinomialMixture() {
     final int k = 5;
-    final int n = 50;
-    final int count = 200;
+    final int n = 100;
+    final int count = 500;
     int tries = 100;
 
     for (int i = 0; i < tries; ++i) {
@@ -106,7 +101,7 @@ public class BernoulliTest extends GridTest {
         double sumAvgMixture = 0;
         double sumAvgNaive = 0;
         for (int tr = 0; tr < tries; ++tr) {
-          BetaBinomialMixture mix = new BetaBinomialMixture(5, rand);
+          BetaBinomialMixture mix = new BetaBinomialMixture(3, rand);
           final BetaBinomialMixture.Observations observations = mix.next(N, n);
           final int finaln = n;
           StochasticSearch<BetaBinomialMixtureEM> search = new StochasticSearch<>(new Factory<Learner<BetaBinomialMixtureEM>>() {
@@ -165,6 +160,12 @@ public class BernoulliTest extends GridTest {
       assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.Alpha, i) - Gamma.digamma(102.5 + i)) < 1e-12);
       assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.Beta, i) - Gamma.digamma(10.11 + i)) < 1e-12);
       assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.AlphaBeta, i) - Gamma.digamma(102.5 + 10.11 + i)) < 1e-12);
+    }
+
+    for (int i = 0; i < 10; ++i) {
+      assertTrue(Math.abs(prop.digamma1(SpecialFunctionCache.Type.Alpha, i) - Gamma.trigamma(102.5 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma1(SpecialFunctionCache.Type.Beta, i) - Gamma.trigamma(10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma1(SpecialFunctionCache.Type.AlphaBeta, i) - Gamma.trigamma(102.5 + 10.11 + i)) < 1e-12);
     }
 
     prop = new SpecialFunctionCache(12.2, 55.1, 100);
