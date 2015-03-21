@@ -8,7 +8,6 @@ import java.util.Arrays;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 import static java.lang.Double.isNaN;
-import static org.apache.commons.math3.special.Gamma.digamma;
 
 public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
   final int k;
@@ -17,7 +16,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
   final Mx dummy;
   final BetaBinomialMixture model;
   final FastRandom random;
-  final BetaFunctionsProportion betaFunc[];
+  final SpecialFunctionCache funcs[];
   final double gradientCache[];
 
   public BetaBinomialMixtureEM(int k, final int[] sums, final int n, FastRandom random) {
@@ -27,17 +26,18 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     this.dummy = new VecBasedMx(sums.length, k);
     this.model = new BetaBinomialMixture(k, random);
     this.random = random;
-    this.betaFunc = new BetaFunctionsProportion[k];
+    this.funcs = new SpecialFunctionCache[k];
     for (int i = 0; i < k; ++i) {
-      this.betaFunc[i] = new BetaFunctionsProportion(this.model.alphas[i], this.model.betas[i], n);
+      this.funcs[i] = new SpecialFunctionCache(this.model.alphas[i], this.model.betas[i], n);
     }
     this.gradientCache = new double[this.model.alphas.length * 2];
+    this.oldPoint = new double[this.model.alphas.length * 2];
   }
 
 
   final private void updateCache() {
     for (int i = 0; i < k; ++i) {
-      betaFunc[i].update(model.alphas[i], model.betas[i]);
+      funcs[i].update(model.alphas[i], model.betas[i]);
     }
   }
 
@@ -50,7 +50,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       final int m = sums[i];
       double denum = 0;
       for (int j = 0; j < k; ++j) {
-        probs[j] = model.q[j] * betaFunc[j].calculate(m, n);
+        probs[j] = model.q[j] * funcs[j].calculate(m, n);
         denum += probs[j];
       }
       for (int j = 0; j < k; ++j) {
@@ -59,8 +59,8 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     }
   }
 
-  private final int iterations = 10;
-  private final double startStep = 0.5;
+  private final int iterations = 20;
+  private final double startStep = 0.05;
 
 
   private boolean gradientStep(double step) {
@@ -69,10 +69,10 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     final double psiasum[] = new double[k];
     final double psibsum[] = new double[k];
     for (int i = 0; i < k; ++i) {
-      final double psiab = digamma(model.alphas[i] + model.betas[i]);
-      final double psiabn = digamma(n + model.alphas[i] + model.betas[i]);
-      final double psia = digamma(model.alphas[i]);
-      final double psib = digamma(model.betas[i]);
+      final double psiab = funcs[i].digamma(SpecialFunctionCache.Type.AlphaBeta,0);
+      final double psiabn = funcs[i].digamma(SpecialFunctionCache.Type.AlphaBeta, n);
+      final double psia = funcs[i].digamma(SpecialFunctionCache.Type.Alpha,0);
+      final double psib = funcs[i].digamma(SpecialFunctionCache.Type.Beta,0);
       psiasum[i] = -psia + psiab - psiabn;
       psibsum[i] = -psib + psiab - psiabn;
     }
@@ -81,13 +81,13 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       double denum = 0;
       final int m = sums[i];
       for (int j = 0; j < k; ++j) {
-        cache[j] = dummy.get(i, j) * betaFunc[j].calculate(m, n);
+        cache[j] = dummy.get(i, j) * funcs[j].calculate(m, n);
         denum += cache[j];
       }
       for (int j = 0; j < k; ++j) {
         cache[j] /= denum;
-        double alphaGrad = cache[j] * (psiasum[j] + digamma(model.alphas[j] + m));
-        double betaGrad = cache[j] * (psibsum[j] + digamma(model.betas[j] + n - m));
+        final double alphaGrad = cache[j] * (psiasum[j] + funcs[j].digamma(SpecialFunctionCache.Type.Alpha, m));
+        final double betaGrad = cache[j] * (psibsum[j] + funcs[j].digamma(SpecialFunctionCache.Type.Beta,n - m));
         gradientCache[2 * j] += alphaGrad;
         gradientCache[2 * j + 1] += betaGrad;
       }
@@ -101,11 +101,11 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     for (int i = 0; i < k; ++i) {
       model.alphas[i] += step * gradientCache[2 * i];
       model.betas[i] += step * gradientCache[2 * i + 1];
-      if (model.betas[i] < 1e-2f) {
-        model.betas[i] = 1e-2f;
+      if (model.betas[i] < 0.5f) {
+        model.betas[i] = 0.5f;
       }
-      if (model.alphas[i] < 1e-2f) {
-        model.alphas[i] = 1e-2f;
+      if (model.alphas[i] < 0.5f) {
+        model.alphas[i] = 0.5f;
       }
     }
     return false;
@@ -141,20 +141,29 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
         return;
 
       double currentLL = likelihood();
-      if (currentLL + 0.01 >= ll || step < 1e-6) {
+      if (currentLL + 0.01 >= ll || step < 1e-4) {
         return;
       }
-      step *= 0.9;
+      step *= 0.1;
     }
   }
 
 
-  int count = 50;
+  int count = 200;
+  double[] oldPoint;
 
   @Override
   protected boolean stop() {
+    double dist = 0;
+    for (int i=0; i< model.alphas.length;++i) {
+      final double diff1 = oldPoint[2*i]-model.alphas[i];
+      final double diff2 = oldPoint[2*i+1]-model.betas[i];
+      dist += diff1*diff1 + diff2*diff2;
+      oldPoint[2*i] = model.alphas[i];
+      oldPoint[2*i+1] = model.betas[i];
+    }
     count--;
-    if (count < 0)
+    if (dist < 1e-2 || count < 0)
       return true;
     return false;
   }
@@ -172,7 +181,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       double p = 0;
       final int m = sums[i];
       for (int j = 0; j < model.alphas.length; ++j) {
-        p += model.q[j] * betaFunc[j].calculate(m, n);
+        p += model.q[j] * funcs[j].calculate(m, n);
       }
       ll += Math.log(p);
     }

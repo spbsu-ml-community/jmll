@@ -38,7 +38,7 @@ public class BetaBinomialMixture {
   }
 
 
-  private int randomInitLimit = 150;
+  private int randomInitLimit = 100;
 
   public BetaBinomialMixture(int k, FastRandom random) {
     double q[] = new double[k];
