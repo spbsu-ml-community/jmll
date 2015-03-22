@@ -35,7 +35,6 @@ public abstract class EM<Result> {
         if (currentLL + 1e-2 < ll) {
           throw new RuntimeException("EM always increase likelihood");
         }
-        ll = currentLL;
       }
     }
     return new FittedModel<>(likelihood(), model());

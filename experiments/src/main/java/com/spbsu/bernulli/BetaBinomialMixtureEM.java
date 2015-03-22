@@ -1,12 +1,14 @@
 package com.spbsu.bernulli;
 
+import com.spbsu.bernulli.caches.BetaCache;
+import com.spbsu.bernulli.caches.Digamma1Cache;
+import com.spbsu.bernulli.caches.DigammaCache;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 
 import java.util.Arrays;
 
-import static com.spbsu.commons.math.MathTools.sqr;
 import static java.lang.Double.isNaN;
 
 public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
@@ -62,10 +64,10 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     }
   }
 
-  private final int iterations = 3;
+  private final int iterations = 2;
   private final double gradientStartStep = 0.01;
   private final double newtonStartStep = 0.01;
-  private final int gradientIters = 25;
+  private final int gradientIters = 20;
 
   private boolean newtonStep(double step) {
     updateCache();
@@ -76,15 +78,15 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     final double psi1a[] = new double[k];
     final double psi1b[] = new double[k];
     for (int i = 0; i < k; ++i) {
-      psi1abdiff[i] = funcs[i].digamma1(SpecialFunctionCache.Type.AlphaBeta, 0) - funcs[i].digamma1(SpecialFunctionCache.Type.AlphaBeta, n);
-      psi1a[i] = funcs[i].digamma1(SpecialFunctionCache.Type.Alpha, 0);
-      psi1b[i] = funcs[i].digamma1(SpecialFunctionCache.Type.Beta, 0);
+      psi1abdiff[i] = funcs[i].digamma1(Type.AlphaBeta, 0) - funcs[i].digamma1(Type.AlphaBeta, n);
+      psi1a[i] = funcs[i].digamma1(Type.Alpha, 0);
+      psi1b[i] = funcs[i].digamma1(Type.Beta, 0);
     }
     for (int i = 0; i < sums.length; ++i) {
       final int m = sums[i];
       for (int j = 0; j < k; ++j) {
-        final double psi1am = funcs[j].digamma1(SpecialFunctionCache.Type.Alpha, m);
-        final double psi1bm = funcs[j].digamma1(SpecialFunctionCache.Type.Beta, n - m);
+        final double psi1am = funcs[j].digamma1(Type.Alpha, m);
+        final double psi1bm = funcs[j].digamma1(Type.Beta, n - m);
         final int idx0 = 3 * j;
         final int idx1 = 3 * j + 1;
         final int idx2 = 3 * j + 2;
@@ -107,7 +109,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       //matrix
       final double a = newtonCache[3 * i]; //d/dalpha^2
       final double b = newtonCache[3 * i + 1];//d/alphabeta
-      final double d = newtonCache[3 * i + 2];//d/betaallpha
+      final double d = newtonCache[3 * i + 2];//d/beta^2
       final double det = a * d - b * b;
 
       final double stepAlpha = (d * dalpha - b * dbeta) / det;
@@ -118,13 +120,9 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       if (model.betas[i] < 0.001) {
         model.betas[i] = 0.001;
         status = true;
-      } else if (model.betas[i] > 10000) {
-        status = true;
       }
       if (model.alphas[i] < 0.001) {
         model.alphas[i] = 0.001;
-        status = true;
-      } else if (model.alphas[i] > 10000) {
         status = true;
       }
     }
@@ -137,18 +135,18 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     final double psiasum[] = new double[k];
     final double psibsum[] = new double[k];
     for (int i = 0; i < k; ++i) {
-      final double psiab = funcs[i].digamma(SpecialFunctionCache.Type.AlphaBeta, 0);
-      final double psiabn = funcs[i].digamma(SpecialFunctionCache.Type.AlphaBeta, n);
-      final double psia = funcs[i].digamma(SpecialFunctionCache.Type.Alpha, 0);
-      final double psib = funcs[i].digamma(SpecialFunctionCache.Type.Beta, 0);
+      final double psiab = funcs[i].digamma(Type.AlphaBeta, 0);
+      final double psiabn = funcs[i].digamma(Type.AlphaBeta, n);
+      final double psia = funcs[i].digamma(Type.Alpha, 0);
+      final double psib = funcs[i].digamma(Type.Beta, 0);
       psiasum[i] = -psia + psiab - psiabn;
       psibsum[i] = -psib + psiab - psiabn;
     }
     for (int i = 0; i < sums.length; ++i) {
       final int m = sums[i];
       for (int j = 0; j < k; ++j) {
-        final double alphaGrad = dummy.get(i, j) * (psiasum[j] + funcs[j].digamma(SpecialFunctionCache.Type.Alpha, m));
-        final double betaGrad = dummy.get(i, j) * (psibsum[j] + funcs[j].digamma(SpecialFunctionCache.Type.Beta, n - m));
+        final double alphaGrad = dummy.get(i, j) * (psiasum[j] + funcs[j].digamma(Type.Alpha, m));
+        final double betaGrad = dummy.get(i, j) * (psibsum[j] + funcs[j].digamma(Type.Beta, n - m));
         gradientCache[2 * j] += alphaGrad;
         gradientCache[2 * j + 1] += betaGrad;
       }
@@ -170,13 +168,9 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       if (model.betas[i] < 0.001) {
         model.betas[i] = 0.001;
         status = true;
-      } else if (model.betas[i] > 10000) {
-        status = true;
       }
       if (model.alphas[i] < 0.001) {
         model.alphas[i] = 0.001;
-        status = true;
-      } else if (model.alphas[i] > 10000) {
         status = true;
       }
     }
@@ -221,7 +215,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
 //  }
 
   boolean first = true;
-  final int maxIterations = 10;
+  final int maxIterations = 5;
 
   @Override
   protected void maximization() {
@@ -239,57 +233,50 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       model.q[i] = probs[i] / total;
 
     double gradientStep = gradientStartStep;
-    double ll = likelihood();
-    double currentLL = Double.NEGATIVE_INFINITY;
-
-    int iters = 0;
-    while (currentLL < ll || iters < maxIterations) {
-//      if (first) {
-        for (int i = 0; i < gradientIters; ++i) {
-          if (gradientStep(gradientStep)) {
-            return;
-          }
-        }
-//        first = false;
-//      }
-
-//      for (int i = 0; i < iterations; ++i) {
-//        if (newtonStep(newtonStartStep)) {
-//          return;
-//        }
-//      }
-      double gradientNorm = 0;
-      for (int i = 0; i < gradientCache.length; ++i) {
-        gradientNorm += sqr(gradientCache[i]);
-      }
-      if (gradientNorm / gradientCache.length < 1e-2)
+    for (int i = 0; i < gradientIters; ++i) {
+      if (gradientStep(gradientStep)) {
         return;
-      currentLL = likelihood();
-      ++iters;
+      }
+    }
+//      first = true;
+//    for (int i = 0; i < iterations; ++i) {
+//      if (newtonStep(newtonStartStep)) {
+//        return;
+//      }
+//    }
+//    shrinkage();
+  }
+
+  final int maxObservations = 200;
+
+  //heuristic for damn singularities.
+  private void shrinkage() {
+    for (int i = 0; i < model.alphas.length; ++i) {
+      final double alpha = model.alphas[i];
+      final double beta = model.betas[i];
+      double observations = alpha + beta;
+      if (observations > maxObservations) {
+        double m = alpha / observations;
+        model.alphas[i] = maxObservations * m * 0.9;
+        model.betas[i] = maxObservations * 0.9;
+      }
     }
   }
 
-  int count = 200;
+  int count = 50;
   double[] oldPoint;
+
+  double oldLikelihood = Double.NEGATIVE_INFINITY;
 
   @Override
   protected boolean stop() {
-    double dist = 0;
-    for (int i = 0; i < model.alphas.length; ++i) {
-      if (model.alphas[i] > 10000) {
-        return true;
-      }
-      if (model.betas[i] > 10000) {
-        return true;
-      }
-      final double diff1 = oldPoint[2 * i] - model.alphas[i];
-      final double diff2 = oldPoint[2 * i + 1] - model.betas[i];
-      dist += diff1 * diff1 + diff2 * diff2;
-      oldPoint[2 * i] = model.alphas[i];
-      oldPoint[2 * i + 1] = model.betas[i];
+    final double currentLL = likelihood();
+    if (oldLikelihood + 1e-1 >= currentLL) {
+      return true;
     }
+    oldLikelihood = currentLL;
     count--;
-    if (dist < 1e-2 || count < 0)
+    if (count < 0)
       return true;
     return false;
   }
@@ -329,5 +316,65 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     return result;
   }
 
+  public enum Type {
+    Alpha,
+    AlphaBeta, Beta
+  }
+
+
+  public static class SpecialFunctionCache {
+    DigammaCache[] digammaCaches = new DigammaCache[3];
+    Digamma1Cache[] digamma1Caches = new Digamma1Cache[3];
+    BetaCache betaCache;
+
+    public SpecialFunctionCache(double alpha, double beta, int n) {
+      betaCache = new BetaCache(alpha,beta,n);
+      digammaCaches[0] = new DigammaCache(alpha, n);
+      digammaCaches[1] = new DigammaCache(beta, n);
+      digammaCaches[2] = new DigammaCache(alpha + beta, n);
+
+      digamma1Caches[0] = new Digamma1Cache(alpha, n);
+      digamma1Caches[1] = new Digamma1Cache(beta, n);
+      digamma1Caches[2] = new Digamma1Cache(alpha + beta, n);
+    }
+
+
+    public double calculate(int m, int n) {
+      return betaCache.calculate(m,n);
+    }
+
+
+
+    final public double digamma(Type type, int offset) {
+      if (type == Type.Alpha) {
+        return digammaCaches[0].calculate(offset);
+      } else if (type == Type.Beta) {
+        return digammaCaches[1].calculate(offset);
+      } else {
+        return digammaCaches[2].calculate(offset);
+      }
+    }
+
+    public double digamma1(Type type, int offset) {
+      if (type == Type.Alpha) {
+        return digamma1Caches[0].calculate(offset);
+      } else if (type == Type.Beta) {
+        return digamma1Caches[1].calculate(offset);
+      } else {
+        return digamma1Caches[2].calculate(offset);
+      }
+    }
+
+
+    final public void update(double alpha, double beta) {
+      betaCache.update(alpha,beta);
+      digammaCaches[0].update(alpha);
+      digammaCaches[1].update(beta);
+      digammaCaches[2].update(alpha + beta);
+      digamma1Caches[0].update(alpha);
+      digamma1Caches[1].update(beta);
+      digamma1Caches[2].update(alpha + beta);
+    }
+  }
 }
 

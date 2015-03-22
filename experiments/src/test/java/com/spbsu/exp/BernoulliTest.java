@@ -8,6 +8,8 @@ import org.apache.commons.math3.special.Gamma;
 
 import java.util.Arrays;
 
+import static com.spbsu.bernulli.BetaBinomialMixtureEM.Type;
+
 /**
  * bernoulli models experiments
  * User: noxoomo
@@ -73,15 +75,32 @@ public class BernoulliTest extends TestCase {
 
 
   public void testBetaBinomialMixture() {
-    final int k = 5;
-    final int n = 100;
-    final int count = 500;
-    int tries = 100;
+    final int k = 3;
+    final int n = 200;
+    final int count = 5000;
+    int tries = 200;
 
     for (int i = 0; i < tries; ++i) {
       BetaBinomialMixture mixture = new BetaBinomialMixture(k, rand);
       BetaBinomialMixture.Observations observation = mixture.next(count, n);
       BetaBinomialMixtureEM em = new BetaBinomialMixtureEM(k, observation.sums, n, rand);
+      FittedModel<BetaBinomialMixture> fittedModel = em.fit(true);
+      System.out.println("Real model " + mixture);
+      System.out.println("Fitted model " + fittedModel.model);
+    }
+  }
+
+  public void testBetaBinomialRegularizedMixture() {
+    final int k = 3;
+    final int n = 200;
+    final int count = 5000;
+    int tries = 200;
+    int fakeObservations = 1000;
+
+    for (int i = 0; i < tries; ++i) {
+      BetaBinomialMixture mixture = new BetaBinomialMixture(k, rand);
+      BetaBinomialMixture.Observations observation = mixture.next(count, n);
+      RegularizedBetaBinomialMixtureEM em = new RegularizedBetaBinomialMixtureEM(k, observation.sums, n,fakeObservations, rand);
       FittedModel<BetaBinomialMixture> fittedModel = em.fit(true);
       System.out.println("Real model " + mixture);
       System.out.println("Fitted model " + fittedModel.model);
@@ -101,7 +120,7 @@ public class BernoulliTest extends TestCase {
         double sumAvgMixture = 0;
         double sumAvgNaive = 0;
         for (int tr = 0; tr < tries; ++tr) {
-          BetaBinomialMixture mix = new BetaBinomialMixture(3, rand);
+          BetaBinomialMixture mix = new BetaBinomialMixture(5, rand);
           final BetaBinomialMixture.Observations observations = mix.next(N, n);
           final int finaln = n;
           StochasticSearch<BetaBinomialMixtureEM> search = new StochasticSearch<>(new Factory<Learner<BetaBinomialMixtureEM>>() {
@@ -133,9 +152,53 @@ public class BernoulliTest extends TestCase {
   }
 
 
+  public void testBetaBinomialRegularizedMixtureEstimation() {
+    final int k = 3;
+    int tries = 100;
+
+    final int from = 100;
+    final int to = 100000;
+    final int step = 1000;
+
+    for (int n = 100; n < 10000; n += 1000)
+      for (int N = from; N < to; N += step) {
+        double sumAvgMixture = 0;
+        double sumAvgNaive = 0;
+        for (int tr = 0; tr < tries; ++tr) {
+          BetaBinomialMixture mix = new BetaBinomialMixture(5, rand);
+          final BetaBinomialMixture.Observations observations = mix.next(N, n);
+          final int finaln = n;
+          StochasticSearch<RegularizedBetaBinomialMixtureEM> search = new StochasticSearch<>(new Factory<Learner<RegularizedBetaBinomialMixtureEM>>() {
+            @Override
+            public Learner<RegularizedBetaBinomialMixtureEM> create() {
+              return new Learner<RegularizedBetaBinomialMixtureEM>() {
+                @Override
+                public FittedModel<RegularizedBetaBinomialMixtureEM> fit() {
+                  RegularizedBetaBinomialMixtureEM em = new RegularizedBetaBinomialMixtureEM(k, observations.sums, finaln,200, rand);
+                  FittedModel<BetaBinomialMixture> model = em.fit();
+                  return new FittedModel<>(model.likelihood, em);
+                }
+              };
+            }
+          });
+          RegularizedBetaBinomialMixtureEM em = search.fit(8);
+//          BetaBinomialMixtureEM em = new BetaBinomialMixtureEM(k,observations.sums,n,rand);
+
+          double[] means = em.estimate(false);
+          double[] naive = new double[observations.sums.length];
+          for (int i = 0; i < naive.length; ++i) {
+            naive[i] = observations.sums[i] * 1.0 / n;
+          }
+          sumAvgMixture += l2(means, observations.thetas) / observations.thetas.length;
+          sumAvgNaive += l2(naive, observations.thetas) / observations.thetas.length;
+        }
+        System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tries + "\t" + sumAvgNaive / tries);
+      }
+  }
+
   public void testSpecialFunctionCache() {
 //    BetaFunctionsProportion prop = new  BetaFunctionsProportion(0.5,0.5,50);
-    SpecialFunctionCache prop = new SpecialFunctionCache(1, 1, 10);
+    BetaBinomialMixtureEM.SpecialFunctionCache prop = new BetaBinomialMixtureEM.SpecialFunctionCache(1, 1, 10);
 //    assertTrue((prop.calculate(10,50)-1.860013246596769 * 1e-13) < 1e-20);
 //    prop.update(1,1);
     assertTrue(Math.abs(prop.calculate(2, 10) - 0.0020202) < 1e-7);
@@ -146,9 +209,9 @@ public class BernoulliTest extends TestCase {
     assertTrue(Math.abs(prop.calculate(10, 10) - 0.0909091) < 1e-7);
 
     for (int i = 0; i < 10; ++i) {
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.Alpha, i) - Gamma.digamma(1 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.Beta, i) - Gamma.digamma(1 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.AlphaBeta, i) - Gamma.digamma(2 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - Gamma.digamma(1 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - Gamma.digamma(1 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - Gamma.digamma(2 + i)) < 1e-12);
     }
 
     prop.update(102.5, 10.11);
@@ -157,18 +220,18 @@ public class BernoulliTest extends TestCase {
     assertTrue(Math.abs(prop.calculate(8, 10) - 0.00369375) < 1e-8);
 
     for (int i = 0; i < 10; ++i) {
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.Alpha, i) - Gamma.digamma(102.5 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.Beta, i) - Gamma.digamma(10.11 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.AlphaBeta, i) - Gamma.digamma(102.5 + 10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - Gamma.digamma(102.5 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - Gamma.digamma(10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - Gamma.digamma(102.5 + 10.11 + i)) < 1e-12);
     }
 
     for (int i = 0; i < 10; ++i) {
-      assertTrue(Math.abs(prop.digamma1(SpecialFunctionCache.Type.Alpha, i) - Gamma.trigamma(102.5 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma1(SpecialFunctionCache.Type.Beta, i) - Gamma.trigamma(10.11 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma1(SpecialFunctionCache.Type.AlphaBeta, i) - Gamma.trigamma(102.5 + 10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma1(Type.Alpha, i) - Gamma.trigamma(102.5 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma1(Type.Beta, i) - Gamma.trigamma(10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma1(Type.AlphaBeta, i) - Gamma.trigamma(102.5 + 10.11 + i)) < 1e-12);
     }
 
-    prop = new SpecialFunctionCache(12.2, 55.1, 100);
+    prop = new BetaBinomialMixtureEM.SpecialFunctionCache(12.2, 55.1, 100);
 
     assertTrue(Math.abs(prop.calculate(30, 100) - 3.520721627628687e-28) < 1e-32);
     assertTrue(Math.abs(prop.calculate(60, 100) - 7.007620723590574e-37) < 1e-41);
@@ -177,9 +240,9 @@ public class BernoulliTest extends TestCase {
 
 
     for (int i = 0; i < 100; ++i) {
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.Alpha, i) - Gamma.digamma(12.2 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.Beta, i) - Gamma.digamma(55.1 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(SpecialFunctionCache.Type.AlphaBeta, i) - Gamma.digamma(12.2 + 55.1 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - Gamma.digamma(12.2 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - Gamma.digamma(55.1 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - Gamma.digamma(12.2 + 55.1 + i)) < 1e-12);
     }
   }
 
