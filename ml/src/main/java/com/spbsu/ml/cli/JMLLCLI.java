@@ -208,11 +208,11 @@ public class JMLLCLI {
     //added progress handlers
     ProgressHandler progressPrinter = null;
     if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION) && !command.hasOption(FAST_OPTION)) {
+      final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "10"));
       if (loss instanceof BlockwiseMLLLogit) {
-        final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
         progressPrinter = new MulticlassProgressPrinter(learn, test, printPeriod); //f*ck you with your custom different-dimensional metrics
       } else {
-        progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics);
+        progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics, printPeriod);
       }
       //noinspection unchecked
       ((WeakListenerHolder) method).addListener(progressPrinter);
