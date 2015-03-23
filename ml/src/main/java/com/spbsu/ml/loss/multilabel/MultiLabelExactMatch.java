@@ -37,7 +37,7 @@ public class MultiLabelExactMatch extends Func.Stub implements ClassicMultiLabel
 
   @Override
   public int dim() {
-    return 0;
+    return targets.dim();
   }
 
   @Override
