@@ -9,7 +9,7 @@ import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.models.multiclass.MultiClassModel;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 /**
