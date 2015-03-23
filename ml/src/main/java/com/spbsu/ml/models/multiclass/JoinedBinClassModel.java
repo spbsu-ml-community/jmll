@@ -1,4 +1,4 @@
-package com.spbsu.ml.models;
+package com.spbsu.ml.models.multiclass;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
@@ -25,11 +25,16 @@ public class JoinedBinClassModel extends MCModel.Stub {
   }
 
   @Override
+  public int countClasses() {
+    return internalModel.ydim();
+  }
+
+  @Override
   public Vec probs(final Vec x) {
     final Vec apply = internalModel.trans(x);
     final Vec probs = new ArrayVec(apply.dim());
     for (int i = 0; i < apply.dim(); i++) {
-      probs.set(i, MathTools.sigmoid(apply.get(i), 0.65));
+      probs.set(i, MathTools.sigmoid(apply.get(i)));
     }
     return probs;
   }

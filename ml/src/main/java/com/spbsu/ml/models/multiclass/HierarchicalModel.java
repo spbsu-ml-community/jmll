@@ -1,4 +1,4 @@
-package com.spbsu.ml.models;
+package com.spbsu.ml.models.multiclass;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -31,6 +31,11 @@ public class HierarchicalModel extends MCModel.Stub {
   @Nullable
   public HierarchicalModel getChild(final int label) {
     return label2childModel.get(label);
+  }
+
+  @Override
+  public int countClasses() {
+    return basedOn.countClasses();
   }
 
   @Override

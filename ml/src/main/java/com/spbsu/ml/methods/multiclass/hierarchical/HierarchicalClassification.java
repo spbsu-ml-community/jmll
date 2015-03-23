@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.hierarchical;
+package com.spbsu.ml.methods.multiclass.hierarchical;
 
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.Pair;
@@ -9,8 +9,8 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.HierarchicalModel;
-import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.models.multiclass.HierarchicalModel;
+import com.spbsu.ml.models.multiclass.MultiClassModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;

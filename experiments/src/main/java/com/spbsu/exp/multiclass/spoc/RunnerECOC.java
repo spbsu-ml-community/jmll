@@ -25,10 +25,10 @@ import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.spoc.ECOCCombo;
+import com.spbsu.ml.methods.multiclass.spoc.ECOCCombo;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.MCModel;
-import com.spbsu.ml.models.MulticlassCodingMatrixModel;
+import com.spbsu.ml.models.multiclass.MCModel;
+import com.spbsu.ml.models.multiclass.MulticlassCodingMatrixModel;
 
 import java.io.FileInputStream;
 import java.io.IOException;

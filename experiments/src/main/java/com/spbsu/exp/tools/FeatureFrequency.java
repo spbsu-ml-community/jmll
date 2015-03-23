@@ -6,8 +6,8 @@ import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
-import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.ObliviousTree;
+import com.spbsu.ml.models.multiclass.MultiClassModel;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

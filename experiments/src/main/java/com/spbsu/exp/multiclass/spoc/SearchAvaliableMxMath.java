@@ -6,9 +6,9 @@ import com.spbsu.commons.math.io.Mx2CharSequenceConversionPack;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.logging.Logger;
-import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
-import com.spbsu.ml.methods.spoc.CMLHelper;
-import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearning;
+import com.spbsu.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
+import com.spbsu.ml.methods.multiclass.spoc.CMLHelper;
+import com.spbsu.ml.methods.multiclass.spoc.impl.CodingMatrixLearning;
 import org.apache.commons.cli.MissingArgumentException;
 
 import java.io.BufferedReader;

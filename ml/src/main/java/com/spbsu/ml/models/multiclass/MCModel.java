@@ -1,4 +1,4 @@
-package com.spbsu.ml.models;
+package com.spbsu.ml.models.multiclass;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -10,6 +10,7 @@ import com.spbsu.ml.Func;
  * Description:
  */
 public interface MCModel extends Func {
+  int countClasses();
   Vec probs(Vec x);
   int bestClass(Vec x);
   Vec bestClassAll(Mx x); //TODO[qdeee]: use only transAll()
