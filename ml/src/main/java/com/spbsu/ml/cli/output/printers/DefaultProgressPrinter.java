@@ -10,7 +10,6 @@ import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.func.Ensemble;
 
 import static com.spbsu.commons.math.vectors.VecTools.append;
-import static com.spbsu.commons.math.vectors.VecTools.assign;
 
 /**
  * User: qdeee
@@ -54,7 +53,7 @@ public class DefaultProgressPrinter implements ProgressHandler {
     else {
       learnValues = partial.transAll(learn.vecData().data());
       for (int i = 0; i < testValuesArray.length; i++) {
-        assign(testValuesArray[i], partial.transAll(test.vecData().data()));
+        testValuesArray[i] = partial.transAll(test.vecData().data());
       }
     }
     iteration++;
