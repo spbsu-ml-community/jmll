@@ -23,8 +23,8 @@ import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.MCMicroF1Score;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
 import com.spbsu.ml.meta.items.QURLItem;
-import com.spbsu.ml.models.JoinedBinClassModel;
-import com.spbsu.ml.models.MCModel;
+import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
+import com.spbsu.ml.models.multiclass.MCModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
@@ -54,6 +54,19 @@ public class MCTools {
       classesCount = max(target.at(i) + 1, classesCount);
     }
     return classesCount;
+  }
+
+  /**
+   * calculate classes entries counts
+   * @param target normalized(!) target with class labels from {0,...,K-1}
+   * @return array with counts
+   */
+  public static int[] classEntriesCounts(final IntSeq target) {
+    final int[] counts = new int[countClasses(target)];
+    for (int i = 0; i < target.length(); i++) {
+      counts[target.arr[i]]++;
+    }
+    return counts;
   }
 
   public static int classEntriesCount(final IntSeq target, final int classNo) {
