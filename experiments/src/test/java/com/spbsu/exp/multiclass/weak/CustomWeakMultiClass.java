@@ -14,8 +14,8 @@ import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.MultiClass;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.MCModel;
-import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.models.multiclass.MCModel;
+import com.spbsu.ml.models.multiclass.MultiClassModel;
 import com.spbsu.ml.testUtils.FakePool;
 
 /**
@@ -55,7 +55,7 @@ public class CustomWeakMultiClass extends VecOptimization.Stub<BlockwiseMLLLogit
         iter++;
       }
     };
-    boosting.addListener(calcer);
+//    boosting.addListener(calcer);
     final Ensemble ensemble = boosting.fit(learnData, loss);
     System.out.println();
     final MCModel model = new MultiClassModel(MCTools.joinBoostingResult(ensemble));
