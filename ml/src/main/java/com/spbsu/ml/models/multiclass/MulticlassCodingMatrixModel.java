@@ -1,4 +1,4 @@
-package com.spbsu.ml.models;
+package com.spbsu.ml.models.multiclass;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.metrics.Metric;
@@ -57,6 +57,11 @@ public class MulticlassCodingMatrixModel extends MCModel.Stub {
       dist[i] = metric.distance(binarize, codingMatrix.row(i));
     }
     return dist;
+  }
+
+  @Override
+  public int countClasses() {
+    return codingMatrix.rows();
   }
 
   @Override

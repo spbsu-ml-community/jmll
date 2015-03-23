@@ -3,7 +3,7 @@ package com.spbsu.exp.multiclass.spoc.full.mx.bruteforce;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
+import com.spbsu.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
 
 /**
  * User: qdeee

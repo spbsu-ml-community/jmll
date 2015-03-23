@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.spoc;
+package com.spbsu.ml.methods.multiclass.spoc;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.ml.data.set.VecDataSet;

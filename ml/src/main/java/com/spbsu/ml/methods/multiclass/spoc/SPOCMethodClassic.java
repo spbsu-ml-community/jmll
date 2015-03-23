@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.spoc;
+package com.spbsu.ml.methods.multiclass.spoc;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -14,7 +14,7 @@ import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.MulticlassCodingMatrixModel;
+import com.spbsu.ml.models.multiclass.MulticlassCodingMatrixModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TDoubleLinkedList;

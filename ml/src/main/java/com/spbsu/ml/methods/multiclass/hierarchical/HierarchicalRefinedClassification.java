@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.hierarchical;
+package com.spbsu.ml.methods.multiclass.hierarchical;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -14,9 +14,9 @@ import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.HierarchicalModel;
-import com.spbsu.ml.models.JoinedBinClassModel;
-import com.spbsu.ml.models.MCModel;
+import com.spbsu.ml.models.multiclass.HierarchicalModel;
+import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
+import com.spbsu.ml.models.multiclass.MCModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;

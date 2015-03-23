@@ -29,7 +29,7 @@ import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.ClassicMulticlassLoss;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.JoinedBinClassModel;
+import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
 import org.apache.commons.cli.*;
 
 import java.io.*;

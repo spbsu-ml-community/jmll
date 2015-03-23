@@ -12,8 +12,8 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
-import com.spbsu.ml.models.MCModel;
-import com.spbsu.ml.models.MultiClassModel;
+import com.spbsu.ml.models.multiclass.MCModel;
+import com.spbsu.ml.models.multiclass.MultiClassModel;
 
 /**
  * User: qdeee

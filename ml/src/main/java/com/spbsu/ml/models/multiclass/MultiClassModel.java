@@ -1,4 +1,4 @@
-package com.spbsu.ml.models;
+package com.spbsu.ml.models.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
@@ -24,6 +24,11 @@ public class MultiClassModel extends MCModel.Stub {
 
   public FuncJoin getInternModel() {
     return model;
+  }
+
+  @Override
+  public int countClasses() {
+    return model.ydim() + 1;
   }
 
   @Override

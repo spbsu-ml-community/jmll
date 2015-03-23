@@ -1,11 +1,11 @@
-package com.spbsu.ml.methods.spoc.impl;
+package com.spbsu.ml.methods.multiclass.spoc.impl;
 
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.methods.spoc.AbstractCodingMatrixLearning;
-import com.spbsu.ml.methods.spoc.CMLHelper;
+import com.spbsu.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
+import com.spbsu.ml.methods.multiclass.spoc.CMLHelper;
 
 import java.util.Random;
 
