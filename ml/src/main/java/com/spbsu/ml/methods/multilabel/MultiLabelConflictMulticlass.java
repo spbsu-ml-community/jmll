@@ -12,19 +12,19 @@ import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multilabel.ClassicMultiLabelLoss;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.multilabel.ConflictThresholdMultiLabelModel;
 import com.spbsu.ml.models.multiclass.MCModel;
+import com.spbsu.ml.models.multilabel.ConflictThresholdMultiLabelModel;
 
 /**
  * User: qdeee
  * Date: 22.03.15
  */
-public class MultiLabelConflict implements VecOptimization<ClassicMultiLabelLoss> {
+public class MultiLabelConflictMulticlass implements VecOptimization<ClassicMultiLabelLoss> {
   private final VecOptimization<BlockwiseMLLLogit> weakMultiClass;
   private final double threshold;
   private final boolean allZeroesClassEnabled;
 
-  public MultiLabelConflict(final VecOptimization<BlockwiseMLLLogit> weakMultiClass, final double threshold, final boolean allZeroesClassEnabled) {
+  public MultiLabelConflictMulticlass(final VecOptimization<BlockwiseMLLLogit> weakMultiClass, final double threshold, final boolean allZeroesClassEnabled) {
     this.weakMultiClass = weakMultiClass;
     this.threshold = threshold;
     this.allZeroesClassEnabled = allZeroesClassEnabled;
