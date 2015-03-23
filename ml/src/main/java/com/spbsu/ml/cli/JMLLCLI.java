@@ -129,14 +129,16 @@ public class JMLLCLI {
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
-    } catch (Exception e) {
-      final HelpFormatter formatter = new HelpFormatter();
-      e.printStackTrace();
+    } catch (ParseException e) {
       System.err.println(e.getLocalizedMessage());
+      final HelpFormatter formatter = new HelpFormatter();
       final String columns = System.getenv("COLUMNS");
-
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
       formatter.printHelp("JMLLCLI", options);
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.err.println(e.getLocalizedMessage());
     }
   }
 
