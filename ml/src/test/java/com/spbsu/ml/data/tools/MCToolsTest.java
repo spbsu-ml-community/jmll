@@ -38,6 +38,12 @@ public class MCToolsTest extends TestCase {
     assertEquals(16, MCTools.countClasses(target));
   }
 
+  public void testClassEntriesCounts() throws Exception {
+    final IntSeq target = new IntSeq(0, 0, 1, 2, 2, 2);
+    final int[] counts = MCTools.classEntriesCounts(target);
+    assertTrue(Arrays.equals(new int[]{2, 1, 3}, counts));
+  }
+
   public void testClassEntriesCount() throws Exception {
     assertEquals(5, MCTools.classEntriesCount(target, 15));
     assertEquals(1, MCTools.classEntriesCount(target, 0));
