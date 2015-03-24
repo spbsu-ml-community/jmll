@@ -27,13 +27,16 @@ public class MultiLabelMicroFScore extends Func.Stub implements ClassicMultiLabe
   @Override
   public double value(final Vec x) {
     final Mx predictMx = (Mx) x;
-    double value = 0;
+    double total = 0;
     for (int i = 0; i < predictMx.rows(); i++) {
       final Vec predictedLabels = predictMx.row(i);
       final Vec targetLabels = targets.row(i);
-      value += VecTools.multiply(predictedLabels, targetLabels) / (VecTools.sum(predictedLabels) + VecTools.sum(targetLabels));
+      final double v = VecTools.multiply(predictedLabels, targetLabels) / (VecTools.sum(predictedLabels) + VecTools.sum(targetLabels));
+      if (!Double.isNaN(v)) {
+        total += v;
+      }
     }
-    return 2 * value / targets.rows();
+    return 2 * total / targets.rows();
   }
 
   @Override
