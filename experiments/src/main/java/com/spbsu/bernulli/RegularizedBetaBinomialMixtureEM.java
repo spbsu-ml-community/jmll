@@ -83,7 +83,7 @@ public class RegularizedBetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
   private final int newtonIters = 3;
   private final double gradientStep = 0.05;
   private final double newtonStep = 0.01;
-  private final int gradientIters = 5;
+  private final int gradientIters = 20;
 
   private final int iterations = 2;
   boolean first = true;
@@ -116,7 +116,7 @@ public class RegularizedBetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
   @Override
   protected boolean stop() {
     final double currentLL = likelihood();
-    if (Math.abs(oldLikelihood -currentLL) < 1e-1) {
+    if (Math.abs(oldLikelihood - currentLL) < 1e-1) {
       return true;
     }
     oldLikelihood = currentLL;
@@ -320,11 +320,15 @@ public class RegularizedBetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     final double gradientCache[];
     final double newtonCache[];
     final int maxPrecision;
+    boolean[] stopped;
+    int stoppedCount;
 
     PrecisionOptimization(int N) {
       this.gradientCache = new double[model.alphas.length];
       this.maxPrecision = N;
       this.newtonCache = new double[model.alphas.length];
+      this.stopped = new boolean[model.alphas.length];
+      stoppedCount = 0;
     }
 
     private boolean newtonStep(double step) {
@@ -334,27 +338,40 @@ public class RegularizedBetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
 
       final double cache[] = new double[k];
       for (int i = 0; i < k; ++i) {
-        cache[i] = -funcs[i].digamma1(Type.Alpha, 0) - funcs[i].digamma1(Type.Beta, 0);
+        if (stopped[i])
+          continue;
+        final double p = mu[i];
+        cache[i] = -p*p*funcs[i].digamma1(Type.Alpha, 0) - (1-p)*(1-p)*funcs[i].digamma1(Type.Beta, 0) ;
+        cache[i] += -funcs[i].digamma1(Type.AlphaBeta,n) + funcs[i].digamma1(Type.AlphaBeta,0);
       }
       for (int i = 0; i < sums.length; ++i) {
         final int m = sums[i];
         for (int j = 0; j < k; ++j) {
-          final double p = dummy.get(i, j);
-          final double dgrad = p * (cache[j] + funcs[j].digamma1(Type.Alpha, m) + funcs[j].digamma1(Type.Beta, n - m));
+          if (stopped[j])
+            continue;
+          final double prob = dummy.get(i, j);
+          final double p = mu[j];
+          final double dgrad = prob*(cache[j] + (1-p)*(1-p) * funcs[j].digamma1(Type.Beta, n - m) + p*p * funcs[j].digamma1(Type.Alpha,m));
           newtonCache[j] += dgrad;
         }
       }
-      for (int i = 0; i < newtonCache.length; ++i) {
-        newtonCache[i] *= N * N;
-      }
 
       for (int i = 0; i < k; ++i) {
+        if (stopped[i])
+          continue;
         //matrix
-        double mu = model.alphas[i] / N - step * gradientCache[i] / newtonCache[i];
-
-        model.alphas[i] = mu * N;
-        model.betas[i] = (1 - mu) * N;
+        double N = precisions[i] - step*(gradientCache[i] / newtonCache[i]);
+        if (N > 0) {
+          if (precisions[i] > maxPrecision) {
+            precisions[i] = maxPrecision;
+            stopped[i] = true;
+            stoppedCount++;
+          } else {
+            precisions[i] = N;
+          }
+        }
       }
+      updateModel();
       return false;
     }
 
@@ -363,12 +380,16 @@ public class RegularizedBetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       Arrays.fill(gradientCache, 0.0);
       final double cache[] = new double[k];
       for (int i = 0; i < k; ++i) {
+        if (stopped[i])
+          continue;
         cache[i] = -mu[i] * funcs[i].digamma(Type.Alpha, 0) - (1 - mu[i]) * funcs[i].digamma(Type.Beta, 0)
                 + funcs[i].digamma(Type.AlphaBeta, 0) - funcs[i].digamma(Type.AlphaBeta, n);
       }
       for (int i = 0; i < sums.length; ++i) {
         final int m = sums[i];
         for (int j = 0; j < k; ++j) {
+          if (stopped[j])
+            continue;
           final double prob = dummy.get(i, j);
           final double p = mu[j];
           final SpecialFunctionCache func = funcs[j];
@@ -387,13 +408,20 @@ public class RegularizedBetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
         }
       }
       for (int i = 0; i < k; ++i) {
+        if (stopped[i])
+          continue;
         while (precisions[i] + step * gradientCache[i] < 1e-3) {
           step *= 0.5;
           if (step < 1e-10)
             return false;
         }
         precisions[i] += step * gradientCache[i];
-        precisions[i] = Math.min(precisions[i], maxPrecision);
+        if (precisions[i] > maxPrecision) {
+          precisions[i] = maxPrecision;
+          stopped[i] = true;
+          stoppedCount++;
+        }
+
       }
       updateModel();
       return false;
@@ -402,13 +430,15 @@ public class RegularizedBetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     boolean first = true;
 
     boolean maximize() {
-//      if (first) {
+      if (stoppedCount == k)
+        return false;
+      if (first) {
       for (int i = 0; i < gradientIters; ++i)
         gradientStep(gradientStep);
-//        first = false;
-//      }
-//      for (int i = 0; i < newtonIters; ++i)
-//        newtonStep(newtonStep);
+        first = false;
+      }
+      for (int i = 0; i < newtonIters; ++i)
+        newtonStep(newtonStep);
       return true;
 //    }
     }

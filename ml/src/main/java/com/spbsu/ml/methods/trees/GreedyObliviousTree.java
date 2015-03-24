@@ -1,11 +1,5 @@
 package com.spbsu.ml.methods.trees;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ListIterator;
-
-
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
@@ -14,8 +8,14 @@ import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
+import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.ObliviousTree;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * User: solar
@@ -39,7 +39,8 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
 
     final BinarizedDataSet bds;
     bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
-    leaves.add(new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, ds.length())));
+
+    leaves.add(new BFOptimizationSubset(bds, loss, learnPoints(loss, ds)));
 
     final double[] scores = new double[grid.size()];
     for (int level = 0; level < depth; level++) {
@@ -74,5 +75,11 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
       based[i] = leaves.get(i).size();
     }
     return new ObliviousTree(conditions, step, based);
+  }
+
+  private int[] learnPoints(Loss loss, VecDataSet ds) {
+    if (loss instanceof WeightedLoss) {
+      return ((WeightedLoss) loss).points();
+    } else return ArrayTools.sequence(0, ds.length());
   }
 }
