@@ -41,60 +41,6 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     return distanse;
   }
 
-  public static boolean validateSolution(final Mx a, final Vec right, final Vec sol) {
-    final Vec val = MxTools.multiply(a, sol);
-    final double l2 = VecTools.distance(val, right);
-    if (l2 > right.dim()) {
-      /*for (int i = 0; i < right.dim(); i++)
-        System.out.format("%f = %f\n", val.at(i), right.at(i));*/
-    }
-    //System.out.println(l2);
-    return l2 < 0.1 * right.dim();
-  }
-
-  public static Vec solveLinearEquationUsingLQ(final Mx mx, final Vec right) {
-    if (mx.rows() != mx.columns())
-      throw new IllegalArgumentException("Matrix must be quadratic");
-    if (right.dim() != mx.rows())
-      throw new IllegalArgumentException("Vector must be the same size as Matrix");
-    final int n = mx.rows();
-    final Mx l = new VecBasedMx(n, n);
-    final Mx q = new VecBasedMx(n, n);
-    MxTools.householderLQ(mx, l, q);
-    //System.out.println(VecTools.inverseLTriangle(l));
-    //System.out.println(VecTools.multiply(q,VecTools.transpose(q)));
-    final Vec first = new ArrayVec(n);
-    for (int i = 0; i < n; i++) {
-      if (Math.abs(l.get(i, i)) > 1e-5) {
-        double val = right.get(i);
-        for (int j = 0; j < i; j++)
-          val -= first.get(j) * l.get(i, j);
-        first.set(i, val / l.get(i, i));
-      } else {
-        first.set(i, 0);
-      }
-    }
-    final Vec ans = MxTools.multiply(q, first);
-    if (!validateSolution(mx, right, ans)) {
-      PrintWriter printWriter = null;
-      try {
-        printWriter = new PrintWriter(new File("badMx.txt"));
-      } catch (FileNotFoundException e) {
-        e.printStackTrace();
-      }
-      printWriter.println(mx.rows());
-      for (int i = 0; i < mx.rows(); i++)
-        for (int j = i + 1; j < mx.rows(); j++)
-          if (l.get(i, j) > 1e-5)
-            System.out.println("bad l" + l.get(i, j));
-      printWriter.println(mx);
-      printWriter.println(right);
-      printWriter.close();
-      throw new RuntimeException("Not correct work of solveLinearEquationUsingLQ");
-    }
-    return ans;
-  }
-
   double sqr(final double x) {
     return x * x;
   }
@@ -148,7 +94,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     //System.out.println(mx);
     //System.out.println(linear);
     //System.out.println(VecTools.inverseCholesky(mx));
-    final Vec result = solveLinearEquationUsingLQ(mx, linear);
+    final Vec result = MxTools.solveSystemLq(mx, linear);
     //result.set(0, sum / countIn);
     //for (int i = 1; i < result.dim(); i++)
     //result.set(i, 0);

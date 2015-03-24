@@ -13,13 +13,13 @@ import java.util.List;
  * Time: 20:50
  * To change this template use File | Settings | File Templates.
  */
-public class ContinousObliviousTree extends Func.Stub {
+public class PolynomialObliviousTree extends Func.Stub {
     protected final BFGrid.BinaryFeature[] features;
     protected final double[][] values;
     //private final double[] basedOn;
     //private final double score;
 
-    public ContinousObliviousTree(final List<BFGrid.BinaryFeature> features, final double[][] values)/*, double[] basedOn, double bestScore)*/ {
+    public PolynomialObliviousTree(final List<BFGrid.BinaryFeature> features, final double[][] values)/*, double[] basedOn, double bestScore)*/ {
         //For every leaf you must make pass 1 value for 0 degree coefficient, n - for 1 degree coefficient, n^2 for 2 degree, and so on
         assert values.length == 1 << features.size();
         for (int i = 0; i < values.length; i++)

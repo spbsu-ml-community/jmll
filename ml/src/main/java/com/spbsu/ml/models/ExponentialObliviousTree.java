@@ -13,7 +13,7 @@ import java.util.List;
  * Time: 18:03
  * Idea please stop making my code yellow
  */
-public class ExponentialObliviousTree extends ContinousObliviousTree {
+public class ExponentialObliviousTree extends PolynomialObliviousTree {
   private final double DistCoef;
 
   public ExponentialObliviousTree(final List<BFGrid.BinaryFeature> features, final double[][] values, final double _distCoef) {
