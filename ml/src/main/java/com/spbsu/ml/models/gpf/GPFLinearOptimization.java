@@ -31,16 +31,16 @@ public class GPFLinearOptimization {
 
   IterationEventListener listener;
 
-  public GPFLinearModel StochasticGradientDescent(GPFLinearModel model0, List<Session<BlockV1>> dataset, int nIterations) {
+  public GPFLinearModel StochasticGradientDescent(final GPFLinearModel model0, final List<Session<BlockV1>> dataset, final int nIterations) {
     if (dataset.size() < SGD_BLOCK_SIZE)
       throw new IllegalArgumentException("dataset.size() < SGD_BLOCK_SIZE: dataset.size()=" + dataset.size() + ", SGD_BLOCK_SIZE=" + SGD_BLOCK_SIZE);
 
-    GPFLinearModel model = new GPFLinearModel(model0);
-    Random random = new Random(1);
-    List<Session<BlockV1>> dataset_shuffled = new ArrayList<>(dataset);
+    final GPFLinearModel model = new GPFLinearModel(model0);
+    final Random random = new Random(1);
+    final List<Session<BlockV1>> dataset_shuffled = new ArrayList<>(dataset);
     Collections.shuffle(dataset_shuffled, random);
     int dataset_position = 0;
-    ArrayVec last_theta = new ArrayVec(model.theta.toArray());
+    final ArrayVec last_theta = new ArrayVec(model.theta.toArray());
     double last_ll = Double.NEGATIVE_INFINITY;
     for (int iter = 0; iter < nIterations; iter++) {
       List<Session<BlockV1>> dataset_chunk = null;
@@ -56,7 +56,7 @@ public class GPFLinearOptimization {
         dataset_chunk.addAll(dataset_shuffled.subList(0, dataset_position));
 
         if (do_step_decrease_if_worsening) {
-          DatasetGradientValue gradV = evalDatasetGradientValue(model, dataset, false);
+          final DatasetGradientValue gradV = evalDatasetGradientValue(model, dataset, false);
           dataset_ll = gradV.loglikelihood;
           fullds_nobservations_correct = gradV.nObservations;
           if (dataset_ll > last_ll) {
@@ -67,19 +67,19 @@ public class GPFLinearOptimization {
             // go back on the last good theta
             model.theta.assign(last_theta);
             step_a_m *= step_decrease_if_worsening;
-            double eta = step_eta0 * Math.pow(step_a_m * step_a / (step_a/step_a_m + iter), step_gamma);
+            final double eta = step_eta0 * Math.pow(step_a_m * step_a / (step_a/step_a_m + iter), step_gamma);
             if (listener != null)
               listener.backstepPerformed(new IterationEvent(this, iter, model, last_ll, null, 0, eta, dataset_ll, fullds_nobservations_correct));
           }
         }
       }
 
-      double eta = step_eta0 * Math.pow(step_a_m * step_a / (step_a/step_a_m + iter), step_gamma);
+      final double eta = step_eta0 * Math.pow(step_a_m * step_a / (step_a/step_a_m + iter), step_gamma);
       if (eta < min_eta) {
         return model;
       }
 
-      DatasetGradientValue gradV = evalDatasetGradientValue(model, dataset_chunk, true);
+      final DatasetGradientValue gradV = evalDatasetGradientValue(model, dataset_chunk, true);
 
       // do visualization stuff
       if (listener != null)
@@ -89,8 +89,8 @@ public class GPFLinearOptimization {
         continue; // improbable session
 
       // evaluate new_theta
-      ArrayVec new_theta = new ArrayVec(model.NFEATS);
-      double gradient_norm = VecTools.norm(gradV.gradient);
+      final ArrayVec new_theta = new ArrayVec(model.NFEATS);
+      final double gradient_norm = VecTools.norm(gradV.gradient);
       if (gradient_norm > 0) {
         new_theta.assign(gradV.gradient);
 
@@ -122,13 +122,13 @@ public class GPFLinearOptimization {
     return model;
   }
 
-  public void eval_step_params(double eta_step_0, double eta_step_T1, int T1, double eta_step_T2, int T2) {
+  public void eval_step_params(final double eta_step_0, final double eta_step_T1, final int T1, final double eta_step_T2, final int T2) {
     this.step_eta0 = eta_step_0;
     this.step_gamma = Math.log(eta_step_T1 / eta_step_T2) / Math.log( T2 / T1 );
     this.step_a = Math.exp( Math.log(eta_step_T1 / eta_step_0) / step_gamma + Math.log( T1 ) );
   }
 
-  public void eval_step_params_gamma(double eta_step_0, double step_gamma, double eta_step_T2, int T2) {
+  public void eval_step_params_gamma(final double eta_step_0, final double step_gamma, final double eta_step_T2, final int T2) {
     this.step_eta0 = eta_step_0;
     this.step_gamma = step_gamma;
     this.step_a = Math.pow(eta_step_T2 / eta_step_0, 1/step_gamma) * T2;
@@ -192,13 +192,13 @@ public class GPFLinearOptimization {
     int nObservations = 0;
   }
 
-  DatasetGradientValue evalDatasetGradientValue(GPFLinearModel model, final List<Session<BlockV1>> dataset, final boolean do_eval_gradient) {
-    DatasetGradientValue ret = new DatasetGradientValue();
+  DatasetGradientValue evalDatasetGradientValue(final GPFLinearModel model, final List<Session<BlockV1>> dataset, final boolean do_eval_gradient) {
+    final DatasetGradientValue ret = new DatasetGradientValue();
     if (do_eval_gradient)
       ret.gradient = new ArrayVec(model.NFEATS);
 
-    for (Session ses: dataset) {
-      GPFLinearModel.GradientValue gradientValue = model.eval_L_and_Gradient(ses, do_eval_gradient);
+    for (final Session ses: dataset) {
+      final GPFLinearModel.GradientValue gradientValue = model.eval_L_and_Gradient(ses, do_eval_gradient);
 
       if (do_ignore_improbable_sessions) {
         boolean is_improbable_session = false;
@@ -238,11 +238,11 @@ public class GPFLinearOptimization {
     public double fullds_loglikelihood;
     public int fullds_nobservations_correct;
 
-    public IterationEvent(Object source) {
+    public IterationEvent(final Object source) {
       super(source);
     }
 
-    public IterationEvent(Object source, int iter, GPFLinearModel model, double loglikelihood, ArrayVec gradient, int nObservations, double step_size, double fullds_loglikelihood, int fullds_nobservations_correct) {
+    public IterationEvent(final Object source, final int iter, final GPFLinearModel model, final double loglikelihood, final ArrayVec gradient, final int nObservations, final double step_size, final double fullds_loglikelihood, final int fullds_nobservations_correct) {
       super(source);
       this.iter = iter;
       this.model = model;

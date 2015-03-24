@@ -2,15 +2,8 @@ package com.spbsu.ml.models.gpf;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
-
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -69,13 +62,13 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
      * @return transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
      */
     @Override
-    public VecBasedMx evalSessionTransitionProbs(Session<Blk> ses) {
+    public VecBasedMx evalSessionTransitionProbs(final Session<Blk> ses) {
       final Blk[] blocks = ses.getBlocks();
 
       // 1 & для каждой пары блоков $i$, $j$ вычислить $f(i,j)$; третья координата - наличие клика c_i
-      Tensor3 f = new Tensor3(blocks.length, blocks.length, 2);
+      final Tensor3 f = new Tensor3(blocks.length, blocks.length, 2);
       for (int i = 0; i < blocks.length; i++) {
-        for (int j: ses.getEdgesFrom(i)) {
+        for (final int j: ses.getEdgesFrom(i)) {
           for (int click_i = 0; click_i < 2; click_i++) {
             f.set(i, j, click_i, eval_f(ses, i, j, click_i));
           }
@@ -85,16 +78,16 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
       f.set(Session.E_ind, Session.E_ind, 1, 1.);
 
       // transmx[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
-      VecBasedMx transmx_0 = new VecBasedMx(blocks.length * 2, blocks.length * 2);
+      final VecBasedMx transmx_0 = new VecBasedMx(blocks.length * 2, blocks.length * 2);
       for (int i = 0; i < blocks.length; i++) {
         for (int click_i = 0; click_i < 2; click_i++) {
           double sum_f_i_j = 0.;
-          for (int j: ses.getEdgesFrom(i))
+          for (final int j: ses.getEdgesFrom(i))
             sum_f_i_j += f.get(i, j, click_i);
 
-          for (int j: ses.getEdgesFrom(i)) {
-            double trans_prob = f.get(i, j, click_i) / sum_f_i_j;
-            double click_prob = getClickGivenViewProbability(blocks[j]);
+          for (final int j: ses.getEdgesFrom(i)) {
+            final double trans_prob = f.get(i, j, click_i) / sum_f_i_j;
+            final double click_prob = getClickGivenViewProbability(blocks[j]);
             transmx_0.set(click_i * blocks.length + i, 0 * blocks.length + j, trans_prob * (1. - click_prob));
             transmx_0.set(click_i * blocks.length + i, 1 * blocks.length + j, trans_prob * click_prob);
           }
@@ -109,14 +102,14 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
      * @return double[ses.getBlocks().length] - array of probabilities
      */
     @Override
-    public double[] evalHasClickProbabilities(Session<Blk> ses) {
+    public double[] evalHasClickProbabilities(final Session<Blk> ses) {
       final Session.Block[] blocks = ses.getBlocks();
       // transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
-      VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
+      final VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
 
-      double[] hasClickProbabilities = new double[blocks.length];
+      final double[] hasClickProbabilities = new double[blocks.length];
       for (int ci = Session.R0_ind; ci < blocks.length; ci++) {
-        VecBasedMx transmx_ci = new VecBasedMx(transmx_0);
+        final VecBasedMx transmx_ci = new VecBasedMx(transmx_0);
         // модифицируем стохастическую матрицу transmx_ci так, чтобы после клика на ci пользователь оставался в том же состоянии
         for (int j = 0; j < transmx_ci.columns; j++)
           transmx_ci.set(1 * blocks.length + ci, j, 0.);
@@ -142,14 +135,14 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
      * @return double[ses.getBlocks().length] - array of probabilities
      */
     @Override
-    public double[] evalHasViewProbabilities(Session<Blk> ses) {
+    public double[] evalHasViewProbabilities(final Session<Blk> ses) {
       final Session.Block[] blocks = ses.getBlocks();
       // transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
-      VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
+      final VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
 
-      double[] hasViewProbabilities = new double[blocks.length];
+      final double[] hasViewProbabilities = new double[blocks.length];
       for (int ci = Session.R0_ind; ci < blocks.length; ci++) {
-        VecBasedMx transmx_ci = new VecBasedMx(transmx_0);
+        final VecBasedMx transmx_ci = new VecBasedMx(transmx_0);
         // модифицируем стохастическую матрицу transmx_ci так, чтобы после view на ci пользователь оставался в том же состоянии
         for (int j = 0; j < transmx_ci.columns; j++) {
           transmx_ci.set(0 * blocks.length + ci, j, 0.);
@@ -179,12 +172,12 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
      * @return double[ses.getBlocks().length] - array of expected number of steps
      */
     @Override
-    public double[] evalExpectedAttention(Session<Blk> ses) {
+    public double[] evalExpectedAttention(final Session<Blk> ses) {
       final Session.Block[] blocks = ses.getBlocks();
       // transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
-      VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
+      final VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
 
-      double[] expectedAttention = new double[blocks.length];
+      final double[] expectedAttention = new double[blocks.length];
       // сначала пользователь в состоянии (Q, no_click)
       Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
       state_probabilities.set(0, Session.Q_ind, 1.);
@@ -205,10 +198,10 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
      * @return double[ses.getBlocks().length] - array of expected number of steps
      */
     @Override
-    public double evalExpectedNumberOfClicks(Session<Blk> ses) {
+    public double evalExpectedNumberOfClicks(final Session<Blk> ses) {
       final Session.Block[] blocks = ses.getBlocks();
       // transmx_0[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
-      VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
+      final VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
 
       double expectedNumberOfClicks = 0.;
       // сначала пользователь в состоянии (Q, no_click)
@@ -225,21 +218,21 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
     }
 
     @Override
-    public String explainSessionProb(Session<Blk> ses) {
-      VecBasedMx sum_f = new VecBasedMx(ses.getBlocks().length, 2);
+    public String explainSessionProb(final Session<Blk> ses) {
+      final VecBasedMx sum_f = new VecBasedMx(ses.getBlocks().length, 2);
       for (int i = 0; i < ses.getBlocks().length; i++) {
-        for (int j: ses.getEdgesFrom(i)) {
+        for (final int j: ses.getEdgesFrom(i)) {
           sum_f.adjust(i, 0, eval_f(ses, i, j, 0));
           sum_f.adjust(i, 1, eval_f(ses, i, j, 1));
         }
       }
-      double[] hasClickProbabilities = evalHasClickProbabilities(ses);
-      double[] hasViewProbabilities = evalHasViewProbabilities(ses);
-      double[] attentionExpectation = evalExpectedAttention(ses);
+      final double[] hasClickProbabilities = evalHasClickProbabilities(ses);
+      final double[] hasViewProbabilities = evalHasViewProbabilities(ses);
+      final double[] attentionExpectation = evalExpectedAttention(ses);
 //    ArrayVec attentionDistribution = new ArrayVec(attentionExpectation);
 //    attentionDistribution.scale(1. / VecTools.sum(attentionDistribution));
 
-      StringBuffer ret = new StringBuffer();
+      final StringBuffer ret = new StringBuffer();
       ret.append("pos\tsntype\trel\tclick\t");
       ret.append("P(has_click)\tP(has_view)\tE(Att)\t\t");
       ret.append("P(click|V)\tP(Q->i)\tP(S->i)\t\t");
@@ -247,7 +240,7 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
       ret.append("P(i->i+1|c=1)\tP(i->i-1|c=1)\tP(i->E|c=1)\tP(i->S|c=1)\n");
 
       for (int i = Session.R0_ind; i < ses.getBlocks().length; i++) {
-        Blk bi = ses.getBlock(i);
+        final Blk bi = ses.getBlock(i);
         int click_position = -1;
         for (int ci = 0; ci < ses.getClick_indexes().length; ci++) {
           if (ses.getClick_indexes()[ci] == i) {
@@ -265,8 +258,8 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
         ret.append("" + hasClickProbabilities[i] + "\t" + hasViewProbabilities[i] + "\t" + attentionExpectation[i] + "\t\t");
 
         //ret.append("P(click|V)\tP(Q->i)\tP(S->i)\t\t");
-        double P_Q_i = eval_f(ses, Session.Q_ind, i, 0) / sum_f.get(Session.Q_ind, 0);
-        double P_S_i = eval_f(ses, Session.S_ind, i, 0) / sum_f.get(Session.S_ind, 0);
+        final double P_Q_i = eval_f(ses, Session.Q_ind, i, 0) / sum_f.get(Session.Q_ind, 0);
+        final double P_S_i = eval_f(ses, Session.S_ind, i, 0) / sum_f.get(Session.S_ind, 0);
         ret.append("" + getClickGivenViewProbability(bi) + "\t" + P_Q_i + "\t" + P_S_i + "\t\t");
 
         //ret.append("P(i->i+1|c=0)\tP(i->i-1|c=0)\tP(i->E|c=0)\tP(i->S|c=0)\t\t");

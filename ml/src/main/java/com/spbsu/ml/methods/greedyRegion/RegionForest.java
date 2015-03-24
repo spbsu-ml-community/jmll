@@ -31,19 +31,19 @@ public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.St
   private final MeanMethod meanMethod;
 
 
-  public RegionForest(BFGrid grid, FastRandom rnd, int weakCount) {
+  public RegionForest(final BFGrid grid, final FastRandom rnd, final int weakCount) {
     this(grid, rnd, weakCount, MeanMethod.Naive);
   }
 
-  public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, double alpha, double beta) {
+  public RegionForest(final BFGrid grid, final FastRandom rnd, final int weakCount, final double alpha, final double beta) {
     this(grid, rnd, weakCount, MeanMethod.Naive, alpha, beta, 1);
   }
 
-  public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, MeanMethod meanMethod) {
+  public RegionForest(final BFGrid grid, final FastRandom rnd, final int weakCount, final MeanMethod meanMethod) {
     this(grid, rnd, weakCount, meanMethod, 0.02, 0.05, 1);
   }
 
-  public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, MeanMethod meanMethod, double alpha, double beta, int maxFailed) {
+  public RegionForest(final BFGrid grid, final FastRandom rnd, final int weakCount, final MeanMethod meanMethod, final double alpha, final double beta, final int maxFailed) {
     this.weak = new GreedyTDRegion<>(grid, alpha, beta, maxFailed);
     this.weakCount = weakCount;
     this.rnd = rnd;
@@ -51,7 +51,7 @@ public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.St
     this.meanMethod = meanMethod;
   }
 
-  public RegionForest(BFGrid grid, FastRandom rnd, int weakCount, double alpha, double beta, int maxFailed) {
+  public RegionForest(final BFGrid grid, final FastRandom rnd, final int weakCount, final double alpha, final double beta, final int maxFailed) {
     this(grid, rnd, weakCount, MeanMethod.Naive, alpha, beta, maxFailed);
   }
 
@@ -90,12 +90,12 @@ public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.St
       e.printStackTrace();
     }
 
-    double samples[][] = new double[weakCount][];
+    final double[][] samples = new double[weakCount][];
     for (int i = 0; i < weakCount; ++i) {
       samples[i] = regions[i].inside.toArray();
     }
-    MTA mta = new MTA(samples);
-    double means[];
+    final MTA mta = new MTA(samples);
+    final double[] means;
     switch (meanMethod) {
       case Stein: {
         means = mta.stein();

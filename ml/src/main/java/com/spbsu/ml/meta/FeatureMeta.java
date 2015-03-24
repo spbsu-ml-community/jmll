@@ -26,7 +26,7 @@ public interface FeatureMeta {
 
     private final Class<? extends Seq<?>> type;
 
-    private ValueType(Class<? extends Seq<?>> type) {
+    private ValueType(final Class<? extends Seq<?>> type) {
       this.type = type;
     }
 
@@ -50,6 +50,11 @@ public interface FeatureMeta {
     @Override
     public final int hashCode() {
       return id().hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return id() + ": " + description();
     }
   }
 }

@@ -31,9 +31,14 @@ public class MulticlassProgressPrinter implements ProgressHandler {
   private final Mx learnValues;
   private final Mx testValues;
 
+  private final int itersForOut;
   int iteration = 0;
 
   public MulticlassProgressPrinter(final Pool<?> learn, final Pool<?> test) {
+    this(learn, test, 10);
+  }
+
+  public MulticlassProgressPrinter(final Pool<?> learn, final Pool<?> test, final int itersForOut) {
     this.learn = learn.vecData();
     this.test = test.vecData();
 
@@ -41,12 +46,13 @@ public class MulticlassProgressPrinter implements ProgressHandler {
     this.testMLLLogit = test.target(BlockwiseMLLLogit.class);
     assert learnMLLLogit.classesCount() == testMLLLogit.classesCount();
 
-    this.learnValues = new VecBasedMx(learnMLLLogit.classesCount() - 1, learnMLLLogit.xdim());
-    this.testValues = new VecBasedMx(testMLLLogit.classesCount() - 1, testMLLLogit.xdim());
+    this.learnValues = new VecBasedMx(learn.size(), learnMLLLogit.classesCount() - 1);
+    this.testValues = new VecBasedMx(test.size(), testMLLLogit.classesCount() - 1);
+    this.itersForOut = itersForOut;
   }
 
   @Override
-  public void invoke(Trans partial) {
+  public void invoke(final Trans partial) {
     if (isBoostingMulticlassProcess(partial)) {
       final Ensemble ensemble = (Ensemble) partial;
       final double step = ensemble.wlast();
@@ -58,7 +64,7 @@ public class MulticlassProgressPrinter implements ProgressHandler {
     }
 
     iteration++;
-    if (iteration % 10 == 0) {
+    if (iteration % itersForOut == 0) {
       final IntSeq learnPredicted;
       final IntSeq testPredicted;
 
@@ -73,8 +79,8 @@ public class MulticlassProgressPrinter implements ProgressHandler {
 
       System.out.print(iteration);
 
-      System.out.print(" " + learnMLLLogit.trans(learnValues));
-      System.out.print(" " + testMLLLogit.trans(testValues));
+      System.out.print(" " + learnMLLLogit.value(learnValues));
+      System.out.print(" " + testMLLLogit.value(testValues));
 
       final ConfusionMatrix learnConfusionMatrix = new ConfusionMatrix(learnMLLLogit.labels(), learnPredicted);
       System.out.print("\t" + learnConfusionMatrix.oneLineReport());

@@ -19,7 +19,7 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
   }
 
 
-  public ObliviousTreeDynamicBin(final List<BinaryFeature> features, double[] values) {
+  public ObliviousTreeDynamicBin(final List<BinaryFeature> features, final double[] values) {
     this.grid = features.get(0).row().grid();
     this.features = features.toArray(new BinaryFeature[features.size()]);
     this.values = values;
@@ -31,14 +31,14 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
   }
 
   @Override
-  public double value(Vec x) {
-    int index = bin(x);
+  public double value(final Vec x) {
+    final int index = bin(x);
     return values[index];
   }
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
+    final StringBuilder builder = new StringBuilder();
     builder.append(values.length);
     builder.append("->(");
     for (int i = 0; i < features.length; i++) {
@@ -47,7 +47,7 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
     }
     builder.append(")");
     builder.append("+[");
-    for (double feature : values) {
+    for (final double feature : values) {
       builder.append(feature).append(", ");
     }
     builder.delete(builder.length() - 2, builder.length());
@@ -55,7 +55,7 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
     return builder.toString();
   }
 
-  public int bin(Vec x) {
+  public int bin(final Vec x) {
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;
@@ -75,11 +75,11 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
 
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (!(o instanceof ObliviousTreeDynamicBin)) return false;
 
-    ObliviousTreeDynamicBin that = (ObliviousTreeDynamicBin) o;
+    final ObliviousTreeDynamicBin that = (ObliviousTreeDynamicBin) o;
 
     if (!Arrays.equals(features, that.features)) return false;
     if (!Arrays.equals(values, that.values)) return false;
@@ -99,7 +99,7 @@ public class ObliviousTreeDynamicBin extends Func.Stub implements BinDynamicOpti
   }
 
   @Override
-  public double value(BinarizedDynamicDataSet bds, int pindex) {
+  public double value(final BinarizedDynamicDataSet bds, final int pindex) {
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;

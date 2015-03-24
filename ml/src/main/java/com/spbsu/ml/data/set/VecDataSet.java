@@ -22,12 +22,12 @@ public interface VecDataSet extends DataSet<Vec> {
   abstract class Stub extends DataSet.Stub<Vec> implements VecDataSet {
     private final Vectorization<?> vec;
 
-    public Stub(VecDataSet parent) {
+    public Stub(final VecDataSet parent) {
       super(parent);
       vec = parent != null ? parent.vec() : null;
     }
 
-    public Stub(DataSet<?> parent, Vectorization<?> vec) {
+    public Stub(final DataSet<?> parent, final Vectorization<?> vec) {
       super(parent);
       this.vec = vec;
     }
@@ -42,10 +42,12 @@ public interface VecDataSet extends DataSet<Vec> {
       return data().rows();
     }
 
+    @Override
     public final int xdim() {
       return data().columns();
     }
 
+    @Override
     public int[] order(final int featureIndex) {
       final int[] result = ArrayTools.sequence(0, length());
       ArrayTools.parallelSort(data().col(featureIndex).toArray(), result);

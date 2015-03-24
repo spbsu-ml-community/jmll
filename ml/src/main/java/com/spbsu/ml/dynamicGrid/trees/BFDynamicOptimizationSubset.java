@@ -13,21 +13,21 @@ public class BFDynamicOptimizationSubset {
   private final BinarizedDynamicDataSet bds;
   public int[] points;
   private final StatBasedLoss<AdditiveStatistics> oracle;
-  private AggregateDynamic aggregate;
+  private final AggregateDynamic aggregate;
 
 
-  public BFDynamicOptimizationSubset(BinarizedDynamicDataSet bds, StatBasedLoss oracle, int[] points) {
+  public BFDynamicOptimizationSubset(final BinarizedDynamicDataSet bds, final StatBasedLoss oracle, final int[] points) {
     this.bds = bds;
     this.points = points;
     this.oracle = oracle;
     this.aggregate = new AggregateDynamic(bds, oracle.statsFactory(), points);
   }
 
-  public BFDynamicOptimizationSubset split(BinaryFeature feature) {
-    TIntArrayList left = new TIntArrayList(points.length);
-    TIntArrayList right = new TIntArrayList(points.length);
+  public BFDynamicOptimizationSubset split(final BinaryFeature feature) {
+    final TIntArrayList left = new TIntArrayList(points.length);
+    final TIntArrayList right = new TIntArrayList(points.length);
     final short[] bins = bds.bins(feature.fIndex());
-    for (int i : points) {
+    for (final int i : points) {
       if (bins[i] <= feature.binNo()) {
         left.add(i);
       } else {
@@ -46,11 +46,11 @@ public class BFDynamicOptimizationSubset {
     return points.length;
   }
 
-  public void visitAllSplits(AggregateDynamic.SplitVisitor<? extends AdditiveStatistics> visitor) {
+  public void visitAllSplits(final AggregateDynamic.SplitVisitor<? extends AdditiveStatistics> visitor) {
     aggregate.visit(visitor);
   }
 
-  public <T extends AdditiveStatistics> void visitSplit(BinaryFeature bf, AggregateDynamic.SplitVisitor<T> visitor) {
+  public <T extends AdditiveStatistics> void visitSplit(final BinaryFeature bf, final AggregateDynamic.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf);
     final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
     visitor.accept(bf, left, right);
@@ -61,7 +61,7 @@ public class BFDynamicOptimizationSubset {
   }
 
 
-  public void rebuild(int... features) {
+  public void rebuild(final int... features) {
     this.aggregate.rebuild(features);
 
   }

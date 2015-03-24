@@ -9,7 +9,7 @@ import com.spbsu.ml.data.set.DataSet;
  * Time: 18:08
  */
 public class F1Logit extends FBetaLogit {
-  public F1Logit(Vec target, DataSet<?> owner) {
+  public F1Logit(final Vec target, final DataSet<?> owner) {
     super(target, owner, 1.);
   }
 }

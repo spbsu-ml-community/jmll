@@ -22,13 +22,13 @@ public class BlockwiseMLLLogit extends BlockwiseFuncC1.Stub implements TargetFun
   private final DataSet<?> owner;
   private final int classesCount;
 
-  public BlockwiseMLLLogit(IntSeq target, DataSet<?> owner) {
+  public BlockwiseMLLLogit(final IntSeq target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
     classesCount = ArrayTools.max(target) + 1;
   }
 
-  public BlockwiseMLLLogit(Vec target, DataSet<?> owner) {
+  public BlockwiseMLLLogit(final Vec target, final DataSet<?> owner) {
     final int[] intTarget = new int[target.length()];
     final VecIterator iter = target.nonZeroes();
     while (iter.advance()) {
@@ -87,7 +87,7 @@ public class BlockwiseMLLLogit extends BlockwiseFuncC1.Stub implements TargetFun
     return target.length() * (classesCount - 1);
   }
 
-  public int label(int idx) {
+  public int label(final int idx) {
     return target.at(idx);
   }
 

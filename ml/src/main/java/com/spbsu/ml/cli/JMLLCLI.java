@@ -23,10 +23,13 @@ import com.spbsu.ml.cli.output.printers.MulticlassProgressPrinter;
 import com.spbsu.ml.cli.output.printers.ResultsPrinter;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.spbsu.ml.loss.multiclass.ClassicMulticlassLoss;
 import com.spbsu.ml.methods.VecOptimization;
+import com.spbsu.ml.models.JoinedBinClassModel;
 import org.apache.commons.cli.*;
 
 import java.io.*;
@@ -53,7 +56,9 @@ public class JMLLCLI {
   private static final String OPTIMIZATION_OPTION = "O";
 
   private static final String VERBOSE_OPTION = "v";
+  private static final String PRINT_PERIOD = "printperiod";
   private static final String FAST_OPTION = "fast";
+  private static final String SKIP_FINAL_EVAL_OPTION = "fastfinal";
   private static final String HIST_OPTION = "h";
   private static final String OUTPUT_OPTION = "o";
   private static final String WRITE_BIN_FORMULA = "mxbin";
@@ -79,13 +84,15 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("matrixnetbin").withDescription("write model in matrix-net bin format").hasArg(false).create(WRITE_BIN_FORMULA));
 
     options.addOption(OptionBuilder.withLongOpt("verbose").withDescription("verbose output").create(VERBOSE_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("print-period").withDescription("number of iterations to evaluate and print scores").hasArg().create(PRINT_PERIOD));
     options.addOption(OptionBuilder.withLongOpt("fast-run").withDescription("fast run without model evaluation").create(FAST_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("skip-final-eval").withDescription("skip model evaluation on last step (faster)").create(SKIP_FINAL_EVAL_OPTION));
     options.addOption(OptionBuilder.withLongOpt("histogram").withDescription("histogram for dynamic grid").hasArg(false).create(HIST_OPTION));
 
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(final String[] args) throws IOException {
     final CommandLineParser parser = new GnuParser();
     try {
       final CommandLine command = parser.parse(options, args);
@@ -103,6 +110,12 @@ public class JMLLCLI {
         case "convert-pool":
           modeConvertPool(command);
           break;
+        case "convert-pool-json2classic":
+          modeConvertPoolJson2Classic(command);
+          break;
+        case "convert-pool-libfm":
+          modeConvertPoolLibfm(command);
+          break;
         case "validate-model":
           modeValidateModel(command);
           break;
@@ -119,12 +132,13 @@ public class JMLLCLI {
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
     } catch (Exception e) {
-      HelpFormatter formatter = new HelpFormatter();
+      final HelpFormatter formatter = new HelpFormatter();
       e.printStackTrace();
       System.err.println(e.getLocalizedMessage());
-      String columns = System.getenv("COLUMNS");
+      final String columns = System.getenv("COLUMNS");
 
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
+      formatter.printHelp("JMLLCLI", options);
     }
   }
 
@@ -189,11 +203,14 @@ public class JMLLCLI {
     } else {
       metrics = new Func[]{test.target(DataTools.targetByName(target))};
     }
-    ProgressHandler progressPrinter = null;
+
+
     //added progress handlers
+    ProgressHandler progressPrinter = null;
     if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION) && !command.hasOption(FAST_OPTION)) {
       if (loss instanceof BlockwiseMLLLogit) {
-        progressPrinter = new MulticlassProgressPrinter(learn, test); //f*ck you with your custom different-dimensional metrics
+        final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
+        progressPrinter = new MulticlassProgressPrinter(learn, test, printPeriod); //f*ck you with your custom different-dimensional metrics
       } else {
         progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics);
       }
@@ -207,6 +224,7 @@ public class JMLLCLI {
       ((WeakListenerHolder) method).addListener(histogramPrinter);
     }
 
+
     //fitting
     Interval.start();
     Interval.suspend();
@@ -215,10 +233,13 @@ public class JMLLCLI {
 
 
     //calc & print scores
-    if (!command.hasOption(FAST_OPTION)) {
+    if (!command.hasOption(FAST_OPTION) && !command.hasOption(SKIP_FINAL_EVAL_OPTION)) {
       ResultsPrinter.printResults(result, learn, test, loss, metrics);
       if (loss instanceof BlockwiseMLLLogit) {
         ResultsPrinter.printMulticlassResults(result, learn, test);
+      } else if (loss instanceof ClassicMulticlassLoss) {
+        final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
+        MCTools.makeOneVsRestReport(learn, test, (JoinedBinClassModel) result, printPeriod);
       }
     }
 
@@ -305,6 +326,36 @@ public class JMLLCLI {
     DataTools.writePoolTo(pool, new FileWriter(outputName));
   }
 
+  private static void modeConvertPoolJson2Classic(final CommandLine command) throws MissingArgumentException, IOException {
+    if (!command.hasOption(LEARN_OPTION)) {
+      throw new MissingArgumentException("Please provide 'LEARN_OPTION'");
+    }
+
+    final DataBuilder dataBuilder = new DataBuilderClassic();
+    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
+    final Pool pool = dataBuilder.create().getFirst();
+    final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".tsv";
+    DataTools.writeClassicPoolTo(pool, outputName);
+  }
+
+  private static void modeConvertPoolLibfm(final CommandLine command) throws MissingArgumentException, IOException {
+    if (!command.hasOption(LEARN_OPTION)) {
+      throw new MissingArgumentException("Please provide 'LEARN_OPTION");
+    }
+
+    final DataBuilderClassic dataBuilder = new DataBuilderClassic();
+    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
+    final Pool<?> pool = dataBuilder.create().getFirst();
+    final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".libfm";
+    try (final BufferedWriter out = new BufferedWriter(new FileWriter(outputName))) {
+      DataTools.writePoolInLibfmFormat(pool, out);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private static void modeValidatePool(final CommandLine command) throws MissingArgumentException {
     if (!command.hasOption(LEARN_OPTION)) {
       throw new MissingArgumentException("Please provide 'LEARN_OPTION'");
@@ -348,7 +399,7 @@ public class JMLLCLI {
     final DataBuilder builder = new DataBuilderClassic();
     builder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     builder.setJsonFormat(command.hasOption(JSON_FORMAT));
-    final Pool pool = builder.create().getFirst();
+    final Pool<?> pool = builder.create().getFirst();
     System.out.println(DataTools.getPoolInfo(pool));
   }
 

@@ -3,6 +3,7 @@ package com.spbsu.ml.io;
 import com.spbsu.commons.func.converters.Vec2StringConverter;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.TypeConverter;
+import com.spbsu.commons.math.io.Vec2CharSequenceConverter;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -18,7 +19,7 @@ public class FMModelConversionPack implements ConversionPack<FMModel, CharSequen
     @Override
     public CharSequence convert(final FMModel from) {
       final Vec2StringConverter vec2StringConverter = new Vec2StringConverter();
-      StringBuilder builder = new StringBuilder();
+      final StringBuilder builder = new StringBuilder();
       builder.append(String.valueOf(from.getW0()));
       builder.append("\n");
       builder.append(vec2StringConverter.convertTo(from.getW()));
@@ -31,7 +32,7 @@ public class FMModelConversionPack implements ConversionPack<FMModel, CharSequen
   public static class From implements TypeConverter<CharSequence, FMModel> {
     @Override
     public FMModel convert(final CharSequence from) {
-      final Vec2StringConverter vec2StringConverter = new Vec2StringConverter();
+      final Vec2CharSequenceConverter vec2StringConverter = new Vec2CharSequenceConverter();
       final CharSequence[] lines = CharSeqTools.split(from, '\n');
       final double w0 = Double.valueOf(lines[0].toString());
       final Vec w = vec2StringConverter.convertFrom(lines[1].toString());

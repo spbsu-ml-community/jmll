@@ -8,7 +8,6 @@ import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
-import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.models.MultiClassModel;
 
@@ -40,7 +39,7 @@ public class MultiClassModelConversionPack implements ConversionPack<MultiClassM
       final TransJoin internModel = repository.convert(from, TransJoin.class);
       final Func[] dirs = ArrayTools.map(internModel.dirs, Func.class, new Computable<Trans, Func>() {
         @Override
-        public Func compute(Trans argument) {
+        public Func compute(final Trans argument) {
           return (Func) argument;
         }
       });

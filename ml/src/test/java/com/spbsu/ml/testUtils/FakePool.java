@@ -28,11 +28,11 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class FakePool extends Pool<FakePool.FakeItem> {
   private final Mx data;
 
-  public FakePool(final Mx data, Seq<?> target) {
+  public FakePool(final Mx data, final Seq<?> target) {
     super(new FakeDataSetMeta(), genItems(target.length()), genFakeFeatures(data), new Pair[]{Pair.create(new FakeTargetMeta(), target)});
     this.data = data;
     for (int i = 0; i < features.length; i++) {
-      Pair<? extends FeatureMeta, ? extends Seq<?>> feature = features[i];
+      final Pair<? extends FeatureMeta, ? extends Seq<?>> feature = features[i];
       ((FakeFeatureMeta)feature.first).owner = this;
     }
     ((FakeTargetMeta)this.targets.get(0).first).owner = this;
@@ -40,7 +40,7 @@ public class FakePool extends Pool<FakePool.FakeItem> {
   }
 
   private static Pair<PoolFeatureMeta, Vec>[] genFakeFeatures(final Mx data) {
-    List<Pair<PoolFeatureMeta, Vec>> features = new ArrayList<>();
+    final List<Pair<PoolFeatureMeta, Vec>> features = new ArrayList<>();
     for (int i = 0; i < data.columns(); i++) {
       final int finalI = i;
       final PoolFeatureMeta.ValueType type = VecTools.isSparse(data.col(i), 0.1) ? PoolFeatureMeta.ValueType.SPARSE_VEC : PoolFeatureMeta.ValueType.VEC;
@@ -50,6 +50,7 @@ public class FakePool extends Pool<FakePool.FakeItem> {
     return features.toArray(new Pair[features.size()]);
   }
 
+  @Override
   public VecDataSet vecData() {
     final DataSet<FakeItem> ds = data();
     return new VecDataSetImpl(ds, data, new Vectorization<FakeItem>() {
@@ -177,8 +178,8 @@ public class FakePool extends Pool<FakePool.FakeItem> {
     }
   }
 
-  private static Seq<FakeItem> genItems(int count) {
-    FakeItem[] result = new FakeItem[count];
+  private static Seq<FakeItem> genItems(final int count) {
+    final FakeItem[] result = new FakeItem[count];
     for (int i = 0; i < result.length; i++)
       result[i] = new FakeItem(i);
     return new ArraySeq<FakeItem>(result);

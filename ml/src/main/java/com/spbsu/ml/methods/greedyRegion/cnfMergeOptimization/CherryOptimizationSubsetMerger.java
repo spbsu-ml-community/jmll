@@ -2,14 +2,10 @@ package com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization;
 
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
-import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.loss.StatBasedLoss;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.methods.greedyMergeOptimization.MergeOptimization;
 import com.spbsu.ml.models.CNF;
 import gnu.trove.list.array.TIntArrayList;
-
-import java.util.ArrayList;
-import java.util.BitSet;
 
 /**
  * Created by noxoomo on 30/11/14.
@@ -17,114 +13,111 @@ import java.util.BitSet;
 public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryOptimizationSubset> {
   private final Factory<AdditiveStatistics> factory;
 
-  public CherryOptimizationSubsetMerger(StatBasedLoss<AdditiveStatistics> loss) {
-    this.factory = loss.statsFactory();
+  public CherryOptimizationSubsetMerger(final Factory<AdditiveStatistics> factory) {
+    this.factory =  factory;
   }
 
-  private CNF.Condition[] merge(CNF.Condition[] leftConditions, CNF.Condition[] rightConditions) {
-    int left = 0;
-    int right = 0;
-    ArrayList<CNF.Condition> conditions = new ArrayList<>(leftConditions.length + rightConditions.length);
-    while (left != leftConditions.length && right != rightConditions.length) {
-      if (leftConditions[left].feature == rightConditions[right].feature) {
-        BitSet used = (BitSet) rightConditions[right].used.clone();
-        used.or(leftConditions[left].used);
-        CNF.Condition newCondition = new CNF.Condition(rightConditions[right].feature, used);
-        ++left;
-        ++right;
-        conditions.add(newCondition);
-        continue;
-      }
-
-      if (leftConditions[left].feature < rightConditions[right].feature) {
-        BitSet used = (BitSet) leftConditions[left].used.clone();
-        CNF.Condition newCondition = new CNF.Condition(leftConditions[left].feature, used);
-        ++left;
-        conditions.add(newCondition);
-      } else {
-        BitSet used = (BitSet) rightConditions[right].used.clone();
-        CNF.Condition newCondition = new CNF.Condition(rightConditions[right].feature, used);
-        ++right;
-        conditions.add(newCondition);
-      }
-    }
-
-    while (left < leftConditions.length) {
-      BitSet used = (BitSet) leftConditions[left].used.clone();
-      CNF.Condition newCondition = new CNF.Condition(leftConditions[left].feature, used);
-      ++left;
-      conditions.add(newCondition);
-    }
-    while (right < rightConditions.length) {
-      BitSet used = (BitSet) rightConditions[right].used.clone();
-      CNF.Condition newCondition = new CNF.Condition(rightConditions[right].feature, used);
-      ++right;
-      conditions.add(newCondition);
-    }
-    return (conditions.toArray(new CNF.Condition[conditions.size()]));
-
-  }
-
-//  ThreadPoolExecutor exec = ThreadTools.createBGExecutor("merge thread", -1);
 
   @Override
   public CherryOptimizationSubset merge(CherryOptimizationSubset first, CherryOptimizationSubset second) {
-    if (first.outside.length == 0 && second.outside.length == 0) {
-      return first;
-    }
-    if (first.regularization == Double.POSITIVE_INFINITY || second.regularization == Double.POSITIVE_INFINITY) { //skip bad subsets
-      return first;
-    }
-    CNF.Condition[] conditions = merge(first.clause.conditions, second.clause.conditions);
+    final CNF.Clause clause = new CNF.Clause(first.bds.grid(), ArrayTools.concat(first.clause.conditions, second.clause.conditions));
 
-
-    AdditiveStatistics stat = factory.create();
-    if (first.outside.length < second.outside.length) {
-      CherryOptimizationSubset tmp = first;
+    final AdditiveStatistics stat = factory.create();
+    if (first.minimumIndices.length < second.minimumIndices.length) {
+      final CherryOptimizationSubset tmp = first;
       first = second;
       second = tmp;
     }
-
-    final CNF.Clause clause = new CNF.Clause(first.bds.grid(), conditions);
-    final BinarizedDataSet bds = first.bds;
-    final boolean inside[] = new boolean[first.outside.length];
-    final int[] points = first.outside;
-//    final CountDownLatch latch = new CountDownLatch(first.outside.length);
-    for (int i = 0; i < points.length; ++i) {
-      inside[i] = clause.value(bds, points[i]) == 1.0;
-    }
-
-//    for (int i = 0; i < points.length; ++i) {
-//      final int fIndex = i;
-//      exec.submit(new Runnable() {
-//        @Override
-//        public void run() {
-//          inside[fIndex] = layer.value(bds, points[fIndex]) == 1.0;
-//          latch.countDown();
-//        }
-//      });
-//    }
-//
-//    try {
-//      latch.await();
-//    } catch (InterruptedException e) {
-//      //skip
-//    }
-
-    stat.append(first.stat);
-    TIntArrayList mergedOutside = new TIntArrayList();
-    TIntArrayList mergedInside = new TIntArrayList(first.inside);
-
-    for (int i = 0; i < points.length; ++i) {
-      if (inside[i]) {
-        stat.append(points[i], 1);
-        mergedInside.add(points[i]);
-      } else {
-        mergedOutside.add(points[i]);
+    if (first.isMinimumOutside && second.isMinimumOutside) { // intersection of outer
+      stat.append(second.stat);
+      final int[] firstOutside = first.minimumIndices;
+      final int[] secondOutside = second.minimumIndices;
+      final TIntArrayList mergedOutside = new TIntArrayList(second.minimumIndices.length);
+      int firstIndex = 0;
+      for (int i = 0; i <= secondOutside.length; i++) {
+        final boolean last = i == secondOutside.length;
+        final int next = !last ? secondOutside[i] : Integer.MAX_VALUE;
+        while (firstIndex < firstOutside.length && firstOutside[firstIndex] < next) {
+          firstIndex++;
+        }
+        if (!last) {
+          if (firstIndex < firstOutside.length && firstOutside[firstIndex] == next)
+            mergedOutside.add(next);
+          else stat.remove(next, 1);
+        }
       }
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
     }
-    return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), mergedOutside.toArray(), stat);
+    else if (first.isMinimumOutside && !second.isMinimumOutside) {
+      stat.append(first.stat);
+      final int[] firstOutside = first.minimumIndices;
+      final int[] secondInside = second.minimumIndices;
+      final TIntArrayList mergedOutside = new TIntArrayList(first.minimumIndices.length);
+      int firstIndex = 0;
+      for (int i = 0; i <= secondInside.length; i++) {
+        final boolean last = i == secondInside.length;
+        final int next = !last ? secondInside[i] : Integer.MAX_VALUE;
+        while (firstIndex < firstOutside.length && firstOutside[firstIndex] < next) {
+          mergedOutside.add(firstOutside[firstIndex]);
+          firstIndex++;
+        }
+        if (!last) {
+          if (firstIndex < firstOutside.length && firstOutside[firstIndex] == next) {
+            stat.append(next, 1);
+            firstIndex++;
+          }
+        }
+      }
+
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
+    }
+    else if (!first.isMinimumOutside && second.isMinimumOutside) {
+      stat.append(second.stat);
+      final int[] firstInside = first.minimumIndices;
+      final int[] secondOutside = second.minimumIndices;
+      final TIntArrayList mergedOutside = new TIntArrayList(second.minimumIndices.length);
+      int secondIndex = 0;
+      for (int i = 0; i <= firstInside.length; i++) {
+        final boolean last = i == firstInside.length;
+        final int next = !last ? firstInside[i] : Integer.MAX_VALUE;
+        while (secondIndex < secondOutside.length && secondOutside[secondIndex] < next) {
+          mergedOutside.add(secondOutside[secondIndex]);
+          secondIndex++;
+        }
+        if (!last) {
+          if (secondIndex < secondOutside.length && secondOutside[secondIndex] == next) {
+            stat.append(next, 1);
+            secondIndex++;
+          }
+        }
+      }
+
+      return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
+    }
+    else if (!first.isMinimumOutside && !second.isMinimumOutside) {
+      stat.append(first.stat);
+      final AdditiveStatistics inside = factory.create();
+      final int[] firstInside = first.minimumIndices;
+      final int[] secondInside = second.minimumIndices;
+      final TIntArrayList mergedInside = new TIntArrayList(second.minimumIndices.length);
+      int secondIndex = 0;
+      for (int i = 0; i <= firstInside.length; i++) {
+        final boolean last = i == firstInside.length;
+        final int next = !last ? firstInside[i] : Integer.MAX_VALUE;
+        while (secondIndex < secondInside.length && secondInside[secondIndex] < next) {
+          mergedInside.add(secondInside[secondIndex]);
+          inside.append(secondInside[secondIndex], 1);
+          secondIndex++;
+        }
+        if (!last) {
+          inside.append(next, 1);
+          mergedInside.add(next);
+          if (secondIndex < secondInside.length && secondInside[secondIndex] == next)
+            secondIndex++;
+        }
+      }
+      return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, inside, first.initialCardinality);
+    }
+    throw new RuntimeException("Never happen");
   }
-
-
 }

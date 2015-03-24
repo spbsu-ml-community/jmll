@@ -19,8 +19,8 @@ public class SessionV1AttractivenessModel implements AttractivenessModel<BlockV1
 
   @Override
   public double eval_f(final Session<BlockV1> ses, final int s, final int e, final int click_s) {
-    TIntArrayList nonzeroFeats = getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s);
-    Vec features = new ArrayVec(NFEATS);
+    final TIntArrayList nonzeroFeats = getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s);
+    final Vec features = new ArrayVec(NFEATS);
     for (int j = 0; j < nonzeroFeats.size(); j++)
       features.set(nonzeroFeats.getQuick(j), 1.);
     return f_model.value(features);
@@ -28,11 +28,11 @@ public class SessionV1AttractivenessModel implements AttractivenessModel<BlockV1
 
   @Override
   public SparseVec feats(final Session<BlockV1> ses, final int s, final int e, final int click_s) {
-    TIntArrayList nonzeroFeats = getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s);
-    double[] ones = new double[nonzeroFeats.size()];
+    final TIntArrayList nonzeroFeats = getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s);
+    final double[] ones = new double[nonzeroFeats.size()];
     for (int i = 0; i < ones.length; i++)
       ones[i] = 1.;
-    SparseVec features = new SparseVec(NFEATS, nonzeroFeats.toArray(), ones);
+    final SparseVec features = new SparseVec(NFEATS, nonzeroFeats.toArray(), ones);
     return features;
   }
 
@@ -44,8 +44,8 @@ public class SessionV1AttractivenessModel implements AttractivenessModel<BlockV1
    * @param click_s in {0,1} - флаг клика на блоке bs
    * @return список индексов ненулевых фич
    */
-  private TIntArrayList getNonzeroFeats(BlockV1 bs, BlockV1 be, int click_s) {
-    TIntArrayList ret = new TIntArrayList(MAX_NONZERO_FEATS);
+  private TIntArrayList getNonzeroFeats(final BlockV1 bs, final BlockV1 be, final int click_s) {
+    final TIntArrayList ret = new TIntArrayList(MAX_NONZERO_FEATS);
     int index = 0;
     //  бинарные фичи для каждого типа блока $e$: [WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER]
     if (be.resultType != null)

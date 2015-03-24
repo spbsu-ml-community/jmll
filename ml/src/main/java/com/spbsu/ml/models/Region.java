@@ -2,8 +2,6 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.BinOptimizedModel;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
 import java.util.Arrays;
@@ -14,15 +12,12 @@ import java.util.List;
  * Date: 29.11.12
  * Time: 5:35
  */
-public class Region extends Func.Stub implements BinOptimizedModel {
-  private final BFGrid.BinaryFeature[] features;
-  private final boolean[] mask;
-  public final double inside;
-  public final double outside;
+public class Region extends RegionBase {
+  public final BFGrid.BinaryFeature[] features;
+  public final boolean[] mask;
   public final int maxFailed;
   public final int basedOn;
   public final double score;
-  private final BFGrid grid;
 
   public BFGrid.BinaryFeature[] features() {
     return features.clone();
@@ -32,61 +27,56 @@ public class Region extends Func.Stub implements BinOptimizedModel {
     return mask.clone();
   }
 
-  public Region(final List<BFGrid.BinaryFeature> conditions, boolean[] mask, double inside, int basedOn, double score) {
+  public Region(final List<BFGrid.BinaryFeature> conditions, final boolean[] mask, final double inside, final int basedOn, final double score) {
     this(conditions, mask, inside, 0, basedOn, score, 0);
   }
 
-  public Region(final List<BFGrid.BinaryFeature> conditions, boolean[] mask, double inside, double outside, int basedOn, double score, int maxFailed) {
-    grid = conditions.get(0).row().grid();
+  public Region(final List<BFGrid.BinaryFeature> conditions, final boolean[] mask, final double inside, final double outside, final int basedOn, final double score, final int maxFailed) {
+    super(conditions.size() > 0 ? conditions.get(0).row().grid() : null, inside, outside);
     this.basedOn = basedOn;
     this.score = score;
     this.features = conditions.toArray(new BFGrid.BinaryFeature[conditions.size()]);
     this.mask = mask;
-    this.inside = inside;
-    this.outside = outside;
     this.maxFailed = maxFailed;
   }
 
+
+  public Region(final Region base, final double inside, final double outside) {
+    super(base.grid, inside, outside);
+    this.basedOn = base.basedOn;
+    this.score = base.score();
+    this.features = base.features;
+    this.mask = base.mask;
+    this.maxFailed = base.maxFailed;
+  }
+
   @Override
-  public double value(BinarizedDataSet bds, int pindex) {
+  public boolean contains(final BinarizedDataSet bds, final int pindex) {
     int failed = 0;
     for (int i = 0; i < features.length; i++) {
-      if (bds.bins(features[i].findex)[pindex] > features[i].binNo != mask[i])
-        ++failed;
+      if (bds.bins(features[i].findex)[pindex] > features[i].binNo != mask[i]) {
+        if (++failed > maxFailed) {
+          return false;
+        }
+      }
     }
-    return failed <= maxFailed ? inside : outside;
+
+    return true;
   }
 
   @Override
-  public double value(Vec x) {
-    int failed = 0;
-    for (int i = 0; i < features.length; i++) {
-      if (features[i].value(x) != mask[i])
-        ++failed;
-    }
-    if (failed > maxFailed) {
-      return outside;
-    }
-    return inside;
-  }
-
-  @Override
-  public int dim() {
-    return grid.rows();
-  }
-
-  public boolean contains(Vec x) {
+  public boolean contains(final Vec x) {
     int failed = 0;
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(x) != mask[i])
         ++failed;
     }
-    return failed > maxFailed;
+    return failed <= maxFailed;
   }
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
+    final StringBuilder builder = new StringBuilder();
     builder.append(maxFailed).append(":");
     builder.append(inside).append("/").append(outside).append("/").append(basedOn);
     builder.append(" ->");
@@ -100,18 +90,11 @@ public class Region extends Func.Stub implements BinOptimizedModel {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (!(o instanceof Region)) return false;
-    Region that = (Region) o;
-    if (!Arrays.equals(features, that.features)) return false;
-    if (!Arrays.equals(mask, that.mask)) return false;
-    if (this.inside != that.inside) return false;
-    if (this.outside != that.outside) return false;
-    if (this.maxFailed != that.maxFailed) return false;
-    if (this.score != that.score) return false;
-    if (this.basedOn != that.basedOn) return false;
-    return true;
+    final Region that = (Region) o;
+    return Arrays.equals(features, that.features) && Arrays.equals(mask, that.mask) && this.inside == that.inside && this.outside == that.outside && this.maxFailed == that.maxFailed && this.score == that.score && this.basedOn == that.basedOn;
   }
 
   public double score() {

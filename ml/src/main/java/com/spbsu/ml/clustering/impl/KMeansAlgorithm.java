@@ -21,23 +21,23 @@ public class KMeansAlgorithm<T> implements ClusterizationAlgorithm<T> {
   int clustCount;
   double maxDist;
 
-  public KMeansAlgorithm(int clustCount, double maxDist) {
+  public KMeansAlgorithm(final int clustCount, final double maxDist) {
     this.clustCount = clustCount;
     this.maxDist = maxDist;
   }
 
   @NotNull
   @Override
-  public Collection<? extends Collection<T>> cluster(Collection<T> dataSet, Computable<T, Vec> data2DVector) {
+  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Computable<T, Vec> data2DVector) {
     Vec[] centroids = new Vec[clustCount];
-    List<Set<T>> clusters = new ArrayList<Set<T>>();
+    final List<Set<T>> clusters = new ArrayList<Set<T>>();
     while (clusters.size() < centroids.length) {
       clusters.add(new HashSet<T>());
     }
     int fullIndex = 0;
-    for (T point : dataSet) {
-      Vec vec = data2DVector.compute(point);
-      int index = fullIndex++ % centroids.length;
+    for (final T point : dataSet) {
+      final Vec vec = data2DVector.compute(point);
+      final int index = fullIndex++ % centroids.length;
       if (centroids[index] == null)
         //noinspection unchecked
         centroids[index] = copy(vec);
@@ -56,7 +56,7 @@ public class KMeansAlgorithm<T> implements ClusterizationAlgorithm<T> {
         clusters.get(i).clear();
       }
 
-      for (T point : dataSet) {
+      for (final T point : dataSet) {
         final Vec vec = data2DVector.compute(point);
         double minResemblance = Double.MAX_VALUE;
         int minIndex = -1;
@@ -84,8 +84,8 @@ public class KMeansAlgorithm<T> implements ClusterizationAlgorithm<T> {
     while (iter.hasNext()) {
       final Set<T> cluster = iter.next();
       double meanDist = 0;
-      Vec centroid = centroids[index++];
-      for (T term : cluster) {
+      final Vec centroid = centroids[index++];
+      for (final T term : cluster) {
         meanDist += VecTools.distanceAV(data2DVector.compute(term), centroid);
       }
       meanDist /= cluster.size();

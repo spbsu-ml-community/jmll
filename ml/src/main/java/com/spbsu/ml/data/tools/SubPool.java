@@ -14,14 +14,14 @@ import com.spbsu.ml.meta.PoolFeatureMeta;
  */
 public class SubPool<I extends DSItem> extends Pool<I> {
 
-  public SubPool(final Pool<I> original, int[] indices) {
+  public SubPool(final Pool<I> original, final int[] indices) {
     super(original.meta,
         ArrayTools.cut(original.items, indices),
         cutFeatures(original.features, indices),
         cutFeatures(original.targets.toArray(new Pair[original.targets.size()]), indices));
   }
 
-  private static <T extends PoolFeatureMeta> Pair<? extends T, ? extends Seq<?>>[] cutFeatures(Pair<? extends T, ? extends Seq<?>>[] original, int[] indices) {
+  private static <T extends PoolFeatureMeta> Pair<? extends T, ? extends Seq<?>>[] cutFeatures(final Pair<? extends T, ? extends Seq<?>>[] original, final int[] indices) {
     @SuppressWarnings("unchecked")
     final Pair<T, Seq<?>>[] result = new Pair[original.length];
     for (int i = 0; i < original.length; i++) {

@@ -17,7 +17,7 @@ import java.util.StringTokenizer;
 */
 public class BFGridStringConverter implements Converter<BFGrid, CharSequence> {
   @Override
-  public BFGrid convertFrom(CharSequence source) {
+  public BFGrid convertFrom(final CharSequence source) {
     final List<BFGrid.BFRow> rows = new ArrayList<BFGrid.BFRow>(1000);
     final LineNumberReader reader = new LineNumberReader(new CharSeqReader(source));
     String line;
@@ -42,8 +42,8 @@ public class BFGridStringConverter implements Converter<BFGrid, CharSequence> {
   }
 
   @Override
-  public CharSequence convertTo(BFGrid grid) {
-    StringBuilder builder = new StringBuilder();
+  public CharSequence convertTo(final BFGrid grid) {
+    final StringBuilder builder = new StringBuilder();
     for (int rowIndex = 0; rowIndex < grid.rows(); rowIndex++) {
       final BFGrid.BFRow row = grid.row(rowIndex);
       final int rowBfCount = row.borders.length;

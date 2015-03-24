@@ -21,12 +21,12 @@ import java.io.OutputStreamWriter;
  */
 public class FMTrainingWorkaround extends VecOptimization.Stub<L2> {
   private final static String LIBFM_PATH = System.getProperty("user.dir") + "/libfm";
-  private String task;
-  private String dim; // e.g, "1/1/8"
-  private String iters;
-  private String others;
+  private final String task;
+  private final String dim; // e.g, "1/1/8"
+  private final String iters;
+  private final String others;
 
-  public FMTrainingWorkaround(String task, String dim, String iters, String others) {
+  public FMTrainingWorkaround(final String task, final String dim, final String iters, final String others) {
     this.task = task;
     this.dim = dim.replace('/', ',');
     this.iters = iters;
@@ -48,10 +48,10 @@ public class FMTrainingWorkaround extends VecOptimization.Stub<L2> {
       if (maxTarget < t)
         maxTarget = (float) t;
     }
-    int numFeatures = learn.xdim();
-    int numRows = learn.length();
+    final int numFeatures = learn.xdim();
+    final int numRows = learn.length();
     long numValues = 0;
-    MxIterator mxIterator = learn.data().nonZeroes();
+    final MxIterator mxIterator = learn.data().nonZeroes();
     while (mxIterator.advance()) {
       numValues++;
     }
@@ -90,7 +90,7 @@ public class FMTrainingWorkaround extends VecOptimization.Stub<L2> {
       //sending dataset
       final Vec2StringConverter converter = new Vec2StringConverter();
       for (int i = 0; i < learn.length(); i++) {
-        String target = String.valueOf(func.target.get(i));
+        final String target = String.valueOf(func.target.get(i));
         try {
           final String entry = String.format("%s %s\n", target, converter.convertToSparse(learn.data().row(i)));
           writer.write(entry);
@@ -105,13 +105,13 @@ public class FMTrainingWorkaround extends VecOptimization.Stub<L2> {
       readInput(reader, true);
 
       //read result model
-      StringBuilder modelStr = new StringBuilder();
+      final StringBuilder modelStr = new StringBuilder();
       modelStr.append(reader.readLine());
       modelStr.append("\n");
       modelStr.append(reader.readLine());
       modelStr.append("\n");
       modelStr.append(reader.readLine());
-      ModelsSerializationRepository serializationRepository = new ModelsSerializationRepository();
+      final ModelsSerializationRepository serializationRepository = new ModelsSerializationRepository();
       final FMModel read = serializationRepository.read(modelStr, FMModel.class);
       return read;
     } catch (IOException e) {
@@ -119,7 +119,7 @@ public class FMTrainingWorkaround extends VecOptimization.Stub<L2> {
     }
   }
 
-  private void readInput(LineNumberReader reader, boolean blocking) throws IOException {
+  private void readInput(final LineNumberReader reader, final boolean blocking) throws IOException {
     String line;
     while ((line = reader.readLine()) != null && (reader.ready() || blocking) && (!line.equals("FM model"))) {
       System.out.println(line);

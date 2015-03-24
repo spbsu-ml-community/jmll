@@ -18,11 +18,11 @@ public class GreedyObliviousTreeDynamicBuilder implements Factory<VecOptimizatio
   private int depth = 6;
   private double lambda = 2;
 
-  public void setLambda(double l) {
+  public void setLambda(final double l) {
     this.lambda = l;
   }
 
-  public void setDepth(int d) {
+  public void setDepth(final int d) {
     this.depth = d;
   }
 

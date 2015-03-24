@@ -16,7 +16,7 @@ import java.util.StringTokenizer;
 
 public class DynamicGridStringConverter implements Converter<DynamicGrid, CharSequence> {
   @Override
-  public DynamicGrid convertFrom(CharSequence source) {
+  public DynamicGrid convertFrom(final CharSequence source) {
     final List<StaticRow> rows = new ArrayList<StaticRow>(1000);
     final LineNumberReader reader = new LineNumberReader(new CharSeqReader(source));
     String line;
@@ -40,8 +40,8 @@ public class DynamicGridStringConverter implements Converter<DynamicGrid, CharSe
   }
 
   @Override
-  public CharSequence convertTo(DynamicGrid grid) {
-    StringBuilder builder = new StringBuilder();
+  public CharSequence convertTo(final DynamicGrid grid) {
+    final StringBuilder builder = new StringBuilder();
     for (int rowIndex = 0; rowIndex < grid.rows(); rowIndex++) {
       final DynamicRow row = grid.row(rowIndex);
       final int rowBfCount = row.size();

@@ -23,12 +23,12 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
       this.repository = repository;
     }
 
-    protected CharSequence convertModels(F from) {
-      StringBuilder builder = new StringBuilder();
+    protected CharSequence convertModels(final F from) {
+      final StringBuilder builder = new StringBuilder();
       builder.append("{").append(from.dirs.length).append(",\n");
       for (int i = 0; i < from.dirs.length; i++) {
         builder.append("{");
-        Trans model = from.dirs[i];
+        final Trans model = from.dirs[i];
         builder.append(from.dirs[i].getClass().getCanonicalName()).append(",\n");
         builder.append("{");
         builder.append(repository.convert(model, CharSequence.class));
@@ -43,7 +43,7 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
 
   public static class To extends BaseTo<TransJoin> {
     @Override
-    public CharSequence convert(TransJoin from) {
+    public CharSequence convert(final TransJoin from) {
       return convertModels(from);
     }
   }
@@ -56,7 +56,7 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
       this.repository = repository;
     }
 
-    protected Trans[] convertModels(CharSequence from) {
+    protected Trans[] convertModels(final CharSequence from) {
       int index = CharSeqTools.skipTo(from, 0, '{') + 1;
       final int modelsCount = Integer.parseInt(CharSeqTools.cut(from, index, ',').toString().trim());
       final Trans[] models = new Trans[modelsCount];
@@ -65,9 +65,9 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
         for (int i = 0; i < models.length; i++) {
           final CharSequence modelCS = CharSeqTools.cutBetween(from, index, '{', '}');
           {
-            int mindex = 0;
-            String modelClassName = CharSeqTools.cut(modelCS, mindex, ',').toString().trim();
-            Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(modelClassName);
+            final int mindex = 0;
+            final String modelClassName = CharSeqTools.cut(modelCS, mindex, ',').toString().trim();
+            final Class<? extends Trans> elementClass = (Class<? extends Trans>) Class.forName(modelClassName);
             models[i] = repository.convert(CharSeqTools.cutBetween(modelCS, mindex, '{', '}'), elementClass);
           }
           index += modelCS.length();
@@ -81,7 +81,7 @@ public class TransJoinConversionPack implements ConversionPack<TransJoin, CharSe
 
   public static class From extends BaseFrom<TransJoin> {
     @Override
-    public TransJoin convert(CharSequence from) {
+    public TransJoin convert(final CharSequence from) {
       return new TransJoin(convertModels(from));
     }
   }

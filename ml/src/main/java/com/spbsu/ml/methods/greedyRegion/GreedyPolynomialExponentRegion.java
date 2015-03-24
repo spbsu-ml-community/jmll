@@ -26,13 +26,13 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
   private boolean[] mask;
   private final double distCoeffiecent, regulationCoeffiecent;
 
-  public GreedyPolynomialExponentRegion(BFGrid grid, double distCoeffiecent, double regulationCoeffiecent) {
+  public GreedyPolynomialExponentRegion(final BFGrid grid, final double distCoeffiecent, final double regulationCoeffiecent) {
     this.distCoeffiecent = distCoeffiecent;
     this.regulationCoeffiecent = regulationCoeffiecent;
     this.greedyTDRegion = new GreedyTDRegion<L2>(grid, 0.02, 0.5, 0);
   }
 
-  double getDistanseFromRegion(Vec x) {
+  double getDistanseFromRegion(final Vec x) {
     double distanse = 0;
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(x) != mask[i])
@@ -41,9 +41,9 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     return distanse;
   }
 
-  public static boolean validateSolution(Mx a, Vec right, Vec sol) {
-    Vec val = MxTools.multiply(a, sol);
-    double l2 = VecTools.distance(val, right);
+  public static boolean validateSolution(final Mx a, final Vec right, final Vec sol) {
+    final Vec val = MxTools.multiply(a, sol);
+    final double l2 = VecTools.distance(val, right);
     if (l2 > right.dim()) {
       /*for (int i = 0; i < right.dim(); i++)
         System.out.format("%f = %f\n", val.at(i), right.at(i));*/
@@ -52,18 +52,18 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     return l2 < 0.1 * right.dim();
   }
 
-  public static Vec solveLinearEquationUsingLQ(Mx mx, Vec right) {
+  public static Vec solveLinearEquationUsingLQ(final Mx mx, final Vec right) {
     if (mx.rows() != mx.columns())
       throw new IllegalArgumentException("Matrix must be quadratic");
     if (right.dim() != mx.rows())
       throw new IllegalArgumentException("Vector must be the same size as Matrix");
-    int n = mx.rows();
-    Mx l = new VecBasedMx(n, n);
-    Mx q = new VecBasedMx(n, n);
+    final int n = mx.rows();
+    final Mx l = new VecBasedMx(n, n);
+    final Mx q = new VecBasedMx(n, n);
     MxTools.householderLQ(mx, l, q);
     //System.out.println(VecTools.inverseLTriangle(l));
     //System.out.println(VecTools.multiply(q,VecTools.transpose(q)));
-    Vec first = new ArrayVec(n);
+    final Vec first = new ArrayVec(n);
     for (int i = 0; i < n; i++) {
       if (Math.abs(l.get(i, i)) > 1e-5) {
         double val = right.get(i);
@@ -74,7 +74,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
         first.set(i, 0);
       }
     }
-    Vec ans = MxTools.multiply(q, first);
+    final Vec ans = MxTools.multiply(q, first);
     if (!validateSolution(mx, right, ans)) {
       PrintWriter printWriter = null;
       try {
@@ -95,13 +95,13 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     return ans;
   }
 
-  double sqr(double x) {
+  double sqr(final double x) {
     return x * x;
   }
 
   @Override
-  public PolynomialExponentRegion fit(VecDataSet learn, L2 loss) {
-    Region base = greedyTDRegion.fit(learn, loss);
+  public PolynomialExponentRegion fit(final VecDataSet learn, final L2 loss) {
+    final Region base = greedyTDRegion.fit(learn, loss);
     features = base.features();
     mask = base.masks();
     double baseMse = 0;
@@ -109,26 +109,26 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
       baseMse += sqr(base.value(learn.data().row(i)) - loss.target.get(i));
     System.out.println("\nBase_MSE = " + baseMse);
 
-    int numberOfFeatures = features.length + 1;
-    int matrixSize = (features.length + 1) * (features.length + 1);
-    Mx mx = new VecBasedMx(matrixSize, matrixSize);
-    Vec linear = new ArrayVec(matrixSize);
+    final int numberOfFeatures = features.length + 1;
+    final int matrixSize = (features.length + 1) * (features.length + 1);
+    final Mx mx = new VecBasedMx(matrixSize, matrixSize);
+    final Vec linear = new ArrayVec(matrixSize);
     int countIn = 0;
     double sum = 0;
     for (int i = 0; i < learn.data().rows(); i++) {
-      Vec vec = learn.data().row(i);
+      final Vec vec = learn.data().row(i);
 
       if (!base.contains(vec))
         continue;
 
-      double data[] = new double[numberOfFeatures];
+      final double[] data = new double[numberOfFeatures];
       data[0] = 1;
       for (int j = 0; j < features.length; j++)
         data[j + 1] = vec.get(features[j].findex);
-      double f = loss.target.get(i);
+      final double f = loss.target.get(i);
       sum += f;
       countIn++;
-      double weight = 1;// Math.exp(-getDistanseFromRegion(vec) * distCoeffiecent);
+      final double weight = 1;// Math.exp(-getDistanseFromRegion(vec) * distCoeffiecent);
       //System.out.println(weight);
       for (int x = 0; x < numberOfFeatures; x++)
         for (int y = 0; y < numberOfFeatures; y++)
@@ -148,12 +148,12 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     //System.out.println(mx);
     //System.out.println(linear);
     //System.out.println(VecTools.inverseCholesky(mx));
-    Vec result = solveLinearEquationUsingLQ(mx, linear);
+    final Vec result = solveLinearEquationUsingLQ(mx, linear);
     //result.set(0, sum / countIn);
     //for (int i = 1; i < result.dim(); i++)
     //result.set(i, 0);
     System.out.println(result);
-    PolynomialExponentRegion ret = new PolynomialExponentRegion(features, mask, result.toArray(), distCoeffiecent);
+    final PolynomialExponentRegion ret = new PolynomialExponentRegion(features, mask, result.toArray(), distCoeffiecent);
     double mse = 0;
     for (int i = 0; i < learn.length(); i++)
       mse += sqr(ret.value(learn.data().row(i)) - loss.target.get(i));

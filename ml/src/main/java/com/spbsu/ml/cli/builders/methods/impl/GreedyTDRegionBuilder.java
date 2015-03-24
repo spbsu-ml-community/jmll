@@ -1,7 +1,9 @@
 package com.spbsu.ml.cli.builders.methods.impl;
 
 import com.spbsu.commons.func.Factory;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 
@@ -21,20 +23,20 @@ public class GreedyTDRegionBuilder implements Factory<VecOptimization> {
     this.gridBuilder = gridBuilder;
   }
 
-  public void setAlpha(double alpha) {
+  public void setAlpha(final double alpha) {
     this.alpha = alpha;
   }
 
-  public void setBeta(double beta) {
+  public void setBeta(final double beta) {
     this.beta = beta;
   }
 
-  public void setMaxFailed(int maxFailed) {
+  public void setMaxFailed(final int maxFailed) {
     this.maxFailed = maxFailed;
   }
 
   @Override
   public VecOptimization create() {
-    return new GreedyTDRegion(gridBuilder.create(), alpha, beta, maxFailed);
+    return new BootstrapOptimization( new GreedyTDRegion(gridBuilder.create(), alpha, beta, maxFailed), new FastRandom());
   }
 }

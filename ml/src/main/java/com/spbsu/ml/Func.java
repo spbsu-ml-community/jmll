@@ -15,20 +15,24 @@ public interface Func extends Trans {
   int dim();
 
   abstract class Stub extends Trans.Stub implements Func {
+    @Override
     public final int ydim() {
       return 1;
     }
 
+    @Override
     public final int xdim() {
       return dim();
     }
 
-    public final Vec trans(Vec x) {
+    @Override
+    public final Vec trans(final Vec x) {
       return new ArrayVec(new double[]{value(x)});
     }
 
-    public Mx transAll(Mx ds) {
-      Mx result = new VecBasedMx(1, new ArrayVec(ds.rows()));
+    @Override
+    public Mx transAll(final Mx ds) {
+      final Mx result = new VecBasedMx(1, new ArrayVec(ds.rows()));
       for (int i = 0; i < ds.rows(); i++) {
         result.set(i, value(ds.row(i)));
       }

@@ -1,7 +1,6 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -15,6 +14,7 @@ public interface VecOptimization<Loss extends TargetFunc> extends Optimization<L
   /**
    * Optimization based on vector representation of train items
    */
+  @Override
   Trans fit(VecDataSet learn, Loss loss);
 
   abstract class Stub<Loss extends TargetFunc> implements VecOptimization<Loss> {

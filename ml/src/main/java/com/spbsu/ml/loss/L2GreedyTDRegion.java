@@ -12,18 +12,18 @@ import com.spbsu.ml.data.set.DataSet;
 public class L2GreedyTDRegion extends L2 {
   final double norm;
 
-  public L2GreedyTDRegion(Vec target, DataSet<?> base) {
+  public L2GreedyTDRegion(final Vec target, final DataSet<?> base) {
     super(target, base);
     norm = VecTools.norm(target);
   }
 
   @Override
-  public double value(MSEStats stats) {
+  public double value(final MSEStats stats) {
     return stats.weight >= 1 ? stats.sum / stats.weight : 0;
   }
 
   @Override
-  public double score(MSEStats stats) {
+  public double score(final MSEStats stats) {
     return stats.weight > 1 ? (-stats.sum * stats.sum / stats.weight) * stats.weight * (stats.weight - 2) / (stats.weight * stats.weight - 3 * stats.weight + 1)
             : 0;
   }

@@ -12,7 +12,7 @@ public class StaticRow implements DynamicRow {
   private DynamicGrid grid = null;
   private final BinaryFeature[] bfs;
 
-  public StaticRow(DynamicGrid grid, int origFIndex, double[] borders) {
+  public StaticRow(final DynamicGrid grid, final int origFIndex, final double[] borders) {
     this.origFIndex = origFIndex;
     this.grid = grid;
     bfs = new BinaryFeature[borders.length];
@@ -48,17 +48,17 @@ public class StaticRow implements DynamicRow {
   }
 
   @Override
-  public BinaryFeature bf(int binNo) {
+  public BinaryFeature bf(final int binNo) {
     return bfs[binNo];
   }
 
   @Override
-  public void setOwner(DynamicGrid grid) {
+  public void setOwner(final DynamicGrid grid) {
     this.grid = grid;
   }
 
   @Override
-  public short bin(double value) {
+  public short bin(final double value) {
     short index = 0;
     while (index < size() && value > bfs[index].condition())
       index++;
@@ -66,7 +66,7 @@ public class StaticRow implements DynamicRow {
   }
 
   @Override
-  public double regularize(BinaryFeature bf) {
+  public double regularize(final BinaryFeature bf) {
     return 0;
   }
 }

@@ -1,13 +1,10 @@
 package com.spbsu.ml.loss.multiclass;
 
-import java.util.Arrays;
-
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import gnu.trove.map.hash.TIntIntHashMap;
@@ -16,18 +13,18 @@ import gnu.trove.map.hash.TIntIntHashMap;
  * User: qdeee
  * Date: 09.04.14
  */
-public class MCMacroRecall extends Func.Stub implements TargetFunc {
+public class MCMacroRecall extends Func.Stub implements ClassicMulticlassLoss {
   private final IntSeq target;
   private final DataSet<?> owner;
   private final int[] classLabels;
 
-  public MCMacroRecall(final IntSeq target, DataSet<?> owner) {
+  public MCMacroRecall(final IntSeq target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
     this.classLabels = MCTools.getClassesLabels(target);
   }
 
-  public MCMacroRecall(Vec target, DataSet<?> owner) {
+  public MCMacroRecall(final Vec target, final DataSet<?> owner) {
     final int[] intTarget = new int[target.length()];
     final VecIterator iter = target.nonZeroes();
     while (iter.advance()) {
@@ -39,7 +36,7 @@ public class MCMacroRecall extends Func.Stub implements TargetFunc {
   }
 
   @Override
-  public double value(Vec x) {
+  public double value(final Vec x) {
     final TIntIntHashMap id2tp = new TIntIntHashMap();
     final TIntIntHashMap id2fn = new TIntIntHashMap();
     for (int i = 0; i < target.length(); i++) {
@@ -73,5 +70,10 @@ public class MCMacroRecall extends Func.Stub implements TargetFunc {
   @Override
   public DataSet<?> owner() {
     return owner;
+  }
+
+  @Override
+  public IntSeq labels() {
+    return target;
   }
 }

@@ -1,7 +1,6 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.seq.Seq;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 

@@ -8,7 +8,7 @@ import java.util.Comparator;
 public class RegularizedLossComparator<Model, Loss extends RegularizedLoss<Model>> implements ModelComparators<Model> {
   Loss loss;
 
-  public RegularizedLossComparator(Loss loss) {
+  public RegularizedLossComparator(final Loss loss) {
     this.loss = loss;
   }
 
@@ -16,7 +16,7 @@ public class RegularizedLossComparator<Model, Loss extends RegularizedLoss<Model
   public Comparator<Model> regularizationComparator() {
     return new Comparator<Model>() {
       @Override
-      public int compare(Model left, Model right) {
+      public int compare(final Model left, final Model right) {
         return Double.compare(loss.regularization(left), loss.regularization(right));
       }
     };
@@ -26,7 +26,7 @@ public class RegularizedLossComparator<Model, Loss extends RegularizedLoss<Model
   public Comparator<Model> targetComparator() {
     return new Comparator<Model>() {
       @Override
-      public int compare(Model left, Model right) {
+      public int compare(final Model left, final Model right) {
         return Double.compare(loss.target(left), loss.target(right));
       }
     };
@@ -36,7 +36,7 @@ public class RegularizedLossComparator<Model, Loss extends RegularizedLoss<Model
   public Comparator<Model> scoreComparator() {
     return new Comparator<Model>() {
       @Override
-      public int compare(Model left, Model right) {
+      public int compare(final Model left, final Model right) {
         return Double.compare(loss.score(left), loss.score(right));
       }
     };

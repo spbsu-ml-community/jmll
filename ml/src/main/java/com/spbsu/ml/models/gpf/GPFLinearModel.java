@@ -33,7 +33,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
   public GPFLinearModel() {
   }
 
-  public GPFLinearModel(GPFLinearModel model) {
+  public GPFLinearModel(final GPFLinearModel model) {
     this.MAX_PATH_LENGTH = model.MAX_PATH_LENGTH;
     this.PRUNE_A_THRESHOLD = model.PRUNE_A_THRESHOLD;
     this.theta = new ArrayVec(model.theta.toArray());
@@ -48,8 +48,8 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
    * @param click_s in {0,1} - флаг клика на блоке bs
    * @return список индексов ненулевых фич
    */
-  private TIntArrayList getNonzeroFeats(BlockV1 bs, BlockV1 be, int click_s) {
-    TIntArrayList ret = new TIntArrayList(MAX_NONZERO_FEATS);
+  private TIntArrayList getNonzeroFeats(final BlockV1 bs, final BlockV1 be, final int click_s) {
+    final TIntArrayList ret = new TIntArrayList(MAX_NONZERO_FEATS);
     int index = 0;
     //  бинарные фичи для каждого типа блока $e$: [WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER]
     if (be.resultType != null)
@@ -88,11 +88,12 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     return ret;
   }
 
-  public double eval_f(Session<BlockV1> ses, int s, int e, int click_s) {
+  @Override
+  public double eval_f(final Session<BlockV1> ses, final int s, final int e, final int click_s) {
     return eval_f(getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s));
   }
 
-  protected double eval_f(TIntArrayList nonzeroFeats) {
+  protected double eval_f(final TIntArrayList nonzeroFeats) {
     // Функция аттрактивности перехода s->e f = <F(s,e),w> - линейная функция от фич пары блоков и предшествовавшего клика
     double ret = 0.;
     for (int i = 0; i < nonzeroFeats.size(); i++)
@@ -101,15 +102,15 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     return ret;
   }
 
-  protected ArrayVec eval_df_dTheta(BlockV1 bs, BlockV1 be, int click_s) {
-    TIntArrayList nonzeroFeats = getNonzeroFeats(bs, be, click_s);
-    double f_value = eval_f(nonzeroFeats);
+  protected ArrayVec eval_df_dTheta(final BlockV1 bs, final BlockV1 be, final int click_s) {
+    final TIntArrayList nonzeroFeats = getNonzeroFeats(bs, be, click_s);
+    final double f_value = eval_f(nonzeroFeats);
     return eval_df_dTheta(nonzeroFeats, f_value);
   }
 
-  protected ArrayVec eval_df_dTheta(TIntArrayList nonzeroFeats, double f_value) {
+  protected ArrayVec eval_df_dTheta(final TIntArrayList nonzeroFeats, final double f_value) {
     // Функция аттрактивности перехода s->e f = <F(s,e),w> - линейная функция от фич пары блоков и предшествовавшего клика
-    ArrayVec ret = new ArrayVec(NFEATS);
+    final ArrayVec ret = new ArrayVec(NFEATS);
     for (int i = 0; i < nonzeroFeats.size(); i++)
       ret.set(nonzeroFeats.getQuick(i), f_value);
     return ret;
@@ -122,21 +123,21 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     VecBasedMx gradient; // (ses.clicks.length + 1) \times NFEATS
   }
 
-  GradientValue eval_L_and_Gradient(Session<BlockV1> ses, final boolean do_eval_gradient) {
-    GradientValue ret = new GradientValue();
+  GradientValue eval_L_and_Gradient(final Session<BlockV1> ses, final boolean do_eval_gradient) {
+    final GradientValue ret = new GradientValue();
     ret.observation_probabilities = new ArrayVec(ses.getClick_indexes().length + 1);
     if (do_eval_gradient)
       ret.gradient = new VecBasedMx(ses.getClick_indexes().length + 1, NFEATS);
 
-    BlockV1[] blocks = ses.getBlocks();
+    final BlockV1[] blocks = ses.getBlocks();
 
     // 1 & для каждой пары блоков $i$, $j$ вычислить $f(i,j)$; третья координата - наличие клика c_i
-    Tensor3 f = new Tensor3(blocks.length, blocks.length, 2);
+    final Tensor3 f = new Tensor3(blocks.length, blocks.length, 2);
     for (int i = 0; i < blocks.length; i++) {
-      for (int j: ses.getEdgesFrom(i))
+      for (final int j: ses.getEdgesFrom(i))
         f.set(i, j, 0, eval_f(ses, i, j, 0));
       if (ses.hasClickOn(i)) {
-        for (int j: ses.getEdgesFrom(i))
+        for (final int j: ses.getEdgesFrom(i))
           f.set(i, j, 1, eval_f(ses, i, j, 1));
       }
     }
@@ -144,23 +145,23 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     f.set(Session.E_ind, Session.E_ind, 1, 1.);
 
     // 2 & для каждого блока $i$ вычислить норму $\sum_k f(i, k)$; Вторая координата - наличие клика c_i
-    Mx sum_f_i_k = new VecBasedMx(blocks.length, 2);
+    final Mx sum_f_i_k = new VecBasedMx(blocks.length, 2);
     for (int i = 0; i < blocks.length; i++) {
       double sum = 0;
-      for (int k: ses.getEdgesFrom(i))
+      for (final int k: ses.getEdgesFrom(i))
         sum += f.get(i, k, 0);
       sum_f_i_k.set(i, 0, sum);
 
       if (ses.hasClickOn(i) || i == Session.E_ind) {
         sum = 0;
-        for (int k: ses.getEdgesFrom(i))
+        for (final int k: ses.getEdgesFrom(i))
           sum += f.get(i, k, 1);
         sum_f_i_k.set(i, 1, sum);
       }
     }
 
     // 3 & для каждого блока $i$ вычислить $P(c=0|r_i)$
-    double[] P_noclick_i = new double[blocks.length];
+    final double[] P_noclick_i = new double[blocks.length];
     for (int i = 0; i < blocks.length; i++) {
       switch (blocks[i].blockType) {
         case RESULT:
@@ -179,12 +180,12 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     }
 
     // 4 & для каждой пары блоков $i$, $j$ вычислить $P(i \to j)$; третья координата - наличие клика c_i
-    Tensor3 P_i_j = new Tensor3(blocks.length, blocks.length, 2);
+    final Tensor3 P_i_j = new Tensor3(blocks.length, blocks.length, 2);
     for (int i = 0; i < blocks.length; i++) {
-      for (int j: ses.getEdgesFrom(i))
+      for (final int j: ses.getEdgesFrom(i))
         P_i_j.set(i, j, 0, f.get(i, j, 0) / sum_f_i_k.get(i, 0));
       if (ses.hasClickOn(i)) {
-        for (int j: ses.getEdgesFrom(i))
+        for (final int j: ses.getEdgesFrom(i))
           P_i_j.set(i, j, 1, f.get(i, j, 1) / sum_f_i_k.get(i, 1));
       }
     }
@@ -196,10 +197,10 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
       // 7 & для каждой пары блоков $i$, $j$ вычислить $\frac{df}{d\Theta}(i,j)$
       df_dTheta = new Tensor4(blocks.length, blocks.length, 2, NFEATS);
       for (int i = 0; i < blocks.length; i++) {
-        for (int j: ses.getEdgesFrom(i))
+        for (final int j: ses.getEdgesFrom(i))
           df_dTheta.setRow(i, j, 0, eval_df_dTheta(blocks[i], blocks[j], 0));
         if (ses.hasClickOn(i)) {
-          for (int j: ses.getEdgesFrom(i))
+          for (final int j: ses.getEdgesFrom(i))
             df_dTheta.setRow(i, j, 1, eval_df_dTheta(blocks[i], blocks[j], 1));
         }
       }
@@ -211,13 +212,13 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
       sum_df_dTheta_i_k = new Tensor3(blocks.length, 2, NFEATS);
       for (int i = 0; i < blocks.length; i++) {
         ArrayVec sum = new ArrayVec(NFEATS);
-        for (int k: ses.getEdgesFrom(i))
+        for (final int k: ses.getEdgesFrom(i))
           sum.add(df_dTheta.getRow(i, k, 0));
         sum_df_dTheta_i_k.setRow(i, 0, sum);
 
         if (ses.hasClickOn(i) || i == Session.E_ind) {
           sum = new ArrayVec(NFEATS);
-          for (int k: ses.getEdgesFrom(i))
+          for (final int k: ses.getEdgesFrom(i))
             sum.add(df_dTheta.getRow(i, k, 1));
           sum_df_dTheta_i_k.setRow(i, 1, sum);
         }
@@ -225,9 +226,9 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
 
       // 8 & для каждой пары блоков $i$, $j$ вычислить $\frac{d}{d\Theta}P(i,j)$
       dPij_dTheta = new Tensor4(blocks.length, blocks.length, 2, NFEATS);
-      ArrayVec val1 = new ArrayVec(NFEATS);
+      final ArrayVec val1 = new ArrayVec(NFEATS);
       for (int i = 0; i < blocks.length; i++) {
-        for (int j: ses.getEdgesFrom(i)) {
+        for (final int j: ses.getEdgesFrom(i)) {
           val1.assign(sum_df_dTheta_i_k.getRow(i, 0));
           val1.scale( - f.get(i, j, 0) / sum_f_i_k.get(i, 0) );
           val1.add( df_dTheta.getRow(i, j, 0) );
@@ -236,7 +237,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
         }
 
         if (ses.hasClickOn(i)) {
-          for (int j: ses.getEdgesFrom(i)) {
+          for (final int j: ses.getEdgesFrom(i)) {
             val1.assign(sum_df_dTheta_i_k.getRow(i, 1));
             val1.scale( - f.get(i, j, 1) / sum_f_i_k.get(i, 1) );
             val1.add( df_dTheta.getRow(i, j, 1) );
@@ -248,7 +249,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     }
 
     // далее -- вычисления для каждого клика в отдельности
-    int[] observations = new int[ses.getClick_indexes().length + 2];
+    final int[] observations = new int[ses.getClick_indexes().length + 2];
     observations[0] = Session.Q_ind;
     for (int i = 0; i < ses.getClick_indexes().length; i++)
       observations[i+1] = ses.getClick_indexes()[i];
@@ -256,11 +257,11 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
 
     for (int eindex = 1; eindex < observations.length; eindex++) {
       // 5 & для всех блоков $i$ и длин $t$ вычислить $A(s,i,t)$
-      int s = observations[eindex - 1];
-      int e = observations[eindex];
-      int click_s = s == 0 ? 0 : 1;
+      final int s = observations[eindex - 1];
+      final int e = observations[eindex];
+      final int click_s = s == 0 ? 0 : 1;
       // $A(i,j,t)$ вероятность пройти без из блока $i$ в блок $j$ за $t$ шагов не сделав по пути ни одного клика
-      Mx A = new VecBasedMx(blocks.length, MAX_PATH_LENGTH + 1);
+      final Mx A = new VecBasedMx(blocks.length, MAX_PATH_LENGTH + 1);
 
       // Критерий ранней остановки вычисления матрицы $A$: если
       //   A(s,i,t+1) < \varepsilon \max_{i,u<=t} A(s,i,u)
@@ -269,8 +270,8 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
 
       // A(s,i,1) =& P(s\to i) \cdot P(c=0 | i)              &\quad \forall i
       double max_A_lte_t = 0.;
-      for (int i: ses.getEdgesFrom(s)) {
-        double val = P_i_j.get(s, i, click_s) * P_noclick_i[i];
+      for (final int i: ses.getEdgesFrom(s)) {
+        final double val = P_i_j.get(s, i, click_s) * P_noclick_i[i];
         A.set(i, 1, val);
         max_A_lte_t = Math.max(max_A_lte_t, val);
       }
@@ -278,7 +279,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
         double max_A_tp1 = 0;
         for (int i = 0; i < blocks.length; i++) {
           double val = 0;
-          for (int j: ses.getEdgesTo(i))
+          for (final int j: ses.getEdgesTo(i))
             val += A.get(j, t) * P_i_j.get(j, i, 0);
           val *= P_noclick_i[i];
           A.set(i, t + 1, val);
@@ -301,23 +302,23 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
 
       if (do_eval_gradient) {
         // 9 & для всех блоков $i$ и длин $t$ вычислить $\frac{dA}{d\Theta}(s,i,t)$
-        Tensor3 dA_dTheta = new Tensor3(blocks.length, max_path_length_pruned + 1, NFEATS);
+        final Tensor3 dA_dTheta = new Tensor3(blocks.length, max_path_length_pruned + 1, NFEATS);
         // \frac{dA}{d\Theta}(s,i,1) =& P(c=0 | i) \cdot \frac{d}{d\Theta}P(s\to i) + P(s\to i) \cdot \frac{d}{d\Theta} P(c=0|i) \qquad \forall i
-        for (int i: ses.getEdgesFrom(s)) {
-          ArrayVec val = dPij_dTheta.getRow(s, i, click_s);
+        for (final int i: ses.getEdgesFrom(s)) {
+          final ArrayVec val = dPij_dTheta.getRow(s, i, click_s);
           val.scale(P_noclick_i[i]);
           dA_dTheta.setRow(i, 1, val);
         }
         // \frac{dA}{d\Theta}(s,i,t+1) =&
         //  P(c=0|i) \sum_j \left( \frac{dA}{d\Theta}(s,j,t) \cdot P(j\to i)
         //       + A(s,j,t) \cdot \frac{d}{d\Theta} P(j\to i) \right)
-        ArrayVec sum = new ArrayVec(NFEATS);
-        ArrayVec val1 = new ArrayVec(NFEATS);
-        ArrayVec val2 = new ArrayVec(NFEATS);
+        final ArrayVec sum = new ArrayVec(NFEATS);
+        final ArrayVec val1 = new ArrayVec(NFEATS);
+        final ArrayVec val2 = new ArrayVec(NFEATS);
         for (int t = 1; t < max_path_length_pruned; t++) {
           for (int i = 0; i < blocks.length; i++) {
             sum.fill(0);
-            for (int j: ses.getEdgesTo(i)) {
+            for (final int j: ses.getEdgesTo(i)) {
               // sum += A.get(j, t) * P_i_j.get(j, i, 0);
               val1.assign(dA_dTheta.getRow(j, t));
               val1.scale(P_i_j.get(j, i, 0));
@@ -335,7 +336,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
         }
 
         // 10 & вычислить градиент $\frac{d}{d\Theta} \log P(O_{d,\nu})$
-        ArrayVec dPlogO_dTheta = new ArrayVec(NFEATS);
+        final ArrayVec dPlogO_dTheta = new ArrayVec(NFEATS);
         //        for (int t = 1; t <= MAX_PATH_LENGTH; t++)
         //          observation_prob += A.get(e, t);
         //        observation_prob *= (1 - P_noclick_i[e]) / P_noclick_i[e];
@@ -351,18 +352,19 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     return ret;
   }
 
+  @Override
   public String explainTheta() {
-    StringBuffer ret = new StringBuffer();
+    final StringBuffer ret = new StringBuffer();
     ret.append("theta: {\n");
 
     int index = 0;
     //  бинарные фичи для каждого типа блока $e$: [WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER]
-    for (BlockV1.ResultType x: BlockV1.ResultType.values()) {
+    for (final BlockV1.ResultType x: BlockV1.ResultType.values()) {
       ret.append("  w(" + x.name() + ")\t" + theta.get(index) + "\n");
       index++;
     }
     // бинарные фичи асессорской релевантности для блока $e$, 5 градаций + NOT\_ASED
-    for (BlockV1.ResultGrade x: BlockV1.ResultGrade.values()) {
+    for (final BlockV1.ResultGrade x: BlockV1.ResultGrade.values()) {
       ret.append("  w(" + x.name() + ")\t" + theta.get(index) + "\n");
       index++;
     }
@@ -396,18 +398,18 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
   }
 
   @Override
-  public void trainClickProbability(List<Session<BlockV1>> dataset) {
-    VecBasedMx shows = new VecBasedMx(BlockV1.ResultType.values().length, BlockV1.ResultGrade.values().length);
-    VecBasedMx clicks = new VecBasedMx(BlockV1.ResultType.values().length, BlockV1.ResultGrade.values().length);
-    for (Session<BlockV1> ses: dataset) {
-      BlockV1 block1 = ses.getBlock(Session.R0_ind);
+  public void trainClickProbability(final List<Session<BlockV1>> dataset) {
+    final VecBasedMx shows = new VecBasedMx(BlockV1.ResultType.values().length, BlockV1.ResultGrade.values().length);
+    final VecBasedMx clicks = new VecBasedMx(BlockV1.ResultType.values().length, BlockV1.ResultGrade.values().length);
+    for (final Session<BlockV1> ses: dataset) {
+      final BlockV1 block1 = ses.getBlock(Session.R0_ind);
       shows.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
       if (ses.hasClickOn(Session.R0_ind))
         clicks.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
     }
 
-    double[] shows_result_type = new double[BlockV1.ResultType.values().length];
-    double[] clicks_result_type = new double[BlockV1.ResultType.values().length];
+    final double[] shows_result_type = new double[BlockV1.ResultType.values().length];
+    final double[] clicks_result_type = new double[BlockV1.ResultType.values().length];
     double shows_all = 0;
     double clicks_all = 0;
     for (int i = 0; i < BlockV1.ResultType.values().length; i++) {
@@ -419,18 +421,18 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
       clicks_all += clicks_result_type[i];
     }
 
-    double ctr_all = clicks_all / shows_all;
+    final double ctr_all = clicks_all / shows_all;
     for (int i = 0; i < BlockV1.ResultType.values().length; i++) {
-      double prob_click_result_type = (clicks_result_type[i] + 10 * ctr_all) / (shows_result_type[i] + 10);
+      final double prob_click_result_type = (clicks_result_type[i] + 10 * ctr_all) / (shows_result_type[i] + 10);
       for (int j = 0; j < BlockV1.ResultGrade.values().length; j++) {
-        double prob = (clicks.get(i, j) + 10 * prob_click_result_type) / (shows.get(i, j) + 10);
+        final double prob = (clicks.get(i, j) + 10 * prob_click_result_type) / (shows.get(i, j) + 10);
         clickProbability.set(i, j, prob);
       }
     }
   }
 
   @Override
-  public double getClickGivenViewProbability(BlockV1 b) {
+  public double getClickGivenViewProbability(final BlockV1 b) {
     if (b.blockType == Session.BlockType.RESULT) {
       return clickProbability.get(b.resultType.ordinal(), b.resultGrade.ordinal());
     } else {
@@ -451,11 +453,11 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
 
   @Override
   public SparseVec feats(final Session<BlockV1> ses, final int s, final int e, final int click_s) {
-    TIntArrayList nonzeroFeats = getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s);
-    double[] ones = new double[nonzeroFeats.size()];
+    final TIntArrayList nonzeroFeats = getNonzeroFeats(ses.getBlock(s), ses.getBlock(e), click_s);
+    final double[] ones = new double[nonzeroFeats.size()];
     for (int i = 0; i < ones.length; i++)
       ones[i] = 1.;
-    SparseVec features = new SparseVec(NFEATS, nonzeroFeats.toArray(), ones);
+    final SparseVec features = new SparseVec(NFEATS, nonzeroFeats.toArray(), ones);
     return features;
   }
 

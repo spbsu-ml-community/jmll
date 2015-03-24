@@ -27,11 +27,11 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
 
   double step;
 
-  public GradientBoosting(VecOptimization<L2> weak, int iterationsCount, double step) {
+  public GradientBoosting(final VecOptimization<L2> weak, final int iterationsCount, final double step) {
     this(weak, SatL2.class, iterationsCount, step);
   }
 
-  public GradientBoosting(VecOptimization<L2> weak, Class<? extends L2> factory, int iterationsCount, double step) {
+  public GradientBoosting(final VecOptimization<L2> weak, final Class<? extends L2> factory, final int iterationsCount, final double step) {
     this.weak = weak;
     this.factory = factory;
     this.iterationsCount = iterationsCount;
@@ -39,9 +39,9 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
   }
 
   @Override
-  public Ensemble fit(VecDataSet learn, GlobalLoss globalLoss) {
+  public Ensemble fit(final VecDataSet learn, final GlobalLoss globalLoss) {
     final Vec cursor = new ArrayVec(globalLoss.xdim());
-    List<Trans> weakModels = new ArrayList<>(iterationsCount);
+    final List<Trans> weakModels = new ArrayList<>(iterationsCount);
     final Trans gradient = globalLoss.gradient();
 
     for (int t = 0; t < iterationsCount; t++) {

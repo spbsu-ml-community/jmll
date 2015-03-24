@@ -29,13 +29,14 @@ public class MethodsBuilder {
 
   public void setRandom(final FastRandom random) {
     BootstrapOptimizationBuilder.defaultRandom = random;
+    RandomForestBuilder.defaultRandom = random;
   }
 
   public VecOptimization create(final String scheme) {
     return chooseMethod(scheme);
   }
 
-  private static VecOptimization chooseMethod(String scheme) {
+  private static VecOptimization chooseMethod(final String scheme) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
     final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart));
     final String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
@@ -46,7 +47,7 @@ public class MethodsBuilder {
       final int splitPos = param.indexOf('=');
       final String name = param.substring(0, splitPos).trim();
 
-      StringBuilder valueBuilder = new StringBuilder();
+      final StringBuilder valueBuilder = new StringBuilder();
       {
         int open = 0;
         String token = param.substring(splitPos + 1, param.length()).trim();
@@ -58,7 +59,7 @@ public class MethodsBuilder {
               ++open;
             } else if (c == ')') {
               if (open <= 0) {
-                throw new RuntimeException("Can not set up parameter: bad stack");
+                throw new RuntimeException("Can not set up parameter \"" + name + "\" because of bad parsing stack");
               } else {
                 --open;
               }
@@ -89,6 +90,8 @@ public class MethodsBuilder {
           setter.invoke(factory, Integer.parseInt(value));
         } else if (Double.class.equals(type) || double.class.equals(type)) {
           setter.invoke(factory, Double.parseDouble(value));
+        } else if (Boolean.class.equals(type) || boolean.class.equals(type)) {
+          setter.invoke(factory, Boolean.parseBoolean(value));
         } else if (String.class.equals(type)) {
           setter.invoke(factory, value);
         } else if (Optimization.class.isAssignableFrom(type)) {

@@ -24,36 +24,36 @@ import java.util.ListIterator;
  */
 public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   private final int depth;
-  private DynamicGrid grid;
+  private final DynamicGrid grid;
   private boolean growGrid = true;
   private final int minSplits;
   private final double lambda;
-  private static double eps = 1e-4;
+  private static final double eps = 1e-4;
 
 
-  public GreedyObliviousTreeDynamic2(DynamicGrid grid, int depth, double lambda) {
+  public GreedyObliviousTreeDynamic2(final DynamicGrid grid, final int depth, final double lambda) {
     this.depth = depth;
     this.grid = grid;
     minSplits = 1;
     this.lambda = lambda;
   }
 
-  public GreedyObliviousTreeDynamic2(VecDataSet ds, int depth) {
+  public GreedyObliviousTreeDynamic2(final VecDataSet ds, final int depth) {
     this(ds, depth, 0, 1);
   }
 
-  public GreedyObliviousTreeDynamic2(VecDataSet ds, int depth, double lambda) {
+  public GreedyObliviousTreeDynamic2(final VecDataSet ds, final int depth, final double lambda) {
     this(ds, depth, lambda, 1);
   }
 
-  public GreedyObliviousTreeDynamic2(VecDataSet ds, int depth, double lambda, int minSplits) {
+  public GreedyObliviousTreeDynamic2(final VecDataSet ds, final int depth, final double lambda, final int minSplits) {
     this.minSplits = minSplits;
     this.depth = depth;
     this.lambda = lambda;
     this.grid = new BFDynamicGrid(ds, minSplits);
   }
 
-  public GreedyObliviousTreeDynamic2(VecDataSet ds, int depth, double lambda, int minSplits, boolean grow) {
+  public GreedyObliviousTreeDynamic2(final VecDataSet ds, final int depth, final double lambda, final int minSplits, final boolean grow) {
     this.minSplits = minSplits;
     this.depth = depth;
     this.lambda = lambda;
@@ -62,7 +62,7 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
   }
 
 
-  public GreedyObliviousTreeDynamic2(DynamicGrid grid, int depth, double lambda, boolean grow) {
+  public GreedyObliviousTreeDynamic2(final DynamicGrid grid, final int depth, final double lambda, final boolean grow) {
 //    this.minSplits = minSplits;
     this.depth = depth;
     this.minSplits = 1;
@@ -76,12 +76,13 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
     this.growGrid = false;
   }
 
-  public ObliviousTreeDynamicBin fit(VecDataSet ds, final Loss loss) {
-    BinarizedDynamicDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+  @Override
+  public ObliviousTreeDynamicBin fit(final VecDataSet ds, final Loss loss) {
+    final BinarizedDynamicDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 
     List<BFDynamicOptimizationSubset> leaves = new ArrayList<>(1 << depth);
-    TIntArrayList nonActiveF = new TIntArrayList(grid.rows());
-    TIntArrayList nonActiveBin = new TIntArrayList(grid.rows());
+    final TIntArrayList nonActiveF = new TIntArrayList(grid.rows());
+    final TIntArrayList nonActiveBin = new TIntArrayList(grid.rows());
     final List<BinaryFeature> conditions = new ArrayList<>(depth);
     final double[][] scores = new double[grid.rows()][];
     for (int i = 0; i < scores.length; ++i) {
@@ -102,12 +103,12 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
       }
 
 
-      for (BFDynamicOptimizationSubset leaf : leaves) {
+      for (final BFDynamicOptimizationSubset leaf : leaves) {
         leaf.visitAllSplits(new AggregateDynamic.SplitVisitor<AdditiveStatistics>() {
           @Override
-          public void accept(BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
-            double leftScore = loss.score(left);
-            double rightScore = loss.score(right);
+          public void accept(final BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
+            final double leftScore = loss.score(left);
+            final double rightScore = loss.score(right);
             scores[bf.fIndex()][bf.binNo()] += leftScore + rightScore;
           }
         });
@@ -127,7 +128,7 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
 
 
         for (int bin = 0; bin < scores[f].length; ++bin) {
-          BinaryFeature bf = grid.bf(f, bin);
+          final BinaryFeature bf = grid.bf(f, bin);
           if (bf.isActive()) {
             if (scores[f][bin] < bestFeatureScore) {
               bestBinIndex = bin;
@@ -139,10 +140,10 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
         }
 
         if (candidateIndex != -1 && growGrid) {
-          BinaryFeature candidate = grid.bf(f, candidateIndex);
+          final BinaryFeature candidate = grid.bf(f, candidateIndex);
 
           double score = bestFeatureScore - scores[f][candidateIndex];
-          double reg = candidate.regularization();
+          final double reg = candidate.regularization();
           score -= lambda * reg;
           if (score > 0) {
             bds.queueSplit(candidate);
@@ -184,7 +185,7 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
     }
 
 //            updated = false;
-    double[] values = new double[leaves.size()];
+    final double[] values = new double[leaves.size()];
     for (int i = 0; i < values.length; i++) {
       values[i] = loss.bestIncrement(leaves.get(i).total());
     }

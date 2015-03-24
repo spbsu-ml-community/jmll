@@ -4,23 +4,22 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: qdeee
  * Date: 09.04.14
  */
-public class MCMicroRecall extends Func.Stub implements TargetFunc {
+public class MCMicroRecall extends Func.Stub implements ClassicMulticlassLoss {
   protected final IntSeq target;
   private final DataSet<?> owner;
 
-  public MCMicroRecall(final IntSeq target, DataSet<?> owner) {
+  public MCMicroRecall(final IntSeq target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
   }
 
-  public MCMicroRecall(final Vec target, DataSet<?> owner) {
+  public MCMicroRecall(final Vec target, final DataSet<?> owner) {
     final int[] intTarget = new int[target.length()];
     final VecIterator iter = target.nonZeroes();
     while (iter.advance()) {
@@ -55,5 +54,10 @@ public class MCMicroRecall extends Func.Stub implements TargetFunc {
   @Override
   public DataSet<?> owner() {
     return owner;
+  }
+
+  @Override
+  public IntSeq labels() {
+    return target;
   }
 }

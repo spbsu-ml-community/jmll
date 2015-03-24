@@ -2,7 +2,6 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
@@ -23,6 +22,7 @@ public interface Trans extends Computable<Vec,Vec> {
   Mx transAll(Mx x);
 
   abstract class Stub implements Trans {
+    @Override
     public Trans gradient() {
       return null;
     }
@@ -32,8 +32,9 @@ public interface Trans extends Computable<Vec,Vec> {
       return trans(argument);
     }
 
-    public Mx transAll(Mx ds) {
-      Mx result = new VecBasedMx(ydim(), new ArrayVec(ds.rows() * ydim()));
+    @Override
+    public Mx transAll(final Mx ds) {
+      final Mx result = new VecBasedMx(ydim(), new ArrayVec(ds.rows() * ydim()));
       for (int i = 0; i < ds.rows(); i++) {
         VecTools.assign(result.row(i), trans(ds.row(i)));
       }

@@ -9,7 +9,7 @@ import java.io.IOException;
  * Time: 17:38
  */
 public class JMLLCLI {
-  public static void main(String[] args) throws IOException {
+  public static void main(final String[] args) throws IOException {
     com.spbsu.ml.cli.JMLLCLI.main(args); //for old compatibility
   }
 }

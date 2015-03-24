@@ -20,7 +20,7 @@ public class CherryRegion extends Func.Stub implements BinOptimizedModel {
   private final BFGrid grid;
   private final int[] starts;
 
-  public CherryRegion(BitSet[] conditions, double inside, BFGrid grid) {
+  public CherryRegion(final BitSet[] conditions, final double inside, final BFGrid grid) {
     this.conditions = conditions;
     this.grid = grid;
     this.inside = inside;
@@ -34,23 +34,23 @@ public class CherryRegion extends Func.Stub implements BinOptimizedModel {
   }
 
   @Override
-  public double value(BinarizedDataSet bds, int pindex) {
-    byte[] binarization = new byte[grid.rows()];
+  public double value(final BinarizedDataSet bds, final int pindex) {
+    final byte[] binarization = new byte[grid.rows()];
     for (int f = 0; f < grid.rows(); ++f) {
       binarization[f] = bds.bins(f)[pindex];
     }
     return value(binarization);
   }
 
-  public double value(byte[] point) {
+  public double value(final byte[] point) {
 
     return contains(point) ? inside : outside;
 
   }
 
   @Override
-  public double value(Vec x) {
-    byte[] binarizied = new byte[grid.rows()];
+  public double value(final Vec x) {
+    final byte[] binarizied = new byte[grid.rows()];
     grid.binarize(x, binarizied);
     return value(binarizied);
   }
@@ -60,15 +60,15 @@ public class CherryRegion extends Func.Stub implements BinOptimizedModel {
     return grid.rows();
   }
 
-  public boolean contains(Vec x) {
-    byte[] binarizied = new byte[grid.rows()];
+  public boolean contains(final Vec x) {
+    final byte[] binarizied = new byte[grid.rows()];
     grid.binarize(x, binarizied);
     return contains(binarizied);
   }
 
-  public boolean contains(byte[] point) {
+  public boolean contains(final byte[] point) {
     boolean contains = true;
-    for (BitSet condition : conditions) {
+    for (final BitSet condition : conditions) {
       boolean good = false;
       for (int i = 0; i <grid.rows(); ++i) {
         good = good | condition.get(starts[i] + point[i]);

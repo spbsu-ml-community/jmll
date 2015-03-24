@@ -15,7 +15,7 @@ public class GreedyObliviousTreeBuilder implements Factory<VecOptimization> {
   private Factory<BFGrid> gridBuilder = defaultGridBuilder;
   private int depth = 6;
 
-  public void setDepth(int d) {
+  public void setDepth(final int d) {
     this.depth = d;
   }
 

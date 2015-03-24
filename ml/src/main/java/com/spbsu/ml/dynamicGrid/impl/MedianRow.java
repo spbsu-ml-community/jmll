@@ -16,11 +16,11 @@ public class MedianRow implements DynamicRow {
   private DynamicGrid grid = null;
   private final double[] feature;
   private final int[] reverse;
-  private TIntArrayList borders = new TIntArrayList();
+  private final TIntArrayList borders = new TIntArrayList();
   private final ArrayList<BinaryFeatureImpl> bfs = new ArrayList<>();
   private final int levels;
 
-  public MedianRow(DynamicGrid grid, double[] feature, int[] reverse, int origFIndex, int minSplits) {
+  public MedianRow(final DynamicGrid grid, final double[] feature, final int[] reverse, final int origFIndex, final int minSplits) {
     this.origFIndex = origFIndex;
     this.feature = feature;
     this.grid = grid;
@@ -33,17 +33,17 @@ public class MedianRow implements DynamicRow {
     borders.add(feature.length);
     for (int i = 0; i < minSplits; ++i)
       addSplit();
-    for (BinaryFeature bf : bfs) {
+    for (final BinaryFeature bf : bfs) {
       bf.setActive(true);
     }
     addSplit();
   }
 
-  public MedianRow(double[] feature, int[] reverse, int origFIndex) {
+  public MedianRow(final double[] feature, final int[] reverse, final int origFIndex) {
     this(null, feature, reverse, origFIndex, 1);
   }
 
-  public MedianRow(double[] feature, int[] reverse, int origFIndex, int minSplits) {
+  public MedianRow(final double[] feature, final int[] reverse, final int origFIndex, final int minSplits) {
     this(null, feature, reverse, origFIndex, minSplits);
   }
 
@@ -67,10 +67,10 @@ public class MedianRow implements DynamicRow {
     return grid;
   }
 
-  private static Random rand = new Random();
+  private static final Random rand = new Random();
 
 
-  private List<BinaryFeatureImpl> bestSplitsCache = new ArrayList<>();
+  private final List<BinaryFeatureImpl> bestSplitsCache = new ArrayList<>();
 
   @Override
   public boolean addSplit() {
@@ -89,8 +89,8 @@ public class MedianRow implements DynamicRow {
 
   private boolean addFromCache() {
     while (bestSplitsCache.size() > 0) {
-      int ind = rand.nextInt(bestSplitsCache.size());
-      BinaryFeatureImpl bf = bestSplitsCache.get(ind);
+      final int ind = rand.nextInt(bestSplitsCache.size());
+      final BinaryFeatureImpl bf = bestSplitsCache.get(ind);
       bestSplitsCache.remove(ind);
       if (grid.isKnown(bf.gridHash)) {
         continue;
@@ -108,7 +108,7 @@ public class MedianRow implements DynamicRow {
   }
 
 
-  private static double diffScore(int start, int end, int split, int n) {
+  private static double diffScore(final int start, final int end, final int split, final int n) {
     double diff = (end - start) * Math.log((end - start) * 1.0 / n)
             - (end - split) * Math.log((end - split) * 1.0 / n) - (split - start) * Math.log((split - start) * 1.0 / n);
 //    diff /= n;
@@ -120,11 +120,11 @@ public class MedianRow implements DynamicRow {
     double bestScore = 0;
     double diff = 0;
     int bestSplit = -1;
-    TIntArrayList bestSplits = new TIntArrayList();
+    final TIntArrayList bestSplits = new TIntArrayList();
     for (int i = 0; i < borders.size(); ++i) {
-      int start = i > 0 ? borders.get(i - 1) : 0;
-      int end = borders.get(i);//.borderIndex;
-      double median = feature[start + (end - start) / 2];
+      final int start = i > 0 ? borders.get(i - 1) : 0;
+      final int end = borders.get(i);//.borderIndex;
+      final double median = feature[start + (end - start) / 2];
       int split = Math.abs(Arrays.binarySearch(feature, start, end, median));
       while (split > start && Math.abs(feature[split] - median) < eps) // look for first less then median value
         split--;
@@ -137,7 +137,7 @@ public class MedianRow implements DynamicRow {
       final double scoreRight = split < end ? Math.log(end - split) + Math.log(split - start) : 0;
       final int ub = split;
       split = scoreLeft < scoreRight ? ub : lb;
-      double score = scoreLeft < scoreRight ? scoreRight : scoreLeft;
+      final double score = scoreLeft < scoreRight ? scoreRight : scoreLeft;
 
       if (split > start && split < end) {
         if (score > bestScore + eps) {
@@ -156,12 +156,12 @@ public class MedianRow implements DynamicRow {
     for (int i = 0; i < bestSplits.size(); ++i) {
       bestSplit = bestSplits.get(i);
       borders.add(bestSplit);
-      BinaryFeatureImpl newBF = new BinaryFeatureImpl(this, origFIndex, feature[bestSplit - 1], bestSplit);
+      final BinaryFeatureImpl newBF = new BinaryFeatureImpl(this, origFIndex, feature[bestSplit - 1], bestSplit);
       bestSplitsCache.add(newBF);
       newBF.setRegScore(diff);
     }
 
-    int[] crcs = new int[bestSplitsCache.size()];
+    final int[] crcs = new int[bestSplitsCache.size()];
     for (int i = 0; i < feature.length; i++) { // unordered index
       final int orderedIndex = reverse[i];
       for (int b = 0; b < bestSplitsCache.size() && orderedIndex >= bestSplitsCache.get(b).borderIndex; b++) {
@@ -181,17 +181,17 @@ public class MedianRow implements DynamicRow {
   }
 
   @Override
-  public BinaryFeature bf(int binNo) {
+  public BinaryFeature bf(final int binNo) {
     return bfs.get(binNo);
   }
 
   @Override
-  public void setOwner(DynamicGrid grid) {
+  public void setOwner(final DynamicGrid grid) {
     this.grid = grid;
   }
 
   @Override
-  public short bin(double value) {
+  public short bin(final double value) {
     short index = 0;
     while (index < size() && value > bfs.get(index).condition)
       index++;
@@ -200,7 +200,7 @@ public class MedianRow implements DynamicRow {
 
 
   @Override
-  public double regularize(BinaryFeature bf) {
+  public double regularize(final BinaryFeature bf) {
     return bf.regularization();
 //    double entropy = 0;
 //    double entropyWithoutFeature = 0;

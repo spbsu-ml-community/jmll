@@ -20,11 +20,11 @@ public class AggregateDynamic {
   private final Factory<AdditiveStatistics> factory;
   private int[] points;
 
-  public void updatePoints(int[] points) {
+  public void updatePoints(final int[] points) {
     this.points = points;
   }
 
-  public AggregateDynamic(BinarizedDynamicDataSet bds, Factory<AdditiveStatistics> factory, int[] points) {
+  public AggregateDynamic(final BinarizedDynamicDataSet bds, final Factory<AdditiveStatistics> factory, final int[] points) {
     this.points = points;
     this.bds = bds;
     this.grid = bds.grid();
@@ -37,7 +37,7 @@ public class AggregateDynamic {
     rebuild(points, ArrayTools.sequence(0, grid.rows()));
   }
 
-  public AdditiveStatistics combinatorForFeature(BinaryFeature bf) {
+  public AdditiveStatistics combinatorForFeature(final BinaryFeature bf) {
     final AdditiveStatistics result = factory.create();
     final DynamicRow row = bf.row();
     final int binNo = bf.binNo();
@@ -49,7 +49,7 @@ public class AggregateDynamic {
   }
 
   public AdditiveStatistics total() {
-    AdditiveStatistics myTotal = factory.create();
+    final AdditiveStatistics myTotal = factory.create();
     final DynamicRow row = grid.nonEmptyRow();
     final AdditiveStatistics[] myBins = bins[row.origFIndex()];
     for (int bin = 0; bin < myBins.length; ++bin) {
@@ -116,7 +116,7 @@ public class AggregateDynamic {
 //    }
 //  }
 
-  public <T extends AdditiveStatistics> void visit(SplitVisitor<T> visitor) {
+  public <T extends AdditiveStatistics> void visit(final SplitVisitor<T> visitor) {
     final T total = (T) total();
     for (int f = 0; f < grid.rows(); f++) {
       final T left = (T) factory.create();
@@ -131,13 +131,13 @@ public class AggregateDynamic {
     }
   }
 
-  public void rebuild(int... features) {
+  public void rebuild(final int... features) {
     rebuild(this.points, features);
   }
 
-  private void rebuild(final int[] indices, int... features) {
+  private void rebuild(final int[] indices, final int... features) {
     final CountDownLatch latch = new CountDownLatch(features.length);
-    for (int findex : features) {
+    for (final int findex : features) {
       final int finalFIndex = findex;
       exec.execute(new Runnable() {
         @Override

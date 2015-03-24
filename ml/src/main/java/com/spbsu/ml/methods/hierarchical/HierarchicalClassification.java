@@ -4,7 +4,6 @@ import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.tree.IntTree;
 import com.spbsu.commons.util.tree.IntTreeVisitor;
-import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;

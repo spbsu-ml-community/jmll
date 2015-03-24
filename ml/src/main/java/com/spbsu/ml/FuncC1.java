@@ -27,7 +27,7 @@ public interface FuncC1 extends Func {
         }
 
         @Override
-        public Vec trans(Vec x) {
+        public Vec trans(final Vec x) {
           return FuncC1.Stub.this.gradient(x);
         }
       };

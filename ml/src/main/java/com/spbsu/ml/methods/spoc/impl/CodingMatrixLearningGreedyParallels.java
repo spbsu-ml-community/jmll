@@ -5,6 +5,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.Combinatorics;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.ml.methods.spoc.CMLHelper;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -50,7 +51,7 @@ public class CodingMatrixLearningGreedyParallels extends CodingMatrixLearningGre
         for (int i = 0; i < mxB.rows(); i++) {
           mxB.set(i, mxB.columns() - 1, 2 * perm[i] - 1);  //0 -> -1, 1 -> 1
         }
-        if (checkConstraints(mxB) && checkColumnsIndependence(mxB)) {
+        if (CMLHelper.checkConstraints(mxB) && CMLHelper.checkColumnsIndependence(mxB)) {
           final double loss = calcLoss(mxB, S);
           if (loss < minLoss) {
             minLoss = loss;
@@ -80,7 +81,7 @@ public class CodingMatrixLearningGreedyParallels extends CodingMatrixLearningGre
         final List<Future<Pair<Double,int[]>>> futures = executor.invokeAll(tasks);
         double totalMinLoss = Double.MAX_VALUE;
         int[] totalBestPerm = null;
-        for (Future<Pair<Double, int[]>> future : futures) {
+        for (final Future<Pair<Double, int[]>> future : futures) {
           final Pair<Double, int[]> pair = future.get();
           final Double loss = pair.first;
           final int[] perm = pair.second;

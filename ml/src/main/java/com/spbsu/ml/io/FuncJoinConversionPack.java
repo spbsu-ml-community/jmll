@@ -2,7 +2,6 @@ package com.spbsu.ml.io;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.types.ConversionPack;
-import com.spbsu.commons.func.types.TypeConverter;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
@@ -25,7 +24,7 @@ public class FuncJoinConversionPack implements ConversionPack<FuncJoin, CharSequ
     public FuncJoin convert(final CharSequence from) {
       final Func[] dirs = ArrayTools.map(convertModels(from), Func.class, new Computable<Trans, Func>() {
         @Override
-        public Func compute(Trans argument) {
+        public Func compute(final Trans argument) {
           return (Func) argument;
         }
       });
@@ -33,6 +32,7 @@ public class FuncJoinConversionPack implements ConversionPack<FuncJoin, CharSequ
     }
   }
 
+  @Override
   public Class<To> to() {
     return To.class;
   }

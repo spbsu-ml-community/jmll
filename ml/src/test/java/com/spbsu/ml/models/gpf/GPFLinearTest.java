@@ -6,6 +6,7 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
 import com.spbsu.ml.models.gpf.weblogmodel.WebLogV1GPFSession;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -20,12 +21,13 @@ import static junit.framework.Assert.assertEquals;
  * User: irlab
  * Date: 22.05.14
  */
+@Ignore
 public class GPFLinearTest {
-  private int random_seed = 0;
+  private final int random_seed = 0;
 
   @Test
   public void testArtificialClicks() throws IOException {
-    List<Session<BlockV1>> dataset_nonfinal;
+    final List<Session<BlockV1>> dataset_nonfinal;
     try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1_h10k.dat.gz"))) {
       dataset_nonfinal = WebLogV1GPFSession.loadDatasetFromJSON(is, new GPFLinearModel(), 100);
     }
@@ -46,12 +48,12 @@ public class GPFLinearTest {
     int n_sum_clicks = 0;
     for (int nSes = 0; nSes < dataset.size(); nSes++) {
       //System.out.println("session " + nSes);
-      Session<BlockV1> ses = dataset.get(nSes);
-      List<Integer> click_indexes = new ArrayList<Integer>();
+      final Session<BlockV1> ses = dataset.get(nSes);
+      final List<Integer> click_indexes = new ArrayList<Integer>();
       int state = Session.Q_ind;
       int click_s = 0;
       while (state != Session.E_ind) {
-        double[] probs = new double[ses.getEdgesFrom(state).length];
+        final double[] probs = new double[ses.getEdgesFrom(state).length];
         for (int j = 0; j < probs.length; j++)
           probs[j] = model_true.eval_f(ses, state, ses.getEdgesFrom(state)[j], click_s);
 
@@ -79,7 +81,7 @@ public class GPFLinearTest {
     System.out.println("clicks generated, avg: " + n_sum_clicks/(float)dataset.size() + " clicks/session, " + dataset.size() + " sessions");
 
     int nObservations = 0;
-    for (Session ses: dataset)
+    for (final Session ses: dataset)
       nObservations += ses.getClick_indexes().length + 1;
     final int fullds_nobservations_all = nObservations;
 
@@ -98,7 +100,7 @@ public class GPFLinearTest {
       System.out.println("model_true loglikelihood: " + model_true_expll);
       assertEquals(8.4, model_true_expll, 0.1);
 
-      long t1 = System.currentTimeMillis();
+      final long t1 = System.currentTimeMillis();
       final double model0_expll = Math.exp(-optimizer.evalDatasetGradientValue(model0, dataset, false).loglikelihood);
       System.out.println("model0 loglikelihood:     " + model0_expll);
       assertEquals(97.9, model0_expll, 0.1);
@@ -122,14 +124,14 @@ public class GPFLinearTest {
 
       optimizer.listener = new GPFLinearOptimization.IterationEventListener() {
         @Override
-        public void iterationPerformed(GPFLinearOptimization.IterationEvent e) {
+        public void iterationPerformed(final GPFLinearOptimization.IterationEvent e) {
           if (optimizer.SGD_BLOCK_SIZE < dataset.size() && e.iter % (dataset.size() / optimizer.SGD_BLOCK_SIZE) != 0) return;
-          double model0_dist = Math.sqrt(model0.theta.l2(e.model.theta));
-          double model_true_dist = Math.sqrt(model_true.theta.l2(e.model.theta));
+          final double model0_dist = Math.sqrt(model0.theta.l2(e.model.theta));
+          final double model_true_dist = Math.sqrt(model_true.theta.l2(e.model.theta));
           double fullds_loglikelihood = e.fullds_loglikelihood;
           int fullds_nobservations_correct = e.fullds_nobservations_correct;
           if (fullds_loglikelihood == 0.) {
-            GPFLinearOptimization.DatasetGradientValue gradV = optimizer.evalDatasetGradientValue(e.model, dataset, false);
+            final GPFLinearOptimization.DatasetGradientValue gradV = optimizer.evalDatasetGradientValue(e.model, dataset, false);
             fullds_loglikelihood = gradV.loglikelihood;
             fullds_nobservations_correct = gradV.nObservations;
           }
@@ -146,14 +148,14 @@ public class GPFLinearTest {
         }
 
         @Override
-        public void backstepPerformed(GPFLinearOptimization.IterationEvent e) {
+        public void backstepPerformed(final GPFLinearOptimization.IterationEvent e) {
           System.out.println("  L > last_L: " + Math.exp(-e.fullds_loglikelihood) + " > " + Math.exp(-e.loglikelihood) + ", go back and set a_m = " + optimizer.step_a_m);
         }
       };
 
-      GPFLinearModel model_optimized = optimizer.StochasticGradientDescent(model0, dataset, iteration_count);
+      final GPFLinearModel model_optimized = optimizer.StochasticGradientDescent(model0, dataset, iteration_count);
 
-      long t3 = System.currentTimeMillis();
+      final long t3 = System.currentTimeMillis();
       System.out.println("time optimization: " + (t3-t2)/1000 + " sec");
       final double model_final_expll = Math.exp(-optimizer.evalDatasetGradientValue(model_optimized, dataset, false).loglikelihood);
       System.out.println("final loglikelihood:      " + model_final_expll);
@@ -163,37 +165,37 @@ public class GPFLinearTest {
 
   @Test
   public void testOptimizeSGD() throws IOException {
-    List<Session<BlockV1>> dataset_nonfinal;
+    final List<Session<BlockV1>> dataset_nonfinal;
     try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1_h10k.dat.gz"))) {
       dataset_nonfinal = WebLogV1GPFSession.loadDatasetFromJSON(is, new GPFLinearModel(), 100);
     }
     final List<Session<BlockV1>> dataset = dataset_nonfinal;
-    List<Session<BlockV1>> test_dataset_nonfinal;
+    final List<Session<BlockV1>> test_dataset_nonfinal;
     try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand2_h10k.dat.gz"))) {
       test_dataset_nonfinal = WebLogV1GPFSession.loadDatasetFromJSON(is, new GPFLinearModel(), 100);
     }
     final List<Session<BlockV1>> test_dataset = test_dataset_nonfinal;
 
-    boolean test_sorted_clicks_model = false;
+    final boolean test_sorted_clicks_model = false;
     if (test_sorted_clicks_model) {
       System.out.println("test_sorted_clicks_model");
-      for (Session ses: dataset)
+      for (final Session ses: dataset)
         ses.sortUniqueClicks();
-      for (Session ses: test_dataset)
+      for (final Session ses: test_dataset)
         ses.sortUniqueClicks();
     }
 
     int nObservations = 0;
-    for (Session ses: dataset)
+    for (final Session ses: dataset)
       nObservations += ses.getClick_indexes().length + 1;
     final int fullds_nobservations_all = nObservations;
 
     int n_sum_clicks = 0;
-    for (Session ses: dataset)
+    for (final Session ses: dataset)
       n_sum_clicks += ses.getClick_indexes().length;
     System.out.println("dataset size: " + dataset.size() + " sessions, avg " + (n_sum_clicks / (float)dataset.size()) + " clicks/session");
 
-    FastRandom rand = new FastRandom(random_seed);
+    final FastRandom rand = new FastRandom(random_seed);
 
     double best_ll = 1111;
     double test_ll = 1111;
@@ -209,7 +211,7 @@ public class GPFLinearTest {
 
       final GPFLinearOptimization optimizer = new GPFLinearOptimization();
 
-      long t1 = System.currentTimeMillis();
+      final long t1 = System.currentTimeMillis();
       final double model0_expll = Math.exp(-optimizer.evalDatasetGradientValue(model0, dataset, false).loglikelihood);
       System.out.println("model0 loglikelihood:     " + model0_expll);
       assertEquals(13.3, model0_expll, 0.1);
@@ -233,8 +235,8 @@ public class GPFLinearTest {
 
       optimizer.listener = new GPFLinearOptimization.IterationEventListener() {
         @Override
-        public void iterationPerformed(GPFLinearOptimization.IterationEvent e) {
-          int iterations_per_dataset = dataset.size() / optimizer.SGD_BLOCK_SIZE;
+        public void iterationPerformed(final GPFLinearOptimization.IterationEvent e) {
+          final int iterations_per_dataset = dataset.size() / optimizer.SGD_BLOCK_SIZE;
           if (optimizer.SGD_BLOCK_SIZE < dataset.size()) {
             if (e.iter < iterations_per_dataset) {
               return;
@@ -246,11 +248,11 @@ public class GPFLinearTest {
             }
           }
 
-          double model0_dist = Math.sqrt(model0.theta.l2(e.model.theta));
+          final double model0_dist = Math.sqrt(model0.theta.l2(e.model.theta));
           double fullds_loglikelihood = e.fullds_loglikelihood;
           int fullds_nobservations_correct = e.fullds_nobservations_correct;
           if (fullds_loglikelihood == 0.) {
-            GPFLinearOptimization.DatasetGradientValue gradV = optimizer.evalDatasetGradientValue(e.model, dataset, false);
+            final GPFLinearOptimization.DatasetGradientValue gradV = optimizer.evalDatasetGradientValue(e.model, dataset, false);
             fullds_loglikelihood = gradV.loglikelihood;
             fullds_nobservations_correct = gradV.nObservations;
           }
@@ -272,16 +274,16 @@ public class GPFLinearTest {
         }
 
         @Override
-        public void backstepPerformed(GPFLinearOptimization.IterationEvent e) {
+        public void backstepPerformed(final GPFLinearOptimization.IterationEvent e) {
           System.out.println("  L > last_L: " + Math.exp(-e.fullds_loglikelihood) + " > " + Math.exp(-e.loglikelihood) + ", go back and set a_m = " + optimizer.step_a_m);
         }
       };
 
-      GPFLinearModel model_optimized = optimizer.StochasticGradientDescent(model0, dataset, iteration_count);
+      final GPFLinearModel model_optimized = optimizer.StochasticGradientDescent(model0, dataset, iteration_count);
 
-      long t3 = System.currentTimeMillis();
+      final long t3 = System.currentTimeMillis();
       System.out.println("time optimization: " + (t3-t2)/1000 + " sec");
-      double ll = Math.exp(-optimizer.evalDatasetGradientValue(model_optimized, dataset, false).loglikelihood);
+      final double ll = Math.exp(-optimizer.evalDatasetGradientValue(model_optimized, dataset, false).loglikelihood);
       System.out.println("final loglikelihood:      " + ll);
       System.out.println("final theta: " + model_optimized.theta );
       System.out.println("final theta explain: " + model_optimized.explainTheta() );
@@ -299,8 +301,8 @@ public class GPFLinearTest {
 
   @Test
   public void testSERPProbs() throws IOException {
-    GPFLinearModel model = new GPFLinearModel();
-    List<Session<BlockV1>> dataset;
+    final GPFLinearModel model = new GPFLinearModel();
+    final List<Session<BlockV1>> dataset;
     try (InputStream is = new GZIPInputStream(WebLogV1GPFSession.class.getResourceAsStream("ses_100k_simple_rand1_h10k.dat.gz"))) {
       dataset = WebLogV1GPFSession.loadDatasetFromJSON(is, new GPFLinearModel(), 100);
     }
@@ -310,16 +312,16 @@ public class GPFLinearTest {
     // optimized sort_clicks
     //String theta_str = "-1.702713106887966 0.6404247678125509 0.8839508435362965 0.21594343210697917 -0.7358391375584755 -0.8042641035860408 0.3583499027340962 -0.11674658767248532 0.14040130919303337 0.03769440360443547 0.03935260864525687 0.02853823412929953 2.9422529205133463 -2.874955306294313 3.9219531435872557 0.15268044240500608 -1.3913468238331568 0.7810782232327959 0.041232789657154746 -0.45027594953466205 -0.9911457338442456 -1.0436641653093275 -1.283091206075993 -1.2334707757320833 -2.0290071795725835 -1.2284048134884975 -0.8402670201797776 0.09780373481660343 -0.6956589612984125 -0.7010852279098979 0.39816008299399064 -0.03645514963018488 -0.7665757899838521 -0.44931334579482907 1.2404606430397838 2.1373765546696415 -2.3185767965067376 -0.3782845023765775";
     // optimized r602_2.out
-    String theta_str = "-0.9205664691357801 0.9041998193447492 1.0046610326248397 0.29671349018552656 -0.18053090095708907 0.1772697097979266 -0.20372762113889378 -0.7347344786004694 -0.590408428912083 -0.7299015246974587 -0.792449157275554 -0.7089522500922206 2.2627922543859196 -3.100817014916263 4.067342185744358 -2.5792603725334557 1.1895147789581328 1.3296377365812424 0.7446332963557005 0.1835711196264189 0.016013162804432185 -0.18441528045214423 -0.6162991227657141 -0.6939594938332577 1.0894364501659024 0.3579520755136945 0.496534915034393 0.4146067640917571 0.3836857168202354 -0.015704278848354097 0.0913408379926171 -0.04884275707431338 -0.12681530930644924 -0.30889371408471994 0.7818935938652342 2.008411165741512 -4.581704099106069 0.7613830127598948";
-    String[] theta_str_arr = theta_str.split(" ");
-    ArrayVec theta = new ArrayVec(model.NFEATS);
+    final String theta_str = "-0.9205664691357801 0.9041998193447492 1.0046610326248397 0.29671349018552656 -0.18053090095708907 0.1772697097979266 -0.20372762113889378 -0.7347344786004694 -0.590408428912083 -0.7299015246974587 -0.792449157275554 -0.7089522500922206 2.2627922543859196 -3.100817014916263 4.067342185744358 -2.5792603725334557 1.1895147789581328 1.3296377365812424 0.7446332963557005 0.1835711196264189 0.016013162804432185 -0.18441528045214423 -0.6162991227657141 -0.6939594938332577 1.0894364501659024 0.3579520755136945 0.496534915034393 0.4146067640917571 0.3836857168202354 -0.015704278848354097 0.0913408379926171 -0.04884275707431338 -0.12681530930644924 -0.30889371408471994 0.7818935938652342 2.008411165741512 -4.581704099106069 0.7613830127598948";
+    final String[] theta_str_arr = theta_str.split(" ");
+    final ArrayVec theta = new ArrayVec(model.NFEATS);
     for (int i = 0; i < theta.dim(); i++)
       theta.set(i, Double.parseDouble(theta_str_arr[i]));
     model.theta.assign(theta);
 
     // init session
-    Session session = new Session();
-    BlockV1[] blocks = new BlockV1[11];
+    final Session session = new Session();
+    final BlockV1[] blocks = new BlockV1[11];
     for (int i = 0; i < blocks.length; i++) {
       blocks[i] = new BlockV1(
               Session.BlockType.RESULT,
@@ -327,7 +329,7 @@ public class GPFLinearTest {
               i,
               i <= 3 ? BlockV1.ResultGrade.RELEVANT_PLUS : BlockV1.ResultGrade.NOT_ASED);
     }
-    int[] clicks = new int[] {3, 2, 6, 10};
+    final int[] clicks = new int[] {3, 2, 6, 10};
     WebLogV1GPFSession.setSessionData(session, blocks, clicks);
 
     System.out.println(model.explainTheta() + "\n");

@@ -18,9 +18,9 @@ import java.util.Random;
 public class StochasticGradientDescent implements Optimize<FuncEnsemble> {
   private final int iterations;
   private final double step;
-  private Random rand;
+  private final Random rand;
 
-  public StochasticGradientDescent(final int iterations, final double step, Random rand) {
+  public StochasticGradientDescent(final int iterations, final double step, final Random rand) {
     this.iterations = iterations;
     this.step = step;
     this.rand = rand;
@@ -32,13 +32,13 @@ public class StochasticGradientDescent implements Optimize<FuncEnsemble> {
       throw new IllegalArgumentException("Internal functions must implement not-null gradient()");
     }
 
-    Vec x = new ArrayVec(sumFuncs.xdim());
+    final Vec x = new ArrayVec(sumFuncs.xdim());
     for (int i = 0; i < x.dim(); i++) {
       x.set(i, rand.nextGaussian());
     }
 
     int iter = 0;
-    TIntList indices = new TIntArrayList(ArrayTools.sequence(0, sumFuncs.size()));
+    final TIntList indices = new TIntArrayList(ArrayTools.sequence(0, sumFuncs.size()));
     while (iter++ < iterations) {
       indices.shuffle(rand);
       for (int i = 0; i < indices.size(); i++) {

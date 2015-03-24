@@ -1,13 +1,10 @@
 package com.spbsu.ml.models.gpf;
 
-import com.spbsu.commons.filters.FalseFilter;
 import gnu.trove.list.array.TIntArrayList;
 
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -67,7 +64,7 @@ public class Session<Blk extends Session.Block> {
   public Session() {
   }
 
-  public Session(String uid, String reqid, int user_region, String query, String source_string) {
+  public Session(final String uid, final String reqid, final int user_region, final String query, final String source_string) {
     this.uid = uid;
     this.reqid = reqid;
     this.user_region = user_region;
@@ -75,10 +72,10 @@ public class Session<Blk extends Session.Block> {
     this.source_string = source_string;
   }
 
-  public void setBlocks(Blk[] blocks) {
+  public void setBlocks(final Blk[] blocks) {
     this.blocks = blocks;
   }
-  public Blk getBlock(int index) {
+  public Blk getBlock(final int index) {
     return blocks[index];
   }
 
@@ -94,34 +91,34 @@ public class Session<Blk extends Session.Block> {
     return click_indexes;
   }
 
-  public void setClick_indexes(int[] click_indexes) {
+  public void setClick_indexes(final int[] click_indexes) {
     this.click_indexes = click_indexes;
   }
 
-  public boolean hasClickOn(int block_index) {
-    for (int i: click_indexes) {
+  public boolean hasClickOn(final int block_index) {
+    for (final int i: click_indexes) {
       if (i == block_index) return true;
     }
     return false;
   }
 
-  public int[] getEdgesFrom(int block_index_from) {
+  public int[] getEdgesFrom(final int block_index_from) {
     return edge_from[block_index_from];
   }
-  public int[] getEdgesTo(int block_index_to) {
+  public int[] getEdgesTo(final int block_index_to) {
     return edge_to[block_index_to];
   }
 
-  public void setEdges(List<Edge> edges) {
-    @SuppressWarnings("unchecked")
+  public void setEdges(final List<Edge> edges) {
+    @SuppressWarnings("unchecked") final
     List<Integer>[] edge_from_v = (List<Integer>[])new List[blocks.length];
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked") final
     List<Integer>[] edge_to_v = (List<Integer>[])new List[blocks.length];
     for (int i = 0; i < blocks.length; i++) {
       edge_from_v[i] = new ArrayList<Integer>();
       edge_to_v[i] = new ArrayList<Integer>();
     }
-    for (Edge e: edges) {
+    for (final Edge e: edges) {
       edge_from_v[e.block_index_from].add(e.block_index_to);
       edge_to_v[e.block_index_to].add(e.block_index_from);
     }
@@ -144,7 +141,7 @@ public class Session<Blk extends Session.Block> {
   public void sortUniqueClicks() {
     if (click_indexes.length == 0) return;
     Arrays.sort(click_indexes);
-    TIntArrayList new_click_indexes = new TIntArrayList(click_indexes.length);
+    final TIntArrayList new_click_indexes = new TIntArrayList(click_indexes.length);
     new_click_indexes.add(click_indexes[0]);
     for (int i = 1; i < click_indexes.length; i++) {
       if (click_indexes[i] == click_indexes[i-1]) continue;

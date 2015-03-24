@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * Time: 13:01
  */
 public class ModelsSerializationRepository extends SerializationRepository<CharSequence> {
-  private static ConversionRepository conversion = new TypeConvertersCollection(MathTools.CONVERSION,
+  private static final ConversionRepository conversion = new TypeConvertersCollection(MathTools.CONVERSION,
           new ObliviousTreeConversionPack(),
           new RegionConversionPack(),
           new ObliviousMultiClassTreeConversionPack(),
@@ -41,7 +41,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   public ModelsSerializationRepository(final BFGrid grid) {
     super(conversion.customize(new Filter<TypeConverter>() {
       @Override
-      public boolean accept(TypeConverter typeConverter) {
+      public boolean accept(final TypeConverter typeConverter) {
         if (typeConverter instanceof GridEnabled)
           ((GridEnabled) typeConverter).setGrid(grid);
         return true;
@@ -53,7 +53,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   public ModelsSerializationRepository(final DynamicGrid grid) {
     super(conversion.customize(new Filter<TypeConverter>() {
       @Override
-      public boolean accept(TypeConverter typeConverter) {
+      public boolean accept(final TypeConverter typeConverter) {
         if (typeConverter instanceof DynamicGridEnabled)
           ((DynamicGridEnabled) typeConverter).setGrid(grid);
         return true;
@@ -63,7 +63,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   }
 
 
-  private ModelsSerializationRepository(ConversionRepository repository) {
+  private ModelsSerializationRepository(final ConversionRepository repository) {
     super(repository, CharSequence.class);
   }
 
@@ -80,7 +80,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   public ModelsSerializationRepository customizeGrid(final BFGrid grid) {
     final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
       @Override
-      public boolean accept(TypeConverter typeConverter) {
+      public boolean accept(final TypeConverter typeConverter) {
         if (typeConverter instanceof GridEnabled)
           ((GridEnabled) typeConverter).setGrid(grid);
         return true;
@@ -93,7 +93,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   public ModelsSerializationRepository customizeGrid(final DynamicGrid grid) {
     final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
       @Override
-      public boolean accept(TypeConverter typeConverter) {
+      public boolean accept(final TypeConverter typeConverter) {
         if (typeConverter instanceof DynamicGridEnabled)
           ((DynamicGridEnabled) typeConverter).setGrid(dynamicGrid);
         return true;

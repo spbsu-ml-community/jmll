@@ -33,18 +33,18 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
   private double beta = 1.1;
   private final FastRandom rand = new FastRandom();
 
-  public GreedyTDRegionNonStochasticProbs(BFGrid grid) {
+  public GreedyTDRegionNonStochasticProbs(final BFGrid grid) {
     this.grid = grid;
   }
 
-  public GreedyTDRegionNonStochasticProbs(BFGrid grid, double alpha, double beta) {
+  public GreedyTDRegionNonStochasticProbs(final BFGrid grid, final double alpha, final double beta) {
     this(grid);
     this.alpha = alpha;
     this.beta = beta;
   }
 
   Pair<BFGrid.BinaryFeature[], boolean[]> initFit(final VecDataSet learn, final Loss loss) {
-    BFOptimizationSubset current;
+    final BFOptimizationSubset current;
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     current = new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, learn.length()));
     final double[] bestRowScores = new double[grid.rows()];
@@ -56,10 +56,10 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
 
     current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
       @Override
-      public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+      public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
         final double leftScore = logScore(left);
         final double rightScore = logScore(right);
-        double bestScore = leftScore > rightScore ? rightScore : leftScore;
+        final double bestScore = leftScore > rightScore ? rightScore : leftScore;
 
         if (bestScore < bestRowScores[bf.findex]) {
           bestRowScores[bf.findex] = bestScore;
@@ -70,11 +70,11 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     });
 
 
-    boolean[] resultMasks = new boolean[maxFailed];
-    BFGrid.BinaryFeature[] resultFeatures = new BFGrid.BinaryFeature[maxFailed];
+    final boolean[] resultMasks = new boolean[maxFailed];
+    final BFGrid.BinaryFeature[] resultFeatures = new BFGrid.BinaryFeature[maxFailed];
 
     for (int i = 0; i < maxFailed; ) {
-      boolean[] used = new boolean[bestRowScores.length];
+      final boolean[] used = new boolean[bestRowScores.length];
       final int index = rand.nextInt(bestRowScores.length);
       if (bestRowScores[index] < Double.POSITIVE_INFINITY && !used[index]) {
         used[index] = true;
@@ -96,7 +96,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     final List<Boolean> mask = new ArrayList<>();
     final TDoubleArrayList conditionSum = new TDoubleArrayList(32);
     final TDoubleArrayList conditionTotal = new TDoubleArrayList(32);
-    Pair<BFGrid.BinaryFeature[], boolean[]> init = initFit(learn, loss);
+    final Pair<BFGrid.BinaryFeature[], boolean[]> init = initFit(learn, loss);
     for (int i = 0; i < init.first.length; ++i) {
       conditions.add(init.first[i]);
       usedBF[init.first[i].bfIndex] = true;
@@ -127,7 +127,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
 
       determenisticCurrent.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
         @Override
-        public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+        public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
           final AdditiveStatistics leftIn = (AdditiveStatistics) loss.statsFactory().create();
           final AdditiveStatistics rightIn = (AdditiveStatistics) loss.statsFactory().create();
           leftIn.append(left);
@@ -144,7 +144,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
 
       current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
         @Override
-        public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+        public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
           if (usedBF[bf.bfIndex]) {
             scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
           } else {
@@ -168,7 +168,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
             {
               csum[csum.length - 1] = weights[bf.bfIndex * 2 + 1];
               ctotal[csum.length - 1] = total;
-              double prob = estimate(csum, ctotal);
+              final double prob = estimate(csum, ctotal);
               final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
               final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
               out.append(left);
@@ -216,14 +216,14 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     }
 
 
-    boolean[] masks = new boolean[conditions.size()];
+    final boolean[] masks = new boolean[conditions.size()];
     for (int i = 0; i < masks.length; i++) {
       masks[i] = mask.get(i);
     }
 
 //
-    Region region = new Region(conditions, masks, 1, 0, -1, currentScore, conditions.size() > maxFailed ? maxFailed : 0);
-    Vec target = loss.target();
+    final Region region = new Region(conditions, masks, 1, 0, -1, currentScore, conditions.size() > maxFailed ? maxFailed : 0);
+    final Vec target = loss.target();
     double sum = 0;
     double outSum = 0;
     double weight = 0;
@@ -231,7 +231,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
 
     for (int i = 0; i < bds.original().length(); ++i) {
       if (region.value(bds, i) == 1) {
-        double samplWeight = 1.0;// current.size() > 10 ? rand.nextPoisson(1.0) : 1.0;
+        final double samplWeight = 1.0;// current.size() > 10 ? rand.nextPoisson(1.0) : 1.0;
         weight += samplWeight;
         sum += target.get(i) * samplWeight;
       } else {
@@ -240,13 +240,13 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
       }
     }
 
-    double value = weight > 1 ? sum / weight : loss.bestIncrement(current.total());//loss.bestIncrement(inside);
+    final double value = weight > 1 ? sum / weight : loss.bestIncrement(current.total());//loss.bestIncrement(inside);
 //    double value = loss.bestIncrement(current.total());//loss.bestIncrement(inside);
     return new Region(conditions, masks, value, 0, -1, currentScore, conditions.size() > 1 ? maxFailed : 0);
 
   }
 
-  private double estimate(double[] sum, double[] counts) {
+  private double estimate(final double[] sum, final double[] counts) {
     double p = 1;
     for (int i = 0; i < sum.length; ++i) {
       p *= sum[i] / counts[i];
@@ -261,7 +261,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
   }
 
 
-  public static double weight(AdditiveStatistics stats) {
+  public static double weight(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
       return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).weight;
     }
@@ -271,7 +271,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     return 0;
   }
 
-  public static double sum(AdditiveStatistics stats) {
+  public static double sum(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
       return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).sum;
     }
@@ -281,7 +281,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     return 0;
   }
 
-  public static double sum2(AdditiveStatistics stats) {
+  public static double sum2(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
       return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).sum2;
     }
@@ -291,10 +291,10 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     return 0;
   }
 
-  public double score(AdditiveStatistics stats) {
-    double sum = sum(stats);
-    double sum2 = sum2(stats);
-    double weight = weight(stats);
+  public double score(final AdditiveStatistics stats) {
+    final double sum = sum(stats);
+    final double sum2 = sum2(stats);
+    final double weight = weight(stats);
     return weight > 2 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;
 //    return weight > 1 ? (sum2 / (weight - 1) - sum * sum / (weight - 1) / (weight - 1)) : sum2;
 //    return weight > 2 ? (sum2 / weight - sum * sum / weight / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;
@@ -304,13 +304,13 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
 //    return (stats.sum2 / (n-1) -stats.sum * stats.sum  / (n - 1) / (n - 1));
   }
 
-  public double inScore(AdditiveStatistics stats) {
-    double weight = weight(stats);
+  public double inScore(final AdditiveStatistics stats) {
+    final double weight = weight(stats);
     if (weight < 5) {
       return Double.POSITIVE_INFINITY;
     }
-    double sum = sum(stats);
-    double sum2 = sum2(stats);
+    final double sum = sum(stats);
+    final double sum2 = sum2(stats);
 //    return weight > 2 ? (-sum * sum * weight / (weight-1) / (weight-1))  * (1 + 2 * Math.log(weight + 1)) : 0;
     return -sum * sum / (weight - 1) / (weight - 1);
 //    return weight > 1 ? (sum2 / (weight - 1) - sum * sum / (weight - 1) / (weight - 1)) : sum2;
@@ -320,10 +320,10 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
 //    return (stats.sum2 / (n-1) -stats.sum * stats.sum  / (n - 1) / (n - 1));
   }
 
-  public double outScore(AdditiveStatistics stats) {
-    double sum2 = sum2(stats);
-    double sum = sum(stats);
-    double weight = weight(stats);
+  public double outScore(final AdditiveStatistics stats) {
+    final double sum2 = sum2(stats);
+    final double sum = sum(stats);
+    final double weight = weight(stats);
     if (weight < 5) {
       return Double.POSITIVE_INFINITY;
     }
@@ -339,7 +339,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
 //    return (stats.sum2 / (n-1) -stats.sum * stats.sum  / (n - 1) / (n - 1));
   }
 
-  public double logScore(AdditiveStatistics stats) {
+  public double logScore(final AdditiveStatistics stats) {
     final double weight = weight(stats);
     final double sum = sum(stats);
     return weight > 2 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;

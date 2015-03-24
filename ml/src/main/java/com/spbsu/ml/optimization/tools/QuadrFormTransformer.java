@@ -11,9 +11,9 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
  * Time: 19:34
  */
 public class QuadrFormTransformer {
-    public static Mx getInvertedForm(Vec x, int factors) {
-        int n = x.dim();
-        Mx mxA = new VecBasedMx(n*factors, n*factors);
+    public static Mx getInvertedForm(final Vec x, final int factors) {
+        final int n = x.dim();
+        final Mx mxA = new VecBasedMx(n*factors, n*factors);
         for (int i = 0; i < n-1; i++)
             for (int j = i+1; j < n; j++)
                 for (int k = 0; k < factors; k++) {
@@ -25,11 +25,11 @@ public class QuadrFormTransformer {
 
     //show overview of the matrix of the 'inverted' quadratic form.
     // 'i*j' equal to 'x.at(i)*x.at(j)'
-    public static void printOverview(int n, int factors) {
-        int size = n*factors;
-        String holder = "%s*%s";
+    public static void printOverview(final int n, final int factors) {
+        final int size = n*factors;
+        final String holder = "%s*%s";
 
-        String[][] mxA = new String[size][size];
+        final String[][] mxA = new String[size][size];
         for (int i = 0; i < n-1; i++)
             for (int j = i+1; j < n; j++)
                 for (int k = 0; k < factors; k++) {
@@ -37,7 +37,7 @@ public class QuadrFormTransformer {
                     mxA[j + k*n][i + k*n] = String.format(holder, i, j);
                 }
 
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 builder.append(j > 0 ? "\t\t\t" : "");
@@ -50,7 +50,7 @@ public class QuadrFormTransformer {
         System.out.println(builder.toString());
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         printOverview(5, 3);
     }
 

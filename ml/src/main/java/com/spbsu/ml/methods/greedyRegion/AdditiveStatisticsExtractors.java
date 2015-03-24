@@ -8,7 +8,7 @@ import com.spbsu.ml.loss.WeightedLoss;
  * Created by noxoomo on 10/11/14.
  */
 public class AdditiveStatisticsExtractors {
-  public static double weight(AdditiveStatistics stats) {
+  public static double weight(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
       return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).weight;
     }
@@ -18,7 +18,7 @@ public class AdditiveStatisticsExtractors {
     return 0;
   }
 
-  public static double sum(AdditiveStatistics stats) {
+  public static double sum(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
       return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).sum;
     }
@@ -28,7 +28,7 @@ public class AdditiveStatisticsExtractors {
     return 0;
   }
 
-  public static double sum2(AdditiveStatistics stats) {
+  public static double sum2(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
       return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).sum2;
     }

@@ -16,15 +16,15 @@ public class RandomForest<Loss extends StatBasedLoss> extends WeakListenerHolder
   private final VecOptimization<WeightedLoss<? extends Loss>> weak;
   private final int treesCount;
 
-  public RandomForest(VecOptimization<WeightedLoss<? extends Loss>> weak, FastRandom rnd, int treesCount) {
+  public RandomForest(final VecOptimization<WeightedLoss<? extends Loss>> weak, final FastRandom rnd, final int treesCount) {
     this.weak = weak;
     this.treesCount = treesCount;
     this.rnd = rnd;
   }
 
   @Override
-  public Trans fit(VecDataSet learn, Loss globalLoss) {
-    Trans[] weakModels = new Trans[treesCount];
+  public Trans fit(final VecDataSet learn, final Loss globalLoss) {
+    final Trans[] weakModels = new Trans[treesCount];
     for (int i = 0; i < treesCount; ++i)
       weakModels[i] = weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
     return new Ensemble(weakModels, VecTools.fill(new ArrayVec(weakModels.length), 1.0 / treesCount));

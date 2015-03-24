@@ -18,31 +18,33 @@ public class CELogit extends FuncC1.Stub implements TargetFunc{
   private final Vec target;
   private final DataSet<?> owner;
 
-  public CELogit(Vec target, DataSet<?> owner) {
+  public CELogit(final Vec target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
   }
 
   @Override
-  public Vec gradient(Vec x) {
-    Vec result = new ArrayVec(x.dim());
+  public Vec gradient(final Vec x) {
+    final Vec result = new ArrayVec(x.dim());
     for (int i = 0; i < x.dim(); i++) {
-      double b = target.get(i) > 0 ? 1 : -1;
-      double a = exp(x.get(i) * b);
+      final double b = target.get(i) > 0 ? 1 : -1;
+      final double a = exp(x.get(i) * b);
       result.set(i, 2 * a * b / (1 + a) / (1 + a));
     }
     return result;
   }
 
+  @Override
   public int dim() {
     return target.dim();
   }
 
-  public double value(Vec point) {
+  @Override
+  public double value(final Vec point) {
     double result = 0;
     for (int i = 0; i < point.dim(); i++) {
-      double expMX = exp(-point.get(i));
-      double pX = 1. / (1. + expMX);
+      final double expMX = exp(-point.get(i));
+      final double pX = 1. / (1. + expMX);
       if (target.get(i) > 0) // positive example
         result += 1 - pX;
       else // negative

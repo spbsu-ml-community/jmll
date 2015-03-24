@@ -2,7 +2,6 @@ package com.spbsu.ml.methods;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 

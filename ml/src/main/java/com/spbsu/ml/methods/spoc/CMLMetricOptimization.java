@@ -28,7 +28,7 @@ public class CMLMetricOptimization {
   private final BlockwiseMLLLogit target;
   private final double step;
 
-  public CMLMetricOptimization(final VecDataSet ds, BlockwiseMLLLogit target, final Mx S, final double c, final double step) {
+  public CMLMetricOptimization(final VecDataSet ds, final BlockwiseMLLLogit target, final Mx S, final double c, final double step) {
     this.ds = ds;
     this.target = target;
     this.step = step;
@@ -49,12 +49,13 @@ public class CMLMetricOptimization {
       this.binClassifier = binClassifier;
     }
 
+    @Override
     public Vec gradient(final Vec mu) {
       final Vec grad = new ArrayVec(mu.dim());
       for (int k = 0; k < grad.dim(); k++) {
         final TIntList idxs = classesIdxs.get(k);
         double val = 0.0;
-        for (TIntIterator listIter = idxs.iterator(); listIter.hasNext(); ) {
+        for (final TIntIterator listIter = idxs.iterator(); listIter.hasNext(); ) {
           final Vec x = ds.data().row(listIter.next());
           final double trans = binClassifier.value(x);
           final double sigmoid = MathTools.sigmoid(trans);
@@ -67,7 +68,7 @@ public class CMLMetricOptimization {
       VecTools.scale(grad, 1 / norm);
 
       for (int k = 0; k < grad.dim(); k++) {
-        double val = VecTools.multiply(laplacian.row(k), mu);
+        final double val = VecTools.multiply(laplacian.row(k), mu);
         grad.adjust(k, val);
       }
       return grad;
@@ -103,7 +104,7 @@ public class CMLMetricOptimization {
     return result;
   }
 
-  public Vec optimizeColumn(FuncC1 func, Vec codingColumn) {
+  public Vec optimizeColumn(final FuncC1 func, final Vec codingColumn) {
     final Vec mu = new ArrayVec(codingColumn.dim());
     for (int i = 0; i < mu.dim(); i++) {
       final double code = codingColumn.get(i);

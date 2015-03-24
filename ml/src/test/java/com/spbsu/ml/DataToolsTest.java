@@ -1,16 +1,21 @@
 package com.spbsu.ml;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-
-
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.meta.DSItem;
+import com.spbsu.ml.meta.items.QURLItem;
+import com.spbsu.ml.testUtils.FakePool;
+
+import java.io.StringReader;
+import java.io.StringWriter;
 
 /**
  * User: solar
@@ -59,7 +64,7 @@ public class DataToolsTest extends GridTest {
     final StringWriter out = new StringWriter();
     DataTools.writePoolTo(learn, out);
     final Pool<? extends DSItem> pool = DataTools.readPoolFrom(new StringReader(out.toString()));
-    StringWriter out1 = new StringWriter();
+    final StringWriter out1 = new StringWriter();
     DataTools.writePoolTo(pool, out1);
     assertEquals(out.toString(), out1.toString());
   }
@@ -67,7 +72,7 @@ public class DataToolsTest extends GridTest {
   public void testExtendDataset() throws Exception {
     final ArrayVec target = new ArrayVec(0.1,
         0.2);
-    VecDataSet ds = new VecDataSetImpl(
+    final VecDataSet ds = new VecDataSetImpl(
         new VecBasedMx(2,
             new ArrayVec(1, 2,
                          3, 4)
@@ -79,5 +84,30 @@ public class DataToolsTest extends GridTest {
     for (int i = 0; i < extDs.length(); i++) {
       System.out.println(target.get(i) + "\t" + extDs.at(i).toString());
     }
+  }
+
+  public void testLibfmWrite() throws Exception {
+    final Mx data = new VecBasedMx(2, new ArrayVec(
+        0.0, 1.0,
+        1.0, 0.0
+    ));
+    final Vec target = new ArrayVec(0.5, 0.7);
+    final FakePool pool = new FakePool(data, target);
+    final StringWriter out = new StringWriter();
+    DataTools.writePoolInLibfmFormat(pool, out);
+    assertEquals("0.5\t1:1.0\n0.7\t0:1.0\n", out.toString());
+  }
+
+  public void testClassicWrite() throws Exception {
+    final StringWriter out = new StringWriter();
+    DataTools.writeClassicPoolTo(learn, out);
+    final Pool<QURLItem> pool = DataTools.loadFromFeaturesTxt("file", new StringReader(out.toString()));
+    assertTrue(VecTools.equals(learn.target(L2.class).target, pool.target(L2.class).target));
+    assertTrue(VecTools.equals(learn.vecData().data(), pool.vecData().data()));
+  }
+
+  @Override
+  protected boolean isJDK8DependResult() {
+    return true;
   }
 }

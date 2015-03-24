@@ -20,12 +20,12 @@ public class BinaryFeatureImpl implements BinaryFeature {
   private boolean active = false;
   private double regScore = 0;
 
-  public void setRegScore(double reg) {
+  public void setRegScore(final double reg) {
     this.regScore = reg;
   }
 
 
-  public BinaryFeatureImpl(DynamicRow bfRow, int origFIndex, double condition, int index) {
+  public BinaryFeatureImpl(final DynamicRow bfRow, final int origFIndex, final double condition, final int index) {
     this.bfRow = bfRow;
     this.origFIndex = origFIndex;
     this.condition = condition;
@@ -33,12 +33,13 @@ public class BinaryFeatureImpl implements BinaryFeature {
   }
 
 
-  public void setBinNo(int newBinNo) {
+  public void setBinNo(final int newBinNo) {
     this.binNo = newBinNo;
   }
 
 
-  public void setActive(boolean status) {
+  @Override
+  public void setActive(final boolean status) {
     this.active = status;
   }
 
@@ -53,10 +54,12 @@ public class BinaryFeatureImpl implements BinaryFeature {
     return this.condition;
   }
 
-  public boolean value(Vec vec) {
+  @Override
+  public boolean value(final Vec vec) {
     return vec.get(origFIndex) > condition;
   }
 
+  @Override
   public DynamicRow row() {
     return bfRow;
   }
@@ -101,14 +104,14 @@ public class BinaryFeatureImpl implements BinaryFeature {
 
   static Comparator<BinaryFeatureImpl> conditionComparator = new Comparator<BinaryFeatureImpl>() {
     @Override
-    public int compare(BinaryFeatureImpl a, BinaryFeatureImpl b) {
+    public int compare(final BinaryFeatureImpl a, final BinaryFeatureImpl b) {
       return Double.compare(a.condition, b.condition);
     }
   };
 
   static Comparator<BinaryFeatureImpl> borderComparator = new Comparator<BinaryFeatureImpl>() {
     @Override
-    public int compare(BinaryFeatureImpl a, BinaryFeatureImpl b) {
+    public int compare(final BinaryFeatureImpl a, final BinaryFeatureImpl b) {
       return Integer.compare(a.borderIndex, b.borderIndex);
     }
   };

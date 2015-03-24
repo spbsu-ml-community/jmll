@@ -13,19 +13,19 @@ import com.spbsu.ml.io.DynamicGridStringConverter;
 import gnu.trove.set.hash.TIntHashSet;
 
 public class BFDynamicGrid implements DynamicGrid {
-  private DynamicRow[] rows;
-  private TIntHashSet known = new TIntHashSet();
+  private final DynamicRow[] rows;
+  private final TIntHashSet known = new TIntHashSet();
   private final DynamicRow leastNonEmptyRow;
 
 
-  public BFDynamicGrid(VecDataSet ds, int minSplits) {
+  public BFDynamicGrid(final VecDataSet ds, final int minSplits) {
     final OrderByFeature byFeature = ds.cache().cache(OrderByFeature.class, DataSet.class);
 
-    MedianRow[] rows = new MedianRow[ds.data().columns()];
+    final MedianRow[] rows = new MedianRow[ds.data().columns()];
     for (int f = 0; f < ds.data().columns(); ++f) {
       final ArrayPermutation permutation = byFeature.orderBy(f);
-      int[] order = permutation.direct();
-      double[] feature = new double[order.length];
+      final int[] order = permutation.direct();
+      final double[] feature = new double[order.length];
       for (int i = 0; i < feature.length; i++)
         feature[i] = ds.at(order[i]).get(f);
       rows[f] = new MedianRow(this, feature, permutation.reverse(), f, minSplits);
@@ -41,7 +41,7 @@ public class BFDynamicGrid implements DynamicGrid {
     leastNonEmptyRow = least;
   }
 
-  public BFDynamicGrid(DynamicRow[] rows) {
+  public BFDynamicGrid(final DynamicRow[] rows) {
     DynamicRow least = null;
     for (int f = 0; f < rows.length; ++f)
       if (!rows[f].empty()) {
@@ -50,17 +50,18 @@ public class BFDynamicGrid implements DynamicGrid {
       }
     this.rows = rows;
     leastNonEmptyRow = least;
-    for (DynamicRow row : rows)
+    for (final DynamicRow row : rows)
       row.setOwner(this);
   }
 
 
-  public DynamicRow row(int feature) {
+  @Override
+  public DynamicRow row(final int feature) {
     return feature < rows.length ? rows[feature] : null;
   }
 
   @Override
-  public void binarize(Vec x, short[] folds) {
+  public void binarize(final Vec x, final short[] folds) {
     for (int i = 0; i < x.dim(); i++) {
       folds[i] = rows[i].bin(x.get(i));
     }
@@ -68,7 +69,7 @@ public class BFDynamicGrid implements DynamicGrid {
   }
 
   @Override
-  public BinaryFeature bf(int fIndex, int binNo) {
+  public BinaryFeature bf(final int fIndex, final int binNo) {
     return rows[fIndex].bf(binNo);
   }
 
@@ -78,14 +79,14 @@ public class BFDynamicGrid implements DynamicGrid {
   }
 
   @Override
-  public boolean addSplit(int feature) {
+  public boolean addSplit(final int feature) {
     return rows[feature].addSplit();
   }
 
 
   @Override
   public int[] hist() {
-    int[] counts = new int[rows.length];
+    final int[] counts = new int[rows.length];
     for (int f = 0; f < rows.length; ++f) {
       counts[f] = rows[f].size();
     }
@@ -93,23 +94,24 @@ public class BFDynamicGrid implements DynamicGrid {
   }
 
 
+  @Override
   public int rows() {
     return rows.length;
   }
 
   @Override
-  public void setKnown(int hash) {
+  public void setKnown(final int hash) {
     known.add(hash);
   }
 
   @Override
-  public boolean isKnown(int hash) {
+  public boolean isKnown(final int hash) {
     return known.contains(hash);
   }
 
 
   @Override
-  public boolean isActive(int fIndex, int binNo) {
+  public boolean isActive(final int fIndex, final int binNo) {
     return bf(fIndex, binNo).isActive();
   }
 
@@ -127,22 +129,22 @@ public class BFDynamicGrid implements DynamicGrid {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (!(o instanceof DynamicGrid)) return false;
 
-    DynamicGrid grid = (DynamicGrid) o;
+    final DynamicGrid grid = (DynamicGrid) o;
 
     if (this.rows() != grid.rows()) return false;
 
     for (int feature = 0; feature < rows(); ++feature) {
-      DynamicRow thisRow = this.row(feature);
-      DynamicRow otherRow = grid.row(feature);
+      final DynamicRow thisRow = this.row(feature);
+      final DynamicRow otherRow = grid.row(feature);
       if (thisRow.size() != otherRow.size())
         return false;
       for (int bin = 0; bin < thisRow.size(); ++bin) {
-        BinaryFeature thisBF = thisRow.bf(bin);
-        BinaryFeature other = otherRow.bf(bin);
+        final BinaryFeature thisBF = thisRow.bf(bin);
+        final BinaryFeature other = otherRow.bf(bin);
         if (Math.abs(thisBF.condition() - other.condition()) > 1e-9) return false;
         if (thisBF.fIndex() != other.fIndex()) return false;
       }

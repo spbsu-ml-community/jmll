@@ -15,7 +15,7 @@ public class HistogramPrinter implements ProgressHandler {
   int iteration = 0;
 
   @Override
-  public void invoke(Trans partial) {
+  public void invoke(final Trans partial) {
     iteration++;
     if (iteration % 10 != 0) {
       return;
@@ -25,7 +25,7 @@ public class HistogramPrinter implements ProgressHandler {
       final double step = ensemble.wlast();
       final Trans last = ensemble.last();
       if (last instanceof ObliviousTreeDynamicBin) {
-        ObliviousTreeDynamicBin tree = (ObliviousTreeDynamicBin) last;
+        final ObliviousTreeDynamicBin tree = (ObliviousTreeDynamicBin) last;
         System.out.println("Current grid " + Arrays.toString(tree.grid().hist()));
       }
     }

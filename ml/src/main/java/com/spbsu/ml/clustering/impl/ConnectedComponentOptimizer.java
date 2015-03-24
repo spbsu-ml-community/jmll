@@ -18,10 +18,10 @@ import java.util.*;
  * Time: 0:48:33
  */
 public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T> {
-  private ClusterizationAlgorithm<T> algorithm;
-  private double minToJoin;
+  private final ClusterizationAlgorithm<T> algorithm;
+  private final double minToJoin;
 
-  public ConnectedComponentOptimizer(ClusterizationAlgorithm<T> algorithm, double minToJoin) {
+  public ConnectedComponentOptimizer(final ClusterizationAlgorithm<T> algorithm, final double minToJoin) {
     this.algorithm = algorithm;
     this.minToJoin = minToJoin;
   }
@@ -31,7 +31,7 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
     T t;
     int componentIndex;
 
-    private IndexedVecIter(VecIterator iter, T t, int index) {
+    private IndexedVecIter(final VecIterator iter, final T t, final int index) {
       this.iter = iter;
       this.t = t;
       componentIndex = index;
@@ -42,17 +42,17 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
     List<IndexedVecIter> iters = new LinkedList<IndexedVecIter>();
     final int index;
 
-    public VecIterEntry(int index) {
+    public VecIterEntry(final int index) {
       this.index = index;
     }
 
     @Override
-    public int compareTo(@NotNull VecIterEntry node) {
+    public int compareTo(@NotNull final VecIterEntry node) {
       return index - node.index;
     }
   }
 
-  private static void processIter(Set<VecIterEntry> iters, TIntObjectHashMap<VecIterEntry> cache, IndexedVecIter iter) {
+  private static void processIter(final Set<VecIterEntry> iters, final TIntObjectHashMap<VecIterEntry> cache, final IndexedVecIter iter) {
     final int index = iter.iter.index();
     VecIterEntry iterEntry = cache.get(index);
     if (iterEntry == null) {
@@ -65,14 +65,14 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
 
   @NotNull
   @Override
-  public Collection<? extends Collection<T>> cluster(Collection<T> dataSet, final Computable<T, Vec> data2DVector) {
+  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Computable<T, Vec> data2DVector) {
     final TreeSet<VecIterEntry> iters = new TreeSet<>();
     final TIntObjectHashMap<VecIterEntry> cache = new TIntObjectHashMap<VecIterEntry>();
     final List<IndexedVecIter<T>> entries = new ArrayList<IndexedVecIter<T>>();
-    double minToJoin = this.minToJoin;// + 0.5 * (1 - Math.min(1,  Math.log(2000) / Math.log(dataSet.size())));
+    final double minToJoin = this.minToJoin;// + 0.5 * (1 - Math.min(1,  Math.log(2000) / Math.log(dataSet.size())));
     {
       int index = 1;
-      for (T t : dataSet) {
+      for (final T t : dataSet) {
         final Vec vec = data2DVector.compute(t);
         final VecIterator iter = vec.nonZeroes();
         while (iter.advance() && iter.value() < minToJoin);
@@ -92,7 +92,7 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
         double sum = 0;
         int count = 0;
         int prev = 0;
-        for (IndexedVecIter iter : topEntry.iters) {
+        for (final IndexedVecIter iter : topEntry.iters) {
           count++;
           sum += iter.iter.value();
           if (prev != 0 && prev != iter.iter.index())
@@ -105,7 +105,7 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
 //        System.out.println(termsBasis.fromIndex(topEntry.iters.at(0).iter.index()) + ": " + topEntry.iters.size()+ ":" + maxComponentIndex + ":" + (sum / Math.max(1, count)));
       }
 
-      for (IndexedVecIter iter : topEntry.iters) {
+      for (final IndexedVecIter iter : topEntry.iters) {
         if (join)
           iter.componentIndex = maxComponentIndex;
         while (iter.iter.advance() && iter.iter.value() < minToJoin);
@@ -114,8 +114,8 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
       }
 
     }
-    TIntObjectHashMap<Set<T>> components = new TIntObjectHashMap<Set<T>>();
-    for (IndexedVecIter<T> entry : entries) {
+    final TIntObjectHashMap<Set<T>> components = new TIntObjectHashMap<Set<T>>();
+    for (final IndexedVecIter<T> entry : entries) {
       Set<T> component = components.get(entry.componentIndex);
       if (component == null)
         components.put(entry.componentIndex, component = new HashSet<T>());
@@ -127,8 +127,8 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
     final List<Collection<T>> clusters = new ArrayList<Collection<T>>();
     components.forEachValue(new TObjectProcedure<Set<T>>() {
       @Override
-      public boolean execute(Set<T> ts) {
-        for (Collection<T> cluster : algorithm.cluster(ts, data2DVector)) {
+      public boolean execute(final Set<T> ts) {
+        for (final Collection<T> cluster : algorithm.cluster(ts, data2DVector)) {
           clusters.add(cluster);
         }
         return true;

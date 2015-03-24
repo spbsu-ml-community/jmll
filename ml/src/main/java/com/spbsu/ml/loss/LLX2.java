@@ -19,15 +19,16 @@ public class LLX2 extends FuncC1.Stub implements TargetFunc {
   private final Vec target;
   private final DataSet<?> owner;
 
-  public LLX2(Vec target, DataSet<?> owner) {
+  public LLX2(final Vec target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
   }
 
-  public Vec gradient(Vec point) {
-    Vec result = new ArrayVec(point.dim());
+  @Override
+  public Vec gradient(final Vec point) {
+    final Vec result = new ArrayVec(point.dim());
     for (int i = 0; i < point.dim(); i++) {
-      double x = point.get(i) + 1;
+      final double x = point.get(i) + 1;
       if (target.get(i) > 0) // positive example
         result.set(i, -2 * x);
       else // negative
@@ -41,11 +42,12 @@ public class LLX2 extends FuncC1.Stub implements TargetFunc {
     return target.dim();
   }
 
-  public double value(Vec point) {
+  @Override
+  public double value(final Vec point) {
     double result = 0;
     for (int i = 0; i < point.dim(); i++) {
-      double x = point.get(i) + 1;
-      double pX = exp(-x * x);
+      final double x = point.get(i) + 1;
+      final double pX = exp(-x * x);
       if (target.get(i) > 0) // positive example
         result -= log(pX);
       else // negative

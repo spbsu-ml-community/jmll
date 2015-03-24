@@ -25,21 +25,21 @@ public class MLLLogit extends FuncC1.Stub implements TargetFunc {
   private final DataSet<?> owner;
   private final int classesCount;
 
-  public MLLLogit(IntSeq target, DataSet<?> owner) {
+  public MLLLogit(final IntSeq target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
     classesCount = ArrayTools.max(target) + 1;
   }
 
   @Override
-  public Vec gradient(Vec point) {
-    Vec result = new ArrayVec(point.dim());
-    Mx resultMx = new VecBasedMx(target.length(), result);
-    Mx mxPoint = new VecBasedMx(target.length(), point);
+  public Vec gradient(final Vec point) {
+    final Vec result = new ArrayVec(point.dim());
+    final Mx resultMx = new VecBasedMx(target.length(), result);
+    final Mx mxPoint = new VecBasedMx(target.length(), point);
     for (int i = 0; i < target.length(); i++) {
       double sum = 0;
       for (int c = 0; c < classesCount - 1; c++){
-        double expX = exp(mxPoint.get(c, i));
+        final double expX = exp(mxPoint.get(c, i));
         sum += expX;
       }
       final int pointClass = target.at(i);
@@ -54,13 +54,13 @@ public class MLLLogit extends FuncC1.Stub implements TargetFunc {
   }
 
   @Override
-  public double value(Vec point) {
+  public double value(final Vec point) {
     double result = 0;
-    Mx mxPoint = new VecBasedMx(target.length(), point);
+    final Mx mxPoint = new VecBasedMx(target.length(), point);
     for (int i = 0; i < target.length(); i++) {
       double sum = 0;
       for (int c = 0; c < classesCount - 1; c++){
-        double expX = exp(mxPoint.get(c, i));
+        final double expX = exp(mxPoint.get(c, i));
         sum += expX;
       }
       final int pointClass = target.at(i);
@@ -78,7 +78,7 @@ public class MLLLogit extends FuncC1.Stub implements TargetFunc {
     return target.length() * (classesCount - 1);
   }
 
-  public int label(int idx) {
+  public int label(final int idx) {
     return target.at(idx);
   }
 

@@ -11,7 +11,6 @@ import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
-import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.BFOptimizationSubset;
 import com.spbsu.ml.models.Region;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -27,31 +26,31 @@ import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.wei
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptimization<Loss> {
   protected final BFGrid grid;
   private final FastRandom rand = new FastRandom();
   private final double alpha;
   private final double beta;
   private final int maxFailed;
 
-  public GreedyTDRegion(BFGrid grid) {
+  public GreedyTDRegion(final BFGrid grid) {
     this(grid, 0.02, 0.5, 1);
   }
 
-  public GreedyTDRegion(BFGrid grid, double alpha, double beta, int maxFailed) {
+  public GreedyTDRegion(final BFGrid grid, final double alpha, final double beta, final int maxFailed) {
     this.grid = grid;
     this.alpha = alpha;
     this.beta = beta;
     this.maxFailed = maxFailed;
   }
 
-  public GreedyTDRegion(BFGrid grid, double alpha, double beta) {
+  public GreedyTDRegion(final BFGrid grid, final double alpha, final double beta) {
     this(grid, alpha, beta, 1);
   }
 
 
   Pair<BFGrid.BinaryFeature[], boolean[]> initFit(final VecDataSet learn, final Loss loss) {
-    BFOptimizationSubset current;
+    final BFOptimizationSubset current;
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     current = new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, learn.length()));
     final double[] bestRowScores = new double[grid.rows()];
@@ -63,10 +62,10 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
 
     current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
       @Override
-      public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+      public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
         final double leftScore = score(left);
         final double rightScore = score(right);
-        double bestScore = leftScore > rightScore ? rightScore : leftScore;
+        final double bestScore = leftScore > rightScore ? rightScore : leftScore;
 
         if (bestScore < bestRowScores[bf.findex]) {
           bestRowScores[bf.findex] = bestScore;
@@ -77,11 +76,11 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     });
 
 
-    boolean[] resultMasks = new boolean[maxFailed];
-    BFGrid.BinaryFeature[] resultFeatures = new BFGrid.BinaryFeature[maxFailed];
+    final boolean[] resultMasks = new boolean[maxFailed];
+    final BFGrid.BinaryFeature[] resultFeatures = new BFGrid.BinaryFeature[maxFailed];
 
     for (int i = 0; i < maxFailed; ) {
-      boolean[] used = new boolean[bestRowScores.length];
+      final boolean[] used = new boolean[bestRowScores.length];
       final int index = rand.nextInt(bestRowScores.length);
       if (bestRowScores[index] < Double.POSITIVE_INFINITY && !used[index]) {
         used[index] = true;
@@ -100,7 +99,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(100);
     final boolean[] usedBF = new boolean[grid.size()];
     final List<Boolean> mask = new ArrayList<>();
-    Pair<BFGrid.BinaryFeature[], boolean[]> init = initFit(learn, loss);
+    final Pair<BFGrid.BinaryFeature[], boolean[]> init = initFit(learn, loss);
     for (int i = 0; i < init.first.length; ++i) {
       conditions.add(init.first[i]);
       usedBF[init.first[i].bfIndex] = true;
@@ -118,11 +117,11 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     while (true) {
       current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
         @Override
-        public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+        public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
           if (usedBF[bf.bfIndex]) {
             scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
           } else {
-            double leftScore;
+            final double leftScore;
             {
               final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
               in.append(current.nonCriticalTotal);
@@ -130,7 +129,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
               leftScore = loss.score(in);
             }
 
-            double rightScore;
+            final double rightScore;
             {
               final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
               in.append(current.nonCriticalTotal);
@@ -154,7 +153,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
       final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
       final boolean bestSplitMask = isRight[bestSplitBF.bfIndex];
 
-      BFOptimizationSubset outRegion = current.split(bestSplitBF, bestSplitMask);
+      final BFOptimizationSubset outRegion = current.split(bestSplitBF, bestSplitMask);
       if (outRegion == null) {
         break;
       }
@@ -166,26 +165,26 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     }
 
 
-    boolean[] masks = new boolean[conditions.size()];
+    final boolean[] masks = new boolean[conditions.size()];
     for (int i = 0; i < masks.length; i++) {
       masks[i] = mask.get(i);
     }
 
 //
-    Region region = new Region(conditions, masks, 1, 0, -1, currentScore, conditions.size() > maxFailed ? maxFailed : 0);
-    Vec target = loss.target();
+    final Region region = new Region(conditions, masks, 1, 0, -1, currentScore, conditions.size() > maxFailed ? maxFailed : 0);
+    final Vec target = loss.target();
     double sum = 0;
     double weight = 0;
 
     for (int i = 0; i < bds.original().length(); ++i) {
-      if (region.value(bds, i) == 1) {
-        double samplWeight = 1.0;// current.size() > 10 ? rand.nextPoisson(1.0) : 1.0;
+      if (region.contains(bds, i)) {
+        final double samplWeight = 1.0;// current.size() > 10 ? rand.nextPoisson(1.0) : 1.0;
         weight += samplWeight;
         sum += target.get(i) * samplWeight;
       }
     }
 
-    double value = weight > 1 ? sum / weight : loss.bestIncrement(current.total());
+    final double value = weight > 1 ? sum / weight : loss.bestIncrement(current.total());
     return new Region(conditions, masks, value, 0, -1, currentScore, conditions.size() > 1 ? maxFailed : 0);
   }
 
@@ -194,7 +193,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(100);
     final boolean[] usedBF = new boolean[grid.size()];
     final List<Boolean> mask = new ArrayList<>();
-    Pair<BFGrid.BinaryFeature[], boolean[]> init = initFit(learn, loss);
+    final Pair<BFGrid.BinaryFeature[], boolean[]> init = initFit(learn, loss);
     for (int i = 0; i < init.first.length; ++i) {
       conditions.add(init.first[i]);
       mask.add(init.second[i]);
@@ -211,11 +210,11 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     while (true) {
       current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
         @Override
-        public void accept(BFGrid.BinaryFeature bf, AdditiveStatistics left, AdditiveStatistics right) {
+        public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
           if (usedBF[bf.bfIndex]) {
             scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
           } else {
-            double leftScore;
+            final double leftScore;
             {
               final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
               in.append(current.nonCriticalTotal);
@@ -223,7 +222,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
               leftScore = loss.score(in);
             }
 
-            double rightScore;
+            final double rightScore;
             {
               final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
               in.append(current.nonCriticalTotal);
@@ -247,7 +246,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
       final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
       final boolean bestSplitMask = isRight[bestSplitBF.bfIndex];
 
-      BFOptimizationSubset outRegion = current.split(bestSplitBF, bestSplitMask);
+      final BFOptimizationSubset outRegion = current.split(bestSplitBF, bestSplitMask);
       if (outRegion == null) {
         break;
       }
@@ -258,18 +257,18 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     }
 
 
-    boolean[] masks = new boolean[conditions.size()];
+    final boolean[] masks = new boolean[conditions.size()];
     for (int i = 0; i < masks.length; i++) {
       masks[i] = mask.get(i);
     }
 
 //
-    Region region = new Region(conditions, masks, 1, 0, -1, currentScore, conditions.size() > maxFailed ? maxFailed : 0);
-    Vec target = loss.target();
-    TDoubleArrayList sample = new TDoubleArrayList();
+    final Region region = new Region(conditions, masks, 1, 0, -1, currentScore, conditions.size() > maxFailed ? maxFailed : 0);
+    final Vec target = loss.target();
+    final TDoubleArrayList sample = new TDoubleArrayList();
 
     for (int i = 0; i < bds.original().length(); ++i) {
-      if (region.value(bds, i) == 1) {
+      if (region.contains(bds, i)) {
         sample.add(target.get(i));
       }
     }
@@ -286,7 +285,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     final TDoubleArrayList inside;
     final int maxFailed;
 
-    RegionStats(List<BFGrid.BinaryFeature> conditions, boolean[] mask, TDoubleArrayList inside, int maxFailed) {
+    RegionStats(final List<BFGrid.BinaryFeature> conditions, final boolean[] mask, final TDoubleArrayList inside, final int maxFailed) {
       this.conditions = conditions;
       this.mask = mask;
       this.inside = inside;
@@ -294,9 +293,9 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends VecOptimization.
     }
   }
 
-  public double score(AdditiveStatistics stats) {
-    double sum = sum(stats);
-    double weight = weight(stats);
+  public double score(final AdditiveStatistics stats) {
+    final double sum = sum(stats);
+    final double weight = weight(stats);
     return weight > 2 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;
   }
 

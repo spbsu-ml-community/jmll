@@ -1,9 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import java.lang.reflect.Array;
-import java.util.*;
-
-
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVecBuilder;
@@ -21,6 +17,9 @@ import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.PoolFeatureMeta;
 import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 
+import java.lang.reflect.Array;
+import java.util.*;
+
 /**
  * User: solar
  * Date: 07.07.14
@@ -29,15 +28,15 @@ import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 public class PoolByRowsBuilder implements Factory<Pool<? extends DSItem>> {
   private JsonDataSetMeta meta;
   private List<DSItem> items = new ArrayList<>();
-  private LinkedHashMap<FeatureMeta, SeqBuilder<?>> features = new LinkedHashMap<>();
+  private final LinkedHashMap<FeatureMeta, SeqBuilder<?>> features = new LinkedHashMap<>();
 
   @Override
   public Pool<? extends DSItem> create() {
     return create(meta.type().clazz());
   }
 
-  public <Item extends DSItem> Pool<Item> create(Class<Item> clazz) {
-    Pair<PoolFeatureMeta, Seq<?>>[] features = new Pair[this.features.size()];
+  public <Item extends DSItem> Pool<Item> create(final Class<Item> clazz) {
+    final Pair<PoolFeatureMeta, Seq<?>>[] features = new Pair[this.features.size()];
     int index = 0;
     final Holder<DataSet<?>> dataSet = Holder.create(null);
     for (final Map.Entry<FeatureMeta, SeqBuilder<?>> entry : this.features.entrySet()) {
@@ -61,6 +60,11 @@ public class PoolByRowsBuilder implements Factory<Pool<? extends DSItem>> {
         public ValueType type() {
           return entry.getKey().type();
         }
+
+        @Override
+        public String toString() {
+          return id();
+        }
       };
       features[index++] = Pair.<PoolFeatureMeta, Seq<?>>create(key, entry.getValue().build());
     }
@@ -72,7 +76,7 @@ public class PoolByRowsBuilder implements Factory<Pool<? extends DSItem>> {
     );
     { // verifying lines
       dataSet.setValue(result.data());
-      for (Pair<PoolFeatureMeta, Seq<?>> entry : features) {
+      for (final Pair<PoolFeatureMeta, Seq<?>> entry : features) {
         if (entry.second.length() != items.size())
           throw new RuntimeException(
               "Feature " + entry.first.toString() + " has " + entry.second.length() + " entries " + " expected " + items.size());
@@ -80,7 +84,7 @@ public class PoolByRowsBuilder implements Factory<Pool<? extends DSItem>> {
     }
 
     final Set<String> itemIds = new HashSet<>();
-    for (Item item : (List<Item>)items) {
+    for (final Item item : (List<Item>)items) {
       if (itemIds.contains(item.id()))
         throw new RuntimeException(
             "Contain duplicates! Id = " + item.id()

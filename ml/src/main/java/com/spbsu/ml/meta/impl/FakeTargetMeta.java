@@ -8,8 +8,8 @@ import com.spbsu.ml.meta.TargetMeta;
  * Date: 22.07.14
  */
 public class FakeTargetMeta implements TargetMeta {
-  private DataSet<?> ds;
-  private ValueType valueType;
+  private final DataSet<?> ds;
+  private final ValueType valueType;
 
   public FakeTargetMeta(final DataSet<?> ds, final ValueType valueType) {
     this.ds = ds;
