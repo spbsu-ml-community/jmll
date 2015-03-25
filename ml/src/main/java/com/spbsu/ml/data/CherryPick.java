@@ -5,20 +5,10 @@ import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.util.BestHolder;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.models.CNF;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;
-
-import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.weight;
-
-/**
- * User: solar
- * Date: 26.08.13
- * Time: 22:09
- */
-
 
 class CherryBestHolder extends BestHolder<BFGrid.BFRow> {
   private int startBin;
@@ -36,37 +26,20 @@ class CherryBestHolder extends BestHolder<BFGrid.BFRow> {
   public int startBin() {
     return startBin;
   }
+
   public int endBin() {
     return endBin;
   }
 }
 
 public class CherryPick {
-  public class ClauseComplexity {
-    public final AdditiveStatistics inside;
-    public final AdditiveStatistics outside;
-    public final int complexity;
-    public final double reg;
-
-    ClauseComplexity(AdditiveStatistics outside, AdditiveStatistics inside, int complexity, double reg) {
-      this.outside = outside;
-      this.inside = inside;
-      this.complexity = complexity;
-      this.reg = reg;
-    }
-  }
-
-
-
   public class Result {
     public final int[] points;
     public final CNF.Clause clause;
-    public final ClauseComplexity complexity;
 
-    Result(int[] points, CNF.Clause clause, ClauseComplexity complexity) {
+    Result(int[] points, CNF.Clause clause) {
       this.points = points;
       this.clause = clause;
-      this.complexity = complexity;
     }
   }
 
@@ -80,64 +53,27 @@ public class CherryPick {
     this.factory = factory;
   }
 
-  public Result fit(final int[] points, final AdditiveStatistics priorOut,final double startReg, final StatBasedLoss<AdditiveStatistics> loss) {
+  public Result fit(final int[] points, final CherryLoss loss) {
     List<CherryBestHolder> features = new ArrayList<>(100);
     final CherrySubset subset = new CherrySubset(bds, factory, points);
     double currentScore = Double.NEGATIVE_INFINITY;
-    final AdditiveStatistics total = subset.total();
-    int complexity = 0;
-    double currentReg = startReg;
-    final double ideaSplit = Math.log(1.0 / 2);
-    final double totalWeight = weight(total) + weight(priorOut);
-    final double startWeight = weight(total);
     while (true) {
       final CherryBestHolder bestHolder = new CherryBestHolder();
-      final double fCurrentReg = currentReg;
-      final int finalComplexity = complexity;
       subset.visitAll(new Aggregate.IntervalVisitor<AdditiveStatistics>() {
         @Override
         public void accept(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out) {
-          final AdditiveStatistics inside = subset.inside();
-          inside.append(added);
-          AdditiveStatistics outside = loss.statsFactory().create().append(out).append(priorOut);
-          double score = loss.score(inside) + loss.score(outside);
-//          double p = weight(added) / totalWeight;
-//          double score;
-//          {
-//            double sumIn = sum(inside);
-//            double sum2In = sum2(inside);
-//            double sum2Out = sum2(out);
-//            double wIn = weight(inside);
-            double wAdded = weight(added);
-            double wOut = weight(out);
-            double p = wAdded /  (totalWeight);
-          double p2 = wAdded / totalWeight;
-            double borders = (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0);
-            double reg = fCurrentReg +   (borders-ideaSplit + p*Math.log(p)+ (1-p) * Math.log(1-p));
-//            + p2*Math.log(p2)+ (1-p2) * Math.log(1-p2));
-//            double var= wOut * ( sum2Out / (wOut - 1))
-//                    + MathTools.sqr(wIn / (wIn - 1)) * (sum2In - sumIn * sumIn / wIn);
-//            score = -var * (1 + 0.1*reg);
-//          }
-          score /= reg;
-          bestHolder.update(feature, score, start,end);
+          final double score = loss.score(feature, start, end, added, out);
+          bestHolder.update(feature, score, start, end);
         }
       });
-      if (bestHolder.getScore() <= currentScore )
+      if (bestHolder.getScore() <= currentScore + 1e-9)
         break;
+      AdditiveStatistics added = subset.add(bestHolder.getValue(), bestHolder.startBin(), bestHolder.endBin());
       features.add(bestHolder);
-      AdditiveStatistics added = subset.add(bestHolder.getValue(), bestHolder.startBin(),bestHolder.endBin());
-      double wAdded = weight(added);
-      double wOut =  weight(subset.total());
-      double p = (wAdded) / (totalWeight);
-//      double p2 = (wAdded) / (totalWeight);
-      double borders = (bestHolder.startBin() != 0 ? 1 : 0) + (bestHolder.endBin() != bestHolder.getValue().size() ? 1 : 0);
-      currentReg +=  (borders- ideaSplit + p*Math.log(p) + (1-p)*Math.log(1-p));
-//      currentReg += (2* Math.log( (wIn + wOut) / 2) - Math.log(wIn) - Math.log(wOut));
+      loss.added(bestHolder.getValue(), bestHolder.startBin(), bestHolder.endBin(), added);
       currentScore = bestHolder.getScore();
-      ++complexity;
     }
-    return new Result(subset.pointsInside(), createClause(features), new ClauseComplexity(factory.create().append(total).remove(subset.inside()), subset.inside(), complexity, currentReg));
+    return new Result(subset.pointsInside(), createClause(features));
   }
 
   private CNF.Clause createClause(List<CherryBestHolder> features) {
@@ -165,10 +101,10 @@ public class CherryPick {
       while (j < features.size() && features.get(j).getValue().origFIndex == findex) {
         ++j;
       }
-      BitSet used = new BitSet(row.size()+1);
+      BitSet used = new BitSet(row.size() + 1);
       for (int k = i; k < j; ++k) {
         final int startBin = features.get(k).startBin();
-        final int end = features.get(k).endBin()+1;
+        final int end = features.get(k).endBin() + 1;
         used.set(startBin, end);
       }
       conditions.add(new CNF.Condition(row, used));
