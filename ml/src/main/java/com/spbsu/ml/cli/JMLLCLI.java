@@ -28,6 +28,7 @@ import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.ClassicMulticlassLoss;
+import com.spbsu.ml.loss.multilabel.ClassicMultiLabelLoss;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
 import org.apache.commons.cli.*;
@@ -65,6 +66,8 @@ public class JMLLCLI {
 
   private static final String MODEL_OPTION = "m";
 
+  public static final String RANGES = "r";
+
   static Options options = new Options();
 
   static {
@@ -90,6 +93,8 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("histogram").withDescription("histogram for dynamic grid").hasArg(false).create(HIST_OPTION));
 
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
+
+    options.addOption(OptionBuilder.withLongOpt("ranges").withLongOpt("parameters ranges").hasArg().create(RANGES));
   }
 
   public static void main(final String[] args) throws IOException {
@@ -101,33 +106,16 @@ public class JMLLCLI {
 
       final String mode = command.getArgs()[0];
       switch (mode) {
-        case "fit":
-          modeFit(command);
-          break;
-        case "apply":
-          modeApply(command);
-          break;
-        case "convert-pool":
-          modeConvertPool(command);
-          break;
-        case "convert-pool-json2classic":
-          modeConvertPoolJson2Classic(command);
-          break;
-        case "convert-pool-libfm":
-          modeConvertPoolLibfm(command);
-          break;
-        case "validate-model":
-          modeValidateModel(command);
-          break;
-        case "validate-pool":
-          modeValidatePool(command);
-          break;
-        case "split-json-pool":
-          modeSplitJsonPool(command);
-          break;
-        case "print-pool-info":
-          modePrintPoolInfo(command);
-          break;
+        case "fit":                       modeFit(command);                     break;
+        case "apply":                     modeApply(command);                   break;
+        case "convert-pool":              modeConvertPool(command);             break;
+        case "convert-pool-json2classic": modeConvertPoolJson2Classic(command); break;
+        case "convert-pool-libfm":        modeConvertPoolLibfm(command);        break;
+        case "validate-model":            modeValidateModel(command);           break;
+        case "validate-pool":             modeValidatePool(command);            break;
+        case "split-json-pool":           modeSplitJsonPool(command);           break;
+        case "print-pool-info":           modePrintPoolInfo(command);           break;
+        case "gridSearch":                modeGridSearch(command);              break;
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
@@ -242,6 +230,8 @@ public class JMLLCLI {
       } else if (loss instanceof ClassicMulticlassLoss) {
         final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
         MCTools.makeOneVsRestReport(learn, test, (JoinedBinClassModel) result, printPeriod);
+      } else if (loss instanceof ClassicMultiLabelLoss) {
+        ResultsPrinter.printMultilabelResult(result, learn, test);
       }
     }
 
@@ -403,6 +393,10 @@ public class JMLLCLI {
     builder.setJsonFormat(command.hasOption(JSON_FORMAT));
     final Pool<?> pool = builder.create().getFirst();
     System.out.println(DataTools.getPoolInfo(pool));
+  }
+
+  private static void modeGridSearch(final CommandLine command) {
+
   }
 
   private static String getOutputName(final CommandLine command) {
