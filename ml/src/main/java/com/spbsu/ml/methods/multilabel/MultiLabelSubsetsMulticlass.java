@@ -1,5 +1,8 @@
 package com.spbsu.ml.methods.multilabel;
 
+import com.spbsu.commons.func.Action;
+import com.spbsu.commons.func.WeakListenerHolder;
+import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxBuilder;
 import com.spbsu.commons.math.vectors.Vec;
@@ -7,13 +10,17 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.MxByRowsBuilder;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;
+import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multilabel.ClassicMultiLabelLoss;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.multiclass.MCModel;
+import com.spbsu.ml.models.multiclass.MultiClassModel;
 import com.spbsu.ml.models.multilabel.MultiLabelSubsetsModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.map.TIntObjectMap;
@@ -21,6 +28,7 @@ import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.procedure.TObjectIntProcedure;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +36,7 @@ import java.util.List;
  * User: qdeee
  * Date: 23.03.15
  */
-public class MultiLabelSubsetsMulticlass implements VecOptimization<ClassicMultiLabelLoss> {
+public class MultiLabelSubsetsMulticlass extends WeakListenerHolderImpl<MultiLabelSubsetsModel> implements VecOptimization<ClassicMultiLabelLoss> {
   private final VecOptimization<BlockwiseMLLLogit> weak;
   private final int minExamplesCount;
 
@@ -80,7 +88,37 @@ public class MultiLabelSubsetsMulticlass implements VecOptimization<ClassicMulti
     //fit model
     final VecDataSet filteredDs = new VecDataSetImpl(mxBuilder.build(), learn);
     final BlockwiseMLLLogit mllLogit = new BlockwiseMLLLogit(targetBuilder.build(), learn);
-    final MCModel model = (MCModel) weak.fit(filteredDs, mllLogit);
-    return new MultiLabelSubsetsModel(model, filteredClass2Vec.toArray(new Vec[filteredClass2Vec.size()]));
+
+    //dirty hack for proxy listener
+    List<Action> tmp = new ArrayList<>();
+    final Vec[] filteredClass2VecArr = filteredClass2Vec.toArray(new Vec[filteredClass2Vec.size()]);
+    if (weak instanceof WeakListenerHolder) {
+      for (final WeakReference<Action<? super MultiLabelSubsetsModel>> listener : listeners) {
+        final Action<? super MultiLabelSubsetsModel> multiLabelAction = listener.get();
+        final WeakListenerHolder weakListenerHolder = (WeakListenerHolder) weak;
+        final Action<Ensemble> weakAction = new Action<Ensemble>() {
+          @Override
+          public void invoke(final Ensemble ensemble) {
+            final FuncJoin join = MCTools.joinBoostingResult(ensemble);
+            multiLabelAction.invoke(new MultiLabelSubsetsModel(new MultiClassModel(join), filteredClass2VecArr));
+          }
+        };
+        tmp.add(weakAction);
+        weakListenerHolder.addListener(weakAction);
+      }
+    }
+    final Trans fitted = weak.fit(filteredDs, mllLogit);
+    return new MultiLabelSubsetsModel(createMCModel(fitted), filteredClass2VecArr);
+  }
+
+  private static MCModel createMCModel(final Trans fitted) {
+    if (fitted instanceof Ensemble && ((Ensemble) fitted).last() instanceof FuncJoin) {
+      final FuncJoin funcJoin = MCTools.joinBoostingResult((Ensemble) fitted);
+      return new MultiClassModel(funcJoin);
+    } else if (fitted instanceof MCModel) {
+      return  (MCModel) fitted;
+    } else {
+      throw new IllegalStateException("Can't convert fitted model to MCModel");
+    }
   }
 }
