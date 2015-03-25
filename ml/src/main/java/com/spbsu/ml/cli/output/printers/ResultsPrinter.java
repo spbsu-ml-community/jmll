@@ -1,6 +1,7 @@
 package com.spbsu.ml.cli.output.printers;
 
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.seq.IntSeq;
@@ -12,8 +13,11 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
+import com.spbsu.ml.loss.multiclass.util.MultilabelConfusionMatrix;
+import com.spbsu.ml.loss.multilabel.MultiLabelExactMatch;
 import com.spbsu.ml.models.multiclass.MCModel;
 import com.spbsu.ml.models.multiclass.MultiClassModel;
+import com.spbsu.ml.models.multilabel.MultiLabelModel;
 
 /**
  * User: qdeee
@@ -51,5 +55,24 @@ public class ResultsPrinter {
     System.out.println(testConfusionMatrix.toSummaryString());
     System.out.println(testConfusionMatrix.toClassDetailsString());
     System.out.println();
+  }
+
+  public static void printMultilabelResult(final Computable computable, final Pool<?> learn, final Pool<?> test) {
+    if (computable instanceof MultiLabelModel) {
+      final MultiLabelModel model = (MultiLabelModel) computable;
+      final Mx learnTargets = learn.multiTarget(MultiLabelExactMatch.class).getTargets();
+      final Mx learnPredicted = model.predictLabelsAll(learn.vecData().data());
+      final MultilabelConfusionMatrix learnConfusionMatrix = new MultilabelConfusionMatrix(learnTargets, learnPredicted);
+      System.out.println("[LEARN]");
+      System.out.println(learnConfusionMatrix.toSummaryString());
+      System.out.println(learnConfusionMatrix.toClassDetailsString());
+
+      final Mx testTargets = test.multiTarget(MultiLabelExactMatch.class).getTargets();
+      final Mx testPredicted = model.predictLabelsAll(test.vecData().data());
+      final MultilabelConfusionMatrix testConfusionMatrix = new MultilabelConfusionMatrix(testTargets, testPredicted);
+      System.out.println("[TEST]");
+      System.out.println(testConfusionMatrix.toSummaryString());
+      System.out.println(testConfusionMatrix.toClassDetailsString());
+    }
   }
 }
