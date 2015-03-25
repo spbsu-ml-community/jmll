@@ -13,7 +13,7 @@ public class MultiLabelSubsetsBuilder implements Factory<MultiLabelSubsetsMultic
   private int minExamplesCount = 50;
   private VecOptimization<BlockwiseMLLLogit> weakMulticlass;
 
-  public void setMinExamplesCount(final int minExamplesCount) {
+  public void setMinCount(final int minExamplesCount) {
     this.minExamplesCount = minExamplesCount;
   }
 

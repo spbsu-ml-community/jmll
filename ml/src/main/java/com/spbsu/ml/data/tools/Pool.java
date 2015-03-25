@@ -188,7 +188,11 @@ public class Pool<I extends DSItem> {
       if (target != null)
         return target;
     }
-    throw new RuntimeException("No proper constructor found");
+    try {
+      return multiTarget(targetClass);
+    } catch (Exception e) {
+      throw new RuntimeException("No proper constructor found");
+    }
   }
 
   public Seq<?> target(String name) {
@@ -212,7 +216,6 @@ public class Pool<I extends DSItem> {
       } else {
         throw new RuntimeException("Unsupported target type: " + target.getClass().getName());
       }
-
     }
 
     final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targetsValues);

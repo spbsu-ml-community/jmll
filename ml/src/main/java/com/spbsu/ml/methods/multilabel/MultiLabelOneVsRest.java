@@ -28,6 +28,7 @@ public class MultiLabelOneVsRest implements VecOptimization<ClassicMultiLabelLos
     final Mx targets = multiLabelLoss.getTargets();
     final Func[] result = new Func[targets.columns()];
     for (int j = 0; j < targets.columns(); j++) {
+      System.out.println("Start training for column #" + j);
       final Vec target = targets.col(j);
       final LLLogit llLogit = new LLLogit(target, learn);
       final Trans model = weak.fit(learn, llLogit);
