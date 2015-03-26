@@ -62,8 +62,10 @@ public class CherryPick {
       subset.visitAll(new Aggregate.IntervalVisitor<AdditiveStatistics>() {
         @Override
         public void accept(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out) {
-          final double score = loss.score(feature, start, end, added, out);
-          bestHolder.update(feature, score, start, end);
+          if (!feature.empty()) {
+            final double score = loss.score(feature, start, end, added, out);
+            bestHolder.update(feature, score, start, end);
+          }
         }
       });
       if (bestHolder.getScore() <= currentScore + 1e-9)
