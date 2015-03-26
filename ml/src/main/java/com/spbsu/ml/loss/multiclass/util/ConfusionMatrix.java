@@ -2,7 +2,8 @@ package com.spbsu.ml.loss.multiclass.util;
 
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.commons.util.TablePrinter;
+import com.spbsu.commons.util.table.TableBuilder;
+import com.spbsu.commons.util.table.TablePrinter;
 import com.spbsu.ml.data.tools.MCTools;
 
 /**
@@ -191,7 +192,7 @@ public class ConfusionMatrix {
   }
 
   public String toSummaryString() {
-    final TablePrinter.TableBuilder tableBuilder = new TablePrinter.TableBuilder("Metric", "Value");
+    final TableBuilder tableBuilder = new TableBuilder("Metric", "Value");
     final String result = tableBuilder
         .addRow("Micro precision: ",  getMicroPrecision())
         .addRow("Micro recall: ",     getMicroRecall())
@@ -204,7 +205,7 @@ public class ConfusionMatrix {
   }
 
   public String toClassDetailsString() {
-    final TablePrinter.TableBuilder tableBuilder = new TablePrinter.TableBuilder("class", "precision", "recall", "f1-measure");
+    final TableBuilder tableBuilder = new TableBuilder("class", "precision", "recall", "f1-measure");
     for (int i = 0; i < counts.length; i++) {
       tableBuilder.addRow(String.valueOf(i), getPrecision(i), getRecall(i), getF1Measure(i));
     }

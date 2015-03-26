@@ -17,7 +17,6 @@ import com.spbsu.ml.Vectorization;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
-import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.meta.*;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
