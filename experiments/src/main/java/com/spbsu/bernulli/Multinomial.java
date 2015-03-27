@@ -23,7 +23,7 @@ public class Multinomial {
     }
   }
 
-  int next() {
+  public int next() {
     final double coin = rand.nextDouble();
     return Math.abs(Arrays.binarySearch(cum, coin)) - 2;
   }

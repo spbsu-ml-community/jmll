@@ -1,5 +1,6 @@
-package com.spbsu.bernulli;
+package com.spbsu.bernulli.betaBinomialMixture;
 
+import com.spbsu.bernulli.EM;
 import com.spbsu.bernulli.caches.BetaCache;
 import com.spbsu.bernulli.caches.Digamma1Cache;
 import com.spbsu.bernulli.caches.DigammaCache;
@@ -37,7 +38,7 @@ public class RegularizedBetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     this.sums = sums;
     this.n = n;
     this.dummy = new VecBasedMx(sums.length, k);
-    this.model = new BetaBinomialMixture(k, random);
+    this.model = new BetaBinomialMixture(k,n, random);
     this.random = random;
     this.funcs = new SpecialFunctionCache[k];
     this.mu = new double[k];
