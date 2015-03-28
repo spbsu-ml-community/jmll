@@ -6,6 +6,8 @@ import gnu.trove.list.array.TIntArrayList;
 
 import java.util.Arrays;
 
+import static com.spbsu.commons.math.MathTools.sqr;
+
 
 //estimates some vector parameter of distibution by sampling with metropolis-hastings
 public class MCMCBernoulliEstimation {
@@ -32,7 +34,7 @@ public class MCMCBernoulliEstimation {
   }
 
   private boolean burnIn = false; // take values only after burn in
-  private final int window = 100; // decorrelation, for better estimation. (we don't have infinite sample size)
+  private final int window = 1000; // decorrelation, for better estimation. (we don't have infinite sample size)
 
   private final double logStepProb;
 
@@ -87,7 +89,7 @@ public class MCMCBernoulliEstimation {
     componentsPoints[from].removeAt(lastInd);
     denums[from] = invn / componentsPoints[from].size();
     componentsPoints[to].add(point);
-    denums[to] = invn / componentsPoints[from].size();
+    denums[to] = invn / componentsPoints[to].size();
     componentsMap[point] = to;
     updateLikelihood(from);
     updateLikelihood(to);
@@ -132,7 +134,7 @@ public class MCMCBernoulliEstimation {
   final boolean next() {
     final double currentLL = likelihood();
     final int moveFrom = rand.nextByte(k);
-    if (componentsPoints[moveFrom].size() == 1)
+    if (componentsPoints[moveFrom].size() <= 1)
       return false;
     int moveTo = rand.nextByte(k - 1);
     if (moveTo >= moveFrom)
@@ -150,16 +152,6 @@ public class MCMCBernoulliEstimation {
     return false;
   }
 
-//  private double getProb(int from) {
-//    final int logProbCached = componentsPoints[from].size();
-//    if (isLogProbCached[logProbCached]) {
-//      return logSizesCache[logProbCached];
-//    } else {
-//      logSizesCache[logProbCached] = logStepProb - Math.log(logProbCached);
-//      isLogProbCached[logProbCached] = true;
-//      return logSizesCache[logProbCached];
-//    }
-//  }
 
   private double getProb(int size) {
     if (isLogProbCached[size]) {
@@ -230,6 +222,8 @@ public class MCMCBernoulliEstimation {
       diff1 += diff3;
       sum += diff0 + diff1;
     }
+    for (int i = len; i < first.length; ++i)
+      sum += sqr(first[i] - second[i]);
     return sum;
   }
 
