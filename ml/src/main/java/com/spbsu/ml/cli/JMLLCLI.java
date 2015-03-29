@@ -17,6 +17,7 @@ import com.spbsu.ml.cli.builders.methods.MethodsBuilder;
 import com.spbsu.ml.cli.builders.methods.grid.DynamicGridBuilder;
 import com.spbsu.ml.cli.builders.methods.grid.GridBuilder;
 import com.spbsu.ml.cli.gridsearch.GridSearch;
+import com.spbsu.ml.cli.gridsearch.OptimumHolder;
 import com.spbsu.ml.cli.gridsearch.ParametersExtractor;
 import com.spbsu.ml.cli.output.ModelWriter;
 import com.spbsu.ml.cli.output.printers.DefaultProgressPrinter;
@@ -460,7 +461,7 @@ public class JMLLCLI {
     final GridSearch gridSearch = new GridSearch(learn, test, loss, metrics, methodsBuilder);
     final String commonScheme = command.getOptionValue(OPTIMIZATION_OPTION);
     final String[][] parametersSpace = ParametersExtractor.parse(command.getOptionValue(RANGES_OPTION));
-    final GridSearch.OptimumHolder[] searchResult = gridSearch.search(commonScheme, parametersSpace);
+    final OptimumHolder[] searchResult = gridSearch.search(commonScheme, parametersSpace);
     for (int i = 0; i < metrics.length; i++) {
       System.out.println(metrics[i].getClass().getSimpleName() + " : " + searchResult[i]);
     }
