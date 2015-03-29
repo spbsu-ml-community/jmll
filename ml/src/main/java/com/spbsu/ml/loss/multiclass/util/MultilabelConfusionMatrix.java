@@ -3,7 +3,7 @@ package com.spbsu.ml.loss.multiclass.util;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.commons.util.TablePrinter;
+import com.spbsu.commons.util.table.TableBuilder;
 
 /**
  * User: qdeee
@@ -35,7 +35,7 @@ public class MultilabelConfusionMatrix {
       macroFScore[i] = matrixes[i].getMacroF1Measure();
     }
 
-    final TablePrinter.TableBuilder tableBuilder = new TablePrinter.TableBuilder();
+    final TableBuilder tableBuilder = new TableBuilder();
     tableBuilder.setHeader("Metric\\Label", ArrayTools.sequence(0, matrixes.length));
     tableBuilder.addRow("Micro precision: ",  microPrecision);
     tableBuilder.addRow("Micro recall: ",     microPrecision);
@@ -63,7 +63,7 @@ public class MultilabelConfusionMatrix {
       fScore1[i] = matrixes[i].getF1Measure(1);
     }
 
-    final TablePrinter.TableBuilder tableBuilder = new TablePrinter.TableBuilder();
+    final TableBuilder tableBuilder = new TableBuilder();
     final String table = tableBuilder
         .setHeader("metric\\label", ArrayTools.sequence(0, matrixes.length))
         .addRow("[0] precision", precision0)

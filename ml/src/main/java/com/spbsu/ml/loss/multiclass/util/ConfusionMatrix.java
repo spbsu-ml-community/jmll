@@ -3,7 +3,6 @@ package com.spbsu.ml.loss.multiclass.util;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.table.TableBuilder;
-import com.spbsu.commons.util.table.TablePrinter;
 import com.spbsu.ml.data.tools.MCTools;
 
 /**
