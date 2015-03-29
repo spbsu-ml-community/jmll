@@ -70,19 +70,19 @@ public class BernoulliTest extends TestCase {
   }
 
   public void testBetaBinomialMixtureEstimation() {
-    final int k = 3;
+    final int k = 2;
     int tries = 100;
 
-    final int from = 100;
+    final int from = 25600;
     final int to = 100000;
     final int step = 1000;
 
-    for (int n = 100; n < 10000; n += 1000)
+    for (int n = 320; n < 10000; n += 1000)
       for (int N = from; N < to; N += step) {
         double sumAvgMixture = 0;
         double sumAvgNaive = 0;
-        for (int tr = 0; tr < tries; ++tr) {
-          BetaBinomialMixture mix = new BetaBinomialMixture(5, n, rand);
+        for (int tr = 1; tr <= tries; ++tr) {
+          BetaBinomialMixture mix = new BetaBinomialMixture(2, n, rand);
           final MixtureObservations observations = mix.sample(N);
           final int finaln = n;
           StochasticSearch<BetaBinomialMixtureEM> search = new StochasticSearch<>(new Factory<Learner<BetaBinomialMixtureEM>>() {
@@ -104,6 +104,7 @@ public class BernoulliTest extends TestCase {
           double[] means = em.estimate(false);
           sumAvgMixture += observations.quality(means) / observations.thetas.length;
           sumAvgNaive += observations.naiveQuality() / observations.thetas.length;
+          System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tr + "\t" + sumAvgNaive / tr);
         }
         System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tries + "\t" + sumAvgNaive / tries);
       }
@@ -169,19 +170,19 @@ public class BernoulliTest extends TestCase {
   }
 
   public void testBetaBinomialRegularizedMixtureEstimation() {
-    final int k = 5;
+    final int k = 2;
     int tries = 100;
 
-    final int from = 100;
-    final int to = 10001;
+    final int from = 5000;
+    final int to = 100001;
     final int step = 1000;
 
-    for (int n = 10; n < 10001; n *= 10)
+    for (int n = 30; n < 10001; n *= 10)
       for (int N = from; N < to; N *= 10) {
         double sumAvgMixture = 0;
         double sumAvgNaive = 0;
-        for (int tr = 0; tr < tries; ++tr) {
-          BetaBinomialMixture mix = new BetaBinomialMixture(16, n, rand);
+        for (int tr = 1; tr <= tries; ++tr) {
+          BetaBinomialMixture mix = new BetaBinomialMixture(2, n, rand);
           final MixtureObservations observations = mix.sample(N);
           final int finaln = n;
           StochasticSearch<RegularizedBetaBinomialMixtureEM> search = new StochasticSearch<>(new Factory<Learner<RegularizedBetaBinomialMixtureEM>>() {
@@ -190,7 +191,7 @@ public class BernoulliTest extends TestCase {
               return new Learner<RegularizedBetaBinomialMixtureEM>() {
                 @Override
                 public FittedModel<RegularizedBetaBinomialMixtureEM> fit() {
-                  RegularizedBetaBinomialMixtureEM em = new RegularizedBetaBinomialMixtureEM(k, observations.sums, finaln, 200, rand);
+                  RegularizedBetaBinomialMixtureEM em = new RegularizedBetaBinomialMixtureEM(k, observations.sums, finaln,200, rand);
                   FittedModel<BetaBinomialMixture> model = em.fit();
                   return new FittedModel<>(model.likelihood, em);
                 }
@@ -201,8 +202,12 @@ public class BernoulliTest extends TestCase {
 //          BetaBinomialMixtureEM em = new BetaBinomialMixtureEM(k,observations.sums,n,rand);
 
           double[] means = em.estimate(false);
-          sumAvgMixture += observations.quality(means) / observations.thetas.length;
-          sumAvgNaive += observations.naiveQuality() / observations.thetas.length;
+          sumAvgMixture += observations.quality(means);
+          sumAvgNaive += observations.naiveQuality() ;
+          System.out.println("Real model " + mix.toString());
+          System.out.println("Fitted model " + em.model().toString());
+          System.out.println(tr + "\t" + n + "\t" + sumAvgMixture / tr + "\t" + sumAvgNaive / tr);
+
         }
         System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tries + "\t" + sumAvgNaive / tries);
       }
@@ -418,11 +423,11 @@ public class BernoulliTest extends TestCase {
   }
 
   public void testMixture() {
-    final int k = 5;
+    final int k = 50;
     final int from = 500;
     final int to = 100001;
     final int tries = 1000;
-    for (int n = 10; n < 1001; n *= 2)
+    for (int n = 20; n < 1001; n *= 2)
       for (int N = from; N < to; N *= 10) {
         double sumAvgMixture = 0;
         double sumAvgBetaMixture = 0;
@@ -432,7 +437,7 @@ public class BernoulliTest extends TestCase {
         for (int tr = 1; tr <= tries; ++tr) {
           final MixtureObservations<NaiveMixture> experiment = mixture.sample(N);
           double[] betameans = fitBetaMixture(k, experiment);
-          double[] mcmcmeans = fitMCMCMixture(k, experiment, 4, 500000000);
+          double[] mcmcmeans = fitMCMCMixture(k, experiment, 4, 100000000);
           double[] means = fitNaiveMixture(k, experiment);
           sumAvgMixture += experiment.quality(means);
           sumAvgBetaMixture +=experiment.quality(betameans);
@@ -446,11 +451,11 @@ public class BernoulliTest extends TestCase {
 
 
   public void testNaiveMixture() {
-    final int k = 5;
-    final int from = 500;
+    final int k = 2;
+    final int from = 6400;
     final int to = 100001;
     final int tries = 1000;
-    for (int n = 10; n < 1001; n *= 2)
+    for (int n = 320; n < 1001; n *= 2)
       for (int N = from; N < to; N *= 10) {
         double sumAvgMixture = 0;
         double sumAvgNaive = 0;

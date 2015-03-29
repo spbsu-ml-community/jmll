@@ -308,7 +308,7 @@ public class BernoulliMixtureEM extends EM<NaiveMixture> {
   }
 
   @Override
-  protected NaiveMixture model() {
+  public NaiveMixture model() {
     return new NaiveMixture(theta, total, rand);
   }
 }

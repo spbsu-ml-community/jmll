@@ -13,12 +13,11 @@ import static com.spbsu.commons.math.MathTools.sqr;
 public class MCMCBernoulliEstimation {
   private final int k; //number of mixtures
   private final int n; //number of observations
-  private final double invn;
   private final int[] sums;
   private final int[] stateSums;
   private final int[] componentsMap;
   private TIntArrayList[] componentsPoints;
-  double[] denums;
+  double[] param;
   private final FastRandom rand;
   private final BernoulliPrior prior;
   private Estimator estimator;
@@ -43,7 +42,6 @@ public class MCMCBernoulliEstimation {
     this.logStepProb = -Math.log(k) - Math.log(k - 1);
     ;
     this.n = n;
-    this.invn = 1.0 / n;
     this.rand = new FastRandom(random.nextLong());
     this.prior = prior;
     this.stateSums = new int[k];
@@ -52,7 +50,7 @@ public class MCMCBernoulliEstimation {
     this.sums = sums;
     this.estimator = new Estimator(sums.length);
     this.componentsPoints = new TIntArrayList[k];
-    this.denums = new double[k];
+    this.param = new double[k];
     for (int i = 0; i < k; ++i)
       this.componentsPoints[i] = new TIntArrayList(sums.length);
     this.randomState();
@@ -73,9 +71,7 @@ public class MCMCBernoulliEstimation {
       stateSums[comp] += sums[i];
       componentsPoints[comp].add(i);
     }
-    for (int i = 0; i < k; ++i) {
-      denums[i] = 1.0 / n / componentsPoints[i].size();
-    }
+
     updateLikelihood();
   }
 
@@ -87,9 +83,7 @@ public class MCMCBernoulliEstimation {
     final int lastInd = componentsPoints[from].size() - 1;
     componentsPoints[from].set(entry, componentsPoints[from].get(lastInd));
     componentsPoints[from].removeAt(lastInd);
-    denums[from] = invn / componentsPoints[from].size();
     componentsPoints[to].add(point);
-    denums[to] = invn / componentsPoints[to].size();
     componentsMap[point] = to;
     updateLikelihood(from);
     updateLikelihood(to);
@@ -164,11 +158,17 @@ public class MCMCBernoulliEstimation {
   }
 
 
+  //it'll be inlined
+  private void save() {
+    addEB();
+//    add();
+  }
+
   public void run(int iters) {
     {
       int it = 0;
       double currentMeans[] = new double[componentsMap.length];
-      int burnIters = 1000;
+      int burnIters = 100000;
       while (!burnIn) {
         for (int i = 0; i < burnIters; ++i, ++it) {
           if (!next()) {
@@ -177,7 +177,7 @@ public class MCMCBernoulliEstimation {
             ++accepted;
           }
           if (i % window == 0)
-            add();
+            save();
         }
         double[] means = estimation();
         if (burned(means, currentMeans)) {
@@ -197,7 +197,7 @@ public class MCMCBernoulliEstimation {
         ++accepted;
       }
       if (i % window == 0)
-        add();
+        save();
     }
     System.out.println("Accepted rate " + acceptedRate());
   }
@@ -237,27 +237,71 @@ public class MCMCBernoulliEstimation {
   }
 
 
+  private void parameterEstimation() {
+    for (int i = 0; i < k; ++i) {
+      param[i] = stateSums[i] * 1.0 / n / componentsPoints[i].size();
+    }
+  }
+
   final void add() {
     estimator.count++;
+    parameterEstimation();
     final int len = (componentsMap.length / 4) * 4;
     for (int i = 0; i < len; i += 4) {
       final int ind0 = componentsMap[i];
       final int ind1 = componentsMap[i + 1];
       final int ind2 = componentsMap[i + 2];
       final int ind3 = componentsMap[i + 3];
-      final int m0 = stateSums[ind0];
-      final int m1 = stateSums[ind1];
-      final int m2 = stateSums[ind2];
-      final int m3 = stateSums[ind3];
-      estimator.meanSums[i] += m0 * denums[ind0];
-      estimator.meanSums[i + 1] += m1 * denums[ind1];
-      estimator.meanSums[i + 2] += m2 * denums[ind2];
-      estimator.meanSums[i + 3] += m3 * denums[ind3];
+      estimator.meanSums[i] += param[ind0];
+      estimator.meanSums[i + 1] += param[ind1];
+      estimator.meanSums[i + 2] += param[ind2];
+      estimator.meanSums[i + 3] += param[ind3];
     }
     for (int i = len; i < componentsMap.length; ++i) {
       final int ind0 = componentsMap[i];
-      final int m0 = stateSums[ind0];
-      estimator.meanSums[i] += m0 * denums[ind0];
+      estimator.meanSums[i] += param[ind0];
+    }
+  }
+
+  final void addEB() { //use model only for estimation of "true" parameters only
+    estimator.count++;
+    parameterEstimation();
+    final double[] logtheta = new double[k];
+    final double[] logntheta = new double[k];
+    for (int i = 0; i < param.length; ++i) {
+      logtheta[i] = Math.log(param[i]);
+      logntheta[i] = Math.log(1 - param[i]);
+    }
+    final double[] prior = new double[k];
+    final double[] posterior = new double[k];
+    for (int i = 0; i < prior.length; ++i) {
+      prior[i] = Math.log(componentsPoints[i].size() * 1.0 / sums.length);
+    }
+
+    for (int i = 0; i < sums.length; ++i) {
+      final double m = sums[i];
+      double denum = 0;
+      if (m == 0) {
+        for (int j = 0; j < k; ++j) {
+          posterior[j] = Math.exp((n - m) * logntheta[j] + prior[j]);
+          denum += posterior[j];
+        }
+      } else if (m == n) {
+        for (int j = 0; j < k; ++j) {
+          posterior[j] = Math.exp(m * logtheta[j] + prior[j]);
+          denum += posterior[j];
+        }
+      } else {
+        for (int j = 0; j < k; ++j) {
+          posterior[j] = Math.exp(m * logtheta[j] + (n - m) * logntheta[j] + prior[j]);
+          denum += posterior[j];
+        }
+      }
+      double est = 0;
+      for (int j = 0; j < k; ++j) {
+        est += posterior[j] * param[j] / denum;
+      }
+      estimator.meanSums[i] += est;
     }
   }
 

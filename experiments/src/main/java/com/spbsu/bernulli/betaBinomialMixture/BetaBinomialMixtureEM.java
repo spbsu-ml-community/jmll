@@ -283,7 +283,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
   }
 
   @Override
-  protected BetaBinomialMixture model() {
+  public BetaBinomialMixture model() {
     return model;
   }
 

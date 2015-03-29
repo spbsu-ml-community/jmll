@@ -12,7 +12,7 @@ public abstract class EM<Result> {
 
   protected abstract boolean stop();
 
-  protected abstract Result model();
+  public abstract Result model();
 
   protected abstract double likelihood();
 

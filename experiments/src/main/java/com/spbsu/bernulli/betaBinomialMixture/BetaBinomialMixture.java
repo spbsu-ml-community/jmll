@@ -11,8 +11,8 @@ import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
 
 public class BetaBinomialMixture extends Mixture {
-  final double alphas[];
-  final double betas[];
+  public final double alphas[];
+  public final double betas[];
   final RandomGenerator apacheRandom;
   final BetaDistribution[] samplers;
   final Multinomial multinomialSampler;
@@ -24,11 +24,11 @@ public class BetaBinomialMixture extends Mixture {
   }
 
   public BetaBinomialMixture(double[] alphas, double[] betas, double[] q, int count) {
-    this(alphas, betas, q,count, new FastRandom());
+    this(alphas, betas, q, count, new FastRandom());
   }
 
-  public BetaBinomialMixture(double[] alphas, double[] betas, double[] q, int count,  FastRandom rand) {
-    super(q,rand);
+  public BetaBinomialMixture(double[] alphas, double[] betas, double[] q, int count, FastRandom rand) {
+    super(q, rand);
     this.alphas = alphas;
     this.betas = betas;
     ArrayTools.parallelSort(q, alphas, betas);
@@ -49,8 +49,8 @@ public class BetaBinomialMixture extends Mixture {
     double[] alphas = new double[q.length];
     double[] betas = new double[q.length];
     for (int i = 0; i < q.length; ++i) {
-      alphas[i] = randomInitLimit * random.nextDouble();
-      betas[i] = randomInitLimit * random.nextDouble();
+      alphas[i] = random.nextDouble()*randomInitLimit;
+      betas[i] = random.nextDouble()*randomInitLimit;
     }
     this.alphas = alphas;
     this.betas = betas;
@@ -84,13 +84,13 @@ public class BetaBinomialMixture extends Mixture {
   }
 
 
-
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append(alphas.length).append(": ");
     for (int i = 0; i < alphas.length; ++i) {
-      builder.append("(").append(q[i]).append(",").append(alphas[i]).append(",").append(betas[i]).append(")");
+      builder.append("(").append(q[i]).append(",").append(alphas[i]).append(",").append(betas[i])
+              .append(",").append(alphas[i] / (alphas[i]+betas[i])).append(")");
     }
     return builder.toString();
   }
