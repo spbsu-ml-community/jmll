@@ -48,7 +48,7 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
     CherryTDLoss localLoss;
     {
       AdditiveStatistics total = (AdditiveStatistics) loss.statsFactory().create();
-      for (int point: points)
+      for (int point : points)
         total.append(point, 1);
 //      localLoss = new InOutLoss(total, loss);
       localLoss = new OutLoss(total, loss);
@@ -89,17 +89,15 @@ class HaarLoss implements CherryTDLoss {
   @Override
   public double score(final BFGrid.BFRow feature, final int start, final int end,
                       final AdditiveStatistics added, final AdditiveStatistics out) {
-    if (orCount > 1 || weight(added) == 0)
-      return Double.NEGATIVE_INFINITY;
     final AdditiveStatistics in = factory.create().append(inside).append(added);
     final AdditiveStatistics outside = factory.create().append(total).remove(in);
-    int borders = ((start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0));
-    return score(in, outside, complexity + borders);
+    int borders = 1 + (start != 0 ? end != feature.size() ? 4 : 1 : 0) + (end != feature.size() ? start != 0 ? 4 : 1 : 0);
+    return score(in, outside, complexity + borders) * (1 + Math.log(weight(added)));
   }
 
   @Override
   public void added(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added) {
-    complexity += (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0);
+    complexity += 1 + (start != 0 ? end != feature.size() ? 4 : 1 : 0) + (end != feature.size() ? start != 0 ? 4 : 1 : 0);
     inside.append(added);
     ++orCount;
   }
@@ -115,16 +113,14 @@ class HaarLoss implements CherryTDLoss {
 
   //we are maximizing score
   private double score(final AdditiveStatistics in, final AdditiveStatistics out, final double complexity) {
-    if (complexity > 10)
-      return Double.NEGATIVE_INFINITY;
     final double sumIn = sum(in);
     final double sumOut = sum(out);
     final double wIn = weight(in);
     final double wOut = weight(out);
     final double p = wIn / (wIn + wOut);
-    if (wIn < 3 || wOut < 3)
+    if ((wIn > 0 && wIn < 100) || (wOut > 0 && wOut < 100))
       return Double.NEGATIVE_INFINITY;
-    return sqr(sumIn - sumOut) / (1 + complexity);
+    return sqr(sumIn - sumOut) * (Math.log(wIn + 1) + Math.log(wOut + 1) + 1 - complexity);
   }
 
   @Override
@@ -184,12 +180,12 @@ class InOutLoss implements CherryTDLoss {
     double wtotal = weight(total);
     final double p = wadded / wtotal;
     double inf = -Math.log(0.5) + p * Math.log(p) + (1 - p) * Math.log(1 - p);
-    return score(in, outside) / (complexity + infoLoss + inf + (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0));
+    return score(in, outside) / (complexity + infoLoss + inf + 1 + (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0));
   }
 
   @Override
   public void added(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added) {
-    complexity += (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0);
+    complexity += 1 + (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0);
     double win = weight(added);
     double wtotal = weight(total);
     final double p = win / wtotal;
@@ -237,7 +233,6 @@ class OutLoss implements CherryTDLoss {
   private final AdditiveStatistics total;
   private Factory<AdditiveStatistics> factory;
   private int complexity = 1;
-  private double infoLoss = 0;
   private StatBasedLoss<AdditiveStatistics> base;
 
   public OutLoss(AdditiveStatistics total, StatBasedLoss<AdditiveStatistics> base) {
@@ -247,47 +242,24 @@ class OutLoss implements CherryTDLoss {
     this.base = base;
   }
 
+  final double minBinSize = 40;
   @Override
   public double score(final BFGrid.BFRow feature, final int start, final int end,
                       final AdditiveStatistics added, final AdditiveStatistics out) {
-    if (orCount > 3)
-      return Double.NEGATIVE_INFINITY;
     final AdditiveStatistics in = factory.create().append(inside).append(added);
     final AdditiveStatistics outside = factory.create().append(total).remove(in);
-    double wadded = weight(added);
-    if (wadded < 3)
+    final int borders = 1 + (start != 0 ? end != feature.size() ? 4 : 2 : 0) + (end != feature.size() ? start != 0 ? 4 : 2 : 0);
+    final double inf = Math.min(weight(added), weight(out));
+    if (inf < minBinSize)
       return Double.NEGATIVE_INFINITY;
-    final int borders = 1+ (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0);
-    if (complexity + borders > 10) {
-      return Double.NEGATIVE_INFINITY;
-    }
-    if (weight(inside) == 0) {
-      return score(in, outside, complexity + borders);
-    } else {
-      double sumIn = sum(inside);
-      double weightIn = weight(inside);
-
-      double sumAdded = sum(added);
-      double weightAdded = weight(added);
-
-      double wtotal = weight(total);
-      final double p = wadded / wtotal;
-      double inf = - p * Math.log(p) - (1 - p) * Math.log(1 - p);
-
-      double score = sumIn / weightIn * ((1 - weightAdded / weightIn) * sumIn + 2 * sumAdded);
-      return  score * (1 +  2*Math.log(wadded))/ ( borders + complexity);
-    }
-
-//    return score(in, outside, complexity + borders) * (1 + 2 * Math.log(wadded)) ;// / (complexity + infoLoss + inf +  ) ;
+    return score(in, outside, complexity + borders)  / (complexity + borders);
   }
 
   @Override
   public void added(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added) {
-    complexity +=  1+ (start != 0 ? 1 : 0) + (end != feature.size() ? 1 : 0);
+    complexity += 1 + (start != 0 ? end != feature.size() ? 4 : 2 : 0) + (end != feature.size() ? start != 0 ? 4 : 2 : 0);
     double win = weight(added);
     double wtotal = weight(total);
-    final double p = win / wtotal;
-    infoLoss +=- p * Math.log(p)  - (1 - p) * Math.log(1 - p);
     inside.append(added);
     System.out.print("\nAdded " + weight(added) + " points");
     ++orCount;
@@ -296,6 +268,7 @@ class OutLoss implements CherryTDLoss {
   @Override
   public void nextIteration() {
     this.inside = factory.create();
+    complexity += 1;
     this.orCount = 0;
   }
 
@@ -303,11 +276,12 @@ class OutLoss implements CherryTDLoss {
 
   //we are maximizing score
   private double score(final AdditiveStatistics in, final AdditiveStatistics out, int complexity) {
-    if (complexity > 10) {
+    final double wIn = weight(in);
+    final double wOut = weight(out);
+    if ((wIn > 0 && wIn < minBinSize) || (wOut > 0 && wOut < minBinSize))
       return Double.NEGATIVE_INFINITY;
-    }
-    return -(base.score(in)) * (1 +2* Math.log(weight(in)) )/complexity;
-   }
+    return -(base.score(in));
+  }
 
   @Override
   public double insideIncrement() {
@@ -321,13 +295,8 @@ class OutLoss implements CherryTDLoss {
 
   @Override
   public double score() {
-    if (complexity > 10) {
-      return Double.NEGATIVE_INFINITY;
-    }
-    return weight(inside) > 0 ? sqr(sum(inside)) * (1 + 2 * Math.log(weight(inside))) / weight(inside) / (complexity) : Double.NEGATIVE_INFINITY;
-//    AdditiveStatistics outside = factory.create().append(total).remove(inside);
+    AdditiveStatistics outside = factory.create().append(total).remove(inside);
+    return weight(inside) > 0 ? score(inside, outside, complexity) / complexity : Double.NEGATIVE_INFINITY;
 //    return score(inside, outside,complexity);// /  (complexity + infoLoss );
   }
-
-
 }
