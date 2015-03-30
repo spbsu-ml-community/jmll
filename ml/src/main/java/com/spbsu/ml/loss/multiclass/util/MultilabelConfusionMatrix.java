@@ -37,9 +37,9 @@ public class MultilabelConfusionMatrix {
 
     final TableBuilder tableBuilder = new TableBuilder();
     tableBuilder.setHeader("Metric\\Label", ArrayTools.sequence(0, matrixes.length));
-    tableBuilder.addRow("Micro precision: ",  microPrecision);
-    tableBuilder.addRow("Micro recall: ",     microPrecision);
-    tableBuilder.addRow("Micro F1-measure: ", microPrecision);
+//    tableBuilder.addRow("Micro precision: ",  microPrecision);
+//    tableBuilder.addRow("Micro recall: ",     microPrecision);
+//    tableBuilder.addRow("Micro F1-measure: ", microPrecision);
     tableBuilder.addRow("Macro precision: ",  macroPrecision);
     tableBuilder.addRow("Macro recall: ",     macroRecall);
     tableBuilder.addRow("Macro F1-measure: ", macroFScore);
