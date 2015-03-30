@@ -5,6 +5,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.models.MultiClassModel;
 
 /**
  * User: solar

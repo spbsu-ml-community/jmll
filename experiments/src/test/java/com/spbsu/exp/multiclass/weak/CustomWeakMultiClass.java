@@ -14,8 +14,8 @@ import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.MultiClass;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.multiclass.MCModel;
-import com.spbsu.ml.models.multiclass.MultiClassModel;
 import com.spbsu.ml.testUtils.FakePool;
 
 /**

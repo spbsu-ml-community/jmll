@@ -1,19 +1,6 @@
 package com.spbsu.ml.data.tools;
 
 
-import com.spbsu.commons.seq.*;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.zip.GZIPInputStream;
-
-
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -36,6 +23,10 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.seq.ArraySeq;
+import com.spbsu.commons.seq.CharSeqTools;
+import com.spbsu.commons.seq.ReaderChopper;
+import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.JSONTools;
@@ -59,9 +50,9 @@ import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 import com.spbsu.ml.meta.impl.JsonFeatureMeta;
 import com.spbsu.ml.meta.impl.JsonTargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
+import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
-import com.spbsu.ml.models.multiclass.MultiClassModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
 import org.jetbrains.annotations.Nullable;
