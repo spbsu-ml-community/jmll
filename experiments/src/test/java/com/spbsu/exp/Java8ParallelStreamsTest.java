@@ -1,19 +1,19 @@
-//package com.spbsu.exp;
-//
-//import com.spbsu.commons.math.vectors.Vec;
-//import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-//import com.spbsu.commons.random.FastRandom;
-//import junit.framework.TestCase;
-//
+package com.spbsu.exp;
+
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.random.FastRandom;
+import junit.framework.TestCase;
+
 //import java.util.stream.IntStream;
-//
-//import static com.spbsu.commons.math.vectors.VecTools.*;
-//import static java.lang.Math.exp;
-//
-///**
-//* Created by noxoomo on 31/03/15.
-//*/
-//public class Java8ParallelStreamsTest extends TestCase {
+
+import static com.spbsu.commons.math.vectors.VecTools.*;
+import static java.lang.Math.exp;
+
+/**
+ * Created by noxoomo on 31/03/15.
+ */
+public class Java8ParallelStreamsTest extends TestCase {
 //  FastRandom random = new FastRandom(0);
 //
 //  private Vec randomVec(int dim) {
@@ -200,4 +200,4 @@
 //      System.out.println("Working time for seq bootstrap " + (sequentialTime) / 1000);
 //    }
 //  }
-//}
+}
