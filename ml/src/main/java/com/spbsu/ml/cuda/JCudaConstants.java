@@ -5,7 +5,7 @@ package com.spbsu.ml.cuda;
  * ksen
  * 21.February.2015 at 13:53
  */
-public class JcudaConstants {
+public class JCudaConstants {
 
   public static final String[] JCUDA_NATIVE_LIBS_NAMES = {
       "JCudaDriver-linux-x86_64.so",

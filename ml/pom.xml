@@ -51,27 +51,27 @@
     <dependency>
         <groupId>org.nd4j</groupId>
         <artifactId>jcuda</artifactId>
-        <version>6.0</version>
+        <version>${cuda.version}</version>
     </dependency>
     <dependency>
         <groupId>org.nd4j</groupId>
         <artifactId>jcublas2</artifactId>
-        <version>6.0</version>
+        <version>${cuda.version}</version>
     </dependency>
     <dependency>
         <groupId>org.nd4j</groupId>
         <artifactId>jcurand</artifactId>
-        <version>6.0</version>
+        <version>${cuda.version}</version>
     </dependency>
     <dependency>
         <groupId>org.nd4j</groupId>
         <artifactId>jcufft</artifactId>
-        <version>6.0</version>
+        <version>${cuda.version}</version>
     </dependency>
     <dependency>
         <groupId>org.nd4j</groupId>
         <artifactId>jcusparse</artifactId>
-        <version>6.0</version>
+        <version>${cuda.version}</version>
     </dependency>
     <dependency>
         <groupId>com.xeiam.xchart</groupId>
@@ -84,6 +84,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <java.version>1.7</java.version>
+    <cuda.version>6.5</cuda.version>
   </properties>
 
   <build>

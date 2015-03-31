@@ -8,8 +8,6 @@ import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.util.logging.Logger;
 import jcuda.driver.*;
 import com.spbsu.commons.system.RuntimeUtils;
-import jcuda.Pointer;
-import jcuda.Sizeof;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -20,16 +18,14 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
-import static jcuda.driver.JCudaDriver.*;
-
 /**
  * jmll
  * ksen
  * 16.October.2014 at 11:35
  */
-public class JcudaHelper {
+public class JCudaHelper {
 
-  private static final Logger LOG = Logger.create(JcudaHelper.class);
+  private static final Logger LOG = Logger.create(JCudaHelper.class);
 
   private static File LOCAL_PTX_DIRECTORY;
   private static final Cache<String, CUfunction> CACHE = new FixedSizeCache<>(100, CacheStrategy.Type.LRU);
@@ -82,9 +78,9 @@ public class JcudaHelper {
   public static void hook() {}
 
   static {
-    final ClassLoader classLoader = JcudaHelper.class.getClassLoader();
+    final ClassLoader classLoader = JCudaHelper.class.getClassLoader();
     try {
-      final File tempDirectory = Files.createTempDirectory(JcudaConstants.JCUDA_TMP_DIRECTORY_NAME).toFile();
+      final File tempDirectory = Files.createTempDirectory(JCudaConstants.JCUDA_TMP_DIRECTORY_NAME).toFile();
       tempDirectory.deleteOnExit();
       setUsrPaths(tempDirectory.getAbsolutePath());
 
@@ -107,7 +103,8 @@ public class JcudaHelper {
               "3. properly installed CUDA,\n" +
               "4. CUDA in a environment variables (LD_LIBRARY_PATH),\n" +
               "5. Jcuda's dependencies with version = CUDA's version" +
-              "on machine where you trying to run this code?"
+              "on machine where you trying to run this code?",
+          e
       );
     }
   }
@@ -126,7 +123,7 @@ public class JcudaHelper {
   private static void extractNativeLibraries(final ClassLoader classLoader, final File tempDirectory)
       throws IOException
   {
-    for (final String jcudaNativeLibName : JcudaConstants.JCUDA_NATIVE_LIBS_NAMES) {
+    for (final String jcudaNativeLibName : JCudaConstants.JCUDA_NATIVE_LIBS_NAMES) {
       final URL resource = classLoader.getResource(jcudaNativeLibName);
       final File localReplica = new File(tempDirectory, "lib" + jcudaNativeLibName);
       try (
@@ -142,12 +139,12 @@ public class JcudaHelper {
   private static File extractCuFiles(final ClassLoader classLoader, final File tempDirectory)
       throws URISyntaxException, IOException
   {
-    final File localCuDirectory = new File(tempDirectory, JcudaConstants.CU_CLASS_PATH);
+    final File localCuDirectory = new File(tempDirectory, JCudaConstants.CU_CLASS_PATH);
     if (!localCuDirectory.mkdirs()) {
       LOG.error("Can't create local directory for a *.cu " + localCuDirectory.getAbsolutePath());
       throw new RuntimeException();
     }
-    final URL resource = classLoader.getResource(JcudaConstants.CU_CLASS_PATH.substring(1));
+    final URL resource = classLoader.getResource(JCudaConstants.CU_CLASS_PATH.substring(1));
     if (resource == null) {
       LOG.error("Can't find *.cu directory.");
       throw new RuntimeException();
@@ -156,25 +153,32 @@ public class JcudaHelper {
     final Map<String, String> environment = new HashMap<>();
     environment.put("create", "true");
 
-    try (final FileSystem jarFileSystem = FileSystems.newFileSystem(cuFilesUri, environment)) {
-      final Path path = jarFileSystem.getPath(JcudaConstants.CU_CLASS_PATH);
-      Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-          Files.copy(
-              file,
-              new File(localCuDirectory, file.getFileName().toString()).toPath(),
-              StandardCopyOption.REPLACE_EXISTING
-          );
-          return FileVisitResult.CONTINUE;
-        }
-      });
+    Path path;
+    FileSystem fileSystem;
+    try {
+      fileSystem = FileSystems.newFileSystem(cuFilesUri, environment);
+      path = fileSystem.getPath(JCudaConstants.CU_CLASS_PATH);
     }
+    catch (Exception e) {
+      fileSystem = FileSystems.getDefault();
+      path = fileSystem.getPath(cuFilesUri.getPath());
+    }
+    Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+        Files.copy(
+            file,
+            new File(localCuDirectory, file.getFileName().toString()).toPath(),
+            StandardCopyOption.REPLACE_EXISTING
+        );
+        return FileVisitResult.CONTINUE;
+      }
+    });
     return localCuDirectory;
   }
 
   private static File compileCuFiles(final File localCuDirectory, final File tempDirectory) {
-    final File localPtxDirectory = new File(tempDirectory, JcudaConstants.PTX_CLASS_PATH);
+    final File localPtxDirectory = new File(tempDirectory, JCudaConstants.PTX_CLASS_PATH);
     localPtxDirectory.mkdirs();
     for (final File cuFile : localCuDirectory.listFiles()) {
       compilePtx(cuFile, new File(localPtxDirectory, cuNameToPtx(cuFile.getName())));

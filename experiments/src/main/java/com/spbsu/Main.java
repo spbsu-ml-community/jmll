@@ -1,8 +1,8 @@
 package com.spbsu;
 
-import com.spbsu.ml.cuda.JcublasHelper;
-import com.spbsu.ml.cuda.JcudaHelper;
-import com.spbsu.ml.cuda.JcudaVectorInscale;
+import com.spbsu.ml.cuda.JCublasHelper;
+import com.spbsu.ml.cuda.JCudaHelper;
+import com.spbsu.ml.cuda.JCudaVectorInscale;
 import com.spbsu.ml.cuda.data.FMatrix;
 import com.spbsu.ml.cuda.data.impl.FArrayMatrix;
 import com.spbsu.commons.math.vectors.Mx;
@@ -29,19 +29,19 @@ public class Main {
         gpu[j] = -1;
       }
       long begin = System.nanoTime();
-      JcudaVectorInscale.fExp(gpu);
+      JCudaVectorInscale.fExp(gpu);
       System.out.println("Iter: " + i + "\tTime: GPU=" + (System.nanoTime() - begin));
 
       begin = System.nanoTime();
-      JcudaVectorInscale.fSigmoid(gpu);
+      JCudaVectorInscale.fSigmoid(gpu);
       System.out.println("Iter: " + i + "\tTime: GPU=" + (System.nanoTime() - begin));
 
       begin = System.nanoTime();
-      JcudaVectorInscale.fTanh(gpu);
+      JCudaVectorInscale.fTanh(gpu);
       System.out.println("Iter: " + i + "\tTime: GPU=" + (System.nanoTime() - begin));
     }
 
-    JcudaHelper.destroy();
+    JCudaHelper.destroy();
   }
 
   private static void first() {
@@ -57,7 +57,7 @@ public class Main {
       final FMatrix E = getMatrix(i);
 
       long gpuBegin = System.currentTimeMillis();
-      final FMatrix F = JcublasHelper.fSum(D, E);
+      final FMatrix F = JCublasHelper.fSum(D, E);
       long gpuEnd = System.currentTimeMillis();
 
       System.out.println(

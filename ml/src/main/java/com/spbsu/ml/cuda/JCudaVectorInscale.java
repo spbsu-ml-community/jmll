@@ -1,8 +1,5 @@
 package com.spbsu.ml.cuda;
 
-import org.jetbrains.annotations.NotNull;
-import com.spbsu.ml.cuda.data.FMatrix;
-import com.spbsu.ml.cuda.data.FVector;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.*;
@@ -20,49 +17,14 @@ import static jcuda.runtime.JCuda.*;
  * ksen
  * 25.October.2014 at 21:36
  */
-public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
+public class JCudaVectorInscale { //todo(ksen): reformat cp-ps
 
   static {
-    JcudaHelper.hook();
-  }
-
-  public static FMatrix fSigmoid(final @NotNull FMatrix A) {
-    fSigmoid(A.toArray());
-    return A;
-  }
-
-  public static FVector fSigmoid(final @NotNull FVector a) {
-    fSigmoid(a.toArray());
-    return a;
-  }
-
-  public static FMatrix fRndSigmoid(final @NotNull FMatrix A) {
-    fRndSigmoid(A.toArray());
-    return A;
-  }
-
-  public static FMatrix fTanh(final @NotNull FMatrix A) {
-    fTanh(A.toArray());
-    return A;
-  }
-
-  public static FVector fTanh(final @NotNull FVector a) {
-    fTanh(a.toArray());
-    return a;
-  }
-
-  public static FMatrix fExp(final @NotNull FMatrix A) {
-    fExp(A.toArray());
-    return A;
-  }
-
-  public static FVector fExp(final @NotNull FVector a) {
-    fExp(a.toArray());
-    return a;
+    JCudaHelper.hook();
   }
 
   public static void fExp(final float[] ha) {
-    final CUfunction function = JcudaHelper.getFunction("VectorInscale.cu", "fExp");
+    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "fExp");
 
     final int length = ha.length;
 
@@ -94,7 +56,7 @@ public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
   }
 
   public static void fSigmoid(final float[] ha) {
-    final CUfunction function = JcudaHelper.getFunction("VectorInscale.cu", "fSigmoid");
+    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "fSigmoid");
 
     final int length = ha.length;
 
@@ -126,7 +88,7 @@ public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
   }
 
   public static void fTanh(final float[] ha) {
-    final CUfunction function = JcudaHelper.getFunction("VectorInscale.cu", "fTanh");
+    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "fTanh");
 
     final int length = ha.length;
 
@@ -170,7 +132,7 @@ public class JcudaVectorInscale { //todo(ksen): reformat cp-ps
     final CUcontext context = new CUcontext();
     JCudaDriver.cuCtxCreate(context, 0, device);
 
-    final CUfunction function = JcudaHelper.getFunction("VectorInscale.cu", "fRndSigmoid");
+    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "fRndSigmoid");
 
     final CUdeviceptr original = new CUdeviceptr();
     JCudaDriver.cuMemAlloc(original, length * Sizeof.FLOAT);
