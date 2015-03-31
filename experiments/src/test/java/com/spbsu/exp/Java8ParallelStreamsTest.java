@@ -1,4 +1,4 @@
-package com.spbsu.ml;
+package com.spbsu.exp;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
@@ -101,7 +101,7 @@ public class Java8ParallelStreamsTest extends TestCase {
           long endTime = System.currentTimeMillis();
           sequatialTime += endTime - startTime;
         }
-        assertTrue(distance(a, b) < 1e-9);
+        TestCase.assertTrue(distance(a, b) < 1e-9);
       }
       System.out.println("Dim: " + dim + "\nWorking time for parallel gradient " + (parallelTime) / 1000);
       System.out.println("Working time for seq gradient " + (sequatialTime) / 1000);
@@ -138,7 +138,7 @@ public class Java8ParallelStreamsTest extends TestCase {
           long endTime = System.currentTimeMillis();
           sequentialTime += endTime - startTime;
         }
-        assertTrue(distance(a, b) < 1e-9);
+        TestCase.assertTrue(distance(a, b) < 1e-9);
       }
       System.out.println("Dim: " + dim + "\nWorking time for parallel gradient " + (parallelTime) / 1000);
       System.out.println("Working time for seq gradient " + (sequentialTime) / 1000);
