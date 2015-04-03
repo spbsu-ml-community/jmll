@@ -17,6 +17,7 @@ import com.spbsu.ml.loss.multiclass.util.MultilabelConfusionMatrix;
 import com.spbsu.ml.loss.multilabel.MultiLabelExactMatch;
 import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.multiclass.MCModel;
+import com.spbsu.ml.models.multilabel.LogitMultiLabelModel;
 import com.spbsu.ml.models.multilabel.MultiLabelModel;
 
 /**
@@ -58,21 +59,26 @@ public class ResultsPrinter {
   }
 
   public static void printMultilabelResult(final Computable computable, final Pool<?> learn, final Pool<?> test) {
-    if (computable instanceof MultiLabelModel) {
-      final MultiLabelModel model = (MultiLabelModel) computable;
-      final Mx learnTargets = learn.multiTarget(MultiLabelExactMatch.class).getTargets();
-      final Mx learnPredicted = model.predictLabelsAll(learn.vecData().data());
-      final MultilabelConfusionMatrix learnConfusionMatrix = new MultilabelConfusionMatrix(learnTargets, learnPredicted);
-      System.out.println("[LEARN]");
-      System.out.println(learnConfusionMatrix.toSummaryString());
-      System.out.println(learnConfusionMatrix.toClassDetailsString());
+    final MultiLabelModel mlModel;
+    if (computable instanceof Ensemble && ((Ensemble) computable).last() instanceof FuncJoin) {
+      final FuncJoin funcJoin = MCTools.joinBoostingResult((Ensemble) computable);
+      mlModel = new LogitMultiLabelModel(funcJoin);
+    } else if (computable instanceof MultiLabelModel) {
+      mlModel = (MultiLabelModel) computable;
+    } else return;
 
-      final Mx testTargets = test.multiTarget(MultiLabelExactMatch.class).getTargets();
-      final Mx testPredicted = model.predictLabelsAll(test.vecData().data());
-      final MultilabelConfusionMatrix testConfusionMatrix = new MultilabelConfusionMatrix(testTargets, testPredicted);
-      System.out.println("[TEST]");
-      System.out.println(testConfusionMatrix.toSummaryString());
-      System.out.println(testConfusionMatrix.toClassDetailsString());
-    }
+    final Mx learnTargets = learn.multiTarget(MultiLabelExactMatch.class).getTargets();
+    final Mx learnPredicted = mlModel.predictLabelsAll(learn.vecData().data());
+    final MultilabelConfusionMatrix learnConfusionMatrix = new MultilabelConfusionMatrix(learnTargets, learnPredicted);
+    System.out.println("[LEARN]");
+    System.out.println(learnConfusionMatrix.toSummaryString());
+    System.out.println(learnConfusionMatrix.toClassDetailsString());
+
+    final Mx testTargets = test.multiTarget(MultiLabelExactMatch.class).getTargets();
+    final Mx testPredicted = mlModel.predictLabelsAll(test.vecData().data());
+    final MultilabelConfusionMatrix testConfusionMatrix = new MultilabelConfusionMatrix(testTargets, testPredicted);
+    System.out.println("[TEST]");
+    System.out.println(testConfusionMatrix.toSummaryString());
+    System.out.println(testConfusionMatrix.toClassDetailsString());
   }
 }

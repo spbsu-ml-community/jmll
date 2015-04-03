@@ -27,6 +27,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
           new FuncJoinConversionPack(),
           new FMModelConversionPack(),
           new MultiClassModelConversionPack(),
+          new JoinedBinClassModelConversionPack(),
           new ObliviousTreeDynamicBinConversionPack(),
           BFGrid.CONVERTER.getClass(),
           (new DynamicGridStringConverter()).getClass()
