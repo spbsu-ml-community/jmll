@@ -10,7 +10,7 @@ import com.spbsu.ml.loss.multilabel.ClassicMultiLabelLoss;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.multiclass.MultiClassOneVsRest;
 import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
-import com.spbsu.ml.models.multilabel.ThresholdMultiLabelModel;
+import com.spbsu.ml.models.multilabel.ThresholdProbsMultiLabelModel;
 
 /**
  * User: qdeee
@@ -24,7 +24,7 @@ public class MultiLabelOneVsRest implements VecOptimization<ClassicMultiLabelLos
   }
 
   @Override
-  public ThresholdMultiLabelModel fit(final VecDataSet learn, final ClassicMultiLabelLoss multiLabelLoss) {
+  public ThresholdProbsMultiLabelModel fit(final VecDataSet learn, final ClassicMultiLabelLoss multiLabelLoss) {
     final Mx targets = multiLabelLoss.getTargets();
     final Func[] result = new Func[targets.columns()];
     for (int j = 0; j < targets.columns(); j++) {
@@ -34,6 +34,6 @@ public class MultiLabelOneVsRest implements VecOptimization<ClassicMultiLabelLos
       final Trans model = weak.fit(learn, llLogit);
       result[j] = MultiClassOneVsRest.extractFunc(model);
     }
-    return new ThresholdMultiLabelModel(new JoinedBinClassModel(result), 0.5);
+    return new ThresholdProbsMultiLabelModel(new JoinedBinClassModel(result), 0.5);
   }
 }
