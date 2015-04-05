@@ -4,13 +4,14 @@ import com.spbsu.commons.func.Evaluator;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -97,6 +98,28 @@ public class TransJoin extends Trans.Stub {
     for (int c = 0; c < dirs.length; c++) {
       VecTools.assign(result.row(c), dirs[c].trans(x));
     }
+    return result;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TransJoin)) return false;
+
+    final TransJoin transJoin = (TransJoin) o;
+
+    if (xdim != transJoin.xdim) return false;
+    if (ydim != transJoin.ydim) return false;
+    if (!Arrays.equals(dirs, transJoin.dirs)) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = Arrays.hashCode(dirs);
+    result = 31 * result + xdim;
+    result = 31 * result + ydim;
     return result;
   }
 }

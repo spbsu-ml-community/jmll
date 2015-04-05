@@ -6,8 +6,10 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
+import com.spbsu.ml.data.tools.MultiLabelTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
@@ -17,7 +19,6 @@ import com.spbsu.ml.loss.multiclass.util.MultilabelConfusionMatrix;
 import com.spbsu.ml.loss.multilabel.MultiLabelExactMatch;
 import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.multiclass.MCModel;
-import com.spbsu.ml.models.multilabel.LogitMultiLabelModel;
 import com.spbsu.ml.models.multilabel.MultiLabelModel;
 
 /**
@@ -59,13 +60,7 @@ public class ResultsPrinter {
   }
 
   public static void printMultilabelResult(final Computable computable, final Pool<?> learn, final Pool<?> test) {
-    final MultiLabelModel mlModel;
-    if (computable instanceof Ensemble && ((Ensemble) computable).last() instanceof FuncJoin) {
-      final FuncJoin funcJoin = MCTools.joinBoostingResult((Ensemble) computable);
-      mlModel = new LogitMultiLabelModel(funcJoin);
-    } else if (computable instanceof MultiLabelModel) {
-      mlModel = (MultiLabelModel) computable;
-    } else return;
+    final MultiLabelModel mlModel = MultiLabelTools.extractMultiLabelModel((Trans) computable);
 
     final Mx learnTargets = learn.multiTarget(MultiLabelExactMatch.class).getTargets();
     final Mx learnPredicted = mlModel.predictLabelsAll(learn.vecData().data());
