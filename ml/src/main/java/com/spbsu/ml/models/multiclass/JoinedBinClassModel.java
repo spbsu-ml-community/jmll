@@ -20,6 +20,10 @@ public class JoinedBinClassModel extends MCModel.Stub {
     internalModel = new FuncJoin(dirs);
   }
 
+  public JoinedBinClassModel(final FuncJoin internalModel) {
+    this.internalModel = internalModel;
+  }
+
   public FuncJoin getInternModel() {
     return internalModel;
   }
