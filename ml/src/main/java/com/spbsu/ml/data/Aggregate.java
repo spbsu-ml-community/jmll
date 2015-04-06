@@ -23,6 +23,16 @@ public class Aggregate {
   private final Factory<AdditiveStatistics> factory;
 
   public Aggregate(final BinarizedDataSet bds, final Factory<AdditiveStatistics> factory, final int[] points) {
+    this(bds, factory);
+    build(points);
+  }
+
+  public Aggregate(final BinarizedDataSet bds, final Factory<AdditiveStatistics> factory, final PointsMap map) {
+    this(bds,factory);
+    build(map);
+  }
+
+  private Aggregate(final BinarizedDataSet bds, final Factory<AdditiveStatistics> factory) {
     this.bds = bds;
     this.grid = bds.grid();
     this.starts = new int[grid.rows()];
@@ -36,7 +46,11 @@ public class Aggregate {
       bins[i] = factory.create();
     }
     this.factory = factory;
-    build(points);
+  }
+
+  public Aggregate(final BinarizedDataSet bds, final Factory<AdditiveStatistics> factory, final int[] points, final double[] weights) {
+    this(bds,factory);
+    build(points, weights);
   }
 
   public AdditiveStatistics combinatorForFeature(final int bf) {
@@ -172,8 +186,140 @@ public class Aggregate {
     } catch (InterruptedException e) {
       // skip
     }
+    //need for cherry pick
+//    AdditiveStatistics total = total();
+//    for (int findex=0; findex < grid.rows();++findex) {
+//      final BFGrid.BFRow row = grid.row(findex);
+//      if (row.empty()) {
+//        final int offset = starts[row.origFIndex];
+//        bins[offset] = factory.create().append(total);
+//      }
+//    }
   }
 
+
+  private void build(final PointsMap map) {
+    if (map.size() == 0)
+      return;
+    final CountDownLatch latch = new CountDownLatch(grid.rows());
+    for (int findex = 0; findex < grid.rows(); findex++) {
+      final BFGrid.BFRow row = grid.row(findex);
+      final byte[] bin = bds.bins(findex);
+      exec.execute(new Runnable() {
+        @Override
+        public void run() {
+          final int offset = starts[row.origFIndex];
+          if (!row.empty()) {
+//            for (int i : indices) {
+//              bins[offset + bin[i]].append(i, 1);
+//            }
+            final int length = 4 * (map.size() / 4);
+            final AdditiveStatistics[] binsLocal = bins;
+            @SuppressWarnings("UnnecessaryLocalVariable")
+            final byte[] binLocal = bin;
+            for (int i = 0; i < length; i += 4) {
+              final int idx1 = map.point(i);
+              final int idx2 = map.point(i+1);
+              final int idx3 = map.point(i+2);
+              final int idx4 = map.point(i+3);
+              final AdditiveStatistics bin1 = binsLocal[offset + binLocal[idx1]];
+              final AdditiveStatistics bin2 = binsLocal[offset + binLocal[idx2]];
+              final AdditiveStatistics bin3 = binsLocal[offset + binLocal[idx3]];
+              final AdditiveStatistics bin4 = binsLocal[offset + binLocal[idx4]];
+              bin1.append(idx1, 1);
+              bin2.append(idx2, 1);
+              bin3.append(idx3, 1);
+              bin4.append(idx4, 1);
+            }
+            for (int i =length; i < map.size(); i++) {
+              final int idx = map.point(i);
+              binsLocal[offset + bin[idx]].append(map.point(i), 1);
+            }
+          }
+          latch.countDown();
+        }
+      });
+    }
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      // skip
+    }
+    //need for cherry pick
+//    AdditiveStatistics total = total();
+//    for (int findex=0; findex < grid.rows();++findex) {
+//      final BFGrid.BFRow row = grid.row(findex);
+//      if (row.empty()) {
+//        final int offset = starts[row.origFIndex];
+//        bins[offset] = factory.create().append(total);
+//      }
+//    }
+  }
+
+
+  private void build(final int[] indices, final double[] weights) {
+    if (indices.length == 0)
+      return;
+    final CountDownLatch latch = new CountDownLatch(grid.rows());
+    for (int findex = 0; findex < grid.rows(); findex++) {
+      final BFGrid.BFRow row = grid.row(findex);
+      final byte[] bin = bds.bins(findex);
+      exec.execute(new Runnable() {
+        @Override
+        public void run() {
+          final int offset = starts[row.origFIndex];
+          if (!row.empty()) {
+//            for (int i : indices) {
+//              bins[offset + bin[i]].append(i, 1);
+//            }
+            final int length = 4 * (indices.length / 4);
+            final AdditiveStatistics[] binsLocal = bins;
+            @SuppressWarnings("UnnecessaryLocalVariable")
+            final int[] indicesLocal = indices;
+            @SuppressWarnings("UnnecessaryLocalVariable")
+            final byte[] binLocal = bin;
+            for (int i = 0; i < length; i += 4) {
+              final int idx1 = indicesLocal[i];
+              final int idx2 = indicesLocal[i + 1];
+              final int idx3 = indicesLocal[i + 2];
+              final int idx4 = indicesLocal[i + 3];
+              final AdditiveStatistics bin1 = binsLocal[offset + binLocal[idx1]];
+              final AdditiveStatistics bin2 = binsLocal[offset + binLocal[idx2]];
+              final AdditiveStatistics bin3 = binsLocal[offset + binLocal[idx3]];
+              final AdditiveStatistics bin4 = binsLocal[offset + binLocal[idx4]];
+              bin1.append(idx1, weights[i]);
+              bin2.append(idx2, weights[i]);
+              bin3.append(idx3, weights[i]);
+              bin4.append(idx4, weights[i]);
+            }
+            for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
+              binsLocal[offset + bin[indicesLocal[i]]].append(indicesLocal[i], weights[i]);
+            }
+          }
+          latch.countDown();
+        }
+      });
+    }
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      // skip
+    }
+    //need for cherry pick
+//    AdditiveStatistics total = total();
+//    for (int findex=0; findex < grid.rows();++findex) {
+//      final BFGrid.BFRow row = grid.row(findex);
+//      if (row.empty()) {
+//        final int offset = starts[row.origFIndex];
+//        bins[offset] = factory.create().append(total);
+//      }
+//    }
+  }
+
+  public interface PointsMap {
+    int size();
+    int point(int i);
+  }
 
   public void append(final int[] indices) {
     final CountDownLatch latch = new CountDownLatch(grid.rows());
