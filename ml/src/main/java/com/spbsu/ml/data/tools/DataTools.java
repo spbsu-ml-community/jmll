@@ -53,6 +53,7 @@ import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
+import com.spbsu.ml.models.multilabel.MultiLabelBinarizedModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
 import org.jetbrains.annotations.Nullable;
@@ -204,6 +205,8 @@ public class DataTools {
       }
     } else if (result instanceof MultiClassModel) {
       return grid(((MultiClassModel) result).getInternModel());
+    } else if (result instanceof MultiLabelBinarizedModel) {
+      return grid(((MultiLabelBinarizedModel) result).getInternModel());
     } else if (result instanceof ObliviousTree) {
       return ((ObliviousTree)result).grid();
     } else if (result instanceof ObliviousMultiClassTree) {
