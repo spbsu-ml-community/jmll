@@ -4,10 +4,8 @@ import com.spbsu.commons.func.types.ConversionDependant;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.TypeConverter;
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.CharSeqTools;
-import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.Ensemble;
 
@@ -19,15 +17,11 @@ import java.util.StringTokenizer;
  * Time: 17:16
  */
 public class EnsembleModelConversionPack implements ConversionPack<Ensemble, CharSequence> {
-  public static abstract class BaseTo<F extends Ensemble> implements TypeConverter<F, CharSequence>, ConversionDependant {
+  public static class To implements TypeConverter<Ensemble, CharSequence>, ConversionDependant {
     private ConversionRepository repository;
 
     @Override
-    public void setConversionRepository(final ConversionRepository repository) {
-      this.repository = repository;
-    }
-
-    protected CharSequence convertModels(final F from) {
+    public CharSequence convert(final Ensemble from) {
       final StringBuilder builder = new StringBuilder();
       builder.append(from.size());
       builder.append("\n\n");
@@ -41,24 +35,18 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
       builder.delete(builder.length() - 1, builder.length());
       return builder;
     }
-  }
-
-  public static class To extends BaseTo<Ensemble> {
-    @Override
-    public CharSequence convert(final Ensemble from) {
-      return convertModels(from);
-    }
-  }
-
-  public abstract static class BaseFrom<T extends Ensemble> implements TypeConverter<CharSequence, T>, ConversionDependant {
-
-    private ConversionRepository repository;
 
     @Override
     public void setConversionRepository(final ConversionRepository repository) {
       this.repository = repository;
     }
-    protected Pair<Trans[], Vec> convertModels(CharSequence from) {
+  }
+
+  public static class From implements TypeConverter<CharSequence, Ensemble>, ConversionDependant {
+    private ConversionRepository repository;
+
+    @Override
+    public Ensemble convert(CharSequence from) {
       if (from.toString().indexOf('\r') >= 0)
         from = from.toString().replace("\r", ""); // fix windows newlines created by GIT
 
@@ -80,17 +68,12 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
       } catch (ClassNotFoundException e) {
         throw new RuntimeException("Element class not found!", e);
       }
-      return Pair.create(models, (Vec) new ArrayVec(weights));
+      return new Ensemble(models, new ArrayVec(weights));
     }
-  }
 
-  public static class From extends BaseFrom<Ensemble> {
     @Override
-    public Ensemble convert(final CharSequence from) {
-      final Pair<Trans[], Vec> pair = convertModels(from);
-      final Trans[] models = pair.getFirst();
-      final Vec weights = pair.getSecond();
-      return new Ensemble(models, weights);
+    public void setConversionRepository(final ConversionRepository repository) {
+      this.repository = repository;
     }
   }
 

@@ -1,10 +1,14 @@
 package com.spbsu.ml.io;
 
+import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.types.ConversionDependant;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.func.types.ConversionRepository;
 import com.spbsu.commons.func.types.TypeConverter;
-import com.spbsu.ml.func.FuncJoin;
+import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
+import com.spbsu.ml.func.TransJoin;
 import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
 
 /**
@@ -17,7 +21,7 @@ public class JoinedBinClassModelConversionPack implements ConversionPack<JoinedB
 
     @Override
     public CharSequence convert(final JoinedBinClassModel from) {
-      final FuncJoin internModel = from.getInternModel();
+      final TransJoin internModel = from.getInternModel();
       return repository.convert(internModel, CharSequence.class);
     }
 
@@ -32,8 +36,14 @@ public class JoinedBinClassModelConversionPack implements ConversionPack<JoinedB
 
     @Override
     public JoinedBinClassModel convert(final CharSequence from) {
-      final FuncJoin internModel = repository.convert(from, FuncJoin.class);
-      return new JoinedBinClassModel(internModel);
+      final TransJoin internModel = repository.convert(from, TransJoin.class);
+      final Func[] dirs = ArrayTools.map(internModel.dirs, Func.class, new Computable<Trans, Func>() {
+        @Override
+        public Func compute(final Trans argument) {
+          return (Func) argument;
+        }
+      });
+      return new JoinedBinClassModel(dirs);
     }
 
     @Override
