@@ -17,6 +17,7 @@ public class CherrySubset implements CherryPointsHolder{
   private int outsideStart = 0;
   private Aggregate outsideAggregate;
   private AdditiveStatistics inside;
+  private int length;
 
   public CherrySubset(BinarizedDataSet bds, Factory<AdditiveStatistics> factory, int[] points) {
     this.bds = bds;
@@ -25,18 +26,21 @@ public class CherrySubset implements CherryPointsHolder{
     for (int i=0; i < points.length;++i)
       points[i]++;
     cache = new int[points.length];
+    this.length = points.length;
   }
 
 
 
   @Override
   public int[] points() {
-    return points;
+    final int[] newPoints = new int[length];
+    System.arraycopy(points,0,newPoints,0,length);
+    return newPoints;
   }
 
   @Override
   public double[] weights() {
-    double[] weights=  new double[points.length];
+    double[] weights=  new double[length];
     Arrays.fill(weights, 1.0);
     return weights;
   }
@@ -46,29 +50,21 @@ public class CherrySubset implements CherryPointsHolder{
   }
 
   @Override
+  public BFGrid grid() {
+    return bds.grid();
+  }
+
+  @Override
   public void endClause() {
     insideSign = !insideSign;
-    final int[] newPoints = new int[outsideStart];
-    cache = new int[newPoints.length];
-    System.arraycopy(points,0,newPoints,0,outsideStart);
-    points = newPoints;
+    length = outsideStart;
     outsideStart = 0;
   }
 
   @Override
   public void startClause() {
     inside = factory.create();
-    this.outsideAggregate = new Aggregate(bds, factory, new Aggregate.PointsMap() {
-      @Override
-      public int size() {
-        return points.length;
-      }
-
-      @Override
-      public int point(int i) {
-        return getPoint(i);
-      }
-    });
+    this.outsideAggregate = new Aggregate(bds, factory,getPoints(0,length));
   }
 
   @Override
@@ -77,7 +73,7 @@ public class CherrySubset implements CherryPointsHolder{
     final byte[] bins = bds.bins(row.origFIndex);
     AdditiveStatistics added = factory.create();
     int count = 0;
-    for (int i = outsideStart; i < points.length; ++i) {
+    for (int i = outsideStart; i < length; ++i) {
       final int point = getPoint(i);
       final int bin = bins[point];
       if (startBin <= bin && bin <= endBin) {
@@ -87,8 +83,8 @@ public class CherrySubset implements CherryPointsHolder{
       }
     }
     gather(outsideStart + count);
-    if (count > points.length - outsideStart) {
-      int[] out = getPoints(outsideStart+count, points.length);
+    if (count > length - outsideStart) {
+      int[] out = getPoints(outsideStart+count, length);
       outsideAggregate = new Aggregate(bds,factory,out);
     } else {
       int[] addedPoints = getPoints(outsideStart,count);
@@ -124,7 +120,7 @@ public class CherrySubset implements CherryPointsHolder{
   private void gather(final int inCount) {
     int inPtr = 0;
     int outPtr = inCount;
-    for (int i=0; i < points.length;++i) {
+    for (int i=0; i < length;++i) {
       if ((points[i] > 0) == insideSign) {
         cache[inPtr++] = points[i];
       } else {

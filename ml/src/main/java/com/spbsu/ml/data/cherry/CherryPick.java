@@ -14,14 +14,23 @@ public class CherryPick {
     final CherryPointsHolder subset = loss.subset();
     double currentScore = Double.NEGATIVE_INFINITY;
     loss.startClause();
+    final CherryBestHolder[] bestHolders = new CherryBestHolder[subset.grid().rows()];
     while (true) {
-      final CherryBestHolder bestHolder = new CherryBestHolder();
+      for (int i = 0; i < bestHolders.length; ++i) {
+        bestHolders[i] = new CherryBestHolder();
+      }
       subset.visitAll((feature, start, end, added, out) -> {
         if (!feature.empty()) {
           final double score = loss.score(feature, start, end, added, out);
-          bestHolder.update(feature, score, start, end);
+          bestHolders[feature.origFIndex].update(feature, score, start, end);
         }
       });
+      CherryBestHolder bestHolder = bestHolders[0];
+      for (int i = 0; i < bestHolders.length; ++i) {
+        if (bestHolder.getScore() < bestHolders[i].getScore()) {
+          bestHolder = bestHolders[i];
+        }
+      }
       if (bestHolder.getScore() <= currentScore + 1e-9)
         break;
       features.add(bestHolder);
@@ -29,7 +38,7 @@ public class CherryPick {
       currentScore = bestHolder.getScore();
     }
     loss.endClause();
-    return  createClause(features);
+    return createClause(features);
   }
 
   private CNF.Clause createClause(List<CherryBestHolder> features) {

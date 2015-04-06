@@ -29,15 +29,17 @@ public class OutLoss<Subset extends CherryPointsHolder, Loss extends StatBasedLo
   }
 
   private int borders(BFGrid.BFRow feature, int start, int end) {
-    return start != 0 && end != feature.size() ? 4 : 1;
+    return start != 0 && end != feature.size() ? 8 : 1;
   }
 
   private double score(AdditiveStatistics inside, AdditiveStatistics outside, int complexity) {
     final double wIn = weight(inside);
     if (wIn > 0 && wIn < minBinSize)
       return Double.NEGATIVE_INFINITY;
-    final double wOut = weight(inside);
+    final double wOut = weight(outside);
     if (wIn > 0 && wIn < minBinSize)
+      return Double.NEGATIVE_INFINITY;
+    if (wOut > 0 && wOut < minBinSize)
       return Double.NEGATIVE_INFINITY;
     return -loss.score(inside) / complexity;
   }
@@ -54,13 +56,14 @@ public class OutLoss<Subset extends CherryPointsHolder, Loss extends StatBasedLo
 
   @Override
   public void endClause() {
-    ++complexity;
+    complexity++;
     subset.endClause();
   }
 
   public void addCondition(BFGrid.BFRow feature, int start, int end) {
     subset().addCondition(feature, start, end);
     complexity += borders(feature, start, end);
+    complexity += 1;
   }
 
   @Override

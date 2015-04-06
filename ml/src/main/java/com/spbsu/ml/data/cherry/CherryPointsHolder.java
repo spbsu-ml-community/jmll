@@ -14,6 +14,7 @@ public interface CherryPointsHolder  {
 
   void visitAll(final Aggregate.IntervalVisitor<? extends AdditiveStatistics> visitor);
 
+  BFGrid grid();
 
   void endClause();
   void startClause();
