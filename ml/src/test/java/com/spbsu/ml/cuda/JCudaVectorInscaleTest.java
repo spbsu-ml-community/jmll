@@ -32,7 +32,7 @@ public class JCudaVectorInscaleTest extends Assert {
 
     JCudaVectorInscale.exp(actual);
 
-    compare(expected, actual);
+    assertArrayEquals(expected, actual, EPS);
   }
 
   @Test
@@ -50,7 +50,7 @@ public class JCudaVectorInscaleTest extends Assert {
 
     JCudaVectorInscale.sigmoid(actual);
 
-    compare(expected, actual);
+    assertArrayEquals(expected, actual, EPS);
   }
 
   @Test
@@ -68,13 +68,7 @@ public class JCudaVectorInscaleTest extends Assert {
 
     JCudaVectorInscale.tanh(actual);
 
-    compare(expected, actual);
-  }
-
-  private void compare(final double[] a, final double[] b) {
-    for (int i = 0; i < a.length; i++) {
-      assertEquals(a[i], b[i], EPS);
-    }
+    assertArrayEquals(expected, actual, EPS);
   }
 
 }
