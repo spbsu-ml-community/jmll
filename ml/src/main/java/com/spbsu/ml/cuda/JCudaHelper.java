@@ -5,9 +5,10 @@ import com.spbsu.commons.util.cache.Cache;
 import com.spbsu.commons.util.cache.CacheStrategy;
 import com.spbsu.commons.util.cache.impl.FixedSizeCache;
 import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.util.logging.Logger;
 import jcuda.driver.*;
 import com.spbsu.commons.system.RuntimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -25,9 +26,10 @@ import java.util.*;
  */
 public class JCudaHelper {
 
-  private static final Logger LOG = Logger.create(JCudaHelper.class);
+  private static final Logger LOG = LoggerFactory.getLogger(JCudaHelper.class);
 
   private static File LOCAL_PTX_DIRECTORY;
+
   private static final Cache<String, CUfunction> CACHE = new FixedSizeCache<>(100, CacheStrategy.Type.LRU);
 
   private static CUcontext CONTEXT;
@@ -81,7 +83,6 @@ public class JCudaHelper {
     final ClassLoader classLoader = JCudaHelper.class.getClassLoader();
     try {
       final File tempDirectory = Files.createTempDirectory(JCudaConstants.JCUDA_TMP_DIRECTORY_NAME).toFile();
-      tempDirectory.deleteOnExit();
       setUsrPaths(tempDirectory.getAbsolutePath());
 
       LOG.info("Jcuda is working in the " + tempDirectory.getAbsolutePath());

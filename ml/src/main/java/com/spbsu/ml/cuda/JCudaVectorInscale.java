@@ -17,20 +17,20 @@ import static jcuda.runtime.JCuda.*;
  * ksen
  * 25.October.2014 at 21:36
  */
-public class JCudaVectorInscale { //todo(ksen): reformat cp-ps
+public class JCudaVectorInscale {
 
   static {
     JCudaHelper.hook();
   }
 
-  public static void fExp(final float[] ha) {
-    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "fExp");
+  public static void exp(final double[] ha) {
+    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "dExp");
 
     final int length = ha.length;
 
     final CUdeviceptr da = new CUdeviceptr();
-    JCudaDriver.cuMemAlloc(da, length * Sizeof.FLOAT);
-    JCudaDriver.cuMemcpyHtoD(da, Pointer.to(ha), length * Sizeof.FLOAT);
+    JCudaDriver.cuMemAlloc(da, length * Sizeof.DOUBLE);
+    JCudaDriver.cuMemcpyHtoD(da, Pointer.to(ha), length * Sizeof.DOUBLE);
 
     Pointer kernelParameters = Pointer.to(
         Pointer.to(da),
@@ -50,19 +50,19 @@ public class JCudaVectorInscale { //todo(ksen): reformat cp-ps
 
     JCudaDriver.cuCtxSynchronize();
 
-    JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.FLOAT);
+    JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.DOUBLE);
 
     JCudaDriver.cuMemFree(da);
   }
 
-  public static void fSigmoid(final float[] ha) {
-    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "fSigmoid");
+  public static void sigmoid(final double[] ha) {
+    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "dSigmoid");
 
     final int length = ha.length;
 
     final CUdeviceptr da = new CUdeviceptr();
-    JCudaDriver.cuMemAlloc(da, length * Sizeof.FLOAT);
-    JCudaDriver.cuMemcpyHtoD(da, Pointer.to(ha), length * Sizeof.FLOAT);
+    JCudaDriver.cuMemAlloc(da, length * Sizeof.DOUBLE);
+    JCudaDriver.cuMemcpyHtoD(da, Pointer.to(ha), length * Sizeof.DOUBLE);
 
     Pointer kernelParameters = Pointer.to(
         Pointer.to(da),
@@ -82,19 +82,19 @@ public class JCudaVectorInscale { //todo(ksen): reformat cp-ps
 
     JCudaDriver.cuCtxSynchronize();
 
-    JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.FLOAT);
+    JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.DOUBLE);
 
     JCudaDriver.cuMemFree(da);
   }
 
-  public static void fTanh(final float[] ha) {
-    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "fTanh");
+  public static void tanh(final double[] ha) {
+    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "dTanh");
 
     final int length = ha.length;
 
     final CUdeviceptr da = new CUdeviceptr();
-    JCudaDriver.cuMemAlloc(da, length * Sizeof.FLOAT);
-    JCudaDriver.cuMemcpyHtoD(da, Pointer.to(ha), length * Sizeof.FLOAT);
+    JCudaDriver.cuMemAlloc(da, length * Sizeof.DOUBLE);
+    JCudaDriver.cuMemcpyHtoD(da, Pointer.to(ha), length * Sizeof.DOUBLE);
 
     Pointer kernelParameters = Pointer.to(
         Pointer.to(da),
@@ -114,14 +114,14 @@ public class JCudaVectorInscale { //todo(ksen): reformat cp-ps
 
     JCudaDriver.cuCtxSynchronize();
 
-    JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.FLOAT);
+    JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), da, length * Sizeof.DOUBLE);
 
     JCudaDriver.cuMemFree(da);
   }
 
-  private static void fRndSigmoid(final float[] ha) {
+  private static void fRndSigmoid(final double[] ha) {
     final int length = ha.length;
-    final float[] randomH = getRandom(length);
+    final double[] randomH = getRandom(length);
 
     JCudaDriver.setExceptionsEnabled(true);
 
@@ -132,15 +132,15 @@ public class JCudaVectorInscale { //todo(ksen): reformat cp-ps
     final CUcontext context = new CUcontext();
     JCudaDriver.cuCtxCreate(context, 0, device);
 
-    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "fRndSigmoid");
+    final CUfunction function = JCudaHelper.getFunction("VectorInscale.cu", "dRndSigmoid");
 
     final CUdeviceptr original = new CUdeviceptr();
-    JCudaDriver.cuMemAlloc(original, length * Sizeof.FLOAT);
-    JCudaDriver.cuMemcpyHtoD(original, Pointer.to(ha), length * Sizeof.FLOAT);
+    JCudaDriver.cuMemAlloc(original, length * Sizeof.DOUBLE);
+    JCudaDriver.cuMemcpyHtoD(original, Pointer.to(ha), length * Sizeof.DOUBLE);
 
     final CUdeviceptr randomD = new CUdeviceptr();
-    JCudaDriver.cuMemAlloc(randomD, length * Sizeof.FLOAT);
-    JCudaDriver.cuMemcpyHtoD(randomD, Pointer.to(randomH), length * Sizeof.FLOAT);
+    JCudaDriver.cuMemAlloc(randomD, length * Sizeof.DOUBLE);
+    JCudaDriver.cuMemcpyHtoD(randomD, Pointer.to(randomH), length * Sizeof.DOUBLE);
 
     Pointer kernelParameters = Pointer.to(
         Pointer.to(original),
@@ -161,29 +161,29 @@ public class JCudaVectorInscale { //todo(ksen): reformat cp-ps
 
     JCudaDriver.cuCtxSynchronize();
 
-    JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), original, length * Sizeof.FLOAT);
+    JCudaDriver.cuMemcpyDtoH(Pointer.to(ha), original, length * Sizeof.DOUBLE);
 
     JCudaDriver.cuMemFree(original);
 
     JCudaDriver.cuCtxDestroy(context);
   }
 
-  private static float[] getRandom(final int size) {
+  private static double[] getRandom(final int size) {
     JCuda.setExceptionsEnabled(true);
     JCurand.setExceptionsEnabled(true);
 
     final curandGenerator generator = new curandGenerator();
 
-    float host[] = new float[size];
+    double host[] = new double[size];
     final Pointer device = new Pointer();
-    cudaMalloc(device, size * Sizeof.FLOAT);
+    cudaMalloc(device, size * Sizeof.DOUBLE);
 
     curandCreateGenerator(generator, curandRngType.CURAND_RNG_PSEUDO_DEFAULT);
     curandSetPseudoRandomGeneratorSeed(generator, System.currentTimeMillis());
 
     curandGenerateUniform(generator, device, size);
 
-    cudaMemcpy(Pointer.to(host), device, size * Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost);
+    cudaMemcpy(Pointer.to(host), device, size * Sizeof.DOUBLE, cudaMemcpyKind.cudaMemcpyDeviceToHost);
 
     curandDestroyGenerator(generator);
     cudaFree(device);

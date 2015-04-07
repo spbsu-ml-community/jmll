@@ -1,25 +1,25 @@
 extern "C"
-__global__ void fSigmoid(float *original, int size) {
+__global__ void dSigmoid(double *original, int size) {
   const int X = gridDim.x;
   const int index = gridDim.y * X * threadIdx.x + X * blockIdx.y + blockIdx.x;
 
   if(index < size) {
-    original[index] = 1.f / (1.f + expf(-original[index]));
+    original[index] = 1. / (1. + exp(-original[index]));
   }
 }
 
 extern "C"
-__global__ void fExp(float *original, int size) {
+__global__ void dExp(double *original, int size) {
   const int X = gridDim.x;
   const int index = gridDim.y * X * threadIdx.x + X * blockIdx.y + blockIdx.x;
 
   if(index < size) {
-    original[index] = expf(original[index]);
+    original[index] = exp(original[index]);
   }
 }
 
 extern "C"
-__global__ void fTanh(float *original, int size) {
+__global__ void dTanh(double *original, int size) {
   const int X = gridDim.x;
   const int index = gridDim.y * X * threadIdx.x + X * blockIdx.y + blockIdx.x;
 
@@ -29,11 +29,11 @@ __global__ void fTanh(float *original, int size) {
 }
 
 extern "C"
-__global__ void fRndSigmoid(float *original, float *random, int size) {
+__global__ void dRndSigmoid(double *original, double *random, int size) {
   const int X = gridDim.x;
   const int index = gridDim.y * X * threadIdx.x + X * blockIdx.y + blockIdx.x;
 
   if(index < size) {
-    original[index] = (1.f / (1.f + expf(-original[index]))) > random[index];
+    original[index] = (1. / (1. + exp(-original[index]))) > random[index];
   }
 }
