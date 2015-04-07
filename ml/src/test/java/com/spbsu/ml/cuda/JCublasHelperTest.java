@@ -1,16 +1,11 @@
 package com.spbsu.ml.cuda;
 
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.MxTools;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
-import com.spbsu.commons.math.vectors.impl.mx.ColsVecSeqMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.seq.VecSeq;
-import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
+import org.junit.Assert;
+
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 
 /**
  * jmll
