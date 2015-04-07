@@ -5,7 +5,7 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.data.cherry.CherryLoss;
 import com.spbsu.ml.data.cherry.CherryPick;
-import com.spbsu.ml.data.cherry.CherrySubset;
+import com.spbsu.ml.data.cherry.CherryStochasticSubset;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
@@ -43,7 +43,8 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
     double currentScore = Double.NEGATIVE_INFINITY;
     CherryLoss localLoss;
     {
-      localLoss = new OutLoss<>(new CherrySubset(bds,loss.statsFactory(),points), loss);
+//      localLoss = new OutLoss<>(new CherrySubset(bds,loss.statsFactory(),points), loss);
+      localLoss = new OutLoss<>(new CherryStochasticSubset(bds.rds,bds,loss.statsFactory(),points), loss);
     }
 
     double bestIncInside = 0;

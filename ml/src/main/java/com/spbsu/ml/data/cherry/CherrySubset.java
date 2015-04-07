@@ -6,8 +6,6 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
-import java.util.Arrays;
-
 public class CherrySubset implements CherryPointsHolder{
   private final BinarizedDataSet bds;
   private final Factory<AdditiveStatistics> factory;
@@ -29,21 +27,6 @@ public class CherrySubset implements CherryPointsHolder{
     this.length = points.length;
   }
 
-
-
-  @Override
-  public int[] points() {
-    final int[] newPoints = new int[length];
-    System.arraycopy(points,0,newPoints,0,length);
-    return newPoints;
-  }
-
-  @Override
-  public double[] weights() {
-    double[] weights=  new double[length];
-    Arrays.fill(weights, 1.0);
-    return weights;
-  }
 
   public void visitAll(final Aggregate.IntervalVisitor<? extends AdditiveStatistics> visitor) {
     outsideAggregate.visit(visitor);

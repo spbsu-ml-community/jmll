@@ -12,7 +12,7 @@ public class OutLoss<Subset extends CherryPointsHolder, Loss extends StatBasedLo
   private Subset subset;
   private Loss loss;
   private int complexity = 1;
-  private int minBinSize = 50;
+  private int minBinSize = 0;
 
   OutLoss(Subset subset, Loss loss) {
     this.subset = subset;
@@ -29,7 +29,7 @@ public class OutLoss<Subset extends CherryPointsHolder, Loss extends StatBasedLo
   }
 
   private int borders(BFGrid.BFRow feature, int start, int end) {
-    return start != 0 && end != feature.size() ? 8 : 1;
+    return start != 0 && end != feature.size() ? 4 : 1;
   }
 
   private double score(AdditiveStatistics inside, AdditiveStatistics outside, int complexity) {

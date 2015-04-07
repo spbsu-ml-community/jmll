@@ -123,19 +123,19 @@ public class Aggregate {
   public <T extends AdditiveStatistics> void visit(final IntervalVisitor<T> visitor) {
     final T total = (T) total();
       IntStream.range(0,grid.rows()).parallel().forEach(f -> {
-      final BFGrid.BFRow row = grid.row(f);
-      final int offset = starts[row.origFIndex];
-      for (int startBin =0;  startBin <= row.size(); ++ startBin) {
-        final T inside = (T) factory.create();
-        final T outside = (T) factory.create().append(total);
-        for (int endBin = startBin; endBin <= row.size();++endBin) {
-          inside.append(bins[offset+endBin]);
-          outside.remove(bins[offset+endBin]);
-          visitor.accept(row,startBin,endBin,inside,outside);
+        final BFGrid.BFRow row = grid.row(f);
+        final int offset = starts[row.origFIndex];
+        for (int startBin = 0; startBin <= row.size(); ++startBin) {
+          final T inside = (T) factory.create();
+          final T outside = (T) factory.create().append(total);
+          for (int endBin = startBin; endBin <= row.size(); ++endBin) {
+            inside.append(bins[offset + endBin]);
+            outside.remove(bins[offset + endBin]);
+            visitor.accept(row, startBin, endBin, inside, outside);
+          }
+          ++startBin;
         }
-        ++startBin;
-      }
-    });
+      });
  }
 
 
@@ -146,40 +146,37 @@ public class Aggregate {
     for (int findex = 0; findex < grid.rows(); findex++) {
       final BFGrid.BFRow row = grid.row(findex);
       final byte[] bin = bds.bins(findex);
-      exec.execute(new Runnable() {
-        @Override
-        public void run() {
-          final int offset = starts[row.origFIndex];
-          if (!row.empty()) {
+      exec.execute(() -> {
+        final int offset = starts[row.origFIndex];
+        if (!row.empty()) {
 //            for (int i : indices) {
 //              bins[offset + bin[i]].append(i, 1);
 //            }
-            final int length = 4 * (indices.length / 4);
-            final AdditiveStatistics[] binsLocal = bins;
-            @SuppressWarnings("UnnecessaryLocalVariable")
-            final int[] indicesLocal = indices;
-            @SuppressWarnings("UnnecessaryLocalVariable")
-            final byte[] binLocal = bin;
-            for (int i = 0; i < length; i += 4) {
-              final int idx1 = indicesLocal[i];
-              final int idx2 = indicesLocal[i + 1];
-              final int idx3 = indicesLocal[i + 2];
-              final int idx4 = indicesLocal[i + 3];
-              final AdditiveStatistics bin1 = binsLocal[offset + binLocal[idx1]];
-              final AdditiveStatistics bin2 = binsLocal[offset + binLocal[idx2]];
-              final AdditiveStatistics bin3 = binsLocal[offset + binLocal[idx3]];
-              final AdditiveStatistics bin4 = binsLocal[offset + binLocal[idx4]];
-              bin1.append(idx1, 1);
-              bin2.append(idx2, 1);
-              bin3.append(idx3, 1);
-              bin4.append(idx4, 1);
-            }
-            for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
-              binsLocal[offset + bin[indicesLocal[i]]].append(indicesLocal[i], 1);
-            }
+          final int length = 4 * (indices.length / 4);
+          final AdditiveStatistics[] binsLocal = bins;
+          @SuppressWarnings("UnnecessaryLocalVariable")
+          final int[] indicesLocal = indices;
+          @SuppressWarnings("UnnecessaryLocalVariable")
+          final byte[] binLocal = bin;
+          for (int i = 0; i < length; i += 4) {
+            final int idx1 = indicesLocal[i];
+            final int idx2 = indicesLocal[i + 1];
+            final int idx3 = indicesLocal[i + 2];
+            final int idx4 = indicesLocal[i + 3];
+            final AdditiveStatistics bin1 = binsLocal[offset + binLocal[idx1]];
+            final AdditiveStatistics bin2 = binsLocal[offset + binLocal[idx2]];
+            final AdditiveStatistics bin3 = binsLocal[offset + binLocal[idx3]];
+            final AdditiveStatistics bin4 = binsLocal[offset + binLocal[idx4]];
+            bin1.append(idx1, 1);
+            bin2.append(idx2, 1);
+            bin3.append(idx3, 1);
+            bin4.append(idx4, 1);
           }
-          latch.countDown();
+          for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
+            binsLocal[offset + bin[indicesLocal[i]]].append(indicesLocal[i], 1);
+          }
         }
+        latch.countDown();
       });
     }
     try {
@@ -289,9 +286,9 @@ public class Aggregate {
               final AdditiveStatistics bin3 = binsLocal[offset + binLocal[idx3]];
               final AdditiveStatistics bin4 = binsLocal[offset + binLocal[idx4]];
               bin1.append(idx1, weights[i]);
-              bin2.append(idx2, weights[i]);
-              bin3.append(idx3, weights[i]);
-              bin4.append(idx4, weights[i]);
+              bin2.append(idx2, weights[i+1]);
+              bin3.append(idx3, weights[i+2]);
+              bin4.append(idx4, weights[i+3]);
             }
             for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
               binsLocal[offset + bin[indicesLocal[i]]].append(indicesLocal[i], weights[i]);
