@@ -13,7 +13,7 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
-import com.spbsu.ml.models.MCModel;
+import com.spbsu.ml.models.multiclass.MCModel;
 
 import static com.spbsu.commons.math.vectors.VecTools.append;
 import static com.spbsu.commons.math.vectors.VecTools.scale;
@@ -31,9 +31,14 @@ public class MulticlassProgressPrinter implements ProgressHandler {
   private final Mx learnValues;
   private final Mx testValues;
 
+  private final int itersForOut;
   int iteration = 0;
 
   public MulticlassProgressPrinter(final Pool<?> learn, final Pool<?> test) {
+    this(learn, test, 10);
+  }
+
+  public MulticlassProgressPrinter(final Pool<?> learn, final Pool<?> test, final int itersForOut) {
     this.learn = learn.vecData();
     this.test = test.vecData();
 
@@ -43,6 +48,7 @@ public class MulticlassProgressPrinter implements ProgressHandler {
 
     this.learnValues = new VecBasedMx(learn.size(), learnMLLLogit.classesCount() - 1);
     this.testValues = new VecBasedMx(test.size(), testMLLLogit.classesCount() - 1);
+    this.itersForOut = itersForOut;
   }
 
   @Override
@@ -58,7 +64,7 @@ public class MulticlassProgressPrinter implements ProgressHandler {
     }
 
     iteration++;
-    if (iteration % 10 == 0) {
+    if (iteration % itersForOut == 0) {
       final IntSeq learnPredicted;
       final IntSeq testPredicted;
 

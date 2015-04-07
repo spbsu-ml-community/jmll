@@ -1,220 +1,181 @@
 package com.spbsu.ml.data;
 
 import com.spbsu.commons.func.AdditiveStatistics;
-import com.spbsu.commons.func.Evaluator;
 import com.spbsu.commons.func.Factory;
-import com.spbsu.commons.util.Pair;
-import com.spbsu.commons.util.ThreadTools;
+import com.spbsu.commons.util.BestHolder;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
+import com.spbsu.ml.models.CNF;
 import gnu.trove.list.array.TIntArrayList;
 
-import java.util.BitSet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.*;
 
-/**
- * User: solar
- * Date: 26.08.13
- * Time: 22:09
- */
+class CherryBestHolder extends BestHolder<BFGrid.BFRow> {
+  private int startBin;
+  private int endBin;
+
+  public synchronized boolean update(final BFGrid.BFRow update, final double score, final int startBin, final int endBin) {
+    if (update(update, score)) {
+      this.startBin = startBin;
+      this.endBin = endBin;
+      return true;
+    }
+    return false;
+  }
+
+  public int startBin() {
+    return startBin;
+  }
+
+  public int endBin() {
+    return endBin;
+  }
+}
+
 public class CherryPick {
+  public class Result {
+    public final int[] points;
+    public final CNF.Clause clause;
+
+    Result(int[] points, CNF.Clause clause) {
+      this.points = points;
+      this.clause = clause;
+    }
+  }
+
   private final BinarizedDataSet bds;
   private final BFGrid grid;
   private final Factory<AdditiveStatistics> factory;
-  //  private final int[] starts;
-  private final int[][] binsIndex;
-  //  private final int[] inverseIndex;
-//  private final byte[] inverseBinIndex;
-  public double currentScore = 0;
-  final int binsCount;
-  public AdditiveStatistics inside;
 
   public CherryPick(final BinarizedDataSet bds, final Factory<AdditiveStatistics> factory) {
     this.bds = bds;
     this.grid = bds.grid();
     this.factory = factory;
-//    this.starts = new int[grid.rows()];
-    this.binsIndex = new int[grid.rows()][];
-
-    int current = 0;
-    for (int i = 0; i < grid.rows(); i++) {
-      this.binsIndex[i] = new int[grid.row(i).size() + 1];
-      for (int bin = 0; bin <= grid.row(i).size(); ++bin) {
-        this.binsIndex[i][bin] = current;
-        ++current;
-      }
-    }
-    this.binsCount = current;
-    inside = factory.create();
   }
 
-  private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("CherryPick thread", -1);
-
-  @SuppressWarnings("unchecked")
-  public <T extends AdditiveStatistics> Pair<BitSet, int[]> build(final Evaluator<T> eval, final int[] points, final double lambda) {
-    final TIntArrayList included = new TIntArrayList();
-
-    final int[][] base = new int[grid.rows()][];
-    {
-      for (int feature = 0; feature < grid.rows(); feature++) {
-        base[feature] = new int[grid.row(feature).size() + 1];
-        final byte[] bin = bds.bins(feature);
-        for (int j = 0; j < points.length; j++) {
-          base[feature][bin[points[j]]]++;
-        }
-      }
-    }
-
-    final BitSet conditions = new BitSet(binsCount);
-    final T resultStat = (T) factory.create();
-    int[] indices2include = points;
-    double resultScore = Double.POSITIVE_INFINITY;//eval.value(resultStat);
-
-    do {
-
-
-      final CountDownLatch latch = new CountDownLatch(binsCount - conditions.cardinality());
-      final double[][] scores = new double[grid.rows()][];
-      final int[] candidates = indices2include;
-
-      for (int f = 0; f < grid.rows(); ++f) {
-        scores[f] = new double[grid.row(f).size() + 1];
-        for (int bin = 0; bin <= grid.row(f).size(); ++bin) {
-          scores[f][bin] = Double.POSITIVE_INFINITY;
-          if (conditions.get(binsIndex[f][bin])) {
-            continue;
-          }
-
-          conditions.set(binsIndex[f][bin]);
-          scores[f][bin] = regularization(conditions, base);
-          conditions.clear(binsIndex[f][bin]);
-          final int finalBinIndex = bin;
-          final int finalFeature = f;
-
-          exec.execute(new Runnable() {
-            @Override
-            public void run() {
-              final byte[] bin = bds.bins(finalFeature);
-              final T stat = (T) factory.create().append(resultStat);
-              for (int i = 0; i < candidates.length; i++) {
-                final int index = candidates[i];
-                if (finalBinIndex == bin[index])
-                  stat.append(index, 1);
-              }
-              scores[finalFeature][finalBinIndex] = eval.value(stat) * (1 + lambda * scores[finalFeature][finalBinIndex]);
-              latch.countDown();
-            }
-          });
-        }
-      }
-
-      try {
-        latch.await();
-      } catch (InterruptedException e) {
-        // skip
-      }
-
-      double minScore = Double.POSITIVE_INFINITY;
-      int bestFeature = -1;
-      int bestBin = -1;
-      for (int f = 0; f < grid.rows(); ++f) {
-        for (int bin = 0; bin < grid.row(f).size(); ++bin) {
-          if (scores[f][bin] < minScore) {
-            minScore = scores[f][bin];
-            bestFeature = f;
-            bestBin = bin;
+  public Result fit(final int[] points, final CherryLoss loss) {
+    List<CherryBestHolder> features = new ArrayList<>(100);
+    final CherrySubset subset = new CherrySubset(bds, factory, points);
+    double currentScore = Double.NEGATIVE_INFINITY;
+    while (true) {
+      final CherryBestHolder bestHolder = new CherryBestHolder();
+      subset.visitAll(new Aggregate.IntervalVisitor<AdditiveStatistics>() {
+        @Override
+        public void accept(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out) {
+          if (!feature.empty()) {
+            final double score = loss.score(feature, start, end, added, out);
+            bestHolder.update(feature, score, start, end);
           }
         }
-      }
-
-      if (bestFeature < 0 || minScore >= resultScore)
+      });
+      if (bestHolder.getScore() <= currentScore + 1e-9)
         break;
-      resultScore = minScore;
-      conditions.set(binsIndex[bestFeature][bestBin]);
-      indices2include = new int[indices2include.length - base[bestFeature][bestBin]];
-      int index = 0;
-      final byte[] bin = bds.bins(bestFeature);
-
-      for (int i = 0; i < candidates.length; i++) {
-        if (bin[candidates[i]] != bestBin) {
-          indices2include[index] = candidates[i];
-          ++index;
-        } else {
-          included.add(candidates[i]);
-          resultStat.append(candidates[i], 1);
-          for (int feature = 0; feature < grid.rows(); feature++) {
-            final byte[] bins = bds.bins(feature);
-            base[feature][bins[candidates[i]]]--;
-          }
-        }
-      }
+      AdditiveStatistics added = subset.add(bestHolder.getValue(), bestHolder.startBin(), bestHolder.endBin());
+      features.add(bestHolder);
+      loss.added(bestHolder.getValue(), bestHolder.startBin(), bestHolder.endBin(), added);
+      currentScore = bestHolder.getScore();
     }
-    while (true);
-    currentScore = resultScore;
-    inside = resultStat;
-    return new Pair<>(conditions, included.toArray());
+    return new Result(subset.pointsInside(), createClause(features));
   }
 
+  private CNF.Clause createClause(List<CherryBestHolder> features) {
+    Collections.sort(features, new Comparator<CherryBestHolder>() {
+      @Override
+      public int compare(CherryBestHolder first, CherryBestHolder second) {
+        int firstIndex = first.getValue().origFIndex;
+        int secondIndex = second.getValue().origFIndex;
 
-  private double regularization(final BitSet conditions, final int[][] base) {
-////    return 0;
-//    double result = 0;
-//    int index = 0;
-//    int count = 0;
-//    int realCardinality = 0;
-//    for (int i = 0; i < base.length; i++) {
-//      final int[] row = base[i];
-//      boolean current = conditions.get(index);
-//      for (int j = 0; j < row.length; j++, index++) {
-//        realCardinality += (current != conditions.get(index) ? 1 : 0);
-//        current = conditions.get(index);
-//        if (!conditions.get(index))
-//          continue;
-//        count += row[j];
-//        if (j + 1 == row.length || !conditions.get(index + 1)) {
-//          result += Math.log(count + 1);
-//          count = 0;
-//        }
-//      }
-//    }
-//    return result + realCardinality; // information in split + AIC
-
-
-    double result = 0;
-    final int index = 0;
-    int count = 0;
-    int total = 0;
-    int realCardinality = 0;
-    int inside = 0;
-    for (int bin = 0; bin < grid.row(0).size(); ++bin) {
-      total += base[0][bin];
-    }
-//    boolean current = conditions.get(index);
-//    for (int f= 0; f < grid.rows();++f)
-//      for (int bin =0; bin < grid.row(f).size();++bin) {
-//        if (conditions.get(binsIndex[f][bin])) {
-//          result += Math.log(base[f][bin]+1);
-//          inside += base[f][bin];
-//        }
-//      }
-    int cardinality = 0;
-    for (int f = 0; f < grid.rows(); ++f) {
-      for (int bin = 0; bin <= grid.row(f).size(); ++bin) {
-        if (conditions.get(binsIndex[f][bin])) {
-          count += base[f][bin];
-          inside += base[f][bin];
-          cardinality = 1;
+        if (firstIndex < secondIndex) {
+          return -1;
+        } else if (firstIndex > secondIndex) {
+          return 1;
         } else {
-          result += Math.log(count + 1);
-          realCardinality += cardinality;
-          count = 0;
-          cardinality = 0;
+          return Integer.compare(first.startBin(), second.startBin());
         }
       }
-      result += Math.log(count + 1);
-      realCardinality += cardinality;
+    });
+
+    List<CNF.Condition> conditions = new ArrayList<>(features.size());
+    for (int i = 0; i < features.size(); ++i) {
+      int j = i + 1;
+      BFGrid.BFRow row = features.get(i).getValue();
+      int findex = row.origFIndex;
+      while (j < features.size() && features.get(j).getValue().origFIndex == findex) {
+        ++j;
+      }
+      BitSet used = new BitSet(row.size() + 1);
+      for (int k = i; k < j; ++k) {
+        final int startBin = features.get(k).startBin();
+        final int end = features.get(k).endBin() + 1;
+        used.set(startBin, end);
+      }
+      conditions.add(new CNF.Condition(row, used));
     }
-    return 1.0 / (1 + cardinality) + result;// + Math.log(total - inside + 1);// +  Math.log(excluded+1);// / (1 + realCardinality);
+    return new CNF.Clause(grid, conditions.toArray(new CNF.Condition[conditions.size()]));
+  }
+}
+
+
+class CherrySubset {
+  private final BinarizedDataSet bds;
+  private final Factory<AdditiveStatistics> factory;
+  private int[] points;
+  private Aggregate outsideAggregate;
+  private AdditiveStatistics inside;
+  private TIntArrayList pointsInside = new TIntArrayList();
+
+  public CherrySubset(BinarizedDataSet bds, Factory<AdditiveStatistics> factory, int[] points) {
+    this.bds = bds;
+    this.factory = factory;
+    this.points = points;
+    this.inside = factory.create();
+    this.outsideAggregate = new Aggregate(bds, factory, points);
+  }
+
+  public AdditiveStatistics add(BFGrid.BFRow row, int startBin, int endBin) {
+    final TIntArrayList outsidePoints = new TIntArrayList(points.length);
+    int insideStart = pointsInside.size();
+    final byte[] bins = bds.bins(row.origFIndex);
+    AdditiveStatistics added = factory.create();
+    for (final int i : points) {
+      final int bin = bins[i];
+      if (startBin <= bin && bin <= endBin) {
+        added.append(i, 1);
+        pointsInside.add(i);
+      } else {
+        outsidePoints.add(i);
+      }
+    }
+
+    points = outsidePoints.toArray();
+    if (pointsInside.size() - insideStart < points.length) {
+      int[] in = new int[pointsInside.size() - insideStart];
+      for (int i = insideStart; i < pointsInside.size(); ++i) {
+        in[i - insideStart] = pointsInside.get(i);
+      }
+      final Aggregate removed = new Aggregate(bds, factory, in);
+      outsideAggregate.remove(removed);
+    } else {
+      outsideAggregate = new Aggregate(bds, factory, points);
+    }
+    inside.append(added);
+    return added;
+  }
+
+  public void visitAll(final Aggregate.IntervalVisitor<? extends AdditiveStatistics> visitor) {
+    outsideAggregate.visit(visitor);
+  }
+
+  public AdditiveStatistics total() {
+    return outsideAggregate.total();
+  }
+
+  public AdditiveStatistics inside() {
+    AdditiveStatistics stat = factory.create().append(inside);
+    return stat;
+  }
+
+  public int[] pointsInside() {
+    return pointsInside.toArray();
   }
 }

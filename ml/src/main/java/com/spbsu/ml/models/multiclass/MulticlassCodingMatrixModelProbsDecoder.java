@@ -1,4 +1,4 @@
-package com.spbsu.ml.models;
+package com.spbsu.ml.models.multiclass;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;

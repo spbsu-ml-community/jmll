@@ -1,15 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import org.jetbrains.annotations.Nullable;
-
-import java.io.*;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.zip.GZIPInputStream;
-
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -34,8 +24,8 @@ import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
-import com.spbsu.commons.seq.CharBufferSeq;
 import com.spbsu.commons.seq.CharSeqTools;
+import com.spbsu.commons.seq.ReaderChopper;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.commons.util.ArrayTools;
@@ -63,8 +53,18 @@ import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
+import com.spbsu.ml.models.multilabel.MultiLabelBinarizedModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.zip.GZIPInputStream;
 
 /**
  * User: solar
@@ -205,6 +205,8 @@ public class DataTools {
       }
     } else if (result instanceof MultiClassModel) {
       return grid(((MultiClassModel) result).getInternModel());
+    } else if (result instanceof MultiLabelBinarizedModel) {
+      return grid(((MultiLabelBinarizedModel) result).getInternModel());
     } else if (result instanceof ObliviousTree) {
       return ((ObliviousTree)result).grid();
     } else if (result instanceof ObliviousMultiClassTree) {
@@ -264,9 +266,6 @@ public class DataTools {
 
   public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
       new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
-
-  public static final SerializationRepository<CharBufferSeq> BUFFER_SERIALIZATION = new SerializationRepository<>(
-      new TypeConvertersCollection("com.spbsu.commons.math.cbio"), CharBufferSeq.class);
 
   public static int[][] splitAtRandom(final int size, final FastRandom rng, final double... v) {
     final Vec weights = new ArrayVec(v);
@@ -378,49 +377,46 @@ public class DataTools {
   public static Pool<? extends DSItem> readPoolFrom(final Reader input) throws IOException {
     try {
       final PoolBuilder builder = new PoolBuilder();
-      CharSeqTools.processAndSplitLinesNIO(input, new Processor<CharBufferSeq[]>() {
-            @Override
-            public void process(final CharBufferSeq[] parts) {
-              try {
-                final JsonParser parser = JSONTools.parseJSON(parts[1]);
-                switch (parts[0].toString()) {
-                  case "items": {
-                    final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
-                    builder.setMeta(meta);
+      final ReaderChopper chopper = new ReaderChopper(input);
+      CharSequence name;
+      while ((name = chopper.chop('\t')) != null) {
+        if (name.length() == 0)
+          continue;
+        final JsonParser parser = JSONTools.parseJSON(chopper.chop('\t'));
 
-                    final JsonParser parseItems = JSONTools.parseJSON(parts[2]);
-                    final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
-                    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                    final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
-                    final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
-                    for (int i = 0; i < myObjects.size(); i++) {
-                      builder.addItem(myObjects.get(i));
-                    }
-                    break;
-                  }
-                  case "feature": {
-                    final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
-                    final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
-                    builder.newFeature(fmeta, BUFFER_SERIALIZATION.read(
-                        parts[2],
-                        vecClass));
-                    break;
-                  }
-                  case "target": {
-                    final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
-                    final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
-                    builder.newTarget(fmeta, BUFFER_SERIALIZATION.read(
-                        parts[2],
-                        vecClass));
-                    break;
-                  }
-                }
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
+        switch (name.toString()) {
+          case "items": {
+            final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
+            builder.setMeta(meta);
+
+            final JsonParser parseItems = JSONTools.parseJSON(chopper.chop('\n'));
+            final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
+            final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
+            for (int i = 0; i < myObjects.size(); i++) {
+              builder.addItem(myObjects.get(i));
             }
-          },
-          "\t", 2);
+            break;
+          }
+          case "feature": {
+            final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
+            final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
+            builder.newFeature(fmeta, SERIALIZATION.read(
+                    chopper.chop('\n'),
+                    vecClass));
+            break;
+          }
+          case "target": {
+            final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
+            final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
+            builder.newTarget(fmeta, SERIALIZATION.read(
+                    chopper.chop('\n'),
+                    vecClass));
+            break;
+          }
+        }
+      }
       return builder.create();
     } catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
@@ -459,7 +455,7 @@ public class DataTools {
     return Pair.create(subSet, subTarget);
   }
 
-  public static String getPoolInfo(final Pool pool) {
+  public static String getPoolInfo(final Pool<?> pool) {
     final VecDataSet vecDataSet = pool.vecData();
 
     final StringBuilder builder = new StringBuilder()
@@ -471,7 +467,7 @@ public class DataTools {
       builder
           .append("\n")
           .append("feature #").append(i)
-          .append(": type = ").append(vecDataSet.fmeta(i).type());
+          .append(": type = ").append(pool.features[i].getFirst().type());
     }
     return builder.toString();
   }

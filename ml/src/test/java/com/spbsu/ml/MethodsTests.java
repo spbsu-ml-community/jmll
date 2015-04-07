@@ -2,6 +2,7 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
@@ -25,11 +26,14 @@ import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDIterativeRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
+import com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization.GreedyMergedRegion;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
+import sun.net.ProgressListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +41,8 @@ import java.util.Random;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 import static com.spbsu.commons.math.vectors.VecTools.copy;
+import static java.lang.Math.exp;
+import static java.lang.Math.log;
 
 /**
  * User: solar
@@ -166,7 +172,77 @@ public abstract class MethodsTests extends GridTest {
     assertTrue(VecTools.distance(fit.topology, original.topology) < accuracy * fit.topology.dim());
   }
 
+public void testElasticNetBenchmark() {
+    //
+      final int N = 20000;
+      final int TestN = 20000;
+      final int p = 2000;
+      Vec beta = new ArrayVec(p);
+      for (int i = 0; i < p; ++i) {
+        beta.set(i, rng.nextGaussian());
+      }
+      Mx learn = new VecBasedMx(N, p);
+      Mx test = new VecBasedMx(TestN, p);
+      for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < p; ++j) {
+          learn.set(i, j, rng.nextDouble());
+        }
+      }
+      for (int i = 0; i < TestN; ++i) {
+        for (int j = 0; j < p; ++j) {
+          test.set(i, j, rng.nextDouble());
+        }
+      }
+      Vec realTarget = MxTools.multiply(learn, beta);
+      Vec testTarget = MxTools.multiply(test, beta);
+      Vec target = copy(realTarget);
+      for (int i=0; i < target.dim();++i) {
+        target.adjust(i, rng.nextGaussian()*0.005);
+      }
+      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
 
+
+      final L2 loss = (L2) pool.target(L2.class);
+      long start_time = System.currentTimeMillis();
+
+
+      double lambda = 1;
+      Linear result;
+      final ElasticNetMethod.ElasticNetCache cache = new ElasticNetMethod.ElasticNetCache(pool.vecData().data(), loss.target,0.95, lambda);
+      final ElasticNetMethod net = new ElasticNetMethod(1e-7f, 0.95, 0);
+      while (lambda > 1e-9) {
+        cache.setLambda(lambda);
+        result = net.fit(cache);
+        System.out.println("Current lambda " + lambda);
+        System.out.println("Current Fit time " + (System.currentTimeMillis() - start_time));
+        System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
+        System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
+        System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
+        System.out.println("");
+        lambda *= 0.9;
+      }
+
+
+
+      System.out.println("Current lambda " + 0);
+      final ElasticNetMethod unregNet = new ElasticNetMethod(1e-7f, 0.95, 0);
+      result = (Linear) unregNet.fit(pool.vecData(), loss);
+      System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
+      System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
+      System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
+      System.out.println("");
+
+      {
+        System.out.println("Classic linear regression");
+        final Mx trLearn = MxTools.transpose(learn);
+        Vec classic = MxTools.multiply(MxTools.inverse(MxTools.multiply(trLearn, learn)), MxTools.multiply(trLearn,target));
+        System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, classic), realTarget)) / target.dim());
+        System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn,  classic), target)) / target.dim());
+        System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test,  classic), testTarget)) / testTarget.dim());
+      }
+//      System.out.println("Fit weights " + result.weights);
+//      System.out.println("Real weights " + beta);
+  }
 
   public void testElasticNet() {
     {
@@ -369,7 +445,7 @@ public abstract class MethodsTests extends GridTest {
     final Class<L2> targetClass = L2.class;
     final L2 target = learn.target(targetClass);
     final NormalizedLinear model = lars.fit(learn.vecData(), target);
-    System.out.println(validate.target(L2.class).value(model.transAll(((VecDataSet) validate).data())));
+    System.out.println(validate.target(L2.class).value(model.transAll((validate.vecData()).data())));
   }
 
 
@@ -411,7 +487,7 @@ public abstract class MethodsTests extends GridTest {
       System.out.print(" minimum = " + min);
       ++iterations;
       Vec applied = iterationResult.addedModel.transAll(test.data()).col(0);
-      VecTools.scale(applied,-1.0);
+      VecTools.scale(applied, -1.0);
       transformedTest.add(applied);
       if (iterations % 10 == 0) {
         Mx currentTest = new ColsVecArrayMx(transformedTest.toArray(new Vec[transformedTest.size()]));
@@ -504,7 +580,7 @@ public abstract class MethodsTests extends GridTest {
   public void testGTDRBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting
             (new BootstrapOptimization<>(
-                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.007);
+                    new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.007);
 //    final GradientBoosting<L2> boosting = new GradientBoosting
 //            (new RandomForest<>(
 //                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
@@ -587,8 +663,74 @@ public abstract class MethodsTests extends GridTest {
 
 
   public void testOTBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), 2000, 0.02);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), LOOL2.class, 2000, 0.02);
     new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
+  }
+
+  public void testClassifyBoost() {
+    final ProgressHandler pl = new ProgressHandler() {
+      final Vec cursor = new ArrayVec(learn.size());
+      double h_t = entropy(cursor);
+
+      private double entropy(Vec cursor) {
+        double result = 0;
+        for (int i = 0; i < learn.target(0).length(); i++) {
+          final double pX;
+          if ((Double)learn.target(0).at(i) > 0)
+            pX = 1./(1. + exp(-cursor.get(i)));
+          else
+            pX = 1./(1. + exp(cursor.get(i)));
+          result += - pX * log(pX) / log(2);
+        }
+        return result;
+      }
+
+      @Override
+      public void invoke(Trans partial) {
+        if (!(partial instanceof Ensemble))
+          throw new RuntimeException("Can not work with other than ensembles");
+        final Ensemble linear = (Ensemble) partial;
+        final Trans increment = linear.last();
+        Vec inc = copy(cursor);
+        for (int i = 0; i < learn.size(); i++) {
+          if (increment instanceof Ensemble) {
+            cursor.adjust(i, linear.wlast() * (increment.trans(learn.vecData().data().row(i)).get(0)));
+            inc.adjust(i, increment.trans(learn.vecData().data().row(i)).get(0));
+          } else {
+            cursor.adjust(i, linear.wlast() * ((Func) increment).value(learn.vecData().data().row(i)));
+            inc.adjust(i, ((Func) increment).value(learn.vecData().data().row(i)));
+          }
+        }
+        double h_t1 = entropy(inc);
+        System.out.println("Info score: " + ((h_t - h_t1) / info(increment)));
+        h_t = entropy(cursor);
+      }
+
+      private double info(Trans increment) {
+        if (increment instanceof ObliviousTree) {
+          double info = 0;
+          double total = 0;
+          final double[] based = ((ObliviousTree) increment).based();
+          for(int i = 0; i < based.length; i++) {
+            final double fold = based[i];
+            info += (fold + 1) * log(fold + 1);
+            total += fold;
+          }
+          info -= log(total + based.length);
+          info /= -(total + based.length);
+          return info;
+        }
+        return Double.POSITIVE_INFINITY;
+      }
+    };
+
+    Action<Trans> learnScore = new ScorePrinter("Learn", learn.vecData(), learn.target(LLLogit.class));
+    Action<Trans> testScore = new ScorePrinter("Test", validate.vecData(), validate.target(LLLogit.class));
+    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), LOOL2.class, 2000, 0.05);
+    boosting.addListener(pl);
+    boosting.addListener(learnScore);
+    boosting.addListener(testScore);
+    boosting.fit(learn.vecData(), learn.target(LLLogit.class));
   }
 
 
@@ -673,7 +815,7 @@ public abstract class MethodsTests extends GridTest {
 //          double totalDispersion = VecTools.multiply(residues, residues);
         double score = 0;
         for (final double key : values.keys()) {
-          final double regularizer = 1 - 2 * Math.log(2) / Math.log(values.get(key) + 1);
+          final double regularizer = 1 - 2 * log(2) / log(values.get(key) + 1);
           score += dispersionDiff.get(key) * regularizer;
         }
 //          score /= totalDispersion;

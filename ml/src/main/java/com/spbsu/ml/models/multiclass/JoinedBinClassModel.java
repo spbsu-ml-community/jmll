@@ -1,4 +1,4 @@
-package com.spbsu.ml.models;
+package com.spbsu.ml.models.multiclass;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
@@ -20,8 +20,17 @@ public class JoinedBinClassModel extends MCModel.Stub {
     internalModel = new FuncJoin(dirs);
   }
 
+  public JoinedBinClassModel(final FuncJoin internalModel) {
+    this.internalModel = internalModel;
+  }
+
   public FuncJoin getInternModel() {
     return internalModel;
+  }
+
+  @Override
+  public int countClasses() {
+    return internalModel.ydim();
   }
 
   @Override
@@ -29,7 +38,7 @@ public class JoinedBinClassModel extends MCModel.Stub {
     final Vec apply = internalModel.trans(x);
     final Vec probs = new ArrayVec(apply.dim());
     for (int i = 0; i < apply.dim(); i++) {
-      probs.set(i, MathTools.sigmoid(apply.get(i), 0.65));
+      probs.set(i, MathTools.sigmoid(apply.get(i)));
     }
     return probs;
   }
@@ -43,5 +52,22 @@ public class JoinedBinClassModel extends MCModel.Stub {
   @Override
   public int dim() {
     return internalModel.dirs[0].xdim();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    final JoinedBinClassModel that = (JoinedBinClassModel) o;
+
+    if (!internalModel.equals(that.internalModel)) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return internalModel.hashCode();
   }
 }

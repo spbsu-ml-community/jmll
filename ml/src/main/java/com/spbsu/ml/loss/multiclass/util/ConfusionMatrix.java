@@ -1,6 +1,8 @@
 package com.spbsu.ml.loss.multiclass.util;
 
 import com.spbsu.commons.seq.IntSeq;
+import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.util.table.TableBuilder;
 import com.spbsu.ml.data.tools.MCTools;
 
 /**
@@ -20,6 +22,7 @@ public class ConfusionMatrix {
     fn = new int[numClasses];
   }
 
+  //TODO[qdeee]: add validation for bad target(same values, missed class)
   public ConfusionMatrix(final IntSeq target, final IntSeq predicted) {
     this(MCTools.countClasses(target));
 
@@ -171,28 +174,41 @@ public class ConfusionMatrix {
     }
   }
 
+  public int getNumExamples() {
+    int count = 0;
+    for (int i = 0; i < counts.length; i++) {
+      count += ArrayTools.sum(counts[i]);
+    }
+    return count;
+  }
+
+  public int getNumExamples(final int clazz) {
+    return ArrayTools.sum(counts[clazz]);
+  }
+
   public int getNumClasses() {
     return counts.length;
   }
 
   public String toSummaryString() {
-    final String f = "%-20s\t%.6f\n";
-    return "=== Summary ===\n" +
-        String.format(f, "Micro precision: ", getMicroPrecision()) +
-        String.format(f, "Micro recall: ", getMicroRecall()) +
-        String.format(f, "Micro F1-measure: ", getMicroF1Measure()) +
-        String.format(f, "Macro precision: ", getMacroPrecision()) +
-        String.format(f, "Macro recall: ", getMacroRecall()) +
-        String.format(f, "Macro F1-measure: ", getMacroF1Measure());
+    final TableBuilder tableBuilder = new TableBuilder("Metric", "Value");
+    final String result = tableBuilder
+        .addRow("Micro precision: ",  getMicroPrecision())
+        .addRow("Micro recall: ",     getMicroRecall())
+        .addRow("Micro F1-measure: ", getMicroF1Measure())
+        .addRow("Macro precision: ",  getMacroPrecision())
+        .addRow("Macro recall: ",     getMacroRecall())
+        .addRow("Macro F1-measure: ", getMacroF1Measure())
+        .build();
+    return "=== Summary ===\n" + result;
   }
 
   public String toClassDetailsString() {
-    final StringBuilder sb = new StringBuilder("=== Detailed Accuracy By Class ===\n");
-    sb.append("class\tprecision\trecall\tf1-measure\n");
+    final TableBuilder tableBuilder = new TableBuilder("class", "precision", "recall", "f1-measure");
     for (int i = 0; i < counts.length; i++) {
-      sb.append(String.format("%-5d\t%-9.6f\t%-6.6f\t%-10.6f\n", i, getPrecision(i), getRecall(i), getF1Measure(i)));
+      tableBuilder.addRow(String.valueOf(i), getPrecision(i), getRecall(i), getF1Measure(i));
     }
-    return sb.toString();
+    return "=== Detailed Accuracy By Class ===\n" + tableBuilder.build();
   }
 
   public String oneLineReport() {

@@ -4,6 +4,7 @@ import com.spbsu.commons.func.Factory;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.factorization.OuterFactorization;
 import com.spbsu.ml.factorization.impl.ALS;
+import com.spbsu.ml.factorization.impl.ElasticNetFactorization;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
@@ -18,20 +19,24 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
 
   private VecOptimization weak;
   private String localName = "SatL2";
-  private int alsIters = 15;
-  private double alsLambda = 0.0;
+
   private String method = "als";
+  private int iters = 20;
+  private double lambda = 0.0;
+  private double alpha = 0.95;
+
+  private boolean printErr = false;
 
   public void setWeak(final VecOptimization weak) {
     this.weak = weak;
   }
 
   public void setIters(final int alsIters) {
-    this.alsIters = alsIters;
+    this.iters = alsIters;
   }
 
   public void setLambda(final double alsLambda) {
-    this.alsLambda = alsLambda;
+    this.lambda = alsLambda;
   }
 
   public void setLocal(final String localName) {
@@ -42,16 +47,27 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
     this.method = method;
   }
 
+  public void setOut(final boolean printErr) {
+    this.printErr = printErr;
+  }
+
   @Override
   public GradFacMulticlass create() {
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
     final OuterFactorization factorization;
-    if (method.equals("svd")) {
-      factorization = new SVDAdapterEjml();
-    } else {
-      factorization = new ALS(alsIters, alsLambda);
+    switch (method) {
+      case "als":
+        factorization = new ALS(iters, lambda);
+        break;
+      case "elasticnet":
+        factorization = new ElasticNetFactorization(iters, 1e-4, alpha, lambda);
+        break;
+      default:
+        factorization = new SVDAdapterEjml();
+        break;
     }
-    return new GradFacMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName));
+
+    return new GradFacMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);
   }}

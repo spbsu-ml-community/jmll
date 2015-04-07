@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.spoc;
+package com.spbsu.ml.methods.multiclass.spoc;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.ml.Func;
@@ -7,7 +7,7 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.MulticlassCodingMatrixModelProbsDecoder;
+import com.spbsu.ml.models.multiclass.MulticlassCodingMatrixModelProbsDecoder;
 
 /**
  * User: qdeee

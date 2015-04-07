@@ -25,16 +25,19 @@ import com.spbsu.ml.meta.impl.FakeTargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.spoc.SPOCMethodClassic;
-import com.spbsu.ml.methods.spoc.impl.CodingMatrixLearningGreedy;
+import com.spbsu.ml.methods.multiclass.spoc.SPOCMethodClassic;
+import com.spbsu.ml.methods.multiclass.spoc.impl.CodingMatrixLearningGreedy;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.MCModel;
+import com.spbsu.ml.models.multiclass.MCModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import org.apache.commons.cli.MissingArgumentException;
 
 import java.io.*;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.*;
 
 /**

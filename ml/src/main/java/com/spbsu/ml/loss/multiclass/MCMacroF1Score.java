@@ -3,14 +3,13 @@ package com.spbsu.ml.loss.multiclass;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: qdeee
  * Date: 09.04.14
  */
-public class MCMacroF1Score extends Func.Stub implements TargetFunc {
+public class MCMacroF1Score extends Func.Stub implements ClassicMulticlassLoss {
   private final MCMacroPrecision precision;
   private final MCMacroRecall recall;
 
@@ -39,5 +38,10 @@ public class MCMacroF1Score extends Func.Stub implements TargetFunc {
   @Override
   public DataSet<?> owner() {
     return precision.owner();
+  }
+
+  @Override
+  public IntSeq labels() {
+    return precision.labels();
   }
 }

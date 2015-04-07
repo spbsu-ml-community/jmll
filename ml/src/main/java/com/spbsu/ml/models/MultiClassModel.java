@@ -5,6 +5,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.func.FuncJoin;
+import com.spbsu.ml.models.multiclass.MCModel;
 
 /**
  * User: solar
@@ -24,6 +25,11 @@ public class MultiClassModel extends MCModel.Stub {
 
   public FuncJoin getInternModel() {
     return model;
+  }
+
+  @Override
+  public int countClasses() {
+    return model.ydim() + 1;
   }
 
   @Override

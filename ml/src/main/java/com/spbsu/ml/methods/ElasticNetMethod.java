@@ -18,7 +18,6 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
  * Pathwise coordinate descent (for more details see articles by Friedman, Hastie, Tibshirani)
  */
 
-
 public class ElasticNetMethod extends VecOptimization.Stub<L2> {
   private final double tolerance;
   private double alpha;
@@ -70,11 +69,11 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
   public static class ElasticNetCache {
     private final Mx data;
     private final Vec target;
-
-    private final boolean[][] isFeaturesProductCached;
+    private final double equalsTolerance = 1e-15;
+    private final boolean[] isFeaturesProductCached;
     private final boolean[] isTargetCached;
     private final double[] gradient;
-    private final double[][] featureProducts;
+    private final double[] featureProducts;
     private final double[] targetProducts;
     private final Vec betas;
     private int dim;
@@ -88,15 +87,11 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       this.target = target;
       this.betas = init;
       this.dim = 0;
-      isFeaturesProductCached = new boolean[betas.dim()][];
+      isFeaturesProductCached = new boolean[betas.dim()*betas.dim()];
       isTargetCached = new boolean[betas.dim()];
-      featureProducts = new double[betas.dim()][];
+      featureProducts = new double[betas.dim() * betas.dim()];
       targetProducts = new double[betas.dim()];
       gradient = new double[betas.dim()];
-      for (int i = 0; i < betas.dim(); ++i) {
-        featureProducts[i] = new double[i + 1];
-        isFeaturesProductCached[i] = new boolean[i + 1];
-      }
       this.updateDim(dim);
     }
 
@@ -128,11 +123,11 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
         double res = targetProduct(i);
         for (int j = 0; j < i; ++j) {
           final double beta = betas.get(j);
-          res -= beta != 0 ? beta * featureProduct(i, j) : 0;
+          res -= beta != 0 ? beta * featureProduct(j,i) : 0;
         }
         for (int j = i + 1; j < dim; ++j) {
           final double beta = betas.get(j);
-          res -= beta != 0 ? beta * featureProduct(i, j) : 0;
+          res -= beta !=0 ? beta * featureProduct(i, j) : 0;
         }
         gradient[i] = res;
       }
@@ -148,20 +143,84 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       return gradient[k];
     }
 
+
+
+    private double dot(Mx data, int i, int j) {
+      final int rows = data.rows();
+      final int length = 4*(rows / 4);
+      double result = 0;
+      final double[] cache = new double[4];
+      for (int k=0; k < length; k+=4) {
+        final double l1 = data.get(k,i);
+        final double l2 = data.get(k+1,i);
+        final double l3 = data.get(k+2,i);
+        final double l4 = data.get(k+3,i);
+
+        final double r1 = data.get(k,j);
+        final double r2 = data.get(k+1,j);
+        final double r3 = data.get(k+2,j);
+        final double r4 = data.get(k+3,j);
+
+        cache[0] = l1 * r1;
+        cache[1] = l2 * r2;
+        cache[2] = l3 * r3;
+        cache[3] = l4 * r4;
+        cache[0] += cache[2];
+        cache[1] += cache[3];
+        cache[0] += cache[1];
+        result += cache[0];
+      }
+      for (int k=length; k < rows;++k) {
+        result += data.get(k,i) * data.get(k,j);
+      }
+      return result;
+    }
+
+    private double targetDot(Mx data, int i, Vec target) {
+      final int rows = data.rows();
+      final int length = 4*(rows / 4);
+      double result = 0;
+      final double[] cache = new double[4];
+      for (int k=0; k < length; k+=4) {
+        final double l1 = data.get(k,i);
+        final double l2 = data.get(k+1,i);
+        final double l3 = data.get(k+2,i);
+        final double l4 = data.get(k+3,i);
+
+        final double r1 = target.get(k);
+        final double r2 = target.get(k+1);
+        final double r3 = target.get(k+2);
+        final double r4 = target.get(k+3);
+
+        cache[0] = l1 * r1;
+        cache[1] = l2 * r2;
+        cache[2] = l3 * r3;
+        cache[3] = l4 * r4;
+        cache[0] += cache[2];
+        cache[1] += cache[3];
+        cache[0] += cache[1];
+        result += cache[0];
+      }
+      for (int k=length; k < rows;++k) {
+        result += data.get(k,i) * target.get(k);
+      }
+      return result;
+    }
+
     private double featureProduct(int i, int j) {
-      if (i < j) {
+      if (i > j) {
         return featureProduct(j, i);
       }
-      if (!isFeaturesProductCached[i][j]) {
-        featureProducts[i][j] = VecTools.multiply(data.col(i), data.col(j));
-        isFeaturesProductCached[i][j] = true;
+      if (!isFeaturesProductCached[i*betas.dim() + j]) {
+        featureProducts[i*betas.dim() + j] = dot(data, i, j);
+        isFeaturesProductCached[i*betas.dim() + j] = true;
       }
-      return featureProducts[i][j];
+      return featureProducts[i*betas.dim() + j];
     }
 
     private double targetProduct(int k) {
       if (!isTargetCached[k]) {
-        targetProducts[k] = VecTools.multiply(target, data.col(k));
+        targetProducts[k] = targetDot(data, k, target);
         isTargetCached[k] = true;
       }
       return targetProducts[k];
@@ -180,20 +239,56 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       double newBeta = gradient(k);
       newBeta = softThreshold(newBeta, N * lambda * alpha);
       newBeta /= (featureProduct(k, k) + N * lambda * (1 - alpha));
-      if (Math.abs(newBeta - betas.get(k)) > 1e-9f) {
+      if (Math.abs(newBeta - betas.get(k)) > equalsTolerance) {
         update(k, newBeta);
         return true;
       }
       return false;
     }
 
-    private void update(int k, double newBeta) {
+    private void update(final int k,final double newBeta) {
       final double beta = betas.get(k);
-      for (int i = 0; i < k; ++i) {
-        gradient[i] -= (newBeta - beta) * featureProduct(k, i);
+      final double diff = newBeta - beta;
+      {
+        final int length = 4 * (k / 4);
+        final double[] gradientLocal = gradient;
+        for (int i = 0; i < length; i += 4) {
+          final int ind = i;
+          final int localK = k;
+          final double dot1 = diff * featureProduct(ind,localK);
+          final double dot2 = diff * featureProduct(ind + 1,localK);
+          final double dot3 = diff * featureProduct(ind + 2,localK);
+          final double dot4 = diff * featureProduct(ind + 3,localK);
+          gradientLocal[ind] -= dot1;
+          gradientLocal[ind + 1] -= dot2;
+          gradientLocal[ind + 2] -= dot3;
+          gradientLocal[ind + 3] -= dot4;
+        }
+        for (int i = length; i < k; ++i) {
+          gradientLocal[i] -= diff * featureProduct(i,k);
+        }
       }
-      for (int i = k + 1; i < dim; ++i) {
-        gradient[i] -= (newBeta - beta) * featureProduct(k, i);
+
+      {
+        final int offset = k +1;
+        final int size = dim - offset;
+        final int end = 4 * (size / 4) + offset;
+        final double[] gradientLocal = gradient;
+        for (int i = offset; i < end; i += 4) {
+          final int ind = i;
+          final int localK = k;
+          final double dot1 = diff * featureProduct(localK, ind);
+          final double dot2 = diff * featureProduct(localK, ind + 1);
+          final double dot3 = diff * featureProduct(localK, ind + 2);
+          final double dot4 = diff * featureProduct(localK, ind + 3);
+          gradientLocal[ind] -= dot1;
+          gradientLocal[ind + 1] -= dot2;
+          gradientLocal[ind + 2] -= dot3;
+          gradientLocal[ind + 3] -= dot4;
+        }
+        for (int i = end; i < dim; ++i) {
+          gradientLocal[i] -= diff * featureProduct(k,i);
+        }
       }
       betas.set(k, newBeta);
     }
@@ -207,5 +302,4 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       return sgn * Math.max(sgn * z - j, 0);
     }
   }
-
 }

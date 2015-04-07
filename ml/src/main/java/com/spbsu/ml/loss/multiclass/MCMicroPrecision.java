@@ -4,14 +4,13 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 
 /**
  * User: qdeee
  * Date: 09.04.14
  */
-public class MCMicroPrecision extends Func.Stub implements TargetFunc {
+public class MCMicroPrecision extends Func.Stub implements ClassicMulticlassLoss {
   protected final IntSeq target;
   private final DataSet<?> owner;
 
@@ -58,5 +57,10 @@ public class MCMicroPrecision extends Func.Stub implements TargetFunc {
   @Override
   public DataSet<?> owner() {
     return owner;
+  }
+
+  @Override
+  public IntSeq labels() {
+    return target;
   }
 }
