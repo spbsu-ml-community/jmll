@@ -93,7 +93,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     public volatile double sum2;
     public volatile double weight;
 
-    protected final Vec targets;
+    private final Vec targets;
 
     public MSEStats(final Vec target) {
       this.targets = target;

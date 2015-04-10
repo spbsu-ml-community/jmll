@@ -76,8 +76,8 @@ public class CherryStochasticSubset implements CherryPointsHolder {
     return stat;
   }
 
-  final double alpha = 0.01;
-  final double beta = 0.5;
+  final double alpha = 0.25;
+  final double beta = alpha * 10;
 
   private double leftProb(double rk, double border) {
     return Math.exp(Math.min(alpha * (rk - border) - beta, 0));

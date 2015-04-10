@@ -6,7 +6,6 @@ import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.stats.OrderByFeature;
 
-import java.util.stream.IntStream;
 
 /**
  * Created by noxoomo on 02/04/15.
@@ -21,29 +20,9 @@ public class RankedDataSet {
     byFeature = base.cache().cache(OrderByFeature.class, DataSet.class);
     final Mx data = ((VecDataSet) base).data();
     this.ranks = new float[data.columns()][data.rows()];
-    IntStream.range(0, ranks.length).parallel().forEach(feature -> {
+    for (int feature=0; feature < ranks.length;++feature) {
       int[] order = byFeature.orderBy(feature).direct();
-      ranks[feature] = rank(data,feature,order);
-    });
-  }
-
-  private void testRanks(Vec values, float[] rank) {
-    for (int i=0; i < values.dim();++i) {
-      double val = values.get(i);
-      double less = 0;
-      double equals = 0;
-      for (int j=0; j < values.dim();++j) {
-        if (Math.abs(values.get(j) - val) < 1e-9f)
-          equals ++;
-        else if (values.get(j) < val)
-          less++;
-      }
-      if (rank[i] > values.dim()) {
-        System.out.println("bug");
-      }
-      if ((less + 0.5*(equals)) != rank[i]) {
-        System.out.println("bug");
-      }
+      ranks[feature] = rank(data, feature, order);
     }
   }
 

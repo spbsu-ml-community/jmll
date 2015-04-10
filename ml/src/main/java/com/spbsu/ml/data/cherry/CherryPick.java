@@ -1,12 +1,11 @@
 package com.spbsu.ml.data.cherry;
 
+import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.models.CNF;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class CherryPick {
   public CNF.Clause fit(final CherryLoss loss) {
@@ -19,10 +18,13 @@ public class CherryPick {
       for (int i = 0; i < bestHolders.length; ++i) {
         bestHolders[i] = new CherryBestHolder();
       }
-      subset.visitAll((feature, start, end, added, out) -> {
-        if (!feature.empty()) {
-          final double score = loss.score(feature, start, end, added, out);
-          bestHolders[feature.origFIndex].update(feature, score, start, end);
+      subset.visitAll(new Aggregate.IntervalVisitor<AdditiveStatistics>() {
+        @Override
+        public void accept(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out) {
+          if (!feature.empty()) {
+            final double score = loss.score(feature, start, end, added, out);
+            bestHolders[feature.origFIndex].update(feature, score, start, end);
+          }
         }
       });
       CherryBestHolder bestHolder = bestHolders[0];
@@ -42,18 +44,21 @@ public class CherryPick {
   }
 
   private CNF.Clause createClause(List<CherryBestHolder> features) {
-    Collections.sort(features, (first, second) -> {
-      int firstIndex = first.getValue().origFIndex;
-      int secondIndex = second.getValue().origFIndex;
+    Collections.sort(features, new Comparator<CherryBestHolder>() {
+              @Override
+              public int compare(CherryBestHolder first, CherryBestHolder second) {
+                int firstIndex = first.getValue().origFIndex;
+                int secondIndex = second.getValue().origFIndex;
 
-      if (firstIndex < secondIndex) {
-        return -1;
-      } else if (firstIndex > secondIndex) {
-        return 1;
-      } else {
-        return Integer.compare(first.startBin(), second.startBin());
-      }
-    });
+                if (firstIndex < secondIndex) {
+                  return -1;
+                } else if (firstIndex > secondIndex) {
+                  return 1;
+                } else {
+                  return Integer.compare(first.startBin(), second.startBin());
+                }
+              }
+            });
 
     List<CNF.Condition> conditions = new ArrayList<>(features.size());
     for (int i = 0; i < features.size(); ++i) {

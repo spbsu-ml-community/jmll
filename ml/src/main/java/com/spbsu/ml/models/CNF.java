@@ -18,7 +18,7 @@ import java.util.List;
  * Time: 5:35
  */
 public class CNF extends RegionBase {
-  public final Clause[] clauses;
+  private final Clause[] clauses;
 
   public CNF(final Clause[] conditions, final double inside, final BFGrid grid) {
     super(grid, inside, 0.);

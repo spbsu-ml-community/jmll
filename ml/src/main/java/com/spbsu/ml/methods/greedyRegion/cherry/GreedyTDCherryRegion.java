@@ -3,10 +3,12 @@ package com.spbsu.ml.methods.greedyRegion.cherry;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
+import com.spbsu.ml.RankIt;
 import com.spbsu.ml.data.cherry.CherryLoss;
 import com.spbsu.ml.data.cherry.CherryPick;
 import com.spbsu.ml.data.cherry.CherryStochasticSubset;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
+import com.spbsu.ml.data.impl.RankedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
@@ -44,7 +46,8 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
     CherryLoss localLoss;
     {
 //      localLoss = new OutLoss<>(new CherrySubset(bds,loss.statsFactory(),points), loss);
-      localLoss = new OutLoss<>(new CherryStochasticSubset(bds.rds,bds,loss.statsFactory(),points), loss);
+      RankedDataSet rds = learn.cache().cache(RankIt.class,VecDataSet.class).value();
+      localLoss = new OutLoss<>(new CherryStochasticSubset(rds,bds,loss.statsFactory(),points), loss);
     }
 
     double bestIncInside = 0;
