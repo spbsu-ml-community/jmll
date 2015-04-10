@@ -54,7 +54,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <java.version>1.7</java.version>
-    <javac.version>1.7</javac.version>
   </properties>
 
   <build>
