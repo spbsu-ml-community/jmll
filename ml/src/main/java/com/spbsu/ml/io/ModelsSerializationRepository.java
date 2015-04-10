@@ -23,6 +23,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
           new RegionConversionPack(),
           new ObliviousMultiClassTreeConversionPack(),
           new EnsembleModelConversionPack(),
+          new FuncEnsembleConversionPack(),
           new TransJoinConversionPack(),
           new FuncJoinConversionPack(),
           new FMModelConversionPack(),
