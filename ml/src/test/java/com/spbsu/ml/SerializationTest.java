@@ -6,7 +6,6 @@ import com.spbsu.ml.dynamicGrid.impl.BFDynamicGrid;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.models.FMModel;
@@ -106,29 +105,19 @@ public class SerializationTest extends GridTest {
     assertEquals(sum, serialization.read(serialization.write(sum), Ensemble.class));
   }
 
-  public void testFuncEnsemble() throws Exception {
-    final double v = 100500.;
-    final FMModel func = new FMModel(new VecBasedMx(1, new ArrayVec(v)));
-    final FuncEnsemble<FMModel> funcEnsemble = new FuncEnsemble<>(new FMModel[]{func}, new ArrayVec(0.5));
-
-    final ModelsSerializationRepository repository = new ModelsSerializationRepository();
-    final FuncEnsemble readModel = repository.read(repository.write(funcEnsemble), FuncEnsemble.class);
-    assertEquals(funcEnsemble, readModel);
-  }
-
   public void testFMModel() {
     final FMModel model = new FMModel(
-        new VecBasedMx(
-            3,
+            new VecBasedMx(
+                    3,
+                    new ArrayVec(
+                            1, 2, 4,
+                            0, -2.1, 3
+                    )
+            ),
             new ArrayVec(
-                1, 2, 4,
-                0, -2.1, 3
-            )
-        ),
-        new ArrayVec(
-            0.1, 0.2, 0.3
-        ),
-        0.5
+                    0.1, 0.2, 0.3
+            ),
+            0.5
     );
     final ModelsSerializationRepository serialization = new ModelsSerializationRepository();
     assertEquals(model, serialization.read(serialization.write(model), FMModel.class));
@@ -148,8 +137,7 @@ public class SerializationTest extends GridTest {
     final FMModel func = new FMModel(new VecBasedMx(1, new ArrayVec(v)));
     final MultiLabelBinarizedModel binarizedModel = new MultiLabelBinarizedModel(new FuncJoin(new Func[]{func}));
     final ModelsSerializationRepository repository = new ModelsSerializationRepository();
-    final CharSequence write = repository.write(binarizedModel);
-    final MultiLabelBinarizedModel readModel = repository.read(write, MultiLabelBinarizedModel.class);
+    final MultiLabelBinarizedModel readModel = repository.read(repository.write(binarizedModel), MultiLabelBinarizedModel.class);
     assertEquals(binarizedModel, readModel);
   }
 }
