@@ -9,31 +9,30 @@ import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.multilabel.ClassicMultiLabelLoss;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.multiclass.MultiClassOneVsRest;
-import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
-import com.spbsu.ml.models.multilabel.ThresholdMultiLabelModel;
+import com.spbsu.ml.models.multilabel.MultiLabelBinarizedModel;
 
 /**
  * User: qdeee
  * Date: 22.03.15
  */
 public class MultiLabelOneVsRest implements VecOptimization<ClassicMultiLabelLoss> {
-  private final VecOptimization<LLLogit> weak;
+  private final VecOptimization<LLLogit> strong;
 
-  public MultiLabelOneVsRest(final VecOptimization<LLLogit> weak) {
-    this.weak = weak;
+  public MultiLabelOneVsRest(final VecOptimization<LLLogit> strong) {
+    this.strong = strong;
   }
 
   @Override
-  public ThresholdMultiLabelModel fit(final VecDataSet learn, final ClassicMultiLabelLoss multiLabelLoss) {
+  public MultiLabelBinarizedModel fit(final VecDataSet learn, final ClassicMultiLabelLoss multiLabelLoss) {
     final Mx targets = multiLabelLoss.getTargets();
     final Func[] result = new Func[targets.columns()];
     for (int j = 0; j < targets.columns(); j++) {
       System.out.println("Start training for column #" + j);
       final Vec target = targets.col(j);
       final LLLogit llLogit = new LLLogit(target, learn);
-      final Trans model = weak.fit(learn, llLogit);
+      final Trans model = strong.fit(learn, llLogit);
       result[j] = MultiClassOneVsRest.extractFunc(model);
     }
-    return new ThresholdMultiLabelModel(new JoinedBinClassModel(result), 0.5);
+    return new MultiLabelBinarizedModel(result);
   }
 }

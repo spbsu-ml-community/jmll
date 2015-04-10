@@ -8,11 +8,11 @@ import com.spbsu.ml.models.multiclass.MCModel;
  * User: qdeee
  * Date: 22.03.15
  */
-public class ThresholdMultiLabelModel extends MultiLabelModel.Stub {
+public class ThresholdProbsMultiLabelModel extends MultiLabelModel.Stub {
   private final MCModel intern;
   private final double threshold;
 
-  public ThresholdMultiLabelModel(final MCModel intern, final double threshold) {
+  public ThresholdProbsMultiLabelModel(final MCModel intern, final double threshold) {
     this.intern = intern;
     this.threshold = threshold;
   }

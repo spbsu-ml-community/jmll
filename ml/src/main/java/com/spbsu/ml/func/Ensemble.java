@@ -77,12 +77,8 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) return true;
+    if (!(o instanceof Ensemble)) return false;
 
     final Ensemble ensemble = (Ensemble) o;
 
@@ -90,7 +86,6 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
       return false;
     }
     return weights.equals(ensemble.weights);
-
   }
 
   @Override
