@@ -70,6 +70,7 @@ public class GridTools {
         borders.sort();
       }
       final TDoubleArrayList dborders = new TDoubleArrayList();
+      final TIntArrayList sizes = new TIntArrayList();
       { // drop existing
         final int[] crcs = new int[borders.size()];
         for (int i = 0; i < ds.length(); i++) { // unordered index
@@ -83,9 +84,10 @@ public class GridTools {
             continue;
           known.add(crcs[b]);
           dborders.add(feature[borders.get(b) - 1]);
+          sizes.add(borders.get(b));
         }
       }
-      rows[f] = new BFGrid.BFRow(bfCount, f, dborders.toArray());
+      rows[f] = new BFGrid.BFRow(bfCount, f, dborders.toArray(),sizes.toArray());
 
       bfCount += dborders.size();
     }

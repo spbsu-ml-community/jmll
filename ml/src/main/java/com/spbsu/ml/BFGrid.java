@@ -81,6 +81,9 @@ public class BFGrid {
     public final BinaryFeature[] bfs;
 
     public BFRow(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders) {
+      this(owner,bfStart,origFIndex,borders,new int[borders.length]);
+    }
+    public BFRow(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders, final int[] sizes) {
       this.owner = owner;
       this.bfStart = bfStart;
       this.bfEnd = bfStart + borders.length;
@@ -88,12 +91,16 @@ public class BFGrid {
       this.borders = borders;
       bfs = new BinaryFeature[borders.length];
       for (int i = 0; i < borders.length; i++) {
-        bfs[i] = new BinaryFeature(this, bfStart + i, origFIndex, i, borders[i]);
+        bfs[i] = new BinaryFeature(this, bfStart + i, origFIndex, i, borders[i],sizes[i]);
       }
     }
 
     public BFRow(final int bfStart, final int origFIndex, final double[] borders) {
       this(null, bfStart, origFIndex, borders);
+    }
+
+    public BFRow(final int bfStart, final int origFIndex, final double[] borders,final int[] sizes) {
+      this(null, bfStart, origFIndex, borders,sizes);
     }
 
     public int bin(final double val) {
@@ -156,14 +163,21 @@ public class BFGrid {
     public final int findex;
     public final int binNo;
     public final double condition;
+    public final double size;
 
     public BinaryFeature(final BFRow bfRow, final int bfIndex, final int findex, final int binNo, final double condition) {
+      this(bfRow, bfIndex, findex, binNo, condition, 0);
+    }
+
+    public BinaryFeature(final BFRow bfRow, final int bfIndex, final int findex, final int binNo, final double condition, int size) {
       this.bfRow = bfRow;
       this.bfIndex = bfIndex;
       this.findex = findex;
       this.binNo = binNo;
       this.condition = condition;
+      this.size = size;
     }
+
 
     public boolean value(final byte[] folds) {
       return folds[findex] > binNo;

@@ -1,6 +1,7 @@
 package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.BinOptimizedModel;
 import com.spbsu.ml.Func;
@@ -41,4 +42,14 @@ public abstract class RegionBase extends Func.Stub implements BinOptimizedModel 
   public abstract boolean contains(BinarizedDataSet bds, int pindex);
 
   public abstract boolean contains(Vec x);
+
+  public final Vec transAll(BinarizedDataSet bds) {
+    Vec result = new ArrayVec(bds.original().length());
+    for (int i=0; i < result.dim();++i)
+      result.set(i,value(bds,i));
+    return result;
+  }
+
+
 }
+

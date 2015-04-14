@@ -1,5 +1,8 @@
 package com.spbsu.ml.cli;
 
+import java.io.*;
+
+
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
@@ -31,12 +34,11 @@ import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMultiLabelLogit;
 import com.spbsu.ml.loss.multiclass.ClassicMulticlassLoss;
 import com.spbsu.ml.loss.multilabel.ClassicMultiLabelLoss;
+import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.multilabel.MultiLabelOneVsRest;
 import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
 import org.apache.commons.cli.*;
-
-import java.io.*;
 
 /**
  * User: qdeee
@@ -268,7 +270,7 @@ public class JMLLCLI {
     final DataBuilderClassic dataBuilder = new DataBuilderClassic();
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
-    final Pool pool = dataBuilder.create().getFirst();
+    final Pool<? extends DSItem> pool = dataBuilder.create().getFirst();
     final VecDataSet vecDataSet = pool.vecData();
 
     final ModelsSerializationRepository serializationRepository;
@@ -286,6 +288,8 @@ public class JMLLCLI {
 
       for (int i = 0; i < pool.size(); i++) {
         value.clear();
+        value.append(pool.data().at(i).id());
+        value.append('\t');
 //        value.append(MathTools.CONVERSION.convert(vecDataSet.parent().at(i), CharSequence.class));
 //        value.append('\t');
         value.append(MathTools.CONVERSION.convert(vecDataSet.at(i), CharSequence.class));

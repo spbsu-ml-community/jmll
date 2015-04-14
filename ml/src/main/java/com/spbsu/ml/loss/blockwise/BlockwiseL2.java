@@ -119,6 +119,16 @@ public class BlockwiseL2 extends BlockwiseFuncC1.Stub implements BlockwiseStatBa
       return this;
     }
 
+    @Override
+    public AdditiveStatistics append(int index, double weight) {
+      return append(index, (int)weight);
+    }
+
+    @Override
+    public AdditiveStatistics remove(int index, double weight) {
+      return remove(index,(int)weight);
+    }
+
 
     @Override
     public MSEStats append(final int index, final int times) {
