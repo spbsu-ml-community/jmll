@@ -1,11 +1,15 @@
 package com.spbsu.ml.cuda;
 
+import com.spbsu.commons.io.StreamTools;
 import org.junit.Test;
 
 import org.junit.Assert;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+
+import java.io.*;
+import java.util.Arrays;
 
 /**
  * jmll
@@ -110,5 +114,53 @@ public class JCublasHelperTest extends Assert {
 //  private double pow(final double x) {
 //    return Math.pow(x, 2);
 //  }
+
+
+//  @Test
+//  public void testName() throws Exception {
+//    final int[] array = new int[300000000];
+//    for (int r = 0; r < 1000000; r++) {
+//      long begin = System.nanoTime();
+//
+//      int max = Integer.MIN_VALUE;
+//      for (int i = 0; i < array.length; i++) {
+//        if (max < array[i]) {
+//          max = array[i];
+//        }
+//      }
+//
+//      for (int exp = 1; max / exp > 0; exp *= 10) {
+//        int[] output = new int[array.length];
+//        int[] counters = new int[10];
+//        for (int i = 0; i < array.length; i++) {
+//          counters[(array[i] / exp) % 10]++;
+//        }
+//        for (int i = 1; i < 10; i++) {
+//          counters[i] += counters[i - 1];
+//        }
+//        for (int i = array.length - 1; i > -1; i--) {
+//          output[--counters[(array[i] / exp) % 10]] = array[i];
+//        }
+//        System.arraycopy(output, 0, array, 0, array.length);
+//      }
+//
+//      System.out.println(System.nanoTime() - begin);
+//    }
+//  }
+//
+//  @Test
+//  public void testName2() throws Exception {
+//    final int[] array = new int[100000000];
+//    for (int r = 0; r < 1000000; r++) {
+//      long begin = System.nanoTime();
+//      Arrays.sort(array);
+//      System.out.println(System.nanoTime() - begin);
+//    }
+//  }
+
+  @Test
+  public void testName() throws Exception {
+    System.out.println(File.separator);
+  }
 
 }
