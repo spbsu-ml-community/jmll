@@ -10,6 +10,9 @@ import gnu.trove.list.array.TIntArrayList;
 
 import java.util.BitSet;
 
+import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.sum;
+import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.weight;
+
 /**
  * Created by noxoomo on 30/11/14.
  */
@@ -34,14 +37,13 @@ public class CherryOptimizationSubset {
       if (clause.contains(bds, points[i])) {
         stat.append(points[i], 1);
         inside.add(points[i]);
-      }
-      else outside.add(points[i]);
+      } else outside.add(points[i]);
     }
     this.all = points;
     this.bds = bds;
     this.clause = clause;
     isMinimumOutside = outside.size() < inside.size();
-    minimumIndices = isMinimumOutside ? outside.toArray() :inside.toArray();
+    minimumIndices = isMinimumOutside ? outside.toArray() : inside.toArray();
 //    this.cardinality = clause.cardinality();
     this.power = inside.size();
   }
@@ -109,7 +111,7 @@ public class CherryOptimizationSubset {
   }
 
   public int power() {
-    return (int)((L2.MSEStats) ((WeightedLoss.Stat) stat).inside).weight;
+    return (int) ((L2.MSEStats) ((WeightedLoss.Stat) stat).inside).weight;
   }
 
   @Override
@@ -118,14 +120,14 @@ public class CherryOptimizationSubset {
   }
 
   public boolean nextTo(final CherryOptimizationSubset current) {
-    if(clause.conditions.length != 1 || current.clause.conditions.length != 1)
+    if (clause.conditions.length != 1 || current.clause.conditions.length != 1)
       return false;
     if (clause.conditions[0].findex != current.clause.conditions[0].findex)
       return false;
     final BitSet mask = clause.conditions[0].used;
     final BitSet otherMask = current.clause.conditions[0].used;
-    for (int i = mask.nextSetBit(0); i >= 0; i = mask.nextSetBit(i+1)) {
-      if (i > 0 && otherMask.get(i+1) || i < otherMask.size() - 1 && otherMask.get(i + 1))
+    for (int i = mask.nextSetBit(0); i >= 0; i = mask.nextSetBit(i + 1)) {
+      if (i > 0 && otherMask.get(i + 1) || i < otherMask.size() - 1 && otherMask.get(i + 1))
         return true;
     }
     return false;
@@ -133,6 +135,7 @@ public class CherryOptimizationSubset {
 
   private static volatile int counter = 0;
   private final int index = counter++;
+
   public int index() {
     return index;
   }
@@ -145,11 +148,21 @@ public class CherryOptimizationSubset {
         if (value && isMinimumOutside)
           System.out.println();
         j++;
-      }
-      else {
+      } else {
         if (!value && isMinimumOutside)
           System.out.println();
       }
     }
   }
+
+  public void checkStat(Factory<AdditiveStatistics> factory) {
+    AdditiveStatistics inside = factory.create();
+    int[] pointsInside = inside();
+    for (int i : pointsInside)
+      inside.append(i, 1);
+    assert (Math.abs(sum(inside) - sum(stat)) < 1e-9);
+    assert (weight(inside) == weight(stat));
+  }
+
+
 }
