@@ -114,7 +114,6 @@ public class JCublasHelperTest extends Assert {
 //    return Math.pow(x, 2);
 //  }
 
-
   @Test
   public void testScale() throws Exception {
     final Vec a = new ArrayVec(1, 2, 3);
