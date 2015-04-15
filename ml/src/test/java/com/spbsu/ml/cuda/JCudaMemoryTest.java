@@ -1,5 +1,6 @@
 package com.spbsu.ml.cuda;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import jcuda.driver.CUdeviceptr;
@@ -13,6 +14,7 @@ import java.util.Random;
  * ksen
  * 08.April.2015 at 00:32
  */
+@Ignore
 public class JCudaMemoryTest extends Assert {
 
   private static final int LENGTH = 10_000;

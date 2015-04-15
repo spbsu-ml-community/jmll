@@ -1,5 +1,6 @@
-package com.spbsu.ml.cuda;
+package com.spbsu.ml.cuda.root;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.junit.Assert;
@@ -11,11 +12,12 @@ import java.util.Random;
  * ksen
  * 03.April.2015 at 08:12
  */
+@Ignore
 public class JCudaVectorInscaleTest extends Assert {
 
   private static final int LENGTH = 10;
 
-  private static final double EPS = 1e-9f;
+  private static final double EPS = 1e-6; // (CUDA version) > 6.0 -> EPS = 1e-9
 
   @Test
   public void testExp() throws Exception {

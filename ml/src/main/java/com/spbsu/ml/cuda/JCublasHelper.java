@@ -1,6 +1,7 @@
 package com.spbsu.ml.cuda;
 
 import org.jetbrains.annotations.NotNull;
+
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -56,8 +57,9 @@ public class JCublasHelper { //todo(ksen): row-major support
       final double alpha,
       final @NotNull Vec a
   ) {
-    dVscale(alpha, a.toArray());
-    return a;
+    final double[] ha = a.toArray();
+    dVscale(alpha, ha);
+    return new ArrayVec(ha);
   }
 
   public static Vec sum(

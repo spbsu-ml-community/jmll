@@ -1,21 +1,20 @@
 package com.spbsu.ml.cuda;
 
-import com.spbsu.commons.io.StreamTools;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.junit.Assert;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-
-import java.io.*;
-import java.util.Arrays;
+import com.spbsu.commons.math.vectors.VecTools;
 
 /**
  * jmll
  * ksen
  * 28.February.2015 at 22:59
  */
+@Ignore
 public class JCublasHelperTest extends Assert {
 
   private final static double DELTA = 1e-9;
@@ -116,51 +115,28 @@ public class JCublasHelperTest extends Assert {
 //  }
 
 
-//  @Test
-//  public void testName() throws Exception {
-//    final int[] array = new int[300000000];
-//    for (int r = 0; r < 1000000; r++) {
-//      long begin = System.nanoTime();
-//
-//      int max = Integer.MIN_VALUE;
-//      for (int i = 0; i < array.length; i++) {
-//        if (max < array[i]) {
-//          max = array[i];
-//        }
-//      }
-//
-//      for (int exp = 1; max / exp > 0; exp *= 10) {
-//        int[] output = new int[array.length];
-//        int[] counters = new int[10];
-//        for (int i = 0; i < array.length; i++) {
-//          counters[(array[i] / exp) % 10]++;
-//        }
-//        for (int i = 1; i < 10; i++) {
-//          counters[i] += counters[i - 1];
-//        }
-//        for (int i = array.length - 1; i > -1; i--) {
-//          output[--counters[(array[i] / exp) % 10]] = array[i];
-//        }
-//        System.arraycopy(output, 0, array, 0, array.length);
-//      }
-//
-//      System.out.println(System.nanoTime() - begin);
-//    }
-//  }
-//
-//  @Test
-//  public void testName2() throws Exception {
-//    final int[] array = new int[100000000];
-//    for (int r = 0; r < 1000000; r++) {
-//      long begin = System.nanoTime();
-//      Arrays.sort(array);
-//      System.out.println(System.nanoTime() - begin);
-//    }
-//  }
-
   @Test
-  public void testName() throws Exception {
-    System.out.println(File.separator);
+  public void testScale() throws Exception {
+    final Vec a = new ArrayVec(1, 2, 3);
+
+    final Vec b = JCublasHelper.scale(10, a);
+    VecTools.scale(a, 10);
+
+    assertTrue(a.equals(b));
+
+    final Vec c = new ArrayVec(1000000000000., 0, 0);
+
+    final Vec d = JCublasHelper.scale(-1, c);
+    VecTools.scale(c, -1);
+
+    assertTrue(c.equals(d));
+
+    final Vec e = new ArrayVec(-10, 20, 0, 0, 0.000000000000000001);
+
+    final Vec f = JCublasHelper.scale(-0.01111111222, e);
+    VecTools.scale(e, -0.01111111222);
+
+    assertTrue(e.equals(f));
   }
 
 }

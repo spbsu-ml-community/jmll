@@ -1,5 +1,7 @@
-package com.spbsu.ml.cuda;
+package com.spbsu.ml.cuda.root;
 
+import com.spbsu.ml.cuda.JCudaHelper;
+import com.spbsu.ml.cuda.JCudaMemory;
 import jcuda.Pointer;
 import jcuda.driver.*;
 
@@ -8,7 +10,7 @@ import jcuda.driver.*;
  * ksen
  * 25.October.2014 at 21:36
  */
-public class JCudaVectorInscale { //todo(ksen): handle exit code
+public class JCudaVectorInscale {
 
   static {
     JCudaHelper.hook();
