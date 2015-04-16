@@ -3,8 +3,6 @@ package com.spbsu.ml.cuda;
 import org.jetbrains.annotations.NotNull;
 
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.ColMajorArrayMx;
 import jcuda.Pointer;
 import jcuda.Sizeof;
@@ -22,77 +20,77 @@ public class JCublasHelper { //todo(ksen): row-major support
   }
 
   public static int max(
-      final @NotNull Vec a
+      final @NotNull ArrayVec a
   ) {
     return dMax(a.toArray());
   }
 
   public static int min(
-      final @NotNull Vec a
+      final @NotNull ArrayVec a
   ) {
     return dMin(a.toArray());
   }
 
   public static double dot(
-      final @NotNull Vec a,
-      final @NotNull Vec b
+      final @NotNull ArrayVec a,
+      final @NotNull ArrayVec b
   ) {
     return dDot(a.toArray(), b.toArray());
   }
 
   public static double manhattan(
-      final @NotNull Vec a
+      final @NotNull ArrayVec a
   ) {
     return dManhattan(a.toArray());
   }
 
   public static double euclidean(  //todo(ksenon): failed
-      final @NotNull Vec a
+      final @NotNull ArrayVec a
   ) {
     throw new UnsupportedOperationException();
 //    return dEuclidean(a.toArray());
   }
 
-  public static Vec scale(
+  public static ArrayVec scale(
       final double alpha,
-      final @NotNull Vec a
+      final @NotNull ArrayVec a
   ) {
     final double[] ha = a.toArray();
     dVscale(alpha, ha);
     return new ArrayVec(ha);
   }
 
-  public static Vec sum(
-      final @NotNull Vec a,
-      final @NotNull Vec b
+  public static ArrayVec sum(
+      final @NotNull ArrayVec a,
+      final @NotNull ArrayVec b
   ) {
     return new ArrayVec(dVVsum(1, a.toArray(), b.toArray()));
   }
 
-  public static Vec subtr(
-      final @NotNull Vec a,
-      final @NotNull Vec b
+  public static ArrayVec subtr(
+      final @NotNull ArrayVec a,
+      final @NotNull ArrayVec b
   ) {
     return new ArrayVec(dVVsum(-1, a.toArray(), b.toArray()));
   }
 
-  public static Vec mult(
-      final @NotNull Mx A,
-      final @NotNull Vec b
+  public static ArrayVec mult(
+      final @NotNull ColMajorArrayMx A,
+      final @NotNull ArrayVec b
   ) {
     return new ArrayVec(fMVmult(A.rows(), A.columns(), A.toArray(), false, b.toArray()));
   }
 
-  public static Vec mult(
-      final @NotNull Vec b,
-      final @NotNull Mx A
+  public static ArrayVec mult(
+      final @NotNull ArrayVec b,
+      final @NotNull ColMajorArrayMx A
   ) {
     return new ArrayVec(fMVmult(A.rows(), A.columns(), A.toArray(), true, b.toArray()));
   }
 
-  public static Mx mult(
-      final @NotNull Vec a,
-      final @NotNull Vec b
+  public static ColMajorArrayMx mult(
+      final @NotNull ArrayVec a,
+      final @NotNull ArrayVec b
   ) {
     return new ColMajorArrayMx(
         a.dim(),
@@ -100,39 +98,39 @@ public class JCublasHelper { //todo(ksen): row-major support
     );
   }
 
-  public static Mx sum(
-      final @NotNull Mx A,
-      final @NotNull Mx B
+  public static ColMajorArrayMx sum(
+      final @NotNull ColMajorArrayMx A,
+      final @NotNull ColMajorArrayMx B
   ) {
     return new ColMajorArrayMx(A.rows(), dVVsum(1, A.toArray(), B.toArray()));
   }
 
-  public static Mx subtr(
-      final @NotNull Mx A,
-      final @NotNull Mx B
+  public static ColMajorArrayMx subtr(
+      final @NotNull ColMajorArrayMx A,
+      final @NotNull ColMajorArrayMx B
   ) {
     return new ColMajorArrayMx(A.rows(), dVVsum(-1, B.toArray(), A.toArray()));
   }
 
-  public static Mx scale(
+  public static ColMajorArrayMx scale(
       final double alpha,
-      final @NotNull Mx A
+      final @NotNull ColMajorArrayMx A
   ) {
     dVscale(alpha, A.toArray());
     return A;
   }
 
-  public static Mx mult(
-      final @NotNull Mx A,
-      final @NotNull Mx B
+  public static ColMajorArrayMx mult(
+      final @NotNull ColMajorArrayMx A,
+      final @NotNull ColMajorArrayMx B
   ) {
     return mult(A, false, B, false);
   }
 
-  public static Mx mult(
-      final @NotNull Mx A,
+  public static ColMajorArrayMx mult(
+      final @NotNull ColMajorArrayMx A,
       final boolean transA,
-      final @NotNull Mx B,
+      final @NotNull ColMajorArrayMx B,
       final boolean transB
   ) {
     final int rowsA = A.rows();
