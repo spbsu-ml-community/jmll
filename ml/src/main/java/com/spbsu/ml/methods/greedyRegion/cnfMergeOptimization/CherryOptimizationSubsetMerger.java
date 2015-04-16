@@ -43,7 +43,7 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
         if (!last) {
           if (firstIndex < firstOutside.length && firstOutside[firstIndex] == next)
             mergedOutside.add(next);
-          else stat.remove(next, 1);
+          else stat.append(next, 1);
         }
       }
       return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
@@ -68,7 +68,6 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
           }
         }
       }
-
       return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
     }
     else if (!first.isMinimumOutside && second.isMinimumOutside) {
@@ -91,32 +90,27 @@ public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryO
           }
         }
       }
-
       return new CherryOptimizationSubset(first.bds, clause, mergedOutside.toArray(), true, first.all, stat, first.initialCardinality);
     }
     else if (!first.isMinimumOutside && !second.isMinimumOutside) {
       stat.append(first.stat);
-      final AdditiveStatistics inside = factory.create();
-      final int[] firstInside = first.minimumIndices;
-      final int[] secondInside = second.minimumIndices;
+      final int[] firstOutside = first.minimumIndices;
+      final int[] secondOutside = second.minimumIndices;
       final TIntArrayList mergedInside = new TIntArrayList(second.minimumIndices.length);
-      int secondIndex = 0;
-      for (int i = 0; i <= firstInside.length; i++) {
-        final boolean last = i == firstInside.length;
-        final int next = !last ? firstInside[i] : Integer.MAX_VALUE;
-        while (secondIndex < secondInside.length && secondInside[secondIndex] < next) {
-          mergedInside.add(secondInside[secondIndex]);
-          inside.append(secondInside[secondIndex], 1);
-          secondIndex++;
+      int firstIndex = 0;
+      for (int i = 0; i <= secondOutside.length; i++) {
+        final boolean last = i == secondOutside.length;
+        final int next = !last ? secondOutside[i] : Integer.MAX_VALUE;
+        while (firstIndex < firstOutside.length && firstOutside[firstIndex] < next) {
+          firstIndex++;
         }
         if (!last) {
-          inside.append(next, 1);
-          mergedInside.add(next);
-          if (secondIndex < secondInside.length && secondInside[secondIndex] == next)
-            secondIndex++;
+          if (firstIndex < firstOutside.length && firstOutside[firstIndex] == next)
+            mergedInside.add(next);
+          else stat.remove(next, 1);
         }
       }
-      return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, inside, first.initialCardinality);
+      return new CherryOptimizationSubset(first.bds, clause, mergedInside.toArray(), false, first.all, stat, first.initialCardinality);
     }
     throw new RuntimeException("Never happen");
   }
