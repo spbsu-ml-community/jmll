@@ -61,13 +61,15 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
 
       @Override
       public double regularization(CherryOptimizationSubset subset) {
-        return -log(subset.power() + 1);
+        final double cardinalityDiscount = CARDINALITY_FACTOR / (subset.cardinality() + CARDINALITY_FACTOR - 1);
+        final double regularization = (1 + lambda * log(subset.power() + 1));
+        return cardinalityDiscount * regularization;
       }
 
       @Override
       public double score(CherryOptimizationSubset subset) {
-        final double cardinalityDiscount = CARDINALITY_FACTOR / (subset.cardinality() + CARDINALITY_FACTOR - 1);
-        return loss.score(subset.stat) * (1 - lambda * regularization(subset)) * cardinalityDiscount;
+        final double score = loss.score(subset.stat);
+        return score * regularization(subset);
       }
     };
 

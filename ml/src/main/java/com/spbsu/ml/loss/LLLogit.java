@@ -55,7 +55,7 @@ public class LLLogit extends FuncC1.Stub implements TargetFunc {
         result += log(1 - pX);
     }
 
-    return exp(result / point.dim());
+    return result;
   }
 
   public int label(final int idx) {

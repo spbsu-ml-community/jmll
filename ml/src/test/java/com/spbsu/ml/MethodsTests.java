@@ -50,7 +50,7 @@ import static java.lang.Math.log;
  *
  * Time: 15:50
  */
-public abstract class MethodsTests extends GridTest {
+public class MethodsTests extends GridTest {
   private FastRandom rng;
 
   @Override
@@ -580,7 +580,7 @@ public void testElasticNetBenchmark() {
   public void testGTDRBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting
             (new BootstrapOptimization<>(
-                    new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.007);
+                    new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.07);
 //    final GradientBoosting<L2> boosting = new GradientBoosting
 //            (new RandomForest<>(
 //                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
@@ -669,7 +669,10 @@ public void testElasticNetBenchmark() {
 
   public void testClassifyBoost() {
     final ProgressHandler pl = new ProgressHandler() {
+      public static final int WSIZE = 10;
       final Vec cursor = new ArrayVec(learn.size());
+      final double[] window = new double[WSIZE];
+      int index = 0;
       double h_t = entropy(cursor);
 
       private double entropy(Vec cursor) {
@@ -702,7 +705,13 @@ public void testElasticNetBenchmark() {
           }
         }
         double h_t1 = entropy(inc);
-        System.out.println("Info score: " + ((h_t - h_t1) / info(increment)));
+        final double score = (h_t - h_t1) / info(increment);
+        window[index % window.length] = score;
+        index++;
+        double meanScore = 0;
+        for (int i = 0; i < window.length; i++)
+          meanScore += Math.max(0, window[i]/ window.length);
+        System.out.println("Info score: " + score + " window score: " + meanScore);
         h_t = entropy(cursor);
       }
 
@@ -724,12 +733,20 @@ public void testElasticNetBenchmark() {
       }
     };
 
-    Action<Trans> learnScore = new ScorePrinter("Learn", learn.vecData(), learn.target(LLLogit.class));
-    Action<Trans> testScore = new ScorePrinter("Test", validate.vecData(), validate.target(LLLogit.class));
+//    Action<Trans> learnScore = new ScorePrinter("Learn", learn.vecData(), learn.target(LLLogit.class));
+//    Action<Trans> testScore = new ScorePrinter("Test", validate.vecData(), validate.target(LLLogit.class));
+    Action<Trans> iteration = new Action<Trans>() {
+      int index = 0;
+      @Override
+      public void invoke(Trans trans) {
+        System.out.println(index++);
+      }
+    };
     final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), LOOL2.class, 2000, 0.05);
-    boosting.addListener(pl);
-    boosting.addListener(learnScore);
-    boosting.addListener(testScore);
+    boosting.addListener(iteration);
+//    boosting.addListener(pl);
+//    boosting.addListener(learnScore);
+//    boosting.addListener(testScore);
     boosting.fit(learn.vecData(), learn.target(LLLogit.class));
   }
 

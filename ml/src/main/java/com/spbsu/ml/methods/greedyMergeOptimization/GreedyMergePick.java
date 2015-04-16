@@ -54,7 +54,8 @@ public class GreedyMergePick<Model extends CherryOptimizationSubset> {
       iterator.remove();
     }
     final CountDownLatch latch = new CountDownLatch(models.size());
-    final double currentScore = loss.score(current);
+    final double currentTarget = loss.target(current);
+    final double currentReg = loss.regularization(current);
     final BestHolder<Model> bestHolder = new BestHolder<>();
 //    System.out.print(current.toString() + " score: " + pp.format(currentScore));
     for (final Model model : models) {
@@ -64,9 +65,11 @@ public class GreedyMergePick<Model extends CherryOptimizationSubset> {
           try {
             final Model merged = merger.merge(current, model);
             if (merged.power() > model.power() && merged.power() > current.power()) {
-              final double mergedScore = loss.score(merged);
-              final double modelScore = loss.score(model);
-              final double gain = merged.power() * ((modelScore + currentScore) / (model.power() + current.power())) - mergedScore;
+              final double mergedTarget = loss.target(merged);
+              final double mergedReg = loss.regularization(merged);
+              final double modelTarget = loss.target(model);
+              final double modelReg = loss.regularization(model);
+              final double gain = (merged.power() * ((modelTarget + currentTarget) / (model.power() + current.power())) - mergedTarget);
               bestHolder.update(merged, gain);
             }
           }
