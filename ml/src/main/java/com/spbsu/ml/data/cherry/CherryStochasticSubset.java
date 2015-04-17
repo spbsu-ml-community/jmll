@@ -6,6 +6,7 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.impl.RankedDataSet;
+import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
 
@@ -53,8 +54,8 @@ public class CherryStochasticSubset implements CherryPointsHolder {
     inside = factory.create();
     {
       for (int i = 0; i < weights.length; ++i) {
-        logInside[i] += Math.log(1 - Math.exp(currentLogOutside[i]));
-        weights[i] = Math.exp(logInside[i]);
+        logInside[i] += FastMath.log(1 - FastMath.exp(currentLogOutside[i]));
+        weights[i] = FastMath.exp(logInside[i]);
         currentLogOutside[i] = 0;
       }
     }
@@ -63,7 +64,7 @@ public class CherryStochasticSubset implements CherryPointsHolder {
 
   private void calcWeights() {
     for (int i = 0; i < weights.length; ++i) {
-      weights[i]  = 1-Math.exp(logInside[i]) * (1 - Math.exp(currentLogOutside[i]));
+      weights[i]  = 1-FastMath.exp(logInside[i]) * (1 - FastMath.exp(currentLogOutside[i]));
     }
   }
 
@@ -76,15 +77,15 @@ public class CherryStochasticSubset implements CherryPointsHolder {
     return stat;
   }
 
-  final double alpha = 0.25;
-  final double beta = alpha * 10;
+  final double alpha = 0.01;
+  final double beta =   10;
 
-  private double leftProb(double rk, double border) {
-    return Math.exp(Math.min(alpha * (rk - border) - beta, 0));
+  private double leftProb(double rk, double border)  {
+    return FastMath.exp(FastMath.min(alpha * (rk - border- beta) , 0));
   }
 
   private double rightProb(double rk, double border) {
-    return Math.exp(Math.min(alpha * (border - rk) - beta, 0));
+    return FastMath.exp(FastMath.min(alpha * (border - rk- beta) , 0));
   }
 
 
@@ -97,7 +98,7 @@ public class CherryStochasticSubset implements CherryPointsHolder {
       float rk = rank[points[i]];
       final double pLeft = leftProb(rk, leftRank);
       final double pRight = rightProb(rk, rightRank);
-      currentLogOutside[i] += Math.log(1 - pLeft * pRight);
+      currentLogOutside[i] += FastMath.log(1 - pLeft * pRight);
     }
   }
 
@@ -117,13 +118,11 @@ public class CherryStochasticSubset implements CherryPointsHolder {
   }
 
   public AdditiveStatistics inside() {
-    final AdditiveStatistics stat = factory.create().append(inside);
-    return stat;
+    return factory.create().append(inside);
   }
 
   public AdditiveStatistics outside() {
-    final AdditiveStatistics stat = outsideAggregate.total();
-    return stat;
+    return outsideAggregate.total();
   }
 
 
