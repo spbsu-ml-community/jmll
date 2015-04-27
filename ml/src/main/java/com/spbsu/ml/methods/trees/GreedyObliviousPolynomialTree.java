@@ -9,8 +9,9 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
-import com.spbsu.ml.methods.greedyRegion.GreedyPolynomialExponentRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
+import com.spbsu.ml.models.LinearOblivousTree;
+import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.PolynomialObliviousTree;
 
 import java.util.List;
@@ -42,13 +43,10 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
     }
 
     public int convertMultiIndex(int mask, int i, int j) {
-        if (i < j) {
-            int temp = i;
-            i = j;
-            j = temp;
-        }
+        if (i < j)
+          return convertMultiIndex(mask, j, i);
 
-        return mask * (depth + 1) * (depth + 2) / 2 + i * (i + 1) / 2 + j;
+        return mask * numberOfVariablesInRegion + i * (i + 1) / 2 + j;
     }
 
     private void addConditionToMatrix(final Mx mx, final int[] conditionIndexes, double[] conditionCoefficients) {
@@ -121,107 +119,65 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
     }
 
 
-    static public int getRegionOfPoint(final Vec point, final List<BFGrid.BinaryFeature> features) {
-        int index = 0;
-        for (BFGrid.BinaryFeature feature : features) {
-            index <<= 1;
-            if (feature.value(point)) {
-                index++;
-            }
-        }
-        return index;
-    }
-
-    private Vec calculateDiverativeVec(VecDataSet dataSet, WeightedLoss<L2> loss, List<BFGrid.BinaryFeature> features) {
+    private Vec calculateDiverativeVec(VecDataSet dataSet, WeightedLoss<L2> loss, BFGrid.BinaryFeature[] features) {
         Vec diverativeVec = new ArrayVec(numberOfVariables);
         for (int i = 0; i < loss.dim(); i++) {
             final double weight = loss.weight(i);
             final double target = loss.target().get(i);
-            if (weight == 0) {
-                continue;
-            }
-            final Vec point = dataSet.data().row(i);
-            final int index = getRegionOfPoint(point, features);
-            for (int x = 0; x <= depth; x++) {
-                for (int y = 0; y <= x; y++) {
-                    diverativeVec.adjust(convertMultiIndex(index, x, y), -2 * weight * target * point.get(x) * point.get(y));
+                final Vec point = dataSet.data().row(i);
+          int region = ObliviousTree.bin(features, point);
+          double[] factors = GreedyObliviousLinearTree.getSignificantFactors(point, features);
+          for (int x = 0; x <= depth; x++) {
+                    for (int y = 0; y <= x; y++) {
+                        diverativeVec.adjust(convertMultiIndex(region, x, y), -2 * weight * target * factors[x] * factors[y]);
+                    }
                 }
-            }
         }
         return diverativeVec;
     }
-
-    private Mx calculateLossDiverativeMatrix(
+   private Mx calculateLossDiverativeMatrix(
             final VecDataSet dataSet,
             final WeightedLoss<L2> loss,
-            final List<BFGrid.BinaryFeature> features
+            final BFGrid.BinaryFeature[] features
     ) {
-        double[][][] quadraticMissCoefficient = new double[1 << depth][numberOfVariablesInRegion][numberOfVariablesInRegion];
+        Mx diverativeMx = new VecBasedMx(numberOfVariables, numberOfVariables);
         for (int i = 0; i < dataSet.xdim(); i++) {
             final double weight = loss.weight(i);
-            if (weight == 0) {
-                continue;
-            }
             final Vec point = dataSet.data().row(i);
-            final int index = getRegionOfPoint(point, features);
-            for (int x = 0; x <= depth; x++) {
+            final int region = ObliviousTree.bin(features, point);
+          double[] factors = GreedyObliviousLinearTree.getSignificantFactors(point, features);
+          for (int x = 0; x <= depth; x++) {
                 for (int y = 0; y <= x; y++) {
                     for (int x1 = 0; x1 <= depth; x1++) {
                         for (int y1 = 0; y1 <= x1; y1++) {
-                            quadraticMissCoefficient[index][convertMultiIndex(0, x, y)][convertMultiIndex(0, x1, y1)] += weight * point.get(x) * point.get(y) * point.get(x1) * point.get(y1);
-                        }
-                    }
-                }
-            }
-        }
-
-        Mx diverativeMx = new VecBasedMx(numberOfVariables, numberOfVariables);
-        for (int index = 0; index < numberOfRegions; index++) {
-            for (int x = 0; x <= depth; x++) {
-                for (int y = 0; y <= depth; y++) {
-                    for (int x1 = 0; x1 <= depth; x1++) {
-                        for (int y1 = 0; y1 <= x1; y1++) {
-                            diverativeMx.set(
-                                    convertMultiIndex(index, x, y),
-                                    convertMultiIndex(index, x1, y1),
-                                    quadraticMissCoefficient[index][convertMultiIndex(0, x, y)][convertMultiIndex(0, x1, y1)]
+                            diverativeMx.adjust(
+                                convertMultiIndex(region, x, y),
+                                convertMultiIndex(region, x1, y1),
+                                weight * factors[x] * factors[y] * factors[x1] * factors[y1]
                             );
                         }
                     }
                 }
             }
         }
-        return diverativeMx;
+     return diverativeMx;
     }
 
     public PolynomialObliviousTree fit(VecDataSet ds, WeightedLoss<L2> loss) {
-        final List<BFGrid.BinaryFeature> features = got.fit(ds, loss).features();
-        if (features.size() != depth) {
-            System.out.println("Greedy oblivious tree bug");
-            System.exit(-1);
-        }
+        BFGrid.BinaryFeature features[] = (BFGrid.BinaryFeature[])got.fit(ds, loss).features().toArray();
         final Mx diverativeMatrix = calculateLossDiverativeMatrix(ds, loss, features);
         final Vec diverativeVec = calculateDiverativeVec(ds, loss, features);
+        GreedyObliviousLinearTree.addL2Regulation(diverativeMatrix, regulationCoefficient);
 
-        for (int i = 0; i < numberOfVariables; ++i) {
-            diverativeMatrix.adjust(i, i, regulationCoefficient);
-        }
-        final Mx continuousConditions = continuousConditions(features);
+        /*final Mx continuousConditions = continuousConditions(features);
         for (int i = 0; i < numberOfVariables; ++i) {
             for (int j = 0; j < numberOfVariables; ++j) {
                 diverativeMatrix.adjust(i, j, continuousConditions.get(i, j) * continuousFine);
             }
-        }
+        }*/
 
         final Vec answer = MxTools.solveSystemLq(diverativeMatrix, diverativeVec);
-        double out[][] = new double[1 << depth][(depth + 1) * (depth + 2) / 2];
-        for (int i = 0; i < 1 << depth; i++) {
-            for (int k = 0; k <= depth; k++) {
-                for (int j = 0; j <= k; j++) {
-                    out[i][k * (k + 1) / 2 + j] = -answer.get(convertMultiIndex(i, k, j));
-                }
-            }
-        }
-        return new PolynomialObliviousTree(features, out);
+
+        return new PolynomialObliviousTree(features, GreedyObliviousLinearTree.parseByRegions(answer, numberOfVariablesInRegion, numberOfRegions));
     }
 }

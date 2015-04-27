@@ -3,6 +3,7 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.methods.trees.GreedyObliviousLinearTree;
 
 import java.util.List;
 
@@ -16,9 +17,9 @@ import java.util.List;
 public class ExponentialObliviousTree extends PolynomialObliviousTree {
   private final double DistCoef;
 
-  public ExponentialObliviousTree(final List<BFGrid.BinaryFeature> features, final double[][] values, final double _distCoef) {
+  public ExponentialObliviousTree(final BFGrid.BinaryFeature[] features, final double[][] values, final double DistCoef) {
     super(features, values);
-    DistCoef = _distCoef;
+    this.DistCoef = DistCoef;
   }
 
   double sqr(final double x) {
@@ -36,26 +37,19 @@ public class ExponentialObliviousTree extends PolynomialObliviousTree {
   }
 
   @Override
-  public double value(final Vec _x) {
+  public double value(final Vec point) {
     double sum = 0;
 
-    final double[] x = new double[features.length + 1];
-    for (int i = 0; i < features.length; i++)
-      x[i + 1] = _x.get(features[i].findex);
-    x[0] = 1;
+    final double[] factors = GreedyObliviousLinearTree.getSignificantFactors(point, features);
     final double sumWeights = 0;
     //for (int index = 0; index < 1 << lines.length; index++) {
     //double weight = Math.exp(-calcDistanseToRegion(index, _x));
     //sumWeights += weight;
     int index = 0;
-    for (int j = 0; j < features.length; j++) {
-      index <<= 1;
-      if (features[j].value(_x))
-        index++;
-    }
-    for(int i = 0; i < x.length;i++)
+
+    for(int i = 0; i < factors.length;i++)
       for(int j = 0; j <= i; j++)
-        sum += values[index][i * (i + 1) / 2 + j] * x[i] * x[j];
+        sum += values[index][i * (i + 1) / 2 + j] * factors[i] * factors[j];
 
 
     return sum ;// / sumWeights;

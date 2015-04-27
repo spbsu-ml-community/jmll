@@ -66,14 +66,20 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
     return builder.toString();
   }
 
+  public static int bin(final BFGrid.BinaryFeature[] features, final Vec x)
+  {
+      int index = 0;
+      for (int i = 0; i < features.length; i++) {
+          index <<= 1;
+          if (features[i].value(x))
+              index++;
+      }
+      return index;
+  }
+
+
   public int bin(final Vec x) {
-    int index = 0;
-    for (int i = 0; i < features.length; i++) {
-      index <<= 1;
-      if (features[i].value(x))
-        index++;
-    }
-    return index;
+      return bin(features, x);
   }
 
   public List<BFGrid.BinaryFeature> features() {
