@@ -3,7 +3,6 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.methods.trees.GreedyObliviousLinearTree;
 
 import java.util.List;
 
@@ -14,44 +13,48 @@ import java.util.List;
  * Time: 18:03
  * Idea please stop making my code yellow
  */
-public class ExponentialObliviousTree extends PolynomialObliviousTree {
+public class ExponentialObliviousTree extends ObliviousTree {
   private final double DistCoef;
+  private final List<BFGrid.BinaryFeature> features;
+  private final double[] values;
 
-  public ExponentialObliviousTree(final BFGrid.BinaryFeature[] features, final double[][] values, final double DistCoef) {
-    super(features, values);
+  public ExponentialObliviousTree(
+      final List<BFGrid.BinaryFeature> features,
+      final double[] values,
+      final double[] basedOn,
+      final double DistCoef) {
+    super(features, values, basedOn);
     this.DistCoef = DistCoef;
+    this.features = features;
+    this.values = values;
   }
 
-  double sqr(final double x) {
-    return x * x;
-  }
-
-  double calcDistanseToRegion(final int index, final Vec point) {
-    double ans = 0;
-    for (int i = 0; i < features.length; i++) {
-      if (features[i].value(point) != ((index >> i) == 1)) {
-        ans += sqr(point.get(features[i].findex) - features[i].condition);//L2
+  private static double getDistanceFromPointToRegion(int region, final Vec point, final List<BFGrid.BinaryFeature> features) {
+    double sum2 = 0;
+    for (int i = 0; i < features.size(); i++) {
+      if (features.get(i).value(point) != ((region >> i) == 1)) {
+        sum2 += Math.pow(point.get(features.get(i).findex) - features.get(i).condition, 2);
       }
     }
-    return DistCoef * ans;
+    return sum2;
+  }
+
+  public static double getWeightOfPointInRegion(int region, final Vec point, final List<BFGrid.BinaryFeature> features, double DistCoef) {
+    final double distance = getDistanceFromPointToRegion(region, point, features);
+    return Math.exp(-DistCoef * distance);
   }
 
   @Override
   public double value(final Vec point) {
-    double sum = 0;
-
-    final double[] factors = GreedyObliviousLinearTree.getSignificantFactors(point, features);
-    final double sumWeights = 0;
-    //for (int index = 0; index < 1 << lines.length; index++) {
-    //double weight = Math.exp(-calcDistanseToRegion(index, _x));
-    //sumWeights += weight;
-    int index = 0;
-
-    for(int i = 0; i < factors.length;i++)
-      for(int j = 0; j <= i; j++)
-        sum += values[index][i * (i + 1) / 2 + j] * factors[i] * factors[j];
+    double sumWeights = 0;
+    double sumTarget = 0;
+    for (int region = 0; region < values.length; region++) {
+      double weight = getWeightOfPointInRegion(region, point, features, DistCoef);
+      sumWeights += weight;
+      sumTarget += weight * values[region];
+    }
 
 
-    return sum ;// / sumWeights;
+    return sumTarget / sumWeights;
   }
 }
