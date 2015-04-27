@@ -17,30 +17,26 @@ public class PolynomialObliviousTree extends Func.Stub {
   protected final double[][] values;
 
   public PolynomialObliviousTree(final BFGrid.BinaryFeature[] features, final double[][] values) {
-    assert values.length == 1 << features.length;
-    for (int i = 0; i < values.length; i++) {
-      assert values[i].length == features.length * features.length + 2 * features.length + 1; // todo: lolWat
-    }
     this.features = features;
     this.values = values;
   }
 
   @Override
-  public int dim() {
-    return features[0].row().grid().size();
-  }
-
-  @Override
   public double value(final Vec point) {
-    final int index = ObliviousTree.bin(features, point);
-    double sum = 0;
+    final int region = ObliviousTree.bin(features, point);
     double[] factors = GreedyObliviousLinearTree.getSignificantFactors(point, features);
-    for (int i = 0; i <= features.length; i++) {
+    double sum = 0;
+    for (int i = 0; i < factors.length; i++) {
       for (int j = 0; j <= i; j++) {
-        sum += values[index][i * (i + 1) / 2 + j] * factors[i] * factors[j];
+        sum += values[region][i * (i + 1) / 2 + j] * factors[i] * factors[j];
       }
     }
     return sum;
+  }
+
+  @Override
+  public int dim() {
+    return features[0].row().grid().rows();
   }
 
   String indexToTexLetteral(final int i) {
