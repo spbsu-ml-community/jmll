@@ -116,7 +116,7 @@ public class Aggregate {
 
   public <T extends AdditiveStatistics> void visit(final IntervalVisitor<T> visitor) {
     final T total = (T) total();
-    CountDownLatch latch = new CountDownLatch(grid.rows());
+    final CountDownLatch latch = new CountDownLatch(grid.rows());
     for (int f = 0; f < grid.rows(); f++) {
       final BFGrid.BFRow row = grid.row(f);
       final int offset = starts[row.origFIndex];

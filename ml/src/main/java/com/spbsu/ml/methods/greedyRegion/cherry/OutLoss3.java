@@ -9,7 +9,6 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.weight;
 import static com.spbsu.ml.methods.greedyRegion.GreedyTDWeakRegionMTA.sum;
-import static java.lang.Double.min;
 
 public class OutLoss3<Subset extends CherryPointsHolder, Loss extends StatBasedLoss<AdditiveStatistics>> extends CherryLoss {
   private Subset subset;
@@ -35,9 +34,9 @@ public class OutLoss3<Subset extends CherryPointsHolder, Loss extends StatBasedL
     AdditiveStatistics total = subset.inside().append(added);
     final double R1 = -sum(total) * sum(total) / weight(total);
     total.append(out);
-    final double R2 = min(weight(inside) > 1 ? -sum(inside) * sum(inside) / weight(inside) : 0,-sum(total) * sum(total) / weight(total)) ;
+    final double R2 = Math.min(weight(inside) > 1 ? -sum(inside) * sum(inside) / weight(inside) : 0,-sum(total) * sum(total) / weight(total)) ;
     final int borders = borders(feature, start, end);
-    final double score =   (R2-R1) / (borders);
+    final double score =  (R2-R1) / (borders);
     return score >= 0 ? score :  -1000000;//score(total, out, complexity + borders);
   }
 
