@@ -1,8 +1,5 @@
 package com.spbsu.ml.cli;
 
-import java.io.*;
-
-
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
@@ -40,6 +37,8 @@ import com.spbsu.ml.methods.multilabel.MultiLabelOneVsRest;
 import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
 import org.apache.commons.cli.*;
 
+import java.io.*;
+
 /**
  * User: qdeee
  * Date: 03.09.14
@@ -62,7 +61,7 @@ public class JMLLCLI {
   private static final String OPTIMIZATION_OPTION = "O";
 
   private static final String VERBOSE_OPTION = "v";
-  private static final String PRINT_PERIOD = "t";
+  private static final String PRINT_PERIOD = "i";
   private static final String FAST_OPTION = "fast";
   private static final String SKIP_FINAL_EVAL_OPTION = "fastfinal";
   private static final String HIST_OPTION = "h";
