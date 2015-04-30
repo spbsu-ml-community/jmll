@@ -1,14 +1,16 @@
 package com.spbsu.ml.methods.greedyRegion.cherry;
 
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
-import com.spbsu.ml.RankIt;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.cherry.CherryLoss;
 import com.spbsu.ml.data.cherry.CherryPick;
-import com.spbsu.ml.data.cherry.CherryStochasticSubset;
+import com.spbsu.ml.data.cherry.CherrySubset;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
-import com.spbsu.ml.data.impl.RankedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
@@ -26,7 +28,6 @@ import java.util.List;
 public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   public final BFGrid grid;
   private final CherryPick pick = new CherryPick();
-
   public GreedyTDCherryRegion(final BFGrid grid) {
     this.grid = grid;
   }
@@ -45,9 +46,9 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
     double currentScore = Double.NEGATIVE_INFINITY;
     CherryLoss localLoss;
     {
-//      localLoss = new OutLoss<>(new CherrySubset(bds,loss.statsFactory(),points), loss);
-      RankedDataSet rds = learn.cache().cache(RankIt.class,VecDataSet.class).value();
-      localLoss = new OutLoss<>(new CherryStochasticSubset(rds,bds,loss.statsFactory(),points), loss);
+      localLoss = new OutLoss3<>(new CherrySubset(bds,loss.statsFactory(),points), loss);
+//      RankedDataSet rds = learn.cache().cache(RankIt.class, VecDataSet.class).value();
+//      localLoss = new OutLoss<>(new CherryStochasticSubset(rds, bds, loss.statsFactory(), points), loss);
     }
 
     double bestIncInside = 0;
@@ -58,15 +59,47 @@ public class GreedyTDCherryRegion<Loss extends StatBasedLoss> extends VecOptimiz
       if (score <= currentScore + 1e-9) {
         break;
       }
+
       System.out.println("\nAdded clause " + clause);
       currentScore = score;
       bestIncInside = localLoss.insideIncrement();
       bestIncOutside = localLoss.outsideIncrement();
       conditions.add(clause);
     }
-    return new CNF(conditions.toArray(new CNF.Clause[conditions.size()]), bestIncInside, bestIncOutside, grid);
+    return  new CNF(conditions.toArray(new CNF.Clause[conditions.size()]), bestIncInside, bestIncOutside, grid);
   }
 }
 
+class MultiMethodOptimization<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss>  {
+  private final VecOptimization<Loss>[] learners;
+  private final FastRandom random;
 
+  public MultiMethodOptimization(VecOptimization<Loss>[] learners, FastRandom random) {
+    this.learners = learners;
+    this.random = random;
+  }
+
+  class FuncHolder extends Func.Stub {
+    Func inside;
+    FuncHolder(Func inside) {
+      this.inside = inside;
+    }
+
+    @Override
+    public double value(Vec x) {
+      return inside.value(x);
+    }
+
+    @Override
+    public int dim() {
+      return inside.dim();
+    }
+  }
+
+  @Override
+  public Trans fit(VecDataSet learn, Loss loss) {
+    return new FuncHolder((Func)learners[random.nextInt(learners.length)].fit(learn,loss));
+  }
+
+}
 

@@ -116,19 +116,32 @@ public class Aggregate {
 
   public <T extends AdditiveStatistics> void visit(final IntervalVisitor<T> visitor) {
     final T total = (T) total();
+    CountDownLatch latch = new CountDownLatch(grid.rows());
     for (int f = 0; f < grid.rows(); f++) {
       final BFGrid.BFRow row = grid.row(f);
       final int offset = starts[row.origFIndex];
-      for (int startBin = 0; startBin <= row.size(); ++startBin) {
-        final T inside = (T) factory.create();
-        final T outside = (T) factory.create().append(total);
-        for (int endBin = startBin; endBin <= row.size(); ++endBin) {
-          inside.append(bins[offset + endBin]);
-          outside.remove(bins[offset + endBin]);
-          visitor.accept(row, startBin, endBin, inside, outside);
+      exec.submit(new Runnable() {
+        @Override
+        public void run() {
+          if (!row.empty())
+          for (int startBin = 0; startBin <= row.size(); ++startBin) {
+            final T inside = (T) factory.create();
+            final T outside = (T) factory.create().append(total);
+            for (int endBin = startBin; endBin <= row.size(); ++endBin) {
+              inside.append(bins[offset + endBin]);
+              outside.remove(bins[offset + endBin]);
+              visitor.accept(row, startBin, endBin, inside, outside);
+            }
+            ++startBin;
+          }
+          latch.countDown();
         }
-        ++startBin;
-      }
+      });
+    }
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      //
     }
   }
 

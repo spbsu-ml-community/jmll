@@ -8,15 +8,17 @@ import com.spbsu.ml.loss.StatBasedLoss;
 import gnu.trove.set.hash.TIntHashSet;
 
 import static com.spbsu.ml.methods.greedyRegion.AdditiveStatisticsExtractors.weight;
+import static com.spbsu.ml.methods.greedyRegion.GreedyTDWeakRegionMTA.sum;
+import static java.lang.Double.min;
 
-public class OutLoss<Subset extends CherryPointsHolder, Loss extends StatBasedLoss<AdditiveStatistics>> extends CherryLoss {
+public class OutLoss3<Subset extends CherryPointsHolder, Loss extends StatBasedLoss<AdditiveStatistics>> extends CherryLoss {
   private Subset subset;
   private Loss loss;
   private int complexity = 1;
   private int minBinSize = 50;
   private TIntHashSet used = new TIntHashSet();
 
-  OutLoss(Subset subset, Loss loss) {
+  OutLoss3(Subset subset, Loss loss) {
     this.subset = subset;
     this.loss = loss;
   }
@@ -28,9 +30,15 @@ public class OutLoss<Subset extends CherryPointsHolder, Loss extends StatBasedLo
     int newsize = used.contains(feature.origFIndex) ? used.size() : used.size()+1;
     if (newsize > 7)
       return Double.NEGATIVE_INFINITY;
-    AdditiveStatistics inside = subset.inside().append(added);
+
+    AdditiveStatistics inside = subset.inside();
+    AdditiveStatistics total = subset.inside().append(added);
+    final double R1 = -sum(total) * sum(total) / weight(total);
+    total.append(out);
+    final double R2 = min(weight(inside) > 1 ? -sum(inside) * sum(inside) / weight(inside) : 0,-sum(total) * sum(total) / weight(total)) ;
     final int borders = borders(feature, start, end);
-    return score(inside, out, complexity + borders);
+    final double score =   (R2-R1) / (borders);
+    return score >= 0 ? score :  -1000000;//score(total, out, complexity + borders);
   }
 
   private int borders(BFGrid.BFRow feature, int start, int end) {
@@ -46,7 +54,10 @@ public class OutLoss<Subset extends CherryPointsHolder, Loss extends StatBasedLo
     final double wOut = weight(outside);
     if (wOut > 0 && wOut < minBinSize)
       return -1000000;
-    return -loss.score(inside) / complexity;
+    double s = sum(inside) + sum(outside);
+    double w = wIn + wOut;
+    final double score = weight(inside) > 0 ? sum(inside) * sum(inside) / weight(inside) : 0;
+    return score;
   }
 
   @Override
