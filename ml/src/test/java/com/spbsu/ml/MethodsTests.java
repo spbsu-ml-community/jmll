@@ -604,8 +604,23 @@ public void testElasticNetBenchmark() {
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
 
-  public class addBoostingListeners<GlobalLoss extends TargetFunc> {
-    public addBoostingListeners(final GradientBoosting<GlobalLoss> boosting, final GlobalLoss loss, final Pool<?> _learn, final Pool<?> _validate) {
+  private final static int OUTPUT_SCORE = 1 << 0;
+  private final static int OUTPUT_MODEL = 1 << 1;
+  private final static int OUTPUT_DRAW = 1 << 2;
+
+
+    public <GlobalLoss extends TargetFunc> void testWithBoosting(
+        final VecOptimization<WeightedLoss<? extends L2>> weak,
+        final GlobalLoss loss,
+        final Pool<?> learn,
+        final Pool<?> validate,
+        final int stepsNum,
+        final double step,
+        final int outputMode
+    ) {
+      final GradientBoosting<GlobalLoss> boosting =
+          new GradientBoosting<GlobalLoss>(new BootstrapOptimization<L2>(weak, rng), stepsNum, step);
+
       final Action counter = new ProgressHandler() {
         int index = 0;
 
@@ -614,27 +629,33 @@ public void testElasticNetBenchmark() {
           System.out.print("\n" + index++);
         }
       };
-      final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", _learn.vecData(), _learn.target(L2.class));
-      final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", _validate.vecData(), _validate.target(L2.class));
+
+/*
+      final ScoreCalcer learnListener = new ScoreCalcer("\t", learn.vecData(), (L2) learn.target(GlobalLoss.class));
+      final ScoreCalcer validateListener = new ScoreCalcer("\t", validate.vecData(), (L2) validate.target(loss.getClass()));
       final Action modelPrinter = new ModelPrinter();
       final Action qualityCalcer = new QualityCalcer();
-      boosting.addListener(counter);
-      boosting.addListener(learnListener);
-      boosting.addListener(validateListener);
-      boosting.addListener(qualityCalcer);
-//    boosting.addListener(modelPrinter);
-      final Ensemble ans = boosting.fit(_learn.vecData(), loss);
-      Vec current = new ArrayVec(_validate.size());
-      for (int i = 0; i < _validate.size(); i++) {
+      if (((outputMode & OUTPUT_SCORE)) != 0) {
+        boosting.addListener(counter);
+        boosting.addListener(learnListener);
+        boosting.addListener(validateListener);
+        boosting.addListener(qualityCalcer);
+      }
+      if ((outputMode & OUTPUT_MODEL) != 0) {
+        boosting.addListener(modelPrinter);
+      }
+
+      final Ensemble ans = boosting.fit(learn.vecData(), learn.target());
+      Vec current = new ArrayVec(validate.size());
+      for (int i = 0; i < validate.size(); i++) {
         double f = 0;
         for (int j = 0; j < ans.models.length; j++)
-          f += ans.weights.get(j) * ((Func) ans.models[j]).value(((VecDataSet) _validate).data().row(i));
+          f += ans.weights.get(j) * ((Func) ans.models[j]).value(((VecDataSet) validate).data().row(i));
         current.set(i, f);
       }
-      System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
-
+      System.out.println("\n + Final loss = " + VecTools.distance(current, validate.target(L2.class).target) / Math.sqrt(validate.size()));
+*/
     }
-  }
 
 
   public void testGTDRIBoost() {
@@ -662,17 +683,17 @@ public void testElasticNetBenchmark() {
   }
 
 
-  public void testOTBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), LOOL2.class, 2000, 0.02);
-    new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
-  }
+    public void testOTBoost() {
+      /*testWithBoosting(
+        new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng)
+      );*/
+    }
 
   public void testClassifyBoost() {
     final ProgressHandler pl = new ProgressHandler() {
       final Vec cursor = new ArrayVec(learn.size());
       double h_t = entropy(cursor);
 
-  protected static class ScoreCalcer implements ProgressHandler {
       private double entropy(Vec cursor) {
         double result = 0;
         for (int i = 0; i < learn.target(0).length(); i++) {
