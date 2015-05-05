@@ -1,5 +1,8 @@
 package com.spbsu.ml.cli;
 
+import java.io.*;
+
+
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
@@ -16,23 +19,26 @@ import com.spbsu.ml.cli.builders.data.impl.DataBuilderCrossValidation;
 import com.spbsu.ml.cli.builders.methods.MethodsBuilder;
 import com.spbsu.ml.cli.builders.methods.grid.DynamicGridBuilder;
 import com.spbsu.ml.cli.builders.methods.grid.GridBuilder;
+import com.spbsu.ml.cli.gridsearch.GridSearch;
+import com.spbsu.ml.cli.gridsearch.OptimumHolder;
+import com.spbsu.ml.cli.gridsearch.ParametersExtractor;
 import com.spbsu.ml.cli.output.ModelWriter;
-import com.spbsu.ml.cli.output.printers.DefaultProgressPrinter;
-import com.spbsu.ml.cli.output.printers.HistogramPrinter;
-import com.spbsu.ml.cli.output.printers.MulticlassProgressPrinter;
-import com.spbsu.ml.cli.output.printers.ResultsPrinter;
+import com.spbsu.ml.cli.output.printers.*;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
+import com.spbsu.ml.data.tools.MultiLabelTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.spbsu.ml.loss.blockwise.BlockwiseMultiLabelLogit;
 import com.spbsu.ml.loss.multiclass.ClassicMulticlassLoss;
+import com.spbsu.ml.loss.multilabel.ClassicMultiLabelLoss;
+import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.JoinedBinClassModel;
+import com.spbsu.ml.methods.multilabel.MultiLabelOneVsRest;
+import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
 import org.apache.commons.cli.*;
-
-import java.io.*;
 
 /**
  * User: qdeee
@@ -56,7 +62,7 @@ public class JMLLCLI {
   private static final String OPTIMIZATION_OPTION = "O";
 
   private static final String VERBOSE_OPTION = "v";
-  private static final String PRINT_PERIOD = "printperiod";
+  private static final String PRINT_PERIOD = "t";
   private static final String FAST_OPTION = "fast";
   private static final String SKIP_FINAL_EVAL_OPTION = "fastfinal";
   private static final String HIST_OPTION = "h";
@@ -64,6 +70,8 @@ public class JMLLCLI {
   private static final String WRITE_BIN_FORMULA = "mxbin";
 
   private static final String MODEL_OPTION = "m";
+
+  public static final String RANGES_OPTION = "r";
 
   static Options options = new Options();
 
@@ -90,6 +98,8 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("histogram").withDescription("histogram for dynamic grid").hasArg(false).create(HIST_OPTION));
 
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
+
+    options.addOption(OptionBuilder.withLongOpt("ranges").withLongOpt("parameters ranges").hasArg().create(RANGES_OPTION));
   }
 
   public static void main(final String[] args) throws IOException {
@@ -101,44 +111,29 @@ public class JMLLCLI {
 
       final String mode = command.getArgs()[0];
       switch (mode) {
-        case "fit":
-          modeFit(command);
-          break;
-        case "apply":
-          modeApply(command);
-          break;
-        case "convert-pool":
-          modeConvertPool(command);
-          break;
-        case "convert-pool-json2classic":
-          modeConvertPoolJson2Classic(command);
-          break;
-        case "convert-pool-libfm":
-          modeConvertPoolLibfm(command);
-          break;
-        case "validate-model":
-          modeValidateModel(command);
-          break;
-        case "validate-pool":
-          modeValidatePool(command);
-          break;
-        case "split-json-pool":
-          modeSplitJsonPool(command);
-          break;
-        case "print-pool-info":
-          modePrintPoolInfo(command);
-          break;
+        case "fit":                       modeFit(command);                     break;
+        case "apply":                     modeApply(command);                   break;
+        case "convert-pool":              modeConvertPool(command);             break;
+        case "convert-pool-json2classic": modeConvertPoolJson2Classic(command); break;
+        case "convert-pool-libfm":        modeConvertPoolLibfm(command);        break;
+        case "validate-model":            modeValidateModel(command);           break;
+        case "validate-pool":             modeValidatePool(command);            break;
+        case "split-json-pool":           modeSplitJsonPool(command);           break;
+        case "print-pool-info":           modePrintPoolInfo(command);           break;
+        case "grid-search":                modeGridSearch(command);             break;
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
-    } catch (Exception e) {
-      final HelpFormatter formatter = new HelpFormatter();
-      e.printStackTrace();
+    } catch (ParseException e) {
       System.err.println(e.getLocalizedMessage());
+      final HelpFormatter formatter = new HelpFormatter();
       final String columns = System.getenv("COLUMNS");
-
       formatter.printUsage(new PrintWriter(System.err), columns != null ? Integer.parseInt(columns) : 80, "jmll", options);
       formatter.printHelp("JMLLCLI", options);
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.err.println(e.getLocalizedMessage());
     }
   }
 
@@ -208,11 +203,13 @@ public class JMLLCLI {
     //added progress handlers
     ProgressHandler progressPrinter = null;
     if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION) && !command.hasOption(FAST_OPTION)) {
+      final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "10"));
       if (loss instanceof BlockwiseMLLLogit) {
-        final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
         progressPrinter = new MulticlassProgressPrinter(learn, test, printPeriod); //f*ck you with your custom different-dimensional metrics
+      } else if (loss instanceof BlockwiseMultiLabelLogit) {
+        progressPrinter = new MultiLabelLogitProgressPrinter(learn, test, printPeriod);
       } else {
-        progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics);
+        progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics, printPeriod);
       }
       //noinspection unchecked
       ((WeakListenerHolder) method).addListener(progressPrinter);
@@ -240,6 +237,12 @@ public class JMLLCLI {
       } else if (loss instanceof ClassicMulticlassLoss) {
         final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
         MCTools.makeOneVsRestReport(learn, test, (JoinedBinClassModel) result, printPeriod);
+      } else if (loss instanceof ClassicMultiLabelLoss || loss instanceof BlockwiseMultiLabelLogit) {
+        if (method instanceof MultiLabelOneVsRest) {
+          final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
+          MultiLabelTools.makeOVRReport(learn, test, result, printPeriod);
+        }
+        ResultsPrinter.printMultilabelResult(result, learn, test);
       }
     }
 
@@ -267,7 +270,7 @@ public class JMLLCLI {
     final DataBuilderClassic dataBuilder = new DataBuilderClassic();
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
-    final Pool pool = dataBuilder.create().getFirst();
+    final Pool<? extends DSItem> pool = dataBuilder.create().getFirst();
     final VecDataSet vecDataSet = pool.vecData();
 
     final ModelsSerializationRepository serializationRepository;
@@ -285,6 +288,8 @@ public class JMLLCLI {
 
       for (int i = 0; i < pool.size(); i++) {
         value.clear();
+        value.append(pool.data().at(i).id());
+        value.append('\t');
 //        value.append(MathTools.CONVERSION.convert(vecDataSet.parent().at(i), CharSequence.class));
 //        value.append('\t');
         value.append(MathTools.CONVERSION.convert(vecDataSet.at(i), CharSequence.class));
@@ -401,6 +406,75 @@ public class JMLLCLI {
     builder.setJsonFormat(command.hasOption(JSON_FORMAT));
     final Pool<?> pool = builder.create().getFirst();
     System.out.println(DataTools.getPoolInfo(pool));
+  }
+
+  private static void modeGridSearch(final CommandLine command) throws MissingArgumentException, IOException {
+    if (!command.hasOption(LEARN_OPTION)) {
+      throw new MissingArgumentException("Please provide 'LEARN_OPTION'");
+    }
+    if (!command.hasOption(OPTIMIZATION_OPTION)) {
+      throw new MissingArgumentException("Please provide 'OPTIMIZATION_OPTION'");
+    }
+    if (!command.hasOption(RANGES_OPTION)) {
+      throw new MissingArgumentException("Please provide 'RANGE_OPTION'");
+    }
+
+    //data loading
+    final DataBuilder dataBuilder;
+    if (command.hasOption(CROSS_VALIDATION_OPTION)) {
+      final DataBuilderCrossValidation dataBuilderCrossValidation = new DataBuilderCrossValidation();
+      final String[] cvOptions = StringUtils.split(command.getOptionValue(CROSS_VALIDATION_OPTION), "/", 2);
+      dataBuilderCrossValidation.setRandomSeed(Integer.valueOf(cvOptions[0]));
+      dataBuilderCrossValidation.setPartition(Double.valueOf(cvOptions[1]));
+      dataBuilder = dataBuilderCrossValidation;
+    } else {
+      dataBuilder = new DataBuilderClassic();
+      ((DataBuilderClassic) dataBuilder).setTestPath(command.getOptionValue(TEST_OPTION));
+    }
+    dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
+    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+
+    final Pair<? extends Pool, ? extends Pool> pools = dataBuilder.create();
+    final Pool learn = pools.getFirst();
+    final Pool test = pools.getSecond();
+
+    //loading grid (if needed)
+    final GridBuilder gridBuilder = new GridBuilder();
+    if (command.hasOption(GRID_OPTION)) {
+      gridBuilder.setGrid(BFGrid.CONVERTER.convertFrom(StreamTools.readFile(new File(command.getOptionValue(GRID_OPTION)))));
+    } else {
+      gridBuilder.setBinsCount(Integer.valueOf(command.getOptionValue(BIN_FOLDS_COUNT_OPTION, "32")));
+      gridBuilder.setDataSet(learn.vecData());
+    }
+
+    //choose optimization method
+    final MethodsBuilder methodsBuilder = new MethodsBuilder();
+    methodsBuilder.setRandom(new FastRandom());
+    methodsBuilder.setGridBuilder(gridBuilder);
+
+    //set target
+    final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
+    final TargetFunc loss = learn.target(DataTools.targetByName(target));
+
+    //set metrics
+    final String[] metricNames = command.getOptionValues(METRICS_OPTION);
+    final Func[] metrics;
+    if (metricNames != null) {
+      metrics = new Func[metricNames.length];
+      for (int i = 0; i < metricNames.length; i++) {
+        metrics[i] = test.target(DataTools.targetByName(metricNames[i]));
+      }
+    } else {
+      metrics = new Func[]{test.target(DataTools.targetByName(target))};
+    }
+
+    final GridSearch gridSearch = new GridSearch(learn, test, loss, metrics, methodsBuilder);
+    final String commonScheme = command.getOptionValue(OPTIMIZATION_OPTION);
+    final String[][] parametersSpace = ParametersExtractor.parse(command.getOptionValue(RANGES_OPTION));
+    final OptimumHolder[] searchResult = gridSearch.search(commonScheme, parametersSpace);
+    for (int i = 0; i < metrics.length; i++) {
+      System.out.println(metrics[i].getClass().getSimpleName() + " : " + searchResult[i]);
+    }
   }
 
   private static String getOutputName(final CommandLine command) {

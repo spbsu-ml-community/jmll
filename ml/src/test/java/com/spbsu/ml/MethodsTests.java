@@ -2,6 +2,7 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
@@ -25,11 +26,14 @@ import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDIterativeRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
+import com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization.GreedyMergedRegion;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
+import sun.net.ProgressListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +41,8 @@ import java.util.Random;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 import static com.spbsu.commons.math.vectors.VecTools.copy;
+import static java.lang.Math.exp;
+import static java.lang.Math.log;
 
 /**
  * User: solar
@@ -574,7 +580,7 @@ public void testElasticNetBenchmark() {
   public void testGTDRBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting
             (new BootstrapOptimization<>(
-                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.007);
+                    new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.007);
 //    final GradientBoosting<L2> boosting = new GradientBoosting
 //            (new RandomForest<>(
 //                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
@@ -656,13 +662,80 @@ public void testElasticNetBenchmark() {
   }
 
 
-    public void testOTBoost() {
-        final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), 2000, 0.02);
-        new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
-    }
+  public void testOTBoost() {
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), LOOL2.class, 2000, 0.02);
+    new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
+  }
+
+  public void testClassifyBoost() {
+    final ProgressHandler pl = new ProgressHandler() {
+      final Vec cursor = new ArrayVec(learn.size());
+      double h_t = entropy(cursor);
+
+  protected static class ScoreCalcer implements ProgressHandler {
+      private double entropy(Vec cursor) {
+        double result = 0;
+        for (int i = 0; i < learn.target(0).length(); i++) {
+          final double pX;
+          if ((Double)learn.target(0).at(i) > 0)
+            pX = 1./(1. + exp(-cursor.get(i)));
+          else
+            pX = 1./(1. + exp(cursor.get(i)));
+          result += - pX * log(pX) / log(2);
+        }
+        return result;
+      }
+
+      @Override
+      public void invoke(Trans partial) {
+        if (!(partial instanceof Ensemble))
+          throw new RuntimeException("Can not work with other than ensembles");
+        final Ensemble linear = (Ensemble) partial;
+        final Trans increment = linear.last();
+        Vec inc = copy(cursor);
+        for (int i = 0; i < learn.size(); i++) {
+          if (increment instanceof Ensemble) {
+            cursor.adjust(i, linear.wlast() * (increment.trans(learn.vecData().data().row(i)).get(0)));
+            inc.adjust(i, increment.trans(learn.vecData().data().row(i)).get(0));
+          } else {
+            cursor.adjust(i, linear.wlast() * ((Func) increment).value(learn.vecData().data().row(i)));
+            inc.adjust(i, ((Func) increment).value(learn.vecData().data().row(i)));
+          }
+        }
+        double h_t1 = entropy(inc);
+        System.out.println("Info score: " + ((h_t - h_t1) / info(increment)));
+        h_t = entropy(cursor);
+      }
+
+      private double info(Trans increment) {
+        if (increment instanceof ObliviousTree) {
+          double info = 0;
+          double total = 0;
+          final double[] based = ((ObliviousTree) increment).based();
+          for(int i = 0; i < based.length; i++) {
+            final double fold = based[i];
+            info += (fold + 1) * log(fold + 1);
+            total += fold;
+          }
+          info -= log(total + based.length);
+          info /= -(total + based.length);
+          return info;
+        }
+        return Double.POSITIVE_INFINITY;
+      }
+    };
+
+    Action<Trans> learnScore = new ScorePrinter("Learn", learn.vecData(), learn.target(LLLogit.class));
+    Action<Trans> testScore = new ScorePrinter("Test", validate.vecData(), validate.target(LLLogit.class));
+    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), LOOL2.class, 2000, 0.05);
+    boosting.addListener(pl);
+    boosting.addListener(learnScore);
+    boosting.addListener(testScore);
+    boosting.fit(learn.vecData(), learn.target(LLLogit.class));
+  }
 
 
-    protected static class ScoreCalcer implements ProgressHandler {
+  protected static class ScoreCalcer implements ProgressHandler {
     final String message;
     final Vec current;
     private final VecDataSet ds;
@@ -743,7 +816,7 @@ public void testElasticNetBenchmark() {
 //          double totalDispersion = VecTools.multiply(residues, residues);
         double score = 0;
         for (final double key : values.keys()) {
-          final double regularizer = 1 - 2 * Math.log(2) / Math.log(values.get(key) + 1);
+          final double regularizer = 1 - 2 * log(2) / log(values.get(key) + 1);
           score += dispersionDiff.get(key) * regularizer;
         }
 //          score /= totalDispersion;

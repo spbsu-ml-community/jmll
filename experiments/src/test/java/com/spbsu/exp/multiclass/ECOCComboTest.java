@@ -38,11 +38,11 @@ import com.spbsu.ml.meta.impl.FakeTargetMeta;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.multiclass.GradFacMulticlass;
 import com.spbsu.ml.methods.multiclass.GradFacSvdNMulticlass;
-import com.spbsu.ml.methods.spoc.ECOCCombo;
+import com.spbsu.ml.methods.multiclass.spoc.ECOCCombo;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.MCModel;
 import com.spbsu.ml.models.MultiClassModel;
-import com.spbsu.ml.models.MulticlassCodingMatrixModel;
+import com.spbsu.ml.models.multiclass.MCModel;
+import com.spbsu.ml.models.multiclass.MulticlassCodingMatrixModel;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import junit.framework.TestCase;
 

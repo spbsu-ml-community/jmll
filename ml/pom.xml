@@ -33,6 +33,11 @@
       <version>3.3.2</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-math3</artifactId>
+      <version>3.3</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.3.1</version>
@@ -48,12 +53,48 @@
       <artifactId>core</artifactId>
       <version>0.26</version>
     </dependency>
+    <dependency>
+        <groupId>org.nd4j</groupId>
+        <artifactId>jcuda</artifactId>
+        <version>${cuda.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.nd4j</groupId>
+        <artifactId>jcublas2</artifactId>
+        <version>${cuda.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.nd4j</groupId>
+        <artifactId>jcurand</artifactId>
+        <version>${cuda.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.nd4j</groupId>
+        <artifactId>jcufft</artifactId>
+        <version>${cuda.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.nd4j</groupId>
+        <artifactId>jcusparse</artifactId>
+        <version>${cuda.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.xeiam.xchart</groupId>
+        <artifactId>xchart</artifactId>
+        <version>2.4.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.5</version>
+    </dependency>
   </dependencies>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <java.version>1.7</java.version>
+    <cuda.version>6.5</cuda.version>
   </properties>
 
   <build>

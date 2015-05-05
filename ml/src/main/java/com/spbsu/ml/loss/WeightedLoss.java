@@ -125,5 +125,19 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
       inside.remove(((Stat) other).inside);
       return this;
     }
+
+    @Override
+    public Stat append(int index, double weight) {
+      final int count = weights[index];
+      inside.append(index,weight*count);
+      return this;
+    }
+
+    @Override
+    public Stat remove(int index, double weight) {
+      final int count = weights[index];
+      inside.remove(index,weight*count);
+      return this;
+    }
   }
 }

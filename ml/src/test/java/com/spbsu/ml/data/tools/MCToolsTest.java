@@ -38,6 +38,12 @@ public class MCToolsTest extends TestCase {
     assertEquals(16, MCTools.countClasses(target));
   }
 
+  public void testClassEntriesCounts() throws Exception {
+    final IntSeq target = new IntSeq(0, 0, 1, 2, 2, 2);
+    final int[] counts = MCTools.classEntriesCounts(target);
+    assertTrue(Arrays.equals(new int[]{2, 1, 3}, counts));
+  }
+
   public void testClassEntriesCount() throws Exception {
     assertEquals(5, MCTools.classEntriesCount(target, 15));
     assertEquals(1, MCTools.classEntriesCount(target, 0));
@@ -64,13 +70,12 @@ public class MCToolsTest extends TestCase {
     final TIntIntMap labelsMap = new TIntIntHashMap();
     final IntSeq normalizedTarget = MCTools.normalizeTarget(target, labelsMap);
 
-    final IntSeq expectedTarget = new IntSeq(new int[]{
+    final IntSeq expectedTarget = new IntSeq(
         5, 5, 5, 5, 5,
         4, 4, 4, 4,
         3, 3, 3,
         2, 2,
-        1, 0
-    });
+        1, 0);
     assertEquals(expectedTarget, normalizedTarget);
 
   }
@@ -90,15 +95,15 @@ public class MCToolsTest extends TestCase {
     final TDoubleList borders = new TDoubleArrayList();
     final IntSeq mcTarget = MCTools.transformRegressionToMC(regressionTarget, 4, borders);
 
-    final IntSeq expectedMCTarget = new IntSeq(new int[]{0, 0, 1, 1, 2, 2, 3, 3});
+    final IntSeq expectedMCTarget = new IntSeq(0, 0, 1, 1, 2, 2, 3, 3);
     final TDoubleList expectedBorders = new TDoubleArrayList(new double[]{0.25, 0.5, 0.75, 1.0});
     assertEquals(expectedMCTarget, mcTarget);
     assertEquals(expectedBorders, borders);
   }
 
   public void testConfusionMatrix() throws Exception {
-    final IntSeq expected = new IntSeq(new int[] {0, 0, 0, 0, 1, 1, 2, 2});
-    final IntSeq predicted = new IntSeq(new int[]{0, 1, 2, 0, 1, 2, 2, 2});
+    final IntSeq expected = new IntSeq(0, 0, 0, 0, 1, 1, 2, 2);
+    final IntSeq predicted = new IntSeq(0, 1, 2, 0, 1, 2, 2, 2);
     final ConfusionMatrix confusionMatrix = new ConfusionMatrix(expected, predicted);
     assertEquals(2, confusionMatrix.tp(0));
     assertEquals(1, confusionMatrix.tp(1));
@@ -111,5 +116,10 @@ public class MCToolsTest extends TestCase {
     assertEquals(2, confusionMatrix.fn(0));
     assertEquals(1, confusionMatrix.fn(1));
     assertEquals(0, confusionMatrix.fn(2));
+
+    assertEquals(expected.length(), confusionMatrix.getNumExamples());
+    assertEquals(4, confusionMatrix.getNumExamples(0));
+    assertEquals(2, confusionMatrix.getNumExamples(1));
+    assertEquals(2, confusionMatrix.getNumExamples(2));
   }
 }

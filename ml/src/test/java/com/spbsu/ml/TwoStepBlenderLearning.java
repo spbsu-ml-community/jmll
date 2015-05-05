@@ -4,7 +4,6 @@ import com.spbsu.commons.func.Action;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeqReader;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -25,7 +24,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static java.lang.Math.exp;
+import static com.spbsu.commons.math.vectors.VecTools.append;
+import static com.spbsu.commons.math.vectors.VecTools.scale;
 
 /**
  * User: solar
@@ -47,6 +47,7 @@ public class TwoStepBlenderLearning {
     final File resFile = new File("phase-one.residual");
     final Vec residual;
     if (!resFile.exists()) {
+//    {
       final PoolFeatureMeta[] features = pool.features();
       final TIntArrayList relevantForFirstStep = new TIntArrayList();
       for (int i = 0; i < features.length; i++) {
@@ -54,24 +55,25 @@ public class TwoStepBlenderLearning {
           relevantForFirstStep.add(i);
       }
       final int[] queryFeatures = relevantForFirstStep.toArray();
+      final L2 phaseOneTarget = learn.target(L2.class);
       final VecDataSet queryOnlyLearn = learn.joinFeatures(queryFeatures, learn.data());
       final VecDataSet queryOnlyTest = test.joinFeatures(queryFeatures, test.data());
-      final Action<Trans> learnTracker = new TransAction("Learn", queryOnlyLearn, learn.target(LLLogit.class));
-      final Action<Trans> testTracker = new TransAction("Test", queryOnlyTest, test.target(LLLogit.class));
-      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(GridTools.medianGrid(queryOnlyLearn, 32), 6), LOOL2.class, 2000, 0.01);
+      final Action<Trans> learnTracker = new ScorePrinter("Learn", queryOnlyLearn, phaseOneTarget);
+      final Action<Trans> testTracker = new ScorePrinter("Test", queryOnlyTest, test.target(L2.class));
+      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(GridTools.medianGrid(queryOnlyLearn, 32), 6), LOOL2.class, 2000, 0.005);
       boosting.addListener(learnTracker);
       boosting.addListener(testTracker);
-      final Ensemble phaseOneModel = boosting.fit(queryOnlyLearn, learn.target(LLLogit.class));
+      final Ensemble phaseOneModel = boosting.fit(queryOnlyLearn, phaseOneTarget);
+//      final Ensemble phaseOneModel = boosting.fit(queryOnlyLearn, learn.target(LLLogit.class));
       DataTools.writeModel(phaseOneModel, new File("phase-one.jmll"));
 
       {
         residual = phaseOneModel.transAll(pool.joinFeatures(queryFeatures, pool.data()).data());
-        for (int i = 0; i < residual.length(); i++) {
-          residual.set(i, 1. / (1. + exp(-residual.get(i))));
-        }
-//        scale(residual, -1);
-//        append(residual, phaseOneModel.transAll(pool.joinFeatures(queryFeatures, pool.data()).data()));
-//        scale(residual, -1);
+//        for (int i = 0; i < residual.length(); i++) {
+//          residual.set(i, 1. / (1. + exp(-residual.get(i))));
+//        }
+        scale(residual, -1);
+        append(residual, (Vec)pool.target(0));
       }
       StreamTools.transferData(new CharSeqReader(DataTools.SERIALIZATION.write(residual)), new FileWriter("phase-one.residual"));
     }
@@ -97,12 +99,16 @@ public class TwoStepBlenderLearning {
       final BFGrid grid = GridTools.medianGrid(learn.vecData(), 32);
       StreamTools.transferData(new CharSeqReader(DataTools.SERIALIZATION.write(grid)), new FileWriter("phase-two.grid"));
 
-      final TargetFunc phaseTwoLearn = new ExclusiveComplementLLLogit(0.5, (Vec)learn.target(0), (Vec)learn.target(PHASE_TWO_TARGET), learn.data());
-      final TargetFunc phaseTwoTest = new ExclusiveComplementLLLogit(0.5, (Vec)test.target(0), (Vec)test.target(PHASE_TWO_TARGET), test.data());
+//      final TargetFunc phaseTwoLearn = new ExclusiveComplementLLLogit(0.5, (Vec)learn.target(0), (Vec)learn.target(PHASE_TWO_TARGET), learn.data());
+//      final TargetFunc phaseTwoTest = new ExclusiveComplementLLLogit(0.5, (Vec)test.target(0), (Vec)test.target(PHASE_TWO_TARGET), test.data());
+//      final TargetFunc phaseTwoLearn = new ExclusiveComplementLLLogit(0.5, (Vec)learn.target(0), (Vec)learn.target(PHASE_TWO_TARGET), learn.data());
+//      final TargetFunc phaseTwoTest = new ExclusiveComplementLLLogit(0.5, (Vec)test.target(0), (Vec)test.target(PHASE_TWO_TARGET), test.data());
+      final TargetFunc phaseTwoLearn = new L2((Vec)learn.target(PHASE_TWO_TARGET), learn.data());
+      final TargetFunc phaseTwoTest = new L2((Vec)test.target(PHASE_TWO_TARGET), test.data());
 
-      final Action<Trans> learnTracker = new TransAction("Learn", learn.vecData(), phaseTwoLearn);
-      final Action<Trans> testTracker = new TransAction("Test", test.vecData(), phaseTwoTest);
-      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(grid, 6), LOOL2.class, 3000, 0.02);
+      final Action<Trans> learnTracker = new ScorePrinter("Learn", learn.vecData(), phaseTwoLearn);
+      final Action<Trans> testTracker = new ScorePrinter("Test", test.vecData(), phaseTwoTest);
+      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(grid, 6), LOOL2.class, 3000, 0.005);
       boosting.addListener(learnTracker);
       boosting.addListener(testTracker);
       final Ensemble phaseTwoModel = boosting.fit(learn.vecData(), phaseTwoLearn);
@@ -110,43 +116,4 @@ public class TwoStepBlenderLearning {
     }
   }
 
-  private static class TransAction implements Action<Trans> {
-    private final String message;
-    private final Vec cursor;
-    private final VecDataSet ds;
-    private final Func metric;
-    private int index = 0;
-    private final int step = 10;
-
-    private TransAction(String message, VecDataSet ds, Func metric) {
-      this.message = message;
-      this.ds = ds;
-      this.metric = metric;
-      cursor = new ArrayVec(ds.length());
-    }
-
-    @Override
-    public void invoke(Trans partial) {
-      if (partial instanceof Ensemble) {
-        final Ensemble linear = (Ensemble) partial;
-        final Trans increment = linear.last();
-        for (int i = 0; i < ds.length(); i++) {
-          if (increment instanceof Ensemble) {
-            cursor.adjust(i, linear.wlast() * (increment.trans(ds.data().row(i)).get(0)));
-          } else {
-            cursor.adjust(i, linear.wlast() * ((Func) increment).value(ds.data().row(i)));
-          }
-        }
-      } else {
-        for (int i = 0; i < ds.length(); i++) {
-          cursor.set(i, ((Func) partial).value(ds.data().row(i)));
-        }
-      }
-
-      if (++index % step == 0) {
-//        System.out.println(index);
-        System.out.println(index + " " + message + " " + metric.getClass().getSimpleName() + ":" + metric.value(cursor));
-      }
-    }
-  }
 }

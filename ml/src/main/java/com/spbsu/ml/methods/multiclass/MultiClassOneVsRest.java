@@ -13,7 +13,7 @@ import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.multiclass.ClassicMulticlassLoss;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.JoinedBinClassModel;
+import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
 
 /**
  * User: qdeee

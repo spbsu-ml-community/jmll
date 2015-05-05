@@ -12,7 +12,7 @@ public abstract class EM<Result> {
 
   protected abstract boolean stop();
 
-  protected abstract Result model();
+  public abstract Result model();
 
   protected abstract double likelihood();
 
@@ -35,7 +35,6 @@ public abstract class EM<Result> {
         if (currentLL + 1e-2 < ll) {
           throw new RuntimeException("EM always increase likelihood");
         }
-        ll = currentLL;
       }
     }
     return new FittedModel<>(likelihood(), model());
