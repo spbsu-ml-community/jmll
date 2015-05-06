@@ -2,7 +2,6 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
@@ -33,8 +32,11 @@ import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
-import sun.net.ProgressListener;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -608,54 +610,88 @@ public void testElasticNetBenchmark() {
   private final static int OUTPUT_MODEL = 1 << 1;
   private final static int OUTPUT_DRAW = 1 << 2;
 
-
-    public <GlobalLoss extends TargetFunc> void testWithBoosting(
-        final VecOptimization<WeightedLoss<? extends L2>> weak,
-        final GlobalLoss loss,
-        final Pool<?> learn,
-        final Pool<?> validate,
-        final int stepsNum,
-        final double step,
-        final int outputMode
-    ) {
-      final GradientBoosting<GlobalLoss> boosting =
-          new GradientBoosting<GlobalLoss>(new BootstrapOptimization<L2>(weak, rng), stepsNum, step);
-
-      final Action counter = new ProgressHandler() {
-        int index = 0;
-
-        @Override
-        public void invoke(final Trans partial) {
-          System.out.print("\n" + index++);
-        }
-      };
-
-/*
-      final ScoreCalcer learnListener = new ScoreCalcer("\t", learn.vecData(), (L2) learn.target(GlobalLoss.class));
-      final ScoreCalcer validateListener = new ScoreCalcer("\t", validate.vecData(), (L2) validate.target(loss.getClass()));
-      final Action modelPrinter = new ModelPrinter();
-      final Action qualityCalcer = new QualityCalcer();
-      if (((outputMode & OUTPUT_SCORE)) != 0) {
-        boosting.addListener(counter);
-        boosting.addListener(learnListener);
-        boosting.addListener(validateListener);
-        boosting.addListener(qualityCalcer);
-      }
-      if ((outputMode & OUTPUT_MODEL) != 0) {
-        boosting.addListener(modelPrinter);
-      }
-
-      final Ensemble ans = boosting.fit(learn.vecData(), learn.target());
-      Vec current = new ArrayVec(validate.size());
-      for (int i = 0; i < validate.size(); i++) {
-        double f = 0;
-        for (int j = 0; j < ans.models.length; j++)
-          f += ans.weights.get(j) * ((Func) ans.models[j]).value(((VecDataSet) validate).data().row(i));
-        current.set(i, f);
-      }
-      System.out.println("\n + Final loss = " + VecTools.distance(current, validate.target(L2.class).target) / Math.sqrt(validate.size()));
-*/
+  private double computeLoss(Pool<?> pool, Class<SatL2> lossClass, final Trans.Stub model) {
+    Vec current = new ArrayVec(pool.size());
+    for (int i = 0; i < pool.size(); i++) {
+      current.set(i, model.compute(pool.vecData().data().row(i)).get(0));
     }
+    return pool.target(lossClass).compute(current).get(0);
+  }
+
+  public void testWithBoosting(
+      final VecOptimization<WeightedLoss<? extends L2>> weak,
+      final Pool<?> learn,
+      final Pool<?> validate,
+      final int stepsNum,
+      final double step,
+      final int outputMode
+  ) throws IOException, InterruptedException {
+    final GradientBoosting<SatL2> boosting =
+        new GradientBoosting<>(new BootstrapOptimization<L2>(weak, rng), stepsNum, step);
+    class Counter implements ProgressHandler {
+      int index = 0;
+      private final PrintStream stream;
+      Counter() {
+        this(System.out);
+      }
+
+      public Counter(final PrintStream stream) {
+        this.stream = stream;
+      }
+
+      @Override
+      public void invoke(final Trans partial) {
+        stream.print("\n" + index++);
+      }
+    };
+
+    final Class<SatL2> lossClass = SatL2.class;
+    PrintStream graphFile = null;
+    final ScoreCalcer learnListener;
+    final Action qualityCalcer;
+    final ScoreCalcer validateListener;
+    final Action modelPrinter;
+    final ScoreCalcer learnListenerFile;
+    final ScoreCalcer validateListenerFile;
+    final Counter counter;
+    final Counter counterFile;
+    learnListener = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass));
+    validateListener = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass));
+    qualityCalcer = new QualityCalcer();
+    counter = new Counter();
+
+    graphFile = new PrintStream("graph.tsv");
+    counterFile = new Counter(graphFile);
+    learnListenerFile = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass), graphFile);
+    validateListenerFile = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass), graphFile);
+
+
+    if (((outputMode & OUTPUT_SCORE)) != 0) {
+      boosting.addListener(counter);
+      boosting.addListener(learnListener);
+      boosting.addListener(validateListener);
+      boosting.addListener(qualityCalcer);
+    }
+/*    if ((outputMode & OUTPUT_MODEL) != 0) {
+      modelPrinter = new ModelPrinter();
+      boosting.addListener(modelPrinter);
+    }*/
+    if ((outputMode & OUTPUT_DRAW) != 0) {
+      boosting.addListener(counterFile);
+      boosting.addListener(learnListenerFile);
+      boosting.addListener(validateListenerFile);
+    }
+
+
+    final Ensemble model = boosting.fit(learn.vecData(), learn.target(lossClass));
+    System.out.println("\n + Final loss learn= " + computeLoss(learn, lossClass, model));
+    System.out.println("\n + Final loss validate= " + computeLoss(validate, lossClass, model));
+    if ((outputMode & OUTPUT_DRAW) != 0) {
+      graphFile.close();
+      Process p = Runtime.getRuntime().exec("gnuplot draw.gp");
+      p.waitFor();
+    }
+  }
 
 
   public void testGTDRIBoost() {
@@ -683,10 +719,15 @@ public void testElasticNetBenchmark() {
   }
 
 
-    public void testOTBoost() {
-      /*testWithBoosting(
-        new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng)
-      );*/
+    public void testOTBoost() throws IOException, InterruptedException {
+      testWithBoosting(
+          new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6),
+          learn,
+          validate,
+          2000,
+          0.02,
+          /*OUTPUT_SCORE | */OUTPUT_DRAW
+      );
     }
 
   public void testClassifyBoost() {
@@ -761,15 +802,21 @@ public void testElasticNetBenchmark() {
     final Vec current;
     private final VecDataSet ds;
     private final L2 target;
+    private final PrintStream stream;
 
     public ScoreCalcer(final String message, final VecDataSet ds, final L2 target) {
+      this(message, ds, target, System.out);
+    }
+
+    double min = 1e10;
+
+    public ScoreCalcer(final String message, final VecDataSet ds, final L2 target, final PrintStream stream) {
       this.message = message;
       this.ds = ds;
       this.target = target;
       current = new ArrayVec(ds.length());
+      this.stream = stream;
     }
-
-    double min = 1e10;
 
     @Override
     public void invoke(final Trans partial) {
@@ -789,9 +836,9 @@ public void testElasticNetBenchmark() {
         }
       }
       final double curLoss = VecTools.distance(current, target.target) / Math.sqrt(ds.length());
-      System.out.print(message + curLoss);
+      stream.print(message + curLoss + "\t");
       min = Math.min(curLoss, min);
-      System.out.print(" minimum = " + min);
+      stream.print("minimum\t" + min);
     }
   }
 
