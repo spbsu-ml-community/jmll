@@ -38,19 +38,31 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
   }
 
   public static <T extends Comparable<T>> int upperBound(final List<T> list, T key) {
-    int i = 0;
-    while (i < list.size() && key.compareTo(list.get(i)) >= 0) {
-      i++;
+    int l = -1, r = list.size();
+    while (l != r - 1) {
+      final int middle = (l + r) / 2;
+      if (list.get(middle).compareTo(key) <= 0) {
+        l = middle;
+      }
+      else {
+        r = middle;
+      }
     }
-    return i;
+    return r;
   }
 
   public static <T extends Comparable<T>> int lowerBound(final List<T> list, T key) {
-    int i = 0;
-    while (i < list.size() && key.compareTo(list.get(i)) > 0) {
-      i++;
+    int l = -1, r = list.size();
+    while (l != r - 1) {
+      final int middle = (l + r) / 2;
+      if (list.get(middle).compareTo(key) < 0) {
+        l = middle;
+      }
+      else {
+        r = middle;
+      }
     }
-    return i;
+    return r;
   }
 
   public static int findLowerDistance(final List<Double> list, double x, double target) {

@@ -12,22 +12,24 @@ import java.util.List;
  */
 public class GreedyExponentialObliviousTreeTest extends TestCase {
   public void testUpperBound() {
-    List<Double> list = Arrays.asList(0., 1., 1., 2., 3.);
+    List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 3., 3.);
     assertEquals(GreedyExponentialObliviousTree.upperBound(list, 2.0), 4);
     assertEquals(GreedyExponentialObliviousTree.upperBound(list, 1.0), 3);
     assertEquals(GreedyExponentialObliviousTree.upperBound(list, 0.0), 1);
+    assertEquals(GreedyExponentialObliviousTree.upperBound(list, 3.0), 7);
 
-    assertEquals(GreedyExponentialObliviousTree.upperBound(list, 100.0), 5);
+    assertEquals(GreedyExponentialObliviousTree.upperBound(list, 100.0), list.size());
     assertEquals(GreedyExponentialObliviousTree.upperBound(list, -1.), 0);
   }
 
   public void testLowerBound() {
-    List<Double> list = Arrays.asList(0., 1., 1., 2., 3.);
-    assertEquals(GreedyExponentialObliviousTree.lowerBound(list, 2.0), 3);
-    assertEquals(GreedyExponentialObliviousTree.lowerBound(list, 1.0), 1);
-    assertEquals(GreedyExponentialObliviousTree.lowerBound(list, 0.0), 0);
+    List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 3., 3.);
+    assertEquals(3, GreedyExponentialObliviousTree.lowerBound(list, 2.0));
+    assertEquals(1, GreedyExponentialObliviousTree.lowerBound(list, 1.0));
+    assertEquals(0, GreedyExponentialObliviousTree.lowerBound(list, 0.0));
+    assertEquals(4, GreedyExponentialObliviousTree.lowerBound(list, 3.0));
 
-    assertEquals(GreedyExponentialObliviousTree.lowerBound(list, 100.0), 5);
+    assertEquals(GreedyExponentialObliviousTree.lowerBound(list, 100.0), list.size());
     assertEquals(GreedyExponentialObliviousTree.lowerBound(list, -1.), 0);
   }
 
