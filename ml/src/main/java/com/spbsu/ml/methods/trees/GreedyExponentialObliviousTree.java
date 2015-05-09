@@ -5,7 +5,6 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
-import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.ArrayList;
@@ -20,12 +19,12 @@ import java.util.List;
 */
 
 public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<? extends L2>>{
-  private final double DistCoef;
+  private final double SwapProbability;
   private final ArrayList<ArrayList<Double>> factors;
 
-  public GreedyExponentialObliviousTree(final BFGrid grid, final VecDataSet ds, int depth, double DistCoef) {
+  public GreedyExponentialObliviousTree(final BFGrid grid, final VecDataSet ds, int depth, double SwapProbability) {
     super(grid, depth);
-    this.DistCoef = DistCoef;
+    this.SwapProbability = SwapProbability;
     factors = new ArrayList<>();
     for (int i = 0; i < ds.data().columns(); i++) {
       final Vec col = ds.data().col(i);
@@ -38,7 +37,7 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
     }
   }
 
-  private <T extends Comparable> int upper_bound(final List<T> list, T key) {
+  public static <T extends Comparable<T>> int upperBound(final List<T> list, T key) {
     int i = 0;
     while (i < list.size() && key.compareTo(list.get(i)) >= 0) {
       i++;
@@ -46,7 +45,7 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
     return i;
   }
 
-  private <T extends Comparable> int lower_bound(final List<T> list, T key) {
+  public static <T extends Comparable<T>> int lowerBound(final List<T> list, T key) {
     int i = 0;
     while (i < list.size() && key.compareTo(list.get(i)) > 0) {
       i++;
@@ -54,50 +53,50 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
     return i;
   }
 
-  double findLowerDistance(int factorId, double x, double target) {
-    int lowerX = lower_bound(factors.get(factorId), x);
-    int targetIndex = upper_bound(factors.get(factorId), target);
+  public static int findLowerDistance(final List<Double> list, double x, double target) {
+    int lowerX = lowerBound(list, x);
+    int targetIndex = upperBound(list, target) - 1;
     return Math.abs(lowerX - targetIndex);
   }
 
-  double findUpperDistance(int factorId, double x, double target) {
-    int upperX = upper_bound(factors.get(factorId), x);
-    int targetIndex = upper_bound(factors.get(factorId), target);
+  public static int findUpperDistance(final List<Double> list, double x, double target) {
+    int upperX = upperBound(list, x);
+    int targetIndex = upperBound(list, target) - 1;
     return Math.abs(upperX - targetIndex);
   }
 
-  double getProbability(int factorId, double x, double target) {
-    final double lowerDistance = findLowerDistance(factorId, x, target);
-    final double upperDistance = findUpperDistance(factorId, x, target);
+  public static double getProbability(final List<Double> list, double x, double target, double swapProbability) {
+    final int lowerDistance = findLowerDistance(list, x, target);
+    final int upperDistance = findUpperDistance(list, x, target);
     if (x > target) {
-      return sumProgression(DistCoef, lowerDistance, upperDistance);
+      return sumProgression(swapProbability, lowerDistance, upperDistance);
     } else {
-      return sumProgression(DistCoef, upperDistance + 2, lowerDistance + 2);
+      return sumProgression(swapProbability, upperDistance + 2, lowerDistance + 2);
     }
 
   }
 
-  private double sumProgression(double p, double begin, double end) {
+  public static double sumProgression(double p, int begin, int end) {
     return (Math.pow(p, begin) - Math.pow(p, end)) / (1 - p) / (end - begin);
 
   }
 
-  double getProbabilityOfFit(int factorId, double x, double target, boolean greater) {
-    final double probability = getProbability(factorId, x, target);
+  public static double getProbabilityOfFit(final List<Double> list, double x, double target, boolean greater, double swapProbability) {
+    final double probability = getProbability(list, x, target, swapProbability);
     if ((x > target) == greater) {
       return 1 - probability;
     }
     return probability;
   }
 
-  double getProbabilityBeingInRegion(final List<BFGrid.BinaryFeature> features, final Vec point, int region) {
+  private double getProbabilityBeingInRegion(final List<BFGrid.BinaryFeature> features, final Vec point, int region) {
     double probability = 1;
     for (int i = 0; i < features.size(); i++) {
       final boolean greater = ((region >> (features.size() - i - 1) & 1) == 1);
       final int factorId = features.get(i).findex;
       final double condition = features.get(i).condition;
       final double x = point.get(factorId);
-      probability *= getProbabilityOfFit(factorId, x, condition, greater);
+      probability *= getProbabilityOfFit(factors.get(factorId), x, condition, greater, SwapProbability);
     }
     return probability;
   }
@@ -117,8 +116,9 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
 
       for (int region = 0; region < numberOfRegions; ++region) {
         final double expWeight = getProbabilityBeingInRegion(features, point, region);
-      if (expWeight < 0 || weight < 0)
-        throw new RuntimeException("");
+        if (expWeight < 0 || weight < 0) {
+          throw new RuntimeException("");
+        }
 
         targetSum[region] += target * weight * expWeight;
         weightsSum[region] += weight * expWeight;
