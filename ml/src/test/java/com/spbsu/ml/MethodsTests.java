@@ -26,6 +26,7 @@ import com.spbsu.ml.methods.greedyRegion.GreedyTDIterativeRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
 import com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization.GreedyMergedRegion;
+import com.spbsu.ml.methods.trees.GreedyExponentialObliviousTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
@@ -719,16 +720,27 @@ public void testElasticNetBenchmark() {
   }
 
 
-    public void testOTBoost() throws IOException, InterruptedException {
-      testWithBoosting(
-          new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6),
-          learn,
-          validate,
-          2000,
-          0.02,
+  public void testOTBoost() throws IOException, InterruptedException {
+    testWithBoosting(
+        new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6),
+        learn,
+        validate,
+        2000,
+        0.02,
           /*OUTPUT_SCORE | */OUTPUT_DRAW
-      );
-    }
+    );
+  }
+
+  public void testEOTBoost() throws IOException, InterruptedException {
+    testWithBoosting(
+        new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 0.8),
+        learn,
+        validate,
+        2000,
+        0.02,
+          OUTPUT_SCORE | OUTPUT_DRAW
+    );
+  }
 
   public void testClassifyBoost() {
     final ProgressHandler pl = new ProgressHandler() {

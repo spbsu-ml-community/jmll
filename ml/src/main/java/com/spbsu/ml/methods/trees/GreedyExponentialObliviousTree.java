@@ -5,6 +5,7 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.List;
     *Idea please stop making my code yellow
 */
 
-public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<L2>> {
+public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<? extends L2>>{
   private final double DistCoef;
   private final ArrayList<ArrayList<Double>> factors;
 
@@ -26,11 +27,11 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
     super(grid, depth);
     this.DistCoef = DistCoef;
     factors = new ArrayList<>();
-    for (int i = 0; i < ds.xdim(); i++) {
-      final Vec row = ds.data().row(i);
-      ArrayList<Double> list = new ArrayList<>(row.dim());
-      for (int j = 0; j < row.dim(); j++) {
-        list.set(j, row.get(j));
+    for (int i = 0; i < ds.data().columns(); i++) {
+      final Vec col = ds.data().col(i);
+      ArrayList<Double> list = new ArrayList<>(col.dim());
+      for (int j = 0; j < col.dim(); j++) {
+        list.add(col.get(j));
       }
       Collections.sort(list);
       factors.add(list);
@@ -39,7 +40,7 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
 
   private <T extends Comparable> int upper_bound(final List<T> list, T key) {
     int i = 0;
-    while (i < list.size() && key.compareTo(list.get(i)) <= 0) {
+    while (i < list.size() && key.compareTo(list.get(i)) >= 0) {
       i++;
     }
     return i;
@@ -47,28 +48,37 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
 
   private <T extends Comparable> int lower_bound(final List<T> list, T key) {
     int i = 0;
-    while (i < list.size() && key.compareTo(list.get(i)) < 0) {
+    while (i < list.size() && key.compareTo(list.get(i)) > 0) {
       i++;
     }
     return i;
   }
 
-  double findExpectedDistance(int factorId, double x, double target) {
+  double findLowerDistance(int factorId, double x, double target) {
     int lowerX = lower_bound(factors.get(factorId), x);
-    int upperX = upper_bound(factors.get(factorId), x);
-    double expectedIndex = (lowerX + upperX) / 2.0;
     int targetIndex = upper_bound(factors.get(factorId), target);
+    return Math.abs(lowerX - targetIndex);
+  }
 
-    return Math.abs(expectedIndex - targetIndex);
+  double findUpperDistance(int factorId, double x, double target) {
+    int upperX = upper_bound(factors.get(factorId), x);
+    int targetIndex = upper_bound(factors.get(factorId), target);
+    return Math.abs(upperX - targetIndex);
   }
 
   double getProbability(int factorId, double x, double target) {
-    double distance = findExpectedDistance(factorId, x, target);
+    final double lowerDistance = findLowerDistance(factorId, x, target);
+    final double upperDistance = findUpperDistance(factorId, x, target);
     if (x > target) {
-      return Math.exp(-DistCoef * (distance));
+      return sumProgression(DistCoef, lowerDistance, upperDistance);
     } else {
-      return Math.exp(-DistCoef * (distance + 1));
+      return sumProgression(DistCoef, upperDistance + 2, lowerDistance + 2);
     }
+
+  }
+
+  private double sumProgression(double p, double begin, double end) {
+    return (Math.pow(p, begin) - Math.pow(p, end)) / (1 - p) / (end - begin);
 
   }
 
@@ -83,7 +93,7 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
   double getProbabilityBeingInRegion(final List<BFGrid.BinaryFeature> features, final Vec point, int region) {
     double probability = 1;
     for (int i = 0; i < features.size(); i++) {
-      final boolean greater = ((region >> i & 1) == 1);
+      final boolean greater = ((region >> (features.size() - i - 1) & 1) == 1);
       final int factorId = features.get(i).findex;
       final double condition = features.get(i).condition;
       final double x = point.get(factorId);
@@ -93,7 +103,7 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
   }
 
   @Override
-  public ObliviousTree fit(final VecDataSet ds, final WeightedLoss<L2> loss) {
+  public ObliviousTree fit(final VecDataSet ds, final WeightedLoss<? extends L2> loss) {
     final ObliviousTree tree = super.fit(ds, loss);
     final List<BFGrid.BinaryFeature> features = tree.features();
     final int numberOfRegions = 1 << features.size();
@@ -107,6 +117,8 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
 
       for (int region = 0; region < numberOfRegions; ++region) {
         final double expWeight = getProbabilityBeingInRegion(features, point, region);
+      if (expWeight < 0 || weight < 0)
+        throw new RuntimeException("");
 
         targetSum[region] += target * weight * expWeight;
         weightsSum[region] += weight * expWeight;
@@ -114,7 +126,9 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
     }
     double[] values = new double[numberOfRegions];
     for (int region = 0; region < numberOfRegions; ++region) {
-      values[region] = targetSum[region] / weightsSum[region];
+      if (weightsSum[region] > 1e-9) {
+        values[region] = targetSum[region] / weightsSum[region];
+      }
     }
 
     return new ObliviousTree(features, values, tree.based());
