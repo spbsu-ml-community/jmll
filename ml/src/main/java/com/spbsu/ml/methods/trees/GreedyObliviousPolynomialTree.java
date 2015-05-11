@@ -13,8 +13,6 @@ import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.PolynomialObliviousTree;
 
-import java.util.List;
-
 /**
  * Created with IntelliJ IDEA.
  * User: towelenee
@@ -23,6 +21,7 @@ import java.util.List;
  */
 public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
   private final int depth;
+  private final int dimensions;
   private final int numberOfVariables;
   private final int numberOfRegions;
   private final GreedyObliviousTree<WeightedLoss<L2>> got;
@@ -30,23 +29,76 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
   private final double regulationCoefficient;
   private final double continuousFine;
 
-  public GreedyObliviousPolynomialTree(final BFGrid grid, int depth) {
+  public GreedyObliviousPolynomialTree(final BFGrid grid, int depth, int dimensions) {
     super(grid);
+    this.dimensions = dimensions;
     got = new GreedyObliviousTree<>(grid, depth);
     numberOfRegions = 1 << depth;
-    numberOfVariablesInRegion = (depth + 1) * (depth + 2) / 2;
+    numberOfVariablesInRegion = count(depth + 1, dimensions);
     numberOfVariables = numberOfRegions * numberOfVariablesInRegion;
     this.depth = depth;
     regulationCoefficient = 1000;
     continuousFine = 0;
   }
 
-  public int convertMultiIndex(int mask, int i, int j) {
-    if (i < j) {
-      return convertMultiIndex(mask, j, i);
-    }
+  static int[][] answer = new int[100][100];
 
-    return mask * numberOfVariablesInRegion + i * (i + 1) / 2 + j;
+  public static int count(int maxElement, int dim) {
+    if (dim == 0) {
+      return 1;
+    }
+    if (answer[maxElement][dim] != 0) {
+      return answer[maxElement][dim];
+    }
+    int sum = 0;
+    for (int i = 0; i <= maxElement; i++) {
+      sum += count(i, dim - 1);
+    }
+    answer[maxElement][dim] = sum;
+    return sum;
+  }
+
+  public static double get(int number, int maxElement, int dim, final double[] feature) {
+    if (dim == 0) {
+      return 1;
+    }
+    for (int i = 0; i <= maxElement; i++) {
+      if (count(i, dim - 1) <= number) {
+        number -= count(i, dim - 1);
+      } else {
+        return feature[i] * get(number, i, dim - 1, feature);
+      }
+    }
+    throw new IllegalArgumentException("");
+  }
+
+  static public void addL2Regulation(final Mx mx, double regulationCoefficient) {
+    for (int i = 0; i < mx.dim(); ++i) {
+      mx.adjust(i, i, regulationCoefficient);
+    }
+  }
+
+  static public double[] getSignificantFactors(final Vec x, final BFGrid.BinaryFeature[] features) {
+    double factors[] = new double[features.length + 1];
+    factors[0] = 1;
+    for (int j = 0; j < features.length; j++) {
+      factors[j + 1] = x.get(features[j].findex);
+    }
+    return factors;
+
+  }
+
+  static public double[][] parseByRegions(Vec output, int numberOfVariablesInRegion, int numberOfRegions) {
+    if (output.dim() != numberOfRegions * numberOfVariablesInRegion) {
+      throw new IllegalArgumentException("output don't fit");
+    }
+    double[][] parsed = new double[numberOfRegions][numberOfVariablesInRegion];
+    for (int i = 0; i < numberOfRegions; i++) {
+      for (int j = 0; j < numberOfVariablesInRegion; j++) {
+        parsed[i][j] = output.get(i * numberOfVariablesInRegion + j);
+      }
+    }
+    return parsed;
   }
 
   private void addConditionToMatrix(final Mx mx, final int[] conditionIndexes, double[] conditionCoefficients) {
@@ -61,77 +113,9 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
     }
   }
 
-  private void addInPointEqualCondition(final double[] point, int mask, int neighbourMask, Mx mx) {
-    int cnt = 0;
-    int index[] = new int[2 * numberOfVariablesInRegion];
-    double coef[] = new double[2 * numberOfVariablesInRegion];
-    for (int i = 0; i <= depth; i++) {
-      for (int j = 0; j <= i; j++) {
-        index[cnt] = convertMultiIndex(mask, i, j);
-        coef[cnt++] = point[i] * point[j];
-        index[cnt] = convertMultiIndex(neighbourMask, i, j);
-        coef[cnt++] = -point[i] * point[j];
-      }
-    }
-    addConditionToMatrix(mx, index, coef);
+  private int convertMultiIndex(int region, int index) {
+    return region * numberOfVariablesInRegion + index;
   }
-
-  private void addConstantBoundaryCondition(int featureNum, double boundary, int region, int neighbourRegion, final Mx conditionMatrix) {
-    double[] point = new double[depth + 1];
-    point[0] = 1;
-    point[featureNum + 1] = boundary;
-    addInPointEqualCondition(point, region, neighbourRegion, conditionMatrix);
-  }
-
-  private void addLinearBoundaryCondition(int featureId, double boundary, int region, int neighbourRegion, Mx conditionMatrix) {
-    for (int i = 1; i <= depth; i++) {
-      if (i != featureId) {
-        addConditionToMatrix(
-            conditionMatrix,
-            new int[]{
-                convertMultiIndex(region, 0, i),
-                convertMultiIndex(neighbourRegion, 0, i),
-                convertMultiIndex(region, featureId, i),
-                convertMultiIndex(neighbourRegion, featureId, i)
-            },
-            new double[]{1, -1, boundary, -boundary}
-        );
-      }
-    }
-
-  }
-
-  private void addQuadraticBoundaryCondition(int featureId, int region, int neighbourRegion, Mx conditionMatrix) {
-    for (int i = 1; i <= depth; i++) {
-      for (int j = 1; j <= i; j++) {
-        if ((i != featureId) && (j != featureId)) {
-          addConditionToMatrix(
-              conditionMatrix,
-              new int[]{convertMultiIndex(region, i, j), convertMultiIndex(neighbourRegion, i, j)},
-              new double[]{1, -1}
-          );
-        }
-      }
-    }
-  }
-
-  private Mx ContinuousConditions(final List<BFGrid.BinaryFeature> features) {
-    Mx conditionMatrix = new VecBasedMx(numberOfVariables, numberOfVariables);
-    for (int region = 0; region < numberOfRegions; region++) {
-      for (int featureId = 0; featureId < depth; featureId++) {
-        if (((region >> featureId) & 1) == 0) {
-          int neighbourRegion = region ^ (1 << featureId);
-          double boundary = features.get(featureId).condition;
-
-          addConstantBoundaryCondition(featureId + 1, boundary, region, neighbourRegion, conditionMatrix);
-          addLinearBoundaryCondition(featureId + 1, boundary, region, neighbourRegion, conditionMatrix);
-          addQuadraticBoundaryCondition(featureId + 1, region, neighbourRegion, conditionMatrix);
-        }
-      }
-    }
-    return conditionMatrix;
-  }
-
 
   private Vec calculateDiverativeVec(VecDataSet dataSet, WeightedLoss<L2> loss, BFGrid.BinaryFeature[] features) {
     Vec diverativeVec = new ArrayVec(numberOfVariables);
@@ -140,12 +124,9 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
       final double target = loss.target().get(i);
       final Vec point = dataSet.data().row(i);
       int region = ObliviousTree.bin(features, point);
-      double[] factors = GreedyObliviousLinearTree.getSignificantFactors(point, features);
-
-      for (int x = 0; x <= depth; x++) {
-        for (int y = 0; y <= x; y++) {
-          diverativeVec.adjust(convertMultiIndex(region, x, y), -2 * weight * target * factors[x] * factors[y]);
-        }
+      double[] factors = getSignificantFactors(point, features);
+      for (int index = 0; index < numberOfVariablesInRegion; index++) {
+        diverativeVec.adjust(convertMultiIndex(region, index), -2 * weight * target * get(index, factors.length - 1, dimensions, factors));
       }
     }
     return diverativeVec;
@@ -161,18 +142,14 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
       final double weight = loss.weight(i);
       final Vec point = dataSet.data().row(i);
       final int region = ObliviousTree.bin(features, point);
-      double[] factors = GreedyObliviousLinearTree.getSignificantFactors(point, features);
-      for (int x = 0; x <= depth; x++) {
-        for (int y = 0; y <= x; y++) {
-          for (int x1 = 0; x1 <= depth; x1++) {
-            for (int y1 = 0; y1 <= x1; y1++) {
-              diverativeMx.adjust(
-                  convertMultiIndex(region, x, y),
-                  convertMultiIndex(region, x1, y1),
-                  weight * factors[x] * factors[y] * factors[x1] * factors[y1]
-              );
-            }
-          }
+      double[] factors = getSignificantFactors(point, features);
+      for (int index = 0; index < numberOfVariablesInRegion; index++) {
+        for (int jindex = 0; jindex < numberOfVariablesInRegion; jindex++) {
+          diverativeMx.adjust(
+              convertMultiIndex(region, index),
+              convertMultiIndex(region, jindex),
+              weight * get(index, factors.length - 1, dimensions, factors) * get(jindex, factors.length - 1, dimensions, factors)
+          );
         }
       }
     }
@@ -183,17 +160,10 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
     BFGrid.BinaryFeature features[] = (BFGrid.BinaryFeature[]) got.fit(ds, loss).features().toArray();
     final Mx diverativeMatrix = calculateLossDiverativeMatrix(ds, loss, features);
     final Vec diverativeVec = calculateDiverativeVec(ds, loss, features);
-    GreedyObliviousLinearTree.addL2Regulation(diverativeMatrix, regulationCoefficient);
-
-        /*final Mx continuousConditions = continuousConditions(features);
-        for (int i = 0; i < numberOfVariables; ++i) {
-            for (int j = 0; j < numberOfVariables; ++j) {
-                diverativeMatrix.adjust(i, j, continuousConditions.get(i, j) * continuousFine);
-            }
-        }*/
+    addL2Regulation(diverativeMatrix, regulationCoefficient);
 
     final Vec regressionCoefficients = MxTools.solveSystemLq(diverativeMatrix, diverativeVec);
 
-    return new PolynomialObliviousTree(features, GreedyObliviousLinearTree.parseByRegions(regressionCoefficients, numberOfVariablesInRegion, numberOfRegions));
+    return new PolynomialObliviousTree(features, parseByRegions(regressionCoefficients, numberOfVariablesInRegion, numberOfRegions), dimensions, depth);
   }
 }

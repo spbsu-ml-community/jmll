@@ -607,9 +607,9 @@ public void testElasticNetBenchmark() {
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
 
-  private final static int OUTPUT_SCORE = 1 << 0;
-  private final static int OUTPUT_MODEL = 1 << 1;
-  private final static int OUTPUT_DRAW = 1 << 2;
+  protected final static int OUTPUT_SCORE = 1 << 0;
+  protected final static int OUTPUT_MODEL = 1 << 1;
+  protected final static int OUTPUT_DRAW = 1 << 2;
 
   private double computeLoss(Pool<?> pool, Class<SatL2> lossClass, final Trans.Stub model) {
     Vec current = new ArrayVec(pool.size());
@@ -728,17 +728,6 @@ public void testElasticNetBenchmark() {
         2000,
         0.02,
           /*OUTPUT_SCORE | */OUTPUT_DRAW
-    );
-  }
-
-  public void testEOTBoost() throws IOException, InterruptedException {
-    testWithBoosting(
-        new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 0.8),
-        learn,
-        validate,
-        2000,
-        0.02,
-          OUTPUT_SCORE | OUTPUT_DRAW
     );
   }
 

@@ -3,7 +3,7 @@ package com.spbsu.ml.models;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Func;
-import com.spbsu.ml.methods.trees.GreedyObliviousLinearTree;
+import com.spbsu.ml.methods.trees.GreedyObliviousPolynomialTree;
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,21 +15,23 @@ import com.spbsu.ml.methods.trees.GreedyObliviousLinearTree;
 public class PolynomialObliviousTree extends Func.Stub {
   protected final BFGrid.BinaryFeature[] features;
   protected final double[][] values;
+  private final int dimensions;
+  private final int numberOfVariablesInRegion;
 
-  public PolynomialObliviousTree(final BFGrid.BinaryFeature[] features, final double[][] values) {
+  public PolynomialObliviousTree(final BFGrid.BinaryFeature[] features, final double[][] values, int dimensions, int depth) {
     this.features = features;
     this.values = values;
+    this.dimensions = dimensions;
+    numberOfVariablesInRegion = GreedyObliviousPolynomialTree.count(depth + 1, dimensions);
   }
 
   @Override
   public double value(final Vec point) {
     final int region = ObliviousTree.bin(features, point);
-    double[] factors = GreedyObliviousLinearTree.getSignificantFactors(point, features);
+    double[] factors = GreedyObliviousPolynomialTree.getSignificantFactors(point, features);
     double sum = 0;
-    for (int i = 0; i < factors.length; i++) {
-      for (int j = 0; j <= i; j++) {
-        sum += values[region][i * (i + 1) / 2 + j] * factors[i] * factors[j];
-      }
+    for (int i = 0; i < numberOfVariablesInRegion; i++) {
+      sum += GreedyObliviousPolynomialTree.get(i, factors.length - 1, dimensions, factors) * values[region][i];
     }
     return sum;
   }

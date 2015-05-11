@@ -3,6 +3,7 @@ package com.spbsu.ml;
 import com.spbsu.ml.methods.trees.GreedyExponentialObliviousTree;
 import junit.framework.TestCase;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,7 +11,7 @@ import java.util.List;
  * Test for exponential probability idea
  * Created by towelenee on 5/9/15.
  */
-public class GreedyExponentialObliviousTreeTest extends TestCase {
+public class GreedyExponentialObliviousTreeTest extends MethodsTests {
   public void testUpperBound() {
     List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 3., 3.);
     assertEquals(GreedyExponentialObliviousTree.upperBound(list, 2.0), 4);
@@ -80,6 +81,18 @@ public class GreedyExponentialObliviousTreeTest extends TestCase {
       assertEquals(1 - p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 8., 5., true, 0.1), 1e-15);
       assertEquals(p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 8., 5., false, 0.1), 1e-15);
     }
-
   }
+
+  public void testEOTBoost() throws IOException, InterruptedException {
+    testWithBoosting(
+        new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 0.8),
+        learn,
+        validate,
+        2000,
+        0.02,
+        OUTPUT_SCORE | OUTPUT_DRAW
+    );
+  }
+
+
 }
