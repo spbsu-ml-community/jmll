@@ -22,7 +22,7 @@ public class PolynomialObliviousTree extends Func.Stub {
     this.features = features;
     this.values = values;
     this.dimensions = dimensions;
-    numberOfVariablesInRegion = GreedyObliviousPolynomialTree.count(depth + 1, dimensions);
+    numberOfVariablesInRegion = GreedyObliviousPolynomialTree.count(depth, dimensions);
   }
 
   @Override

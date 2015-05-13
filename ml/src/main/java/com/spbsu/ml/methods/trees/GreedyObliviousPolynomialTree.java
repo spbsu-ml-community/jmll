@@ -6,12 +6,17 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.PolynomialObliviousTree;
+
+import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,25 +24,24 @@ import com.spbsu.ml.models.PolynomialObliviousTree;
  * Date: 14.05.13
  * Time: 21:09
  */
-public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
+public class GreedyObliviousPolynomialTree implements VecOptimization<WeightedLoss<? extends L2>> {
   private final int depth;
   private final int dimensions;
   private final int numberOfVariables;
   private final int numberOfRegions;
-  private final GreedyObliviousTree<WeightedLoss<L2>> got;
+  private final GreedyObliviousTree<WeightedLoss<? extends L2>> got;
   private final int numberOfVariablesInRegion;
   private final double regulationCoefficient;
   private final double continuousFine;
 
-  public GreedyObliviousPolynomialTree(final BFGrid grid, int depth, int dimensions) {
-    super(grid);
+  public GreedyObliviousPolynomialTree(final BFGrid grid, int depth, int dimensions, double regulationCoefficient) {
     this.dimensions = dimensions;
+    this.regulationCoefficient = regulationCoefficient;
     got = new GreedyObliviousTree<>(grid, depth);
     numberOfRegions = 1 << depth;
-    numberOfVariablesInRegion = count(depth + 1, dimensions);
+    numberOfVariablesInRegion = count(depth, dimensions);
     numberOfVariables = numberOfRegions * numberOfVariablesInRegion;
     this.depth = depth;
-    regulationCoefficient = 1000;
     continuousFine = 0;
   }
 
@@ -73,7 +77,7 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
   }
 
   static public void addL2Regulation(final Mx mx, double regulationCoefficient) {
-    for (int i = 0; i < mx.dim(); ++i) {
+    for (int i = 0; i < mx.rows(); ++i) {
       mx.adjust(i, i, regulationCoefficient);
     }
   }
@@ -117,7 +121,7 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
     return region * numberOfVariablesInRegion + index;
   }
 
-  private Vec calculateDiverativeVec(VecDataSet dataSet, WeightedLoss<L2> loss, BFGrid.BinaryFeature[] features) {
+  private Vec calculateDiverativeVec(VecDataSet dataSet, WeightedLoss<? extends L2> loss, BFGrid.BinaryFeature[] features) {
     Vec diverativeVec = new ArrayVec(numberOfVariables);
     for (int i = 0; i < loss.dim(); i++) {
       final double weight = loss.weight(i);
@@ -126,7 +130,7 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
       int region = ObliviousTree.bin(features, point);
       double[] factors = getSignificantFactors(point, features);
       for (int index = 0; index < numberOfVariablesInRegion; index++) {
-        diverativeVec.adjust(convertMultiIndex(region, index), -2 * weight * target * get(index, factors.length - 1, dimensions, factors));
+        diverativeVec.adjust(convertMultiIndex(region, index), 2 * weight * target * get(index, factors.length - 1, dimensions, factors));
       }
     }
     return diverativeVec;
@@ -134,7 +138,7 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
 
   private Mx calculateLossDiverativeMatrix(
       final VecDataSet dataSet,
-      final WeightedLoss<L2> loss,
+      final WeightedLoss<? extends L2> loss,
       final BFGrid.BinaryFeature[] features
   ) {
     Mx diverativeMx = new VecBasedMx(numberOfVariables, numberOfVariables);
@@ -156,8 +160,10 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
     return diverativeMx;
   }
 
-  public PolynomialObliviousTree fit(VecDataSet ds, WeightedLoss<L2> loss) {
-    BFGrid.BinaryFeature features[] = (BFGrid.BinaryFeature[]) got.fit(ds, loss).features().toArray();
+  @Override
+  public PolynomialObliviousTree fit(VecDataSet ds, WeightedLoss<? extends L2> loss) {
+    final List<BFGrid.BinaryFeature> binaryFeatures = got.fit(ds, loss).features();
+    BFGrid.BinaryFeature features[] =  binaryFeatures.toArray(new BFGrid.BinaryFeature[binaryFeatures.size()]);
     final Mx diverativeMatrix = calculateLossDiverativeMatrix(ds, loss, features);
     final Vec diverativeVec = calculateDiverativeVec(ds, loss, features);
     addL2Regulation(diverativeMatrix, regulationCoefficient);
@@ -166,4 +172,5 @@ public class GreedyObliviousPolynomialTree extends GreedyTDRegion {
 
     return new PolynomialObliviousTree(features, parseByRegions(regressionCoefficients, numberOfVariablesInRegion, numberOfRegions), dimensions, depth);
   }
+
 }

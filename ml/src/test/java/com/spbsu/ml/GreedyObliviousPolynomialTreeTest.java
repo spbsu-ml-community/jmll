@@ -18,7 +18,7 @@ public class GreedyObliviousPolynomialTreeTest extends MethodsTests {
 
   public void testPOTBoost() throws IOException, InterruptedException {
     testWithBoosting(
-        new GreedyObliviousPolynomialTree(GridTools.medianGrid(learn.vecData(), 32), 6, 2),
+        new GreedyObliviousPolynomialTree(GridTools.medianGrid(learn.vecData(), 32), 6, 1, 1000),
         learn,
         validate,
         2000,
