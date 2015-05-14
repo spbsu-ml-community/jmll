@@ -1,5 +1,6 @@
 package com.spbsu.ml.models;
 
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -196,13 +197,19 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
     return features.length > 0 ? new ObliviousTree(Arrays.asList(features), values, basedOn) : null;
   }
 
-  public double[] getSignificantFactors(final Vec x) {
-    double factors[] = new double[features.length + 1];
-    factors[0] = 1;
-    for (int j = 0; j < features.length; j++) {
-      factors[j + 1] = x.get(features[j].findex);
-    }
-    return factors;
+  public Vec getSignificantFactors(final Vec x) {
+    return new ArrayVec(){
+      @Override
+      public int dim() {
+        return features.length + 1;
+      }
+      @Override
+      public double get(final int i) {
+        if (i == 0)
+          return 1;
+        return x.get(features[i - 1].findex);
+      }
+    };
   }
 
 

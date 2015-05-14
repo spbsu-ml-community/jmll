@@ -1,10 +1,7 @@
 package com.spbsu.ml.models;
 
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VectorOfMultiplications;
-import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.vectors.VectorOfMultiplicationsFactory;
 import com.spbsu.ml.methods.trees.GreedyObliviousPolynomialTree;
 
 /**
@@ -15,23 +12,28 @@ import com.spbsu.ml.methods.trees.GreedyObliviousPolynomialTree;
  * To change this template use File | Settings | File Templates.
  */
 public class PolynomialObliviousTree extends ObliviousTree {
-  private final int dimensions;
+  private final VectorOfMultiplicationsFactory multiplicationsFactory;
   private final int numberOfVariablesInRegion;
 
-  public PolynomialObliviousTree(final ObliviousTree based, final double[] values, int dimensions, int depth) {
+  public PolynomialObliviousTree(
+      final ObliviousTree based,
+      final double[] values,
+      final VectorOfMultiplicationsFactory multiplicationsFactory
+  ) {
     super(based.features(), values);
-    this.dimensions = dimensions;
-    numberOfVariablesInRegion = MathTools.combinationsWithRepetition(depth + 1, dimensions);
+    this.multiplicationsFactory = multiplicationsFactory;
+    numberOfVariablesInRegion = multiplicationsFactory.getDim();
   }
 
   @Override
   public double value(final Vec point) {
     final int region = bin(point);
     double sum = 0;
-    Vec factors = new VectorOfMultiplications(getSignificantFactors(point), dimensions);
-
+    final Vec factors = getSignificantFactors(point);
     for (int i = 0; i < numberOfVariablesInRegion; i++) {
-      sum += factors.get(i) * values[GreedyObliviousPolynomialTree.convertMultiIndex(region, i, numberOfVariablesInRegion)];
+      sum +=
+          multiplicationsFactory.get(factors, i) *
+          values[GreedyObliviousPolynomialTree.convertMultiIndex(region, i, numberOfVariablesInRegion)];
     }
     return sum;
   }

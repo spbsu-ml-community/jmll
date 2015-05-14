@@ -1,10 +1,9 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VectorOfMultiplications;
+import com.spbsu.commons.math.vectors.VectorOfMultiplicationsFactory;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
@@ -21,20 +20,17 @@ import com.spbsu.ml.models.PolynomialObliviousTree;
  * Time: 21:09
  */
 public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedLoss<? extends L2>> {
-  private final int depth;
-  private final int dimensions;
   private final int numberOfVariables;
-  private final int numberOfVariablesInRegion;
   private final double regulationCoefficient;
+  private final VectorOfMultiplicationsFactory multiplicationsFactory;
+  private final int numberOfVariablesInRegion;
 
   public GreedyObliviousPolynomialTree(final BFGrid grid, int depth, int dimensions, double regulationCoefficient) {
     super(grid, depth);
-    this.dimensions = dimensions;
     this.regulationCoefficient = regulationCoefficient;
-    int numberOfRegions = 1 << depth;
-    numberOfVariablesInRegion = MathTools.combinationsWithRepetition(depth + 1, dimensions);
-    numberOfVariables = numberOfRegions * numberOfVariablesInRegion;
-    this.depth = depth;
+    multiplicationsFactory = new VectorOfMultiplicationsFactory(depth + 1, dimensions);
+    numberOfVariablesInRegion = multiplicationsFactory.getDim();
+    numberOfVariables = numberOfVariablesInRegion << depth;
   }
 
   public static int convertMultiIndex(int region, int index, int numberOfVariablesInRegion) {
@@ -43,7 +39,7 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
 
   private int convertMultiIndex(int region, int index)
   {
-    return convertMultiIndex(region, index, numberOfVariablesInRegion);
+    return convertMultiIndex(region, index, multiplicationsFactory.getDim());
   }
 
   private Vec calculateDerivativeVec(VecDataSet dataSet, WeightedLoss<? extends L2> loss, final ObliviousTree based) {
@@ -53,10 +49,11 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
       final double target = loss.target().get(i);
       final Vec point = dataSet.data().row(i);
       int region = based.bin(point);
-      Vec factors = new VectorOfMultiplications(based.getSignificantFactors(point), dimensions);
 
-      for (int index = 0; index < numberOfVariablesInRegion; index++) {
-        derivativeVec.adjust(convertMultiIndex(region, index), 2 * weight * target * factors.get(index));
+      final Vec factors = based.getSignificantFactors(point);
+
+      for (int j = 0; j < numberOfVariablesInRegion; j++) {
+        derivativeVec.adjust(convertMultiIndex(region, j), 2 * weight * target * multiplicationsFactory.get(factors, j));
       }
     }
     return derivativeVec;
@@ -72,13 +69,13 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
       final double weight = loss.weight(i);
       final Vec point = dataSet.data().row(i);
       final int region = based.bin(point);
-      Vec factors = new VectorOfMultiplications(based.getSignificantFactors(point), dimensions);
+      final Vec factors = based.getSignificantFactors(point);
       for (int j = 0; j < numberOfVariablesInRegion; j++) {
         for (int g = 0; g < numberOfVariablesInRegion; g++) {
           derivativeMx.adjust(
               convertMultiIndex(region, j),
               convertMultiIndex(region, g),
-              weight * factors.get(j) * factors.get(g)
+              weight * multiplicationsFactory.get(factors, j) * multiplicationsFactory.get(factors, g)
           );
         }
       }
@@ -100,7 +97,7 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
 
     final Vec regressionCoefficients = MxTools.solveSystemLq(derivativeMatrix, derivativeVec);
 
-    return new PolynomialObliviousTree(based, regressionCoefficients.toArray(), dimensions, depth);
+    return new PolynomialObliviousTree(based, regressionCoefficients.toArray(), multiplicationsFactory);
   }
 
 }
