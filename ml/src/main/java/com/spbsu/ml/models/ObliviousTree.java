@@ -21,7 +21,7 @@ import com.spbsu.ml.data.impl.BinarizedDataSet;
  */
 public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
   private final BFGrid.BinaryFeature[] features;
-  private final double[] values;
+  protected final double[] values;
   private final double[] basedOn;
   private final BFGrid grid;
 
@@ -66,24 +66,18 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
     return builder.toString();
   }
 
-  public static int bin(final BFGrid.BinaryFeature[] features, final Vec x)
-  {
-      int index = 0;
-      for (int i = 0; i < features.length; i++) {
-          index <<= 1;
-          if (features[i].value(x))
-              index++;
-      }
-      return index;
-  }
-
-
   public int bin(final Vec x) {
-      return bin(features, x);
+    int index = 0;
+    for (int i = 0; i < features.length; i++) {
+      index <<= 1;
+      if (features[i].value(x))
+        index++;
+    }
+    return index;
   }
 
   public List<BFGrid.BinaryFeature> features() {
-    final List<BFGrid.BinaryFeature> ret = new ArrayList<BFGrid.BinaryFeature>();
+    final List<BFGrid.BinaryFeature> ret = new ArrayList<>();
     for (int i = 0; i < features.length; i++)
       ret.add(features[i]);
     return ret;
@@ -201,4 +195,15 @@ public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
 
     return features.length > 0 ? new ObliviousTree(Arrays.asList(features), values, basedOn) : null;
   }
+
+  public double[] getSignificantFactors(final Vec x) {
+    double factors[] = new double[features.length + 1];
+    factors[0] = 1;
+    for (int j = 0; j < features.length; j++) {
+      factors[j + 1] = x.get(features[j].findex);
+    }
+    return factors;
+  }
+
+
 }
