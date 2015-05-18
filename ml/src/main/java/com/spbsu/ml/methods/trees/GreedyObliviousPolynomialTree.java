@@ -44,7 +44,7 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
 
   private Vec calculateDerivativeVec(VecDataSet dataSet, WeightedLoss<? extends L2> loss, final ObliviousTree based) {
     Vec derivativeVec = new ArrayVec(numberOfVariables);
-    for (int i = 0; i < loss.dim(); i++) {
+    for (int i = 0; i < dataSet.data().rows(); i++) {
       final double weight = loss.weight(i);
       final double target = loss.target().get(i);
       final Vec point = dataSet.data().row(i);
@@ -53,7 +53,7 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
       final Vec factors = based.getSignificantFactors(point);
 
       for (int j = 0; j < numberOfVariablesInRegion; j++) {
-        derivativeVec.adjust(convertMultiIndex(region, j), 2 * weight * target * multiplicationsFactory.get(factors, j));
+        derivativeVec.adjust(convertMultiIndex(region, j), weight * target * multiplicationsFactory.get(factors, j));
       }
     }
     return derivativeVec;
@@ -65,7 +65,7 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
       final ObliviousTree based
   ) {
     Mx derivativeMx = new VecBasedMx(numberOfVariables, numberOfVariables);
-    for (int i = 0; i < dataSet.xdim(); i++) {
+    for (int i = 0; i < dataSet.data().rows(); i++) {
       final double weight = loss.weight(i);
       final Vec point = dataSet.data().row(i);
       final int region = based.bin(point);
@@ -95,8 +95,8 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
       }
     }
 
-    final Vec regressionCoefficients = MxTools.solveSystemLq(derivativeMatrix, derivativeVec);
-
+    final Vec regressionCoefficients = MxTools.solveCholesky(derivativeMatrix, derivativeVec);
+    MxTools.multiply(derivativeMatrix, regressionCoefficients);
     return new PolynomialObliviousTree(based, regressionCoefficients.toArray(), multiplicationsFactory);
   }
 

@@ -34,10 +34,7 @@ import com.spbsu.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -661,7 +658,7 @@ public void testElasticNetBenchmark() {
     qualityCalcer = new QualityCalcer();
     counter = new Counter();
 
-    graphFile = new PrintStream("graph.tsv");
+    graphFile = new PrintStream(new FileOutputStream(new File("graph.tsv")));
     counterFile = new Counter(graphFile);
     learnListenerFile = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass), graphFile);
     validateListenerFile = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass), graphFile);
@@ -688,9 +685,10 @@ public void testElasticNetBenchmark() {
     System.out.println("\n + Final loss learn= " + computeLoss(learn, lossClass, model));
     System.out.println("\n + Final loss validate= " + computeLoss(validate, lossClass, model));
     if ((outputMode & OUTPUT_DRAW) != 0) {
+      graphFile.flush();
       graphFile.close();
-      Process p = Runtime.getRuntime().exec("gnuplot draw.gp");
-      p.waitFor();
+      //Process p = Runtime.getRuntime().exec("gnuplot draw.gp");
+      //p.waitFor();
     }
   }
 
@@ -725,9 +723,9 @@ public void testElasticNetBenchmark() {
         new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6),
         learn,
         validate,
-        2000,
-        0.02,
-          /*OUTPUT_SCORE | */OUTPUT_DRAW
+        1000,
+        0.005,
+        OUTPUT_SCORE | OUTPUT_DRAW
     );
   }
 
