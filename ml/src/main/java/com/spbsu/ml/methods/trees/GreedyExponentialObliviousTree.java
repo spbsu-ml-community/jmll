@@ -1,5 +1,6 @@
 package com.spbsu.ml.methods.trees;
 
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -8,6 +9,7 @@ import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,7 +20,7 @@ import java.util.List;
     *Idea please stop making my code yellow
 */
 
-public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<? extends L2>>{
+public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<? extends L2>> {
   private final double SwapProbability;
   private final ArrayList<ArrayList<Double>> factors;
 
@@ -101,16 +103,22 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
     return probability;
   }
 
-  private double getProbabilityBeingInRegion(final List<BFGrid.BinaryFeature> features, final Vec point, int region) {
-    double probability = 1;
+  private double[] getProbabilitiesBeingInRegion(final List<BFGrid.BinaryFeature> features, final Vec point) {
+    final int numberOfRegions = 1 << features.size();
+    double[] probabilities = new double[numberOfRegions];
+    Arrays.fill(probabilities, 1.0);
     for (int i = 0; i < features.size(); i++) {
-      final boolean greater = ((region >> (features.size() - i - 1) & 1) == 1);
       final int factorId = features.get(i).findex;
       final double condition = features.get(i).condition;
       final double x = point.get(factorId);
-      probability *= getProbabilityOfFit(factors.get(factorId), x, condition, greater, SwapProbability);
+      double[] p = new double[2];
+      for (int j = 0; j < 2; j++)
+        p[j] = getProbabilityOfFit(factors.get(factorId), x, condition, (j == 1), SwapProbability);
+
+      for (int region = 0; region < 1 << features.size(); region++)
+        probabilities[region] *= p[(region >> (features.size() - i - 1)) & 1];
     }
-    return probability;
+    return probabilities;
   }
 
   @Override
@@ -121,20 +129,24 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
 
     double[] targetSum = new double[numberOfRegions];
     double[] weightsSum = new double[numberOfRegions];
-    for (int i = 0; i < ds.xdim(); ++i) {
+    for (int i = 0; i < ds.data().rows(); ++i) {
       final double weight = loss.weight(i);
       final double target = loss.target().get(i);
       final Vec point = ds.data().row(i);
+      double sumProb = 0;
 
+      final double[] probabilities = getProbabilitiesBeingInRegion(features, point);
       for (int region = 0; region < numberOfRegions; ++region) {
-        final double expWeight = getProbabilityBeingInRegion(features, point, region);
-        if (expWeight < 0 || weight < 0) {
-          throw new RuntimeException("");
-        }
+        final double expWeight = probabilities[region];
+        sumProb += expWeight;
 
-        targetSum[region] += target * weight * expWeight;
-        weightsSum[region] += weight * expWeight;
+        if (expWeight > MathTools.EPSILON) {
+          targetSum[region] += target * weight * expWeight;
+          weightsSum[region] += weight * expWeight;
+        }
       }
+      if (sumProb < 0.9999)
+        throw new RuntimeException("");
     }
     double[] values = new double[numberOfRegions];
     for (int region = 0; region < numberOfRegions; ++region) {
@@ -142,7 +154,6 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
         values[region] = targetSum[region] / weightsSum[region];
       }
     }
-
     return new ObliviousTree(features, values, tree.based());
   }
 }

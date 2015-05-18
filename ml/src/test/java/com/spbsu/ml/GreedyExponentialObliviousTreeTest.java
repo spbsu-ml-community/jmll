@@ -1,7 +1,6 @@
 package com.spbsu.ml;
 
 import com.spbsu.ml.methods.trees.GreedyExponentialObliviousTree;
-import junit.framework.TestCase;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -88,8 +87,8 @@ public class GreedyExponentialObliviousTreeTest extends MethodsTests {
         new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 0.8),
         learn,
         validate,
-        2000,
-        0.02,
+        1000,
+        0.006,
         OUTPUT_SCORE | OUTPUT_DRAW
     );
   }
