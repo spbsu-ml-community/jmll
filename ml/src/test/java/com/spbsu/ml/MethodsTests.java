@@ -26,7 +26,6 @@ import com.spbsu.ml.methods.greedyRegion.GreedyTDIterativeRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
 import com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization.GreedyMergedRegion;
-import com.spbsu.ml.methods.trees.GreedyExponentialObliviousTree;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
@@ -622,8 +621,8 @@ public void testElasticNetBenchmark() {
       final Pool<?> validate,
       final int stepsNum,
       final double step,
-      final int outputMode
-  ) throws IOException, InterruptedException {
+      final int outputMode,
+      String fileName) throws IOException, InterruptedException {
     final GradientBoosting<SatL2> boosting =
         new GradientBoosting<>(new BootstrapOptimization<L2>(weak, rng), stepsNum, step);
     class Counter implements ProgressHandler {
@@ -658,7 +657,7 @@ public void testElasticNetBenchmark() {
     qualityCalcer = new QualityCalcer();
     counter = new Counter();
 
-    graphFile = new PrintStream(new FileOutputStream(new File("graph.tsv")));
+    graphFile = new PrintStream(new FileOutputStream(new File(fileName)));
     counterFile = new Counter(graphFile);
     learnListenerFile = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass), graphFile);
     validateListenerFile = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass), graphFile);
@@ -725,8 +724,8 @@ public void testElasticNetBenchmark() {
         validate,
         1000,
         0.005,
-        OUTPUT_SCORE | OUTPUT_DRAW
-    );
+        OUTPUT_SCORE | OUTPUT_DRAW,
+        null);
   }
 
   public void testClassifyBoost() {

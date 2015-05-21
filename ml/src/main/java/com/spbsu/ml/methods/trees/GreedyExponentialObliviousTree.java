@@ -20,7 +20,7 @@ import java.util.List;
     *Idea please stop making my code yellow
 */
 
-public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<? extends L2>> {
+public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<? extends L2>>{
   private final double SwapProbability;
   private final ArrayList<ArrayList<Double>> factors;
 
@@ -95,9 +95,9 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
 
   }
 
-  public static double getProbabilityOfFit(final List<Double> list, double x, double target, boolean greater, double swapProbability) {
+  public static double getProbabilityOfFit(final List<Double> list, double x, double target, double swapProbability) {
     final double probability = getProbability(list, x, target, swapProbability);
-    if ((x > target) == greater) {
+    if (!(x > target)) {
       return 1 - probability;
     }
     return probability;
@@ -112,9 +112,10 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
       final double condition = features.get(i).condition;
       final double x = point.get(factorId);
       double[] p = new double[2];
-      for (int j = 0; j < 2; j++)
-        p[j] = getProbabilityOfFit(factors.get(factorId), x, condition, (j == 1), SwapProbability);
-
+      {
+        p[0] = getProbabilityOfFit(factors.get(factorId), x, condition, SwapProbability);
+        p[1]  = 1 - p[0];
+      }
       for (int region = 0; region < 1 << features.size(); region++)
         probabilities[region] *= p[(region >> (features.size() - i - 1)) & 1];
     }

@@ -57,28 +57,22 @@ public class GreedyExponentialObliviousTreeTest extends MethodsTests {
 
   public void testProbabilityOfFit() {
     List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 5., 5., 8., 8., 8., 9.);
-    assertEquals(1e-5, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 0., 3., true, 0.1), 1e-15);
-    assertEquals(1 - 1e-5, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 0., 3., false, 0.1), 1e-15);
+    assertEquals(1 - 1e-5, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 0., 3., 0.1), 1e-15);
 
-    assertEquals(1e-4, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 2., 5., true, 0.1), 1e-15);
-    assertEquals(1 - 1e-4, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 2., 5., false, 0.1), 1e-15);
+    assertEquals(1 - 1e-4, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 2., 5., 0.1), 1e-15);
 
-    assertEquals(1 - 1e-4, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 3., 0., true, 0.1), 1e-15);
-    assertEquals(1e-4, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 3., 0., false, 0.1), 1e-15);
+    assertEquals(1e-4, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 3., 0., 0.1), 1e-15);
 
-    assertEquals(1 - 1e-2, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 3., 1., true, 0.1), 1e-15);
-    assertEquals(1e-2, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 3., 1., false, 0.1), 1e-15);
+    assertEquals(1e-2, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 3., 1., 0.1), 1e-15);
 
     {
       double p = (1e-3 + 1e-2) / 2;
-      assertEquals(p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 1., 2., true, 0.1), 1e-15);
-      assertEquals(1 - p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 1., 2., false, 0.1), 1e-15);
+      assertEquals(1 - p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 1., 2., 0.1), 1e-15);
     }
 
     {
       double p = (1e-1 + 1e-2 + 1e-3) / 3;
-      assertEquals(1 - p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 8., 5., true, 0.1), 1e-15);
-      assertEquals(p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 8., 5., false, 0.1), 1e-15);
+      assertEquals(p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 8., 5., 0.1), 1e-15);
     }
   }
 
@@ -89,8 +83,24 @@ public class GreedyExponentialObliviousTreeTest extends MethodsTests {
         validate,
         1000,
         0.006,
-        OUTPUT_SCORE | OUTPUT_DRAW
-    );
+        OUTPUT_SCORE | OUTPUT_DRAW,
+        "graph.tsv");
+  }
+  public void testEOTBoostMulti() throws IOException, InterruptedException {
+    for (int regulation = 0; regulation < 20; regulation++)
+    {
+      for(double step = 0.001; step < 0.02; step += 0.001) {
+        testWithBoosting(
+            new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 1 - Math.pow(2, -regulation)),
+            learn,
+            validate,
+            1000,
+            step,
+            OUTPUT_SCORE | OUTPUT_DRAW,
+            "exp-" + regulation + "step-" + step
+        );
+      }
+    }
   }
 
 
