@@ -11,6 +11,17 @@
     <name>SpbSU Experiments</name>
     <dependencies>
         <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.spbsu</groupId>
             <artifactId>commons</artifactId>
             <version>1.0-SNAPSHOT</version>
@@ -65,7 +76,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
-        <java.version>1.7</java.version>
+        <java.version>1.8</java.version>
+        <javac.version>1.8 </javac.version>
+        <jmh.version>1.7</jmh.version>
     </properties>
 
     <build>

@@ -49,8 +49,10 @@ public class BetaBinomialMixture extends Mixture {
     double[] alphas = new double[q.length];
     double[] betas = new double[q.length];
     for (int i = 0; i < q.length; ++i) {
-      alphas[i] = random.nextDouble()*randomInitLimit;
-      betas[i] = random.nextDouble()*randomInitLimit;
+      final int precision = 4+random.nextInt(randomInitLimit);
+      final double mean = 0.05 + 0.9*random.nextDouble();
+      alphas[i] = mean * precision;
+      betas[i] = (1-mean) * precision;
     }
     this.alphas = alphas;
     this.betas = betas;
@@ -93,6 +95,33 @@ public class BetaBinomialMixture extends Mixture {
               .append(",").append(alphas[i] / (alphas[i]+betas[i])).append(")");
     }
     return builder.toString();
+  }
+
+  public double[] estimate(MixtureObservations<BetaBinomialMixture> experiment) {
+    double[] theta = new double[experiment.sums.length];
+    final int k = experiment.owner.alphas.length;
+    final int n = experiment.n;
+    final BetaBinomialMixtureEM.SpecialFunctionCache funcs[] = new BetaBinomialMixtureEM.SpecialFunctionCache[k];
+    for (int i=0; i < k;++i) {
+      final double alpha = experiment.owner.alphas[i];
+      final double beta = experiment.owner.betas[i];
+      funcs[i] = new BetaBinomialMixtureEM.SpecialFunctionCache(alpha,beta,n);
+    }
+
+    double[] probs = new double[k];
+    int[] sums = experiment.sums;
+    for (int i = 0; i < sums.length; ++i) {
+      final int m = sums[i];
+      double denum = 0;
+      for (int j = 0; j < k; ++j) {
+        probs[j] = experiment.owner.q[j] * funcs[j].calculate(m, n);
+        denum += probs[j];
+      }
+      for (int j = 0; j < k; ++j) {
+        theta[i] += probs[j] * (m + experiment.owner.alphas[j]) / (n + experiment.owner.alphas[j] + experiment.owner.betas[j]) / denum;
+      }
+    }
+    return theta;
   }
 }
 

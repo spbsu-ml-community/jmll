@@ -9,9 +9,14 @@ package com.spbsu.bernulli;
 public class FittedModel<Model> {
   public final double likelihood;
   public final Model model;
+  public final int complexity;
 
-  public FittedModel(double likelihood, Model model) {
+
+  public FittedModel(double likelihood, Model model, int complexity) {
     this.likelihood = likelihood;
     this.model = model;
+    this.complexity = complexity;
   }
+
+
 }

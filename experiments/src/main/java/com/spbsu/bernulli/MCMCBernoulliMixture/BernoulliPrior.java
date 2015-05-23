@@ -5,5 +5,9 @@ package com.spbsu.bernulli.MCMCBernoulliMixture;
  */
 
 public interface BernoulliPrior {
-  public double likelihood(int sum, int total);
+  double likelihood(int sum, int total);
+  default double estimate(int sum, int total) {
+    return sum * 1.0  / total;
+  }
+
 }

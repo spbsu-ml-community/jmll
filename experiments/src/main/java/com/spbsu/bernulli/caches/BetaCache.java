@@ -1,5 +1,7 @@
 package com.spbsu.bernulli.caches;
 
+import org.apache.commons.math3.util.FastMath;
+
 public class BetaCache {
   double alpha;
   double beta;
@@ -22,27 +24,31 @@ public class BetaCache {
   boolean cachedAlphaBetaSum = false;
 
 
-  final public double calculate(int m, int n) {
+  final public double logCalculate(int m, int n) {
     if (!cachedAlphaBetaSum) {
       final double ab = alpha + beta;
       for (int i = 0; i < n; ++i) {
-        logAlphaBetaSum += Math.log(ab + i);
+        logAlphaBetaSum += FastMath.log(ab + i);
       }
       cachedAlphaBetaSum = true;
     }
     if (lastCachedAlpha < m) {
       for (int i = lastCachedAlpha + 1; i <= m; ++i) {
-        logAlpha[i] = logAlpha[i - 1] + Math.log(alpha + i - 1);
+        logAlpha[i] = logAlpha[i - 1] + FastMath.log(alpha + i - 1);
       }
       lastCachedAlpha = m;
     }
     if (lastCachedBeta < n - m) {
       for (int i = lastCachedBeta + 1; i <= n - m; ++i) {
-        logBeta[i] = logBeta[i - 1] + Math.log(beta + i - 1);
+        logBeta[i] = logBeta[i - 1] + FastMath.log(beta + i - 1);
       }
       lastCachedBeta = n - m;
     }
-    return Math.exp(logAlpha[m] + logBeta[n - m] - logAlphaBetaSum);
+    return logAlpha[m] + logBeta[n - m] - logAlphaBetaSum;
+  }
+
+  final public double calculate(int m, int n) {
+    return FastMath.exp(logCalculate(m, n));
   }
 
   final public void update(double alpha, double beta) {
@@ -57,5 +63,4 @@ public class BetaCache {
     logAlphaBetaSum = 0;
     cachedAlphaBetaSum = false;
   }
-
 }

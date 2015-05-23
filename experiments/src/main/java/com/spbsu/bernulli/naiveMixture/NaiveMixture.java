@@ -7,6 +7,7 @@ import com.spbsu.commons.random.FastRandom;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * Created by noxoomo on 27/03/15.
@@ -50,5 +51,38 @@ public class NaiveMixture  extends Mixture {
     }
     return new MixtureObservations<>(this,components,means,sums,count);
   }
+
+
+  public double[] estimate(int[] sums) {
+    final double[] result = new double[sums.length];
+    final double[] logtheta  =new double[means.length];
+    final double[] logntheta  =new double[means.length];
+    final double[] logq  =new double[means.length];
+
+    for (int i = 0; i < means.length; ++i) {
+      logtheta[i] = FastMath.log(means[i]);
+      logntheta[i] = FastMath.log(1 - means[i]);
+      logq[i] = FastMath.log(q[i]);
+    }
+    for (int j = 0; j < sums.length; ++j) {
+      double theta = 0;
+      final double m = sums[j];
+      final double n = count;
+      double denum = 0;
+      for (int i=0; i < means.length;++i) {
+        double tmp = m != 0 ? m * logtheta[i] : 0;
+        tmp += (n - m) != 0 ? (n - m) * logntheta[i] : 0;
+        tmp += logq[i];
+        final double p = FastMath.exp(tmp);
+        denum += p;
+        theta += p * means[i];
+      }
+      theta /= denum;
+      result[j] = theta;
+    }
+
+    return result;
+  }
+
 
 }

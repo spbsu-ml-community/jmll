@@ -22,6 +22,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
   final SpecialFunctionCache funcs[];
   final double gradientCache[];
   final double newtonCache[];
+  final double maxPrecision = 500;
 
   public BetaBinomialMixtureEM(int k, final int[] sums, final int n, FastRandom random) {
     this.k = k; //components count
@@ -41,7 +42,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
   }
 
 
-  final private void updateCache() {
+  private void updateCache() {
     for (int i = 0; i < k; ++i) {
       funcs[i].update(model.alphas[i], model.betas[i]);
     }
@@ -65,10 +66,10 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     }
   }
 
-  private final int iterations = 2;
+  private final int iterations = 3;
   private final double gradientStartStep = 0.01;
-  private final double newtonStartStep = 0.01;
-  private final int gradientIters = 20;
+  private final double newtonStartStep = 0.005;
+  private final int gradientIters = 10;
 
   private boolean newtonStep(double step) {
     updateCache();
@@ -116,6 +117,10 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       final double stepAlpha = (d * dalpha - b * dbeta) / det;
       final double stepBeta = (a * dbeta - b * dalpha) / det;
 
+      if (model.alphas[i] - step*stepAlpha < 1e-3 || model.betas[i] - step * stepBeta< 1e-3)
+        continue;
+
+
       model.alphas[i] -= step * stepAlpha;
       model.betas[i] -= step * stepBeta;
       if (model.betas[i] < 0.001) {
@@ -126,6 +131,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
         model.alphas[i] = 0.001;
         status = true;
       }
+
     }
     return status;
   }
@@ -152,6 +158,34 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
         gradientCache[2 * j + 1] += betaGrad;
       }
     }
+  }
+
+  private void fillGradient2() {
+    Arrays.fill(gradientCache, 0.0);
+    final double psiasum[] = new double[k];
+    final double psibsum[] = new double[k];
+    for (int i = 0; i < k; ++i) {
+      final double psiab = funcs[i].digamma(Type.AlphaBeta, 0);
+      final double psiabn = funcs[i].digamma(Type.AlphaBeta, n);
+      final double psia = funcs[i].digamma(Type.Alpha, 0);
+      final double psib = funcs[i].digamma(Type.Beta, 0);
+      psiasum[i] = -psia + psiab - psiabn;
+      psibsum[i] = -psib + psiab - psiabn;
+    }
+    for (int i = 0; i < sums.length; ++i) {
+      final int m = sums[i];
+      for (int j = 0; j < k; ++j) {
+        final double alphaGrad = dummy.get(i, j) * (psiasum[j] + funcs[j].digamma(Type.Alpha, m));
+        final double betaGrad = dummy.get(i, j) * (psibsum[j] + funcs[j].digamma(Type.Beta, n - m));
+        gradientCache[2 * j] += alphaGrad;
+        gradientCache[2 * j + 1] += betaGrad;
+      }
+    }
+  }
+
+  @Override
+  public int complexity() {
+    return 3 * k;
   }
 
   private boolean gradientStep(double step) {
@@ -238,17 +272,20 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       if (gradientStep(gradientStep)) {
         return;
       }
+      shrinkage();
     }
 //      first = true;
 //    for (int i = 0; i < iterations; ++i) {
 //      if (newtonStep(newtonStartStep)) {
+//        shrinkage();
 //        return;
 //      }
+//      shrinkage();
 //    }
-//    shrinkage();
+//
   }
 
-  final int maxObservations = 200;
+  final int maxObservations = 500;
 
   //heuristic for damn singularities.
   private void shrinkage() {
@@ -258,8 +295,8 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       double observations = alpha + beta;
       if (observations > maxObservations) {
         double m = alpha / observations;
-        model.alphas[i] = maxObservations * m * 0.9;
-        model.betas[i] = maxObservations * 0.9;
+        model.alphas[i] = maxObservations * m;
+        model.betas[i] = maxObservations * (1-m);
       }
     }
   }
@@ -277,9 +314,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
     }
     oldLikelihood = currentLL;
     count--;
-    if (count < 0)
-      return true;
-    return false;
+    return count < 0;
   }
 
   @Override

@@ -10,8 +10,9 @@ import com.spbsu.bernulli.StochasticSearch;
 import com.spbsu.bernulli.betaBinomialMixture.BetaBinomialMixture;
 import com.spbsu.bernulli.betaBinomialMixture.BetaBinomialMixtureEM;
 import com.spbsu.bernulli.betaBinomialMixture.RegularizedBetaBinomialMixtureEM;
-import com.spbsu.bernulli.naiveMixture.BernoulliMixtureEM;
+import com.spbsu.bernulli.caches.GammaCache;
 import com.spbsu.bernulli.naiveMixture.NaiveMixture;
+import com.spbsu.bernulli.naiveMixture.NoMixture;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
@@ -24,6 +25,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.spbsu.bernulli.FitIt.*;
 import static com.spbsu.bernulli.betaBinomialMixture.BetaBinomialMixtureEM.Type;
 import static com.spbsu.commons.math.MathTools.sqr;
 import static com.spbsu.commons.math.vectors.VecTools.*;
@@ -93,7 +95,7 @@ public class BernoulliTest extends TestCase {
                 public FittedModel<BetaBinomialMixtureEM> fit() {
                   BetaBinomialMixtureEM em = new BetaBinomialMixtureEM(k, observations.sums, finaln, rand);
                   FittedModel<BetaBinomialMixture> model = em.fit();
-                  return new FittedModel<>(model.likelihood, em);
+                  return new FittedModel<>(model.likelihood, em, em.complexity());
                 }
               };
             }
@@ -150,7 +152,7 @@ public class BernoulliTest extends TestCase {
                 public FittedModel<RegularizedBetaBinomialMixtureEM> fit() {
                   RegularizedBetaBinomialMixtureEM em = new RegularizedBetaBinomialMixtureEM(4, isums, finalN, 100, rand);
                   FittedModel<BetaBinomialMixture> model = em.fit();
-                  return new FittedModel<>(model.likelihood, em);
+                  return new FittedModel<>(model.likelihood, em,em.complexity());
                 }
               };
             }
@@ -193,7 +195,7 @@ public class BernoulliTest extends TestCase {
                 public FittedModel<RegularizedBetaBinomialMixtureEM> fit() {
                   RegularizedBetaBinomialMixtureEM em = new RegularizedBetaBinomialMixtureEM(k, observations.sums, finaln,200, rand);
                   FittedModel<BetaBinomialMixture> model = em.fit();
-                  return new FittedModel<>(model.likelihood, em);
+                  return new FittedModel<>(model.likelihood, em, em.complexity());
                 }
               };
             }
@@ -330,7 +332,7 @@ public class BernoulliTest extends TestCase {
 
   public void testMCMCEstimation() {
     final int k = 5;
-    final int count = 100;
+    final int count = 10;
     final int n = 100000;
     final int runIters = 10000000;
 
@@ -351,99 +353,32 @@ public class BernoulliTest extends TestCase {
 
   }
 
-  <Mixture> double[] fitMCMCMixture(final int k, final MixtureObservations<Mixture> experiment,final int chainsCount, final int iters) {
-    final double[][] means = new double[chainsCount][experiment.sums.length];
-    final BernoulliPrior prior = new UniformPrior(experiment.n * experiment.sums.length+1);
-    final CountDownLatch latch = new CountDownLatch(chainsCount);
-    for (int i = 0; i < chainsCount; ++i) {
-      final int ind = i;
-      exec.submit(new Runnable() {
-        @Override
-        public void run() {
-          MCMCBernoulliEstimation estimation = new MCMCBernoulliEstimation(k, experiment.n, experiment.sums, prior, rand);
-          estimation.run(iters);
-          means[ind] = estimation.estimation();
-          latch.countDown();
-        }
-      });
-    }
-    try {
-      latch.await();
-    } catch (Exception e) {
-      //
-    }
 
-    for (int i=1; i < means.length-1;++i) {
-      for (int j=0; j < means[0].length;++j)
-        means[0][j] += means[i][j];
-    }
-    final int last = means.length - 1;
-    for (int j=0; j  < means[0].length;++j) {
-      means[0][j] = (means[0][j] + means[last][j]) / means.length;
-    }
-     return means[0];
-  }
-
-  <Mixture> double[] fitBetaMixture(final int k, final MixtureObservations<Mixture> experiment) {
-    StochasticSearch<RegularizedBetaBinomialMixtureEM> search = new StochasticSearch<>(new Factory<Learner<RegularizedBetaBinomialMixtureEM>>() {
-
-      @Override
-      public Learner<RegularizedBetaBinomialMixtureEM> create() {
-        return new Learner<RegularizedBetaBinomialMixtureEM>() {
-          @Override
-          public FittedModel<RegularizedBetaBinomialMixtureEM> fit() {
-            RegularizedBetaBinomialMixtureEM em = new RegularizedBetaBinomialMixtureEM(k, experiment.sums,  experiment.n,500, rand);
-            FittedModel<BetaBinomialMixture> model = em.fit();
-            return new FittedModel<>(model.likelihood, em);
-          }
-        };
-      }
-    });
-    RegularizedBetaBinomialMixtureEM emb = search.fit(8);
-//          BetaBinomialMixtureEM em = new BetaBinomialMixtureEM(k,observations.sums,n,rand);
-    return emb.estimate(false);
-  }
-
-  <Mixture> double[] fitNaiveMixture(final int k, final MixtureObservations<Mixture> experiment) {
-    StochasticSearch<BernoulliMixtureEM> search = new StochasticSearch<>(new Factory<Learner<BernoulliMixtureEM>>() {
-      @Override
-      public Learner<BernoulliMixtureEM> create() {
-        return new Learner<BernoulliMixtureEM>() {
-          @Override
-          public FittedModel<BernoulliMixtureEM> fit() {
-            BernoulliMixtureEM em = new BernoulliMixtureEM(experiment.sums,  experiment.n,k, rand);
-            FittedModel<NaiveMixture> model = em.fit();
-            return new FittedModel<>(model.likelihood, em);
-          }
-        };
-      }
-    });
-    BernoulliMixtureEM emb = search.fit(8);
-    return emb.estimate(false);
-  }
 
   public void testMixture() {
-    final int k = 50;
-    final int from = 500;
+    final int k = 3;
+    final int from = 50;
     final int to = 100001;
     final int tries = 1000;
-    for (int n = 20; n < 1001; n *= 2)
+    for (int n = 10; n < 1001; n *= 2)
       for (int N = from; N < to; N *= 10) {
         double sumAvgMixture = 0;
         double sumAvgBetaMixture = 0;
         double sumAvgNaive = 0;
         double sumAvgMCMC = 0;
+        double sumAvgBest = 0;
         final NaiveMixture mixture = new NaiveMixture(k,n,rand);
         for (int tr = 1; tr <= tries; ++tr) {
           final MixtureObservations<NaiveMixture> experiment = mixture.sample(N);
           double[] betameans = fitBetaMixture(k, experiment);
-          double[] mcmcmeans = fitMCMCMixture(k, experiment, 4, 100000000);
+          double[] mcmcmeans = fitMCMCMixture(k, experiment, 4, 10000000);
           double[] means = fitNaiveMixture(k, experiment);
           sumAvgMixture += experiment.quality(means);
           sumAvgBetaMixture +=experiment.quality(betameans);
           sumAvgNaive += experiment.naiveQuality();
           sumAvgMCMC += experiment.quality(mcmcmeans);
-          System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tr + "\t" + sumAvgBetaMixture / tr+ "\t" +sumAvgMCMC / tr + "\t"  + sumAvgNaive / tr);
+          sumAvgBest += experiment.quality(mixture.estimate(experiment.sums));
+          System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tr + "\t" + sumAvgBetaMixture / tr+ "\t" +sumAvgMCMC / tr + "\t"  + sumAvgNaive / tr  + "\t"  + sumAvgBest / tr);
         }
         System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tries + "\t" + sumAvgBetaMixture / tries + "\t" +sumAvgMCMC / tries + "\t"  + sumAvgNaive / tries);
       }
@@ -451,23 +386,166 @@ public class BernoulliTest extends TestCase {
 
 
   public void testNaiveMixture() {
-    final int k = 2;
-    final int from = 6400;
+    final int k = 10;
+    final int from = 100;
     final int to = 100001;
     final int tries = 1000;
-    for (int n = 320; n < 1001; n *= 2)
+    for (int n = 20; n < 1001; n *= 2)
       for (int N = from; N < to; N *= 10) {
         double sumAvgMixture = 0;
         double sumAvgNaive = 0;
-        final NaiveMixture mixture = new NaiveMixture(k,n,rand);
+        final NoMixture mixture = new NoMixture(n,rand);
         for (int tr = 1; tr <= tries; ++tr) {
-          final MixtureObservations<NaiveMixture> experiment = mixture.sample(N);
+          final MixtureObservations<NoMixture> experiment = mixture.sample(N);
           double[] means = fitNaiveMixture(k, experiment);
           sumAvgMixture += experiment.quality(means);
           sumAvgNaive += experiment.naiveQuality();
-          System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tr + "\t" + "\t"  + sumAvgNaive / tr);
+//          System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tr + "\t" + "\t"  + sumAvgNaive / tr);
         }
         System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tries + "\t" + "\t"  + sumAvgNaive / tries);
       }
+  }
+
+  public void testGammaCache() {
+    for (int i=0; i < 10; ++i) {
+      double alpha = rand.nextDouble();
+      GammaCache cache = new GammaCache(alpha,100000);
+      for (int j=0; j < 1000;++j) {
+        int k =   rand.nextInt(100000);
+        assertTrue(Math.abs(cache.logValue(k) -Gamma.logGamma(k+alpha)) < 1e-5);
+      }
+    }
+  }
+
+
+
+
+
+  public void testDirichletMixture() {
+    final int from = 100;
+    final int to = 10000001;
+    final int tries = 1000;
+    for (int n = 10; n < 1001; n *= 2)
+      for (int N = from; N < to; N *= 20) {
+        double sumAvgDir = 0;
+        double sumAvgMixture = 0;
+        double sumAvgNaive = 0;
+        for (int tr = 1; tr <= tries; ++tr) {
+          final int k = 50;//2+rand.nextInt(40);
+          final NoMixture mixture = new NoMixture(n,rand);
+            final MixtureObservations<NoMixture> experiment = mixture.sample(N);
+//          final NaiveMixture mixture = new NaiveMixture(k,n,rand);
+//          final NaiveMixture mixture = new NaiveMixture(6,n,rand);
+//          final MixtureObservations<NaiveMixture> experiment = mixture.sample(N);
+          double[] means = fitDirichlet(experiment);
+          double[] means2 = fitNaiveMixture(k, experiment);
+          final double q0 = experiment.quality(means) ;
+          final double q1 =experiment.quality(means2) ;
+          final double q2 =  experiment.naiveQuality();
+          sumAvgDir += q0;
+          sumAvgMixture += q1;
+          sumAvgNaive +=q2;
+          System.out.println(N + "\t" + n + "\t" + q0 + "\t" + q1 + "\t"+ "\t"  + q2);
+        }
+        System.out.println(N + "\t" + n + "\t" + sumAvgDir / tries + "\t" + sumAvgMixture / tries +  "\t"  + sumAvgNaive / tries);
+      }
+  }
+
+  public void testDirichletMixture2() {
+    final int from = 100;
+    final int to = 10001;
+    final int tries = 1000;
+    for (int n = 10; n < 1001; n *= 2)
+      for (int N = from; N < to; N *= 20) {
+        double sumAvgDir = 0;
+        double sumAvgMixture = 0;
+        double sumAvgNaive = 0;
+        double sumAvgMCMC = 0;
+        for (int tr = 1; tr <= tries; ++tr) {
+          final int k = 5;//1+rand.nextInt(5);
+//          final BetaBinomialMixture mixture = new BetaBinomialMixture(k, n, rand);
+          final NoMixture mixture = new NoMixture(n,rand);
+          final MixtureObservations<NoMixture> experiment = mixture.sample(N);
+//          final NaiveMixture mixture = new NaiveMixture(6,n,rand);
+//          final MixtureObservations<BetaBinomialMixture> experiment = mixture.sample(N);
+          double[] means = fitDirichlet(experiment);
+          double[] means2 = fitBetaMixture(k, experiment);
+          double[] meansMCMC = fitMCMCMixture(k, experiment, 4, 100000000);
+          final double q0 = experiment.quality(means) ;
+          final double q1 =experiment.quality(means2) ;
+          final double q2 =  experiment.naiveQuality() ;
+          final double q3 =  experiment.quality(meansMCMC);
+          sumAvgDir += q0;
+          sumAvgMixture += q1;
+          sumAvgNaive +=q2;
+          sumAvgMCMC +=q3;
+          System.out.println(N + "\t" + n + "\t" + q0 + "\t" + q1 + "\t"+  q3 +"\t"  + q2);
+        }
+        System.out.println(N + "\t" + n + "\t" + sumAvgDir / tries + "\t" + sumAvgMixture / tries +  "\t" + sumAvgMCMC / tries + "\t" + sumAvgNaive / tries);
+      }
+  }
+
+  public void testAicMixture() {
+    final int from = 100;
+    final int to = 10001;
+    final int tries = 1000;
+    for (int n = 20; n < 100; n *= 2)
+      for (int N = from; N < to; N *= 10) {
+        double sumAvgAic = 0;
+        double sumAvgMixture = 0;
+        double sumAvgNaive = 0;
+        for (int tr = 1; tr <= tries; ++tr) {
+          final int k = 2+rand.nextInt(10);
+          final NaiveMixture mixture = new NaiveMixture(k,n,rand);
+//          final NaiveMixture mixture = new NaiveMixture(6,n,rand);
+          final MixtureObservations<NaiveMixture> experiment = mixture.sample(N);
+          double[] means = fitAicEm(experiment) ;
+          double[] means2 = fitNaiveMixture(k, experiment);
+          final double q0 = experiment.quality(means);
+          final double q1 =experiment.quality(means2);
+          final double q2 =  experiment.naiveQuality() ;
+          sumAvgAic += q0;
+          sumAvgMixture += q1;
+          sumAvgNaive += q2;
+//          System.out.println(N + "\t" + n + "\t" + q0 + "\t" + q1 + "\t"+ "\t"  + q2);
+//          System.out.println(N + "\t" + n + "\t" + sumAvgMixture / tr + "\t" + "\t"  + sumAvgNaive / tr);
+        }
+        System.out.println(N + "\t" + n + "\t" + sumAvgAic / tries + "\t" + "\t" + sumAvgMixture / tries + "\t" + sumAvgNaive / tries);
+      }
+  }
+
+  public void testBetaBinomialEstimation() {
+    for (int k=3; k < 10; ++k) {
+      for (int n : new int[] {10,50})
+      for (int size: new int[]{1000, 100, 200, 500, 1000})
+        for (int tr= 0; tr < 5000;++tr) {
+        BetaBinomialMixture mixture = new BetaBinomialMixture(k, n, rand);
+        MixtureObservations<BetaBinomialMixture> experiment = mixture.sample(size);
+          BetaBinomialMixtureEM em = fitBetaMixture2(k, experiment);
+          if (em == null) {
+            em = new BetaBinomialMixtureEM(k, experiment.sums, experiment.n, rand);
+            em.fit();
+          }
+        double[] betameans = em.estimate(false);
+//        double[] betameans = fitBetaMixture(k, experiment);
+//        double[] dirichletMeans = fitDirichlet(experiment);
+//        double[] aicEMMeans = fitAicBetaEm(experiment);
+        double naiveScores = experiment.naiveQuality();
+        double bayesScore = experiment.quality(mixture.estimate(experiment));
+        double betaScores = experiment.quality(betameans);
+          System.out.println("Scores: " + "\t" + naiveScores
+          + "\t" + bayesScore +
+          "\t" + betaScores);
+        if (betaScores > 1.5*naiveScores) {
+          System.out.println("bayes score" + bayesScore);
+          BetaBinomialMixtureEM em2 = new BetaBinomialMixtureEM(k,experiment.sums,experiment.n,rand);
+          em2.fit();
+          double[] bmeans2 = em2.estimate(false);
+          System.out.println("quality " + experiment.quality(bmeans2));
+          em.fit(true);
+          System.out.println("naive score" + naiveScores);
+        }
+      }
+    }
   }
 }

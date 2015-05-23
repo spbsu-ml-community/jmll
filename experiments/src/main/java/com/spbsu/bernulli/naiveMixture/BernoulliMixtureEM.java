@@ -4,6 +4,7 @@ import com.spbsu.bernulli.EM;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
+import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
 
@@ -73,17 +74,17 @@ public class BernoulliMixtureEM extends EM<NaiveMixture> {
     }
     for (int i = 0; i < q.length; ++i) {
       q[i] /= totalWeight;
-      logq[i] = Math.log(q[i]);
+      logq[i] = FastMath.log(q[i]);
     }
     for (int i = 0; i < theta.length; ++i) {
       theta[i] = rand.nextDouble();
 
     }
-    for (int i = 0; i < theta.length; ++i) {
-      logtheta[i] = Math.log(theta[i]);
-      logntheta[i] = Math.log(1 - theta[i]);
-    }
     Arrays.sort(theta);
+    for (int i = 0; i < theta.length; ++i) {
+      logtheta[i] = FastMath.log(theta[i]);
+      logntheta[i] = FastMath.log(1 - theta[i]);
+    }
   }
 
 
@@ -135,10 +136,10 @@ public class BernoulliMixtureEM extends EM<NaiveMixture> {
         final double tmp1 = m * llt1 + (n - m) * rlt1 + lq1;
         final double tmp2 = m * llt2 + (n - m) * rlt2 + lq2;
         final double tmp3 = m * llt3 + (n - m) * rlt3 + lq3;
-        cache[i] = Math.exp(tmp0);
-        cache[i + 1] = Math.exp(tmp1);
-        cache[i + 2] = Math.exp(tmp2);
-        cache[i + 3] = Math.exp(tmp3);
+        cache[i] = FastMath.exp(tmp0);
+        cache[i + 1] = FastMath.exp(tmp1);
+        cache[i + 2] = FastMath.exp(tmp2);
+        cache[i + 3] = FastMath.exp(tmp3);
         denum += (cache[i] + cache[i + 1] + cache[i + 2] + cache[i + 3]);
       }
 
@@ -146,7 +147,7 @@ public class BernoulliMixtureEM extends EM<NaiveMixture> {
         double tmp = m != 0 ? m * logtheta[i] : 0;
         tmp += (n - m) != 0 ? (n - m) * logntheta[i] : 0;
         tmp += logq[i];
-        cache[i] = Math.exp(tmp);
+        cache[i] = FastMath.exp(tmp);
         denum += cache[i];
       }
 
@@ -220,10 +221,10 @@ public class BernoulliMixtureEM extends EM<NaiveMixture> {
         final double tmp2 = m * llt2 + (n - m) * rlt2 + lq2;
         final double tmp3 = m * llt3 + (n - m) * rlt3 + lq3;
 
-        final double p0 = Math.exp(tmp0);
-        final double p1 = Math.exp(tmp1);
-        final double p2 = Math.exp(tmp2);
-        final double p3 = Math.exp(tmp3);
+        final double p0 = FastMath.exp(tmp0);
+        final double p1 = FastMath.exp(tmp1);
+        final double p2 = FastMath.exp(tmp2);
+        final double p3 = FastMath.exp(tmp3);
         final double p02 = p0 + p2;
         final double p13 = p1 + p3;
         p += p02 + p13;
@@ -232,9 +233,9 @@ public class BernoulliMixtureEM extends EM<NaiveMixture> {
         double tmp = m != 0 ? m * logtheta[i] : 0;
         tmp += (n - m) != 0 ? (n - m) * logntheta[i] : 0;
         tmp += logq[i];
-        p += Math.exp(tmp);
+        p += FastMath.exp(tmp);
       }
-      ll += Math.log(p);
+      ll += FastMath.log(p);
     }
     return ll;
   }
@@ -291,7 +292,7 @@ public class BernoulliMixtureEM extends EM<NaiveMixture> {
 //    }
   }
 
-  int count = 100;
+  int count = 200;
   double oldLikelihood = Double.NEGATIVE_INFINITY;
 
 
@@ -305,6 +306,11 @@ public class BernoulliMixtureEM extends EM<NaiveMixture> {
       oldLikelihood = currentLL;
     }
     return --count <= 0;
+  }
+
+  @Override
+  public int complexity() {
+    return k * 2;
   }
 
   @Override
