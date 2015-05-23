@@ -1,5 +1,6 @@
 package com.spbsu.ml.cuda;
 
+import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -7,16 +8,23 @@ import org.junit.Assert;
 
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.ml.cuda.data.impl.FloatMatrix;
 
 /**
- * jmll
- * ksen
- * 28.February.2015 at 22:59
+ * Project jmll
+ *
+ * @author Ksen
  */
 @Ignore
 public class JCublasHelperTest extends Assert {
 
   private final static double DELTA = 1e-9;
+  private final static float EPS = 1e-9f;
+
+  @AfterClass
+  public static void shutdown() {
+    JCublasHelper.shutdown();
+  }
 
   @Test
   public void testMax() throws Exception {
@@ -135,6 +143,113 @@ public class JCublasHelperTest extends Assert {
     VecTools.scale(e, -0.01111111222);
 
     assertTrue(e.equals(f));
+  }
+
+  @Test
+  public void testSum() throws Exception {
+    final ArrayVec a = new ArrayVec(1, 2, 3);
+    final ArrayVec b = new ArrayVec(1, 2, 3);
+
+    final ArrayVec c = JCublasHelper.sum(a, b);
+    final ArrayVec d = VecTools.sum(a, b);
+
+    assertTrue(c.equals(d));
+
+    final ArrayVec a2 = new ArrayVec(-1000.1010101);
+    final ArrayVec b2 = new ArrayVec(0.);
+
+    final ArrayVec c2 = JCublasHelper.sum(a2, b2);
+    final ArrayVec d2 = VecTools.sum(a2, b2);
+
+    assertTrue(c2.equals(d2));
+
+    final ArrayVec a3 = new ArrayVec(-10, -20, 0, 0, 1, 0, 10, 0);
+    final ArrayVec b3 = new ArrayVec(0, 0, 1, 1, -1, -1, 0, 0);
+
+    final ArrayVec c3 = JCublasHelper.sum(a3, b3);
+    final ArrayVec d3 = VecTools.sum(a3, b3);
+
+    assertTrue(c3.equals(d3));
+  }
+
+  @Test
+  public void testDevFloatMultMxMx() throws Exception {
+    final float[] leftData = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    final float[] rightData = new float[15];
+
+    final FloatMatrix A = new FloatMatrix(3, leftData);
+    final FloatMatrix B = new FloatMatrix(5, rightData);
+    final FloatMatrix C = new FloatMatrix(3, new float[9]);
+
+    JCublasHelper.mult(A, false, B, false, C);
+
+    final float[] expected = C.get();
+
+    assertArrayEquals(new float[9], expected, EPS);
+
+    A.destroy();
+    B.destroy();
+    C.destroy();
+  }
+
+  @Test
+  public void testDevFloatMultMxTMx() throws Exception {
+    final float[] leftData = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    final float[] rightData = new float[15];
+
+    final FloatMatrix A = new FloatMatrix(3, leftData);
+    final FloatMatrix B = new FloatMatrix(3, rightData);
+    final FloatMatrix C = new FloatMatrix(3, new float[9]);
+
+    JCublasHelper.mult(A, false, B, true, C);
+
+    final float[] expected = C.get();
+
+    assertArrayEquals(new float[9], expected, EPS);
+
+    A.destroy();
+    B.destroy();
+    C.destroy();
+  }
+
+  @Test
+  public void testDevFloatMultMxMxT() throws Exception {
+    final float[] leftData = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    final float[] rightData = new float[15];
+
+    final FloatMatrix A = new FloatMatrix(5, leftData);
+    final FloatMatrix B = new FloatMatrix(5, rightData);
+    final FloatMatrix C = new FloatMatrix(3, new float[9]);
+
+    JCublasHelper.mult(A, true, B, false, C);
+
+    final float[] expected = C.get();
+
+    assertArrayEquals(new float[9], expected, EPS);
+
+    A.destroy();
+    B.destroy();
+    C.destroy();
+  }
+
+  @Test
+  public void testDevFloatMultMxTMxT() throws Exception {
+    final float[] leftData = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    final float[] rightData = new float[21];
+
+    final FloatMatrix A = new FloatMatrix(3, leftData);
+    final FloatMatrix B = new FloatMatrix(7, rightData);
+    final FloatMatrix C = new FloatMatrix(5, new float[35]);
+
+    JCublasHelper.mult(A, true, B, true, C);
+
+    final float[] expected = C.get();
+
+    assertArrayEquals(new float[35], expected, EPS);
+
+    A.destroy();
+    B.destroy();
+    C.destroy();
   }
 
 }

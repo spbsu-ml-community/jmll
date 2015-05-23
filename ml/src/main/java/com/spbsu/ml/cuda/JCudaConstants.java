@@ -1,9 +1,9 @@
 package com.spbsu.ml.cuda;
 
 /**
- * jmll
- * ksen
- * 21.February.2015 at 13:53
+ * Project jmll
+ *
+ * @author Ksen
  */
 public class JCudaConstants {
 
