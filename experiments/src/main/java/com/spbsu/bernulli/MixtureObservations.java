@@ -44,10 +44,10 @@ public class MixtureObservations<MixtureDistribution> {
     double sum = 0;
     final int len = (thetas.length / 4) * 4;
     for (int i = 0; i < len; i += 4) {
-      double p0 = sums[i] * 1.0 / n;
-      double p1 = sums[i + 1] * 1.0 / n;
-      double p2 = sums[i + 2] * 1.0 / n;
-      double p3 = sums[i + 3] * 1.0 / n;
+      final double p0 = sums[i] * 1.0 / n;
+      final double p1 = sums[i + 1] * 1.0 / n;
+      final double p2 = sums[i + 2] * 1.0 / n;
+      final double p3 = sums[i + 3] * 1.0 / n;
       double diff0 = thetas[i] - p0;
       double diff1 = thetas[i + 1] - p1;
       double diff2 = thetas[i + 2] - p2;
@@ -62,6 +62,33 @@ public class MixtureObservations<MixtureDistribution> {
     }
     for (int i = len; i < thetas.length; ++i) {
       sum += sqr(thetas[i] - sums[i] * 1.0 / n);
+    }
+    return sum;
+  }
+
+  public final double bayesQuality(double alpha, double beta) {
+    double sum = 0;
+    double prec = alpha + beta;
+    final int len = (thetas.length / 4) * 4;
+    for (int i = 0; i < len; i += 4) {
+      final double p0 = (alpha + sums[i]) * 1.0 / (n+prec);
+      final double p1 = (alpha + sums[i + 1]) * 1.0 / (n+prec);
+      final double p2 = (alpha + sums[i + 2]) * 1.0 / (n + prec);
+      final double p3 = (alpha + sums[i + 3]) * 1.0 / (n + prec);
+      double diff0 = thetas[i] - p0;
+      double diff1 = thetas[i + 1] - p1;
+      double diff2 = thetas[i + 2] - p2;
+      double diff3 = thetas[i + 3] - p3;
+      diff0 *= diff0;
+      diff1 *= diff1;
+      diff2 *= diff2;
+      diff3 *= diff3;
+      diff0 += diff2;
+      diff1 += diff3;
+      sum += diff0 + diff1;
+    }
+    for (int i = len; i < thetas.length; ++i) {
+      sum += sqr(thetas[i] - (alpha +sums[i]) * 1.0 / (n+prec));
     }
     return sum;
   }

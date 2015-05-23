@@ -16,6 +16,10 @@ public abstract class EM<Result> {
 
   protected abstract double likelihood();
 
+  public int complexity() {
+    return 1;
+  }
+
   public final FittedModel<Result> fit() {
     return fit(false);
   }
@@ -37,7 +41,11 @@ public abstract class EM<Result> {
         }
       }
     }
-    return new FittedModel<>(likelihood(), model());
+    return new FittedModel<>(likelihood(), model(),complexity());
+  }
+
+  public final FittedModel<Result> fittedModel() {
+    return new FittedModel<>(likelihood(), model(),complexity());
   }
 
 

@@ -3,10 +3,11 @@ package com.spbsu.bernulli.MCMCBernoulliMixture;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ArrayTools;
 import gnu.trove.list.array.TIntArrayList;
+import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
 
-import static com.spbsu.commons.math.MathTools.sqr;
+import static com.spbsu.bernulli.Utils.dist;
 
 
 //estimates some vector parameter of distibution by sampling with metropolis-hastings
@@ -33,7 +34,7 @@ public class MCMCBernoulliEstimation {
   }
 
   private boolean burnIn = false; // take values only after burn in
-  private final int window = 1000; // decorrelation, for better estimation. (we don't have infinite sample size)
+  private final int window = 200; // decorrelation, for better estimation. (we don't have infinite sample size)
 
   private final double logStepProb;
 
@@ -120,8 +121,10 @@ public class MCMCBernoulliEstimation {
     final int sum = sums[point];
     final int s0 = stateSums[from] - sum;
     final int s1 = stateSums[to] + sum;
-    ll += prior.likelihood(s0, (componentsPoints[from].size() - 1) * n);
-    ll += prior.likelihood(s1, (componentsPoints[to].size() + 1) * n);
+    final int t0 = (componentsPoints[from].size() - 1) * n;
+    final int t1 = (componentsPoints[to].size() + 1) * n;
+    ll += prior.likelihood(s0,t0);
+    ll += prior.likelihood(s1, t1);
     return ll;
   }
 
@@ -138,7 +141,7 @@ public class MCMCBernoulliEstimation {
     final double prob = getProb(componentsPoints[moveFrom].size());
     final double invProb = getProb(componentsPoints[moveTo].size() + 1);
     final double newLL = getNewLL(moveFrom, entry, moveTo);
-    final double accProb = Math.exp(newLL + invProb - prob - currentLL);
+    final double accProb = FastMath.exp((newLL + invProb) - (prob + currentLL));
     if (rand.nextDouble() < accProb) {
       move(moveFrom, entry, moveTo);
       return true;
@@ -151,7 +154,7 @@ public class MCMCBernoulliEstimation {
     if (isLogProbCached[size]) {
       return logSizesCache[size];
     } else {
-      logSizesCache[size] = logStepProb - Math.log(size);
+      logSizesCache[size] = logStepProb - FastMath.log(size);
       isLogProbCached[size] = true;
       return logSizesCache[size];
     }
@@ -206,26 +209,6 @@ public class MCMCBernoulliEstimation {
     return dist(means, currentMeans) < 1;
   }
 
-  private double dist(double[] first, double[] second) {
-    final int len = (first.length / 4) * 4;
-    double sum = 0;
-    for (int i = 0; i < len; i += 4) {
-      double diff0 = first[i] - second[i];
-      double diff1 = first[i + 1] - second[i + 1];
-      double diff2 = first[i + 2] - second[i + 2];
-      double diff3 = first[i + 3] - second[i + 3];
-      diff0 *= diff0;
-      diff1 *= diff1;
-      diff2 *= diff2;
-      diff3 *= diff3;
-      diff0 += diff2;
-      diff1 += diff3;
-      sum += diff0 + diff1;
-    }
-    for (int i = len; i < first.length; ++i)
-      sum += sqr(first[i] - second[i]);
-    return sum;
-  }
 
 
   public final double[] estimation() {
@@ -269,13 +252,13 @@ public class MCMCBernoulliEstimation {
     final double[] logtheta = new double[k];
     final double[] logntheta = new double[k];
     for (int i = 0; i < param.length; ++i) {
-      logtheta[i] = Math.log(param[i]);
-      logntheta[i] = Math.log(1 - param[i]);
+      logtheta[i] = FastMath.log(param[i]);
+      logntheta[i] = FastMath.log(1 - param[i]);
     }
     final double[] prior = new double[k];
     final double[] posterior = new double[k];
     for (int i = 0; i < prior.length; ++i) {
-      prior[i] = Math.log(componentsPoints[i].size() * 1.0 / sums.length);
+      prior[i] = FastMath.log(componentsPoints[i].size() * 1.0 / sums.length);
     }
 
     for (int i = 0; i < sums.length; ++i) {
@@ -283,17 +266,17 @@ public class MCMCBernoulliEstimation {
       double denum = 0;
       if (m == 0) {
         for (int j = 0; j < k; ++j) {
-          posterior[j] = Math.exp((n - m) * logntheta[j] + prior[j]);
+          posterior[j] = FastMath.exp((n - m) * logntheta[j] + prior[j]);
           denum += posterior[j];
         }
       } else if (m == n) {
         for (int j = 0; j < k; ++j) {
-          posterior[j] = Math.exp(m * logtheta[j] + prior[j]);
+          posterior[j] = FastMath.exp(m * logtheta[j] + prior[j]);
           denum += posterior[j];
         }
       } else {
         for (int j = 0; j < k; ++j) {
-          posterior[j] = Math.exp(m * logtheta[j] + (n - m) * logntheta[j] + prior[j]);
+          posterior[j] = FastMath.exp(m * logtheta[j] + (n - m) * logntheta[j] + prior[j]);
           denum += posterior[j];
         }
       }
@@ -305,7 +288,7 @@ public class MCMCBernoulliEstimation {
     }
   }
 
-  private class Estimator {
+  class Estimator {
     final double[] meanSums;
     private int count; //normalization for estimator
 
@@ -327,5 +310,5 @@ public class MCMCBernoulliEstimation {
     }
   }
 
-
 }
+
