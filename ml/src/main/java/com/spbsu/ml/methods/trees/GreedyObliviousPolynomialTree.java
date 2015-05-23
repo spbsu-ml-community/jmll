@@ -4,6 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VectorOfMultiplicationsFactory;
+import com.spbsu.commons.math.vectors.impl.mx.SparseMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
@@ -39,7 +40,9 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
 
   private int convertMultiIndex(int region, int index)
   {
-    return convertMultiIndex(region, index, multiplicationsFactory.getDim());
+    if (convertMultiIndex(region, index, numberOfVariablesInRegion) >= numberOfVariables)
+      throw new RuntimeException("");
+    return convertMultiIndex(region, index, numberOfVariablesInRegion);
   }
 
   private Vec calculateDerivativeVec(VecDataSet dataSet, WeightedLoss<? extends L2> loss, final ObliviousTree based) {
@@ -59,12 +62,12 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
     return derivativeVec;
   }
 
-  private Mx calculateLossDerivativeMatrix(
+  private SparseMx calculateLossDerivativeMatrix(
       final VecDataSet dataSet,
       final WeightedLoss<? extends L2> loss,
       final ObliviousTree based
   ) {
-    Mx derivativeMx = new VecBasedMx(numberOfVariables, numberOfVariables);
+    SparseMx derivativeMx = new SparseMx(numberOfVariables, numberOfVariables);
     for (int i = 0; i < dataSet.data().rows(); i++) {
       final double weight = loss.weight(i);
       final Vec point = dataSet.data().row(i);
@@ -86,16 +89,29 @@ public class GreedyObliviousPolynomialTree extends GreedyObliviousTree<WeightedL
   @Override
   public PolynomialObliviousTree fit(VecDataSet ds, WeightedLoss<? extends L2> loss) {
     final ObliviousTree based = super.fit(ds, loss);
-    final Mx derivativeMatrix = calculateLossDerivativeMatrix(ds, loss, based);
+    final SparseMx derivativeMatrix = calculateLossDerivativeMatrix(ds, loss, based);
     final Vec derivativeVec = calculateDerivativeVec(ds, loss, based);
 
     { // Adding regulation
-      for (int i = 0; i < derivativeMatrix.rows(); ++i) {
-        derivativeMatrix.adjust(i, i, regulationCoefficient);
+
+      for (int region = 0; region < (1 << depth); region++) {
+        for (int feature = 0; feature < depth; feature++) {
+          final int neighbourRegion = region ^ (1 << feature);
+          for (int i = 0 ; i < numberOfVariablesInRegion; i++)
+          {
+            derivativeMatrix.adjust(convertMultiIndex(region, i), convertMultiIndex(region, i), regulationCoefficient);
+            derivativeMatrix.adjust(convertMultiIndex(region, i), convertMultiIndex(neighbourRegion, i), -regulationCoefficient);
+          }
+        }
       }
+
+      /*for (int i = 0; i < derivativeMatrix.rows(); ++i) {
+        derivativeMatrix.adjust(i, i, regulationCoefficient);
+      }*/
     }
 
-    final Vec regressionCoefficients = MxTools.solveCholesky(derivativeMatrix, derivativeVec);
+    final Vec regressionCoefficients = MxTools.solveGaussZelden(derivativeMatrix, derivativeVec);
+//    final Vec regressionCoefficients = MxTools.solveCholesky(derivativeMatrix, derivativeVec);
     MxTools.multiply(derivativeMatrix, regressionCoefficients);
     return new PolynomialObliviousTree(based, regressionCoefficients.toArray(), multiplicationsFactory);
   }

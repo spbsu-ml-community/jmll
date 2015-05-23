@@ -1,5 +1,6 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -23,8 +24,9 @@ public class GreedyObliviousPolynomialTreeTest extends MethodsTests {
         learn,
         validate,
         2000,
-        0.005,
-        MethodsTests.OUTPUT_SCORE | MethodsTests.OUTPUT_DRAW
+        0.01,
+        MethodsTests.OUTPUT_SCORE | MethodsTests.OUTPUT_DRAW,
+        "graph.tsv"
     );
   }
   public void testOnSmallDataset() {
@@ -43,7 +45,23 @@ public class GreedyObliviousPolynomialTreeTest extends MethodsTests {
         new WeightedLoss<>(new L2(target, fakePool.vecData()), weights)
     );
     for (int i = 0; i < 4; i++) {
-      assertEquals(target.get(i), tree.value(data.row(i)), 1e-10);
+      assertEquals(target.get(i), tree.value(data.row(i)), MathTools.EPSILON);
+    }
+  }
+  public void testPOTBoostMulti() throws IOException, InterruptedException {
+    for (int regulation = -2; regulation <= 5; regulation++)
+    {
+      for(double step = 0.001; step < 0.04; step += 0.005) {
+        testWithBoosting(
+            new GreedyObliviousPolynomialTree(GridTools.medianGrid(learn.vecData(), 32), 6, 2, Math.pow(10, regulation)),
+            learn,
+            validate,
+            1000,
+            step,
+            OUTPUT_SCORE | OUTPUT_DRAW,
+            "poly-" + regulation + "step-" + step
+        );
+      }
     }
   }
 

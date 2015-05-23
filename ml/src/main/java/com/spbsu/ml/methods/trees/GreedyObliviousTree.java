@@ -23,7 +23,7 @@ import java.util.ListIterator;
  * Time: 17:01
  */
 public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
-  private final int depth;
+  protected final int depth;
   private final BFGrid grid;
 
   public GreedyObliviousTree(final BFGrid grid, final int depth) {
