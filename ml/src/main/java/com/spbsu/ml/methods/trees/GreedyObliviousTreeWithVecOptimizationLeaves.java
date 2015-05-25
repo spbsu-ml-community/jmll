@@ -48,17 +48,17 @@ public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBased
 
   @Override
   public TransObliviousTree fit(final VecDataSet ds, final Loss loss) {
-    Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> tree = base.findBestSubsets(ds, DataTools.bootstrap(loss, rand));
-    List<BFGrid.BinaryFeature> conditions = tree.getSecond();
-    List<BFOptimizationSubset> subsets = tree.getFirst();
-    CountDownLatch latch = new CountDownLatch(subsets.size());
+    final Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> tree = base.findBestSubsets(ds, DataTools.bootstrap(loss, rand));
+    final List<BFGrid.BinaryFeature> conditions = tree.getSecond();
+    final List<BFOptimizationSubset> subsets = tree.getFirst();
+    final CountDownLatch latch = new CountDownLatch(subsets.size());
     final Trans[] leafTrans = new Trans[subsets.size()];
     //damn java 7 without unique, filters, etc and autoboxing overhead…
     Set<Integer> uniqueFeatures = new TreeSet<>();
     for (BFGrid.BinaryFeature bf : conditions) {
       uniqueFeatures.add(bf.findex);
     }
-    int[] features = new int[uniqueFeatures.size()];
+    final int[] features = new int[uniqueFeatures.size()];
     {
       int j = 0;
       for (Integer i : uniqueFeatures) {
