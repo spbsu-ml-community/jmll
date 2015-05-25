@@ -62,4 +62,8 @@ public class BFOptimizationSubset {
   public AdditiveStatistics total() {
     return aggregate.total();
   }
+
+  public int[] getPoints() {
+    return points.clone();
+  }
 }

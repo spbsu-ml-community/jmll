@@ -2,6 +2,7 @@ package com.spbsu.ml.methods.trees;
 
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.data.Aggregate;
@@ -33,6 +34,20 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
 
   @Override
   public ObliviousTree fit(final VecDataSet ds, final Loss loss) {
+    Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> result = findBestSubsets(ds,loss);
+    List<BFOptimizationSubset> leaves = result.getFirst();
+    List<BFGrid.BinaryFeature> conditions = result.getSecond();
+    final double[] step = new double[leaves.size()];
+    final double[] based = new double[leaves.size()];
+    for (int i = 0; i < step.length; i++) {
+      step[i] = loss.bestIncrement(leaves.get(i).total());
+      based[i] = leaves.get(i).size();
+    }
+    return new ObliviousTree(conditions, step, based);
+  }
+
+  //decomposition for oblivious tree with non-constant functions in leaves
+  public final Pair<List<BFOptimizationSubset>,List<BFGrid.BinaryFeature>> findBestSubsets(final VecDataSet ds, final Loss loss) {
     List<BFOptimizationSubset> leaves = new ArrayList<BFOptimizationSubset>(1 << depth);
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(depth);
     double currentScore = Double.POSITIVE_INFINITY;
@@ -68,13 +83,7 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
       leaves = next;
       currentScore = scores[bestSplit];
     }
-    final double[] step = new double[leaves.size()];
-    final double[] based = new double[leaves.size()];
-    for (int i = 0; i < step.length; i++) {
-      step[i] = loss.bestIncrement(leaves.get(i).total());
-      based[i] = leaves.get(i).size();
-    }
-    return new ObliviousTree(conditions, step, based);
+    return new Pair<>(leaves, conditions);
   }
 
   private int[] learnPoints(Loss loss, VecDataSet ds) {
