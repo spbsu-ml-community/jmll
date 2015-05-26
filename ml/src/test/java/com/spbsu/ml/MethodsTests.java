@@ -11,6 +11,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.util.logging.Interval;
+import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.FeaturesTxtPool;
@@ -34,9 +35,7 @@ import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 import static com.spbsu.commons.math.vectors.VecTools.copy;
@@ -652,6 +651,8 @@ public void testElasticNetBenchmark() {
     final ScoreCalcer validateListenerFile;
     final Counter counter;
     final Counter counterFile;
+    final PFoundCalcer pFoundCalcer = new PFoundCalcer("Pfound", (Pool<QURLItem>) learn, learn.target(lossClass), System.out);
+    final NDCGCalcer ndcgCalcer = new NDCGCalcer("NDCG", (Pool<QURLItem>) learn, learn.target(lossClass), System.out);
     learnListener = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass));
     validateListener = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass));
     qualityCalcer = new QualityCalcer();
@@ -668,6 +669,8 @@ public void testElasticNetBenchmark() {
       boosting.addListener(learnListener);
       boosting.addListener(validateListener);
       boosting.addListener(qualityCalcer);
+      boosting.addListener(pFoundCalcer);
+      boosting.addListener(ndcgCalcer);
     }
 /*    if ((outputMode & OUTPUT_MODEL) != 0) {
       modelPrinter = new ModelPrinter();
@@ -723,9 +726,10 @@ public void testElasticNetBenchmark() {
         learn,
         validate,
         1000,
-        0.005,
+        0.008,
         OUTPUT_SCORE | OUTPUT_DRAW,
-        null);
+        "graph.tsv"
+    );
   }
 
   public void testClassifyBoost() {
@@ -794,13 +798,111 @@ public void testElasticNetBenchmark() {
     boosting.fit(learn.vecData(), learn.target(LLLogit.class));
   }
 
+  private abstract static class ListWiseHandler extends ScoreCalcer implements ProgressHandler {
+    private final int[] queryId;
+    protected ArrayList<ArrayList<Integer>> ranking;
+
+    public ListWiseHandler(String message, Pool<QURLItem> ds, L2 target, PrintStream stream) {
+      super(message, ds.vecData(), target, stream);
+      final DataSet<QURLItem> data = ds.data();
+      int maxQueryId = 0;
+      queryId = new int[ds.size()];
+      for (int i = 0; i < ds.size(); i++) {
+        queryId[i] = data.at(i).queryId;
+        maxQueryId = Math.max(queryId[i], maxQueryId);
+      }
+
+      ranking = new ArrayList<>(maxQueryId);
+      for (int i = 0; i <= maxQueryId; i++) {
+        ranking.add(new ArrayList<Integer>());
+      }
+      for (int i = 0; i < ds.size(); i++) {
+        ranking.get(queryId[i]).add(i);
+      }
+    }
+
+    @Override
+    public void invoke(Trans partial) {
+      super.recalculateCurrent(partial);
+      for (int i = 0; i < ranking.size(); i++) {
+        Collections.sort(ranking.get(i), new Comparator<Integer>() {
+          @Override
+          public int compare(Integer a, Integer b) {
+            final double valueA = current.get(a);
+            final double valueB = current.get(b);
+            if (valueA == valueB) {
+              return 0;
+            }
+            return valueA < valueB ? 1 : -1;
+          }
+        });
+      }
+    }
+  }
+
+  private static class PFoundCalcer extends ListWiseHandler {
+    final static double pBreak = 0.15;
+
+    public PFoundCalcer(String message, Pool<QURLItem> ds, L2 target, PrintStream stream) {
+      super(message, ds, target, stream);
+    }
+
+    @Override
+    public void invoke(Trans partial) {
+      super.invoke(partial);
+      double sumPfound = 0;
+      for (int i = 0; i < ranking.size(); i++) {
+        double pLook = 1;
+        for (int j = 0; j < ranking.get(i).size(); j++) {
+          final double relevance = target.get(ranking.get(i).get(j));
+          sumPfound += pLook * relevance;
+          pLook *= (1 - relevance) * (1 - pBreak);
+        }
+      }
+      stream.print(message + sumPfound / ranking.size());
+    }
+  }
+
+  private static class NDCGCalcer extends ListWiseHandler {
+    private double idealGain;
+
+    public NDCGCalcer(String message, Pool<QURLItem> ds, L2 target, PrintStream stream) {
+      super(message, ds, target, stream);
+
+      idealGain = 0;
+      for (int i = 0; i < ranking.size(); i++) {
+        ArrayList<Double> relevances = new ArrayList<>();
+        for (int j = 0; j < ranking.get(i).size(); j++) {
+          relevances.add(target.get(ranking.get(i).get(j)));
+        }
+        Collections.sort(relevances);
+        Collections.reverse(relevances);
+        for (int j = 0; j < relevances.size(); j++) {
+          idealGain += (Math.pow(2, relevances.get(j)) - 1) / Math.log(j + 2);
+        }
+      }
+    }
+
+    @Override
+    public void invoke(final Trans partial) {
+      super.invoke(partial);
+      double gain = 0;
+      for (int i = 0; i < ranking.size(); i++) {
+        for (int j = 0; j < ranking.get(i).size(); j++) {
+          final double relevance = target.get(ranking.get(i).get(j));
+          gain += (Math.pow(2, relevance) - 1) / Math.log(j + 2);
+        }
+      }
+      stream.print(message + gain / idealGain);
+    }
+  }
 
   protected static class ScoreCalcer implements ProgressHandler {
     final String message;
     final Vec current;
     private final VecDataSet ds;
-    private final L2 target;
-    private final PrintStream stream;
+    protected final L2 target;
+    protected final PrintStream stream;
 
     public ScoreCalcer(final String message, final VecDataSet ds, final L2 target) {
       this(message, ds, target, System.out);
@@ -818,6 +920,14 @@ public void testElasticNetBenchmark() {
 
     @Override
     public void invoke(final Trans partial) {
+      recalculateCurrent(partial);
+      final double curLoss = VecTools.distance(current, target.target) / Math.sqrt(ds.length());
+      stream.print(message + curLoss + "\t");
+      min = Math.min(curLoss, min);
+      stream.print("minimum\t" + min);
+    }
+
+    protected void recalculateCurrent(Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble linear = (Ensemble) partial;
         final Trans increment = linear.last();
@@ -833,10 +943,6 @@ public void testElasticNetBenchmark() {
           current.set(i, ((Func) partial).value(ds.data().row(i)));
         }
       }
-      final double curLoss = VecTools.distance(current, target.target) / Math.sqrt(ds.length());
-      stream.print(message + curLoss + "\t");
-      min = Math.min(curLoss, min);
-      stream.print("minimum\t" + min);
     }
   }
 
