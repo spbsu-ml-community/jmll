@@ -22,13 +22,22 @@ public class Layer {
   public Mx dropoutMask;
   public Rectifier rectifier;
 
+  public double bias;
+  public double bias_b;
   public double dropoutFraction;
   public boolean isTrain;
 
   public boolean debug;
 
   public void forward() {
-    output = MxTools.multiply(input, MxTools.transpose(weights));
+    if (bias != 0) {
+      activations = leftExtend(input);
+    }
+    else {
+      activations = VecTools.copy(input);
+    }
+
+    output = MxTools.multiply(activations, MxTools.transpose(weights));
     rectifier.value(output, output);
 
     if (dropoutFraction > 0) {
@@ -45,7 +54,21 @@ public class Layer {
         }
       }
     }
-    activations = VecTools.copy(output);
+  }
+
+  private Mx leftExtend(final Mx original) {
+    final VecBasedMx extended = new VecBasedMx(original.rows(), original.columns() + 1);
+
+    for (int i = 0; i < original.rows(); i++) {
+      extended.set(i, 0, bias);
+    }
+
+    for (int i = 0; i < original.rows(); i++) {
+      for (int j = 1; j < original.columns() + 1; j++) {
+        extended.set(i, j, original.get(i, j - 1));
+      }
+    }
+    return extended;
   }
 
   private Mx getDropoutMask() {
@@ -56,18 +79,40 @@ public class Layer {
     return dropoutMask;
   }
 
-  public void backward(final Mx perv) {
-    difference = MxTools.multiply(MxTools.transpose(output), perv);
+  public void backward() {
+    Mx cnc = null;
+    if (bias_b != 0) {
+      cnc = leftContract(output);
+    }
+    else {
+      cnc = VecTools.copy(output);
+    }
 
-    input = MxTools.multiply(output, weights);
+    difference = MxTools.multiply(MxTools.transpose(cnc), activations);
+    for (int i = 0; i < difference.dim(); i++) {
+      difference.set(i, difference.get(i) / activations.rows());
+    }
 
-    rectifier.grad(perv, perv);
+    input = MxTools.multiply(cnc, weights);
+
+    rectifier.grad(activations, activations);
     for (int i = 0; i < input.dim(); i++) {
-      input.set(i, input.get(i) * perv.get(i));
+      input.set(i, input.get(i) * activations.get(i));
       if (dropoutFraction > 0) {
         input.set(i, input.get(i) * dropoutMask.get(i));
       }
     }
+  }
+
+  private Mx leftContract(final Mx original) {
+    final VecBasedMx contracted = new VecBasedMx(original.rows(), original.columns() - 1);
+
+    for (int i = 0; i < contracted.rows(); i++) {
+      for (int j = 0; j < contracted.columns(); j++) {
+        contracted.set(i, j, original.get(i, j + 1));
+      }
+    }
+    return contracted;
   }
 
 }

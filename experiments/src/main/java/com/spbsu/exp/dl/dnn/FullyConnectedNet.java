@@ -14,7 +14,6 @@ public class FullyConnectedNet {
   private static final Logger LOG = Logger.create(FullyConnectedNet.class);
 
   public Layer[] layers;
-  public double[] biases;
 
   public Mx input;
   public Mx output;
@@ -50,10 +49,11 @@ public class FullyConnectedNet {
       lastLayer.output.set(i, lastLayer.output.get(i) * scale.get(i));
     }
 
-    for (int i = layers.length - 1; i > 1; i--) {
-      layers[i].backward(layers[i - 1].activations);
+    for (int i = layers.length - 1; i > 0; i--) {
+      layers[i].backward();
       layers[i - 1].output = layers[i].input;
     }
+    layers[0].backward();
   }
 
 }

@@ -64,7 +64,7 @@ public class LayerTest extends Assert {
         -5, -1, 1, 10
     ));
 
-    layer.backward(new VecBasedMx(2, 3));
+    layer.backward();
 
     for (int i = 0; i < layer.input.dim(); i++) {
       assertEquals(0., layer.input.get(i), DELTA);
@@ -72,7 +72,7 @@ public class LayerTest extends Assert {
 
     layer.dropoutFraction = 0;
 
-    layer.backward(new VecBasedMx(2, 3));
+    layer.backward();
 
     for (int i = 0; i < layer.input.dim(); i++) {
       assertEquals(0., layer.input.get(i), DELTA);
