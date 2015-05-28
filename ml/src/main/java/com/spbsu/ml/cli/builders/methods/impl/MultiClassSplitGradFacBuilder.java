@@ -10,7 +10,7 @@ import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.multiclass.gradfac.GradFacMulticlass;
-import com.spbsu.ml.methods.multiclass.gradfac.MultiClassBootstrapOptimization;
+import com.spbsu.ml.methods.multiclass.gradfac.MultiClassColumnBootstrapOptimization;
 
 /**
  * User: qdeee
@@ -81,6 +81,6 @@ public class MultiClassSplitGradFacBuilder implements Factory<VecOptimization> {
     }
 
     final GradFacMulticlass gradFacMulticlass = new GradFacMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);
-    return enableBootstrap ? new MultiClassBootstrapOptimization(gradFacMulticlass, random, 1.)
+    return enableBootstrap ? new MultiClassColumnBootstrapOptimization(gradFacMulticlass, random, 1.)
                            : gradFacMulticlass;
   }}
