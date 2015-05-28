@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.multiclass;
+package com.spbsu.ml.methods.multiclass.gradfac;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;

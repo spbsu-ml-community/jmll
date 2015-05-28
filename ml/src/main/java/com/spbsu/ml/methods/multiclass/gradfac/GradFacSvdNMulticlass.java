@@ -1,15 +1,16 @@
-package com.spbsu.ml.methods.multiclass;
+package com.spbsu.ml.methods.multiclass.gradfac;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.factorization.OuterFactorization;
+import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
+import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.func.FuncJoin;
-import com.spbsu.ml.func.ScaledFunc;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
 
@@ -17,46 +18,50 @@ import com.spbsu.ml.methods.VecOptimization;
  * User: qdeee
  * Date: 25.12.14
  */
-public class GradFacMulticlass implements VecOptimization<L2> {
+public class GradFacSvdNMulticlass implements VecOptimization<L2> {
   private final VecOptimization<L2> inner;
-  private final OuterFactorization matrixDecomposition;
   private final Class<? extends L2> local;
+  private final SVDAdapterEjml outerFactorization;
   private final boolean printErrors;
 
-  public GradFacMulticlass(final VecOptimization<L2> inner, final OuterFactorization matrixDecomposition, final Class<? extends L2> local) {
-    this(inner, matrixDecomposition, local, false);
+  public GradFacSvdNMulticlass(final VecOptimization<L2> inner, final Class<? extends L2> local) {
+    this(inner, local, 1);
   }
 
-  public GradFacMulticlass(final VecOptimization<L2> inner, final OuterFactorization matrixDecomposition, final Class<? extends L2> local, final boolean printErrors) {
+  public GradFacSvdNMulticlass(final VecOptimization<L2> inner, final Class<? extends L2> local, final int factorDim) {
+    this(inner, local, factorDim, true, false);
+  }
+
+  public GradFacSvdNMulticlass(final VecOptimization<L2> inner, final Class<? extends L2> local, final int factorDim, final boolean needCompact, final boolean printErrors) {
     this.inner = inner;
-    this.matrixDecomposition = matrixDecomposition;
     this.local = local;
     this.printErrors = printErrors;
+    this.outerFactorization = new SVDAdapterEjml(factorDim, needCompact);
   }
 
   @Override
   public FuncJoin fit(VecDataSet learn, L2 mllLogitGradient) {
     final Mx gradient = (Mx)mllLogitGradient.target;
-    final Pair<Vec, Vec> pair = matrixDecomposition.factorize(gradient);
+    final Pair<Vec, Vec> pair = outerFactorization.factorize(gradient);
 
-    final Vec h = pair.getFirst();
-    final Vec b = pair.getSecond();
+    final Mx h = (Mx) pair.getFirst();
+    final Mx b = (Mx) pair.getSecond();
 
-    final double normB = VecTools.norm(b);
-    VecTools.scale(b, 1 / normB);
-    VecTools.scale(h, normB);
+    final Func[] uApproxModels = new Func[b.columns()];
 
-    final L2 loss = DataTools.newTarget(local, h, learn);
-    final Func model = MultiClassOneVsRest.extractFunc(inner.fit(learn, loss));
+    for (int j = 0; j < b.columns(); j++) {
+      final L2 loss = DataTools.newTarget(local, h.col(j), learn);
+      uApproxModels[j] = (Func) inner.fit(learn, loss);
+    }
 
     final Func[] models = new Func[gradient.columns()];
     for (int c = 0; c < models.length; c++) {
-      models[c] = new ScaledFunc(b.get(c), model);
+      models[c] = new FuncEnsemble<>(uApproxModels, b.row(c));
     }
     final FuncJoin resultModel = new FuncJoin(models);
 
     if (printErrors) {
-      final Mx mxAfterFactor = VecTools.outer(h, b);
+      final Mx mxAfterFactor = MxTools.multiply(h, MxTools.transpose(b));
       final Mx mxAfterFit = resultModel.transAll(learn.data());
       final double gradNorm = VecTools.norm(gradient);
       final double error1 = VecTools.distance(gradient, mxAfterFactor);

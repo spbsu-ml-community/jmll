@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.multiclass;
+package com.spbsu.ml.methods.multiclass.gradfac;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -15,6 +15,7 @@ import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.ScaledFunc;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
+import com.spbsu.ml.methods.multiclass.MultiClassOneVsRest;
 
 /**
  * User: qdeee

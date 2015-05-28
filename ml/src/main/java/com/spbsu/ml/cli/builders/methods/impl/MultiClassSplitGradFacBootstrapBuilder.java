@@ -7,7 +7,7 @@ import com.spbsu.ml.factorization.impl.ALS;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.multiclass.GradFacBootstrapMulticlass;
+import com.spbsu.ml.methods.multiclass.gradfac.GradFacBootstrapMulticlass;
 
 /**
  * User: qdeee
