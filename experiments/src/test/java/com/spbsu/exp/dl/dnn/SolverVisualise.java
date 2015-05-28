@@ -13,6 +13,8 @@ import com.xeiam.xchart.XChartPanel;
 
 import javax.swing.*;
 import javax.swing.text.MaskFormatter;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +31,7 @@ public class SolverVisualise {
   public static final String TARGET_SERIES = "Target";
   public static final String RESULT_SERIES = "Result";
 
-  public static void main(String[] args) throws InterruptedException {
+  public static void main(String[] args) throws InterruptedException, IOException {
     final Chart chart = new Chart(1000, 700);
     chart.setChartTitle("Sample Real-time Chart");
     chart.setXAxisTitle("X");
@@ -56,7 +58,6 @@ public class SolverVisualise {
 
     final int epochs = 100;
     final int examples = 1000;
-    final double learningRate = 0.07;
 
     final Random random = new Random(1);
     final double[] data = new double[examples];
@@ -79,80 +80,20 @@ public class SolverVisualise {
     }
     chartPanel.updateSeries(TARGET_SERIES, xSeries, ySeries);
 
-    final FullyConnectedNet net = getNet();
-    final Solver solver = new Solver();
-    solver.batchSize = 100;
-    solver.epochsNumber = 10;
-    solver.learningRate = learningRate;
-    solver.net = net;
-    solver.debug = true;
+    final Solver solver = new NetBuilder().buildSolver(new File("experiments/src/test/resources/log_net.json"));
+    solver.init();
 
     for (int i = 0; i < epochs; i++) {
       solver.solve(X, Y);
 
       final List<Double> result = new ArrayList<>(examples);
       for (int j = 0; j < examples; j++) {
-        net.input = new VecBasedMx(1, new ArrayVec(X.get(j, 0)));
-        net.forward();
-        result.add(net.output.get(0));
+        solver.net.input = new VecBasedMx(1, new ArrayVec(X.get(j, 0)));
+        solver.net.forward();
+        result.add(solver.net.output.get(0));
       }
       chartPanel.updateSeries(RESULT_SERIES, xSeries, result);
     }
-  }
-
-  private static FullyConnectedNet getNet() {
-    final Layer layer_1 = new Layer();
-    layer_1.isTrain = true;
-    layer_1.bias = 1;
-    layer_1.bias_b = 1;
-    layer_1.dropoutFraction = 0;
-    layer_1.rectifier = new Sigmoid();
-    layer_1.weights = init(200, 2);
-    layer_1.difference = new VecBasedMx(200, 2);
-    layer_1.activations = new VecBasedMx(100, 200);
-    layer_1.input = new VecBasedMx(100, 1);
-    layer_1.output = new VecBasedMx(100, 200);
-    layer_1.debug = true;
-
-    final Layer layer_2 = new Layer();
-    layer_2.isTrain = true;
-    layer_2.bias = 1;
-    layer_2.bias_b = 0;
-    layer_2.dropoutFraction = 0;
-    layer_2.rectifier = new Sigmoid();
-    layer_2.weights = init(50, 201);
-    layer_2.difference = new VecBasedMx(50, 201);
-    layer_2.activations = new VecBasedMx(100, 50);
-    layer_2.input = new VecBasedMx(100, 200);
-    layer_2.output = new VecBasedMx(100, 50);
-    layer_2.debug = true;
-
-    final Layer layer_3 = new Layer();
-    layer_3.isTrain = true;
-    layer_3.dropoutFraction = 0;
-    layer_3.rectifier = new Flat();
-    layer_3.weights = init(1, 50);
-    layer_3.difference = new VecBasedMx(1, 50);
-    layer_3.activations = new VecBasedMx(100, 1);
-    layer_3.input = new VecBasedMx(100, 50);
-    layer_3.output = new VecBasedMx(100, 1);
-    layer_3.debug = true;
-
-    final FullyConnectedNet net = new FullyConnectedNet();
-    net.layers = new Layer[]{layer_1, layer_2, layer_3};
-    net.input = new VecBasedMx(100, 1);
-    net.output = new VecBasedMx(100, 1);
-    net.debug = true;
-
-    return net;
-  }
-
-  private static Mx init(final int r, final int c) {
-    final VecBasedMx mx = new VecBasedMx(r, c);
-    for (int i = 0; i < mx.dim(); i++) {
-      mx.set(i, ThreadLocalRandom.current().nextDouble(0.001) - 0.0005);
-    }
-    return mx;
   }
 
 }

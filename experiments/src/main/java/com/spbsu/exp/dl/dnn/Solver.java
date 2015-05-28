@@ -7,6 +7,7 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -17,6 +18,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Solver {
 
   public FullyConnectedNet net;
+
+  public InitMethod initMethod;
 
   public int batchSize;
   public int epochsNumber;
@@ -77,6 +80,27 @@ public class Solver {
     for (final Layer layer : layers) {
       for (int i = 0; i < layer.difference.dim(); i++) {
         layer.weights.set(i, layer.weights.get(i) - learningRate * layer.difference.get(i));
+      }
+    }
+  }
+
+  public void init() {
+    switch (initMethod) {
+      case RANDOM_OPTIMAL : {
+        final Random random = new Random();
+        for (final Layer layer : net.layers) {
+          final Mx weights = layer.weights;
+          final int rows = weights.rows();
+          final int columns = weights.columns();
+
+          final double scale = 8. * Math.sqrt(6. / (rows + columns - 1.));
+          for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
+              weights.set(i, j, scale * (random.nextDouble() - 0.5));
+            }
+          }
+        }
+        break;
       }
     }
   }
