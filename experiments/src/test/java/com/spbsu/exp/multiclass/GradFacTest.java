@@ -8,17 +8,32 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.ml.GridTools;
+import com.spbsu.ml.cli.output.printers.MulticlassProgressPrinter;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
 import com.spbsu.ml.factorization.OuterFactorization;
 import com.spbsu.ml.factorization.impl.ALS;
 import com.spbsu.ml.factorization.impl.ElasticNetFactorization;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
+import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.LogL2;
+import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.impl.FakeTargetMeta;
+import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.MultiClass;
+import com.spbsu.ml.methods.multiclass.gradfac.GradFacMulticlass;
+import com.spbsu.ml.methods.multiclass.gradfac.GradFacSvdNMulticlass;
+import com.spbsu.ml.methods.multiclass.gradfac.MultiClassColumnBootstrapOptimization;
+import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import junit.framework.TestCase;
 
@@ -31,7 +46,6 @@ import java.io.IOException;
 public class GradFacTest extends TestCase {
   private static Pool<?> learn;
   private static Pool<?> test;
-  private static Mx S;
 
   private synchronized static void init() throws IOException {
     if (learn == null || test == null) {
@@ -161,6 +175,117 @@ public class GradFacTest extends TestCase {
     applyFactorMethod(mx, new SVDAdapterEjml());
     final double lambda = 0.0015;
     applyFactorMethod(mx, new ElasticNetFactorization(20, 1e-4, 0.5, lambda));
+  }
+
+  public void testGradFacBaseline() throws Exception {
+    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
+        new GradFacMulticlass(
+            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+            new SVDAdapterEjml(1),
+            LogL2.class
+        ),
+        L2.class,
+        400,
+        7
+    );
+    fitModel(boosting);
+  }
+
+  public void testGradFacElasticNet() throws Exception {
+    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
+        new GradFacMulticlass(
+            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+            new ElasticNetFactorization(1, 1., 1., 1.),
+            SatL2.class
+        ),
+        L2.class,
+        400,
+        7
+    );
+    fitModel(boosting);
+  }
+
+  public void testGradFacSVDNColumnsBootstrap() throws Exception {
+    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
+        new MultiClassColumnBootstrapOptimization(
+            new GradFacSvdNMulticlass(
+                new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                LogL2.class,
+                2
+            ),
+            new FastRandom(100500),
+            1.
+        ),
+        L2.class,
+        5000,
+        5
+    );
+    fitModel(boosting);
+  }
+
+  public void testGradFacColumnsBootstrap() throws Exception {
+    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
+        new MultiClassColumnBootstrapOptimization(
+            new GradFacMulticlass(
+                new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                new SVDAdapterEjml(1),
+                SatL2.class
+            ), new FastRandom(),
+            1.
+        ),
+        L2.class,
+        7500,
+        7
+    );
+    fitModel(boosting);
+  }
+
+  public void testGradFacElasticNetColumnsBootstrap() throws Exception {
+    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
+        new MultiClassColumnBootstrapOptimization(
+            new GradFacMulticlass(
+                new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                new ElasticNetFactorization(20, 1e-2, 0.95, 0.15 * 1e-6),
+                LogL2.class,
+                true
+            ),
+            new FastRandom(100500),
+            1.
+        ),
+        L2.class,
+        5000,
+        7
+    );
+    fitModel(boosting);
+  }
+
+  public void testBaseline() throws Exception {
+    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
+        new MultiClass(
+            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+            LogL2.class
+        ),
+        L2.class,
+        400,
+        0.3
+    );
+    fitModel(boosting);
+  }
+
+  private void fitModel(final GradientBoosting<BlockwiseMLLLogit> boosting) {
+    final VecDataSet vecDataSet = learn.vecData();
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(learn, test);
+    boosting.addListener(multiclassProgressPrinter);
+
+    final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+
+    final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
+    final MultiClassModel multiclassModel = new MultiClassModel(joined);
+    final String learnResult = MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false);
+    final String testResult = MCTools.evalModel(multiclassModel, test, "[TEST] ", false);
+    System.out.println(learnResult);
+    System.out.println(testResult);
   }
 
   private static void applyFactorMethod(final Mx x, final OuterFactorization method) {
