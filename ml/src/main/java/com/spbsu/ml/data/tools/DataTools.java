@@ -56,6 +56,7 @@ import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.multilabel.MultiLabelBinarizedModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TIntLinkedList;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -83,7 +84,7 @@ public class DataTools {
     final int[] featuresCount = new int[]{-1};
     CharSeqTools.processLines(in, new Processor<CharSequence>() {
       int lindex = 0;
-      
+
       @Override
       public void process(final CharSequence arg) {
         lindex++;
@@ -102,6 +103,31 @@ public class DataTools {
     return new FeaturesTxtPool(fileName,
         new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
         new VecBasedMx(featuresCount[0], data.build()),
+        target.build());
+  }
+
+  public static FeaturesTxtPool loadLetorFile(final String fileName, final Reader in) throws IOException {
+    final List<QURLItem> items = new ArrayList<>();
+    final VecBuilder target = new VecBuilder();
+    final VecBuilder data = new VecBuilder();
+    final int featureNum = 46;
+    CharSeqTools.processLines(in, new Processor<CharSequence>() {
+      int lindex = 0;
+
+      @Override
+      public void process(final CharSequence arg) {
+        lindex++;
+        final CharSequence[] parts = StringUtils.split(arg.toString(), " :");
+        items.add(new QURLItem(CharSeqTools.parseInt(parts[2]), "no url", -1));
+        target.append(CharSeqTools.parseDouble(parts[0]));
+        for (int i = 0; i < featureNum; i++) {
+          data.append(CharSeqTools.parseDouble(parts[4 + i * 2]));
+        }
+      }
+    });
+    return new FeaturesTxtPool(fileName,
+        new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
+        new VecBasedMx(featureNum, data.build()),
         target.build());
   }
 

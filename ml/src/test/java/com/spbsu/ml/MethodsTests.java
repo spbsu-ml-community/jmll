@@ -49,7 +49,7 @@ import static java.lang.Math.log;
  * Time: 15:50
  */
 public abstract class MethodsTests extends GridTest {
-  private FastRandom rng;
+  protected FastRandom rng;
 
   @Override
   protected void setUp() throws Exception {
@@ -651,8 +651,8 @@ public void testElasticNetBenchmark() {
     final ScoreCalcer validateListenerFile;
     final Counter counter;
     final Counter counterFile;
-    final PFoundCalcer pFoundCalcer = new PFoundCalcer("Pfound", (Pool<QURLItem>) learn, learn.target(lossClass), System.out);
-    final NDCGCalcer ndcgCalcer = new NDCGCalcer("NDCG", (Pool<QURLItem>) learn, learn.target(lossClass), System.out);
+    final ListWiseHandler pFoundCalcer = new ListWiseHandler("Pfound", (Pool<QURLItem>) learn, learn.target(lossClass), System.out, new PFoundCalcer());
+    final ListWiseHandler ndcgCalcer = new ListWiseHandler("NDCG", (Pool<QURLItem>) learn, learn.target(lossClass), System.out, new NDCGCalcer(5));
     learnListener = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass));
     validateListener = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass));
     qualityCalcer = new QualityCalcer();
@@ -798,12 +798,22 @@ public void testElasticNetBenchmark() {
     boosting.fit(learn.vecData(), learn.target(LLLogit.class));
   }
 
-  private abstract static class ListWiseHandler extends ScoreCalcer implements ProgressHandler {
+  private static class ListWiseHandler extends ScoreCalcer implements ProgressHandler {
     private final int[] queryId;
-    protected ArrayList<ArrayList<Integer>> ranking;
+    private final ArrayList<Double> idealMeasure;
+    private ArrayList<ArrayList<Integer>> ranking;
+    private final int numberOfQueries;
+    private final Computable<ArrayList<Double>, Double> measure;
 
-    public ListWiseHandler(String message, Pool<QURLItem> ds, L2 target, PrintStream stream) {
+    public ListWiseHandler(
+        String message,
+        Pool<QURLItem> ds,
+        L2 target,
+        PrintStream stream,
+        Computable<ArrayList<Double>, Double> measure
+    ) {
       super(message, ds.vecData(), target, stream);
+      this.measure = measure;
       final DataSet<QURLItem> data = ds.data();
       int maxQueryId = 0;
       queryId = new int[ds.size()];
@@ -819,11 +829,31 @@ public void testElasticNetBenchmark() {
       for (int i = 0; i < ds.size(); i++) {
         ranking.get(queryId[i]).add(i);
       }
+      int numberOfQueries = 0;
+      for (int j = 0; j < ranking.size(); j++) {
+        if (!ranking.get(j).isEmpty()) {
+          numberOfQueries++;
+        }
+      }
+      this.numberOfQueries = numberOfQueries;
+      {
+        this.idealMeasure = new ArrayList<Double>();
+        for (int i = 0; i < ranking.size(); i++) {
+          ArrayList<Double> relevances = new ArrayList<>();
+          for (int j = 0; j < ranking.get(i).size(); j++) {
+            relevances.add(target.get(ranking.get(i).get(j)));
+          }
+          Collections.sort(relevances);
+          Collections.reverse(relevances);
+          idealMeasure.add(measure.compute(relevances));
+        }
+      }
     }
 
     @Override
     public void invoke(Trans partial) {
       super.recalculateCurrent(partial);
+      double currentMeasure = 0;
       for (int i = 0; i < ranking.size(); i++) {
         Collections.sort(ranking.get(i), new Comparator<Integer>() {
           @Override
@@ -836,64 +866,49 @@ public void testElasticNetBenchmark() {
             return valueA < valueB ? 1 : -1;
           }
         });
+        ArrayList<Double> relevances = new ArrayList<>(ranking.get(i).size());
+        for (int j = 0; j < ranking.get(i).size(); j++)
+          relevances.add(target.get(ranking.get(i).get(j)));
+        if (idealMeasure.get(i) != 0)
+        {
+          currentMeasure += measure.compute(relevances) / idealMeasure.get(i);
+        }
       }
+      stream.print(message + currentMeasure / numberOfQueries);
     }
   }
 
-  private static class PFoundCalcer extends ListWiseHandler {
+  private static class PFoundCalcer implements Computable<ArrayList<Double>, Double> {
     final static double pBreak = 0.15;
 
-    public PFoundCalcer(String message, Pool<QURLItem> ds, L2 target, PrintStream stream) {
-      super(message, ds, target, stream);
-    }
-
     @Override
-    public void invoke(Trans partial) {
-      super.invoke(partial);
-      double sumPfound = 0;
-      for (int i = 0; i < ranking.size(); i++) {
-        double pLook = 1;
-        for (int j = 0; j < ranking.get(i).size(); j++) {
-          final double relevance = target.get(ranking.get(i).get(j));
-          sumPfound += pLook * relevance;
-          pLook *= (1 - relevance) * (1 - pBreak);
-        }
+    public Double compute(ArrayList<Double> relevances) {
+      double pFound = 0;
+      double pLook = 1;
+      for (int j = 0; j < relevances.size(); j++) {
+        final double relevance = relevances.get(j);
+        pFound += pLook * relevance;
+        pLook *= (1 - relevance) * (1 - pBreak);
       }
-      stream.print(message + sumPfound / ranking.size());
+      return pFound;
     }
   }
 
-  private static class NDCGCalcer extends ListWiseHandler {
-    private double idealGain;
+  private static class NDCGCalcer implements Computable<ArrayList<Double>, Double> {
+    private final int maxDepth;
 
-    public NDCGCalcer(String message, Pool<QURLItem> ds, L2 target, PrintStream stream) {
-      super(message, ds, target, stream);
-
-      idealGain = 0;
-      for (int i = 0; i < ranking.size(); i++) {
-        ArrayList<Double> relevances = new ArrayList<>();
-        for (int j = 0; j < ranking.get(i).size(); j++) {
-          relevances.add(target.get(ranking.get(i).get(j)));
-        }
-        Collections.sort(relevances);
-        Collections.reverse(relevances);
-        for (int j = 0; j < relevances.size(); j++) {
-          idealGain += (Math.pow(2, relevances.get(j)) - 1) / Math.log(j + 2);
-        }
-      }
+    private NDCGCalcer(int maxDepth) {
+      this.maxDepth = maxDepth;
     }
 
     @Override
-    public void invoke(final Trans partial) {
-      super.invoke(partial);
+    public Double compute(ArrayList<Double> relevances) {
       double gain = 0;
-      for (int i = 0; i < ranking.size(); i++) {
-        for (int j = 0; j < ranking.get(i).size(); j++) {
-          final double relevance = target.get(ranking.get(i).get(j));
-          gain += (Math.pow(2, relevance) - 1) / Math.log(j + 2);
-        }
+      for (int j = 0; j < maxDepth && j < relevances.size(); j++) {
+        final double relevance = relevances.get(j);
+        gain += (Math.pow(2, relevance) - 1) / ((j == 0) ? 1 : Math.log(j + 1) / Math.log(2.));
       }
-      stream.print(message + gain / idealGain);
+      return gain;
     }
   }
 
