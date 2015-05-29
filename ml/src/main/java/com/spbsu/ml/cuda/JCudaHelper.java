@@ -5,11 +5,10 @@ import org.jetbrains.annotations.NotNull;
 import com.spbsu.commons.util.cache.Cache;
 import com.spbsu.commons.util.cache.CacheStrategy;
 import com.spbsu.commons.util.cache.impl.FixedSizeCache;
+import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.commons.io.StreamTools;
 import jcuda.driver.*;
 import com.spbsu.commons.system.RuntimeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -21,21 +20,22 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 /**
- * jmll
- * ksen
- * 16.October.2014 at 11:35
+ * Project jmll
+ *
+ * @author Ksen
  */
 //todo(ksen): handle exit code
 //todo(ksen): class/function name from Thread stack trace (+latency?)
+//todo(ksen): handle several devices
 public class JCudaHelper {
 
-  private static final Logger LOG = LoggerFactory.getLogger(JCudaHelper.class);
+  private static final Logger LOG = Logger.create(JCudaHelper.class);
 
   static {
     initJCuda();
   }
 
-  private static final Cache<String, CUfunction> CACHE = new FixedSizeCache<>(100, CacheStrategy.Type.LRU);
+  private static final Cache<String, CUfunction> CACHE = new FixedSizeCache<>(100, CacheStrategy.Type.LFU);
 
   private static File LOCAL_PTX_DIRECTORY;
 
@@ -88,6 +88,56 @@ public class JCudaHelper {
     return cuFileName.substring(0, extensionPoint + 1) + "ptx";
   }
 
+  @SuppressWarnings("StringBufferReplaceableByString")
+  public static void compilePtx(final @NotNull File cuFile, final @NotNull File ptxFile) {
+    final String command = new StringBuilder()
+        .append("nvcc ")
+        .append("-m ").append(RuntimeUtils.getArchDataModel()).append(' ')
+        .append("-ptx ").append(cuFile.getAbsolutePath()).append(' ')
+        .append("-o ").append(ptxFile.getAbsolutePath())
+        .toString()
+    ;
+    execNvcc(command);
+  }
+
+  public static void execNvcc(final String command) {
+    int exitCode;
+    String stdErr = "";
+    String stdOut = "";
+
+    try {
+      final Process process = Runtime.getRuntime().exec(command);
+
+      stdErr = streamToString(process.getErrorStream());
+      stdOut = streamToString(process.getInputStream());
+
+      exitCode = process.waitFor();
+    }
+    catch (IOException | InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(
+          "Interrupted while waiting for nvcc output.\nSTDOUT:\n" + stdOut + "\nSTDERR\n" + stdErr, e
+      );
+    }
+
+    if (exitCode != 0) {
+      throw new RuntimeException("Invocation '" + command + "' failed.\n" + stdOut + "\n" + stdErr);
+    }
+  }
+
+  private static String streamToString(final InputStream inputStream) throws IOException {
+    final StringBuilder builder = new StringBuilder();
+    try (final LineNumberReader reader = new LineNumberReader(new InputStreamReader(inputStream))) {
+      final char[] buffer = new char[8192];
+
+      int read;
+      while ((read = reader.read(buffer)) != -1) {
+        builder.append(buffer, 0, read);
+      }
+    }
+    return builder.toString();
+  }
+
   // Static-magic stuff
 
   private static void initJCuda() {
@@ -99,11 +149,7 @@ public class JCudaHelper {
       LOG.info("Jcuda is working in: " + tempDirectory.getAbsolutePath());
       extractNativeLibraries(classLoader, tempDirectory);
 
-      final File localCuDirectory = extractCuFiles(classLoader, tempDirectory);
-      LOG.info("Local storage for *.cu files " + localCuDirectory.getAbsolutePath());
-
-      LOCAL_PTX_DIRECTORY = compileCuFiles(localCuDirectory, tempDirectory);
-      LOG.info("Local storage for *.ptx files " + LOCAL_PTX_DIRECTORY.getAbsolutePath());
+      extractAndCompileCuFiles(classLoader, tempDirectory);
 
       init();
     }
@@ -156,12 +202,7 @@ public class JCudaHelper {
     }
   }
 
-  private static File extractCuFiles(final ClassLoader classLoader, final File tempDirectory) {
-    final File localCuDirectory = new File(tempDirectory, JCudaConstants.CU_CLASS_PATH);
-    if (!localCuDirectory.mkdirs()) {
-      throw new RuntimeException("Can't create local directory for *.cu " + localCuDirectory.getAbsolutePath());
-    }
-
+  private static void extractAndCompileCuFiles(final ClassLoader classLoader, final File tempDirectory) {
     final URL resource = classLoader.getResource(JCudaConstants.CU_CLASS_PATH.substring(1));
     if (resource == null) {
       throw new RuntimeException("Can't find *.cu directory in class path.");
@@ -177,24 +218,26 @@ public class JCudaHelper {
 
     final Path pathToCus = tryFindPathToCus(cuFilesUri);
     try {
-      Files.walkFileTree(pathToCus, new SimpleFileVisitor<Path>() {
-        @Override
-        public FileVisitResult visitFile(final Path file, final BasicFileAttributes attributes) throws IOException {
-          Files.copy(
-              file,
-              new File(localCuDirectory, file.getFileName().toString()).toPath(),
-              StandardCopyOption.REPLACE_EXISTING
-          );
-          return FileVisitResult.CONTINUE;
-        }
-      });
+      final File tmpCuDirectory = new File(tempDirectory, JCudaConstants.CU_CLASS_PATH);
+      if (!tmpCuDirectory.mkdirs()) {
+        throw new RuntimeException("Can't create local directory for *.cu " + tmpCuDirectory.getAbsolutePath());
+      }
+      LOG.info("Tmp storage for *.cu files " + tmpCuDirectory.getAbsolutePath());
+
+      final File tmpPtxDirectory = new File(tempDirectory, JCudaConstants.PTX_CLASS_PATH);
+      LOCAL_PTX_DIRECTORY = tmpPtxDirectory;
+      if (!tmpPtxDirectory.mkdirs()) {
+        throw new RuntimeException("Can't create local directory for *.ptx " + tmpPtxDirectory.getAbsolutePath());
+      }
+      LOG.info("Tmp storage for *.ptx files " + LOCAL_PTX_DIRECTORY.getAbsolutePath());
+
+      Files.walkFileTree(pathToCus, new CusDirectoryVisitor(pathToCus, tmpCuDirectory, tmpPtxDirectory));
     }
     catch (IOException e) {
       throw new RuntimeException(
-          "Something goes wrong while trying transfer *.cu from " + pathToCus + " to " + localCuDirectory, e
+          "Something goes wrong while trying transfer/compile *.cu from " + pathToCus + " to " + tempDirectory, e
       );
     }
-    return localCuDirectory;
   }
 
   private static Path tryFindPathToCus(final URI cuFilesUri) {
@@ -211,66 +254,54 @@ public class JCudaHelper {
     }
   }
 
-  private static File compileCuFiles(final File localCuDirectory, final File tempDirectory) {
-    final File localPtxDirectory = new File(tempDirectory, JCudaConstants.PTX_CLASS_PATH);
-    if (!localPtxDirectory.mkdirs()) {
-      throw new RuntimeException("Can't create local directory for *.ptx " + localPtxDirectory.getAbsolutePath());
+
+  private static class CusDirectoryVisitor extends SimpleFileVisitor<Path> {
+    private final String pathToCus;
+    private final String tmpCuDirectory;
+    private final String tmpPtxDirectory;
+
+    private CusDirectoryVisitor(final Path pathToCus, final File tmpCuDirectory, final File tmpPtxDirectory) {
+      this.pathToCus = pathToCus.toString();
+      this.tmpCuDirectory = tmpCuDirectory.getAbsolutePath();
+      this.tmpPtxDirectory = tmpPtxDirectory.getAbsolutePath();
     }
 
-    for (final File cuFile : localCuDirectory.listFiles()) {
-      compilePtx(cuFile, new File(localPtxDirectory, cuNameToPtx(cuFile.getName())));
-    }
-    return localPtxDirectory;
-  }
+    @Override
+    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attributes) throws IOException {
+      final String filePath = file.toString();
 
-  public static void compilePtx(final @NotNull File cuFile, final @NotNull File ptxFile) {
-    final String command = new StringBuilder()
-        .append("nvcc ")
-        .append("-m ").append(RuntimeUtils.getArchDataModel()).append(' ')
-        .append("-ptx ").append(cuFile.getAbsolutePath()).append(' ')
-        .append("-o ").append(ptxFile.getAbsolutePath())
-        .toString()
-    ;
-
-    final int exitCode = execNvcc(command);
-    if (exitCode != 0) {
-      throw new RuntimeException("Could not create *.ptx file: " + ptxFile.getAbsolutePath());
-    }
-  }
-
-  private static int execNvcc(final String command) {
-    int exitCode;
-    String stdErr = "";
-    String stdOut = "";
-
-    try {
-      final Process process = Runtime.getRuntime().exec(command);
-
-      stdErr = streamToString(process.getErrorStream());
-      stdOut = streamToString(process.getInputStream());
-
-      exitCode = process.waitFor();
-    }
-    catch (IOException | InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new RuntimeException(
-          "Interrupted while waiting for nvcc output.\nSTDOUT:\n" + stdOut + "\nSTDERR\n" + stdErr, e
+      final String tmpCuFile = filePath.replace(pathToCus, tmpCuDirectory);
+      final Path pathToCu = Paths.get(tmpCuFile);
+      LOG.info(
+          "'" + Files.copy(file, pathToCu, StandardCopyOption.REPLACE_EXISTING) + "' extracted."
       );
-    }
-    return exitCode;
-  }
 
-  private static String streamToString(final InputStream inputStream) throws IOException {
-    final StringBuilder builder = new StringBuilder();
-    try (final LineNumberReader reader = new LineNumberReader(new InputStreamReader(inputStream))) {
-      final char[] buffer = new char[8192];
+      final String tmpPtxFile = filePath.replace(pathToCus, tmpPtxDirectory);
+      final Path pathToPtx = Paths.get(cuNameToPtx(tmpPtxFile));
+      compilePtx(pathToCu.toFile(), pathToPtx.toFile());
+      LOG.info(
+          "'" + pathToCu + "' compiled (" + pathToPtx + ")"
+      );
 
-      int read;
-      while ((read = reader.read(buffer)) != -1) {
-        builder.append(buffer, 0, read);
-      }
+      return FileVisitResult.CONTINUE;
     }
-    return builder.toString();
+
+    @Override
+    public FileVisitResult preVisitDirectory(final Path directory, final BasicFileAttributes attributes)
+        throws IOException
+    {
+      final String directoryPath = directory.toString();
+
+      final String tmpCuSubDirectory = directoryPath.replace(pathToCus, tmpCuDirectory);
+      final Path pathToTmpCuDirectory = Paths.get(tmpCuSubDirectory);
+      LOG.info("'" + Files.createDirectories(pathToTmpCuDirectory) + "' created.");
+
+      final String tmpPtxSubDirectory = directoryPath.replace(pathToCus, tmpPtxDirectory);
+      final Path pathToTmpPtxDirectory = Paths.get(tmpPtxSubDirectory);
+      LOG.info("'" + Files.createDirectories(pathToTmpPtxDirectory) + "' created.");
+
+      return FileVisitResult.CONTINUE;
+    }
   }
 
 }

@@ -31,6 +31,7 @@ public class MethodsBuilder {
   public void setRandom(final FastRandom random) {
     BootstrapOptimizationBuilder.defaultRandom = random;
     RandomForestBuilder.defaultRandom = random;
+    MultiClassSplitGradFacBuilder.defaultRandom = random;
   }
 
   public VecOptimization create(final String scheme) {

@@ -26,6 +26,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
           new FuncEnsembleConversionPack(),
           new TransJoinConversionPack(),
           new FuncJoinConversionPack(),
+          new JoinedProbsModelConversionPack(),
           new FMModelConversionPack(),
           new MultiClassModelConversionPack(),
           new JoinedBinClassModelConversionPack(),

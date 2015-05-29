@@ -1,5 +1,6 @@
 package com.spbsu.ml.cuda;
 
+import com.spbsu.ml.cuda.data.impl.FloatMatrix;
 import org.jetbrains.annotations.NotNull;
 
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
@@ -9,14 +10,19 @@ import jcuda.Sizeof;
 import jcuda.jcublas.JCublas;
 
 /**
- * jmll
- * ksen
- * 14.October.2014 at 12:23
+ * Project jmll
+ *
+ * @author Ksen
  */
 public class JCublasHelper { //todo(ksen): row-major support
 
   static {
     JCudaHelper.hook();
+    JCublas.cublasInit();
+  }
+
+  public static void shutdown() {
+    JCublas.cublasShutdown();
   }
 
   public static int max(
@@ -414,6 +420,54 @@ public class JCublasHelper { //todo(ksen): row-major support
     JCublas.cublasShutdown();
 
     return hC;
+  }
+
+  // Operations on device
+
+  public static void mult(
+      final @NotNull FloatMatrix left,
+      final @NotNull FloatMatrix right,
+      final @NotNull FloatMatrix result
+  ) {
+    mult(left, false, right, false, result);
+  }
+
+  public static void mult(
+      final @NotNull FloatMatrix left,
+      final boolean transposeLeft,
+      final @NotNull FloatMatrix right,
+      final boolean transposeRight,
+      final @NotNull FloatMatrix result
+  ) {
+    fMMmult(1.f, left, transposeLeft, right, transposeRight, 0.f, result);
+  }
+
+  @SuppressWarnings("UnnecessaryLocalVariable")
+  private static void fMMmult(
+      final float alpha,
+      final FloatMatrix left,
+      final boolean transposeLeft,
+      final FloatMatrix right,
+      final boolean transposeRight,
+      final float beta,
+      final @NotNull FloatMatrix result
+  ) {
+    final char opA = transposeLeft ? 'T' : 'N';
+    final char opB = transposeRight ? 'T' : 'N';
+    final int m = transposeLeft ? left.columns : left.rows;
+    final int n = transposeRight ? right.rows : right.columns;
+    final int k = transposeLeft ? left.rows : left.columns;
+    final int lda = left.rows;
+    final int ldb = right.rows;
+    final int ldc = transposeLeft ? left.columns : left.rows;
+
+    JCublas.cublasSgemm(
+        opA, opB,
+        m, n, k,
+        alpha, left.devicePointer, lda,
+        right.devicePointer, ldb,
+        beta, result.devicePointer, ldc
+    );
   }
 
 }

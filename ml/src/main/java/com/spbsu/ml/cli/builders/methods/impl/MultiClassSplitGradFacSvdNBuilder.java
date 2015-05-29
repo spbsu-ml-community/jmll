@@ -4,7 +4,7 @@ import com.spbsu.commons.func.Factory;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.multiclass.GradFacSvdNMulticlass;
+import com.spbsu.ml.methods.multiclass.gradfac.GradFacSvdNMulticlass;
 
 /**
  * User: qdeee
@@ -18,6 +18,7 @@ public class MultiClassSplitGradFacSvdNBuilder implements Factory<GradFacSvdNMul
   private int factorDim = 1;
   private boolean needCompact = true;
   private boolean printErrors = false;
+  private boolean bootstrap = false;
 
   public void setWeak(final VecOptimization weak) {
     this.weak = weak;
@@ -37,6 +38,10 @@ public class MultiClassSplitGradFacSvdNBuilder implements Factory<GradFacSvdNMul
 
   public void setOut(final boolean printErrors) {
     this.printErrors = printErrors;
+  }
+
+  public void setBootstrap(final boolean enable) {
+    this.bootstrap = enable;
   }
 
   @Override

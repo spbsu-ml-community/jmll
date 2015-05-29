@@ -1,8 +1,5 @@
 package com.spbsu.ml.cli;
 
-import java.io.*;
-
-
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
@@ -27,18 +24,19 @@ import com.spbsu.ml.cli.output.printers.*;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.data.tools.MultiLabelTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMultiLabelLogit;
 import com.spbsu.ml.loss.multiclass.ClassicMulticlassLoss;
 import com.spbsu.ml.loss.multilabel.ClassicMultiLabelLoss;
+import com.spbsu.ml.loss.multilabel.MultiLabelOVRLogit;
 import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.multilabel.MultiLabelOneVsRest;
 import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
 import org.apache.commons.cli.*;
+
+import java.io.*;
 
 /**
  * User: qdeee
@@ -62,7 +60,7 @@ public class JMLLCLI {
   private static final String OPTIMIZATION_OPTION = "O";
 
   private static final String VERBOSE_OPTION = "v";
-  private static final String PRINT_PERIOD = "t";
+  private static final String PRINT_PERIOD = "i";
   private static final String FAST_OPTION = "fast";
   private static final String SKIP_FINAL_EVAL_OPTION = "fastfinal";
   private static final String HIST_OPTION = "h";
@@ -206,7 +204,7 @@ public class JMLLCLI {
       final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "10"));
       if (loss instanceof BlockwiseMLLLogit) {
         progressPrinter = new MulticlassProgressPrinter(learn, test, printPeriod); //f*ck you with your custom different-dimensional metrics
-      } else if (loss instanceof BlockwiseMultiLabelLogit) {
+      } else if (loss instanceof BlockwiseMultiLabelLogit || loss instanceof MultiLabelOVRLogit) {
         progressPrinter = new MultiLabelLogitProgressPrinter(learn, test, printPeriod);
       } else {
         progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics, printPeriod);
@@ -237,11 +235,7 @@ public class JMLLCLI {
       } else if (loss instanceof ClassicMulticlassLoss) {
         final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
         MCTools.makeOneVsRestReport(learn, test, (JoinedBinClassModel) result, printPeriod);
-      } else if (loss instanceof ClassicMultiLabelLoss || loss instanceof BlockwiseMultiLabelLogit) {
-        if (method instanceof MultiLabelOneVsRest) {
-          final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
-          MultiLabelTools.makeOVRReport(learn, test, result, printPeriod);
-        }
+      } else if (loss instanceof ClassicMultiLabelLoss || loss instanceof BlockwiseMultiLabelLogit || loss instanceof MultiLabelOVRLogit) {
         ResultsPrinter.printMultilabelResult(result, learn, test);
       }
     }

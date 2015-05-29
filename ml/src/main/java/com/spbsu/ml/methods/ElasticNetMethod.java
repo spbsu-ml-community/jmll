@@ -8,6 +8,7 @@ import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.models.ShifftedTrans;
 
 import static com.spbsu.commons.math.vectors.VecTools.copy;
 
@@ -31,15 +32,23 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
 
   @Override
   public Trans fit(final VecDataSet ds, final L2 loss) {
-    final ElasticNetCache cache = new ElasticNetCache(ds.data(), loss.target, alpha, lambda);
-    return fit(cache);
+    double intercept  = 0;
+    Vec target = loss.target;
+    for (int i=0; i < target.dim();++i) {
+      intercept += target.get(i);
+    }
+    intercept /= target.dim();
+    Vec localTarget = copy(target);
+    localTarget.adjust(-intercept);
+    final ElasticNetCache cache = new ElasticNetCache(ds.data(), localTarget, alpha, lambda);
+    Trans result = fit(cache);
+    return new ShifftedTrans(result,intercept);
   }
 
   public Trans fit(final VecDataSet ds, final L2 loss, final Vec init) {
     final ElasticNetCache cache = new ElasticNetCache(ds.data(), loss.target, init, alpha, lambda);
     return fit(cache);
   }
-
 
   public int checkIterations = 2;
 
@@ -175,7 +184,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       }
       return result;
     }
-
+//jvm vectorization http://hg.openjdk.java.net/hsx/hotspot-comp/hotspot/rev/006050192a5a
     private double targetDot(Mx data, int i, Vec target) {
       final int rows = data.rows();
       final int length = 4*(rows / 4);
@@ -302,4 +311,6 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       return sgn * Math.max(sgn * z - j, 0);
     }
   }
+
 }
+

@@ -87,11 +87,10 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     return owner;
   }
 
-
-  public static class MSEStats implements  AdditiveStatistics {
-    public volatile double sum;
-    public volatile double sum2;
-    public volatile double weight;
+  public static class MSEStats implements AdditiveStatistics {
+    public double sum;
+    public double sum2;
+    public double weight;
 
     private final Vec targets;
 
@@ -111,9 +110,9 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
 
     public MSEStats remove(final int index, final int times, final double p) {
       final double v = targets.get(index);
-      sum -= p*times * v;
-      sum2 -= p*times * v * v;
-      weight -= p*times;
+      sum -= p * times * v;
+      sum2 -= p * times * v * v;
+      weight -= p * times;
       return this;
     }
 
@@ -137,9 +136,9 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
 
     public MSEStats append(final int index, final int times, final double p) {
       final double v = targets.get(index);
-      sum +=p* times * v;
-      sum2 += p*times * v * v;
-      weight += p*times;
+      sum += p * times * v;
+      sum2 += p * times * v * v;
+      weight += p * times;
       return this;
     }
 
@@ -155,7 +154,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     @Override
     public MSEStats append(int index, double w) {
       final double v = targets.get(index);
-      sum +=w * v;
+      sum += w * v;
       sum2 += w * v * v;
       weight += w;
       return this;
@@ -164,7 +163,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     @Override
     public MSEStats remove(int index, double w) {
       final double v = targets.get(index);
-      sum -=w * v;
+      sum -= w * v;
       sum2 -= w * v * v;
       weight -= w;
       return this;

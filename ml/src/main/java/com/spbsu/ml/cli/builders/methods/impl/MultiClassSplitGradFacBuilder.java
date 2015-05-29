@@ -1,6 +1,7 @@
 package com.spbsu.ml.cli.builders.methods.impl;
 
 import com.spbsu.commons.func.Factory;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.factorization.OuterFactorization;
 import com.spbsu.ml.factorization.impl.ALS;
@@ -8,13 +9,16 @@ import com.spbsu.ml.factorization.impl.ElasticNetFactorization;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.multiclass.GradFacMulticlass;
+import com.spbsu.ml.methods.multiclass.gradfac.GradFacMulticlass;
+import com.spbsu.ml.methods.multiclass.gradfac.MultiClassColumnBootstrapOptimization;
 
 /**
  * User: qdeee
  * Date: 03.09.14
  */
-public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass> {
+public class MultiClassSplitGradFacBuilder implements Factory<VecOptimization> {
+  public static FastRandom defaultRandom;
+
   private final Factory<VecOptimization> defaultWeakBuilder = new BootstrapOptimizationBuilder();
 
   private VecOptimization weak;
@@ -24,6 +28,9 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
   private int iters = 20;
   private double lambda = 0.0;
   private double alpha = 0.95;
+
+  private boolean enableBootstrap = false;
+  private FastRandom random = defaultRandom;
 
   private boolean printErr = false;
 
@@ -51,8 +58,12 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
     this.printErr = printErr;
   }
 
+  public void setBootstrap(final boolean enable) {
+    this.enableBootstrap = enable;
+  }
+
   @Override
-  public GradFacMulticlass create() {
+  public VecOptimization create() {
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
@@ -62,12 +73,14 @@ public class MultiClassSplitGradFacBuilder implements Factory<GradFacMulticlass>
         factorization = new ALS(iters, lambda);
         break;
       case "elasticnet":
-        factorization = new ElasticNetFactorization(iters, 1e-4, alpha, lambda);
+        factorization = new ElasticNetFactorization(iters, 1e-2, alpha, lambda);
         break;
       default:
         factorization = new SVDAdapterEjml();
         break;
     }
 
-    return new GradFacMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);
+    final GradFacMulticlass gradFacMulticlass = new GradFacMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);
+    return enableBootstrap ? new MultiClassColumnBootstrapOptimization(gradFacMulticlass, random, 1.)
+                           : gradFacMulticlass;
   }}

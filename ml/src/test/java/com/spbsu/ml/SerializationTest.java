@@ -13,6 +13,7 @@ import com.spbsu.ml.models.FMModel;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.Region;
 import com.spbsu.ml.models.multiclass.JoinedBinClassModel;
+import com.spbsu.ml.models.multiclass.JoinedProbsModel;
 import com.spbsu.ml.models.multilabel.MultiLabelBinarizedModel;
 
 import java.util.Arrays;
@@ -151,5 +152,14 @@ public class SerializationTest extends GridTest {
     final CharSequence write = repository.write(binarizedModel);
     final MultiLabelBinarizedModel readModel = repository.read(write, MultiLabelBinarizedModel.class);
     assertEquals(binarizedModel, readModel);
+  }
+
+  public void testJoinedProbsModel() throws Exception {
+    final double v = 100500.;
+    final FMModel func = new FMModel(new VecBasedMx(1, new ArrayVec(v)));
+    final JoinedProbsModel joinedProbsModel = new JoinedProbsModel(new Func[]{func});
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository();
+    final JoinedProbsModel readModel = repository.read(repository.write(joinedProbsModel), JoinedProbsModel.class);
+    assertEquals(joinedProbsModel, readModel);
   }
 }

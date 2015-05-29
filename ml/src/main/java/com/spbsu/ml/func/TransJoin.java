@@ -104,7 +104,7 @@ public class TransJoin extends Trans.Stub {
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
-    if (!(o instanceof TransJoin)) return false;
+    if (o == null || getClass() != o.getClass()) return false;
 
     final TransJoin transJoin = (TransJoin) o;
 

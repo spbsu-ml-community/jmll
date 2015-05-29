@@ -8,7 +8,7 @@ import com.spbsu.ml.factorization.impl.ElasticNetFactorization;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.multiclass.GradFacFilterMulticlass;
+import com.spbsu.ml.methods.multiclass.gradfac.GradFacFilterMulticlass;
 
 /**
  * User: qdeee
