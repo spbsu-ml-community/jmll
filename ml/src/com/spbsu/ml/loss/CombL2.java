@@ -17,7 +17,7 @@ public class CombL2 extends L2 {
 
   @Override
   public double bestIncrement(MSEStats stats) {
-    return stats.weight > 2 ? stats.sum/stats.weight : 0;
+    return stats.weight > 2 ? stats.sum / stats.weight : 0;
   }
 
   @Override

@@ -8,6 +8,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.trees.GreedyObliviousPolynomialTreeImpl;
+import com.spbsu.ml.methods.trees.PacGreedyPolynomialObliviousTree;
 import com.spbsu.ml.models.PolynomialObliviousTree;
 import com.spbsu.ml.testUtils.FakePool;
 
@@ -17,14 +18,14 @@ import java.io.IOException;
  * Created by towelenee on 5/11/15.
  * Tests for greedy polynomial Tree must have regression test and boosting test
  */
-public class GreedyObliviousPolynomialTreeTest extends MethodsTests {
-  public void testPOTBoost() throws IOException, InterruptedException {
+public class PacGreedyObliviousPolynomialTreeTest extends MethodsTests {
+  public void testPacBoost() throws IOException, InterruptedException {
     testWithBoosting(
-        new GreedyObliviousPolynomialTreeImpl(GridTools.medianGrid(learn.vecData(), 32), 6, 2, 0.1),
+        new PacGreedyPolynomialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6, 2, 5e0),
         learn,
         validate,
         2000,
-        0.01,
+        0.004,
         MethodsTests.OUTPUT_SCORE | MethodsTests.OUTPUT_DRAW,
         "graph.tsv"
     );
@@ -38,8 +39,8 @@ public class GreedyObliviousPolynomialTreeTest extends MethodsTests {
     Vec target = new ArrayVec( 0, 1, 100, 101);
     int[] weights = new int[] {1, 1, 1, 1};
     final FakePool fakePool = new FakePool(data, target);
-    final GreedyObliviousPolynomialTreeImpl polynomialTree =
-        new GreedyObliviousPolynomialTreeImpl(GridTools.medianGrid(fakePool.vecData(), 32), 1, 1, 0);
+    final PacGreedyPolynomialObliviousTree polynomialTree =
+        new PacGreedyPolynomialObliviousTree(GridTools.medianGrid(fakePool.vecData(), 32), 1, 1, 0);
     final PolynomialObliviousTree tree = polynomialTree.fit(
         fakePool.vecData(),
         new WeightedLoss<>(new L2(target, fakePool.vecData()), weights)
