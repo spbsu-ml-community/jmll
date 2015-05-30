@@ -6,12 +6,10 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.models.ExponentialObliviousTree;
 import com.spbsu.ml.models.ObliviousTree;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /*Created with IntelliJ IDEA.
     *User:towelenee
@@ -20,9 +18,10 @@ import java.util.List;
     *Idea please stop making my code yellow
 */
 
-public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<? extends L2>>{
+public class GreedyExponentialObliviousTree extends GreedyObliviousTree<WeightedLoss<? extends L2>> {
   private final double SwapProbability;
   private final ArrayList<ArrayList<Double>> factors;
+  private final ArrayList<HashMap<Double, Integer>> upperBoundCache, lowerBoundCache;
 
   public GreedyExponentialObliviousTree(final BFGrid grid, final VecDataSet ds, int depth, double SwapProbability) {
     super(grid, depth);
@@ -37,6 +36,12 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
       Collections.sort(list);
       factors.add(list);
     }
+    upperBoundCache = new ArrayList<>(factors.size());
+    lowerBoundCache = new ArrayList<>(factors.size());
+    for (int i = 0; i < factors.size(); i++) {
+      upperBoundCache.add(new HashMap<Double, Integer>());
+      lowerBoundCache.add(new HashMap<Double, Integer>());
+    }
   }
 
   public static <T extends Comparable<T>> int upperBound(final List<T> list, T key) {
@@ -45,8 +50,7 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
       final int middle = (l + r) / 2;
       if (list.get(middle).compareTo(key) <= 0) {
         l = middle;
-      }
-      else {
+      } else {
         r = middle;
       }
     }
@@ -59,29 +63,43 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
       final int middle = (l + r) / 2;
       if (list.get(middle).compareTo(key) < 0) {
         l = middle;
-      }
-      else {
+      } else {
         r = middle;
       }
     }
     return r;
   }
 
-  public static int findLowerDistance(final List<Double> list, double x, double target) {
-    int lowerX = lowerBound(list, x);
-    int targetIndex = upperBound(list, target) - 1;
+  private int upperBoundCached(final int factorId, double key) {
+    if (!upperBoundCache.get(factorId).containsKey(key)) {
+      upperBoundCache.get(factorId).put(key, upperBound(factors.get(factorId), key));
+    }
+    return upperBoundCache.get(factorId).get(key);
+  }
+
+  private int lowerBoundCached(final int factorId, double key) {
+    if (!lowerBoundCache.get(factorId).containsKey(key)) {
+      lowerBoundCache.get(factorId).put(key, lowerBound(factors.get(factorId), key));
+    }
+    return lowerBoundCache.get(factorId).get(key);
+  }
+
+
+  private int findLowerDistance(final int factorId, double x, double target) {
+    int lowerX = lowerBoundCached(factorId, x);
+    int targetIndex = upperBoundCached(factorId, target) - 1;
     return Math.abs(lowerX - targetIndex);
   }
 
-  public static int findUpperDistance(final List<Double> list, double x, double target) {
-    int upperX = upperBound(list, x);
-    int targetIndex = upperBound(list, target) - 1;
+  private int findUpperDistance(final int factorId, double x, double target) {
+    int upperX = upperBoundCached(factorId, x);
+    int targetIndex = upperBoundCached(factorId, target) - 1;
     return Math.abs(upperX - targetIndex);
   }
 
-  public static double getProbability(final List<Double> list, double x, double target, double swapProbability) {
-    final int lowerDistance = findLowerDistance(list, x, target);
-    final int upperDistance = findUpperDistance(list, x, target);
+  private double getProbability(final int factorId, double x, double target, double swapProbability) {
+    final int lowerDistance = findLowerDistance(factorId, x, target);
+    final int upperDistance = findUpperDistance(factorId, x, target);
     if (x > target) {
       return sumProgression(swapProbability, lowerDistance, upperDistance);
     } else {
@@ -95,15 +113,15 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
 
   }
 
-  public static double getProbabilityOfFit(final List<Double> list, double x, double target, double swapProbability) {
-    final double probability = getProbability(list, x, target, swapProbability);
+  private double getProbabilityOfFit(final int factorId, double x, double target, double swapProbability) {
+    final double probability = getProbability(factorId, x, target, swapProbability);
     if (!(x > target)) {
       return 1 - probability;
     }
     return probability;
   }
 
-  private double[] getProbabilitiesBeingInRegion(final List<BFGrid.BinaryFeature> features, final Vec point) {
+  public double[] getProbabilitiesBeingInRegion(final List<BFGrid.BinaryFeature> features, final Vec point) {
     final int numberOfRegions = 1 << features.size();
     double[] probabilities = new double[numberOfRegions];
     Arrays.fill(probabilities, 1.0);
@@ -113,11 +131,12 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
       final double x = point.get(factorId);
       double[] p = new double[2];
       {
-        p[0] = getProbabilityOfFit(factors.get(factorId), x, condition, SwapProbability);
-        p[1]  = 1 - p[0];
+        p[0] = getProbabilityOfFit(factorId, x, condition, SwapProbability);
+        p[1] = 1 - p[0];
       }
-      for (int region = 0; region < 1 << features.size(); region++)
+      for (int region = 0; region < 1 << features.size(); region++) {
         probabilities[region] *= p[(region >> (features.size() - i - 1)) & 1];
+      }
     }
     return probabilities;
   }
@@ -146,8 +165,9 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
           weightsSum[region] += weight * expWeight;
         }
       }
-      if (sumProb < 0.9999)
+      if (sumProb < 0.9999) {
         throw new RuntimeException("");
+      }
     }
     double[] values = new double[numberOfRegions];
     for (int region = 0; region < numberOfRegions; ++region) {
@@ -155,6 +175,6 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
         values[region] = targetSum[region] / weightsSum[region];
       }
     }
-    return new ObliviousTree(features, values, tree.based());
+    return new ExponentialObliviousTree(features, values, tree.based(), this);
   }
 }
