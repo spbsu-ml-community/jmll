@@ -21,11 +21,11 @@ import java.io.IOException;
 public class PacGreedyObliviousPolynomialTreeTest extends MethodsTests {
   public void testPacBoost() throws IOException, InterruptedException {
     testWithBoosting(
-        new PacGreedyPolynomialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6, 2, 5e0),
+        new PacGreedyPolynomialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 5, 2, 1e-1),
         learn,
         validate,
         2000,
-        0.004,
+        0.001,
         MethodsTests.OUTPUT_SCORE | MethodsTests.OUTPUT_DRAW,
         "graph.tsv"
     );

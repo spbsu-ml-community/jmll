@@ -62,8 +62,8 @@ public class GreedyObliviousPolynomialTreeImpl extends GreedyObliviousPolynomial
       }*/
     }
 
-    final Vec regressionCoefficients = MxTools.solveGaussZeildel(derivativeMatrix, derivativeVec);
-//    final Vec regressionCoefficients = MxTools.solveCholesky(derivativeMatrix, derivativeVec);
+    final Vec regressionCoefficients = MxTools.solveSystemGaussZeildel(derivativeMatrix, derivativeVec);
+//    final Vec regressionCoefficients = MxTools.solveSystemCholesky(derivativeMatrix, derivativeVec);
     MxTools.multiply(derivativeMatrix, regressionCoefficients);
     return new PolynomialObliviousTree(based, regressionCoefficients.toArray(), multiplicationsFactory);
   }

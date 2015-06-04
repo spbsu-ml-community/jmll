@@ -1,7 +1,6 @@
 package com.spbsu.ml.methods.trees;
 
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VectorOfMultiplicationsFactory;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -11,7 +10,6 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.models.ObliviousTree;
-import com.spbsu.ml.models.PolynomialObliviousTree;
 
 import java.util.ArrayList;
 
@@ -39,8 +37,6 @@ public abstract class GreedyObliviousPolynomialTree extends GreedyObliviousTree<
 
   protected int convertMultiIndex(int region, int index)
   {
-    if (convertMultiIndex(region, index, numberOfVariablesInRegion) >= numberOfVariables)
-      throw new RuntimeException("");
     return convertMultiIndex(region, index, numberOfVariablesInRegion);
   }
 
