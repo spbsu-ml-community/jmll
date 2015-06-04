@@ -119,9 +119,14 @@ public class DataTools {
         lindex++;
         final CharSequence[] parts = StringUtils.split(arg.toString(), " :");
         items.add(new QURLItem(CharSeqTools.parseInt(parts[2]), "no url", -1));
-        target.append(CharSeqTools.parseDouble(parts[0]));
+        target.append(CharSeqTools.parseDouble(parts[0]) / 3);
         for (int i = 0; i < featureNum; i++) {
-          data.append(CharSeqTools.parseDouble(parts[4 + i * 2]));
+          final double feature = CharSeqTools.parseDouble(parts[4 + i * 2]);
+          data.append(feature);
+          if (feature < 0 || feature > 1) {
+            throw new IllegalArgumentException("Feature must be in [0;1] found - " + feature);
+          }
+
         }
       }
     });

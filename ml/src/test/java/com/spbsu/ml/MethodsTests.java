@@ -651,8 +651,8 @@ public void testElasticNetBenchmark() {
     final ScoreCalcer validateListenerFile;
     final Counter counter;
     final Counter counterFile;
-    final ListWiseHandler pFoundCalcer = new ListWiseHandler("Pfound", (Pool<QURLItem>) learn, learn.target(lossClass), System.out, new PFoundCalcer());
-    final ListWiseHandler ndcgCalcer = new ListWiseHandler("NDCG", (Pool<QURLItem>) learn, learn.target(lossClass), System.out, new NDCGCalcer(5));
+    //final ListWiseHandler pFoundCalcer = new ListWiseHandler("Pfound", (Pool<QURLItem>) learn, learn.target(lossClass), System.out, new PFoundCalcer());
+    final ListWiseHandler ndcgCalcer = new ListWiseHandler("\tNDCG", (Pool<QURLItem>) validate, validate.target(lossClass), System.out, new NDCGCalcer(5));
     learnListener = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass));
     validateListener = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass));
     qualityCalcer = new QualityCalcer();
@@ -669,7 +669,6 @@ public void testElasticNetBenchmark() {
       boosting.addListener(learnListener);
       boosting.addListener(validateListener);
       boosting.addListener(qualityCalcer);
-      boosting.addListener(pFoundCalcer);
       boosting.addListener(ndcgCalcer);
     }
 /*    if ((outputMode & OUTPUT_MODEL) != 0) {
@@ -684,8 +683,8 @@ public void testElasticNetBenchmark() {
 
 
     final Ensemble model = boosting.fit(learn.vecData(), learn.target(lossClass));
-    System.out.println("\n + Final loss learn= " + computeLoss(learn, lossClass, model));
-    System.out.println("\n + Final loss validate= " + computeLoss(validate, lossClass, model));
+    /*System.out.println("\n + Final loss learn= " + computeLoss(learn, lossClass, model));
+    System.out.println("\n + Final loss validate= " + computeLoss(validate, lossClass, model));*/
     if ((outputMode & OUTPUT_DRAW) != 0) {
       graphFile.flush();
       graphFile.close();
@@ -874,7 +873,7 @@ public void testElasticNetBenchmark() {
           currentMeasure += measure.compute(relevances) / idealMeasure.get(i);
         }
       }
-      stream.print(message + currentMeasure / numberOfQueries);
+      stream.print(message + ":\t" + currentMeasure / numberOfQueries);
     }
   }
 
@@ -905,8 +904,8 @@ public void testElasticNetBenchmark() {
     public Double compute(ArrayList<Double> relevances) {
       double gain = 0;
       for (int j = 0; j < maxDepth && j < relevances.size(); j++) {
-        final double relevance = relevances.get(j);
-        gain += (Math.pow(2, relevance) - 1) / ((j == 0) ? 1 : Math.log(j + 1) / Math.log(2.));
+        final double relevance = relevances.get(j) * 3;
+        gain += (Math.pow(2, relevance) - 1) / (Math.log(j + 2) / Math.log(2.));
       }
       return gain;
     }

@@ -14,7 +14,7 @@ public class LetorTests extends MethodsTests {
   @Override
   protected void setUp() throws IOException {
     learn = DataTools.loadLetorFile("file", new FileReader("/home/towelenee/pool/Fold1/train.txt"));
-    validate = DataTools.loadLetorFile("file", new FileReader("/home/towelenee/pool/Fold1/test.txt"));
+    validate = DataTools.loadLetorFile("file", new FileReader("/home/towelenee/pool/Fold1/vali.txt"));
     rng = new FastRandom(0);
   }
 
