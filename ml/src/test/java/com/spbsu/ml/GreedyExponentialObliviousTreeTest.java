@@ -10,7 +10,7 @@ import java.util.List;
  * Test for exponential probability idea
  * Created by towelenee on 5/9/15.
  */
-public class GreedyExponentialObliviousTreeTest extends MethodsTests {
+public class GreedyExponentialObliviousTreeTest extends LetorTests {
   public void testUpperBound() {
     List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 3., 3.);
     assertEquals(GreedyExponentialObliviousTree.upperBound(list, 2.0), 4);
@@ -32,29 +32,7 @@ public class GreedyExponentialObliviousTreeTest extends MethodsTests {
     assertEquals(GreedyExponentialObliviousTree.lowerBound(list, 100.0), list.size());
     assertEquals(GreedyExponentialObliviousTree.lowerBound(list, -1.), 0);
   }
-
-  public void testLowerDistance() {
-    List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 5., 5., 8., 8., 9.);
-    assertEquals(7, GreedyExponentialObliviousTree.findLowerDistance(list, 1., 8.));
-    assertEquals(5, GreedyExponentialObliviousTree.findLowerDistance(list, 8., 1.));
-    assertEquals(3, GreedyExponentialObliviousTree.findLowerDistance(list, 0., 2.));
-    assertEquals(3, GreedyExponentialObliviousTree.findLowerDistance(list, 2., 0.));
-    assertEquals(3, GreedyExponentialObliviousTree.findLowerDistance(list, 9., 5.));
-    assertEquals(4, GreedyExponentialObliviousTree.findLowerDistance(list, 5., 9.));
-    assertEquals(4, GreedyExponentialObliviousTree.findLowerDistance(list, 4., 9.));
-  }
-
-  public void testUpperDistance() {
-    List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 5., 5., 8., 8., 9.);
-    assertEquals(5, GreedyExponentialObliviousTree.findUpperDistance(list, 1., 8.));
-    assertEquals(7, GreedyExponentialObliviousTree.findUpperDistance(list, 8., 1.));
-    assertEquals(2, GreedyExponentialObliviousTree.findUpperDistance(list, 0., 2.));
-    assertEquals(4, GreedyExponentialObliviousTree.findUpperDistance(list, 2., 0.));
-    assertEquals(4, GreedyExponentialObliviousTree.findUpperDistance(list, 9., 5.));
-    assertEquals(2, GreedyExponentialObliviousTree.findUpperDistance(list, 5., 9.));
-    assertEquals(4, GreedyExponentialObliviousTree.findUpperDistance(list, 4., 9.));
-  }
-
+/*
   public void testProbabilityOfFit() {
     List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 5., 5., 8., 8., 8., 9.);
     assertEquals(1 - 1e-5, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 0., 3., 0.1), 1e-15);
@@ -75,21 +53,21 @@ public class GreedyExponentialObliviousTreeTest extends MethodsTests {
       assertEquals(p, GreedyExponentialObliviousTree.getProbabilityOfFit(list, 8., 5., 0.1), 1e-15);
     }
   }
-
+*/
   public void testEOTBoost() throws IOException, InterruptedException {
     testWithBoosting(
-        new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 0.8),
+        new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 1 - Math.pow(2, -3)),
         learn,
         validate,
         1000,
-        0.006,
+        0.005,
         OUTPUT_SCORE | OUTPUT_DRAW,
         "graph.tsv");
   }
   public void testEOTBoostMulti() throws IOException, InterruptedException {
-    for (int regulation = 0; regulation < 20; regulation++)
+    for (int regulation = 0; regulation < 5; regulation++)
     {
-      for(double step = 0.001; step < 0.02; step += 0.001) {
+      for(double step = 0.001; step < 0.011; step += 0.001) {
         testWithBoosting(
             new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 1 - Math.pow(2, -regulation)),
             learn,

@@ -85,25 +85,17 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
   }
 
 
-  private int findLowerDistance(final int factorId, double x, double target) {
+  public double getProbability(final int factorId, double x, double target, double swapProbability) {
     int lowerX = lowerBoundCached(factorId, x);
-    int targetIndex = upperBoundCached(factorId, target) - 1;
-    return Math.abs(lowerX - targetIndex);
-  }
-
-  private int findUpperDistance(final int factorId, double x, double target) {
     int upperX = upperBoundCached(factorId, x);
-    int targetIndex = upperBoundCached(factorId, target) - 1;
-    return Math.abs(upperX - targetIndex);
-  }
-
-  private double getProbability(final int factorId, double x, double target, double swapProbability) {
-    final int lowerDistance = findLowerDistance(factorId, x, target);
-    final int upperDistance = findUpperDistance(factorId, x, target);
+    int targetIndex = upperBoundCached(factorId, target);
+    if (lowerX == upperX) {
+      upperX++; //todo: dirty hack
+    }
     if (x > target) {
-      return sumProgression(swapProbability, lowerDistance, upperDistance);
+      return sumProgression(swapProbability, lowerX - targetIndex + 1, upperX - targetIndex + 1);
     } else {
-      return sumProgression(swapProbability, upperDistance + 2, lowerDistance + 2);
+      return sumProgression(swapProbability, targetIndex - upperX + 1, targetIndex - lowerX + 1);
     }
 
   }
@@ -153,20 +145,15 @@ public class GreedyExponentialObliviousTree extends GreedyObliviousTree<Weighted
       final double weight = loss.weight(i);
       final double target = loss.target().get(i);
       final Vec point = ds.data().row(i);
-      double sumProb = 0;
 
       final double[] probabilities = getProbabilitiesBeingInRegion(features, point);
       for (int region = 0; region < numberOfRegions; ++region) {
         final double expWeight = probabilities[region];
-        sumProb += expWeight;
 
         if (expWeight > MathTools.EPSILON) {
           targetSum[region] += target * weight * expWeight;
           weightsSum[region] += weight * expWeight;
         }
-      }
-      if (sumProb < 0.9999) {
-        throw new RuntimeException("");
       }
     }
     double[] values = new double[numberOfRegions];
