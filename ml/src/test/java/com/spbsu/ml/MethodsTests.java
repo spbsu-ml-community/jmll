@@ -659,6 +659,7 @@ public void testElasticNetBenchmark() {
     counter = new Counter();
 
     graphFile = new PrintStream(new FileOutputStream(new File(fileName)));
+    final ListWiseHandler ndcgCalcerToFile = new ListWiseHandler("\tNDCG", (Pool<QURLItem>) validate, validate.target(lossClass), graphFile, new NDCGCalcer(5));
     counterFile = new Counter(graphFile);
     learnListenerFile = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass), graphFile);
     validateListenerFile = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass), graphFile);
@@ -679,6 +680,7 @@ public void testElasticNetBenchmark() {
       boosting.addListener(counterFile);
       boosting.addListener(learnListenerFile);
       boosting.addListener(validateListenerFile);
+      boosting.addListener(ndcgCalcerToFile);
     }
 
 

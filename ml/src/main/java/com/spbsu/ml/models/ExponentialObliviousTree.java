@@ -32,12 +32,16 @@ public class ExponentialObliviousTree extends ObliviousTree {
   @Override
   public double value(final Vec point) {
     double sumTarget = 0;
+    double sumWeights = 0;
     double[] weights = parent.getProbabilitiesBeingInRegion(features, point);
     for (int region = 0; region < values.length; region++) {
       if (weights[region] > MathTools.EPSILON) {
         sumTarget += weights[region] * values[region];
+        sumWeights += weights[region];
       }
     }
-    return sumTarget;
+    if (sumWeights < 0.999 || sumWeights > 1.01)
+      throw new RuntimeException("");
+    return sumTarget / sumWeights; //another dirty hack
   }
 }

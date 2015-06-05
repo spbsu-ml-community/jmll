@@ -18,16 +18,16 @@ import java.io.IOException;
  * Created by towelenee on 5/11/15.
  * Tests for greedy polynomial Tree must have regression test and boosting test
  */
-public class PacGreedyObliviousPolynomialTreeTest extends MethodsTests {
+public class PacGreedyObliviousPolynomialTreeTest extends LetorTests {
   public void testPacBoost() throws IOException, InterruptedException {
     testWithBoosting(
-        new PacGreedyPolynomialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 5, 2, 1e-1),
+        new PacGreedyPolynomialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6, 2, 1e2),
         learn,
         validate,
-        2000,
-        0.001,
+        1000,
+        0.003,
         MethodsTests.OUTPUT_SCORE | MethodsTests.OUTPUT_DRAW,
-        "graph.tsv"
+        "graph-pac.tsv"
     );
   }
   public void testOnSmallDataset() {
