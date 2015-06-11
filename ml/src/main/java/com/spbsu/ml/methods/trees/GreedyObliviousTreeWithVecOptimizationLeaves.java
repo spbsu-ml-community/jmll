@@ -15,6 +15,7 @@ import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
+import com.spbsu.ml.methods.MultipleVecOptimization;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.models.TransObliviousTree;
 
@@ -24,7 +25,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static com.spbsu.commons.math.vectors.VecTools.copy;
+import static com.spbsu.commons.math.vectors.VecTools.adjust;
 
 /**
  * User: noxoomo
@@ -33,11 +34,11 @@ import static com.spbsu.commons.math.vectors.VecTools.copy;
 public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   private final GreedyObliviousTree<WeightedLoss<Loss>> base;
   private final FastRandom rand;
-  private final VecOptimization<L2> leafLearner;
+  private final MultipleVecOptimization<L2> leafLearner;
 
   public GreedyObliviousTreeWithVecOptimizationLeaves(
     final GreedyObliviousTree<WeightedLoss<Loss>> base,
-    final VecOptimization<L2> leafLearner,
+    final MultipleVecOptimization<L2> leafLearner,
     final FastRandom rand) {
     this.base = base;
     this.rand = rand;
@@ -48,7 +49,8 @@ public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBased
 
   @Override
   public TransObliviousTree fit(final VecDataSet ds, final Loss loss) {
-    final Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> tree = base.findBestSubsets(ds, DataTools.bootstrap(loss, rand));
+    final WeightedLoss<Loss> bsLoss = DataTools.bootstrap(loss, rand);
+    final Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> tree = base.findBestSubsets(ds, bsLoss);
     final List<BFGrid.BinaryFeature> conditions = tree.getSecond();
     final List<BFOptimizationSubset> subsets = tree.getFirst();
     final CountDownLatch latch = new CountDownLatch(subsets.size());
@@ -58,6 +60,12 @@ public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBased
     for (BFGrid.BinaryFeature bf : conditions) {
       uniqueFeatures.add(bf.findex);
     }
+//    //prototype
+    if (ds.data().rows() > 20) {
+      while (uniqueFeatures.size() < 12) {
+        uniqueFeatures.add(rand.nextInt(ds.data().columns()));
+      }
+    }
     final int[] features = new int[uniqueFeatures.size()];
     {
       int j = 0;
@@ -65,37 +73,43 @@ public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBased
         features[j++] = i;
       }
     }
+    {
+      final VecDataSet[] datas = new VecDataSet[subsets.size()];
+      final L2[] losses = new L2[subsets.size()];
 
-    //
-
-    for (int i = 0; i < subsets.size(); ++i) {
-      final int ind = i;
-      exec.submit(new Runnable() {
-        @Override
-        public void run() {
-          final BFOptimizationSubset subset = subsets.get(ind);
-          int[] points = subset.getPoints();
-          if (points.length == 0) {
-            leafTrans[ind] = new FakeTrans(points.length, new ArrayVec(1));
-            latch.countDown();
-          } else {
+      for (int i = 0; i < subsets.size(); ++i) {
+        final int ind = i;
+        exec.submit(new Runnable() {
+          @Override
+          public void run() {
+            final BFOptimizationSubset subset = subsets.get(ind);
+            int[] points = subset.getPoints();
             Mx subData = subMx(ds.data(), points, features);
             Vec target = loss.target();
             Vec localTarget = subVec(target, points);
+            final double bias = bsLoss.bestIncrement((WeightedLoss.Stat) subset.total());
+            adjust(localTarget,-bias);
             VecDataSetImpl subDataSet = new VecDataSetImpl(subData, ds);
             L2 localLoss = DataTools.newTarget(L2.class, localTarget, subDataSet);
-            final Trans result = leafLearner.fit(subDataSet, localLoss);
-            leafTrans[ind] = new MappedTrans(result, features);
+            datas[ind] = subDataSet;
+            losses[ind] = localLoss;
             latch.countDown();
           }
-        }
-      });
+        });
+      }
+
+      try {
+        latch.await();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+
+      Trans[] result = leafLearner.fit(datas, losses);
+      for (int i = 0; i < subsets.size(); ++i) {
+        leafTrans[i] = new MappedTrans(result[i], features,bsLoss.bestIncrement((WeightedLoss.Stat)subsets.get(i).total()));
+      }
     }
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+
     return new TransObliviousTree(conditions, leafTrans);
   }
 
@@ -119,11 +133,13 @@ public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBased
 
   private class MappedTrans extends Trans.Stub {
     final Trans trans;
+    final double bias;
     final int[] map;
 
-    public MappedTrans(Trans trans, int[] features) {
+    public MappedTrans(Trans trans, int[] features, double bias) {
       this.trans = trans;
       this.map = features;
+      this.bias = bias;
     }
 
     @Override
@@ -142,32 +158,9 @@ public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBased
       for (int i = 0; i < map.length; ++i) {
         inner.set(i, x.get(map[i]));
       }
-      return trans.trans(inner);
+      return adjust(trans.trans(inner), bias);
     }
   }
 
-  class FakeTrans extends Trans.Stub {
-    private final int xdim;
-    private final Vec result;
 
-    FakeTrans(int xdim, Vec result) {
-      this.xdim = xdim;
-      this.result = result;
-    }
-
-    @Override
-    public int xdim() {
-      return xdim;
-    }
-
-    @Override
-    public int ydim() {
-      return result.dim();
-    }
-
-    @Override
-    public Vec trans(Vec x) {
-      return copy(result);
-    }
-  }
 }

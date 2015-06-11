@@ -3,6 +3,8 @@ package com.spbsu.ml.models;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.Trans;
 
+import static com.spbsu.commons.math.vectors.VecTools.adjust;
+
 
 public class ShifftedTrans extends Trans.Stub {
   private final double mean;
@@ -25,7 +27,7 @@ public class ShifftedTrans extends Trans.Stub {
   @Override
   public Vec trans(Vec x) {
     final Vec res = trans.trans(x);
-    return res.adjust(mean);
+    return adjust(res, mean);
   }
 
 }

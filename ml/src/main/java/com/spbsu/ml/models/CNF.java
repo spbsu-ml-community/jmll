@@ -50,6 +50,7 @@ public class CNF extends RegionBase {
   }
 
   public static class Clause extends RegionBase implements BinOptimizedModel {
+    public static Clause Empty = new Clause(null);
     public final Condition[] conditions;
 
     public Clause(final BFGrid grid, final Condition... conditions) {
