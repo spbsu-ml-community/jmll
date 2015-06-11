@@ -660,6 +660,7 @@ public void testElasticNetBenchmark() {
 
     graphFile = new PrintStream(new FileOutputStream(new File(fileName)));
     final ListWiseHandler ndcgCalcerToFile = new ListWiseHandler("\tNDCG", (Pool<QURLItem>) validate, validate.target(lossClass), graphFile, new NDCGCalcer(5));
+    final ListWiseHandler ndcgCalcerToFileLearn = new ListWiseHandler("\tNDCG-learn", (Pool<QURLItem>) learn, learn.target(lossClass), graphFile, new NDCGCalcer(5));
     counterFile = new Counter(graphFile);
     learnListenerFile = new ScoreCalcer("\t", learn.vecData(), learn.target(lossClass), graphFile);
     validateListenerFile = new ScoreCalcer("\t", validate.vecData(), validate.target(lossClass), graphFile);
@@ -681,6 +682,7 @@ public void testElasticNetBenchmark() {
       boosting.addListener(learnListenerFile);
       boosting.addListener(validateListenerFile);
       boosting.addListener(ndcgCalcerToFile);
+      boosting.addListener(ndcgCalcerToFileLearn);
     }
 
 
@@ -726,8 +728,8 @@ public void testElasticNetBenchmark() {
         new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6),
         learn,
         validate,
-        1000,
-        0.008,
+        2000,
+        0.0015,//final
         OUTPUT_SCORE | OUTPUT_DRAW,
         "graph.tsv"
     );

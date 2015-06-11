@@ -24,8 +24,8 @@ public class PacGreedyObliviousPolynomialTreeTest extends LetorTests {
         new PacGreedyPolynomialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6, 2, 1e2),
         learn,
         validate,
-        1000,
-        0.003,
+        2000,
+        0.00125, // final
         MethodsTests.OUTPUT_SCORE | MethodsTests.OUTPUT_DRAW,
         "graph-pac.tsv"
     );
@@ -52,17 +52,18 @@ public class PacGreedyObliviousPolynomialTreeTest extends LetorTests {
   public void testPOTBoostMulti() throws IOException, InterruptedException {
     for (int regulation = -2; regulation <= 5; regulation++)
     {
-      for(double step = 0.001; step < 0.04; step += 0.005) {
+      //for(double step = 0.001; step < 0.04; step += 0.005) {
+        double step = 0.003;
         testWithBoosting(
             new GreedyObliviousPolynomialTreeImpl(GridTools.medianGrid(learn.vecData(), 32), 6, 2, Math.pow(10, regulation)),
             learn,
             validate,
-            1000,
+            200,
             step,
             OUTPUT_SCORE | OUTPUT_DRAW,
-            "poly-" + regulation + "step-" + step
+            "poly\\poly-" + regulation + "step-" + step
         );
-      }
+      //}
     }
   }
 

@@ -11,7 +11,7 @@ import java.util.List;
  * Test for exponential probability idea
  * Created by towelenee on 5/9/15.
  */
-public class GreedyExponentialObliviousTreeTest extends MethodsTests {
+public class GreedyExponentialObliviousTreeTest extends LetorTests {
   public void testUpperBound() {
     List<Double> list = Arrays.asList(0., 1., 1., 2., 3., 3., 3.);
     assertEquals(GreedyExponentialObliviousTree.upperBound(list, 2.0), 4);
@@ -64,24 +64,43 @@ public class GreedyExponentialObliviousTreeTest extends MethodsTests {
         learn,
         validate,
         2000,
-        0.02,
+        0.002,
         OUTPUT_SCORE | OUTPUT_DRAW,
         "graph.tsv");
   }
   public void testEOTBoostMulti() throws IOException, InterruptedException {
-    for (int regulation = 0; regulation < 5; regulation++)
+    for (int regulation = 1; regulation < 6; regulation++)
     {
-      for(double step = 0.001; step < 0.011; step += 0.001) {
+      //for(double step = 0.001; step < 0.011; step += 0.001) {
+      double step = 0.04;
         testWithBoosting(
             new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 1 - Math.pow(2, -regulation)),
             learn,
             validate,
-            1000,
+            200,
             step,
             OUTPUT_SCORE | OUTPUT_DRAW,
-            "exp-" + regulation + "step-" + step
+            "exp\\exp-" + regulation + "step-" + step
         );
-      }
+      //}
+    }
+  }
+
+  public void testEOTFinal() throws IOException, InterruptedException {
+    for (int attemp = 1; attemp < 6; attemp++)
+    {
+      //for(double step = 0.001; step < 0.011; step += 0.001) {
+      double step = 0.04;
+      testWithBoosting(
+          new GreedyExponentialObliviousTree(GridTools.medianGrid(learn.vecData(), 32), learn.vecData(), 6, 1 - Math.pow(2, -attemp)),
+          learn,
+          validate,
+          2000,
+          0.002,
+          OUTPUT_SCORE | OUTPUT_DRAW,
+          "exp-final-" + attemp
+      );
+      //}
     }
   }
 
