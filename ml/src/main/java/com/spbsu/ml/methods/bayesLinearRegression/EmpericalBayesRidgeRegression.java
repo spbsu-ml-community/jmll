@@ -127,8 +127,6 @@ public class EmpericalBayesRidgeRegression {
 
   double der(double alpha) {
     double der = 0;
-    double a = featuresCount / 2 * alpha;
-    double b = -0.5 * VecTools.multiply(means[0], means[0]);
     for (int i = 0; i < cache.length; ++i) {
       der += 0.5 * featuresCount / alpha;
       der -= 0.5 * VecTools.multiply(means[i], means[i]);

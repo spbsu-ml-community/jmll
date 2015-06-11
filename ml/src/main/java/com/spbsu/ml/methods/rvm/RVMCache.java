@@ -215,7 +215,7 @@ class RVMCache {
         diffs[i] = FastMath.abs(FastMath.log(oldAlpha) - FastMath.log(alpha[i]));
         return Result.Updated;
       }
-    } else if (theta[i] < 0 && Double.isFinite(alpha[i])) {
+    } else if (theta[i] < 0 && Math.abs(alpha[i]) <= Double.MAX_VALUE) {
       alpha[i] = Double.POSITIVE_INFINITY;
       diffs[i] = 0;
       activeIndices.removeFromActive(i);

@@ -10,6 +10,7 @@ import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.ShifftedTrans;
 
+import static com.spbsu.commons.math.vectors.VecTools.adjust;
 import static com.spbsu.commons.math.vectors.VecTools.copy;
 
 /**
@@ -39,7 +40,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
     }
     intercept /= target.dim();
     Vec localTarget = copy(target);
-    localTarget.adjust(-intercept);
+    adjust(localTarget,-intercept);
     final ElasticNetCache cache = new ElasticNetCache(ds.data(), localTarget, alpha, lambda);
     Trans result = fit(cache);
     return new ShifftedTrans(result,intercept);

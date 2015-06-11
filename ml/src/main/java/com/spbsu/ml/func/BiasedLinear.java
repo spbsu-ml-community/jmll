@@ -36,6 +36,6 @@ public class BiasedLinear extends Linear {
 
   @Override
   public int hashCode() {
-    return weights.hashCode() + Double.hashCode(bias);
+    return weights.hashCode() + (int)(bias);
   }
 }
