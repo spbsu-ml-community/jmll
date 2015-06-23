@@ -1,10 +1,14 @@
 package com.spbsu.ml.models;
 
+import org.jetbrains.annotations.NotNull;
+
+
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Func;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.Ensemble;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
@@ -17,14 +21,79 @@ import java.util.*;
  * Date: 28.04.14
  * Time: 8:31
  */
-public class ModelTools {
+public final class ModelTools {
+  private ModelTools() {
+  }
+
+  public static class CompiledOTEnsemble extends Func.Stub {
+    public static class Entry {
+      private final int[] bfIndices;
+      private final double value;
+
+      public Entry(final int[] bfIndices, final double value) {
+        this.bfIndices = bfIndices;
+        this.value = value;
+      }
+
+      public int[] getBfIndices() {
+        return bfIndices;
+      }
+
+      public double getValue() {
+        return value;
+      }
+    }
+
+    private final List<Entry> entries;
+    private final BFGrid grid;
+
+    public CompiledOTEnsemble(final List<Entry> entries, final BFGrid grid) {
+      this.entries = entries;
+      this.grid = grid;
+    }
+
+    @Override
+    public double value(final Vec x) {
+      if (grid == null)
+        return 0.;
+
+      final byte[] binary = new byte[grid.rows()];
+      grid.binarize(x, binary);
+      double result = 0.;
+      for (final Entry entry : entries) {
+        final int[] bfIndices = entry.getBfIndices();
+        double increment = entry.getValue();
+        for (int j = 0; j < bfIndices.length; j++) {
+          if (!grid.bf(bfIndices[j]).value(binary)) {
+            increment = 0;
+            break;
+          }
+        }
+        result += increment;
+      }
+      return result;
+    }
+
+    @Override
+    public int dim() {
+      return grid.rows();
+    }
+
+    public List<Entry> getEntries() {
+      return Collections.unmodifiableList(entries);
+    }
+
+    public BFGrid getGrid() {
+      return grid;
+    }
+  }
+
   private static class ConditionEntry{
     public final int[] features;
 
     private ConditionEntry(final int[] features) {
       this.features = features;
     }
-
 
     @Override
     public boolean equals(final Object o) {
@@ -40,9 +109,10 @@ public class ModelTools {
       return Arrays.hashCode(features);
     }
   }
-  public static Func compile(final Ensemble<ObliviousTree> input) {
+
+  public static CompiledOTEnsemble compile(final Ensemble<ObliviousTree> input) {
     final BFGrid grid = input.size() > 0 ? input.models[0].grid() : null;
-    final TObjectDoubleHashMap<ConditionEntry> scores = new TObjectDoubleHashMap<ConditionEntry>();
+    final TObjectDoubleHashMap<ConditionEntry> scores = new TObjectDoubleHashMap<>();
     for (int i = 0; i < input.size(); i++) {
       final ObliviousTree model = input.models[i];
       final List<BFGrid.BinaryFeature> features = model.features();
@@ -90,55 +160,35 @@ public class ModelTools {
       public int compare(final Pair<ConditionEntry, Double> o1, final Pair<ConditionEntry, Double> o2) {
         if (o1.first.features.length > o2.first.features.length)
           return 1;
-        else if (o1.first.features.length == o2.first.features.length) {
+        if (o1.first.features.length == o2.first.features.length) {
           int index = 0;
           while (o1.first.features[index] == o2.first.features[index])
             index++;
           return Integer.compare(o1.first.features[index], o2.first.features[index]);
         }
-
         return -1;
       }
     });
 
-    final List<int[]> entries = new ArrayList<>(scores.size());
-    final TDoubleArrayList values = new TDoubleArrayList(scores.size());
+    final List<CompiledOTEnsemble.Entry> entries = new ArrayList<>(scores.size());
     final int[] freqs = new int[grid.size()];
 
     for (final Pair<ConditionEntry, Double> score : sortedScores) {
-      entries.add(score.first.features);
+      entries.add(new CompiledOTEnsemble.Entry(score.first.features, score.second));
       for (int i = 0; i < score.first.features.length; i++) {
         freqs[score.first.features[i]]++;
       }
-      values.add(score.second);
     }
-    return new Func.Stub() {
-      byte[] binary = new byte[grid.rows()];
-      @Override
-      public synchronized double value(final Vec x) {
-        if (grid == null)
-          return 0.;
 
-        grid.binarize(x, binary);
-        double result = 0.;
-        for (int i = 0; i < entries.size(); i++) {
-          final int[] conditions = entries.get(i);
-          double increment = values.get(i);
-          for (int j = 0; j < conditions.length; j++) {
-            if (!grid.bf(conditions[j]).value(binary)) {
-              increment = 0;
-              break;
-            }
-          }
-          result += increment;
-        }
-        return result;
-      }
+    return new CompiledOTEnsemble(entries, grid);
+  }
 
-      @Override
-      public int dim() {
-        return grid.rows();
-      }
-    };
+  @NotNull
+  public static Ensemble<ObliviousTree> castEnsembleItems(@NotNull final Ensemble<Trans> model) {
+    final ObliviousTree[] trees = new ObliviousTree[model.models.length];
+    for (int i = 0; i < model.models.length; i++) {
+      trees[i] = (ObliviousTree) model.models[i];
+    }
+    return new Ensemble<>(trees, model.weights);
   }
 }
