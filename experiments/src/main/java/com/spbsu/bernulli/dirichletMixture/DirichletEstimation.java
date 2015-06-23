@@ -6,6 +6,8 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ArrayTools;
 import org.apache.commons.math3.util.FastMath;
 
+import java.util.Arrays;
+
 import static com.spbsu.bernulli.Utils.dist;
 
 /**
@@ -14,7 +16,7 @@ import static com.spbsu.bernulli.Utils.dist;
 public class DirichletEstimation {
 
   final int[] sums;
-  final int n;
+  final int[] counts;
   final FastRandom random;
 
   private final int[] clusters;
@@ -33,10 +35,10 @@ public class DirichletEstimation {
   final EnsembleEstimator estimator;
 
   //TODO: noxoomo: rewrite from prototype to good architecture with different distributions, etc
-  public DirichletEstimation(double var, int n, int sums[], FastRandom random) {
+  public DirichletEstimation(double variance, int[] counts, int sums[], FastRandom random) {
     this.sums = sums;
-    this.n = n;
-    this.var = var;
+    this.counts = counts;
+    this.var = variance;
     this.random = new FastRandom(random.nextLong());
     //map for points
     this.clusters = new int[sums.length];
@@ -44,16 +46,27 @@ public class DirichletEstimation {
     this.map = ArrayTools.sequence(0, sums.length);
     this.labelsManager = new LabelsManager(clusters.length);
 
+    int maxCount = 0;
     for (int i = 0; i < clusters.length; ++i) {
       labelsManager.newLabel();
       clusters[i] = sums[i];
-      clustersSizes[i] = n;
+      clustersSizes[i] = counts[i];
+      maxCount = Math.max(counts[i],maxCount);
     }
 
-    this.gammaAlphaCache = new GammaCache(alpha, n * sums.length);
-    this.gammaBetaCache = alpha != beta ? new GammaCache(beta, n * sums.length) : gammaAlphaCache;
-    this.gammaAlphaBetaCache = new GammaCache(alpha + beta, n * sums.length);
+    this.gammaAlphaCache = new GammaCache(alpha, maxCount * sums.length);
+    this.gammaBetaCache = alpha != beta ? new GammaCache(beta,maxCount * sums.length) : gammaAlphaCache;
+    this.gammaAlphaBetaCache = new GammaCache(alpha + beta, maxCount * sums.length);
     estimator = new EnsembleEstimator(sums.length);
+  }
+
+  static int[] rep(int n, int times) {
+    int[]  counts = new int[times];
+    Arrays.fill(counts,n);
+    return counts;
+  }
+  public DirichletEstimation(double variance, int count, int sums[], FastRandom random) {
+    this(variance,rep(count,sums.length),sums,random);
   }
 
 //  final public double[] estimation() {
@@ -79,7 +92,7 @@ public class DirichletEstimation {
       remove(ind);
 //      sample(i);
       final int m = sums[ind];
-      final int n = this.n;
+      final int n = this.counts[ind];
       final int zeros = n - m;
       final int labelsCount = labelsManager.count();
       final double[] weights = new double[labelsCount + 1];
@@ -151,11 +164,10 @@ public class DirichletEstimation {
     }
   }
 
-
   private void remove(int i) {
     final int label = map[i];
     clusters[label] -= sums[i];
-    clustersSizes[label] -= n;
+    clustersSizes[label] -= counts[i];
     if (clustersSizes[label] == 0) {
       labelsManager.removeLabel(label);
     }
@@ -163,7 +175,7 @@ public class DirichletEstimation {
 
   private void sample(int ind) {
     final int m = sums[ind];
-    final int n = this.n;
+    final int n = this.counts[ind];
     final int zeros = n - m;
     final int labelsCount = labelsManager.count();
     final double[] weights = new double[labelsCount + 1];
@@ -193,14 +205,14 @@ public class DirichletEstimation {
 
   private void addToCluster(int i, int label) {
     clusters[label] += sums[i];
-    clustersSizes[label] += n;
+    clustersSizes[label] += counts[i];
     map[i] = label;
   }
 
   private void createCluster(int i) {
     final int label = labelsManager.newLabel();
     clusters[label] = sums[i];
-    clustersSizes[label] += n;
+    clustersSizes[label] += counts[i];
     map[i] = label;
   }
 

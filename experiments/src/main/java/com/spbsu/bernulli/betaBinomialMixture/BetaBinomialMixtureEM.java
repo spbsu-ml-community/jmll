@@ -7,6 +7,7 @@ import com.spbsu.bernulli.caches.DigammaCache;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
+import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
 
@@ -323,7 +324,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
   }
 
   @Override
-  protected double likelihood() {
+  public double likelihood() {
     updateCache();
     double ll = 0;
     for (int i = 0; i < sums.length; ++i) {
@@ -332,7 +333,7 @@ public class BetaBinomialMixtureEM extends EM<BetaBinomialMixture> {
       for (int j = 0; j < model.alphas.length; ++j) {
         p += model.q[j] * funcs[j].calculate(m, n);
       }
-      ll += Math.log(p);
+      ll += FastMath.log(p);
     }
     return ll;
   }
