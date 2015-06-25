@@ -147,7 +147,7 @@ public class Pool<I extends DSItem> {
       @Override
       public FeatureMeta meta(final int findex) {
         final int search = Arrays.binarySearch(cumulativeFeatureLengths, findex);
-        final int sourceFeatureIdx = search >= 0 ? search + 1 : -search - 1;
+        final int sourceFeatureIdx = search >= 0 ? search : -search - 1;
         return features[indices[sourceFeatureIdx]].first;
       }
 
