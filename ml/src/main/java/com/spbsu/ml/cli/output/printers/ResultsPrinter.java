@@ -16,6 +16,7 @@ import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
 import com.spbsu.ml.loss.multiclass.util.MultilabelConfusionMatrix;
+import com.spbsu.ml.loss.multiclass.util.MultilabelExampleTableOutput;
 import com.spbsu.ml.loss.multiclass.util.MultilabelThresholdPrecisionMatrix;
 import com.spbsu.ml.loss.multilabel.MultiLabelExactMatch;
 import com.spbsu.ml.models.MultiClassModel;
@@ -83,6 +84,8 @@ public class ResultsPrinter {
       final Mx scores = model.transAll(test.vecData().data());
       final Mx targets = test.multiTarget(MultiLabelExactMatch.class).getTargets();
       System.out.println(new MultilabelThresholdPrecisionMatrix(scores, targets, 100).toThresholdPrecisionMatrix());
+
+      System.out.println(new MultilabelExampleTableOutput(scores, targets, test).toExampleTableMatrix());
     }
   }
 }
