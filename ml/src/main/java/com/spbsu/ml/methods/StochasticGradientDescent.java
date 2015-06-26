@@ -43,8 +43,8 @@ public class StochasticGradientDescent<Item> extends WeakListenerHolderImpl<Vec>
       VecTools.fill(gradient, 0.);
       final CountDownLatch latch = new CountDownLatch(couple);
       for (int i = 0; i < couple; i++) {
-        final int nextItem = rng.nextInt(1000);
-//        final int nextItem = rng.nextInt(learn.length());
+//        final int nextItem = rng.nextInt(1000);
+        final int nextItem = rng.nextInt(learn.length());
 //        System.out.println("sample :" + learn.meta().owner().feature(0, nextItem) + " target: " + target.component(nextItem));
         final int finalI = i;
         executor.execute(new Runnable() {
