@@ -1,5 +1,10 @@
 package com.spbsu.ml.models;
 
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.BinModelWithGrid;
+import com.spbsu.ml.BinOptimizedModel;
+import com.spbsu.ml.data.impl.BinarizedDataSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -7,19 +12,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.BinOptimizedModel;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.data.impl.BinarizedDataSet;
-
 /**
  * User: solar
  * Date: 29.11.12
  * Time: 5:35
  */
-public class ObliviousTree extends Func.Stub implements BinOptimizedModel{
+public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWithGrid {
   private final BFGrid.BinaryFeature[] features;
   private final double[] values;
   private final double[] basedOn;

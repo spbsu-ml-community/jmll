@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.bayesLinearRegression;
+package com.spbsu.ml.methods.linearRegressionExperiments;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;

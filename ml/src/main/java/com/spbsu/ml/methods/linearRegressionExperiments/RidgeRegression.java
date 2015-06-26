@@ -1,4 +1,4 @@
-package com.spbsu.ml.methods.bayesLinearRegression;
+package com.spbsu.ml.methods.linearRegressionExperiments;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
@@ -7,7 +7,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.func.BiasedLinear;
+import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
 
@@ -22,11 +22,11 @@ public class RidgeRegression implements VecOptimization<L2> {
   }
 
   @Override
-  public BiasedLinear fit(VecDataSet learn, L2 l2) {
+  public Linear fit(VecDataSet learn, L2 l2) {
     Vec target = l2.target;
     Mx data = learn.data();
-    Mx cov = new VecBasedMx(data.columns() + 1, data.columns() + 1);
-    Vec covTargetWithFeatures = new ArrayVec(data.columns() + 1);
+    Mx cov = new VecBasedMx(data.columns(), data.columns());
+    Vec covTargetWithFeatures = new ArrayVec(data.columns());
     for (int i = 0; i < data.columns(); ++i) {
       final Vec feature = data.col(i);
       cov.set(i, i, VecTools.multiply(feature, feature));
@@ -36,22 +36,22 @@ public class RidgeRegression implements VecOptimization<L2> {
         cov.set(i, j, val);
         cov.set(j, i, val);
       }
-      final double sum = VecTools.sum(feature);
-      cov.set(i, data.columns(), sum);
-      cov.set(data.columns(), i, sum);
     }
-    cov.set(data.columns(), data.columns(), data.rows());
-    covTargetWithFeatures.set(data.columns(), VecTools.sum(target));
+
     for (int i = 0; i < cov.columns(); ++i) {
       cov.adjust(i, i, alpha);
     }
+
     Mx invCov = MxTools.inverse(cov);
     Vec weights = MxTools.multiply(invCov, covTargetWithFeatures);
-    final double bias = weights.get(data.columns());
-    final double[] w = new double[data.columns()];
-    for (int i=0; i < w.length;++i) {
-      w[i] = weights.get(i);
+    Linear model = new Linear(weights);
+
+    double variance = VecTools.sum2(target) / (target.dim()-1);
+    double modelScore = VecTools.distance(model.transAll(data),target) / (target.dim() - model.dim());
+    if (modelScore < variance) {
+      return model;
+    } else {
+      return new Linear(new double[model.dim()]);
     }
-    return new BiasedLinear(w, bias);
   }
 }

@@ -21,6 +21,7 @@ public class MethodsBuilder {
     GreedyTDRegionBuilder.defaultGridBuilder = gridFactory;
     RegionForestBuilder.defaultGridBuilder = gridFactory;
     GreedyTDCherryRegionBuilder.defaultGridBuilder = gridFactory;
+    RidgeRegressionLeavesObliviousTreeBuilder.defaultGridBuilder = gridFactory;
   }
 
   public void setDynamicGridBuilder(final Factory<DynamicGrid> dynamicGridFactory) {
@@ -32,6 +33,7 @@ public class MethodsBuilder {
     BootstrapOptimizationBuilder.defaultRandom = random;
     RandomForestBuilder.defaultRandom = random;
     MultiClassSplitGradFacBuilder.defaultRandom = random;
+    RidgeRegressionLeavesObliviousTreeBuilder.defaultRandom = random;
   }
 
   public VecOptimization create(final String scheme) {

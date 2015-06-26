@@ -25,7 +25,7 @@ import java.util.ListIterator;
  */
 public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   private final int depth;
-  private final BFGrid grid;
+  public final BFGrid grid;
 
   public GreedyObliviousTree(final BFGrid grid, final int depth) {
     this.grid = grid;
@@ -52,8 +52,7 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
     final List<BFGrid.BinaryFeature> conditions = new ArrayList<BFGrid.BinaryFeature>(depth);
     double currentScore = Double.POSITIVE_INFINITY;
 
-    final BinarizedDataSet bds;
-    bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+    final BinarizedDataSet bds =  ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 
     leaves.add(new BFOptimizationSubset(bds, loss, learnPoints(loss, ds)));
 

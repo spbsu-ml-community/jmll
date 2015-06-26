@@ -2,8 +2,8 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.BinModelWithGrid;
 import com.spbsu.ml.BinOptimizedModel;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 
 import java.util.BitSet;
@@ -13,7 +13,7 @@ import java.util.BitSet;
  * Date: 29.11.12
  * Time: 5:35
  */
-public class CherryRegion extends Func.Stub implements BinOptimizedModel {
+public class CherryRegion extends BinOptimizedModel.Stub implements BinModelWithGrid {
   public final double inside;
   private final double outside = 0;
   private final BitSet[] conditions;
@@ -31,6 +31,11 @@ public class CherryRegion extends Func.Stub implements BinOptimizedModel {
       starts[i] = tmp;
       tmp += grid.row(i).size() + 1;
     }
+  }
+
+  @Override
+  public BFGrid grid() {
+    return grid;
   }
 
   @Override
@@ -70,7 +75,7 @@ public class CherryRegion extends Func.Stub implements BinOptimizedModel {
     boolean contains = true;
     for (final BitSet condition : conditions) {
       boolean good = false;
-      for (int i = 0; i <grid.rows(); ++i) {
+      for (int i = 0; i < grid.rows(); ++i) {
         good = good | condition.get(starts[i] + point[i]);
       }
       contains &= good;

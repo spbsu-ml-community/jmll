@@ -2,8 +2,8 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.BinModelWithGrid;
 import com.spbsu.ml.BinOptimizedModel;
-import com.spbsu.ml.Func;
 import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -17,7 +17,7 @@ import java.util.List;
  * User: noxoomo
  */
 
-public class TransObliviousTree extends Func.Stub implements BinOptimizedModel{
+public class TransObliviousTree extends  BinOptimizedModel.Stub implements BinModelWithGrid {
 
   private final BFGrid.BinaryFeature[] features;
   private final Trans[] values;

@@ -1,10 +1,5 @@
 package com.spbsu.ml.data.tools;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -21,6 +16,10 @@ import com.spbsu.ml.meta.TargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
 * User: solar
@@ -53,25 +52,30 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
     return features.toArray(new Pair[features.size()]);
   }
 
+  //dataset is immutable
+  private VecDataSet lazyVecData = null;
   @Override
   public VecDataSet vecData() {
-    final DataSet<QURLItem> ds = data();
-    return new VecDataSetImpl(ds, data, new Vectorization<QURLItem>() {
-      @Override
-      public Vec value(final QURLItem subject) {
-        return data.row(ds.index(subject));
-      }
+    if (lazyVecData == null) {
+      final DataSet<QURLItem> ds = data();
+      lazyVecData = new VecDataSetImpl(ds, data, new Vectorization<QURLItem>() {
+        @Override
+        public Vec value(final QURLItem subject) {
+          return data.row(ds.index(subject));
+        }
 
-      @Override
-      public FeatureMeta meta(final int findex) {
-        return features[findex].first;
-      }
+        @Override
+        public FeatureMeta meta(final int findex) {
+          return features[findex].first;
+        }
 
-      @Override
-      public int dim() {
-        return data.columns();
-      }
-    });
+        @Override
+        public int dim() {
+          return data.columns();
+        }
+      });
+    }
+    return lazyVecData;
   }
 
   @Override

@@ -4,9 +4,9 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.ProgressHandler;
-import com.spbsu.ml.Trans;
+import com.spbsu.ml.*;
+import com.spbsu.ml.data.impl.BinarizedDataSet;
+import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.func.Ensemble;
 
@@ -24,6 +24,8 @@ public class DefaultProgressPrinter implements ProgressHandler {
   private final int printPeriod;
   private Vec learnValues;
   private final Vec[] testValuesArray;
+  private VecDataSet learnDs;
+  private VecDataSet testDs;
 
   public DefaultProgressPrinter(final Pool learn, final Pool test, final Func learnMetric, final Func[] testMetrics, final int printPeriod) {
     this.learn = learn;
@@ -36,6 +38,8 @@ public class DefaultProgressPrinter implements ProgressHandler {
     for (int i = 0; i < testValuesArray.length; i++) {
       testValuesArray[i] = new ArrayVec(testMetrics[i].xdim());
     }
+    this.learnDs = learn.vecData();
+    this.testDs = test.vecData();
   }
 
   int iteration = 0;
@@ -49,8 +53,22 @@ public class DefaultProgressPrinter implements ProgressHandler {
       final double step = ensemble.wlast();
       final Trans last = ensemble.last();
 
-      append(learnValues, VecTools.scale(last.transAll(learn.vecData().data()), step));
-      final Mx testEvaluation = VecTools.scale(last.transAll(test.vecData().data()), step);
+      final Mx learnTrans;
+      final Mx testTrans;
+
+      if (last instanceof BinModelWithGrid) {
+        BinModelWithGrid model = (BinModelWithGrid) last;
+        BinarizedDataSet learnSet =  learnDs.cache().cache(Binarize.class, VecDataSet.class).binarize(model.grid());
+        BinarizedDataSet testSet =  testDs.cache().cache(Binarize.class, VecDataSet.class).binarize(model.grid());
+        learnTrans = model.transAll(learnSet);
+        testTrans = model.transAll(testSet);
+      } else {
+        learnTrans = last.transAll(learnDs.data());
+        testTrans = last.transAll(testDs.data());
+      }
+
+      append(learnValues, VecTools.scale(learnTrans, step));
+      final Mx testEvaluation = VecTools.scale(testTrans, step);
       for (int t = 0; t < testValuesArray.length; ++t) {
         append(testValuesArray[t], testEvaluation);
       }

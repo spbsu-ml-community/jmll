@@ -1,8 +1,7 @@
-package com.spbsu.ml.methods.bayesLinearRegression;
+package com.spbsu.ml.methods.linearRegressionExperiments;
 
 import com.spbsu.commons.util.ThreadTools;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.func.BiasedLinear;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.MultipleVecOptimization;
@@ -16,14 +15,13 @@ import java.util.concurrent.ThreadPoolExecutor;
  * Created by noxoomo on 10/06/15.
  */
 public class MultipleRidgeRegression extends MultipleVecOptimization.Stub<L2> {
-  private final double alpha;
+  private final double lambda;
 
-  public MultipleRidgeRegression(double alpha) {
-    this.alpha = alpha;
+  public MultipleRidgeRegression(double lambda) {
+    this.lambda = lambda;
   }
 
   private static ThreadPoolExecutor exec = ThreadTools.createBGExecutor("ridge regressions", -1);
-
 
   @Override
   public Linear[] fit(VecDataSet[] learn, L2[] loss) {
@@ -38,7 +36,7 @@ public class MultipleRidgeRegression extends MultipleVecOptimization.Stub<L2> {
     int featureCount = 0;
     Linear zeroWeight = null;
     for (int i = 0; i < learn.length; ++i) {
-      if (loss[i] == null || loss[i].dim() + 1 < learn[i].xdim()) {
+      if (loss[i] == null || loss[i].dim()  <  learn[i].xdim()) {
         empty[i] = true;
       } else {
         final VecDataSet data = learn[i];
@@ -49,8 +47,8 @@ public class MultipleRidgeRegression extends MultipleVecOptimization.Stub<L2> {
       }
     }
 
-    final RidgeRegression regression = new RidgeRegression(alpha);
-    final BiasedLinear[] result = new BiasedLinear[datas.size()];
+    final RidgeRegression regression = new RidgeRegression(lambda);
+    final Linear[] result = new Linear[datas.size()];
 
     final CountDownLatch latch = new CountDownLatch(datas.size());
 
@@ -64,6 +62,7 @@ public class MultipleRidgeRegression extends MultipleVecOptimization.Stub<L2> {
         }
       });
     }
+
     try {
       latch.await();
     } catch (InterruptedException e) {
