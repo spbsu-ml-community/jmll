@@ -17,8 +17,6 @@ import static com.spbsu.commons.math.vectors.VecTools.append;
  * Date: 04.09.14
  */
 public class DefaultProgressPrinter implements ProgressHandler {
-  private final Pool learn;
-  private final Pool test;
   private final Func loss;
   private final Func[] testMetrics;
   private final int printPeriod;
@@ -28,8 +26,6 @@ public class DefaultProgressPrinter implements ProgressHandler {
   private VecDataSet testDs;
 
   public DefaultProgressPrinter(final Pool learn, final Pool test, final Func learnMetric, final Func[] testMetrics, final int printPeriod) {
-    this.learn = learn;
-    this.test = test;
     this.loss = learnMetric;
     this.testMetrics = testMetrics;
     this.printPeriod = printPeriod;
@@ -74,14 +70,14 @@ public class DefaultProgressPrinter implements ProgressHandler {
       }
 
     } else if (iteration % printPeriod == 0) {
-      learnValues = partial.transAll(learn.vecData().data());
-      final Mx testEvaluate = partial.transAll(test.vecData().data());
+      learnValues = partial.transAll(learnDs.data());
+      final Mx testEvaluate = partial.transAll(testDs.data());
       for (int i = 0; i < testValuesArray.length; i++) {
         testValuesArray[i] = testEvaluate;
       }
     }
 
-    if (iteration % 10 != 0) {
+    if (iteration % printPeriod != 0) {
       return;
     }
 
