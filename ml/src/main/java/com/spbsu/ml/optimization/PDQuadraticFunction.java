@@ -4,10 +4,8 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.ml.Trans;
-import org.jetbrains.annotations.NotNull;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 
 
 /**
@@ -68,30 +66,9 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
     return VecTools.multiply(MxTools.multiply(mxA, x), x);
   }
 
-  @NotNull
-  @Override
-  public Trans gradient() {
-    return new Trans.Stub() {
-      @Override
-      public Vec trans(final Vec x) {
-        return VecTools.append(MxTools.multiply(mxA, x), w);
-      }
-
-      @Override
-      public int xdim() {
-        return w.dim();
-      }
-
-      @Override
-      public int ydim() {
-        return w.dim();
-      }
-    };
-  }
-
   @Override
   public Vec gradient(final Vec x) {
-    return gradient().trans(x);
+    return VecTools.append(MxTools.multiply(mxA, x), w);
   }
 
   @Override

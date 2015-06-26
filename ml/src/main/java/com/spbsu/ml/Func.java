@@ -1,6 +1,7 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -27,7 +28,7 @@ public interface Func extends Trans {
 
     @Override
     public final Vec trans(final Vec x) {
-      return new ArrayVec(new double[]{value(x)});
+      return new SingleValueVec(value(x));
     }
 
     @Override

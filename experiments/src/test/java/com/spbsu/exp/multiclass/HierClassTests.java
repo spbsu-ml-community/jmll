@@ -10,7 +10,7 @@ import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.impl.FakeTargetMeta;
+import com.spbsu.ml.meta.impl.fake.FakeTargetMeta;
 import com.spbsu.ml.methods.multiclass.hierarchical.HierarchicalClassification;
 import com.spbsu.ml.methods.multiclass.hierarchical.HierarchicalRefinedClassification;
 import com.spbsu.ml.models.multiclass.HierarchicalModel;

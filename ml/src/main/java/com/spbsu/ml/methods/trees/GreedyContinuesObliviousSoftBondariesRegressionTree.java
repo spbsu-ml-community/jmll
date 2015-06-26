@@ -331,27 +331,6 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
       return lipshicParametr;
     }
 
-    @NotNull
-    @Override
-    public Trans gradient() {
-      return new Trans.Stub() {
-        @Override
-        public Vec trans(final Vec x) {
-          return new ArrayVec(calculateFineGradient(x.toArray()));
-        }
-
-        @Override
-        public int xdim() {
-          return numberOfVariables;
-        }
-
-        @Override
-        public int ydim() {
-          return numberOfVariables;
-        }
-      };
-    }
-
     @Override
     public double value(final Vec x) {
       return calculateFine(x.toArray());
@@ -359,7 +338,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
 
     @Override
     public Vec gradient(final Vec x) {
-      return gradient().trans(x);
+      return new ArrayVec(calculateFineGradient(x.toArray()));
     }
   }
 

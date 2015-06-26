@@ -34,7 +34,7 @@ import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.impl.FakeTargetMeta;
+import com.spbsu.ml.meta.impl.fake.FakeTargetMeta;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.multiclass.gradfac.GradFacMulticlass;
 import com.spbsu.ml.methods.multiclass.gradfac.GradFacSvdNMulticlass;

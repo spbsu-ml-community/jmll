@@ -1,6 +1,8 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -10,8 +12,20 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface FuncC1 extends Func {
   Vec gradient(Vec x);
+  Vec gradientTo(Vec x, Vec to);
 
   abstract class Stub extends Func.Stub implements FuncC1 {
+    public Vec gradient(Vec x) {
+      final Vec result = new ArrayVec(x.dim());
+      return gradientTo(x, result);
+    }
+
+    public Vec gradientTo(Vec x, Vec to){
+      final Vec trans = gradient(x);
+      VecTools.assign(to, trans);
+      return to;
+    }
+
     @Override
     @NotNull
     public final Trans gradient() {
@@ -27,8 +41,8 @@ public interface FuncC1 extends Func {
         }
 
         @Override
-        public Vec trans(final Vec x) {
-          return FuncC1.Stub.this.gradient(x);
+        public Vec transTo(final Vec x, final Vec to) {
+          return FuncC1.Stub.this.gradientTo(x, to);
         }
       };
     }

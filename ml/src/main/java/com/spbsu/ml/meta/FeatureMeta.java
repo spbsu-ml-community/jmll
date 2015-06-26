@@ -2,6 +2,7 @@ package com.spbsu.ml.meta;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
+import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.VecSeq;
@@ -22,7 +23,8 @@ public interface FeatureMeta {
     VEC(Vec.class),
     SPARSE_VEC(SparseVec.class),
     INTS(IntSeq.class),
-    VEC_SEQ(VecSeq.class);
+    VEC_SEQ(VecSeq.class),
+    CHAR_SEQ(CharSeq.class);
 
     private final Class<? extends Seq<?>> type;
 

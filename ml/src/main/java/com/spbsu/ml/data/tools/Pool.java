@@ -281,4 +281,9 @@ public class Pool<I extends DSItem> {
 
     throw new RuntimeException("No such target: " + name + " of type " + targetClass.getSimpleName());
   }
+
+  public <T> T feature(int findex, int iindex) {
+    //noinspection unchecked
+    return (T)features[findex].second.at(iindex);
+  }
 }

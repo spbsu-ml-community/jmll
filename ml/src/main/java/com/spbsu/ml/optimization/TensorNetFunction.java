@@ -63,48 +63,6 @@ public class TensorNetFunction extends FuncConvex.Stub {
   }
 
 
-  @NotNull
-  @Override
-  public Trans gradient() {
-    return new Trans.Stub() {
-      @Override
-      public Vec trans(final Vec z) {
-        final int n = z.dim() / 2;
-
-        final Vec grad = new ArrayVec(z.dim());
-        for (int i = 0; i < n; i++) {
-          double valU = 0.0;
-          final double u_i = z.get(i);
-          for (int j = 0; j < n; j++) {
-            final double x = X.get(i, j);
-            valU += z.get(n+j) * (z.get(n+j) * u_i - x) + c1 * (c1 * u_i - x);
-          }
-          grad.set(i, 2 * valU);
-        }
-        for (int j = 0; j < n; j++) {
-          double valV = 0.0;
-          final double v_j = z.get(n + j);
-          for (int i = 0; i < n; i++) {
-            final double x = X.get(i, j);
-            valV += z.get(i) * (z.get(n + i) * v_j - x) + c2 * (c2 * v_j - x);
-          }
-          grad.set(n + j, 2 * valV);
-        }
-        return grad;
-      }
-
-      @Override
-      public int xdim() {
-        return TensorNetFunction.this.dim();
-      }
-
-      @Override
-      public int ydim() {
-        return xdim();
-      }
-    };
-  }
-
   @Override
   public int dim() {
     return X.rows();
@@ -131,7 +89,28 @@ public class TensorNetFunction extends FuncConvex.Stub {
   }
 
   @Override
-  public Vec gradient(final Vec x) {
-    return gradient().trans(x);
+  public Vec gradient(final Vec z) {
+    final int n = z.dim() / 2;
+
+    final Vec grad = new ArrayVec(z.dim());
+    for (int i = 0; i < n; i++) {
+      double valU = 0.0;
+      final double u_i = z.get(i);
+      for (int j = 0; j < n; j++) {
+        final double x = X.get(i, j);
+        valU += z.get(n+j) * (z.get(n+j) * u_i - x) + c1 * (c1 * u_i - x);
+      }
+      grad.set(i, 2 * valU);
+    }
+    for (int j = 0; j < n; j++) {
+      double valV = 0.0;
+      final double v_j = z.get(n + j);
+      for (int i = 0; i < n; i++) {
+        final double x = X.get(i, j);
+        valV += z.get(i) * (z.get(n + i) * v_j - x) + c2 * (c2 * v_j - x);
+      }
+      grad.set(n + j, 2 * valV);
+    }
+    return grad;
   }
 }

@@ -15,7 +15,7 @@ import com.spbsu.ml.data.tools.SubPool;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.impl.FakeTargetMeta;
+import com.spbsu.ml.meta.impl.fake.FakeTargetMeta;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
 import com.spbsu.ml.methods.multiclass.spoc.SPOCMethodClassic;
