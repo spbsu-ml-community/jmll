@@ -6,7 +6,6 @@ import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.io.Vec2CharSequenceConverter;
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -16,16 +15,20 @@ import com.spbsu.commons.seq.*;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.PoolByRowsBuilder;
 import com.spbsu.ml.func.generic.Log;
+import com.spbsu.ml.func.generic.ParallelFunc;
+import com.spbsu.ml.func.generic.WSum;
+import com.spbsu.ml.loss.CompositeFunc;
 import com.spbsu.ml.loss.DSSumFuncComposite;
 import com.spbsu.ml.loss.LL;
+import com.spbsu.ml.loss.MLL;
 import com.spbsu.ml.meta.DataSetMeta;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.items.FakeItem;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.StochasticGradientDescent;
-import com.spbsu.ml.models.NeuralSpider;
+import com.spbsu.ml.models.nn.NeuralSpider;
 import com.spbsu.ml.models.nn.LayeredNetwork;
-import com.spbsu.ml.models.nn.NFANetwork;
+import com.spbsu.ml.models.nn.nfa.NFANetwork;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,7 +45,7 @@ import java.util.zip.GZIPInputStream;
  * Date: 25.05.15
  * Time: 16:39
  */
-public abstract class NNTest {
+public class NNTest {
   private final FastRandom rng = new FastRandom(0);
   private Pool<QURLItem> featuresTxtPool;
 
@@ -91,9 +94,9 @@ public abstract class NNTest {
     };
     final Mx data = pool.vecData().data();
     final LL ll = pool.target(LL.class);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, FuncC1>() {
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
       @Override
-      public FuncC1 compute(final FakeItem argument) {
+      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
         final Vec row = data.row(argument.id);
         return network.decisionByInput(row);
       }
@@ -111,37 +114,55 @@ public abstract class NNTest {
   @Test
   public void testValueSeq() {
       final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 5, new CharSeqAdapter("ab"));
-      final FuncC1 aba = nfa.decisionByInput(new CharSeqAdapter("aba"));
-      Assert.assertEquals(0.2 + 0.16 + 0.128, aba.value(new ArrayVec(nfa.dim())), 0.0001);
+      final Trans aba = nfa.decisionByInput(new CharSeqAdapter("aba"));
+      Assert.assertEquals(0.2 + 0.16 + 0.128, aba.trans(new ArrayVec(nfa.dim())).get(1), 0.0001);
   }
 
   @Test
   public void testSeqGradient1() {
-    String message = "";
+    String message = "\n";
 
     final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 2, new CharSeqAdapter("ab"));
 
     final NeuralSpider.NeuralNet ab = nfa.decisionByInput(new CharSeqAdapter("ab"));
     final NeuralSpider.NeuralNet ba = nfa.decisionByInput(new CharSeqAdapter("ba"));
-    final Vec x = new ArrayVec(1, 2);
+    final Vec x = new ArrayVec(1., 2.);
     message += nfa.ppState(ab.state(x), new CharSeqAdapter("ab"));
-    final Vec gradientAb = ab.gradient(x);
-    message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
-    final Vec gradientBa = ba.gradient(x);
-    // composite result:  1/(1+e^x)*(1 + e^x/(1+e^y))
-    message += "\nor: " + x + "\n"
-            + "ab: " + gradientAb + "\n"
-            + "ba: " + gradientBa + "\n";
-    // composite gradient by x: -e^x/(1+e^x)*1/(1+e^x)*e^y/(1+e^y)
-    Assert.assertEquals(message, -0.17318, gradientAb.get(0), 0.00001);
-    // composite gradient by x: -e^y/(1+e^y)*1/(1+e^y)*1/(1+e^x)
-    Assert.assertEquals(message, -0.076756, gradientAb.get(1), 0.00001);
-    Assert.assertTrue(message, VecTools.equals(gradientAb, gradientBa));
+    { // Positive
+      final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(0, 1)), new ParallelFunc(2, new Log(1., 0.)));
+      final Vec gradientAb = ab.gradientTo(x, new ArrayVec(2), target);
+      message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
+      final Vec gradientBa = ba.gradientTo(x, new ArrayVec(2), target);
+      // composite result:  1/(1+e^x)*(1 + e^x/(1+e^y))
+      message += "or: " + x + "\n"
+              + "ab: " + gradientAb + "\n"
+              + "ba: " + gradientBa + "\n";
+      // composite gradient by x: -e^x/(1+e^x)*1/(1+e^x)*e^y/(1+e^y)
+      Assert.assertEquals(message, -0.26894, gradientAb.get(0), 0.00001);
+      // composite gradient by x: -e^y/(1+e^y)*1/(1+e^y)*1/(1+e^x)
+      Assert.assertEquals(message, -0.1192, gradientAb.get(1), 0.00001);
+      Assert.assertTrue(message, VecTools.equals(gradientAb, gradientBa));
+    }
+    { // Negative
+      final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(1, 0)), new ParallelFunc(2, new Log(1., 0.)));
+      final Vec gradientAb = ab.gradientTo(x, new ArrayVec(2), target);
+      message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
+      final Vec gradientBa = ba.gradientTo(x, new ArrayVec(2), target);
+      // composite result:  1/(1+e^x)*(1 + e^x/(1+e^y))
+      message += "or: " + x + "\n"
+              + "ab: " + gradientAb + "\n"
+              + "ba: " + gradientBa + "\n";
+      // composite gradient by x: -e^x/(1+e^x)*1/(1+e^x)*e^y/(1+e^y)
+      Assert.assertEquals(message, 0.26894, gradientAb.get(0), 0.00001);
+      // composite gradient by x: -e^y/(1+e^y)*1/(1+e^y)*1/(1+e^x)
+      Assert.assertEquals(message, 0.1192, gradientAb.get(1), 0.00001);
+      Assert.assertTrue(message, VecTools.equals(gradientAb, gradientBa));
+    }
   }
 
   @Test
   public void testSeqGradient2() {
-    String message = "";
+    String message = "\n";
 
     final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 3, new CharSeqAdapter("ab"));
 
@@ -149,19 +170,21 @@ public abstract class NNTest {
     final NeuralSpider.NeuralNet ba = nfa.decisionByInput(new CharSeqAdapter("ba"));
     final Vec x = new ArrayVec(1,0, 0,1,  0,1, 0,0);
     message += nfa.ppState(ab.state(x), new CharSeqAdapter("ab"));
-    final Vec gradientAb = ab.gradient(x);
     message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
-    final Vec gradientBa = ba.gradient(x);
+
+    final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(0, 1)), new ParallelFunc(2, new Log(1., 0.)));
+    final Vec gradientAb = ab.gradientTo(x, new ArrayVec(x.dim()), target);
+    final Vec gradientBa = ba.gradientTo(x, new ArrayVec(x.dim()), target);
     message += "\nor: " + x + "\n"
             + "ab: " + gradientAb + "\n"
             + "ba: " + gradientBa + "\n";
-    Assert.assertTrue(message, VecTools.equals(gradientAb, new Vec2CharSequenceConverter().convertFrom("8 -0.11105 -0.01512 0 0 -0.02588 -0.07035 -0.02355 -0.02355"), 0.00001));
-    Assert.assertTrue(message, VecTools.equals(gradientBa, new Vec2CharSequenceConverter().convertFrom("8 -0.02588 -0.00952 -0.02588 -0.07035 -0.0354 -0.09622 0 0"), 0.00001));
+    Assert.assertTrue(message, VecTools.equals(gradientAb, new Vec2CharSequenceConverter().convertFrom("8 -0.18654 -0.02541 0 0 -0.04347 -0.11817 -0.03956 -0.03956"), 0.00001));
+    Assert.assertTrue(message, VecTools.equals(gradientBa, new Vec2CharSequenceConverter().convertFrom("8 -0.04167 -0.01533 -0.04167 -0.11327 -0.057 -0.15494 0 0"), 0.00001));
   }
 
   @Test
   public void testSeqGradient3() {
-    String message = "";
+    String message = "\n";
 
     final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 4, new CharSeqAdapter("ab"));
 
@@ -176,9 +199,11 @@ public abstract class NNTest {
             0,0,1,
             0,0,0);
     message += nfa.ppState(ab.state(x), new CharSeqAdapter("ab"));
-    final Vec gradientAb = ab.gradient(x);
     message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
-    final Vec gradientBa = ba.gradient(x);
+    final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(0, 1)), new ParallelFunc(2, new Log(1., 0.)));
+
+    final Vec gradientAb = ab.gradientTo(x, new ArrayVec(x.dim()), target);
+    final Vec gradientBa = ba.gradientTo(x, new ArrayVec(x.dim()), target);
     message += "\nor: " + x + "\n"
             + "ab: " + gradientAb + "\n"
             + "ba: " + gradientBa + "\n";
@@ -236,10 +261,10 @@ public abstract class NNTest {
       }
     };
     gradientDescent.addListener(pp);
-    final LL logit = pool.target(LL.class);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), logit, new Computable<FakeItem, FuncC1>() {
+    final MLL logit = pool.target(MLL.class);
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), logit, new Computable<FakeItem, TransC1>() {
       @Override
-      public FuncC1 compute(final FakeItem argument) {
+      public TransC1 compute(final FakeItem argument) {
         final CharSeq seq = pool.feature(0, argument.id);
         return nfa.decisionByInput(seq);
       }
@@ -252,13 +277,13 @@ public abstract class NNTest {
       System.out.println("Positive: ");
       final NeuralSpider.NeuralNet abba = nfa.decisionByInput(new CharSeqAdapter("abba"));
       System.out.println(nfa.ppState(abba.state(solution), new CharSeqAdapter("abba")));
-      Assert.assertTrue(abba.value(solution) > 0.95);
+      Assert.assertTrue(abba.trans(solution).get(1) > 0.95);
     }
     {
       System.out.println("Negative: ");
       final NeuralSpider.NeuralNet baba = nfa.decisionByInput(new CharSeqAdapter("baba"));
       System.out.println(nfa.ppState(baba.state(solution), new CharSeqAdapter("baba")));
-      Assert.assertTrue(baba.value(solution) < 0.05);
+      Assert.assertTrue(baba.trans(solution).get(1) < 0.05);
     }
   }
 
@@ -303,7 +328,7 @@ public abstract class NNTest {
         }
       }
     };
-    final LL ll = pool.target(LL.class);
+    final MLL ll = pool.target(MLL.class);
     final Action<Vec> pp = new Action<Vec>() {
       int index = 0;
       @Override
@@ -314,9 +339,9 @@ public abstract class NNTest {
       }
     };
     gradientDescent.addListener(pp);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, FuncC1>() {
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
       @Override
-      public FuncC1 compute(final FakeItem argument) {
+      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
         final CharSeq seq = pool.feature(0, argument.id);
         return network.decisionByInput(seq);
       }
@@ -360,7 +385,7 @@ public abstract class NNTest {
         final int paramsDim = (statesCount - 1) * (statesCount - 1);
         for (int c = 0; c < alpha.length(); c++) {
           final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
-          VecTools.fillUniform(mx, rng, 5 / (statesCount - 1));
+          VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
           for (int j = 0; j < mx.rows(); j++) {
             mx.set(j, j, 5);
           }
@@ -389,14 +414,14 @@ public abstract class NNTest {
       }
     };
     gradientDescent.addListener(pp);
-    final LL ll = pool.target(LL.class);
+    final MLL ll = pool.target(MLL.class);
     final ArrayVec initial = new ArrayVec(network.dim());
     gradientDescent.init(initial);
 //    digIntoSolution(pool, network, ll, initial, "www.yandex.ru/yandsearch?text=xyu.htm", "www.yandex.ru");
 
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, FuncC1>() {
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
       @Override
-      public FuncC1 compute(final FakeItem argument) {
+      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
         final CharSeq seq = pool.feature(0, argument.id);
         return network.decisionByInput(seq);
       }
@@ -421,7 +446,7 @@ public abstract class NNTest {
                 CharSeqTools.split(arg, '\t', parts);
                 final CharSeq next = CharSeq.create(parts[0]);
                 final int nextClass = CharSeqTools.parseInt(CharSeqTools.split(parts[1], ':')[1]);
-                if (nextClass > 0 != this.next)
+                if (nextClass > 0 != this.next || next.length() > 20)
                   return;
                 this.next = !this.next;
                 pbuilder.setFeature(0, next);
@@ -433,56 +458,54 @@ public abstract class NNTest {
     final Pool<FakeItem> pool = pbuilder.create();
     final CharSeqArray alpha = new CharSeqArray('U', 'L', 'H', 'C', 'S', 'N', 'R', 'F', 'V', 'O');
     final int statesCount = 10;
-    final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, 1000000, 1) {
+    final NFANetwork<Character> network = new NFANetwork<>(rng, 0.5, statesCount, alpha);
+    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 100, 1000000, 1) {
       @Override
       public void init(Vec cursor) {
         final int paramsDim = (statesCount - 1) * (statesCount - 1);
         for (int c = 0; c < alpha.length(); c++) {
           final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
-          VecTools.fillUniform(mx, rng);
-          for (int i = 0; i < mx.rows(); i++) {
-            mx.set(i, i, 5);
+          VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
+          for (int j = 0; j < mx.rows(); j++) {
+            mx.set(j, j, 5);
           }
         }
       }
 
       @Override
       public void normalizeGradient(Vec grad) {
-//        for (int i = 0; i < grad.length(); i++) {
-//          if (Math.abs(grad.get(i)) < 0.001)
-//            grad.set(i, 0);
-//        }
+        for (int i = 0; i < grad.length(); i++) {
+          final double v = grad.get(i);
+          if (Math.abs(v) < 0.001)
+            grad.set(i, 0);
+          else
+            grad.set(i, Math.signum(v) * (Math.abs(v) - 0.001));
+        }
       }
     };
-    final LL ll = pool.target(LL.class);
+    final MLL ll = pool.target(MLL.class);
     final Action<Vec> pp = new Action<Vec>() {
       int index = 0;
       @Override
       public void invoke(Vec vec) {
-        if (++index % 10000 == 1) {
+        if (++index % 10 == 1) {
           double sum = 0;
           int count = 0;
           int negative = 0;
           for (int i = 0; i < 1000; i++, count++) {
-            final double value = ll.block(i).value(new SingleValueVec(network.decisionByInput((CharSeq) pool.feature(0, i)).value(vec)));
+            final double value = ll.block(i).value(network.decisionByInput((CharSeq) pool.feature(0, i)).trans(vec));
             sum += value;
             if (Math.exp(-value) > 2)
               negative++;
           }
           System.out.println(index + " ll: " + Math.exp(-sum / count) + " prec: " + (count - negative)/(double)count);
-//          network.ppSolution(vec, 'h');
-//          network.ppSolution(vec, 't');
-//          network.ppSolution(vec, 'm');
-//          network.ppSolution(vec, 'l');
-//          network.ppSolution(vec, '.');
         }
       }
     };
     gradientDescent.addListener(pp);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, FuncC1>() {
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
       @Override
-      public FuncC1 compute(final FakeItem argument) {
+      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
         final CharSeq seq = pool.feature(0, argument.id);
         return network.decisionByInput(seq);
       }
@@ -495,198 +518,10 @@ public abstract class NNTest {
     network.ppSolution(fit.x);
     digIntoSolution(pool, network, ll, fit.x, null, null);
     System.out.println(Math.exp(-ll.value(vals) / ll.dim()));
-//
-//    final List<CharSequence> data = new ArrayList<>();
-//    final TIntArrayList classes = new TIntArrayList();
-//
-//    final int T = 1000000;
-//    double perplexity = 0;
-//    int perCount = 0;
-//    final NFANetwork<Character> nfaNetwork = new NFANetwork<>(rng, 0.2, 6, alpha);
-//    final TDoubleArrayList lls = new TDoubleArrayList();
-//    final int coupleSize = 100;
-//    Vec totalGrad = new ArrayVec(nfaNetwork.dim());
-//    Executor executor = ThreadTools.createBGExecutor(NNTest.class.getName(), coupleSize);
-//    for (int t = 0; t < T; t++) {
-//      final Vec gradient = new ArrayVec(nfaNetwork.dim());
-//      final CountDownLatch latch = new CountDownLatch(coupleSize);
-//      for (int j = 0; j < coupleSize; j++) {
-//        executor.execute(new Runnable() {
-//          @Override
-//          public void run() {
-//            int index;
-//            boolean good = rng.nextBoolean();
-//            do {
-//              index = rng.nextInt(data.size());
-//            } while (classes.get(index) == 1 != good);
-//            final CharSeq seq = CharSeqAdapter.create(data.get(index));
-//            final FuncC1 target = good ? new LogSigmoid(-1, 0) : new LogSigmoid(1, 0);
-//            final Vec myGradient = nfaNetwork.parametersGradient(seq, target);
-//            synchronized (gradient) {
-//              VecTools.append(gradient, myGradient);
-//            }
-//            latch.countDown();
-//          }
-//        });
-//      }
-//      latch.await();
-//
-//      VecTools.scale(gradient, 1. / coupleSize);
-//      VecTools.scale(gradient, 0.1 * 100. / sqrt(10000. + t));
-////      { // l1 regularization
-////        for (int j = 0; j < gradient.length(); j++) {
-////          if (Math.abs(gradient.at(j)) < 0.0001)
-////            gradient.set(j, 0);
-////        }
-////      }
-//      final double cos = VecTools.multiply(totalGrad, gradient) / (MathTools.EPSILON + VecTools.norm(totalGrad)) / VecTools.norm(gradient);
-//      if (Double.isNaN(cos))
-//        continue;
-//      VecTools.scale(totalGrad, 0.99);
-//      VecTools.append(totalGrad, gradient);
-//      VecTools.scale(gradient, (1. + cos));
-//
-////      VecTools.scale(gradient, 0.2);
-//      VecTools.append(nfaNetwork.allWeights(), gradient);
-//
-//      final int index = rng.nextInt(data.size());
-//      final boolean good = classes.get(index) == 1;
-//      final double value = nfaNetwork.compute(CharSeqAdapter.create(data.get(index))).get(0);
-//      {
-//        final FuncC1 target = good ? new LogSigmoid(-1, 0) : new LogSigmoid(1, 0);
-//        final double ll = target.value(new SingleValueVec(value));
-//        lls.add(ll);
-//        perCount++;
-//        perplexity += ll;
-//        if (perCount > 1000) {
-//          perplexity -= lls.get(lls.size() - 1001);
-//          perCount--;
-//        }
-//      }
-////      System.out.println(gradient);
-//      if ((t + 1) % 1000 == 0 || T - t < 10) {
-//        double per = perplexity / perCount;
-//        per = exp(-per);
-//        System.out.print("Iteration: " + (t + 1) + " v: " + value + " good: " + good + " perplexity: " + per);
-//        System.out.println(" cos(prev,grad): " + cos + " grad norm: " + VecTools.norm(gradient));
-//      }
-//    }
-//    perplexity /= perCount;
-//    perplexity = exp(-perplexity);
-//    System.out.println(perplexity);
-//    Assert.assertTrue(perplexity < 1.01);
   }
 
-  @Test
-  public void testFTRLSeqConvergence() throws Exception {
-//    final List<CharSequence> data = new ArrayList<>();
-//    final TIntArrayList classes = new TIntArrayList();
-//
-//    CharSeqTools.processLines(
-//            new InputStreamReader(new GZIPInputStream(new FileInputStream("/Users/solar/tree/java/relpred/trunk/relpred/main/tests/data/in/train.txt.gz"))),
-//            new Processor<CharSequence>() {
-//              CharSequence[] parts = new CharSequence[2];
-//
-//              @Override
-//              public void process(CharSequence arg) {
-//                CharSeqTools.split(arg, '\t', parts);
-//                data.add(parts[0]);
-//                classes.add(Integer.parseInt(CharSeqTools.split(parts[1], ':')[1].toString()));
-//              }
-//            });
-//    final int T = 1000000;
-//
-//    double perplexity = 0;
-//    int perCount = 0;
-//    final NFANetwork<Character> nfaNetwork = new NFANetwork<>(rng, 0.2, 6, new CharSeqArray('U', 'L', 'H', 'C', 'S', 'N', 'R', 'F', 'V', 'O'));
-//    final TDoubleArrayList lls = new TDoubleArrayList();
-//    final int coupleSize = 10;
-//    final Vec z = new ArrayVec(nfaNetwork.dim());
-//    final Vec n = new ArrayVec(nfaNetwork.dim());
-//    double LAMBDA1 = 0.001/nfaNetwork.dim();
-//    double LAMBDA2 = 0.01/nfaNetwork.dim();
-//    double ALPHA = 1;
-//    double BETA = 1;
-//
-//    final Executor executor = ThreadTools.createBGExecutor(NNTest.class.getName(), coupleSize);
-//    final Vec totalGrad = new ArrayVec(nfaNetwork.dim());
-//    final Vec weightedSteps = new ArrayVec(nfaNetwork.dim());
-//
-//    for (int t = 0; t < T; t++) {
-//      final Vec gradient = new ArrayVec(nfaNetwork.dim());
-//
-//      final int index = rng.nextInt(data.size());
-//      final boolean good = classes.get(index) == 1;
-//      final double p = 1/(1 + exp(nfaNetwork.compute(CharSeqAdapter.create(data.get(index))).get(0)));
-//
-//      for (int i = 0; i < nfaNetwork.allWeights().length(); i++) {
-//        if (abs(z.get(i)) >= LAMBDA1) {
-//          nfaNetwork.allWeights().set(i,
-//                  -(z.get(i) - signum(z.get(i)) * LAMBDA1) / ((BETA + sqrt(n.get(i)))/ALPHA + LAMBDA2)
-//          );
-//        }
-//        else nfaNetwork.allWeights().set(i, 0);
-//      }
-//
-//      final CountDownLatch latch = new CountDownLatch(coupleSize);
-//      for (int j = 0; j < coupleSize; j++) {
-//        executor.execute(new Runnable() {
-//          @Override
-//          public void run() {
-//            int index;
-//            boolean good = rng.nextBoolean();
-//            do {
-//              index = rng.nextInt(data.size());
-//            } while (classes.get(index) == 1 != good);
-//            final CharSeq seq = CharSeqAdapter.create(data.get(index));
-//            final FuncC1 target = good ? new LogSigmoid(-1, 0) : new LogSigmoid(1, 0);
-//            final Vec myGradient = nfaNetwork.parametersGradient(seq, target);
-//            synchronized (gradient) {
-//              VecTools.append(gradient, myGradient);
-//            }
-//            latch.countDown();
-//          }
-//        });
-//      }
-//      latch.await();
-//
-//      VecTools.scale(gradient, 1. / coupleSize);
-//      for (int i = 0; i < nfaNetwork.dim(); i++) {
-//        final double g = gradient.get(i);
-//        final double sigma = 1/ALPHA * (sqrt(n.get(i) + g * g) - sqrt(n.get(i)));
-//        z.adjust(i, g - sigma * nfaNetwork.allWeights().get(i));
-//        n.adjust(i, g * g);
-//      }
-//
-////      VecTools.append(nfaNetwork.allWeights(), gradient);
-//
-//      {
-//        final FuncC1 target = good ? new LogSigmoid(-1, 0) : new LogSigmoid(1, 0);
-//        final double ll = target.value(new SingleValueVec(p));
-//        lls.add(ll);
-//        perCount++;
-//        perplexity += ll;
-//        if (perCount > 1000) {
-//          perplexity -= lls.get(lls.size() - 1001);
-//          perCount--;
-//        }
-//      }
-////      System.out.println(gradient);
-//      if ((t + 1) % 1000 == 0 || T - t < 10) {
-//        double per = perplexity / perCount;
-//        per = exp(-per);
-//        System.out.print("Iteration: " + (t + 1) + " v: " + p + " good: " + good + " perplexity: " + per);
-////        System.out.print(" cos(prev,grad): " + cos + " grad norm: " + VecTools.norm(gradient));
-//        System.out.println();
-//      }
-//    }
-//    perplexity /= perCount;
-//    perplexity = exp(-perplexity);
-//    System.out.println(perplexity);
-//    Assert.assertTrue(perplexity < 1.01);
-  }
 
-  private void digIntoSolution(Pool<FakeItem> pool, NFANetwork<Character> network, LL ll, Vec solution, String positiveExample, String negativeExample) {
+  private void digIntoSolution(Pool<FakeItem> pool, NFANetwork<Character> network, MLL ll, Vec solution, String positiveExample, String negativeExample) {
     if (positiveExample != null) {
       System.out.println("Positive: ");
       final CharSeqAdapter input = new CharSeqAdapter(positiveExample);
@@ -714,15 +549,15 @@ public abstract class NNTest {
     }
 
 //    network.ppState(fit.x);
-    final Vec vals = new ArrayVec(pool.size());
     int count = 0, negative = 0;
+    double llSum = 0;
     for (int i = 0; i < ll.blocksCount(); i++) {
       final CharSeq input = pool.feature(0, i);
-      final double pX = network.decisionByInput(input).value(solution);
-      vals.set(i, pX);
-      final double value = Math.exp(-ll.block(i).value(new SingleValueVec(pX)));
+      final double llblock = ll.block(i).value(network.decisionByInput(input).trans(solution));
+      llSum += llblock;
+      final double pX = Math.exp(llblock);
       count++;
-      if (2 < value) {
+      if (pX < 0.5) {
         negative++;
         System.out.println("Input: [" + input + "]");
         final NeuralSpider.NeuralNet net = network.decisionByInput(input);
@@ -730,8 +565,8 @@ public abstract class NNTest {
         System.out.println();
       }
     }
-    System.out.println(Math.exp(-ll.value(vals) / ll.dim()) + " " + (count - negative) / (double)count);
-    Assert.assertTrue(1.1 > Math.exp(-ll.value(vals) / ll.dim()));
+    System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double)count);
+    Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
   }
 
 }

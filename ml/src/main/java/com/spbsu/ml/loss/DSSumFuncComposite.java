@@ -6,6 +6,8 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BlockedTargetFunc;
 import com.spbsu.ml.FuncC1;
+import com.spbsu.ml.Trans;
+import com.spbsu.ml.TransC1;
 import com.spbsu.ml.data.set.DataSet;
 
 /**
@@ -15,14 +17,14 @@ import com.spbsu.ml.data.set.DataSet;
  */
 public class DSSumFuncComposite<Item> extends DSSumFuncC1<Item> implements FuncC1 {
   private final BlockedTargetFunc tgt;
-  private final Computable<Item, FuncC1> decisionFactory;
+  private final Computable<Item, ? extends TransC1> decisionFactory;
   private final int dim;
 
-  public DSSumFuncComposite(DataSet<Item> ds, BlockedTargetFunc tgt, Computable<Item, FuncC1> decisionFactory) {
+  public DSSumFuncComposite(DataSet<Item> ds, BlockedTargetFunc tgt, Computable<Item, ? extends TransC1> decisionFactory) {
     super(ds);
     this.tgt = tgt;
     this.decisionFactory = decisionFactory;
-    dim = decisionFactory.compute(ds.at(0)).dim();
+    dim = decisionFactory.compute(ds.at(0)).xdim();
   }
 
   @Override
@@ -57,8 +59,8 @@ public class DSSumFuncComposite<Item> extends DSSumFuncC1<Item> implements FuncC
 
     @Override
     public Vec compute(Item argument) {
-      final FuncC1 compute = decisionFactory.compute(argument);
-      return compute.compute(x);
+      final Trans compute = decisionFactory.compute(argument);
+      return compute.trans(x);
     }
   }
 }

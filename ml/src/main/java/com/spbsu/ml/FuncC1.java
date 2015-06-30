@@ -10,14 +10,10 @@ import org.jetbrains.annotations.NotNull;
  * Date: 21.12.2010
  * Time: 22:07:07
  */
-public interface FuncC1 extends Func {
-  Vec gradient(Vec x);
-  Vec gradientTo(Vec x, Vec to);
-
+public interface FuncC1 extends Func, TransC1 {
   abstract class Stub extends Func.Stub implements FuncC1 {
-    public Vec gradient(Vec x) {
-      final Vec result = new ArrayVec(x.dim());
-      return gradientTo(x, result);
+    public Vec gradientRowTo(Vec x, Vec to, int index) {
+      return gradientTo(x, to);
     }
 
     public Vec gradientTo(Vec x, Vec to){
@@ -26,9 +22,16 @@ public interface FuncC1 extends Func {
       return to;
     }
 
+    public Vec gradient(Vec x) {
+      final Vec result = new ArrayVec(x.dim());
+      gradientTo(x, result);
+      return result;
+    }
+
+
     @Override
     @NotNull
-    public final Trans gradient() {
+    public Trans gradient() {
       return new Trans.Stub() {
         @Override
         public int xdim() {
@@ -42,7 +45,7 @@ public interface FuncC1 extends Func {
 
         @Override
         public Vec transTo(final Vec x, final Vec to) {
-          return FuncC1.Stub.this.gradientTo(x, to);
+          return gradientTo(x, to);
         }
       };
     }

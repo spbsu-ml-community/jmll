@@ -33,4 +33,11 @@ public abstract class DSSumFuncC1<Item> extends DSSumFunc<Item> implements FuncC
   public Vec gradient(Vec x) {
     return gradientTo(x, new ArrayVec(x.dim()));
   }
+
+  @Override
+  public Vec gradientRowTo(Vec x, Vec to, int index) {
+    if (index != 0)
+      throw new ArrayIndexOutOfBoundsException();
+    return gradientTo(x, to);
+  }
 }

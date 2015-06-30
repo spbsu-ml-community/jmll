@@ -29,6 +29,6 @@ public class WSum extends FuncC1.Stub {
 
   @Override
   public int dim() {
-    return 1;
+    return weights.length();
   }
 }

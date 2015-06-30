@@ -1,14 +1,14 @@
-package com.spbsu.ml.models;
+package com.spbsu.ml.models.nn;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.FuncC1;
-import com.spbsu.ml.func.generic.Identity;
+import com.spbsu.ml.TransC1;
+import com.spbsu.ml.func.generic.WSum;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
@@ -31,17 +31,14 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
   }
 
   private final ThreadLocalArrayVec gradientSCache = new ThreadLocalArrayVec();
-  private final ThreadLocalArrayVec gradientWCache = new ThreadLocalArrayVec();
 
-  public Vec parametersGradient(S argument, FuncC1 target, Vec allWeights) {
+  public Vec parametersGradient(S argument, TransC1 target, Vec allWeights, Vec to) {
     final Topology topology = topology(argument, true);
     final Vec dT = gradientSCache.get(topology.length());
-    final Vec gradientW = gradientWCache.get(allWeights.dim());
     final Vec state = stateCache.get(topology.length());
     final Vec output = produceState(topology, allWeights, state);
 
-    final Vec gradient0 = target.gradient(output);
-    assign(dT.sub(dT.length() - gradient0.dim(), gradient0.dim()), gradient0);
+    target.gradientTo(output, dT.sub(dT.length() - topology.outputCount(), topology.outputCount()));
     final Vec prevLayerGrad = new SparseVec(state.dim());
     final Vec wGrad = new SparseVec(allWeights.dim());
     for (int nodeIndex = topology.length() - 1; nodeIndex > 0; nodeIndex--) {
@@ -60,9 +57,13 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
       scale(wGrad, dTds_i);
 
       append(dT, prevLayerGrad);
-      append(gradientW, wGrad);
+      append(to, wGrad);
     }
-    return gradientW;
+    return to;
+  }
+
+  protected Vec produceState(Topology topology, Vec weights) {
+    return produceState(topology, weights, stateCache.get(topology.length()));
   }
 
   protected Vec produceState(Topology topology, Vec weights, Vec state) {
@@ -75,8 +76,6 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
       final double value = node.transByParameters(weights).value(state);
       state.set(nodeIndex, value);
     }
-    if (state.get(state.dim() - 1) == 0)
-      System.out.println();
     return state.sub(state.length() - topology.outputCount(), topology.outputCount());
   }
 
@@ -99,6 +98,10 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 //      to.append("\n");
 //    }
 //    to.flush();
+  }
+
+  public Vec parametersGradient(S x, TransC1 target, Vec weights) {
+    return parametersGradient(x, target, weights, new ArrayVec(weights.dim()));
   }
 
   public interface Node {
@@ -132,7 +135,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     return new NeuralNet<>(this, input);
   }
 
-  public static class NeuralNet<T, S extends Seq<T>> extends FuncC1.Stub {
+  public static class NeuralNet<T, S extends Seq<T>> extends TransC1.Stub {
     private final NeuralSpider<T, S> spider;
     private final S item;
 
@@ -142,14 +145,15 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     }
 
     @Override
-    public Vec gradientTo(Vec x, Vec to) {
-      assign(to, spider.parametersGradient(item, new Identity(), x));
+    public Vec transTo(Vec x, Vec to) {
+      final Topology topology = topology();
+      final Vec state = spider.produceState(topology, x);
+      assign(to, state);
       return to;
     }
 
-    @Override
-    public double value(Vec x) {
-      return spider.compute(item, x).get(0);
+    public Vec gradientTo(Vec x, Vec to, FuncC1 target) {
+      return spider.parametersGradient(item, target, x, to);
     }
 
     public Topology topology() {
@@ -164,8 +168,20 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     }
 
     @Override
-    public int dim() {
+    public int xdim() {
       return spider.dim();
+    }
+
+    @Override
+    public int ydim() {
+      return topology().outputCount();
+    }
+
+    @Override
+    public Vec gradientRowTo(Vec x, Vec to, int index) {
+      final Vec w = new ArrayVec(ydim());
+      w.set(index, 1);
+      return spider.parametersGradient(item, new WSum(w), x, to);
     }
   }
 }

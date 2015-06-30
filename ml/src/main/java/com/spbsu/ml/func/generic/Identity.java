@@ -1,28 +1,40 @@
 package com.spbsu.ml.func.generic;
 
-import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.ml.TransC1;
 
 /**
 * User: solar
 * Date: 26.05.15
 * Time: 11:45
 */
-public class Identity extends FuncC1.Stub {
-  private static final SingleValueVec one = new SingleValueVec(1);
+public class Identity extends TransC1.Stub {
+  private final int dim;
+
+  public Identity(int dim) {
+    this.dim = dim;
+  }
+
+
   @Override
-  public Vec gradient(Vec x) {
-    return one;
+  public Vec gradientRowTo(Vec x, Vec to, int index) {
+    to.set(index, 1.);
+    return to;
   }
 
   @Override
-  public double value(Vec x) {
-    return x.get(0);
+  public Vec transTo(Vec argument, Vec to) {
+    return VecTools.assign(to, argument);
   }
 
   @Override
-  public int dim() {
-    return 1;
+  public int xdim() {
+    return dim;
+  }
+
+  @Override
+  public int ydim() {
+    return dim;
   }
 }

@@ -18,10 +18,11 @@ public interface Trans extends Computable<Vec,Vec> {
   int ydim();
   @Nullable
   Trans gradient();
-  Vec trans(Vec x);
-  Mx transAll(Mx x);
 
+  Vec trans(Vec x);
   Vec transTo(Vec x, Vec to);
+
+  Mx transAll(Mx x);
 
   abstract class Stub implements Trans {
     @Override
@@ -42,7 +43,7 @@ public interface Trans extends Computable<Vec,Vec> {
     }
 
     public Vec trans(final Vec arg) {
-      final Vec result = new ArrayVec(arg.dim());
+      final Vec result = new ArrayVec(ydim());
       return transTo(arg, result);
     }
 
