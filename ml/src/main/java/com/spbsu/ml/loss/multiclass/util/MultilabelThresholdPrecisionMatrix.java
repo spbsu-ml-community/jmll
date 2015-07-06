@@ -11,11 +11,13 @@ public class MultilabelThresholdPrecisionMatrix {
   private final Mx scores;
   private final Mx targets;
   private final int probThresholdBuckets;
+  private final String name;
 
-  public MultilabelThresholdPrecisionMatrix(final Mx scores, final Mx targets, final int probThresholdBuckets) {
+  public MultilabelThresholdPrecisionMatrix(final Mx scores, final Mx targets, final int probThresholdBuckets, final String name) {
     this.scores = scores;
     this.targets = targets;
     this.probThresholdBuckets = probThresholdBuckets;
+    this.name = name;
   }
 
   public String toThresholdPrecisionMatrix() {
@@ -54,6 +56,6 @@ public class MultilabelThresholdPrecisionMatrix {
     }
 
     final String table = tableBuilder.build();
-    return "=== Precision/recall curve ===\n" + table;
+    return name + "\n" + table;
   }
 }

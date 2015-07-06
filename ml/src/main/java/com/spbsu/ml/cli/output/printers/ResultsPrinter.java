@@ -81,11 +81,15 @@ public class ResultsPrinter {
 
     if (mlModel instanceof MultiLabelBinarizedModel) {
       final Trans model = ((MultiLabelBinarizedModel)mlModel).getInternModel();
-      final Mx scores = model.transAll(test.vecData().data());
-      final Mx targets = test.multiTarget(MultiLabelExactMatch.class).getTargets();
-      System.out.println(new MultilabelThresholdPrecisionMatrix(scores, targets, 100).toThresholdPrecisionMatrix());
+      final Mx testScores = model.transAll(test.vecData().data());
+      System.out.println(new MultilabelThresholdPrecisionMatrix(testScores, testTargets, 100, "=== Precision/recall curve on TEST ===").toThresholdPrecisionMatrix());
 
-      System.out.println(new MultilabelExampleTableOutput(scores, targets, test).toExampleTableMatrix());
+      final Mx learnScores = model.transAll(learn.vecData().data());
+      System.out.println(new MultilabelThresholdPrecisionMatrix(learnScores, learnTargets, 100, "=== Precision/recall curve on LEARN ===").toThresholdPrecisionMatrix());
+
+      System.out.println(new MultilabelExampleTableOutput(testScores, testTargets, test, "=== Scores for examples on TEST ===\n").toExampleTableMatrix());
+
+      System.out.println(new MultilabelExampleTableOutput(learnScores, learnTargets, learn, "=== Scores for examples on LEARN ===\n").toExampleTableMatrix());
     }
   }
 }
