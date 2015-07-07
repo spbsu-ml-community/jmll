@@ -141,8 +141,8 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
           f.set(i, j, 1, eval_f(ses, i, j, 1));
       }
     }
-    f.set(Session.E_ind, Session.E_ind, 0, 1.);
-    f.set(Session.E_ind, Session.E_ind, 1, 1.);
+    f.set(Session.E_INDEX, Session.E_INDEX, 0, 1.);
+    f.set(Session.E_INDEX, Session.E_INDEX, 1, 1.);
 
     // 2 & для каждого блока $i$ вычислить норму $\sum_k f(i, k)$; Вторая координата - наличие клика c_i
     final Mx sum_f_i_k = new VecBasedMx(blocks.length, 2);
@@ -152,7 +152,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
         sum += f.get(i, k, 0);
       sum_f_i_k.set(i, 0, sum);
 
-      if (ses.hasClickOn(i) || i == Session.E_ind) {
+      if (ses.hasClickOn(i) || i == Session.E_INDEX) {
         sum = 0;
         for (final int k: ses.getEdgesFrom(i))
           sum += f.get(i, k, 1);
@@ -205,8 +205,8 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
         }
       }
       // df_dTheta(E -> E) already set to 0
-      //df_dTheta.setRow(Session.E_ind, Session.E_ind, 0, new ArrayVec(model.NFEATS));
-      //df_dTheta.setRow(Session.E_ind, Session.E_ind, 1, new ArrayVec(model.NFEATS));
+      //df_dTheta.setRow(Session.E_INDEX, Session.E_INDEX, 0, new ArrayVec(model.NFEATS));
+      //df_dTheta.setRow(Session.E_INDEX, Session.E_INDEX, 1, new ArrayVec(model.NFEATS));
 
       // для каждого блока $i$ вычисляем сумму $\sum_k df_dTheta(i,k)$
       sum_df_dTheta_i_k = new Tensor3(blocks.length, 2, NFEATS);
@@ -216,7 +216,7 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
           sum.add(df_dTheta.getRow(i, k, 0));
         sum_df_dTheta_i_k.setRow(i, 0, sum);
 
-        if (ses.hasClickOn(i) || i == Session.E_ind) {
+        if (ses.hasClickOn(i) || i == Session.E_INDEX) {
           sum = new ArrayVec(NFEATS);
           for (final int k: ses.getEdgesFrom(i))
             sum.add(df_dTheta.getRow(i, k, 1));
@@ -250,10 +250,10 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
 
     // далее -- вычисления для каждого клика в отдельности
     final int[] observations = new int[ses.getClick_indexes().length + 2];
-    observations[0] = Session.Q_ind;
+    observations[0] = Session.Q_INDEX;
     for (int i = 0; i < ses.getClick_indexes().length; i++)
       observations[i+1] = ses.getClick_indexes()[i];
-    observations[observations.length - 1] = Session.E_ind;
+    observations[observations.length - 1] = Session.E_INDEX;
 
     for (int eindex = 1; eindex < observations.length; eindex++) {
       // 5 & для всех блоков $i$ и длин $t$ вычислить $A(s,i,t)$
@@ -402,9 +402,9 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
     final VecBasedMx shows = new VecBasedMx(BlockV1.ResultType.values().length, BlockV1.ResultGrade.values().length);
     final VecBasedMx clicks = new VecBasedMx(BlockV1.ResultType.values().length, BlockV1.ResultGrade.values().length);
     for (final Session<BlockV1> ses: dataset) {
-      final BlockV1 block1 = ses.getBlock(Session.R0_ind);
+      final BlockV1 block1 = ses.getBlock(Session.R0_INDEX);
       shows.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
-      if (ses.hasClickOn(Session.R0_ind))
+      if (ses.hasClickOn(Session.R0_INDEX))
         clicks.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
     }
 

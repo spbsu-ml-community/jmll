@@ -74,8 +74,8 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
           }
         }
       }
-      f.set(Session.E_ind, Session.E_ind, 0, 1.);
-      f.set(Session.E_ind, Session.E_ind, 1, 1.);
+      f.set(Session.E_INDEX, Session.E_INDEX, 0, 1.);
+      f.set(Session.E_INDEX, Session.E_INDEX, 1, 1.);
 
       // transmx[(i, click_i), (j, click_j)] - вероятность перехода за один шаг из состояния (i, click_i) в (j, click_j)
       final VecBasedMx transmx_0 = new VecBasedMx(blocks.length * 2, blocks.length * 2);
@@ -108,7 +108,7 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
       final VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
 
       final double[] hasClickProbabilities = new double[blocks.length];
-      for (int ci = Session.R0_ind; ci < blocks.length; ci++) {
+      for (int ci = Session.R0_INDEX; ci < blocks.length; ci++) {
         final VecBasedMx transmx_ci = new VecBasedMx(transmx_0);
         // модифицируем стохастическую матрицу transmx_ci так, чтобы после клика на ci пользователь оставался в том же состоянии
         for (int j = 0; j < transmx_ci.columns; j++)
@@ -117,7 +117,7 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
 
         // сначала пользователь в состоянии (Q, no_click)
         Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
-        state_probabilities.set(0, Session.Q_ind, 1.);
+        state_probabilities.set(0, Session.Q_INDEX, 1.);
 
         for (int t = 0; t < MAX_PATH_LENGTH; t++)
           state_probabilities = MxTools.multiply(state_probabilities, transmx_ci);
@@ -141,7 +141,7 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
       final VecBasedMx transmx_0 = evalSessionTransitionProbs(ses);
 
       final double[] hasViewProbabilities = new double[blocks.length];
-      for (int ci = Session.R0_ind; ci < blocks.length; ci++) {
+      for (int ci = Session.R0_INDEX; ci < blocks.length; ci++) {
         final VecBasedMx transmx_ci = new VecBasedMx(transmx_0);
         // модифицируем стохастическую матрицу transmx_ci так, чтобы после view на ci пользователь оставался в том же состоянии
         for (int j = 0; j < transmx_ci.columns; j++) {
@@ -153,7 +153,7 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
 
         // сначала пользователь в состоянии (Q, no_click)
         Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
-        state_probabilities.set(0, Session.Q_ind, 1.);
+        state_probabilities.set(0, Session.Q_INDEX, 1.);
 
         for (int t = 0; t < MAX_PATH_LENGTH; t++)
           state_probabilities = MxTools.multiply(state_probabilities, transmx_0);
@@ -180,11 +180,11 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
       final double[] expectedAttention = new double[blocks.length];
       // сначала пользователь в состоянии (Q, no_click)
       Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
-      state_probabilities.set(0, Session.Q_ind, 1.);
+      state_probabilities.set(0, Session.Q_INDEX, 1.);
 
       for (int t = 0; t < MAX_PATH_LENGTH; t++) {
         state_probabilities = MxTools.multiply(state_probabilities, transmx_0);
-        for (int i = Session.R0_ind; i < blocks.length; i++)
+        for (int i = Session.R0_INDEX; i < blocks.length; i++)
           expectedAttention[i] += state_probabilities.get(0 * blocks.length + i) + state_probabilities.get(1 * blocks.length + i);
       }
 
@@ -206,11 +206,11 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
       double expectedNumberOfClicks = 0.;
       // сначала пользователь в состоянии (Q, no_click)
       Mx state_probabilities = new VecBasedMx(1, transmx_0.columns);
-      state_probabilities.set(0, Session.Q_ind, 1.);
+      state_probabilities.set(0, Session.Q_INDEX, 1.);
 
       for (int t = 0; t < MAX_PATH_LENGTH; t++) {
         state_probabilities = MxTools.multiply(state_probabilities, transmx_0);
-        for (int i = Session.R0_ind; i < blocks.length; i++)
+        for (int i = Session.R0_INDEX; i < blocks.length; i++)
           expectedNumberOfClicks += state_probabilities.get(blocks.length + i);
       }
 
@@ -239,7 +239,7 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
       ret.append("P(i->i+1|c=0)\tP(i->i-1|c=0)\tP(i->E|c=0)\tP(i->S|c=0)\t\t");
       ret.append("P(i->i+1|c=1)\tP(i->i-1|c=1)\tP(i->E|c=1)\tP(i->S|c=1)\n");
 
-      for (int i = Session.R0_ind; i < ses.getBlocks().length; i++) {
+      for (int i = Session.R0_INDEX; i < ses.getBlocks().length; i++) {
         final Blk bi = ses.getBlock(i);
         int click_position = -1;
         for (int ci = 0; ci < ses.getClick_indexes().length; ci++) {
@@ -258,24 +258,24 @@ public interface GPFModel<Blk extends Session.Block> extends AttractivenessModel
         ret.append("" + hasClickProbabilities[i] + "\t" + hasViewProbabilities[i] + "\t" + attentionExpectation[i] + "\t\t");
 
         //ret.append("P(click|V)\tP(Q->i)\tP(S->i)\t\t");
-        final double P_Q_i = eval_f(ses, Session.Q_ind, i, 0) / sum_f.get(Session.Q_ind, 0);
-        final double P_S_i = eval_f(ses, Session.S_ind, i, 0) / sum_f.get(Session.S_ind, 0);
+        final double P_Q_i = eval_f(ses, Session.Q_INDEX, i, 0) / sum_f.get(Session.Q_INDEX, 0);
+        final double P_S_i = eval_f(ses, Session.S_INDEX, i, 0) / sum_f.get(Session.S_INDEX, 0);
         ret.append("" + getClickGivenViewProbability(bi) + "\t" + P_Q_i + "\t" + P_S_i + "\t\t");
 
         //ret.append("P(i->i+1|c=0)\tP(i->i-1|c=0)\tP(i->E|c=0)\tP(i->S|c=0)\t\t");
         int click_i = 0;
         double P_down = i + 1 < ses.getBlocks().length ? eval_f(ses, i, i+1, click_i) / sum_f.get(i, click_i) : 0;
-        double P_up = i - 1 >= Session.R0_ind ? eval_f(ses, i, i-1, click_i) / sum_f.get(i, click_i) : 0;
-        double P_i_E = eval_f(ses, i, Session.E_ind, click_i) / sum_f.get(i, click_i);
-        double P_i_S = eval_f(ses, i, Session.S_ind, click_i) / sum_f.get(i, click_i);
+        double P_up = i - 1 >= Session.R0_INDEX ? eval_f(ses, i, i-1, click_i) / sum_f.get(i, click_i) : 0;
+        double P_i_E = eval_f(ses, i, Session.E_INDEX, click_i) / sum_f.get(i, click_i);
+        double P_i_S = eval_f(ses, i, Session.S_INDEX, click_i) / sum_f.get(i, click_i);
         ret.append("" + P_down + "\t" + P_up + "\t" + P_i_E + "\t" + P_i_S + "\t\t");
 
         //ret.append("P(i->i+1|c=1)\tP(i->i-1|c=1)\tP(i->E|c=1)\tP(i->S|c=1)\n");
         click_i = 1;
         P_down = i + 1 < ses.getBlocks().length ? eval_f(ses, i, i+1, click_i) / sum_f.get(i, click_i) : 0;
-        P_up = i - 1 >= Session.R0_ind ? eval_f(ses, i, i-1, click_i) / sum_f.get(i, click_i) : 0;
-        P_i_E = eval_f(ses, i, Session.E_ind, click_i) / sum_f.get(i, click_i);
-        P_i_S = eval_f(ses, i, Session.S_ind, click_i) / sum_f.get(i, click_i);
+        P_up = i - 1 >= Session.R0_INDEX ? eval_f(ses, i, i-1, click_i) / sum_f.get(i, click_i) : 0;
+        P_i_E = eval_f(ses, i, Session.E_INDEX, click_i) / sum_f.get(i, click_i);
+        P_i_S = eval_f(ses, i, Session.S_INDEX, click_i) / sum_f.get(i, click_i);
         ret.append("" + P_down + "\t" + P_up + "\t" + P_i_E + "\t" + P_i_S + "\n");
       }
       return ret.toString();

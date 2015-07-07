@@ -12,12 +12,12 @@ import java.util.List;
  * Date: 14.05.14
  */
 public class Session<Blk extends Session.Block> {
-  public static final int Q_ind = 0;
-  public static final int S_ind = 1;
-  public static final int E_ind = 2;
-  public static final int R0_ind = 3;
+  public static final int Q_INDEX = 0;
+  public static final int S_INDEX = 1;
+  public static final int E_INDEX = 2;
+  public static final int R0_INDEX = 3;
 
-  public static enum BlockType {
+  public enum BlockType {
     RESULT, Q, S, E
   }
 
