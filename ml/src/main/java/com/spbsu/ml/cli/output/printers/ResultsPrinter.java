@@ -28,6 +28,7 @@ import com.spbsu.ml.models.multilabel.MultiLabelModel;
  * User: qdeee
  * Date: 04.09.14
  */
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
 public class ResultsPrinter {
   public static void printResults(final Computable computable, final Pool<?> learn, final Pool<?> test, final Func loss, final Func[] metrics) {
     System.out.print("Learn: " + loss.value(DataTools.calcAll(computable, learn.vecData())) + " Test:");
