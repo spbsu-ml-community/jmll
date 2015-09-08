@@ -1,6 +1,7 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.ml.Func;
@@ -32,11 +33,12 @@ public class MultiClass extends VecOptimization.Stub<L2> {
   @Override
   public FuncJoin fit(final VecDataSet learn, final L2 mllLogitGradient) {
     final Mx gradient;
-    if (mllLogitGradient.target instanceof Mx) {
-      gradient = (Mx)mllLogitGradient.target;
+    final Vec gradVec = mllLogitGradient.target;
+    if (gradVec instanceof Mx) {
+      gradient = (Mx) gradVec;
     } else {
-      final int columns = mllLogitGradient.target.dim() / learn.data().rows();
-      gradient = new VecBasedMx(columns, mllLogitGradient.target);
+      final int columns = gradVec.dim() / learn.data().rows();
+      gradient = new VecBasedMx(columns, gradVec);
     }
     final Func[] models = new Func[gradient.columns()];
     for (int c = 0; c < models.length; c++) {
