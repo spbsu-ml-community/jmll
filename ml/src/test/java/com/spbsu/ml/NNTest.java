@@ -16,8 +16,11 @@ import com.spbsu.commons.seq.*;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.PoolByRowsBuilder;
 import com.spbsu.ml.func.generic.Log;
+import com.spbsu.ml.func.generic.Sum;
+import com.spbsu.ml.loss.CompositeFunc;
 import com.spbsu.ml.loss.DSSumFuncComposite;
 import com.spbsu.ml.loss.LL;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLL;
 import com.spbsu.ml.meta.DataSetMeta;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.items.FakeItem;
@@ -734,4 +737,152 @@ public abstract class NNTest {
     Assert.assertTrue(1.1 > Math.exp(-ll.value(vals) / ll.dim()));
   }
 
+
+  @Test
+  public void testCompositeFunc() {
+    FuncC1 g = new Sum() {
+      @Override
+      public int dim() {
+        return 2;
+      }
+    };
+    Trans a = new Trans.Stub() {
+      @Override
+      public int xdim() {
+        return 3;
+      }
+
+      @Override
+      public int ydim() {
+        return 2;
+      }
+
+      @Override
+      public Trans gradient() {
+        return new Trans.Stub() {
+          @Override
+          public int xdim() {
+            return 3;
+          }
+
+          @Override
+          public int ydim() {
+            return 6;
+          }
+
+          @Override
+          public Vec trans(Vec arg) {
+            Mx mx = new VecBasedMx(2, 3);
+            mx.set(0,0, arg.get(1));
+            mx.set(0,1, arg.get(0));
+            mx.set(0,2, 0);
+            mx.set(1,0, 0);
+            mx.set(1,1, 1);
+            mx.set(1,2, 1);
+            return mx;
+          }
+        };
+      }
+
+      @Override
+      public Vec trans(Vec argument) {
+        Vec to = new ArrayVec(ydim());
+        to.adjust(0, argument.get(0) * argument.get(1));
+        to.adjust(1, argument.get(1) + argument.get(2));
+        return to;
+      }
+    };
+    Trans b = new Trans.Stub() {
+      @Override
+      public Vec trans(Vec argument) {
+        Vec to = new ArrayVec(ydim());
+        to.adjust(0, argument.get(0) + argument.get(1));
+        to.adjust(1, argument.get(0) + 2);
+        to.adjust(2, argument.get(1) + 4);
+        return to;
+      }
+
+      @Override
+      public int xdim() {
+        return 2;
+      }
+
+      @Override
+      public int ydim() {
+        return 3;
+      }
+
+      @Override
+      public Trans gradient() {
+        return new Trans.Stub() {
+          @Override
+          public int xdim() {
+            return 2;
+          }
+
+          @Override
+          public int ydim() {
+            return 6;
+          }
+
+          @Override
+          public Vec trans(Vec arg) {
+            Mx mx = new VecBasedMx(3, 2);
+            mx.set(0,0, 1);
+            mx.set(0,1, 1);
+            mx.set(1,0, 1);
+            mx.set(1,1, 0);
+            mx.set(2,0, 0);
+            mx.set(2,1, 1);
+            return mx;
+          }
+        };
+      }
+    };
+    CompositeFunc compositeFunc = new CompositeFunc(g, a, b);
+    Assert.assertEquals(31, compositeFunc.value(new ArrayVec(2, 3)), 0);
+    Assert.assertEquals(new ArrayVec(10, 5), compositeFunc.gradient(new ArrayVec(2, 3)));
+  }
+
+  //  @Test
+  public void testBlockwiseMLLConvergence() {
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    pbuilder.allocateFakeFeatures(3, FeatureMeta.ValueType.VEC);
+    pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
+    for (int i = 0; i < 10000; i++) {
+      final Vec next = new ArrayVec(3);
+      for (int j = 0; j < next.dim(); j++)
+        next.set(j, rng.nextInt(3));
+      pbuilder.setFeatures(0, next);
+      pbuilder.setTarget(0, (int) next.get(0));
+      pbuilder.nextItem();
+    }
+
+    final Pool<FakeItem> pool = pbuilder.create();
+    final LayeredNetwork network = new LayeredNetwork(rng, 0., 3, 3, 3, 2);
+    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, 1000, 0.8) {
+      public void init(Vec cursor) {
+        VecTools.fillUniform(cursor, rng);
+      }
+    };
+    final Mx data = pool.vecData().data();
+    final BlockwiseMLL blockwiseMLL = pool.target(BlockwiseMLL.class);
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), blockwiseMLL, new Computable<FakeItem, FuncC1>() {
+      @Override
+      public FuncC1 compute(final FakeItem argument) {
+        final Vec row = data.row(argument.id);
+        return network.decisionByInput(row);
+      }
+    });
+    final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
+    System.out.println(decision.x);
+    final Mx vals = new VecBasedMx(pool.size(), 2);
+    for (int i = 0; i < vals.rows(); i++) {
+      for (int j = 0; j < vals.columns(); j++) {
+        vals.set(i, j, decision.compute(pool.data().at(i)).get(j));
+      }
+    }
+    System.out.println(Math.exp(-blockwiseMLL.value(vals) / blockwiseMLL.dim()));
+    Assert.assertTrue(1.1 > Math.exp(-blockwiseMLL.value(vals) / blockwiseMLL.dim()));
+  }
 }

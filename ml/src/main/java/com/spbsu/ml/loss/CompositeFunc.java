@@ -1,5 +1,6 @@
 package com.spbsu.ml.loss;
 
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -35,17 +36,17 @@ public class CompositeFunc extends FuncC1.Stub {
     for (int i = after.length - 1; i >= 0; i--) {
       x = values[i] = after[i].trans(x);
     }
-    Vec result = first.gradient(x);
+    Vec result = first.gradient(values[0]);
+    Mx prod = new VecBasedMx(result.dim(), new ArrayVec(result.toArray()));
     for (int i = 0; i < after.length; i++) {
       final Trans gradient = after[i].gradient();
       if (gradient == null)
         throw new RuntimeException("Transformation " + after[i] + " has no gradient!");
-      final VecBasedMx prod = new VecBasedMx(1, result);
       final Vec nextGradValue = gradient.trans(values[i + 1]);
 
-      final VecBasedMx nextGrad = new VecBasedMx(nextGradValue.dim() / prod.dim(), nextGradValue);
-      result = MxTools.multiplyTo(prod, nextGrad,
-              new VecBasedMx(1, i + 1 < after.length ? values[i + 1] : new ArrayVec(values[i + 1].dim())));
+      final VecBasedMx nextGrad = new VecBasedMx(nextGradValue.dim() / prod.columns(), new ArrayVec(nextGradValue.toArray()));
+      result = MxTools.multiply(prod, nextGrad);
+      prod = new VecBasedMx(nextGrad.columns, new ArrayVec(result.toArray()));
     }
     return result;
   }
