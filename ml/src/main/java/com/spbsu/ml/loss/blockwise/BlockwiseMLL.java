@@ -2,6 +2,7 @@ package com.spbsu.ml.loss.blockwise;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BlockedTargetFunc;
@@ -96,7 +97,9 @@ public class BlockwiseMLL extends BlockwiseFuncC1.Stub implements BlockedTargetF
     return new FuncC1.Stub() {
       @Override
       public Vec gradient(Vec x) {
-        return BlockwiseMLL.this.gradient(x);
+        Vec result = new ArrayVec(this.dim());
+        BlockwiseMLL.this.gradient(x, result, index);
+        return result;
       }
 
       @Override

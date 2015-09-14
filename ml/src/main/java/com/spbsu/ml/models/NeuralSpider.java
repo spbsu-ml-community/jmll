@@ -1,14 +1,19 @@
 package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.MathTools;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.ThreadLocalArrayVec;
+import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.FuncC1;
+import com.spbsu.ml.Trans;
 import com.spbsu.ml.func.generic.Identity;
+import com.spbsu.ml.func.generic.WSum;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
@@ -132,7 +137,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     return new NeuralNet<>(this, input);
   }
 
-  public static class NeuralNet<T, S extends Seq<T>> extends FuncC1.Stub {
+  public static class NeuralNet<T, S extends Seq<T>> extends Trans.Stub implements FuncC1 {
     private final NeuralSpider<T, S> spider;
     private final S item;
 
@@ -143,8 +148,59 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 
     @Override
     public Vec gradientTo(Vec x, Vec to) {
-      assign(to, spider.parametersGradient(item, new Identity(), x));
+      Mx result = new VecBasedMx(ydim(), xdim());
+      for (int i = 0; i < ydim(); i++) {
+        Vec weights = new ArrayVec(ydim());
+        fill(weights, 0.);
+        weights.set(i, 1.);
+        Vec vec = spider.parametersGradient(item, new WSum(weights), x);
+        for (int j = 0; j < xdim(); j++) {
+          result.set(i, j, vec.get(j));
+        }
+      }
+      assign(to, result);
       return to;
+    }
+
+    @Override
+    public Vec gradient(Vec x) {
+      final Vec result = new ArrayVec(xdim() * ydim());
+      return gradientTo(x, result);
+    }
+
+    @Override
+    public Trans gradient() {
+      return new Trans.Stub() {
+        @Override
+        public int xdim() {
+          return NeuralNet.this.xdim();
+        }
+
+        @Override
+        public int ydim() {
+          return NeuralNet.this.xdim() * NeuralNet.this.ydim();
+        }
+
+        @Override
+        public Vec trans(Vec arg) {
+          return NeuralNet.this.gradient(arg);
+        }
+      };
+    }
+
+    @Override
+    public int xdim() {
+      return dim();
+    }
+
+    @Override
+    public int ydim() {
+      return topology().outputCount();
+    }
+
+    @Override
+    public Vec trans(Vec arg) {
+      return spider.compute(item, arg);
     }
 
     @Override

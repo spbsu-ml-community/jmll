@@ -846,21 +846,24 @@ public abstract class NNTest {
 
   //  @Test
   public void testBlockwiseMLLConvergence() {
+    int classesCount = 3;
+    int inputDim = 3;
+
     final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
-    pbuilder.allocateFakeFeatures(3, FeatureMeta.ValueType.VEC);
+    pbuilder.allocateFakeFeatures(inputDim, FeatureMeta.ValueType.VEC);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     for (int i = 0; i < 10000; i++) {
-      final Vec next = new ArrayVec(3);
+      final Vec next = new ArrayVec(inputDim);
       for (int j = 0; j < next.dim(); j++)
-        next.set(j, rng.nextInt(3));
+        next.set(j, rng.nextInt(classesCount));
       pbuilder.setFeatures(0, next);
       pbuilder.setTarget(0, (int) next.get(0));
       pbuilder.nextItem();
     }
 
     final Pool<FakeItem> pool = pbuilder.create();
-    final LayeredNetwork network = new LayeredNetwork(rng, 0., 3, 3, 3, 2);
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, 1000, 0.8) {
+    final LayeredNetwork network = new LayeredNetwork(rng, 0., inputDim, 3, 3, classesCount - 1);
+    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, 1000000, 0.8) {
       public void init(Vec cursor) {
         VecTools.fillUniform(cursor, rng);
       }
@@ -876,13 +879,73 @@ public abstract class NNTest {
     });
     final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
     System.out.println(decision.x);
-    final Mx vals = new VecBasedMx(pool.size(), 2);
+    final Mx vals = new VecBasedMx(pool.size(), classesCount - 1);
     for (int i = 0; i < vals.rows(); i++) {
       for (int j = 0; j < vals.columns(); j++) {
         vals.set(i, j, decision.compute(pool.data().at(i)).get(j));
       }
     }
-    System.out.println(Math.exp(-blockwiseMLL.value(vals) / blockwiseMLL.dim()));
-    Assert.assertTrue(1.1 > Math.exp(-blockwiseMLL.value(vals) / blockwiseMLL.dim()));
+    double resultValue = blockwiseMLL.transformResultValue(-blockwiseMLL.value(vals));
+    System.out.println(resultValue);
+    Assert.assertTrue(1.1 > resultValue);
+  }
+
+
+  //@Test
+  public void testSimpleBlockwiseMLL() {
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    pbuilder.allocateFakeFeatures(3, FeatureMeta.ValueType.VEC);
+    pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
+    final Vec[] vecs = new Vec[3];
+    vecs[0] = new ArrayVec(2, 10, 10);
+    vecs[1] = new ArrayVec(11, 1, 2);
+    vecs[2] = new ArrayVec(1, 1, 1);
+    for (int i = 0; i < vecs.length; i++) {
+      pbuilder.setFeatures(0, vecs[i]);
+      pbuilder.setTarget(0, i);
+      pbuilder.nextItem();
+    }
+
+    final Pool<FakeItem> pool = pbuilder.create();
+
+    final LayeredNetwork network = new LayeredNetwork(rng, 0., 3, 3, 3, 2);
+    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, 1000, 0.8) {
+      public void init(Vec cursor) {
+        VecTools.fillUniform(cursor, rng);
+      }
+    };
+
+    final Action<Vec> pp = new Action<Vec>() {
+      int index = 0;
+
+      @Override
+      public void invoke(Vec vec) {
+        if (++index == 1) {
+          for (int i = 0; i < vecs.length; i++) {
+            System.out.println("Class: " + i);
+            final NeuralSpider.NeuralNet neuralNet = network.decisionByInput(vecs[i]);
+            System.out.println(neuralNet.state(vec));
+          }
+        }
+      }
+    };
+    gradientDescent.addListener(pp);
+
+    final Mx data = pool.vecData().data();
+    final BlockwiseMLL blockwiseMLL = pool.target(BlockwiseMLL.class);
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), blockwiseMLL, new Computable<FakeItem, Trans>() {
+      @Override
+      public Trans compute(final FakeItem argument) {
+        final Vec row = data.row(argument.id);
+        return network.decisionByInput(row);
+      }
+    });
+    final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
+    System.out.println(decision.x);
+
+    for (int i = 0; i < vecs.length; i++) {
+      System.out.println("Class: " + i);
+      System.out.println(decision.compute(pool.data().at(i)));
+    }
   }
 }
