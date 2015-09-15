@@ -30,11 +30,11 @@ public class BlockV1 extends Session.Block {
            '}';
   }
 
-  public static enum ResultType {
+  public enum ResultType {
     WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER
   }
 
-  public static enum ResultGrade {
+  public enum ResultGrade {
     VITAL           (0.61), //0.69),
     USEFUL          (0.41), //0.47),
     RELEVANT_PLUS   (0.14), //0.45),

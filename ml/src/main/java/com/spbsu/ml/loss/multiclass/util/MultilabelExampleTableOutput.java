@@ -10,16 +10,18 @@ public class MultilabelExampleTableOutput {
   private final Mx scores;
   private final Mx targets;
   private final Pool<?> pool;
+  private final String name;
 
-  public MultilabelExampleTableOutput(final Mx scores, final Mx targets, final Pool<?> pool) {
+  public MultilabelExampleTableOutput(final Mx scores, final Mx targets, final Pool<?> pool, final String name) {
     this.scores = scores;
     this.targets = targets;
     this.pool = pool;
+    this.name = name;
   }
 
   public String toExampleTableMatrix() {
     final StringBuilder out = new StringBuilder();
-    out.append("=== Scores for examples ===\n");
+    out.append(name);
 
     out.append("example");
     for (int i = 0; i < targets.columns(); i++)

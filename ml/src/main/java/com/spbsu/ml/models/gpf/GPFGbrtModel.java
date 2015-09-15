@@ -173,10 +173,10 @@ public class GPFGbrtModel<Blk extends Session.Block> extends GPFModel.Stub<Blk> 
 
     // далее -- вычисления для каждого клика в отдельности
     final int[] observations = new int[ses.getClick_indexes().length + 2];
-    observations[0] = Session.Q_ind;
+    observations[0] = Session.Q_INDEX;
     for (int i = 0; i < ses.getClick_indexes().length; i++)
       observations[i+1] = ses.getClick_indexes()[i];
-    observations[observations.length - 1] = Session.E_ind;
+    observations[observations.length - 1] = Session.E_INDEX;
 
     for (int eindex = 1; eindex < observations.length; eindex++) {
       // 5 & для всех блоков $i$ и длин $t$ вычислить $A(s,i,t)$

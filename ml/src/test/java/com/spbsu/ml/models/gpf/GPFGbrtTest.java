@@ -29,7 +29,6 @@ import static org.junit.Assert.assertEquals;
  * User: irlab
  * Date: 11.07.2014
  */
-@Ignore
 public class GPFGbrtTest {
   @Test
   public void testGbrtOptimization() throws IOException {

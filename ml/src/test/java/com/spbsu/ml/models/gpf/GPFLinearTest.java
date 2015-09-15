@@ -50,9 +50,9 @@ public class GPFLinearTest {
       //System.out.println("session " + nSes);
       final Session<BlockV1> ses = dataset.get(nSes);
       final List<Integer> click_indexes = new ArrayList<Integer>();
-      int state = Session.Q_ind;
+      int state = Session.Q_INDEX;
       int click_s = 0;
-      while (state != Session.E_ind) {
+      while (state != Session.E_INDEX) {
         final double[] probs = new double[ses.getEdgesFrom(state).length];
         for (int j = 0; j < probs.length; j++)
           probs[j] = model_true.eval_f(ses, state, ses.getEdgesFrom(state)[j], click_s);

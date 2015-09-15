@@ -22,9 +22,9 @@ public class WebLogV1ClickProbabilityModel implements ClickProbabilityModel<Bloc
     final VecBasedMx shows = new VecBasedMx(BlockV1.ResultType.values().length, BlockV1.ResultGrade.values().length);
     final VecBasedMx clicks = new VecBasedMx(BlockV1.ResultType.values().length, BlockV1.ResultGrade.values().length);
     for (final Session<BlockV1> ses: dataset) {
-      final BlockV1 block1 = ses.getBlock(Session.R0_ind);
+      final BlockV1 block1 = ses.getBlock(Session.R0_INDEX);
       shows.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
-      if (ses.hasClickOn(Session.R0_ind))
+      if (ses.hasClickOn(Session.R0_INDEX))
         clicks.adjust(block1.resultType.ordinal(), block1.resultGrade.ordinal(), 1);
     }
 

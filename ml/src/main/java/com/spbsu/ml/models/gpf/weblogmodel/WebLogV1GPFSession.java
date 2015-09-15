@@ -9,7 +9,6 @@ import com.google.gson.*;
 import com.spbsu.ml.models.gpf.GPFLinearModel;
 import com.spbsu.ml.models.gpf.GPFModel;
 import com.spbsu.ml.models.gpf.Session;
-import com.spbsu.ml.models.gpf.weblogmodel.BlockV1;
 
 /**
  * User: irlab
@@ -56,16 +55,16 @@ public class WebLogV1GPFSession {
    */
   public static void setSessionData(final Session<BlockV1> ses, final BlockV1[] result_blocks, final int[] clicks_block_indexes) {
     // init blocks
-    final BlockV1[] blocks = new BlockV1[result_blocks.length + Session.R0_ind];
+    final BlockV1[] blocks = new BlockV1[result_blocks.length + Session.R0_INDEX];
 //    int[] result_pos2block_ind = new int[100];
     int max_result_pos = -1;
     int min_result_pos = 1000;
 
-    blocks[Session.Q_ind] = new BlockV1(Session.BlockType.Q, -1);
-    blocks[Session.S_ind] = new BlockV1(Session.BlockType.S, -1);
-    blocks[Session.E_ind] = new BlockV1(Session.BlockType.E, -1);
+    blocks[Session.Q_INDEX] = new BlockV1(Session.BlockType.Q, -1);
+    blocks[Session.S_INDEX] = new BlockV1(Session.BlockType.S, -1);
+    blocks[Session.E_INDEX] = new BlockV1(Session.BlockType.E, -1);
     for (int i = 0; i < result_blocks.length; i++) {
-      blocks[i + Session.R0_ind] = result_blocks[i];
+      blocks[i + Session.R0_INDEX] = result_blocks[i];
       max_result_pos = Math.max(max_result_pos, result_blocks[i].position);
       min_result_pos = Math.min(min_result_pos, result_blocks[i].position);
     }
@@ -73,28 +72,28 @@ public class WebLogV1GPFSession {
 
     final int[] click_indexes = new int[clicks_block_indexes.length];
     for (int i = 0; i < click_indexes.length; i++)
-      click_indexes[i] = clicks_block_indexes[i] + Session.R0_ind;
+      click_indexes[i] = clicks_block_indexes[i] + Session.R0_INDEX;
     ses.setClick_indexes(click_indexes);
 
     // init edges
     final List<Session.Edge> edges = new ArrayList<>();
-    for (int i = Session.R0_ind; i < blocks.length; i++) {
+    for (int i = Session.R0_INDEX; i < blocks.length; i++) {
       // R_i -> R_{i+1}
       if (i + 1 < blocks.length)
         edges.add(new Session.Edge(i, i+1));
       // R_i -> R_{i-1}
-      if (i > Session.R0_ind)
+      if (i > Session.R0_INDEX)
         edges.add(new Session.Edge(i, i-1));
       // Q -> R_i
-      edges.add(new Session.Edge(Session.Q_ind, i));
+      edges.add(new Session.Edge(Session.Q_INDEX, i));
       // S -> R_i
-      edges.add(new Session.Edge(Session.S_ind, i));
+      edges.add(new Session.Edge(Session.S_INDEX, i));
       // R_i -> S
-      edges.add(new Session.Edge(i, Session.S_ind));
+      edges.add(new Session.Edge(i, Session.S_INDEX));
       // R_i -> E
-      edges.add(new Session.Edge(i, Session.E_ind));
+      edges.add(new Session.Edge(i, Session.E_INDEX));
       // E -> E
-      edges.add(new Session.Edge(Session.E_ind, Session.E_ind));
+      edges.add(new Session.Edge(Session.E_INDEX, Session.E_INDEX));
     }
     ses.setEdges(edges);
   }
