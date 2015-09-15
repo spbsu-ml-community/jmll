@@ -382,7 +382,7 @@ public class NNTest {
     final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 10, 20000, 2){
       @Override
       public void init(Vec cursor) {
-        final int paramsDim = (statesCount - 1) * (statesCount - 1);
+        final int paramsDim = (statesCount - 1) * (statesCount - NFANetwork.OUTPUT_NODES);
         for (int c = 0; c < alpha.length(); c++) {
           final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
           VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
