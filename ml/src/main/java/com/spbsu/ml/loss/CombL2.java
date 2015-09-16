@@ -2,6 +2,7 @@ package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.data.set.DataSet;
 
 import static java.lang.Math.log;
 
@@ -11,8 +12,8 @@ import static java.lang.Math.log;
  * Time: 22:37:55
  */
 public class CombL2 extends L2 {
-  public CombL2(Vec target) {
-    super(target);
+  public CombL2(final Vec target, final DataSet<?> owner) {
+    super(target, owner);
   }
 
   @Override
