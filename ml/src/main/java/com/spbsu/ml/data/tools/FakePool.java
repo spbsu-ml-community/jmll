@@ -1,9 +1,4 @@
-package com.spbsu.ml.testUtils;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
+package com.spbsu.ml.data.tools;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -15,17 +10,24 @@ import com.spbsu.ml.Vectorization;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
-import com.spbsu.ml.data.tools.Pool;
-import com.spbsu.ml.meta.*;
+import com.spbsu.ml.meta.DataSetMeta;
+import com.spbsu.ml.meta.FeatureMeta;
+import com.spbsu.ml.meta.PoolFeatureMeta;
+import com.spbsu.ml.meta.TargetMeta;
+import com.spbsu.ml.meta.items.FakeItem;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * User: solar
  * Date: 18.07.14
  * Time: 18:40
  */
-public class FakePool extends Pool<FakePool.FakeItem> {
+public class FakePool extends Pool<FakeItem> {
   private final Mx data;
 
   public FakePool(final Mx data, final Seq<?> target) {
@@ -79,7 +81,10 @@ public class FakePool extends Pool<FakePool.FakeItem> {
       return false;
 
     final FakePool other = (FakePool) obj;
-    return new EqualsBuilder().appendSuper(super.equals(obj)).append(data, other.data).isEquals();
+    return new EqualsBuilder()
+        .appendSuper(super.equals(obj))
+        .append(data, other.data)
+        .isEquals();
   }
 
   @Override
@@ -170,7 +175,7 @@ public class FakePool extends Pool<FakePool.FakeItem> {
     }
 
     @Override
-    public ItemType type() { return ItemType.QURL; }
+    public ItemType type() { return ItemType.FAKE; }
 
     @Override
     public Date created() {
@@ -183,19 +188,5 @@ public class FakePool extends Pool<FakePool.FakeItem> {
     for (int i = 0; i < result.length; i++)
       result[i] = new FakeItem(i);
     return new ArraySeq<FakeItem>(result);
-  }
-
-  public static class FakeItem implements DSItem {
-
-    private final int id;
-
-    private FakeItem(final int id) {
-      this.id = id;
-    }
-
-    @Override
-    public String id() {
-      return "" + id;
-    }
   }
 }

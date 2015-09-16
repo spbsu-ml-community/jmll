@@ -13,14 +13,13 @@ import com.spbsu.commons.func.types.SerializationRepository;
 import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.MxIterator;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecIterator;
+import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
+import com.spbsu.commons.math.vectors.impl.mx.MxByRowsBuilder;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
+import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
@@ -28,6 +27,7 @@ import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.ReaderChopper;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.system.RuntimeUtils;
+import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.JSONTools;
 import com.spbsu.commons.util.Pair;
@@ -49,13 +49,17 @@ import com.spbsu.ml.meta.PoolFeatureMeta;
 import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 import com.spbsu.ml.meta.impl.JsonFeatureMeta;
 import com.spbsu.ml.meta.impl.JsonTargetMeta;
+import com.spbsu.ml.meta.items.FakeItem;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.ObliviousMultiClassTree;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.multilabel.MultiLabelBinarizedModel;
+import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.list.linked.TIntLinkedList;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -470,6 +474,54 @@ public class DataTools {
           .append(": type = ").append(pool.features[i].getFirst().type());
     }
     return builder.toString();
+  }
+
+  public static Pool<FakeItem> loadFromLibSvmFormat(final Reader in) throws IOException {
+    final MutableInt poolFeaturesCount = new MutableInt(-1);
+
+    final VecBuilder targetBuilder = new VecBuilder();
+    final List<Pair<TIntList, TDoubleList>> features = new ArrayList<>();
+
+    CharSeqTools.processLines(in, new Processor<CharSequence>() {
+      int lindex = 0;
+
+      @Override
+      public void process(final CharSequence arg) {
+        final CharSequence[] parts = CharSeqTools.split(arg, ' ');
+
+        targetBuilder.add(CharSeqTools.parseDouble(parts[0]));
+
+        final TIntList rowIndices = new TIntLinkedList();
+        final TDoubleList rowValues = new TDoubleLinkedList();
+
+        for (int i = 1; i < parts.length; i++) {
+          final CharSequence indexAndValue = parts[i];
+          if (StringUtils.isBlank(indexAndValue)) {
+            continue;
+          }
+
+          final CharSequence[] split = CharSeqTools.split(indexAndValue, ':');
+          final int index = CharSeqTools.parseInt(split[0]);
+          final double value = CharSeqTools.parseDouble(split[1]);
+          rowIndices.add(index);
+          rowValues.add(value);
+
+          if (poolFeaturesCount.intValue() < index + 1) {
+            poolFeaturesCount.setValue(index + 1);
+          }
+        }
+        features.add(Pair.create(rowIndices, rowValues));
+        lindex++;
+      }
+    });
+
+    final MxBuilder mxBuilder = new MxByRowsBuilder();
+    for (Pair<TIntList, TDoubleList> pair : features) {
+      mxBuilder.add(new SparseVec(poolFeaturesCount.intValue(), pair.getFirst().toArray(), pair.getSecond().toArray()));
+    }
+    final Mx dataMx = mxBuilder.build();
+
+    return new FakePool(dataMx, targetBuilder.build());
   }
 
   public static void writePoolInLibfmFormat(final Pool<?> pool, final Writer out) throws IOException {
