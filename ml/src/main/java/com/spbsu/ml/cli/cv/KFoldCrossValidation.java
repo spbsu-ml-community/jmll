@@ -65,7 +65,11 @@ public class KFoldCrossValidation {
           LOG.info("Starting evaluation for parameters: " + Arrays.toString(parameters));
           final double meanScore = evaluate(concreteScheme);
           LOG.info("Mean score = " + meanScore + " for parameters " + Arrays.toString(parameters));
-          bestParametersHolder.update(parameters, meanScore);
+          synchronized (bestParametersHolder) {
+            if (bestParametersHolder.update(parameters, meanScore)) {
+              LOG.debug("The best score was updated. Score = " + bestParametersHolder.getScore() + ", parameters: " + Arrays.toString(parameters));
+            };
+          }
         }
       });
     }
