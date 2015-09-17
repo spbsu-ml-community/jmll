@@ -39,6 +39,7 @@ public class JMLLCLI {
   public static final String MODEL_OPTION = "m";
 
   public static final String RANGES_OPTION = "r";
+  public static final String RANDOM_SEED_OPTION = "seed";
 
   private static Options options = new Options();
 
@@ -66,7 +67,8 @@ public class JMLLCLI {
 
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
 
-    options.addOption(OptionBuilder.withLongOpt("ranges").withLongOpt("parameters ranges").hasArg().create(RANGES_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("ranges").withDescription("parameters ranges").hasArg().create(RANGES_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("seed").withLongOpt("random seed").hasArg().create(RANGES_OPTION));
   }
 
   public static void main(final String[] args) throws IOException {
@@ -105,6 +107,7 @@ public class JMLLCLI {
       case "split-json-pool":           return new SplitJsonPool();
       case "print-pool-info":           return new PrintPoolInfo();
       case "grid-search":               return new GridSearch();
+      case "cross-validation":          return new CrossValidation();
       default:
         throw new RuntimeException("Mode " + mode + " is not recognized");
     }

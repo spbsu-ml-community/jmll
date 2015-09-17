@@ -48,7 +48,7 @@ public class GridSearch extends AbstractMode {
       final DataBuilderCrossValidation dataBuilderCrossValidation = new DataBuilderCrossValidation();
       final String[] cvOptions = StringUtils.split(command.getOptionValue(CROSS_VALIDATION_OPTION), "/", 2);
       dataBuilderCrossValidation.setRandomSeed(Integer.valueOf(cvOptions[0]));
-      dataBuilderCrossValidation.setPartition(Double.valueOf(cvOptions[1]));
+      dataBuilderCrossValidation.setPartition(cvOptions[1]);
       dataBuilder = dataBuilderCrossValidation;
     } else {
       dataBuilder = new DataBuilderClassic();

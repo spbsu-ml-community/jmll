@@ -30,7 +30,7 @@ public class SplitJsonPool extends AbstractMode {
     builder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     final String[] cvOptions = StringUtils.split(command.getOptionValue(CROSS_VALIDATION_OPTION), "/", 2);
     builder.setRandomSeed(Integer.valueOf(cvOptions[0]));
-    builder.setPartition(Double.valueOf(cvOptions[1]));
+    builder.setPartition(cvOptions[1]);
 
     final Pair<? extends Pool, ? extends Pool> pools = builder.create();
 

@@ -76,6 +76,10 @@ import java.util.zip.GZIPInputStream;
  * Time: 19:05
  */
 public class DataTools {
+  public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
+      new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
+
+
   public static Pool<QURLItem> loadFromFeaturesTxt(final String file) throws IOException {
     return loadFromFeaturesTxt(file, file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
   }
@@ -267,9 +271,6 @@ public class DataTools {
       throw new RuntimeException("Unable to create requested target: " + name, e);
     }
   }
-
-  public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
-      new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
 
   public static int[][] splitAtRandom(final int size, final FastRandom rng, final double... v) {
     final Vec weights = new ArrayVec(v);
