@@ -75,10 +75,10 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
       outputNodesConnections[d] = (d + 2) * statesCount - 1;
     }
     final int lastLayerStart = seq.length() * statesCount;
-    nodes[nodes.length - 2] = new NonDeterminedNode(this, lastLayerStart, nodes);
+    nodes[nodes.length - 2] = new NonDeterminedNode(statesCount - 1, lastLayerStart, nodes.length);
     nodes[nodes.length - 1] = new OutputNode(outputNodesConnections, nodes);
 
-    return new NFATopology<>(this, seq, dropout, nodes, dropoutArr);
+    return new NFATopology<>(statesCount, dropout, nodes, dropoutArr);
   }
 
   @Override
@@ -165,7 +165,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
         @Override
         public double value(Vec betta) {
           final Mx weights = calcer.compute(betta);
-          return VecTools.multiply(weights.row(index), betta.sub(pStart, pLen - 1));
+          return VecTools.multiply(weights.row(index), parents.sub(pStart, pLen));
         }
 
         @Override

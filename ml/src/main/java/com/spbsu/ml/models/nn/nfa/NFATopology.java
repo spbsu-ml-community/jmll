@@ -9,15 +9,13 @@ import com.spbsu.ml.models.nn.NeuralSpider;
 * Time: 17:27
 */
 class NFATopology<T> extends NeuralSpider.Topology.Stub {
-  private NFANetwork nfaNetwork;
-  private final Seq<T> item;
+  private final int statesCount;
   private final boolean dropout;
   private final NeuralSpider.Node[] nodes;
   private final boolean[] dropoutArr;
 
-  public NFATopology(NFANetwork nfaNetwork, Seq<T> seq, boolean dropout, NeuralSpider.Node[] nodes, boolean[] dropoutArr) {
-    this.nfaNetwork = nfaNetwork;
-    this.item = seq;
+  public NFATopology(int statesCount, boolean dropout, NeuralSpider.Node[] nodes, boolean[] dropoutArr) {
+    this.statesCount = statesCount;
     this.dropout = dropout;
     this.nodes = nodes;
     this.dropoutArr = dropoutArr;
@@ -32,7 +30,7 @@ class NFATopology<T> extends NeuralSpider.Topology.Stub {
   public boolean isDroppedOut(int nodeIndex) {
     if (!dropout || nodeIndex == 0 || nodeIndex == nodes.length - 1)
       return false;
-    final int state = nodeIndex % nfaNetwork.statesCount;
+    final int state = nodeIndex % statesCount;
     return dropoutArr[state];
   }
 
