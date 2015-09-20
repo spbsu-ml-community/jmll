@@ -13,12 +13,14 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 */
 class WeightsCalculator implements Computable<Vec,Mx> {
   private final int statesCount;
+  private final int finalStates;
   private final int wStart;
   private final int wLen;
   private boolean[] dropOut;
 
-  WeightsCalculator(int statesCount, int wStart, int wLen) {
+  WeightsCalculator(int statesCount, int finalStates, int wStart, int wLen) {
     this.statesCount = statesCount;
+    this.finalStates = finalStates;
     this.wStart = wStart;
     this.wLen = wLen;
   }
@@ -27,7 +29,7 @@ class WeightsCalculator implements Computable<Vec,Mx> {
   public Mx computeInner(Vec betta) {
     final VecBasedMx b = new VecBasedMx(statesCount - 1, betta.sub(wStart, wLen));
     final VecBasedMx w = new VecBasedMx(statesCount, this.w.get(statesCount * statesCount));
-    for (int i = 0; i < statesCount - 1; i++) {
+    for (int i = 0; i < statesCount - finalStates; i++) {
       if (dropOut[i])
         continue;
       double sum = 1;

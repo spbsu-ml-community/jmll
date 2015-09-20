@@ -10,12 +10,14 @@ import com.spbsu.ml.models.nn.NeuralSpider;
 */
 class NFATopology<T> extends NeuralSpider.Topology.Stub {
   private final int statesCount;
+  private final int finalStates;
   private final boolean dropout;
   private final NeuralSpider.Node[] nodes;
   private final boolean[] dropoutArr;
 
-  public NFATopology(int statesCount, boolean dropout, NeuralSpider.Node[] nodes, boolean[] dropoutArr) {
+  public NFATopology(int statesCount, int finalStates, boolean dropout, NeuralSpider.Node[] nodes, boolean[] dropoutArr) {
     this.statesCount = statesCount;
+    this.finalStates = finalStates;
     this.dropout = dropout;
     this.nodes = nodes;
     this.dropoutArr = dropoutArr;
@@ -23,7 +25,7 @@ class NFATopology<T> extends NeuralSpider.Topology.Stub {
 
   @Override
   public int outputCount() {
-    return NFANetwork.OUTPUT_NODES;
+    return finalStates + 1;
   }
 
   @Override

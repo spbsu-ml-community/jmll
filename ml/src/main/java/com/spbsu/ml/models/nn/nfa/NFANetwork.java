@@ -21,21 +21,22 @@ import com.spbsu.ml.models.nn.NeuralSpider;
  * Time: 13:25
  */
 public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
-  public static final int OUTPUT_NODES = 2;
   private final FastRandom rng;
   private final double dropout;
   final int statesCount;
   private final Seq<T> alpha;
   private final int dim;
   private final int transitionMxDim;
+  private final int finalStates;
 
-  public NFANetwork(FastRandom rng, double dropout, int statesCount, Seq<T> alpha) {
+  public NFANetwork(FastRandom rng, double dropout, int statesCount, int finalStates, Seq<T> alpha) {
     super();
     this.rng = rng;
     this.dropout = dropout;
     this.statesCount = statesCount;
+    this.finalStates = finalStates;
     this.alpha = alpha;
-    transitionMxDim = (statesCount - 1) * (statesCount - 1);
+    transitionMxDim = (statesCount - finalStates) * (statesCount - 1);
     dim = transitionMxDim * alpha.length();
   }
 
@@ -44,7 +45,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
     protected WeightsCalculator[] initialValue() {
       final WeightsCalculator[] calculators = new WeightsCalculator[alpha.length()];
       for(int i = 0; i < calculators.length; i++) {
-        calculators[i] = new WeightsCalculator(statesCount, i * transitionMxDim, transitionMxDim);
+        calculators[i] = new WeightsCalculator(statesCount, finalStates, i * transitionMxDim, transitionMxDim);
       }
       return calculators;
     }
@@ -52,7 +53,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
 
   @Override
   protected Topology topology(Seq<T> seq, final boolean dropout) {
-    final Node[] nodes = new Node[(seq.length() + 1) * statesCount + OUTPUT_NODES];
+    final Node[] nodes = new Node[(seq.length() + 1) * statesCount + finalStates + 1];
     for (int i = 0; i < statesCount; i++) {
       final Const aConst = new Const(i == 0 ? 1 : 0);
       nodes[i] = new InputNode(aConst);
@@ -60,9 +61,9 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
     final boolean[] dropoutArr = new boolean[statesCount];
 
     if (dropout && rng.nextDouble() < this.dropout)
-      dropoutArr[rng.nextInt(statesCount - OUTPUT_NODES) + 1] = true;
+      dropoutArr[rng.nextInt(statesCount - finalStates - 1) + 1] = true;
 
-    final int[] outputNodesConnections = new int[seq.length()];
+    final int[][] outputNodesConnections = new int[finalStates][seq.length()];
     for (int d = 0; d < seq.length(); d++) {
       final int elementIndex = ArrayTools.indexOf(seq.at(d), alpha);
       final int prevLayerStart = d * statesCount;
@@ -72,13 +73,17 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
         final int nodeIndex = (d + 1) * statesCount + i;
         nodes[nodeIndex] = new MyNode(i, elementIndex * transitionMxDim, transitionMxDim, prevLayerStart, statesCount, nodes.length + statesCount, calcer);
       }
-      outputNodesConnections[d] = (d + 2) * statesCount - 1;
+      for (int i = 0; i < finalStates; i++) {
+        outputNodesConnections[i][d] = (d + 2) * statesCount - finalStates + i;
+      }
     }
     final int lastLayerStart = seq.length() * statesCount;
-    nodes[nodes.length - 2] = new NonDeterminedNode(statesCount - 1, lastLayerStart, nodes.length);
-    nodes[nodes.length - 1] = new OutputNode(outputNodesConnections, nodes);
+    nodes[nodes.length - finalStates - 1] = new NonDeterminedNode(statesCount - finalStates, lastLayerStart, nodes.length);
+    for (int i = 0; i < finalStates; i++) {
+      nodes[nodes.length - finalStates + i] = new OutputNode(outputNodesConnections[i], nodes);
+    }
 
-    return new NFATopology<>(statesCount, dropout, nodes, dropoutArr);
+    return new NFATopology<>(statesCount, finalStates, dropout, nodes, dropoutArr);
   }
 
   @Override
