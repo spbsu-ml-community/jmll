@@ -33,12 +33,14 @@ import com.spbsu.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
+
+import static com.spbsu.commons.io.StreamTools.readFile;
 
 /**
  * User: solar
@@ -598,6 +600,24 @@ public abstract class NNTest {
       System.out.println("Class: " + i);
       System.out.println(decision.compute(pool.data().at(i)));
     }
+  }
+
+
+  //@Test
+  public void testGenom() throws IOException {
+    String str  = readFile(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq_accuracy.fa")).toString();
+    String[] mass = str.split(">");
+    List<String> list = new ArrayList<>();
+    for (String s: mass) {
+      String[] array = s.split("\\s");
+      if (array.length < 2)
+        continue;
+      String hiSeq = array[0].split("_HiSeq")[0];
+      String genom = array[1] + (array.length > 2 ? array[2] : "");
+      list.add(hiSeq + "->" + genom);
+    }
+    System.out.println(list.get(0));
+    System.out.println(list.get(list.size() - 1));
   }
 
 
