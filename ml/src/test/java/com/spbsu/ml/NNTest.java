@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.*;
 import java.util.zip.GZIPInputStream;
 
 import static com.spbsu.commons.io.StreamTools.readFile;
@@ -605,19 +606,146 @@ public abstract class NNTest {
 
   //@Test
   public void testGenom() throws IOException {
-    String str  = readFile(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq_accuracy.fa")).toString();
-    String[] mass = str.split(">");
-    List<String> list = new ArrayList<>();
-    for (String s: mass) {
-      String[] array = s.split("\\s");
-      if (array.length < 2)
+//    String str  = readFile(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq_accuracy.fa")).toString();
+//    String[] mass = str.split(">");
+//    PrintWriter printWriter = new PrintWriter(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq.txt"));
+//    for (String s: mass) {
+//      String[] array = s.split("\\s");
+//      if (array.length < 2)
+//        continue;
+//      String hiSeq = array[0].split("_HiSeq")[0];
+//      String genom = array[1] + (array.length > 2 ? array[2] : "");
+//      printWriter.println(hiSeq + "->" + genom);
+//    }
+//    printWriter.close();
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
+    pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
+
+    final Set<Character> alphaSet = new HashSet<>();
+
+    final List<String> types = new ArrayList<>();
+    final File file = new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq.txt");
+    final BufferedReader br = new BufferedReader(new FileReader(file));
+    String line;
+    while((line = br.readLine()) != null) {
+      String[] strs = line.split("->");
+      if (strs.length < 2)
         continue;
-      String hiSeq = array[0].split("_HiSeq")[0];
-      String genom = array[1] + (array.length > 2 ? array[2] : "");
-      list.add(hiSeq + "->" + genom);
+      String name = strs[0];
+      if (!types.contains(name))
+        types.add(name);
+      String value = strs[1];
+      final Seq<Character> genom = CharSeq.create(value);
+      pbuilder.setFeature(0, genom);
+      pbuilder.setTarget(0, types.indexOf(name));
+      for (int j = 0; j < genom.length(); j++) {
+        alphaSet.add(genom.at(j));
+      }
+      pbuilder.nextItem();
     }
-    System.out.println(list.get(0));
-    System.out.println(list.get(list.size() - 1));
+    br.close();
+    final Pool<FakeItem> pool = pbuilder.create();
+
+    System.out.println(pool.feature(0, 33) + "->" + pool.target(0).at(33));
+    System.out.println(pool.feature(0, 1033) + "->" + pool.target(0).at(1033));
+    System.out.println(pool.feature(0, 2041) + "->" + pool.target(0).at(2041));
+    System.out.println(pool.feature(0, 4500) + "->" + pool.target(0).at(4500));
+    System.out.println(pool.feature(0, 5678) + "->" + pool.target(0).at(5678));
+    System.out.println(pool.feature(0, 9425) + "->" + pool.target(0).at(9425));
+    System.out.println(alphaSet);
+
+    final CharSeqArray alpha = new CharSeqArray(alphaSet.toArray(new Character[alphaSet.size()]));
+    final int statesCount = 13;
+    final int finalStates = 9;
+    final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
+    int iterations = 10000;
+    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, iterations, 2) {
+      @Override
+      public void init(Vec cursor) {
+        final int paramsDim = (statesCount - finalStates) * (statesCount - 1);
+        for (int c = 0; c < alpha.length(); c++) {
+          final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
+          VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
+          for (int j = 0; j < mx.rows(); j++) {
+            mx.set(j, j, 5);
+          }
+        }
+      }
+
+      @Override
+      public void normalizeGradient(Vec grad) {
+        for (int i = 0; i < grad.length(); i++) {
+          if (Math.abs(grad.get(i)) < 0.001)
+            grad.set(i, 0);
+        }
+      }
+    };
+
+    final Action<Vec> pp = new Action<Vec>() {
+      double index = 0;
+      @Override
+      public void invoke(Vec vec) {
+        index++;
+        //if (index % 50 == 0) {
+          System.out.print(String.format("Learning: %s (%.2f%%)\r", index, index / iterations * 100));
+        //}
+      }
+    };
+    gradientDescent.addListener(pp);
+
+    final MLL ll = pool.target(MLL.class);
+    final ArrayVec initial = new ArrayVec(network.dim());
+    gradientDescent.init(initial);
+
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
+      @Override
+      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
+        final CharSeq seq = pool.feature(0, argument.id);
+        return network.decisionByInput(seq);
+      }
+    });
+    final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
+    System.out.println();
+
+    try {
+      ExecutorService executorService = Executors.newFixedThreadPool(4);
+      List<Callable<Double>> tasks = new ArrayList<>(ll.blocksCount());
+      for (int i = 0; i < ll.blocksCount(); i++) {
+        final int finalI = i;
+        tasks.add(() -> ll.block(finalI).value(network.decisionByInput(pool.feature(0, finalI)).trans(decision.x)));
+      }
+      List<Future<Double>> list = new ArrayList<>(tasks.size());
+      for (int i = 0; i < tasks.size(); i++) {
+        list.add(executorService.submit(tasks.get(i)));
+      }
+
+      List<Integer> finishedTasks = new ArrayList<>();
+      int count = 0, negative = 0;
+      double llSum = 0;
+      while (count < ll.blocksCount()) {
+        Thread.sleep(1000);
+        for (int i = 0; i < ll.blocksCount(); i++) {
+          if (list.get(i).isDone() && !finishedTasks.contains(i)) {
+            finishedTasks.add(i);
+            double llblock = list.get(i).get();
+            llSum += llblock;
+            final double pX = Math.exp(llblock);
+            count++;
+            System.out.print(String.format("Calculating results: %s (%.2f%%)\r", count, (double) count / ll.blocksCount() * 100));
+            if (pX < 0.5) {
+              negative++;
+            }
+          }
+        }
+      }
+      System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double) count);
+      Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 
@@ -665,8 +793,6 @@ public abstract class NNTest {
         System.out.println();
       }
     }
-    System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double)count);
-    Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
   }
 
 }
