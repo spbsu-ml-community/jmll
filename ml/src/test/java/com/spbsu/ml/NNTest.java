@@ -793,6 +793,8 @@ public abstract class NNTest {
         System.out.println();
       }
     }
+    System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double)count);
+    Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
   }
 
 }
