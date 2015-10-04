@@ -5,17 +5,24 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.DataTools;
+import com.spbsu.ml.data.tools.FakePool;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.meta.DSItem;
+import com.spbsu.ml.meta.items.FakeItem;
 import com.spbsu.ml.meta.items.QURLItem;
-import com.spbsu.ml.testUtils.FakePool;
+import com.spbsu.ml.testUtils.TestResourceLoader;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 /**
  * User: solar
@@ -84,6 +91,34 @@ public class DataToolsTest extends GridTest {
     for (int i = 0; i < extDs.length(); i++) {
       System.out.println(target.get(i) + "\t" + extDs.at(i).toString());
     }
+  }
+
+  public void testLibSvmRead() throws Exception {
+    try (InputStream stream = TestResourceLoader.loadResourceAsStream("multiclass/iris.libfm")) {
+      final Pool<FakeItem> pool = DataTools.loadFromLibSvmFormat(new InputStreamReader(stream));
+      assertEquals(150, pool.size());
+      assertEquals(4, pool.features().length);
+    }
+  }
+
+  public void testSparse() throws Exception {
+    final SparseVec sparseVec = new SparseVec(0);
+    System.out.println(sparseVec.dim());
+    sparseVec.set(4, 50.);
+    System.out.println(sparseVec.dim());
+    System.out.println(sparseVec.get(4));
+    System.out.println(sparseVec.get(3));
+
+  }
+
+  public void testSplit() throws Exception {
+    final CharSequence[] split = CharSeqTools.split("1 2 3 ", ' ');
+    assertEquals(3, split.length);
+    System.out.println(Arrays.toString(split));
+
+    final CharSequence[] split1 = CharSeqTools.split("1 2 3", " ");
+    assertEquals(3, split1.length);
+    System.out.println(Arrays.toString(split1));
   }
 
   public void testLibfmWrite() throws Exception {

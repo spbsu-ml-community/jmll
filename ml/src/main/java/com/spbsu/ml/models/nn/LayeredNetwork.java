@@ -1,12 +1,9 @@
 package com.spbsu.ml.models.nn;
 
 import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.func.generic.*;
-import com.spbsu.ml.models.NeuralSpider;
 
 import java.util.ArrayList;
 import java.util.List;

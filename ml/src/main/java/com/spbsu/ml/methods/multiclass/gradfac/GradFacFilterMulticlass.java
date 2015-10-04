@@ -40,7 +40,10 @@ public class GradFacFilterMulticlass implements VecOptimization<L2> {
 
   @Override
   public FuncJoin fit(VecDataSet learn, L2 mllLogitGradient) {
-    final Mx gradient = (Mx)mllLogitGradient.target;
+    final Mx gradient = mllLogitGradient.target instanceof Mx
+        ? (Mx)mllLogitGradient.target
+        : new VecBasedMx(mllLogitGradient.target.dim() / learn.length(), mllLogitGradient.target);
+
 
     final Mx gradWithoutColumn = new VecBasedMx(gradient.rows(), gradient.columns() - 1);
     final BestHolder<Pair<Vec, Vec>> bestHolder = new BestHolder<>();

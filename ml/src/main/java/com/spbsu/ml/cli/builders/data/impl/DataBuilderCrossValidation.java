@@ -33,8 +33,12 @@ public class DataBuilderCrossValidation implements DataBuilder {
     this.randomSeed = randomSeed;
   }
 
-  public void setPartition(final double partition) {
-    this.partition = partition;
+  public void setPartition(final String partition) {
+    try {
+      this.partition = Double.parseDouble(partition);
+    } catch (NumberFormatException e) {
+      this.partition = 1. / Integer.parseInt(partition);
+    }
   }
 
   @Override

@@ -1,14 +1,11 @@
 package com.spbsu.ml.func.generic;
 
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.FuncC1;
-
 /**
  * User: solar
  * Date: 10.06.15
  * Time: 23:40
  */
-public class Const extends FuncC1.Stub {
+public class Const extends ElementaryFunc {
   final double value;
 
   public Const(double value) {
@@ -16,17 +13,12 @@ public class Const extends FuncC1.Stub {
   }
 
   @Override
-  public double value(Vec x) {
+  public double value(double x) {
     return value;
   }
 
   @Override
-  public Vec gradientTo(Vec x, Vec to) {
-    return to;
-  }
-
-  @Override
-  public int dim() {
-    return 0;
+  public ElementaryFunc gradient() {
+    return new Const(0);
   }
 }

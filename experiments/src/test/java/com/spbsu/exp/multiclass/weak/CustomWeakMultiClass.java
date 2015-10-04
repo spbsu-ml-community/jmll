@@ -4,6 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.tools.FakePool;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
@@ -16,7 +17,6 @@ import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.multiclass.MCModel;
-import com.spbsu.ml.testUtils.FakePool;
 
 /**
 * User: qdeee

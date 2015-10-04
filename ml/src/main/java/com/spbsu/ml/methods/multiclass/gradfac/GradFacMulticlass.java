@@ -3,6 +3,7 @@ package com.spbsu.ml.methods.multiclass.gradfac;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.Func;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -37,7 +38,9 @@ public class GradFacMulticlass implements VecOptimization<L2> {
 
   @Override
   public FuncJoin fit(VecDataSet learn, L2 mllLogitGradient) {
-    final Mx gradient = (Mx)mllLogitGradient.target;
+    final Mx gradient = mllLogitGradient.target instanceof Mx
+        ? (Mx)mllLogitGradient.target
+        : new VecBasedMx(mllLogitGradient.target.dim() / learn.length(), mllLogitGradient.target);
     final Pair<Vec, Vec> pair = matrixDecomposition.factorize(gradient);
 
     final Vec h = pair.getFirst();

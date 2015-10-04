@@ -1,15 +1,11 @@
 package com.spbsu.ml.func.generic;
 
-import com.spbsu.commons.math.vectors.SingleValueVec;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.FuncC1;
-
 /**
 * User: solar
 * Date: 26.05.15
 * Time: 11:45
 */
-public class Log extends FuncC1.Stub {
+public class Log extends ElementaryFunc {
   private final double a, b;
 
   public Log(double a, double b) {
@@ -18,18 +14,12 @@ public class Log extends FuncC1.Stub {
   }
 
   @Override
-  public Vec gradient(Vec x) {
-    final double denom = a * x.get(0) + b;
-    return new SingleValueVec(a / denom);
+  public ElementaryFunc gradient() {
+    return new Pow(a, -1);
   }
 
   @Override
-  public double value(Vec x) {
-    return Math.log(a * x.get(0) + b);
-  }
-
-  @Override
-  public int dim() {
-    return 1;
+  public double value(double x) {
+    return Math.log(a * x + b);
   }
 }

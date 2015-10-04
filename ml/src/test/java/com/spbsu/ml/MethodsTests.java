@@ -11,15 +11,26 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
+import com.spbsu.commons.seq.IntSeqBuilder;
+import com.spbsu.commons.seq.Seq;
+import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
+import com.spbsu.ml.cli.builders.data.impl.DataBuilderCrossValidation;
+import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
+import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.FeaturesTxtPool;
 import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.data.tools.SubPool;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.func.NormalizedLinear;
 import com.spbsu.ml.loss.*;
+import com.spbsu.ml.meta.FeatureMeta;
+import com.spbsu.ml.meta.TargetMeta;
+import com.spbsu.ml.meta.impl.fake.FakeTargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
@@ -28,6 +39,7 @@ import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
 import com.spbsu.ml.methods.greedyRegion.cnfMergeOptimization.GreedyMergedRegion;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.spbsu.ml.models.ModelTools;
 import com.spbsu.ml.models.ObliviousTree;
 import com.spbsu.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.spbsu.ml.models.pgm.SimplePGM;
@@ -35,6 +47,7 @@ import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 import sun.net.ProgressListener;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -463,6 +476,35 @@ public void testElasticNetBenchmark() {
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
 
+  private static class MyTargetMeta implements TargetMeta {
+
+    private final Pool pool;
+
+    public MyTargetMeta(Pool pool) {
+      this.pool = pool;
+    }
+
+    @Override
+    public DataSet<?> associated() {
+      return pool.data();
+    }
+
+    @Override
+    public String id() {
+      return "Match";
+    }
+
+    @Override
+    public String description() {
+      return "";
+    }
+
+    @Override
+    public ValueType type() {
+      return ValueType.INTS;
+    }
+  }
+
 
   class LassoProgressPrinter implements Action<LassoGradientBoosting.LassoGBIterationResult> {
     private int iterations = 0;
@@ -667,6 +709,72 @@ public void testElasticNetBenchmark() {
     new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
   }
 
+  public void testOTBoost1() throws IOException {
+    final FastRandom rnd = new FastRandom(0);
+    final DataBuilderCrossValidation cvBuilder = new DataBuilderCrossValidation();
+    cvBuilder.setJsonFormat(false);
+    cvBuilder.setLearnPath(System.getenv("HOME") + "/data/pools/green/stylist-20140702.txt");
+    final Pool pool = DataTools.loadFromFeaturesTxt(System.getenv("HOME") + "/data/pools/green/stylist-20140702.txt");
+    final IntSeqBuilder classifyTarget = new IntSeqBuilder();
+    final Vec target = (Vec)pool.target(0);
+    for (int i = 0; i < target.length(); i++) {
+      if (target.get(i) > 2)
+        classifyTarget.add(1);
+      else
+        classifyTarget.add(0);
+    }
+    final TargetMeta meta = new MyTargetMeta(pool);
+    pool.addTarget(meta, classifyTarget.build());
+    final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, 0.5, 0.5);
+    final Pair<? extends Pool, ? extends Pool> cv = Pair.create(new SubPool(pool, cvSplit[0]), new SubPool(pool, cvSplit[1]));
+    final BFGrid grid = GridTools.medianGrid(cv.first.vecData(), 32);
+    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new BootstrapOptimization(new GreedyObliviousTree(grid, 6), rng), LOOL2.class, 2000, 0.02);
+    final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", cv.first.vecData(), cv.first.target(LLLogit.class));
+    final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.second.vecData(), cv.second.target(LLLogit.class));
+    final ScoreCalcer validatePrec = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.second.vecData(), cv.second.target("Match", PLogit.class));
+    final ScoreCalcer validateRecall = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.second.vecData(), cv.second.target("Match", RLogit.class));
+    final ScoreCalcer learnPrec = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.first.vecData(), cv.first.target("Match", PLogit.class));
+    final ScoreCalcer learnRecall = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.first.vecData(), cv.first.target("Match", RLogit.class));
+    final Action<Trans> newLine = new Action<Trans>() {
+      @Override
+      public void invoke(Trans trans) {
+        System.out.println();
+      }
+    };
+    boosting.addListener(learnListener);
+    boosting.addListener(validateListener);
+    boosting.addListener(validatePrec);
+    boosting.addListener(validateRecall);
+    boosting.addListener(learnPrec);
+    boosting.addListener(learnRecall);
+    boosting.addListener(newLine);
+    final Ensemble<ObliviousTree> ensemble = boosting.fit(cv.first.vecData(), (LLLogit) cv.first.target(LLLogit.class));
+    final ModelTools.CompiledOTEnsemble compile = ModelTools.compile(ensemble);
+    double[] scores = new double[grid.rows()];
+    for (int f = 0; f < grid.rows(); f++) {
+      final BFGrid.BFRow row = grid.row(f);
+      final List<ModelTools.CompiledOTEnsemble.Entry> entries = compile.getEntries();
+      for (int i = 0; i < entries.size(); i++) {
+        ModelTools.CompiledOTEnsemble.Entry entry = entries.get(i);
+        boolean isRelevant = false;
+        for (int bfIndex : entry.getBfIndices()) {
+          if (bfIndex >= row.bfStart && bfIndex < row.bfEnd) {
+            isRelevant = true;
+            break;
+          }
+        }
+        if (isRelevant)
+          scores[f] += Math.abs(entry.getValue());
+      }
+    }
+    final int[] order = ArrayTools.sequence(0, scores.length);
+    ArrayTools.parallelSort(scores, order);
+    for(int i = 0; i < order.length; i++) {
+      System.out.println(order[i] + "\t" + scores[i]);
+
+    }
+  }
+
   public void testClassifyBoost() {
     final ProgressHandler pl = new ProgressHandler() {
       public static final int WSIZE = 10;
@@ -755,9 +863,9 @@ public void testElasticNetBenchmark() {
     final String message;
     final Vec current;
     private final VecDataSet ds;
-    private final L2 target;
+    private final TargetFunc target;
 
-    public ScoreCalcer(final String message, final VecDataSet ds, final L2 target) {
+    public ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target) {
       this.message = message;
       this.ds = ds;
       this.target = target;
@@ -783,10 +891,10 @@ public void testElasticNetBenchmark() {
           current.set(i, ((Func) partial).value(ds.data().row(i)));
         }
       }
-      final double curLoss = VecTools.distance(current, target.target) / Math.sqrt(ds.length());
-      System.out.print(message + curLoss);
-      min = Math.min(curLoss, min);
-      System.out.print(" minimum = " + min);
+      final double value = target.value(current);
+      System.out.print(message + value);
+      min = Math.min(value, min);
+      System.out.print(" best = " + min);
     }
   }
 
