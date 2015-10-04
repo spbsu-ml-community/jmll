@@ -578,12 +578,12 @@ public void testElasticNetBenchmark() {
   }
 
   public void testGTDRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting
-            (new BootstrapOptimization<>(
-                    new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.07);
 //    final GradientBoosting<L2> boosting = new GradientBoosting
-//            (new RandomForest<>(
-//                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
+//            (new BootstrapOptimization<>(
+//                         new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.07);
+    final GradientBoosting<L2> boosting = new GradientBoosting
+            (new RandomForest<>(
+                    new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
     final Action counter = new ProgressHandler() {
       int index = 0;
 

@@ -83,7 +83,7 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   }
 
   public int[] points() {
-    final TIntArrayList result = new TIntArrayList(weights.length + 1000);
+    final TIntArrayList result = new TIntArrayList(weights.length + 1000); // Julian ????
     for(int i = 0; i < weights.length; i++) {
       if (weights[i] > 0)
         result.add(i);
