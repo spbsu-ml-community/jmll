@@ -86,12 +86,12 @@ public class CreateWikiWordDict {
             String path = args[3].substring(0, args[3].lastIndexOf("."));
             int iter = 0;
             while((line = bf.readLine()) != null){
-                System.out.print("\r" + iter);
                 IntArrayList doc = new IntArrayList();
                 for(String i : line.split("\\s"))
                     doc.add(Integer.parseInt(i));
                 coding.accept(new IntSeq(doc.toIntArray()));
                 if(++iter % 1000000 == 0){
+                    System.out.println("Number of iterations: " + iter);
                     Dictionary<Integer> dictionary = WikiUtils.getCurrentDictionary();
                     FileWriter fw = new FileWriter(path + "_" + iter + ".dict");
                     for (int j = 0; j < dictionary.alphabet().size(); j++) {
