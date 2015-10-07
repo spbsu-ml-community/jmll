@@ -8,10 +8,7 @@ import com.spbsu.commons.seq.Seq;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -147,16 +144,32 @@ public class WikiUtils {
         };
     }
 
-    public static void setIndexes(File file) throws IOException{
+    public static void readIndexes(File file) throws IOException{
         BufferedReader reader = new BufferedReader(new FileReader(file));
         String line;
         StringToIntSeq.clearIndexes();
+        int maxIndex = 0;
         while((line = reader.readLine()) != null){
             int index = Integer.parseInt(line.split("\t")[1]);
+            if(index > maxIndex){
+                maxIndex = index;
+                while(StringToIntSeq.reverseIndex.size() < maxIndex + 1){
+                    StringToIntSeq.reverseIndex.add(null);
+                }
+            }
             String word = line.split("\t")[0];
-            StringToIntSeq.indexes.put(word, index);
+//            StringToIntSeq.indexes.put(word, index);
             StringToIntSeq.reverseIndex.set(index, word);
         }
+    }
+
+    public static void writeIndexesInFile(File file) throws IOException{
+        FileWriter fw = new FileWriter(file);
+        Map<String, Integer> indexes = getIndexes();
+        for(String key : indexes.keySet()){
+            fw.write(key + "\t" + indexes.get(key) + "\n");
+        }
+        fw.close();
     }
 
     public static void setDefaultCoding(IntExpansion expansion){
@@ -168,7 +181,6 @@ public class WikiUtils {
         for (int j = 0; j < getCurrentDictionary().size(); j++) {
             StringBuilder sb = new StringBuilder();
             Seq seq = getCurrentDictionary().alphabet().get(j);
-            StringBuilder str = new StringBuilder();
             if (seq.length() < 2)
                 continue;
             for (int t = 0; t < seq.length(); t++)
@@ -176,6 +188,14 @@ public class WikiUtils {
             result.put(sb.toString(), coding.expansion().resultFreqs()[j]);
         }
         return result;
+    }
+
+    public static String intSeqToWords(int ... integers){
+        StringBuilder result = new StringBuilder();
+        for(int i : integers){
+            result.append(StringToIntSeq.reverseIndex.get(i)).append(" ");
+        }
+        return result.toString().trim();
     }
 
     public static Dictionary<Integer> getCurrentDictionary(){
@@ -192,8 +212,13 @@ public class WikiUtils {
             for(String s : str.split(" ")){
                 if(!indexes.containsKey(s)) {
                     indexes.put(s, indexes.size() + 1);
+                    while(reverseIndex.size() < indexes.size() + 1) {
+                        reverseIndex.add(null);
+                    }
+                    reverseIndex.set(indexes.size(), s);
                 }
                 result.add(indexes.getInt(s));
+
             }
             return new IntSeq(result.toIntArray());
         }
