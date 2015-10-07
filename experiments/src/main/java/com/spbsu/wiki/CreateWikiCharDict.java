@@ -4,6 +4,7 @@ import com.spbsu.commons.io.codec.seq.DictExpansion;
 import com.spbsu.commons.io.codec.seq.Dictionary;
 import com.spbsu.commons.seq.CharSeqAdapter;
 import com.spbsu.commons.util.ThreadTools;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import se.lth.cs.nlp.mediawiki.model.WikipediaPage;
 import se.lth.cs.nlp.mediawiki.parser.SinglestreamXmlDumpParser;
 import se.lth.cs.nlp.pipeline.Filter;
@@ -27,16 +28,19 @@ public class CreateWikiCharDict {
   public static void main(String[] args) throws Exception {
     //noinspection unchecked
     final DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>)Dictionary.EMPTY, 10000, System.out);
-    final String fileName = args[0];
+    final String fileName = "A:\\com.spbsu.exp.wikipedia\\enwiki\\dump_files\\enwiki-20150901-pages-articles1.xml-p000000010p000010000.bz2";
     final SAXParserFactory factory = SAXParserFactory.newInstance();
     factory.setValidating(false);
     final File output = new File(fileName.substring(0, fileName.lastIndexOf(".")) + ".dict");
 //    final DictExpansion<Character> expansion = new DictExpansion<>(new HashSet<>(Arrays.asList('a')), 1000, System.out);
 //    for (int i = 0; i < 1000; i++)
 
-    final SinglestreamXmlDumpParser parser = new SinglestreamXmlDumpParser(new GZIPInputStream(new FileInputStream(fileName)));
+    //final SinglestreamXmlDumpParser parser = new SinglestreamXmlDumpParser(new GZIPInputStream(new FileInputStream(fileName)));
+
+      final SinglestreamXmlDumpParser parser = new SinglestreamXmlDumpParser(new BZip2CompressorInputStream(new FileInputStream(fileName)));
 
     final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", -1);
+
     PipelineBuilder.input(parser).pipe(new SwebleWikimarkupToText(new RuConfig())).pipe(new Filter<WikipediaPage>() {
       int index = 0;
 
