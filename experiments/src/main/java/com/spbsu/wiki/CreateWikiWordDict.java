@@ -8,6 +8,8 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import java.io.*;
+import java.util.Set;
+import java.util.zip.ZipInputStream;
 
 
 /**
@@ -33,7 +35,6 @@ public class CreateWikiWordDict {
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
-
             });
             parser.parse(new BZip2CompressorInputStream(
                     new FileInputStream(args[1])));
@@ -90,7 +91,7 @@ public class CreateWikiWordDict {
                 for(String i : line.split("\\s"))
                     doc.add(Integer.parseInt(i));
                 coding.accept(new IntSeq(doc.toIntArray()));
-                if(++iter % 1000000 == 0){
+                if(++iter % 5000000 == 0){
                     System.out.println("Number of iterations: " + iter);
                     Dictionary<Integer> dictionary = WikiUtils.getCurrentDictionary();
                     FileWriter fw = new FileWriter(path + "_" + iter + ".dict");
@@ -122,6 +123,60 @@ public class CreateWikiWordDict {
                 fw.write(text + "\t" + line.split("\t")[1] + "\n");
             }
             fw.close();
+        }
+        if(args[0].equals("td")) { //test dictionary
+            //args = [td, path to the dictionary]
+            final String resourses = "experiments/src/test/resources";
+            TF usualDictionary = new TF();
+            TF extendedDictionary = new TF(WikiUtils.readDictionaryFromFile(new File(args[1])));
+            String collections[] = new String[]{
+                    "20ng", "r52", "r8", "mini20"
+            };
+            for(String collection : collections){
+                System.out.println("Collection: " + collection);
+                Rocchio usual = new Rocchio(usualDictionary);
+                Rocchio extended = new Rocchio(extendedDictionary);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(new BZip2CompressorInputStream(new FileInputStream(
+                        resourses + "\\" + collection + "-train.txt.bz2"
+                ))));
+                String line;
+                int i = 0;
+                while ((line = reader.readLine()) != null) {
+                    String cls = line.split("\t")[0];
+                    String body = line.split("\t")[1];
+                    usual.addDocument(body, cls);
+                    extended.addDocument(body, cls);
+                }
+                usual.buildClassifier();
+                extended.buildClassifier();
+                reader = new BufferedReader(new InputStreamReader(new BZip2CompressorInputStream(new FileInputStream(
+                        resourses + "\\" + collection + "-test.txt.bz2"
+                ))));
+
+                int tests = 0;
+                int usualCorrect = 0;
+                int extendedCorrect = 0;
+                int confidence = 0;
+
+                while ((line = reader.readLine()) != null) {
+                    String cls = line.split("\t")[0];
+                    String body = line.split("\t")[1];
+                    String usualPrediction = usual.classify(body);
+                    String extendedPrediction = extended.classify(body);
+                    tests++;
+                    if(usualPrediction.equals(cls))
+                        usualCorrect++;
+                    if(extendedPrediction.equals(cls))
+                        extendedCorrect++;
+                    if(usualPrediction.equals(extendedPrediction))
+                        confidence++;
+                }
+                System.out.println("Extended dictionary correct : " + 1.*extendedCorrect/tests);
+                System.out.println("Usual dictionary correct : " + 1.*usualCorrect/tests);
+                System.out.println("Confidence : " + 1.*confidence/tests + "\n");
+            }
+
+
         }
     }
 }

@@ -9,8 +9,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Юлиан on 05.10.2015.
@@ -198,8 +197,51 @@ public class WikiUtils {
         return result.toString().trim();
     }
 
+    public static <K, V extends Comparable> LinkedHashMap<K, V> sortByValues(Map<K, V> map){
+        return sortByValues(map, false);
+    }
+
+    public static <K, V extends Comparable> LinkedHashMap<K, V> sortByValues(Map<K, V> map, boolean inverse){
+        LinkedHashMap<K, V> result = new LinkedHashMap<>();
+        HashMap<V, ArrayList<K>> inv = new HashMap<>();
+        for(K key : map.keySet()){
+            V value = map.get(key);
+            if(!inv.containsKey(value))
+                inv.put(value, new ArrayList<K>());
+            inv.get(value).add(key);
+        }
+        ArrayList<V> values = new ArrayList<>(new HashSet<>(map.values()));
+        if(inverse)
+            Collections.sort(values, Collections.reverseOrder());
+        else
+            Collections.sort(values);
+        for(V value : values){
+            for(K key : inv.get(value))
+                result.put(key, value);
+        }
+        return result;
+    }
+
     public static Dictionary<Integer> getCurrentDictionary(){
         return coding.expansion().result();
+    }
+
+    public static Set<String> readDictionaryFromFile(File file) throws IOException{
+        HashSet<String> dictionary = new HashSet<>();
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            dictionary.add(line.split("\t")[0]);
+        }
+        return dictionary;
+    }
+
+    public static <T extends Number> double sumOfElements(Collection<T> collection){
+        double res = 0;
+        for(T element : collection){
+            res += element.doubleValue();
+        }
+        return res;
     }
 
     private static class StringToIntSeq {
