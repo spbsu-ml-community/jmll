@@ -19,7 +19,6 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.zip.GZIPInputStream;
 
 /**
  * User: solar
@@ -29,13 +28,8 @@ import java.util.zip.GZIPInputStream;
 public class CreateWikiCharDict {
   public static void main(String[] args) throws Exception {
     //noinspection unchecked
-<<<<<<< HEAD
-    final DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>)Dictionary.EMPTY, 10000, System.out);
-    final String fileName = "A:\\com.spbsu.exp.wikipedia\\enwiki\\dump_files\\enwiki-20150901-pages-articles1.xml-p000000010p000010000.bz2";
-=======
     final DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>)Dictionary.EMPTY, 50000, System.out);
     final String fileName = args[0];
->>>>>>> DictExpansion small speedup
     final SAXParserFactory factory = SAXParserFactory.newInstance();
     factory.setValidating(false);
     final File output = new File(fileName.substring(0, fileName.lastIndexOf(".")) + ".dict");
@@ -46,12 +40,7 @@ public class CreateWikiCharDict {
 
       final SinglestreamXmlDumpParser parser = new SinglestreamXmlDumpParser(new BZip2CompressorInputStream(new FileInputStream(fileName)));
 
-<<<<<<< HEAD
-    final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", -1);
-
-=======
     final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", 1000000);
->>>>>>> DictExpansion small speedup
     PipelineBuilder.input(parser).pipe(new SwebleWikimarkupToText(new RuConfig())).pipe(new Filter<WikipediaPage>() {
       int index = 0;
       final Holder<Dictionary<Character>> dumped = new Holder<>();
