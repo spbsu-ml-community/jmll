@@ -201,9 +201,9 @@ public class BroadMatch {
     if (args.length < 2)
       throw new IllegalArgumentException("Need at least two arguments: mode and file to work with");
     if ("-dict".equals(args[0])) {
-      final DictExpansion<CharSeq> expansion = new DictExpansion<>(100000, System.out);
+      final DictExpansion<CharSeq> expansion = new DictExpansion<>(1000000, System.out);
       final String inputFileName = args[1];
-      final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", 1000000);
+      final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", 100000);
       for (int i = 0; i < 100; i++) {
         CharSeqTools.processLines(new InputStreamReader(new GZIPInputStream(new FileInputStream(inputFileName))), new Action<CharSequence>() {
           CharSequence currentUser;
@@ -211,6 +211,7 @@ public class BroadMatch {
           long ts = 0;
           CharSequence query;
           int index = 0;
+          int dictIndex = 0;
 
           @Override
           public void invoke(CharSequence line) {
@@ -231,7 +232,7 @@ public class BroadMatch {
               if ((++index) % 10000 == 0 && dumped.getValue() != expansion.result()) {
                 try {
                   dumped.setValue(expansion.result());
-                  expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + ".dict"));
+                  expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + "-big-" + dictIndex++ + ".dict"));
                 } catch (Exception e) {
                   e.printStackTrace();
                 }
@@ -248,7 +249,7 @@ public class BroadMatch {
 //          expansion.
           }
         });
-        expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + ".dict"));
+        expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + "-big.dict"));
       }
     }
   }
