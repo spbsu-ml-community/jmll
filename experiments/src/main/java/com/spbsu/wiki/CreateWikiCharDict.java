@@ -3,6 +3,7 @@ package com.spbsu.wiki;
 import com.spbsu.commons.io.codec.seq.DictExpansion;
 import com.spbsu.commons.io.codec.seq.Dictionary;
 import com.spbsu.commons.seq.CharSeqAdapter;
+import com.spbsu.commons.util.Holder;
 import com.spbsu.commons.util.ThreadTools;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import se.lth.cs.nlp.mediawiki.model.WikipediaPage;
@@ -16,6 +17,7 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.zip.GZIPInputStream;
 
@@ -27,8 +29,13 @@ import java.util.zip.GZIPInputStream;
 public class CreateWikiCharDict {
   public static void main(String[] args) throws Exception {
     //noinspection unchecked
+<<<<<<< HEAD
     final DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>)Dictionary.EMPTY, 10000, System.out);
     final String fileName = "A:\\com.spbsu.exp.wikipedia\\enwiki\\dump_files\\enwiki-20150901-pages-articles1.xml-p000000010p000010000.bz2";
+=======
+    final DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>)Dictionary.EMPTY, 50000, System.out);
+    final String fileName = args[0];
+>>>>>>> DictExpansion small speedup
     final SAXParserFactory factory = SAXParserFactory.newInstance();
     factory.setValidating(false);
     final File output = new File(fileName.substring(0, fileName.lastIndexOf(".")) + ".dict");
@@ -39,10 +46,15 @@ public class CreateWikiCharDict {
 
       final SinglestreamXmlDumpParser parser = new SinglestreamXmlDumpParser(new BZip2CompressorInputStream(new FileInputStream(fileName)));
 
+<<<<<<< HEAD
     final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", -1);
 
+=======
+    final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", 1000000);
+>>>>>>> DictExpansion small speedup
     PipelineBuilder.input(parser).pipe(new SwebleWikimarkupToText(new RuConfig())).pipe(new Filter<WikipediaPage>() {
       int index = 0;
+      final Holder<Dictionary<Character>> dumped = new Holder<>();
 
       @Override
       protected boolean accept(WikipediaPage wikipediaPage) {
@@ -56,16 +68,26 @@ public class CreateWikiCharDict {
           if (sentence.length() < 100)
             continue;
 //          System.out.println(sentence);
-          executor.execute(() -> {
+          final Runnable item = () -> {
             expansion.accept(new CharSeqAdapter(sentence));
-            if ((++index) % 10000 == 0) {
+            if ((++index) % 10000 == 0 && dumped.getValue() != expansion.result()) {
               try {
-                expansion.print(new FileWriter(output.getAbsolutePath()));
+                dumped.setValue(expansion.result());
+                expansion.printPairs(new FileWriter(output.getAbsolutePath()));
               } catch (Exception e) {
                 e.printStackTrace();
               }
             }
-          });
+          };
+          final BlockingQueue<Runnable> queue = executor.getQueue();
+          if (queue.remainingCapacity() == 0) {
+            try {
+              queue.put(item);
+            } catch (InterruptedException e) {
+              throw new RuntimeException(e);
+            }
+          }
+          else executor.execute(item);
         }
         return false;
       }
