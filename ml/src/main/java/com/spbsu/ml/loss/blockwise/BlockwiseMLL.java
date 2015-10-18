@@ -1,19 +1,17 @@
-package com.spbsu.ml.loss;
+package com.spbsu.ml.loss.blockwise;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.IntSeqBuilder;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BlockedTargetFunc;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.ml.BlockwiseFuncC1;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.func.generic.Log;
 import com.spbsu.ml.func.generic.ParallelFunc;
 import com.spbsu.ml.func.generic.WSum;
-
-import static java.lang.Math.log;
+import com.spbsu.ml.loss.CompositeFunc;
 
 /**
  * We use value representation = \frac{e^x}{e^x + 1}.
@@ -21,12 +19,12 @@ import static java.lang.Math.log;
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class MLL extends FuncC1.Stub implements BlockedTargetFunc {
+public class BlockwiseMLL extends BlockwiseFuncC1.Stub implements BlockedTargetFunc {
   protected final IntSeq target;
   private final DataSet<?> owner;
   private final int classesCount;
 
-  public MLL(final Vec target, final DataSet<?> owner) {
+  public BlockwiseMLL(final Vec target, final DataSet<?> owner) {
     final IntSeqBuilder builder = new IntSeqBuilder();
     int lastClass = 0;
     for (int i = 0; i < target.length(); i++) {
@@ -38,20 +36,32 @@ public class MLL extends FuncC1.Stub implements BlockedTargetFunc {
     this.classesCount = lastClass + 1;
   }
 
-  public MLL(final IntSeq target, final DataSet<?> owner) {
+  public BlockwiseMLL(final IntSeq target, final DataSet<?> owner) {
     this.classesCount = ArrayTools.max(target) + 1;
     this.target = target;
     this.owner = owner;
   }
 
   @Override
-  public Vec gradientTo(final Vec x, final Vec to) {
-    for (int i = 0; i < target.length(); i++) {
-      final int index = i * classesCount + target.intAt(i);
-      final double pX = x.get(index);
-      to.set(index, 1 / pX);
-    }
-    return to;
+  public void gradient(Vec pointBlock, Vec result, int index) {
+    final int i = target.intAt(index);
+    final double pX = pointBlock.get(i);
+    result.set(i, 1 / pX);
+  }
+
+  @Override
+  public double value(Vec pointBlock, int index) {
+    return pointBlock.get(target.intAt(index));
+  }
+
+  @Override
+  public double transformResultValue(double value) {
+    return Math.exp(-value / dim());
+  }
+
+  @Override
+  public int blockSize() {
+    return classesCount;
   }
 
   @Override
@@ -59,15 +69,6 @@ public class MLL extends FuncC1.Stub implements BlockedTargetFunc {
     return target.length() * classesCount;
   }
 
-  @Override
-  public double value(final Vec point) {
-    double result = 0;
-    for (int i = 0; i < target.length(); i++) {
-      result += log(point.get(i * classesCount + target.intAt(i)));
-    }
-
-    return result;
-  }
 
   public int label(final int idx) {
     return (int)target.intAt(idx);

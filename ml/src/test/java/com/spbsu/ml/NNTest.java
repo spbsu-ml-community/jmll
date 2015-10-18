@@ -20,7 +20,7 @@ import com.spbsu.ml.func.generic.WSum;
 import com.spbsu.ml.loss.CompositeFunc;
 import com.spbsu.ml.loss.DSSumFuncComposite;
 import com.spbsu.ml.loss.LL;
-import com.spbsu.ml.loss.MLL;
+import com.spbsu.ml.loss.blockwise.BlockwiseMLL;
 import com.spbsu.ml.meta.DataSetMeta;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.items.FakeItem;
@@ -264,7 +264,7 @@ public abstract class NNTest {
       }
     };
     gradientDescent.addListener(pp);
-    final MLL logit = pool.target(MLL.class);
+    final BlockwiseMLL logit = pool.target(BlockwiseMLL.class);
     final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), logit, new Computable<FakeItem, TransC1>() {
       @Override
       public TransC1 compute(final FakeItem argument) {
@@ -331,7 +331,7 @@ public abstract class NNTest {
         }
       }
     };
-    final MLL ll = pool.target(MLL.class);
+    final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final Action<Vec> pp = new Action<Vec>() {
       int index = 0;
       @Override
@@ -418,7 +418,7 @@ public abstract class NNTest {
       }
     };
     gradientDescent.addListener(pp);
-    final MLL ll = pool.target(MLL.class);
+    final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final ArrayVec initial = new ArrayVec(network.dim());
     gradientDescent.init(initial);
 //    digIntoSolution(pool, network, ll, initial, "www.yandex.ru/yandsearch?text=xyu.htm", "www.yandex.ru");
@@ -487,7 +487,7 @@ public abstract class NNTest {
         }
       }
     };
-    final MLL ll = pool.target(MLL.class);
+    final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final Action<Vec> pp = new Action<Vec>() {
       int index = 0;
       @Override
@@ -534,7 +534,7 @@ public abstract class NNTest {
     for (int i = 0; i < secs.length; i++) {
       final Seq<Character> url = CharSeq.create(secs[i]);
       pbuilder.setFeature(0, url);
-      pbuilder.setTarget(0, i);
+      pbuilder.setTarget(0, i + 1);
       for (int j = 0; j < url.length(); j++) {
         alphaSet.add(url.at(j));
       }
@@ -543,8 +543,8 @@ public abstract class NNTest {
     final Pool<FakeItem> pool = pbuilder.create();
 
     final CharSeqArray alpha = new CharSeqArray(alphaSet.toArray(new Character[alphaSet.size()]));
-    final int statesCount = 7;
-    final int finalStates = 3;
+    final int statesCount = 8;
+    final int finalStates = 4;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
     final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 10, 20000, 2) {
       @Override
@@ -577,14 +577,14 @@ public abstract class NNTest {
           for (int i = 0; i < secs.length; i++) {
             System.out.println("Class: " + i);
             final NeuralSpider.NeuralNet neuralNet = network.decisionByInput(CharSeq.create(secs[i]));
-            System.out.println(neuralNet.state(vec));
+            System.out.println(network.ppState(neuralNet.state(vec), CharSeq.create(secs[i])));
           }
         }
       }
     };
     gradientDescent.addListener(pp);
 
-    final MLL ll = pool.target(MLL.class);
+    final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final ArrayVec initial = new ArrayVec(network.dim());
     gradientDescent.init(initial);
     final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
@@ -604,7 +604,7 @@ public abstract class NNTest {
   }
 
 
-  //@Test
+  @Test
   public void testGenom() throws IOException {
 //    String str  = readFile(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq_accuracy.fa")).toString();
 //    String[] mass = str.split(">");
@@ -694,7 +694,7 @@ public abstract class NNTest {
     };
     gradientDescent.addListener(pp);
 
-    final MLL ll = pool.target(MLL.class);
+    final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final ArrayVec initial = new ArrayVec(network.dim());
     gradientDescent.init(initial);
 
@@ -749,7 +749,7 @@ public abstract class NNTest {
   }
 
 
-  private void digIntoSolution(Pool<FakeItem> pool, NFANetwork<Character> network, MLL ll, Vec solution, String positiveExample, String negativeExample) {
+  private void digIntoSolution(Pool<FakeItem> pool, NFANetwork<Character> network, BlockwiseMLL ll, Vec solution, String positiveExample, String negativeExample) {
     if (positiveExample != null) {
       System.out.println("Positive: ");
       final CharSeqAdapter input = new CharSeqAdapter(positiveExample);
