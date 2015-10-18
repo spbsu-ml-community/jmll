@@ -14,7 +14,6 @@ import com.spbsu.commons.seq.*;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Holder;
 import com.spbsu.commons.util.ThreadTools;
-import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -143,16 +142,6 @@ public class BroadMatch {
 
   private static final int STEPS = 10000;
 
-  @Test
-  public static void testSuccessions() {
-    final String[] words = new String[0];
-    @SuppressWarnings("unchecked")
-    final Seq<IntSeq>[] session = new Seq[]{new IntSeq(1)};
-
-    final WordGenProbabilityProvider[] providers = gradientDescentEMCascadeModel(words, session, 1);
-
-  }
-
   private static WordGenProbabilityProvider[] gradientDescentEMCascadeModel(String[] words, Seq<IntSeq>[] session, double alpha) {
     final FastRandom rng = new FastRandom(0);
     final WordGenProbabilityProvider[] providers = new WordGenProbabilityProvider[words.length + 1];
@@ -196,12 +185,14 @@ public class BroadMatch {
     }
     return providers;
   }
+  volatile static int index = 0;
+  volatile static int dictIndex = 0;
 
   public static void main(String[] args) throws IOException {
     if (args.length < 2)
       throw new IllegalArgumentException("Need at least two arguments: mode and file to work with");
     if ("-dict".equals(args[0])) {
-      final DictExpansion<CharSeq> expansion = new DictExpansion<>(1000000, System.out);
+      final DictExpansion<CharSeq> expansion = new DictExpansion<>(500000, System.out);
       final String inputFileName = args[1];
       final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", 100000);
       for (int i = 0; i < 100; i++) {
@@ -210,8 +201,6 @@ public class BroadMatch {
           Holder<Dictionary<CharSeq>> dumped = new Holder<>();
           long ts = 0;
           CharSequence query;
-          int index = 0;
-          int dictIndex = 0;
 
           @Override
           public void invoke(CharSequence line) {
@@ -229,10 +218,12 @@ public class BroadMatch {
             final int wcount = CharSeqTools.trySplit(new CharSeqAdapter(query), ' ', words);
             final Runnable item = () -> {
               expansion.accept(new ArraySeq<>(words, 0, wcount));
-              if ((++index) % 10000 == 0 && dumped.getValue() != expansion.result()) {
+              if ((++index) % 1000000 == 0 && dumped.getValue() != expansion.result()) {
                 try {
                   dumped.setValue(expansion.result());
-                  expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + "-big-" + dictIndex++ + ".dict"));
+                  System.out.println("Dump dictionary #" + dictIndex);
+                  expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + "-big-" + dictIndex + ".dict"));
+                  dictIndex++;
                 } catch (Exception e) {
                   e.printStackTrace();
                 }
