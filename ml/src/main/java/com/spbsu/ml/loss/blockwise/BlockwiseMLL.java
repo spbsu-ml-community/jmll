@@ -56,7 +56,7 @@ public class BlockwiseMLL extends BlockwiseFuncC1.Stub implements BlockedTargetF
 
   @Override
   public double transformResultValue(double value) {
-    return Math.exp(-value / dim());
+    return Math.exp(-value / blocksCount());
   }
 
   @Override

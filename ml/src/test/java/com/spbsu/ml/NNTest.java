@@ -431,7 +431,8 @@ public abstract class NNTest {
       }
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
-    digIntoSolution(pool, network, ll, fit.x, "www.yamdex.ru/yandsearch?text=xyu.htm", "www.yamdex.ru");
+//    digIntoSolution(pool, network, ll, fit.x, "www.yamdex.ru/yandsearch?text=xyu.htm", "www.yamdex.ru");
+    digIntoSolutionParallel(pool, network, ll, fit);
   }
 
   @Test
@@ -638,7 +639,7 @@ public abstract class NNTest {
       String value = strs[1];
       final Seq<Character> genom = CharSeq.create(value);
       pbuilder.setFeature(0, genom);
-      pbuilder.setTarget(0, types.indexOf(name));
+      pbuilder.setTarget(0, types.indexOf(name) + 1);
       for (int j = 0; j < genom.length(); j++) {
         alphaSet.add(genom.at(j));
       }
@@ -657,7 +658,7 @@ public abstract class NNTest {
 
     final CharSeqArray alpha = new CharSeqArray(alphaSet.toArray(new Character[alphaSet.size()]));
     final int statesCount = 13;
-    final int finalStates = 9;
+    final int finalStates = 10;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
     int iterations = 10000;
     final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, iterations, 2) {
@@ -708,6 +709,10 @@ public abstract class NNTest {
     final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
     System.out.println();
 
+    digIntoSolutionParallel(pool, network, ll, decision);
+  }
+
+  private void digIntoSolutionParallel(Pool<FakeItem> pool, NFANetwork<Character> network, BlockwiseMLL ll, DSSumFuncComposite<FakeItem>.Decision decision) {
     try {
       ExecutorService executorService = Executors.newFixedThreadPool(4);
       List<Callable<Double>> tasks = new ArrayList<>(ll.blocksCount());
@@ -721,7 +726,7 @@ public abstract class NNTest {
       }
 
       List<Integer> finishedTasks = new ArrayList<>();
-      int count = 0, negative = 0;
+      int count = 0, negative = 0, label = -1;
       double llSum = 0;
       while (count < ll.blocksCount()) {
         Thread.sleep(1000);
@@ -733,14 +738,23 @@ public abstract class NNTest {
             final double pX = Math.exp(llblock);
             count++;
             System.out.print(String.format("Calculating results: %s (%.2f%%)\r", count, (double) count / ll.blocksCount() * 100));
-            if (pX < 0.5) {
+            if (pX < 1.0 / ll.classesCount()) {
               negative++;
+              if (label != ll.label(i)) {
+                label = ll.label(i);
+                CharSeq input = pool.feature(0, i);
+                System.out.println("Input: [" + input + "]");
+                System.out.println("Output: [" + ll.label(i) + "]");
+                final NeuralSpider.NeuralNet net = network.decisionByInput(input);
+                System.out.println(network.ppState(net.state(decision.x), input));
+                System.out.println();
+              }
             }
           }
         }
       }
-      System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double) count);
-      Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
+      System.out.println(ll.transformResultValue(llSum) + " " + (count - negative) / (double) count);
+      Assert.assertTrue(1.1 > ll.transformResultValue(llSum));
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
@@ -755,28 +769,14 @@ public abstract class NNTest {
       final CharSeqAdapter input = new CharSeqAdapter(positiveExample);
       final NeuralSpider.NeuralNet positive = network.decisionByInput(input);
       System.out.println(network.ppState(positive.state(solution), input));
-//      Vec gradient = positive.gradient(solution);
-//      network.ppSolution(gradient, 'h');
-//      network.ppSolution(gradient, 't');
-//      network.ppSolution(gradient, 'm');
-//      network.ppSolution(gradient, 'l');
-//      network.ppSolution(gradient, '.');
-//      Assert.assertTrue(positive.value(solution) > 0.95);
     }
     if (negativeExample != null) {
       System.out.println("Negative: ");
       final CharSeqAdapter input = new CharSeqAdapter(negativeExample);
       final NeuralSpider.NeuralNet negative = network.decisionByInput(input);
       System.out.println(network.ppState(negative.state(solution), input));
-//      network.ppSolution(negative.gradient(solution), 'h');
-//      network.ppSolution(negative.gradient(solution), 't');
-//      network.ppSolution(negative.gradient(solution), 'm');
-//      network.ppSolution(negative.gradient(solution), 'l');
-//      network.ppSolution(negative.gradient(solution), '.');
-//      Assert.assertTrue(negative.value(solution) < 0.05);
     }
 
-//    network.ppState(fit.x);
     int count = 0, negative = 0;
     double llSum = 0;
     for (int i = 0; i < ll.blocksCount(); i++) {
