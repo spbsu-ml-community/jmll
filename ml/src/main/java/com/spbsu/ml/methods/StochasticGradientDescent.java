@@ -65,14 +65,16 @@ public class StochasticGradientDescent<Item> extends WeakListenerHolderImpl<Vec>
         throw new RuntimeException(e);
       }
       VecTools.scale(gradient, 1. / couple);
-//      {
+      {
 //        double meanCos = 0;
 //        for (int i = 0; i < couple; i++) {
-//          meanCos += VecTools.cosine(gradient, coupleVec[i]) / couple;
+//          for (int j = 0; j < couple; j++) {
+//            meanCos += VecTools.cosine(coupleVec[i], coupleVec[j]) / couple / couple;
+//          }
 //        }
-//        System.out.println(gradient);
+////        System.out.println(gradient);
 //        System.out.println(meanCos + " " + VecTools.norm(gradient));
-//      }
+      }
       normalizeGradient(gradient);
 //      VecTools.scale(gradient, step * 100. / Math.sqrt(10000. + t));
       VecTools.scale(gradient, step);

@@ -45,7 +45,7 @@ import java.util.zip.GZIPInputStream;
  * Date: 25.05.15
  * Time: 16:39
  */
-public abstract class NNTest {
+public class NNTest {
   private final FastRandom rng = new FastRandom(0);
   private Pool<QURLItem> featuresTxtPool;
 
@@ -459,7 +459,7 @@ public abstract class NNTest {
     final CharSeqArray alpha = new CharSeqArray('U', 'L', 'H', 'C', 'S', 'N', 'R', 'F', 'V', 'O');
     final int statesCount = 10;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.5, statesCount, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 100, 1000000, 1) {
+    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, 1000000, 1) {
       @Override
       public void init(Vec cursor) {
         final int paramsDim = (statesCount - 1) * (statesCount - 1);
@@ -474,13 +474,13 @@ public abstract class NNTest {
 
       @Override
       public void normalizeGradient(Vec grad) {
-        for (int i = 0; i < grad.length(); i++) {
-          final double v = grad.get(i);
-          if (Math.abs(v) < 0.001)
-            grad.set(i, 0);
-          else
-            grad.set(i, Math.signum(v) * (Math.abs(v) - 0.001));
-        }
+//        for (int i = 0; i < grad.length(); i++) {
+//          final double v = grad.get(i);
+//          if (Math.abs(v) < 0.001)
+//            grad.set(i, 0);
+//          else
+//            grad.set(i, Math.signum(v) * (Math.abs(v) - 0.001));
+//        }
       }
     };
     final MLL ll = pool.target(MLL.class);
@@ -565,8 +565,8 @@ public abstract class NNTest {
         System.out.println();
       }
     }
-    System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double)count);
-    Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
+    System.out.println(Math.exp(-llSum / ll.blocksCount()) + " " + (count - negative) / (double)count);
+    Assert.assertTrue(1.1 > Math.exp(-llSum / ll.blocksCount()));
   }
 
 }
