@@ -71,7 +71,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
       calcer.setDropOut(dropoutArr);
       for (int i = 0; i < statesCount; i++) {
         final int nodeIndex = (d + 1) * statesCount + i;
-        nodes[nodeIndex] = new MyNode(i, elementIndex * transitionMxDim, transitionMxDim, prevLayerStart, statesCount, nodes.length + statesCount, calcer);
+        nodes[nodeIndex] = new MyNode(i, elementIndex * transitionMxDim, transitionMxDim, dim, prevLayerStart, statesCount, nodes.length, calcer);
       }
       for (int i = 0; i < finalStates; i++) {
         outputNodesConnections[i][d] = (d + 2) * statesCount - finalStates + i;
@@ -130,15 +130,17 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
     private final int index;
     private final int wStart;
     private final int wLen;
+    private final int wDim;
     private final int pStart;
     private final int pLen;
     private final int nodesCount;
     private final WeightsCalculator calcer;
 
-    private MyNode(int index, int wStart, int wLen, int pStart, int pLen, int nodesCount, WeightsCalculator calcer) {
+    private MyNode(int index, int wStart, int wLen, int wDim, int pStart, int pLen, int nodesCount, WeightsCalculator calcer) {
       this.index = index;
       this.wStart = wStart;
       this.wLen = wLen;
+      this.wDim = wDim;
       this.pStart = pStart;
       this.pLen = pLen;
       this.nodesCount = nodesCount;
@@ -175,7 +177,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
 
         @Override
         public int dim() {
-          return parents.dim();
+          return wDim;
         }
       };
     }
