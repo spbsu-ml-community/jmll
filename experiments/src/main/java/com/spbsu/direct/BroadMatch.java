@@ -13,15 +13,21 @@ import com.spbsu.commons.math.io.Vec2CharSequenceConverter;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.*;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Holder;
 import com.spbsu.commons.util.ThreadTools;
+import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TObjectDoubleMap;
+import gnu.trove.map.custom_hash.TObjectDoubleCustomHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.strategy.HashingStrategy;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -59,48 +65,55 @@ public class BroadMatch {
     }
 
     public double logP(int variant, IntSeq gen) {
+//      double result = 0;
       double result = MathTools.logPoissonProbability(poissonLambdaSum/poissonLambdaCount, Integer.bitCount(variant));
       for (int i = 0; i < gen.length(); i++, variant >>= 1) {
-        if ((variant & 1) != 0)
-          result += log(pAB(gen.intAt(i)));
+        final boolean positive = (variant & 1) == 1;
+        final int windex = gen.intAt(i);
+
+        result += positive ? log(pAB(windex)) : 0;//log(1 - pAB(windex));
       }
       return result;
     }
 
+    private final TIntIntMap weightsPools = new TIntIntHashMap();
+    private int poolSize = 0;
     public void update(int variant, IntSeq gen, double alpha, ListDictionary<CharSeq> dict, boolean debug) {
       final int length = gen.length();
+      poissonLambdaCount++;
+      poissonLambdaSum += Integer.bitCount(variant);
       if (debug)
         System.out.print(wordText(aindex, dict) + "->");
       for (int i = 0; i < length; i++, variant >>= 1) {
-        if ((variant & 1) == 0)
-          continue;
-        pool.add(gen.intAt(i));
-        if (debug)
-          System.out.print(" " + wordText(gen.intAt(i), dict));
+        final boolean positive = (variant & 1) == 1;
+        final int windex = gen.intAt(i);
+        if (positive && debug) {
+          System.out.print(" " + wordText(windex, dict));
+        }
+        if (positive) {
+          weightsPools.adjustOrPutValue(windex, +1, +1);
+        }
       }
       if (debug)
         System.out.println();
-      poissonLambdaCount++;
-      poissonLambdaSum += Integer.bitCount(length);
-      if (pool.length() < beta.size() / 10)
+      poolSize++;
+      if (!debug && poolSize < poissonLambdaCount / 20.)
         return;
-      update(this.pool.build(), alpha);
-      this.pool = new IntSeqBuilder();
-
+      update(weightsPools, alpha);
+      weightsPools.clear();
+      poolSize = 0;
     }
+    ListDictionary<CharSeq> dict;
 
     private String wordText(int index, ListDictionary<CharSeq> dict) {
       if (index < 0 || index >= dict.size())
         return EMPTY_ID;
+      this.dict = dict;
       return dict.get(index).toString();
     }
 
-    private IntSeqBuilder pool = new IntSeqBuilder();
-    public void update(IntSeq pool, double alpha) {
-      final TIntIntMap uniq = new TIntIntHashMap(pool.length());
-      for(int i = 0; i < pool.length(); i++) {
-        uniq.adjustOrPutValue(pool.at(i), 1, 1);
-      }
+    public void update(TIntIntMap weightsPools, double alpha) {
+      alpha /= poolSize;
 
       /*
           G = p(a->b) {(1 - p(b)) \over p(b) + p(a->b) (1 - p(b))}
@@ -108,72 +121,85 @@ public class BroadMatch {
           Gradient for negatives: -G p(a->i)
           we sum up the G term across all links and then use this sum in update cycle
        */
-      final int[] updates = uniq.keys();
-      final int[] count = uniq.values();
+      final int[] updates = weightsPools.keys();
+      final int[] count = weightsPools.values();
       { // gradient step
         double gradientTermSum = 0;
         double[] oldValues = new double[updates.length];
         for (int i = 0; i < updates.length; i++) {
           final int windex = updates[i];
-          double pB = all[windex].probab;
           double value = oldValues[i] = beta.get(windex);
-          double pGenB = exp(value) / denominator;
-          if (abs(pGenB) < 1e-10)
+          double pAB = exp(value + undefined)/ denominator;
+          if (abs(pAB) < 1e-10)
             continue;
-          gradientTermSum += count[i] * (1 - pB) / (pB + pGenB * (1 - pB)) * pGenB;
+//          gradientTermSum += count[i] * (1 - pB) / (pB + pAB * (1 - pB)) * pAB;
+          gradientTermSum += count[i];// * (1 - pB) / (pB + pAB * (1 - pB)) * pAB;
         }
         if (gradientTermSum == 0)
           return;
         final double newUndefined = undefined - alpha * gradientTermSum * pGen(-1);
 
+//        final Vec newBetta = new SparseVec(beta.dim(), beta.size());
         final VecIterator it = beta.nonZeroes();
         int nzCount = 0;
-        int newDenominator = 1;
+        double newDenominator = 1;
         while (it.advance()) { // updating all non zeroes as if they were negative, then we will change the gradient for positives
           double value = it.value() + undefined;
           final double pAI = exp(value) / denominator;
           value += -alpha * gradientTermSum * pAI;
+          if (abs(value) > 100)
+            System.out.println();
           nzCount++;
-          newDenominator += exp(value);
+          final double exp = exp(value);
+          newDenominator += exp;
+//          if (exp > 1e9)
+//            System.out.println(exp + "\t" + newDenominator);
           it.setValue(value - newUndefined);
+//          newBetta.set(it.index(), value - newUndefined);
         }
 
         for (int i = 0; i < updates.length; i++) {
           final int windex = updates[i];
           double value = oldValues[i] + undefined;
-          final double pB = all[windex].probab;
           final double pAB = exp(value) / denominator;
 
           if (value != undefined) { // reverting changes made in previous loop for this example
-            newDenominator -= exp(value - alpha * gradientTermSum * pAB);
+            final double exp = exp(value - alpha * gradientTermSum * pAB);
+            newDenominator -= exp;
             if (newDenominator < 0)
               System.out.println();
             nzCount--;
           }
-          final double positiveGradientTerm = (1 - pB) / (pB + pAB * (1 - pB) + 1e-10) * pAB;
+          final double positiveGradientTerm = 1;//(1 - pB) / (pB + pAB * (1 - pB)) * pAB;
           final double grad = -(gradientTermSum - count[i] * positiveGradientTerm) * pAB + count[i] * positiveGradientTerm * (1 - pAB);
-          if (grad > 100)
-            System.out.println();
+//          if (abs(grad) > 0.01 && dict != null) {
+//            System.out.println(wordText(aindex, dict) + " " + wordText(windex, dict) + " delta = " + grad);
+//          }
           value += alpha * grad;
+          if (abs(value) > 100)
+            System.out.println();
+
           nzCount++;
           newDenominator += exp(value);
+//          newBetta.set(windex, value - newUndefined);
           beta.set(windex, value - newUndefined);
         }
+        newDenominator += exp(undefined) * (beta.dim() - nzCount);
 
         undefined = newUndefined;
-        newDenominator += exp(undefined) * (beta.dim() - nzCount);
         if (newDenominator < 0)
           System.out.println();
         denominator = newDenominator;
+//        assign(beta, newBetta);
       }
     }
 
     WordGenProbabilityProvider[] all;
     double probab;
     private double pAB(int windex) {
-      final double pGenB = pGen(windex);
-      final double pB = all[windex].probab;
-      return pB + (1 - pB) * pGenB;
+      //      final double pB = all[windex].probab;
+//      return pB + (1 - pB) * pGenB;
+      return pGen(windex);
     }
 
     private double pGen(int windex) {
@@ -209,49 +235,48 @@ public class BroadMatch {
       }
 
       ArrayTools.parallelSort(myProbabs, myIndices);
+      int wordsCount = 0;
       for (int i = myIndices.length - 1; i >= 0; i--) {
-        if(myProbabs[i] < 1e-4)
+        if(myProbabs[i] < 1e-6)
           break;
         final int windex= myIndices[i];
+        wordsCount++;
         if(words.size() > windex)
           wordsNode.put(words.get(windex).toString(), myProbabs[i]);
         else
           wordsNode.put(EMPTY_ID, myProbabs[i]);
       }
 
+      if (wordsCount < 2)
+        return;
 
       final ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
       try {
+        if (aindex < dict.size())
+          to.append(dict.get(aindex).toString()).append(": ");
+        else
+          to.append(EMPTY_ID).append(": ");
+
         to.append(writer.writeValueAsString(output));
+        to.append("\n");
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
 
-    public void init(WordGenProbabilityProvider[] providers, Vec freqs, double totalUnigramFreq, double totalBigramFreq) {
+    public void init(WordGenProbabilityProvider[] providers, ListDictionary<CharSeq> dict) {
       all = providers;
-      final double pA = probab;
-      final double pairsFreq = l1(beta);
-      final int totalKnown = beta.size();
-      final double unexpectedGenProbab = 1./(pairsFreq + totalKnown)/(providers.length - beta.size());
+      this.dict = dict;
       final VecIterator nz = beta.nonZeroes();
       int nzCount = 0;
       denominator = 1;
       while (nz.advance()) {
-        final int windex = nz.index();
         final int count = (int)nz.value();
-        final double pPair = (count + 1.) / (totalBigramFreq + all.length);
-        final double pB = all[windex].probab;
-        double pGenB = (pPair - pA * pB) / (1 - pB) / pA;
-        if (pGenB < 0)
-          pGenB = unexpectedGenProbab/2.;
-        nz.setValue(log(pGenB) - log(unexpectedGenProbab));
+        nz.setValue(log(count));
         denominator += exp(nz.value());
         nzCount++;
       }
       denominator += beta.dim() - nzCount;
-      if (denominator < 0)
-        System.out.println();
     }
   }
 
@@ -268,65 +293,88 @@ public class BroadMatch {
         final String inputFileName = args[1];
         final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", 100000);
         for (int i = 0; i < 100; i++) {
-          CharSeqTools.processLines(new InputStreamReader(new GZIPInputStream(new FileInputStream(inputFileName))), (Action<CharSequence>) line -> {
-            final CharSequence[] parts = new CharSequence[3];
-            if (CharSeqTools.split(line, '\t', parts).length != 3)
-              throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + inputFileName + ":" + index + " does not.");
+          CharSeqTools.processLines(new InputStreamReader(new GZIPInputStream(new FileInputStream(inputFileName))), new Action<CharSequence>() {
+            String current;
+            @Override
+            public void invoke(CharSequence line) {
+              final CharSequence[] parts = new CharSequence[3];
+              if (CharSeqTools.split(line, '\t', parts).length != 3)
+                throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + inputFileName + ":" + index + " does not.");
 //          if (!CharSeqTools.equals(parts[0], currentUser))
-            final ArraySeq<CharSeq> seq = convertToSeq(parts[2]);
-            final Runnable item = () -> {
-              expansion.accept(seq);
-              if ((++index) % 1000000 == 0 && dumped.getValue() != expansion.result()) {
-                try {
-                  dumped.setValue(expansion.result());
-                  System.out.println("Dump dictionary #" + dictIndex);
-                  expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + "-big-" + dictIndex + ".dict"));
-                  dictIndex++;
-                } catch (Exception e) {
-                  e.printStackTrace();
+              if (parts[2].equals(current))
+                return;
+              current = parts[2].toString();
+              final ArraySeq<CharSeq> seq = convertToSeq(parts[2]);
+              final Runnable item = () -> {
+                expansion.accept(seq);
+                if ((++index) % 1000000 == 0 && dumped.getValue() != expansion.result()) {
+                  try {
+                    dumped.setValue(expansion.result());
+                    System.out.println("Dump dictionary #" + dictIndex);
+                    expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + "-big-" + dictIndex + ".dict"));
+                    dictIndex++;
+                  } catch (Exception e) {
+                    e.printStackTrace();
+                  }
                 }
-              }
-            };
-            final BlockingQueue<Runnable> queue = executor.getQueue();
-            if (queue.remainingCapacity() == 0) {
-              try {
-                queue.put(item);
-              } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-              }
-            } else executor.execute(item);
+              };
+              final BlockingQueue<Runnable> queue = executor.getQueue();
+              if (queue.remainingCapacity() == 0) {
+                try {
+                  queue.put(item);
+                } catch (InterruptedException e) {
+                  throw new RuntimeException(e);
+                }
+              } else executor.execute(item);
 //          expansion.
+            }
           });
           expansion.print(new FileWriter(StreamTools.stripExtension(inputFileName) + "-big.dict"));
         }
         break;
       }
       case "-depends": {
-        final double alpha = 0.2;
+        final double alpha = 0.8;
         final String inputFileName = args[2];
         final Vec freqs;
+        final TIntList freqsLA;
 
         final ListDictionary<CharSeq> dict;
         { // dict
-          final VecBuilder freqBuilder = new VecBuilder();
+          final TObjectDoubleMap<Seq<CharSeq>> freqsHash = new TObjectDoubleCustomHashMap<>(new HashingStrategy<Object>() {
+            @Override
+            public int computeHashCode(Object object) {
+              return object.hashCode();
+            }
+
+            @Override
+            public boolean equals(Object o1, Object o2) {
+              return o1.equals(o2);
+            }
+          });
           final List<Seq<CharSeq>> dictSeqs = new ArrayList<>();
 
           CharSeqTools.processLines(new FileReader(args[1]), (Action<CharSequence>) line -> {
             final CharSequence[] split = CharSeqTools.split(line, '\t', new CharSequence[2]);
-            freqBuilder.append(CharSeqTools.parseDouble(split[1]));
             final CharSequence[] parts = CharSeqTools.split(split[0].subSequence(1, split[0].length() - 1), ", ");
             final SeqBuilder<CharSeq> builder = new ArraySeqBuilder<>(CharSeq.class);
             for (final CharSequence part : parts) {
               builder.add(new CharSeqAdapter(part.toString()));
             }
-            dictSeqs.add(builder.build());
+            final Seq<CharSeq> seq = builder.build();
+            dictSeqs.add(seq);
+            freqsHash.put(seq, CharSeqTools.parseDouble(split[1]));
           });
           //noinspection unchecked
           dict = new ListDictionary<CharSeq>(dictSeqs.toArray(new Seq[dictSeqs.size()]));
-          freqs = freqBuilder.build();
+          freqs = new ArrayVec(dict.size());
+          freqsLA = new TIntArrayList(dict.size());
+          for (int i = 0; i < dict.size(); i++) {
+            final double val = freqsHash.get(dict.get(i));
+            freqs.set(i, val);
+            freqsLA.add((int)val);
+          }
         }
-        final double totalUnigramFreq = l1(freqs);
-
         final WordGenProbabilityProvider[] providers = new WordGenProbabilityProvider[dict.size() + 1];
         { // stats
           for (int i = 0; i < providers.length; i++) {
@@ -363,123 +411,150 @@ public class BroadMatch {
           }
 
           for(int i = 0; i < providers.length; i++) {
-            providers[i].probab = l1(providers[i].beta) / totalBigramFreq;
+            providers[i].probab = (l1(providers[i].beta) + 1) / (totalBigramFreq + providers.length);
           }
           for(int i = 0; i < providers.length; i++) {
-            providers[i].init(providers, freqs, totalUnigramFreq, totalBigramFreq);
+            providers[i].init(providers, dict);
           }
         }
-        CharSeqTools.processLines(new InputStreamReader(new GZIPInputStream(new FileInputStream(inputFileName))), new Action<CharSequence>() {
-          int index = 0;
-          long ts;
-          String query;
-          String user;
+        for (int i = 0; i < 100; i++)
+          CharSeqTools.processLines(new InputStreamReader(new GZIPInputStream(new FileInputStream(inputFileName))), new Action<CharSequence>() {
+            long ts;
+            String query;
+            String user;
+            double totalFreq = l1(freqs);
 
-          @Override
-          public void invoke(CharSequence line) {
-            final CharSequence[] parts = new CharSequence[3];
-            if (CharSeqTools.split(line, '\t', parts).length != 3)
-              throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + inputFileName + ":" + index + " does not.");
-            final long ts = CharSeqTools.parseLong(parts[1]);
-            if (parts[2].equals(query)) {
+            @Override
+            public void invoke(CharSequence line) {
+              final CharSequence[] parts = new CharSequence[3];
+              if (CharSeqTools.split(line, '\t', parts).length != 3)
+                throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + inputFileName + ":" + index + " does not.");
+              final long ts = CharSeqTools.parseLong(parts[1]);
+              if (parts[2].equals(query)) {
+                this.ts = ts;
+                return;
+              }
+              final String prev = parts[0].equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.query : null;
+              this.query = parts[2].toString();
+              this.user = parts[0].toString();
               this.ts = ts;
-              return;
-            }
-            final String prev = parts[0].equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.query : null;
-            this.query = parts[2].toString();
-            this.user = parts[0].toString();
-            this.ts = ts;
-            if (prev != null) {
-              processGeneration(prev, alpha);
-            }
-            if (++index % 1000000 == 0) {
-              try (final Writer out = new OutputStreamWriter(new FileOutputStream("output-" + (index / 1000000) + ".txt"))) {
-                for (int i = 0; i < providers.length; i++) {
-                  final WordGenProbabilityProvider provider = providers[i];
-                  if (provider.poissonLambdaCount < 20)
-                    continue;
-                  if (i < dict.size())
-                    out.append(dict.get(i).toString()).append(": ");
-                  else
-                    out.append(EMPTY_ID).append(": ");
-                  provider.print(dict, out);
-                  out.append("\n");
-                }
-              } catch (IOException e) {
-                e.printStackTrace();
+              if (prev != null) {
+                processGeneration(prev, alpha);
               }
-            }
-          }
-
-          private final TDoubleArrayList window = new TDoubleArrayList(1000);
-          private double windowSum = 0;
-          private void processGeneration(String prev, double alpha) {
-            final IntSeq prevQSeq = dropUnknown(dict.parse(convertToSeq(prev)));
-            final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query)));
-            final WordGenProbabilityProvider zeroElementProvider = providers[providers.length - 1];
-
-            if (prevQSeq.length() * currentQSeq.length() > 10) // too many variants of bipartite graph
-              return;
-            final int variantsCount = 1 << (prevQSeq.length() * currentQSeq.length());
-            final int mask = (1 << currentQSeq.length()) - 1;
-            int bestVariant = 0;
-            double bestLogProBab = Double.NEGATIVE_INFINITY;
-            { // expectation
-              for (int p = 0; p < variantsCount; p++) {
-                double variantLogProBab = 0;
-                {
-                  int variant = p;
-                  int generated = 0;
-                  for (int i = 0; i < prevQSeq.length(); i++, variant >>= currentQSeq.length()) {
-                    final int fragment = variant & mask;
-                    generated |= fragment;
-                    final int index = prevQSeq.intAt(i);
-                    if (index < 0)
+              if (++index % 10000000 == 0) {
+                try (final Writer out = new OutputStreamWriter(new FileOutputStream("output-" + (index / 10000000) + ".txt"))) {
+                  for (int i = 0; i < providers.length; i++) {
+                    final WordGenProbabilityProvider provider = providers[i];
+                    if (provider.poissonLambdaCount < 20)
                       continue;
-                    variantLogProBab += providers[index].logP(fragment, currentQSeq);
+//                    if (i < dict.size())
+//                      out.append(dict.get(i).toString()).append(": ");
+//                    else
+//                      out.append(EMPTY_ID).append(": ");
+                    provider.print(dict, out);
+//                    out.append("\n");
                   }
-                  variantLogProBab += zeroElementProvider.logP((~generated & mask), currentQSeq);
-                }
-                if (variantLogProBab > bestLogProBab) {
-                  bestLogProBab = variantLogProBab;
-                  bestVariant = p;
+                } catch (IOException e) {
+                  e.printStackTrace();
                 }
               }
             }
-            if (!Double.isFinite(bestLogProBab))
-              return;
-            if (Double.isNaN(bestLogProBab))
-              System.out.println();
-            { // maximization gradient descent step
 
-              int generated = 0;
-              windowSum += bestLogProBab;
-              window.add(bestLogProBab);
-              final double remove;
-              if (window.size() > 1000) {
-                remove = window.removeAt(0);
-                if (Double.isNaN(bestLogProBab))
+            private final TDoubleArrayList window = new TDoubleArrayList(1000);
+            private double windowSum = 0;
+            private FastRandom rng = new FastRandom(0);
+            private void processGeneration(String prev, double alpha) {
+              final IntSeq prevQSeq = dropUnknown(dict.parse(convertToSeq(prev), freqsLA, totalFreq));
+              final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query), freqsLA, totalFreq));
+
+              if (prevQSeq.length() * currentQSeq.length() > 10) // too many variants of bipartite graph
+                return;
+              final int variantsCount = 1 << (prevQSeq.length() * currentQSeq.length());
+              final int mask = (1 << currentQSeq.length()) - 1;
+              int bestVariant;
+              double bestLogProBab;
+              { // expectation
+                final Vec weights = new ArrayVec(variantsCount);
+                for (int p = 0; p < variantsCount; p++) {
+                  double variantLogProBab = 0;
+                  {
+                    int variant = p;
+                    int generated = 0;
+                    for (int i = 0; i < prevQSeq.length(); i++, variant >>= currentQSeq.length()) {
+                      final int fragment = variant & mask;
+                      generated |= fragment;
+                      final int index = prevQSeq.intAt(i);
+                      if (index < 0)
+                        continue;
+                      variantLogProBab += providers[index].logP(fragment, currentQSeq);
+                    }
+                    for (int i = 0; i < currentQSeq.length(); i++, generated >>= 1) {
+                      if ((generated & 1) == 1)
+                        continue;
+                      variantLogProBab += log(freqs.get(currentQSeq.intAt(i)) + 1) - log(totalFreq + freqs.dim());
+                    }
+                  }
+                  weights.set(p, variantLogProBab);
+//                  if (variantLogProBab > bestLogProBab) {
+//                    bestLogProBab = variantLogProBab;
+//                    bestVariant = p;
+//                  }
+                }
+                double sum = 0;
+                double normalizer = weights.get(0);
+                for (int i = 0; i < variantsCount; i++) {
+                  weights.set(i, exp(weights.get(i) - normalizer));
+                  sum += weights.get(i);
+                }
+                bestVariant = rng.nextSimple(weights, sum);
+                bestLogProBab = log(weights.get(bestVariant)) + normalizer;
+              }
+              { // maximization gradient descent step
+
+                int generated = 0;
+                windowSum += bestLogProBab;
+                window.add(bestLogProBab);
+                final double remove;
+                if (window.size() > 100000) {
+                  remove = window.removeAt(0);
                   windowSum -= remove;
-              }
-              if (Double.isNaN(windowSum)) {
-                System.out.println();
-              }
+                }
 
-              boolean debug = BroadMatch.debug && (index % 1000 == 0);
-              if (debug)
-                System.out.println(prev + " -> " + query + " " + windowSum / window.size());
-              for (int i = 0; i < prevQSeq.length(); i++, bestVariant >>= currentQSeq.length()) {
-                final int fragment = bestVariant & mask;
-                generated |= fragment;
-                final int windex = prevQSeq.intAt(i);
-                if (windex < 0)
-                  continue;
-                providers[windex].update(fragment, currentQSeq, alpha, dict, debug);
+                boolean debug = BroadMatch.debug && (index % 100000 == 0);
+                if (debug)
+                  System.out.print(windowSum / window.size() + "\t" + "\n");
+//              debug = false;
+                if (debug)
+                  System.out.println(prev + " -> " + query + " " + bestLogProBab);
+                double newProb = 0;
+                for (int i = 0; i < prevQSeq.length(); i++, bestVariant >>= currentQSeq.length()) {
+                  final int fragment = bestVariant & mask;
+                  generated |= fragment;
+                  final int windex = prevQSeq.intAt(i);
+                  if (windex < 0)
+                    continue;
+                  providers[windex].update(fragment, currentQSeq, alpha, dict, debug);
+                  newProb += providers[windex].logP(fragment, currentQSeq);
+                }
+                for (int i = 0; i < currentQSeq.length(); i++) {
+                  freqs.adjust(currentQSeq.intAt(i), 1.);
+                  totalFreq++;
+                }
+                if (debug)
+                  System.out.print(EMPTY_ID + " ->");
+                for (int i = 0; i < currentQSeq.length(); i++, generated >>= 1) {
+                  if ((generated & 1) == 1)
+                    continue;
+                  final int windex = currentQSeq.intAt(i);
+                  if (debug)
+                    System.out.print(" " + (windex < dict.size() ? dict.get(windex) : "Shit happens"));
+                  newProb += log(freqs.get(windex) + 1) - log(totalFreq + freqs.dim());
+                }
+                if (debug)
+                  System.out.println("\nNew probability: " + newProb);
               }
-              zeroElementProvider.update(~generated & mask, currentQSeq, alpha, dict, debug);
             }
-          }
-        });
+          });
         break;
       }
       case "-stats": {
@@ -507,10 +582,12 @@ public class BroadMatch {
           stats[i] = new SparseVec(dict.size());
         }
         CharSeqTools.processLines(new InputStreamReader(new GZIPInputStream(new FileInputStream(inputFileName))), new Action<CharSequence>() {
-          int index = 0;
           long ts;
           String query;
           String user;
+          TIntList freqs = new TIntArrayList();
+          IntSeq prevQSeq;
+          double totalFreq = 0;
 
           @Override
           public void invoke(CharSequence line) {
@@ -523,54 +600,62 @@ public class BroadMatch {
               this.ts = ts;
               return;
             }
+            final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query), freqs, totalFreq));
+            for (int i = 0; i < currentQSeq.length(); i++) {
+              final int symbol = currentQSeq.intAt(i);
+              if (symbol >= freqs.size())
+                freqs.fill(freqs.size(), symbol + 1, 0);
+              freqs.set(symbol, freqs.get(symbol) + 1);
+            }
+
             final CharSequence uid = parts[0];
             if (!uid.equals(this.user)) {
-              if (this.query != null) { // session end
-                final IntSeq prevQSeq = dropUnknown(dict.parse(convertToSeq(this.query)));
+              if (prevQSeq != null) { // session end
                 for (int i = 0; i < prevQSeq.length(); i++) {
                   stats[prevQSeq.intAt(i)].adjust(dict.size(), 1.);
                 }
               }
               { // session start
-                final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query)));
+                prevQSeq = null;
                 for (int i = 0; i < currentQSeq.length(); i++) {
                   stats[dict.size()].adjust(currentQSeq.intAt(i), 1.);
                 }
               }
             }
-            final String prev = uid.equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.query : null;
+            final IntSeq prevQSeq = uid.equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.prevQSeq : null;
             this.query = query.toString();
             this.user = uid.toString();
             this.ts = ts;
-            if (prev != null) {
-              final IntSeq prevQSeq = dropUnknown(dict.parse(convertToSeq(prev)));
-              final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(this.query)));
+            if (prevQSeq != null) {
               for (int i = 0; i < prevQSeq.length(); i++) {
                 for (int j = 0; j < currentQSeq.length(); j++) {
                   stats[prevQSeq.intAt(i)].adjust(currentQSeq.intAt(j), 1.);
                 }
               }
             }
-            if (++index % 10000000 == 0) {
-              final String outputFile = StreamTools.stripExtension(inputFileName) + "-" + (index / 10000000) + ".stats";
-              System.out.println("Dump " + outputFile);
-              try (final Writer out = new OutputStreamWriter(new FileOutputStream(outputFile))) {
-                for (int i = 0; i < stats.length; i++) {
-                  final SparseVec stat = stats[i];
-                  if (i < dict.size())
-                    out.append(dict.get(i).toString());
-                  else
-                    out.append(EMPTY_ID);
-                  out.append("\t");
-                  out.append(converter.convertTo(stat));
-                  out.append("\n");
+            this.prevQSeq = currentQSeq;
+
+            { // stats dump
+              if (++index % 10000000 == 0) {
+                final String outputFile = StreamTools.stripExtension(inputFileName) + "-" + (index / 10000000) + ".stats";
+                System.out.println("Dump " + outputFile);
+                try (final Writer out = new OutputStreamWriter(new FileOutputStream(outputFile))) {
+                  for (int i = 0; i < stats.length; i++) {
+                    final SparseVec stat = stats[i];
+                    if (i < dict.size())
+                      out.append(dict.get(i).toString());
+                    else
+                      out.append(EMPTY_ID);
+                    out.append("\t");
+                    out.append(converter.convertTo(stat));
+                    out.append("\n");
+                  }
+                } catch (IOException e) {
+                  e.printStackTrace();
                 }
-              } catch (IOException e) {
-                e.printStackTrace();
               }
             }
           }
-
         });
         break;
       }
