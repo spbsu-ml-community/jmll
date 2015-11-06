@@ -337,7 +337,7 @@ public abstract class NNTest {
       @Override
       public void invoke(Vec vec) {
         if (++index % 100 == 1) {
-          network.ppSolution(vec, '/');
+          network.ppSolution(vec, new CharSeqAdapter("/"));
         }
       }
     };
@@ -409,11 +409,11 @@ public abstract class NNTest {
       @Override
       public void invoke(Vec vec) {
         if (++index % 1000 == 1) {
-          network.ppSolution(vec, 'h');
-          network.ppSolution(vec, 't');
-          network.ppSolution(vec, 'm');
-          network.ppSolution(vec, 'l');
-          network.ppSolution(vec, '.');
+          network.ppSolution(vec, new CharSeqAdapter("h"));
+          network.ppSolution(vec, new CharSeqAdapter("t"));
+          network.ppSolution(vec, new CharSeqAdapter("m"));
+          network.ppSolution(vec, new CharSeqAdapter("l"));
+          network.ppSolution(vec, new CharSeqAdapter("."));
         }
       }
     };
