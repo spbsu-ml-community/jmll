@@ -45,7 +45,7 @@ import java.util.zip.GZIPInputStream;
  * Date: 25.05.15
  * Time: 16:39
  */
-public class NNTest {
+public abstract class NNTest {
   private final FastRandom rng = new FastRandom(0);
   private Pool<QURLItem> featuresTxtPool;
 
