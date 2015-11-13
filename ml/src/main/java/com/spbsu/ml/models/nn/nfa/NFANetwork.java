@@ -140,15 +140,15 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
     return String.valueOf(s) + ":\n" + new VecBasedMx(statesCount - 1, x.sub(i * transitionMxDim, transitionMxDim));
   }
 
-  protected static class MyNode implements NeuralSpider.Node {
-    private final int index;
+  protected class MyNode implements NeuralSpider.Node {
+    protected final int index;
     private final int wStart;
-    private final int wLen;
-    private final int wDim;
-    private final int pStart;
-    private final int pLen;
-    private final int nodesCount;
-    private final WeightsCalculator calcer;
+    protected final int wLen;
+    protected final int wDim;
+    protected final int pStart;
+    protected final int pLen;
+    protected final int nodesCount;
+    protected final WeightsCalculator calcer;
 
     protected MyNode(int index, int wStart, int wLen, int wDim, int pStart, int pLen, int nodesCount, WeightsCalculator calcer) {
       this.index = index;

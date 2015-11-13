@@ -29,6 +29,7 @@ import com.spbsu.ml.methods.StochasticGradientDescent;
 import com.spbsu.ml.models.nn.NeuralSpider;
 import com.spbsu.ml.models.nn.LayeredNetwork;
 import com.spbsu.ml.models.nn.nfa.NFANetwork;
+import com.spbsu.ml.models.nn.nfa.SeqWeightsCalculator;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
 import org.junit.Test;
@@ -795,6 +796,15 @@ public abstract class NNTest {
     }
     System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double)count);
     Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
+  }
+
+
+  @Test
+  public void weightsCalculatorTest() {
+    SeqWeightsCalculator weightsCalculator = new SeqWeightsCalculator(3,1,4,4,0);
+    Vec betta = new ArrayVec(1,1,1,1,1,1,1,1);
+    weightsCalculator.setDropOut(new boolean[] {false, false, false});
+    System.out.println(weightsCalculator.compute(betta));
   }
 
 }

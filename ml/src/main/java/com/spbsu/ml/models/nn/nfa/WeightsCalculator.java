@@ -15,7 +15,7 @@ class WeightsCalculator implements Computable<Vec,Mx> {
   private final int statesCount;
   private final int finalStates;
   private final int wStart;
-  private final int wLen;
+  protected final int wLen;
   private boolean[] dropOut;
 
   WeightsCalculator(int statesCount, int finalStates, int wStart, int wLen) {
@@ -26,7 +26,7 @@ class WeightsCalculator implements Computable<Vec,Mx> {
   }
 
   final ThreadLocalArrayVec w = new ThreadLocalArrayVec();
-  public Mx computeInner(Vec betta) {
+  public Mx computeInner(Vec betta, int wStart, int wLen) {
     final VecBasedMx b = new VecBasedMx(statesCount - 1, betta.sub(wStart, wLen));
     final VecBasedMx w = new VecBasedMx(statesCount, this.w.get(statesCount * statesCount));
     for (int i = 0; i < statesCount - finalStates; i++) {
@@ -48,16 +48,16 @@ class WeightsCalculator implements Computable<Vec,Mx> {
     return w;
   }
 
-  private Vec cacheArg;
-  private Mx cacheVal;
+  protected Vec cacheArg;
+  protected Mx cacheVal;
   @Override
   public Mx compute(Vec betta) {
     if (!betta.isImmutable())
-      return computeInner(betta);
+      return computeInner(betta, wStart, wLen);
     if (betta == cacheArg)
       return cacheVal;
     cacheArg = betta;
-    return cacheVal = computeInner(betta);
+    return cacheVal = computeInner(betta, wStart, wLen);
   }
 
   public void setDropOut(boolean[] dropOut) {
