@@ -6,6 +6,7 @@ import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.io.Vec2CharSequenceConverter;
 import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -26,10 +27,11 @@ import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.items.FakeItem;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.StochasticGradientDescent;
-import com.spbsu.ml.models.nn.NeuralSpider;
 import com.spbsu.ml.models.nn.LayeredNetwork;
+import com.spbsu.ml.models.nn.NeuralSpider;
 import com.spbsu.ml.models.nn.nfa.NFANetwork;
 import com.spbsu.ml.models.nn.nfa.SeqWeightsCalculator;
+import com.spbsu.ml.models.nn.nfa.WeightsCalculator;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
 import org.junit.Test;
@@ -606,7 +608,7 @@ public abstract class NNTest {
   }
 
 
-  @Test
+  //@Test
   public void testGenom() throws IOException {
 //    String str  = readFile(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq_accuracy.fa")).toString();
 //    String[] mass = str.split(">");
@@ -801,10 +803,33 @@ public abstract class NNTest {
 
   @Test
   public void weightsCalculatorTest() {
-    SeqWeightsCalculator weightsCalculator = new SeqWeightsCalculator(3,1,4,4,0);
-    Vec betta = new ArrayVec(1,1,1,1,1,1,1,1);
-    weightsCalculator.setDropOut(new boolean[] {false, false, false});
-    System.out.println(weightsCalculator.compute(betta));
+    Vec betta = new ArrayVec(36);
+    VecTools.fillUniform(betta, rng);
+    boolean[] booleans = {false, false, false, false, false};
+
+    WeightsCalculator weightsCalculator1 = new WeightsCalculator(5, 2, 12, 12);
+    weightsCalculator1.setDropOut(booleans);
+    Mx mx1 = weightsCalculator1.compute(betta);
+
+    WeightsCalculator weightsCalculator2 = new WeightsCalculator(5, 2, 0, 12);
+    weightsCalculator2.setDropOut(booleans);
+    Mx mx2 = weightsCalculator2.compute(betta);
+
+    WeightsCalculator weightsCalculator3 = new WeightsCalculator(5, 2, 24, 12);
+    weightsCalculator3.setDropOut(booleans);
+    Mx mx3 = weightsCalculator3.compute(betta);
+
+    SeqWeightsCalculator weightsCalculator = new SeqWeightsCalculator(5, 2, 12, 12, 0, 24);
+    weightsCalculator.setDropOut(booleans);
+    Mx mx = weightsCalculator.compute(betta);
+
+    Mx multiply = MxTools.multiply(mx3, MxTools.multiply(mx2, mx1));
+
+    for (int i = 0; i < mx.rows(); i++) {
+      for (int j = 0; j < mx.columns(); j++) {
+        Assert.assertEquals(multiply.get(i, j), mx.get(i, j), 0.0001);
+      }
+    }
   }
 
 }

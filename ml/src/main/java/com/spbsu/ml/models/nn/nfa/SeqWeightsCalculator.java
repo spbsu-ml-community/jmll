@@ -19,7 +19,8 @@ public class SeqWeightsCalculator extends WeightsCalculator {
   public Mx computeSeqInner(Vec betta) {
     Mx result = computeInner(betta, wStarts[0], wLen);
     for (int i = 1; i < wStarts.length; i++) {
-      result = MxTools.multiply(computeInner(betta, wStarts[i], wLen), result);
+      Mx mx = computeInner(betta, wStarts[i], wLen);
+      result = MxTools.multiply(mx, result);
     }
     return result;
   }

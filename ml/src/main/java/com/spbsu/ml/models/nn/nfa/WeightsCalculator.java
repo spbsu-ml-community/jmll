@@ -3,32 +3,32 @@ package com.spbsu.ml.models.nn.nfa;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 
 /**
 * User: solar
 * Date: 29.06.15
 * Time: 17:12
 */
-class WeightsCalculator implements Computable<Vec,Mx> {
+public class WeightsCalculator implements Computable<Vec,Mx> {
   private final int statesCount;
   private final int finalStates;
   private final int wStart;
   protected final int wLen;
   private boolean[] dropOut;
 
-  WeightsCalculator(int statesCount, int finalStates, int wStart, int wLen) {
+  public WeightsCalculator(int statesCount, int finalStates, int wStart, int wLen) {
     this.statesCount = statesCount;
     this.finalStates = finalStates;
     this.wStart = wStart;
     this.wLen = wLen;
   }
 
-  final ThreadLocalArrayVec w = new ThreadLocalArrayVec();
   public Mx computeInner(Vec betta, int wStart, int wLen) {
     final VecBasedMx b = new VecBasedMx(statesCount - 1, betta.sub(wStart, wLen));
-    final VecBasedMx w = new VecBasedMx(statesCount, this.w.get(statesCount * statesCount));
+    final Vec vec = new SparseVec(statesCount * statesCount);
+    final VecBasedMx w = new VecBasedMx(statesCount, vec);
     for (int i = 0; i < statesCount - finalStates; i++) {
       if (dropOut[i])
         continue;

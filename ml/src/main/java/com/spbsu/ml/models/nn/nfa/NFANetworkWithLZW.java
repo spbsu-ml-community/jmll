@@ -101,16 +101,16 @@ public class NFANetworkWithLZW<T> extends NFANetwork<T> {
             dropoutArr[rng.nextInt(statesCount - finalStates - 1) + 1] = true;
 
           for (int i = 0; i < length; i++) {
-            WeightsCalculator calcer = NFANetworkWithLZW.this.calculators.get().get(elementIndexes[i]);
-            calcer.setDropOut(dropoutArr);
+            WeightsCalculator calculator = NFANetworkWithLZW.this.calculators.get().get(elementIndexes[i]);
+            calculator.setDropOut(dropoutArr);
             for (int j = 0; j < pLen; j++) {
               final int nodeIndex = i * statesCount + j;
-              silentNodes[nodeIndex] = new NFANetwork.MyNode(j, wStarts[i], wLen, wDim, pStart + i * pLen, pLen, nodesCount, calcer);
+              silentNodes[nodeIndex] = new NFANetwork.MyNode(j, wStarts[i], wLen, wDim, pStart + i * pLen, pLen, nodesCount, calculator);
             }
           }
-          WeightsCalculator calcer = NFANetworkWithLZW.this.calculators.get().get(elementIndexes[length]);
-          calcer.setDropOut(dropoutArr);
-          silentNodes[silentNodes.length - 1] = new NFANetwork.MyNode(index, wStarts[length], wLen, wDim, pStart + length * pLen, pLen, nodesCount, calcer);
+          WeightsCalculator calculator = NFANetworkWithLZW.this.calculators.get().get(elementIndexes[length]);
+          calculator.setDropOut(dropoutArr);
+          silentNodes[silentNodes.length - 1] = new NFANetwork.MyNode(index, wStarts[length], wLen, wDim, pStart + length * pLen, pLen, nodesCount, calculator);
 
           for (int i = 0; i < silentNodes.length - 1; i++) {
             Node silentNode = silentNodes[i];
