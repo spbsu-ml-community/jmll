@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPInputStream;
 
 /**
  * User: solar
@@ -45,6 +44,7 @@ public class BroadMatch {
         final String outputFile = args[2];
         final Action<DictExpansion<CharSeq>> printer = new Action<DictExpansion<CharSeq>>() {
           int dictIndex = 0;
+
           @Override
           public void invoke(DictExpansion<CharSeq> result) {
             try {
@@ -62,6 +62,7 @@ public class BroadMatch {
         for (int i = 3; i < args.length; i++) {
           CharSeqTools.processLines(StreamTools.openTextFile(args[i]), new Action<CharSequence>() {
             String current;
+
             @Override
             public void invoke(CharSequence line) {
               final CharSequence[] parts = new CharSequence[3];
@@ -90,8 +91,7 @@ public class BroadMatch {
                 } catch (InterruptedException e) {
                   throw new RuntimeException(e);
                 }
-              }
-              else executor.execute(item);
+              } else executor.execute(item);
             }
           });
         }
@@ -102,7 +102,7 @@ public class BroadMatch {
         final TIntList freqsLA = new TIntArrayList();
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqsLA);
 
-        final SimpleGenerativeModel model = new SimpleGenerativeModel(dict);
+        final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqsLA);
         model.loadStatistics(args[2]);
 
         for (int i = 3; i < args.length; i++) {
@@ -111,16 +111,14 @@ public class BroadMatch {
             long ts;
             String query;
             String user;
-            TIntList freqs = new TIntArrayList();
             IntSeq prevQSeq;
-            double totalFreq = 0;
 
             @Override
             public void invoke(CharSequence line) {
               final CharSequence[] parts = new CharSequence[3];
               if (CharSeqTools.split(line, '\t', parts).length != 3)
                 throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + fileName + ":" + index + " does not.");
-              if (CharSeqTools.startsWith(parts[0], "uu/"))
+              if (CharSeqTools.startsWith(parts[0], "uu/") || CharSeqTools.startsWith(parts[0], "r"))
                 return;
               final long ts = CharSeqTools.parseLong(parts[1]);
               final String query = normalizeQuery(parts[2].toString());
@@ -128,12 +126,17 @@ public class BroadMatch {
                 this.ts = ts;
                 return;
               }
-              final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query), freqs, totalFreq));
+              final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query), model.freqs, model.totalFreq));
+              if (currentQSeq == null) {
+                this.ts = ts;
+                return;
+              }
+              model.processSeq(currentQSeq);
               final String prev = parts[0].equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.query : null;
               this.query = parts[2].toString();
               this.user = parts[0].toString();
               this.ts = ts;
-              if (prev != null && currentQSeq != null && prevQSeq != null) {
+              if (prev != null && prevQSeq != null) {
                 model.processGeneration(prevQSeq, currentQSeq, alpha);
               }
               prevQSeq = currentQSeq;
@@ -158,92 +161,95 @@ public class BroadMatch {
         final Vec2CharSequenceConverter converter = new Vec2CharSequenceConverter();
         final TIntList freqs = new TIntArrayList();
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqs);
-        final String inputFileName = args[2];
         final SparseVec[] stats = new SparseVec[dict.size() + 1];
 
         for (int i = 0; i < stats.length; i++) {
           stats[i] = new SparseVec(dict.size());
         }
-        CharSeqTools.processLines(new InputStreamReader(new GZIPInputStream(new FileInputStream(inputFileName))), new Action<CharSequence>() {
-          long ts;
-          String query;
-          String user;
-          IntSeq prevQSeq;
-          double totalFreq = freqs.sum();
 
-          @Override
-          public void invoke(CharSequence line) {
-            final CharSequence[] parts = new CharSequence[3];
-            if (CharSeqTools.split(line, '\t', parts).length != 3)
-              throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + inputFileName + ":" + index + " does not.");
-            if (CharSeqTools.startsWith(parts[0], "uu/"))
-              return;
-            final long ts = CharSeqTools.parseLong(parts[1]);
-            final String query = normalizeQuery(parts[2].toString());
+        final String outputFile = args[2];
+        for (int i = 3; i < args.length; i++) {
+          CharSeqTools.processLines(StreamTools.openTextFile(args[i]), new Action<CharSequence>() {
+            long ts;
+            String query;
+            String user;
+            IntSeq prevQSeq;
+            double totalFreq = freqs.sum();
 
-            if (query == null || query.equals(this.query)) {
-              this.ts = ts;
-              return;
-            }
-            final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query), freqs, totalFreq));
-            if (currentQSeq == null) {
-              prevQSeq = null;
-              this.query = null;
-              return;
-            }
+            @Override
+            public void invoke(CharSequence line) {
+              final CharSequence[] parts = new CharSequence[3];
+              if (CharSeqTools.split(line, '\t', parts).length != 3)
+                throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + args[i] + ":" + index + " does not.");
+              if (CharSeqTools.startsWith(parts[0], "uu/") || CharSeqTools.startsWith(parts[0], "r"))
+                return;
+              final long ts = CharSeqTools.parseLong(parts[1]);
+              final String query = normalizeQuery(parts[2].toString());
 
-            for (int i = 0; i < currentQSeq.length(); i++) {
-              final int symbol = currentQSeq.intAt(i);
-              if (symbol >= freqs.size())
-                freqs.fill(freqs.size(), symbol + 1, 0);
-              freqs.set(symbol, freqs.get(symbol) + 1);
-            }
-
-            final CharSequence uid = parts[0];
-            if (!uid.equals(this.user)) {
-              { // session start
+              if (query == null || query.equals(this.query)) {
+                this.ts = ts;
+                return;
+              }
+              final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query), freqs, totalFreq));
+              if (currentQSeq == null) {
                 prevQSeq = null;
-                for (int i = 0; i < currentQSeq.length(); i++) {
-                  stats[dict.size()].adjust(currentQSeq.intAt(i), 1.);
-                }
+                this.query = null;
+                return;
               }
-            }
-            final IntSeq prevQSeq = uid.equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.prevQSeq : null;
-            this.query = query;
-            this.user = uid.toString();
-            this.ts = ts;
-            if (prevQSeq != null) {
-              for (int i = 0; i < prevQSeq.length(); i++) {
-                for (int j = 0; j < currentQSeq.length(); j++) {
-                  stats[prevQSeq.intAt(i)].adjust(currentQSeq.intAt(j), 1.);
-                }
-              }
-            }
-            this.prevQSeq = currentQSeq;
 
-            { // stats dump
-              if (++index % 10000000 == 0) {
-                final String outputFile = StreamTools.stripExtension(inputFileName) + "-" + (index / 10000000) + ".stats";
-                System.out.println("Dump " + outputFile);
-                try (final Writer out = new OutputStreamWriter(new FileOutputStream(outputFile))) {
-                  for (int i = 0; i < stats.length; i++) {
-                    final SparseVec stat = stats[i];
-                    if (i < dict.size())
-                      out.append(dict.get(i).toString());
-                    else
-                      out.append(SimpleGenerativeModel.EMPTY_ID);
-                    out.append("\t");
-                    out.append(converter.convertTo(stat));
-                    out.append("\n");
+              for (int i = 0; i < currentQSeq.length(); i++) {
+                final int symbol = currentQSeq.intAt(i);
+                if (symbol >= freqs.size())
+                  freqs.fill(freqs.size(), symbol + 1, 0);
+                freqs.set(symbol, freqs.get(symbol) + 1);
+              }
+
+              final CharSequence uid = parts[0];
+              if (!uid.equals(this.user)) {
+                { // session start
+                  prevQSeq = null;
+                  for (int i = 0; i < currentQSeq.length(); i++) {
+                    stats[dict.size()].adjust(currentQSeq.intAt(i), 1.);
                   }
-                } catch (IOException e) {
-                  e.printStackTrace();
+                }
+              }
+              final IntSeq prevQSeq = uid.equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.prevQSeq : null;
+              this.query = query;
+              this.user = uid.toString();
+              this.ts = ts;
+              if (prevQSeq != null) {
+                for (int i = 0; i < prevQSeq.length(); i++) {
+                  for (int j = 0; j < currentQSeq.length(); j++) {
+                    stats[prevQSeq.intAt(i)].adjust(currentQSeq.intAt(j), 1.);
+                  }
+                }
+              }
+              this.prevQSeq = currentQSeq;
+
+              { // stats dump
+                if (++index % 10000000 == 0) {
+                  final String outputFileI = StreamTools.stripExtension(outputFile) + "-" + (index / 10000000) + ".stats";
+                  System.out.println("Dump " + outputFileI);
+                  try (final Writer out = new OutputStreamWriter(new FileOutputStream(outputFileI))) {
+                    for (int i = 0; i < stats.length; i++) {
+                      final SparseVec stat = stats[i];
+                      if (i < dict.size())
+                        out.append(dict.get(i).toString());
+                      else
+                        out.append(SimpleGenerativeModel.EMPTY_ID);
+                      out.append("\t");
+                      out.append(converter.convertTo(stat));
+                      out.append("\n");
+                    }
+                  } catch (IOException e) {
+                    e.printStackTrace();
+                  }
                 }
               }
             }
-          }
-        });
-        break;
+          });
+          break;
+        }
       }
     }
   }

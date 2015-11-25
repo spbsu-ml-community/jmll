@@ -12,7 +12,6 @@ import com.spbsu.commons.seq.*;
 import com.spbsu.direct.BroadMatch;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -33,10 +32,13 @@ public class SimpleGenerativeModel {
   private final WordGenProbabilityProvider[] providers;
   private final Dictionary<CharSeq> dict;
   private final FastRandom rng = new FastRandom(0);
+  public static final int GIBBS_COUNT = 10;
 
-  public SimpleGenerativeModel(Dictionary<CharSeq> dict) {
+  public SimpleGenerativeModel(Dictionary<CharSeq> dict, TIntList freqsLA) {
     this.dict = dict;
     this.providers = new WordGenProbabilityProvider[dict.size() + 1];
+    this.freqs = freqsLA;
+    this.totalFreq = freqsLA.sum();
   }
 
   public void loadStatistics(String fileName) throws IOException {
@@ -82,7 +84,7 @@ public class SimpleGenerativeModel {
   private double windowSum = 0;
 
   public double totalFreq = 0;
-  public final TIntList freqs = new TIntArrayList();
+  public final TIntList freqs;
 
   public void processSeq(IntSeq prevQSeq) {
     for (int i = 0; i < prevQSeq.length(); i++) {
@@ -139,52 +141,59 @@ public class SimpleGenerativeModel {
           weights.set(i, exp(weights.get(i) - normalizer));
           sum += weights.get(i);
         }
-        bestVariant = rng.nextSimple(weights, sum);
-        bestLogProBab = log(weights.get(bestVariant)) + normalizer;
+        for (int i = 0; i < GIBBS_COUNT; i++) {
+          bestVariant = rng.nextSimple(weights, sum);
+          bestLogProBab = log(weights.get(bestVariant)) + normalizer;
+          gradientStep(prevQSeq, currentQSeq, alpha / GIBBS_COUNT, mask, bestVariant, bestLogProBab);
+        }
       }
-
-    }
-    { // maximization gradient descent step
-
-      int generated = 0;
-      windowSum += bestLogProBab;
-      window.add(bestLogProBab);
-      final double remove;
-      if (window.size() > 100000) {
-        remove = window.removeAt(0);
-        windowSum -= remove;
+      { // EM
+//        gradientStep(prevQSeq, currentQSeq, alpha, mask, bestVariant, bestLogProBab);
       }
-
-      boolean debug = BroadMatch.debug && (index % 100000 == 0);
-      if (debug)
-        System.out.print(windowSum / window.size() + "\t" + "\n");
-//              debug = false;
-      if (debug)
-        System.out.println(prevQSeq + " -> " + currentQSeq + " " + bestLogProBab);
-      double newProb = 0;
-      for (int i = 0; i < prevQSeq.length(); i++, bestVariant >>= currentQSeq.length()) {
-        final int fragment = bestVariant & mask;
-        generated |= fragment;
-        final int windex = prevQSeq.intAt(i);
-        if (windex < 0)
-          continue;
-        providers[windex].update(fragment, currentQSeq, alpha, dict, debug);
-        newProb += providers[windex].logP(fragment, currentQSeq);
-      }
-      if (debug)
-        System.out.print(EMPTY_ID + " ->");
-      for (int i = 0; i < currentQSeq.length(); i++, generated >>= 1) {
-        if ((generated & 1) == 1)
-          continue;
-        final int windex = currentQSeq.intAt(i);
-        if (debug)
-          System.out.print(dict.get(windex));
-        newProb += log(freqs.get(windex) + 1.) - log(totalFreq + freqs.size());
-      }
-      if (debug)
-        System.out.println("\nNew probability: " + newProb);
     }
     index++;
+  }
+
+  private void gradientStep(IntSeq prevQSeq, IntSeq currentQSeq, double alpha, int mask, int bestVariant, double bestLogProBab) {
+    // maximization gradient descent step
+
+    int generated = 0;
+    windowSum += bestLogProBab;
+    window.add(bestLogProBab);
+    final double remove;
+    if (window.size() > 100000) {
+      remove = window.removeAt(0);
+      windowSum -= remove;
+    }
+
+    boolean debug = BroadMatch.debug && (index % 100000 == 0);
+    if (debug)
+      System.out.print(windowSum / window.size() + "\t" + "\n");
+//              debug = false;
+    if (debug)
+      System.out.println(prevQSeq + " -> " + currentQSeq + " " + bestLogProBab);
+    double newProb = 0;
+    for (int i = 0; i < prevQSeq.length(); i++, bestVariant >>= currentQSeq.length()) {
+      final int fragment = bestVariant & mask;
+      generated |= fragment;
+      final int windex = prevQSeq.intAt(i);
+      if (windex < 0)
+        continue;
+      providers[windex].update(fragment, currentQSeq, alpha, dict, debug);
+      newProb += providers[windex].logP(fragment, currentQSeq);
+    }
+    if (debug)
+      System.out.print(EMPTY_ID + " ->");
+    for (int i = 0; i < currentQSeq.length(); i++, generated >>= 1) {
+      if ((generated & 1) == 1)
+        continue;
+      final int windex = currentQSeq.intAt(i);
+      if (debug)
+        System.out.print(dict.get(windex));
+      newProb += log(freqs.get(windex) + 1.) - log(totalFreq + freqs.size());
+    }
+    if (debug)
+      System.out.println("\nNew probability: " + newProb);
   }
 
   public void print(Writer out, boolean limit) {
