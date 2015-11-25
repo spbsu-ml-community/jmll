@@ -625,7 +625,7 @@ public abstract class NNTest {
     final Set<Character> alphaSet = new HashSet<>();
     final Map<String, List<Seq<Character>>> map = new HashMap<>();
 
-//    final List<String> types = new ArrayList<>();
+    final List<String> types = new ArrayList<>();
     final File file = new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq.txt");
     final BufferedReader br = new BufferedReader(new FileReader(file));
     String line;
@@ -634,39 +634,44 @@ public abstract class NNTest {
       if (strs.length < 2)
         continue;
       String name = strs[0];
-      if (!map.keySet().contains(name)) {
-        map.put(name, new ArrayList<>());
-      }
       String value = strs[1];
       final Seq<Character> genom = CharSeq.create(value);
-      for (int j = 0; j < genom.length(); j++) {
-        alphaSet.add(genom.at(j));
+      if (genom.length() == 101) {
+        if (!map.keySet().contains(name))
+          map.put(name, new ArrayList<>());
+        if (!types.contains(name))
+          types.add(name);
+        for (int j = 0; j < genom.length(); j++)
+          alphaSet.add(genom.at(j));
+        map.get(name).add(genom);
       }
-      map.get(name).add(genom);
     }
     br.close();
 
 
-/*
+
     final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
-    pbuilder.setFeature(0, genom);
-    pbuilder.setTarget(0, types.indexOf(name) + 1);
-    pbuilder.nextItem();
+    for (String name : types) {
+      for (Seq<Character> genom : map.get(name)) {
+        pbuilder.setFeature(0, genom);
+        pbuilder.setTarget(0, types.indexOf(name) + 1);
+        pbuilder.nextItem();
+      }
+    }
     final Pool<FakeItem> pool = pbuilder.create();
 
-    System.out.println(pool.feature(0, 33) + "->" + pool.target(0).at(33));
-    System.out.println(pool.feature(0, 1033) + "->" + pool.target(0).at(1033));
-    System.out.println(pool.feature(0, 2041) + "->" + pool.target(0).at(2041));
-    System.out.println(pool.feature(0, 4500) + "->" + pool.target(0).at(4500));
-    System.out.println(pool.feature(0, 5678) + "->" + pool.target(0).at(5678));
-    System.out.println(pool.feature(0, 9425) + "->" + pool.target(0).at(9425));
+
+    for (int i = 0; i < types.size(); i++) {
+      String name = types.get(i);
+      System.out.println(String.format("%s (%s) -> %s", name, i + 1, map.get(name).size()));
+    }
     System.out.println(alphaSet);
 
     final CharSeqArray alpha = new CharSeqArray(alphaSet.toArray(new Character[alphaSet.size()]));
     final int statesCount = 13;
-    final int finalStates = 10;
+    final int finalStates = types.size();
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
     int iterations = 10000;
     final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, iterations, 2) {
@@ -717,42 +722,54 @@ public abstract class NNTest {
     final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
     System.out.println();
 
-    digIntoSolutionParallel(pool, network, ll, decision);*/
+    digIntoSolutionParallel(pool, network, ll, decision);
   }
 
   private void digIntoSolutionParallel(Pool<FakeItem> pool, NFANetwork<Character> network, BlockwiseMLL ll, DSSumFuncComposite<FakeItem>.Decision decision) {
     try {
       ExecutorService executorService = Executors.newFixedThreadPool(4);
-      List<Callable<Double>> tasks = new ArrayList<>(ll.blocksCount());
+      List<Callable<Vec>> tasks = new ArrayList<>(ll.blocksCount());
       for (int i = 0; i < ll.blocksCount(); i++) {
         final int finalI = i;
-        tasks.add(() -> ll.block(finalI).value(network.decisionByInput(pool.feature(0, finalI)).trans(decision.x)));
+        //tasks.add(() -> ll.block(finalI).value(network.decisionByInput(pool.feature(0, finalI)).trans(decision.x)));
+        tasks.add(() -> network.decisionByInput(pool.feature(0, finalI)).trans(decision.x));
       }
-      List<Future<Double>> list = new ArrayList<>(tasks.size());
+      List<Future<Vec>> list = new ArrayList<>(tasks.size());
       for (int i = 0; i < tasks.size(); i++) {
         list.add(executorService.submit(tasks.get(i)));
       }
 
       List<Integer> finishedTasks = new ArrayList<>();
       int count = 0, negative = 0, label = -1;
+      Map<Integer, Integer> positives = new HashMap<>();
       double llSum = 0;
       while (count < ll.blocksCount()) {
         Thread.sleep(1000);
         for (int i = 0; i < ll.blocksCount(); i++) {
           if (list.get(i).isDone() && !finishedTasks.contains(i)) {
             finishedTasks.add(i);
-            double llblock = list.get(i).get();
+            Vec vec = list.get(i).get();
+            double llblock = ll.block(i).value(vec);
+            int rightAnswer = ll.label(i);
+            if (VecTools.argmax(vec) == rightAnswer) {
+              Integer integer = positives.get(rightAnswer);
+              if (integer == null) {
+                positives.put(rightAnswer, 1);
+              } else {
+                positives.put(rightAnswer, integer + 1);
+              }
+            }
             llSum += llblock;
             final double pX = Math.exp(llblock);
             count++;
             System.out.print(String.format("Calculating results: %s (%.2f%%)\r", count, (double) count / ll.blocksCount() * 100));
             if (pX < 1.0 / ll.classesCount()) {
               negative++;
-              if (label != ll.label(i)) {
-                label = ll.label(i);
+              if (label != rightAnswer) {
+                label = rightAnswer;
                 CharSeq input = pool.feature(0, i);
                 System.out.println("Input: [" + input + "]");
-                System.out.println("Output: [" + ll.label(i) + "]");
+                System.out.println("Output: [" + rightAnswer + "]");
                 final NeuralSpider.NeuralNet net = network.decisionByInput(input);
                 System.out.println(network.ppState(net.state(decision.x), input));
                 System.out.println();
@@ -762,6 +779,7 @@ public abstract class NNTest {
         }
       }
       System.out.println(ll.transformResultValue(llSum) + " " + (count - negative) / (double) count);
+      System.out.println(positives);
       Assert.assertTrue(1.1 > ll.transformResultValue(llSum));
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
