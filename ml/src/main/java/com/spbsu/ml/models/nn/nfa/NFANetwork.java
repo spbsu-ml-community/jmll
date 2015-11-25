@@ -7,14 +7,13 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
+import com.spbsu.commons.seq.SeqTools;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.func.generic.Const;
 import com.spbsu.ml.func.generic.SubVecFuncC1;
 import com.spbsu.ml.func.generic.WSum;
 import com.spbsu.ml.models.nn.NeuralSpider;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * User: solar
@@ -22,14 +21,13 @@ import java.util.List;
  * Time: 13:25
  */
 public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
-  protected final FastRandom rng;
-  protected final double dropout;
-  protected final int statesCount;
-  protected final int dim;
-  protected final int transitionMxDim;
-  protected final int finalStates;
-  protected final ThreadLocal<List<Seq<T>>> dictionary;
-  protected final ThreadLocal<List<WeightsCalculator>> calculators;
+  private final FastRandom rng;
+  private final double dropout;
+  final int statesCount;
+  private final Seq<T> alpha;
+  private final int dim;
+  private final int transitionMxDim;
+  private final int finalStates;
 
   public NFANetwork(FastRandom rng, double dropout, int statesCount, int finalStates, Seq<T> alpha) {
     super();
@@ -37,33 +35,21 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
     this.dropout = dropout;
     this.statesCount = statesCount;
     this.finalStates = finalStates;
+    this.alpha = alpha;
     transitionMxDim = (statesCount - finalStates) * (statesCount - 1);
-
-    dictionary = new ThreadLocal<List<Seq<T>>>() {
-      @Override
-      protected List<Seq<T>> initialValue() {
-        final List<Seq<T>> result =  new ArrayList<>(alpha.length());
-        for (int i = 0; i < alpha.length(); i++) {
-          result.add(alpha.sub(i, i + 1));
-        }
-        return result;
-      }
-    };
-
-    calculators = new ThreadLocal<List<WeightsCalculator>>() {
-      @Override
-      protected List<WeightsCalculator> initialValue() {
-        final List<WeightsCalculator> result  = new ArrayList<>(alpha.length());
-        for(int i = 0; i < alpha.length(); i++) {
-          result.add(new WeightsCalculator(statesCount, finalStates, i * transitionMxDim, transitionMxDim));
-        }
-        return result;
-      }
-    };
-
     dim = transitionMxDim * alpha.length();
   }
 
+  final ThreadLocal<WeightsCalculator[]> calculators = new ThreadLocal<WeightsCalculator[]>() {
+    @Override
+    protected WeightsCalculator[] initialValue() {
+      final WeightsCalculator[] calculators = new WeightsCalculator[alpha.length()];
+      for(int i = 0; i < calculators.length; i++) {
+        calculators[i] = new WeightsCalculator(statesCount, finalStates, i * transitionMxDim, transitionMxDim);
+      }
+      return calculators;
+    }
+  };
 
   @Override
   protected Topology topology(Seq<T> seq, final boolean dropout) {
@@ -79,9 +65,9 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
 
     final int[][] outputNodesConnections = new int[finalStates][seq.length()];
     for (int d = 0; d < seq.length(); d++) {
-      final int elementIndex = dictionary.get().indexOf(seq.sub(d, d+1));
+      final int elementIndex = ArrayTools.indexOf(seq.at(d), alpha);
       final int prevLayerStart = d * statesCount;
-      final WeightsCalculator calcer = calculators.get().get(elementIndex);
+      final WeightsCalculator calcer = calculators.get()[elementIndex];
       calcer.setDropOut(dropoutArr);
       for (int i = 0; i < statesCount; i++) {
         final int nodeIndex = (d + 1) * statesCount + i;
@@ -107,8 +93,8 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
 
   public String ppSolution(Vec x) {
     final StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < dictionary.get().size(); i++) {
-      builder.append(dictionary.get().get(i)).append(":").append("\n");
+    for (int i = 0; i < alpha.length(); i++) {
+      builder.append(alpha.at(i)).append(":").append("\n");
       builder.append(new VecBasedMx(statesCount - 1, x.sub(i * transitionMxDim, transitionMxDim))).append("\n");
     }
     return builder.toString();
@@ -135,22 +121,22 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
     return builder.toString();
   }
 
-  public String ppSolution(Vec x, Seq<T> s) {
-    final int i = dictionary.get().indexOf(s);
+  public String ppSolution(Vec x, T s) {
+    final int i = SeqTools.indexOf(alpha, s);
     return String.valueOf(s) + ":\n" + new VecBasedMx(statesCount - 1, x.sub(i * transitionMxDim, transitionMxDim));
   }
 
-  protected class MyNode implements NeuralSpider.Node {
-    protected final int index;
+  public static class MyNode implements NeuralSpider.Node {
+    private final int index;
     private final int wStart;
-    protected final int wLen;
-    protected final int wDim;
-    protected final int pStart;
-    protected final int pLen;
-    protected final int nodesCount;
-    protected final WeightsCalculator calcer;
+    private final int wLen;
+    private final int wDim;
+    private final int pStart;
+    private final int pLen;
+    private final int nodesCount;
+    private final WeightsCalculator calcer;
 
-    protected MyNode(int index, int wStart, int wLen, int wDim, int pStart, int pLen, int nodesCount, WeightsCalculator calcer) {
+    public MyNode(int index, int wStart, int wLen, int wDim, int pStart, int pLen, int nodesCount, WeightsCalculator calcer) {
       this.index = index;
       this.wStart = wStart;
       this.wLen = wLen;
