@@ -1,7 +1,7 @@
 package com.spbsu.ml.models.nn.nfa;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.func.generic.Const;
 import com.spbsu.ml.models.nn.NeuralSpider;
 

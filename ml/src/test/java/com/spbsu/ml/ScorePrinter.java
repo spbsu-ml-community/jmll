@@ -1,6 +1,8 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;

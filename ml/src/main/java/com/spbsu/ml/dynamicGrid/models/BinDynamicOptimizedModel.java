@@ -1,6 +1,6 @@
 package com.spbsu.ml.dynamicGrid.models;
 
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
 
 /**

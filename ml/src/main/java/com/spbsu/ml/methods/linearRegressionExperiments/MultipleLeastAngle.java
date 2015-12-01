@@ -1,7 +1,7 @@
 package com.spbsu.ml.methods.linearRegressionExperiments;
 
 import com.spbsu.commons.util.ThreadTools;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.MultipleVecOptimization;

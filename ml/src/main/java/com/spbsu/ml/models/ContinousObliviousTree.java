@@ -2,7 +2,7 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 
 import java.util.List;
 

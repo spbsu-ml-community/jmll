@@ -2,8 +2,8 @@ package com.spbsu.ml.methods.wrappers;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.methods.VecOptimization;

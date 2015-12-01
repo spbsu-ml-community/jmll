@@ -3,7 +3,6 @@ package com.spbsu.ml.methods.trees;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Trans;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
@@ -12,7 +11,6 @@ import com.spbsu.ml.models.ContinousObliviousTree;
 import com.spbsu.ml.optimization.FuncConvex;
 import com.spbsu.ml.optimization.Optimize;
 import com.spbsu.ml.optimization.impl.Nesterov1;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;

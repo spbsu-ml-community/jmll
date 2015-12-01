@@ -2,6 +2,8 @@ package com.spbsu.ml.cli.modes.impl;
 
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.io.StreamTools;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;

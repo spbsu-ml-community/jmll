@@ -1,7 +1,7 @@
 package com.spbsu.ml.func;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 
 import java.util.List;
 

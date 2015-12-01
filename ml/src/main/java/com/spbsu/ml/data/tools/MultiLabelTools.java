@@ -2,8 +2,8 @@ package com.spbsu.ml.data.tools;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.cli.output.printers.MultiLabelLogitProgressPrinter;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;

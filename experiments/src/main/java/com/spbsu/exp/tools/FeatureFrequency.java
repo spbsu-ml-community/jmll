@@ -2,8 +2,8 @@ package com.spbsu.exp.tools;
 
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.models.MultiClassModel;

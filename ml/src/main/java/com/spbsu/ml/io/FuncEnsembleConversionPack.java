@@ -5,8 +5,8 @@ import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.func.FuncEnsemble;
 
 /**

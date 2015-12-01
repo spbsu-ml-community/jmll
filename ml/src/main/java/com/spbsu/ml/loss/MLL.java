@@ -2,12 +2,11 @@ package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.IntSeqBuilder;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BlockedTargetFunc;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.func.generic.Log;
 import com.spbsu.ml.func.generic.ParallelFunc;

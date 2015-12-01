@@ -4,7 +4,7 @@ import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.WeakListenerHolder;
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.ml.TargetFunc;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MultiLabelTools;
 import com.spbsu.ml.methods.VecOptimization;

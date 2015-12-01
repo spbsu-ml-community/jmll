@@ -4,7 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 
 public class QuadraticModel extends Func.Stub {
   private final Mx M;

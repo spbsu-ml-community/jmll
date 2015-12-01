@@ -2,7 +2,7 @@ package com.spbsu.ml.models.multilabel;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 
 /**
  * User: qdeee

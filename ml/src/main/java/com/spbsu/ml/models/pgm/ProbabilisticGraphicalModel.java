@@ -3,8 +3,8 @@ package com.spbsu.ml.models.pgm;
 import com.spbsu.commons.filters.Filter;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 
 /**
  * User: solar

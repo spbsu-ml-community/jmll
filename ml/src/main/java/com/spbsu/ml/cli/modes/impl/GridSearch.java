@@ -5,7 +5,7 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.cli.builders.data.DataBuilder;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderClassic;

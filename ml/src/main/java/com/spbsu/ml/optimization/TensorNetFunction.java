@@ -3,7 +3,6 @@ package com.spbsu.ml.optimization;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.Trans;
 import org.jetbrains.annotations.NotNull;
 
 /**

@@ -1,5 +1,6 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.data.set.DataSet;
 
 /**

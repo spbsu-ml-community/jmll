@@ -4,12 +4,10 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.ml.BlockedTargetFunc;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.func.generic.Log;
-import com.spbsu.ml.func.generic.Logit;
 
-import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
 /**

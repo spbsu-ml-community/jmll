@@ -2,8 +2,7 @@ package com.spbsu.ml.func.generic;
 
 import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import org.jetbrains.annotations.NotNull;
 
 /**

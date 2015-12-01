@@ -2,7 +2,7 @@ package com.spbsu.ml.loss.multiclass;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.data.set.DataSet;
 
 /**

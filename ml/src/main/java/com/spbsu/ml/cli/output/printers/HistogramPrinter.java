@@ -1,7 +1,7 @@
 package com.spbsu.ml.cli.output.printers;
 
 import com.spbsu.ml.ProgressHandler;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.spbsu.ml.func.Ensemble;
 

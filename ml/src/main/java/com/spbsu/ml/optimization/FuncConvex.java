@@ -1,6 +1,6 @@
 package com.spbsu.ml.optimization;
 
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 
 /**
  * User: qde

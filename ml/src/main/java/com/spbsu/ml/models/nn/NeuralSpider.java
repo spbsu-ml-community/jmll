@@ -6,8 +6,8 @@ import com.spbsu.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.seq.Seq;
-import com.spbsu.ml.FuncC1;
-import com.spbsu.ml.TransC1;
+import com.spbsu.commons.math.FuncC1;
+import com.spbsu.commons.math.TransC1;
 import com.spbsu.ml.func.generic.WSum;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 

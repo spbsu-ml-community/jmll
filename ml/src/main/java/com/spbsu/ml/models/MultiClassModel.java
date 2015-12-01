@@ -3,7 +3,7 @@ package com.spbsu.ml.models;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.models.multiclass.MCModel;
 

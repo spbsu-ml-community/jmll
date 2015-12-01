@@ -4,7 +4,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**

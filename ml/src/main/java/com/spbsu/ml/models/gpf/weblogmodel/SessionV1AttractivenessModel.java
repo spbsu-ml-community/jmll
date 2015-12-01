@@ -3,7 +3,7 @@ package com.spbsu.ml.models.gpf.weblogmodel;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.models.gpf.AttractivenessModel;
 import com.spbsu.ml.models.gpf.Session;
 import gnu.trove.list.array.TIntArrayList;

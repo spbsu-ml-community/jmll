@@ -251,12 +251,23 @@ public class BroadMatch {
           break;
         }
       }
+      case "-query": {
+        final TIntList freqs = new TIntArrayList();
+        final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqs);
+        final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqs);
+        model.load(args[2]);
+        CharSeqTools.processLines(new InputStreamReader(System.in, StreamTools.UTF), (Action<CharSequence>) arg -> {
+          String query = arg.toString();
+          normalizeQuery(query);
+          System.out.println(model.findTheBestExpansion(convertToSeq(normalizeQuery(arg.toString()))));
+        });
+      }
     }
   }
 
   @Nullable
   private static String normalizeQuery(String query) {
-    query = query.replaceAll("[;,.:\\(\\)\"\'«»]", "");
+    query = query.replaceAll("[;,.:\\(\\)\"\'«»!\\]\\[\\{\\}<>]", "");
     query = query.replaceAll("\\s+", " ");
     return query.toLowerCase();
   }
@@ -283,7 +294,7 @@ public class BroadMatch {
         final CharSequence[] parts = CharSeqTools.split(split[0].subSequence(1, split[0].length() - 1), ", ");
         final SeqBuilder<CharSeq> builder = new ArraySeqBuilder<>(CharSeq.class);
         for (final CharSequence part : parts) {
-          builder.add(new CharSeqAdapter(part.toString()));
+          builder.add(CharSeq.create(part.toString()));
         }
         final Seq<CharSeq> seq = builder.build();
         dictSeqs.add(seq);
@@ -314,7 +325,7 @@ public class BroadMatch {
   private static ArraySeq<CharSeq> convertToSeq(CharSequence word) {
     final CharSeq[] words = new CharSeq[100];
     final String query = word.toString();
-    final int wcount = CharSeqTools.trySplit(new CharSeqAdapter(query), ' ', words);
+    final int wcount = CharSeqTools.trySplit(CharSeq.create(query), ' ', words);
     return new ArraySeq<>(words, 0, wcount);
   }
 }

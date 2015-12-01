@@ -9,14 +9,18 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.*;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.direct.BroadMatch;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
+import gnu.trove.procedure.TIntDoubleProcedure;
 
 import java.io.IOException;
 import java.io.Writer;
 
 import static com.spbsu.commons.math.vectors.VecTools.l1;
+import static java.lang.Double.max;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
@@ -54,7 +58,7 @@ public class SimpleGenerativeModel {
         final CharSequence[] parts = CharSeqTools.split(split[0].subSequence(1, split[0].length() - 1), ", ");
         final SeqBuilder<CharSeq> builder = new ArraySeqBuilder<>(CharSeq.class);
         for (final CharSequence part : parts) {
-          builder.add(new CharSeqAdapter(part.toString()));
+          builder.add(CharSeq.create(part.toString()));
         }
 
         final int index1 = dict.parse(builder.build()).intAt(0);
@@ -200,6 +204,82 @@ public class SimpleGenerativeModel {
     for (int i = 0; i < providers.length; i++) {
       final WordGenProbabilityProvider provider = providers[i];
       provider.print(dict, out, limit);
+    }
+  }
+
+  public void load(String inputFile) throws IOException {
+    CharSeqTools.processLines(StreamTools.openTextFile(inputFile), new Action<CharSequence>() {
+      int index = 0;
+      final StringBuilder builder = new StringBuilder();
+      public void invoke(CharSequence line) {
+        if (line.equals("}")) {
+          WordGenProbabilityProvider provider = new WordGenProbabilityProvider(builder.toString(), dict);
+          providers[provider.aindex] = provider;
+          builder.delete(0, builder.length());
+        }
+        else builder.append(line);
+      }
+    });
+  }
+
+  public String findTheBestExpansion(ArraySeq<CharSeq> arg) {
+    final StringBuilder builder = new StringBuilder();
+    final TObjectDoubleHashMap<Seq<CharSeq>> expansionScores = new TObjectDoubleHashMap<>();
+    final double[] normalize = new double[1];
+    dict.visitVariants(arg, freqs, totalFreq, (seq, probab) -> {
+      if (probab < -100)
+        return true;
+      for (int i = 0; i < seq.length(); i++) {
+        if (i > 0)
+          builder.append(" ");
+        final int symIndex = seq.intAt(i);
+        visitExpVariants(symIndex, (a, b) -> {
+//          System.out.println(dict.get(a).toString() + " " + b);
+          final double symProbab = b * exp(probab);
+//          double logProbab = log(symProbab);
+//          if (logProbab < 1e-20)
+//            return false;
+          normalize[0] = max(exp(probab), normalize[0]);
+          expansionScores.adjustOrPutValue(dict.get(a), symProbab, symProbab);
+          return true;
+        }, 1.);
+//        builder.append(dict.get(symIndex));
+      }
+//      builder.append("\t").append(probab).append("\n");
+      return true;
+    });
+    //noinspection unchecked
+    final Seq<CharSeq>[] keys = expansionScores.keys(new Seq[expansionScores.size()]);
+    final double[] scores = expansionScores.values();
+    final int[] order = ArrayTools.sequence(0, keys.length);
+    ArrayTools.parallelSort(scores, order);
+    for (int i = order.length - 1; i >= 0; i--) {
+      final double prob = scores[i] / normalize[0];
+      if (prob < 1e-7)
+        break;
+
+      builder.append(keys[order[i]].toString()).append(" -> ").append(prob).append("\n");
+    }
+    return builder.toString();
+  }
+
+  private void visitExpVariants(final int index, TIntDoubleProcedure todo, double genProb) {
+    if (genProb < 1e-10 || index < 0)
+      return;
+
+    WordGenProbabilityProvider provider = providers[index];
+    final Seq<CharSeq> phrase = dict.get(index);
+//    System.out.println("Expanding: " + phrase);
+    if (provider != null) {
+      provider.visitVariants((symIndex, symProb) -> {
+        final double currentGenProb = genProb * symProb;
+        final WordGenProbabilityProvider symProvider = providers[symIndex];
+        if (symProvider != null && symProvider.isMeaningful(index)) {
+          visitExpVariants(symIndex, todo, currentGenProb);
+          todo.execute(symIndex, currentGenProb);
+        }
+        return true;
+      });
     }
   }
 }

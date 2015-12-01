@@ -6,7 +6,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 
 import java.util.Arrays;
 import java.util.List;
