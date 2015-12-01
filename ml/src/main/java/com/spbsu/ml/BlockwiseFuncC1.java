@@ -30,7 +30,7 @@ public interface BlockwiseFuncC1 extends FuncC1 {
     }
 
     @Override
-    public final Vec gradient(final Vec x) {
+    public final Mx gradient(final Vec x) {
       return gradient(x instanceof Mx ? (Mx)x : new VecBasedMx(blockSize(), x));
     }
 

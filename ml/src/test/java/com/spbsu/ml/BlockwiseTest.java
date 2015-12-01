@@ -1,5 +1,6 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -53,10 +54,9 @@ public class BlockwiseTest extends TestCase {
     assertEquals(oldMLLLogit.value(point1), newMLLLogit.value(point2), 1e-15);
 
     final Vec oldGrad = oldMLLLogit.gradient(point1);
-    final Vec newGrad = newMLLLogit.gradient(point2);
+    final Mx newGrad = newMLLLogit.gradient(point2);
     final VecBasedMx oldGradMx = new VecBasedMx(poolSize, oldGrad);
-    final VecBasedMx newGradMx = new VecBasedMx(newMLLLogit.classesCount() - 1, newGrad);
-    assertEquals(MxTools.transpose(oldGradMx), newGradMx);
+    assertEquals(MxTools.transpose(oldGradMx), newGrad);
   }
 
   public void testWeightedLoss() throws Exception {
