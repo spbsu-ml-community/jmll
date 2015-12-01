@@ -168,6 +168,7 @@ public class BroadMatch {
         }
 
         final String outputFile = args[2];
+        //noinspection LoopStatementThatDoesntLoop
         for (int i = 3; i < args.length; i++) {
           CharSeqTools.processLines(StreamTools.openTextFile(args[i]), new Action<CharSequence>() {
             long ts;
@@ -301,7 +302,7 @@ public class BroadMatch {
         freqsHash.put(seq, CharSeqTools.parseDouble(split[1]));
       });
       //noinspection unchecked
-      dict = new ListDictionary<CharSeq>(dictSeqs.toArray(new Seq[dictSeqs.size()]));
+      dict = new ListDictionary<>(dictSeqs.toArray(new Seq[dictSeqs.size()]));
       freqs.fill(0, dict.size(), 0);
       for (int i = 0; i < dict.size(); i++) {
         final double val = freqsHash.get(dict.get(i));
