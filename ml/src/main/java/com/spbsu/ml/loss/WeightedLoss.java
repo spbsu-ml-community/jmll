@@ -91,6 +91,15 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
     return result.toArray();
   }
 
+  public int[] zeroPoints() {
+    final TIntArrayList result = new TIntArrayList(weights.length);
+    for(int i = 0; i < weights.length; i++) {
+      if (weights[i] == 0)
+        result.add(i);
+    }
+    return result.toArray();
+  }
+
   public static class Stat implements AdditiveStatistics {
     public AdditiveStatistics inside;
     private final int[] weights;

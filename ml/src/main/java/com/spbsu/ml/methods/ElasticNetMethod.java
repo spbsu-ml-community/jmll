@@ -9,6 +9,10 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.ShifftedTrans;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.spbsu.commons.math.vectors.VecTools.adjust;
 import static com.spbsu.commons.math.vectors.VecTools.copy;
@@ -49,6 +53,24 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
   public Trans fit(final VecDataSet ds, final L2 loss, final Vec init) {
     final ElasticNetCache cache = new ElasticNetCache(ds.data(), loss.target, init, alpha, lambda);
     return fit(cache);
+  }
+
+  public final List<Linear> fit(final Mx data, final Vec target, int nlambda, double lambdaEps) {
+    final ElasticNetCache cache = new ElasticNetCache(data, target, alpha, lambda);
+    double lambdaMax = Double.NEGATIVE_INFINITY;
+    for (int i=0; i < data.columns();++i) {
+      lambdaMax = FastMath.max(FastMath.abs(cache.targetProduct(i)), lambdaMax);
+    }
+    lambdaMax *= alpha /  data.rows();
+    double lambdaMin = lambdaMax * lambdaEps;
+    double step = (lambdaMax - lambdaMin) / nlambda;
+    List<Linear> path = new ArrayList<>(nlambda);
+
+    for (double lambda = lambdaMax; lambda > lambdaMin; lambda -= step) {
+      cache.setLambda(lambda);
+      path.add(fit(cache));
+    }
+    return path;
   }
 
   public int checkIterations = 2;

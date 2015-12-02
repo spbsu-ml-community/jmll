@@ -1,6 +1,9 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.math.vectors.*;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.SingleValueVec;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
@@ -14,10 +17,8 @@ import com.spbsu.ml.loss.StatBasedLoss;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.ElasticNetMethod;
 import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.linearRegressionExperiments.RidgeRegression;
 import com.spbsu.ml.models.ModelTools;
 import com.spbsu.ml.models.ObliviousTree;
-import org.apache.commons.math3.util.FastMath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,13 +28,14 @@ import java.util.List;
  * Date: 02.12.2015
  */
 
-public class RidgeGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   private final GreedyObliviousTree<Loss> base;
-  final double lambda;
+  final double lambdaRatio;
+  final int nlambda = 200;
 
-  public RidgeGreedyObliviousTree(GreedyObliviousTree<Loss> base, double lambda) {
+  public LassoGreedyObliviousTree(GreedyObliviousTree<Loss> base, double lambdaRatio) {
     this.base = base;
-    this.lambda = lambda;
+    this.lambdaRatio = lambdaRatio;
   }
 
   private int[] learnPoints(Loss loss, VecDataSet ds) {
@@ -42,8 +44,18 @@ public class RidgeGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
     } else return ArrayTools.sequence(0, ds.length());
   }
 
+  private int[] validationPoints(Loss loss) {
+    if (loss instanceof WeightedLoss) {
+      return ((WeightedLoss) loss).zeroPoints();
+    } else {
+      throw new RuntimeException("Wrong target type. No validation points");
+    }
+  }
+
+  //TODO: noxoomo, remove duplicates
+  //TODO: noxoomo, no intercept regularization…
   @SuppressWarnings("Duplicates")
-  protected Pair<Mx, Vec> filter(final List<ModelTools.CompiledOTEnsemble.Entry> entryList, final BinarizedDataSet bds, Vec sourceTarget, int[] points) {
+  private Pair<Mx, Vec> filter(final List<ModelTools.CompiledOTEnsemble.Entry> entryList, final BinarizedDataSet bds, Vec sourceTarget, int[] points) {
     final byte[] binary = new byte[base.grid.rows()];
     Mx otData = new VecBasedMx(points.length, entryList.size());
     Vec target = new ArrayVec(points.length);
@@ -82,8 +94,21 @@ public class RidgeGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
     final BinarizedDataSet bds =  ds.cache().cache(Binarize.class, VecDataSet.class).binarize(base.grid);
 
     Pair<Mx,Vec> compiledLearn = filter(entryList, bds, loss.target(), learnPoints(loss, ds));
-    RidgeRegression ridgeRegression = new RidgeRegression(lambda);
-    Vec weights = ridgeRegression.fit(compiledLearn.first, compiledLearn.second);
+    Pair<Mx,Vec> compiledValidate = filter(entryList, bds, loss.target(), validationPoints(loss));
+
+
+    ElasticNetMethod lasso = new ElasticNetMethod(1e-3, 1.0, lambdaRatio);
+    List<Linear> weightsPath = lasso.fit(compiledLearn.first, compiledLearn.second, nlambda, lambdaRatio);
+    double[] scores = weightsPath.parallelStream().mapToDouble(linear -> VecTools.distance(linear.transAll(compiledValidate.first), compiledValidate.second)).toArray();
+    int best = 0;
+    double bestScore = scores[0];
+    for (int i=0; i < scores.length;++i) {
+      if (scores[i] < bestScore) {
+        bestScore = scores[i];
+        best = i;
+      }
+    }
+    Vec weights = weightsPath.get(best).weights;
     ArrayList<ModelTools.CompiledOTEnsemble.Entry> newEntries  = new ArrayList<>(entryList);
     for (int i=0; i < weights.dim();++i) {
       newEntries.add(new ModelTools.CompiledOTEnsemble.Entry(entryList.get(i).getBfIndices(), weights.get(i)));
