@@ -31,11 +31,14 @@ import java.util.List;
 public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   private final GreedyObliviousTree<Loss> base;
   final double lambdaRatio;
-  final int nlambda = 200;
+  final int nlambda;
+  final double alpha;
 
-  public LassoGreedyObliviousTree(GreedyObliviousTree<Loss> base, double lambdaRatio) {
+  public LassoGreedyObliviousTree(GreedyObliviousTree<Loss> base, double lambdaRatio, int nlambda, double alpha) {
     this.base = base;
     this.lambdaRatio = lambdaRatio;
+    this.nlambda = nlambda;
+    this.alpha = alpha;
   }
 
   private int[] learnPoints(Loss loss, VecDataSet ds) {
@@ -97,7 +100,7 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
     Pair<Mx,Vec> compiledValidate = filter(entryList, bds, loss.target(), validationPoints(loss));
 
 
-    ElasticNetMethod lasso = new ElasticNetMethod(1e-3, 1.0, lambdaRatio);
+    ElasticNetMethod lasso = new ElasticNetMethod(1e-7, alpha, lambdaRatio);
     List<Linear> weightsPath = lasso.fit(compiledLearn.first, compiledLearn.second, nlambda, lambdaRatio);
     double[] scores = weightsPath.parallelStream().mapToDouble(linear -> VecTools.distance(linear.transAll(compiledValidate.first), compiledValidate.second)).toArray();
     int best = 0;

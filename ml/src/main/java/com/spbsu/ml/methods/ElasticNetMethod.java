@@ -101,7 +101,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
   public static class ElasticNetCache {
     private final Mx data;
     private final Vec target;
-    private final double equalsTolerance = 1e-15;
+    private final double equalsTolerance = 1e-10;
     private final boolean[] isFeaturesProductCached;
     private final boolean[] isTargetCached;
     private final double[] gradient;
