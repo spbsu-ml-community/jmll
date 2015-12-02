@@ -1,9 +1,6 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.SingleValueVec;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
@@ -22,6 +19,7 @@ import com.spbsu.ml.models.ObliviousTree;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * User: noxoomo
@@ -89,18 +87,34 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
   @Override
   public ModelTools.CompiledOTEnsemble  fit(final VecDataSet ds, final Loss loss) {
     ObliviousTree tree = base.fit(ds, loss);
-
     Ensemble<ObliviousTree> ensemble = new Ensemble<>(new ObliviousTree[]{tree}, VecTools.fill(new SingleValueVec(1), 1.0));
     ModelTools.CompiledOTEnsemble compiledOTEnsemble = ModelTools.compile(ensemble);
-    List<ModelTools.CompiledOTEnsemble.Entry> entryList = compiledOTEnsemble.getEntries();
+    List<ModelTools.CompiledOTEnsemble.Entry> entryList = compiledOTEnsemble.getEntries().stream()
+            .filter(entry -> entry.getBfIndices().length > 0 && entry.getValue() != 0).collect(Collectors.toList());
+
+    Vec target = VecTools.copy(loss.target());
+    double bias = 0;
+    for (int i=0; i < target.dim();++i) {
+      bias += target.get(i);
+    }
+    bias /= target.dim();
+    for (int i=0; i < target.dim();++i) {
+      target.adjust(i, -bias);
+    }
+
 
     final BinarizedDataSet bds =  ds.cache().cache(Binarize.class, VecDataSet.class).binarize(base.grid);
 
-    Pair<Mx,Vec> compiledLearn = filter(entryList, bds, loss.target(), learnPoints(loss, ds));
-    Pair<Mx,Vec> compiledValidate = filter(entryList, bds, loss.target(), validationPoints(loss));
+    Pair<Mx,Vec> compiledLearn = filter(entryList, bds, target, learnPoints(loss, ds));
+
+    Vec entryBias = colMean(compiledLearn.first);
+    center(compiledLearn.first, entryBias);
 
 
-    ElasticNetMethod lasso = new ElasticNetMethod(1e-7, alpha, lambdaRatio);
+    Pair<Mx,Vec> compiledValidate = filter(entryList, bds, target, validationPoints(loss));
+    center(compiledValidate.first, entryBias);
+
+    ElasticNetMethod lasso = new ElasticNetMethod(1e-4, alpha, lambdaRatio);
     List<Linear> weightsPath = lasso.fit(compiledLearn.first, compiledLearn.second, nlambda, lambdaRatio);
     double[] scores = weightsPath.parallelStream().mapToDouble(linear -> VecTools.distance(linear.transAll(compiledValidate.first), compiledValidate.second)).toArray();
     int best = 0;
@@ -116,8 +130,32 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
     for (int i=0; i < weights.dim();++i) {
       if (weights.get(i) != 0) {
         newEntries.add(new ModelTools.CompiledOTEnsemble.Entry(entryList.get(i).getBfIndices(), weights.get(i)));
+        bias -= weights.get(i) * entryBias.get(i);
       }
     }
+    if (bias != 0) {
+      newEntries.add(new ModelTools.CompiledOTEnsemble.Entry(new int[0], bias));
+    }
+
+    System.out.println("Next entries batch: " + newEntries.size() + " of " +  (entryList.size()+1) + " nonZero");
     return new ModelTools.CompiledOTEnsemble(newEntries, tree.grid());
+  }
+
+  private Vec colMean(Mx data) {
+    Vec result = new ArrayVec(data.columns());
+    for (int i=0;i < data.rows();++i) {
+      for (int j=0;j < data.columns();++j) {
+        result.adjust(j, data.get(i, j));
+      }
+    }
+    return VecTools.scale(result, 1.0 / data.rows());
+  }
+
+  private void center(Mx data, Vec bias) {
+      for (int j=0; j < data.rows();++j) {
+        for (int i=0; i < data.columns();++i) {
+          data.adjust(i,j, -bias.get(i));
+      }
+    }
   }
 }

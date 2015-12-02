@@ -61,7 +61,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
     for (int i=0; i < data.columns();++i) {
       lambdaMax = FastMath.max(FastMath.abs(cache.targetProduct(i)), lambdaMax);
     }
-    lambdaMax *= alpha /  data.rows();
+    lambdaMax *= 1.0  / (alpha *  data.rows());
     double lambdaMin = lambdaMax * lambdaEps;
     double step = (lambdaMax - lambdaMin) / nlambda;
     List<Linear> path = new ArrayList<>(nlambda);
