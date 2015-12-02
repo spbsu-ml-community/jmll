@@ -84,7 +84,7 @@ public class RidgeGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
     Pair<Mx,Vec> compiledLearn = filter(entryList, bds, loss.target(), learnPoints(loss, ds));
     RidgeRegression ridgeRegression = new RidgeRegression(lambda);
     Vec weights = ridgeRegression.fit(compiledLearn.first, compiledLearn.second);
-    ArrayList<ModelTools.CompiledOTEnsemble.Entry> newEntries  = new ArrayList<>(entryList);
+    ArrayList<ModelTools.CompiledOTEnsemble.Entry> newEntries  = new ArrayList<>();
     for (int i=0; i < weights.dim();++i) {
       newEntries.add(new ModelTools.CompiledOTEnsemble.Entry(entryList.get(i).getBfIndices(), weights.get(i)));
     }

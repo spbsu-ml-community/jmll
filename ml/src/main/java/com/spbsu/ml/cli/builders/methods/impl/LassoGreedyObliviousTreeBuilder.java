@@ -13,7 +13,7 @@ import com.spbsu.ml.methods.trees.RidgeGreedyObliviousTree;
 public class LassoGreedyObliviousTreeBuilder implements Factory<VecOptimization> {
   private double lambdaRatio = 1e-6;
   private int nlambda = 300;
-  private double alpha = 0.95;
+  private double alpha = 1.0;
   private GreedyObliviousTree weak;
   private final GreedyObliviousTreeBuilder defaultWeakBuilder = new GreedyObliviousTreeBuilder();
 

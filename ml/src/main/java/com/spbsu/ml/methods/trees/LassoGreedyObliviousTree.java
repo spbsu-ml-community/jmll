@@ -112,9 +112,11 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
       }
     }
     Vec weights = weightsPath.get(best).weights;
-    ArrayList<ModelTools.CompiledOTEnsemble.Entry> newEntries  = new ArrayList<>(entryList);
+    ArrayList<ModelTools.CompiledOTEnsemble.Entry> newEntries  = new ArrayList<>();
     for (int i=0; i < weights.dim();++i) {
-      newEntries.add(new ModelTools.CompiledOTEnsemble.Entry(entryList.get(i).getBfIndices(), weights.get(i)));
+      if (weights.get(i) != 0) {
+        newEntries.add(new ModelTools.CompiledOTEnsemble.Entry(entryList.get(i).getBfIndices(), weights.get(i)));
+      }
     }
     return new ModelTools.CompiledOTEnsemble(newEntries, tree.grid());
   }
