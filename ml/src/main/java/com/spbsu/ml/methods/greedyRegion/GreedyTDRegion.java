@@ -162,6 +162,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
       usedBF[bestSplitBF.bfIndex] = true;
       mask.add(bestSplitMask);
       currentScore = scores[bestSplit];
+
     }
 
 

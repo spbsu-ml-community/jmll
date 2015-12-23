@@ -3,7 +3,6 @@ package com.spbsu.ml.methods.linearRegressionExperiments;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ThreadTools;
@@ -22,18 +21,18 @@ public class RidgeRegression implements VecOptimization<L2> {
   final double alpha;
 
   final double multiplyArrayVec(Vec left, Vec right) {
-    assert(left.dim() == right.dim());
-    int size = (left.dim() / 4 ) * 4;
+    assert (left.dim() == right.dim());
+    int size = (left.dim() / 4) * 4;
     double result = 0;
-    for (int i=0; i < size; i += 4) {
+    for (int i = 0; i < size; i += 4) {
       final double la = left.get(i);
-      final double lb = left.get(i+1);
-      final double lc = left.get(i+2);
-      final double ld = left.get(i+3);
+      final double lb = left.get(i + 1);
+      final double lc = left.get(i + 2);
+      final double ld = left.get(i + 3);
       final double ra = right.get(i);
-      final double rb = right.get(i+1);
-      final double rc = right.get(i+2);
-      final double rd = right.get(i+3);
+      final double rb = right.get(i + 1);
+      final double rc = right.get(i + 2);
+      final double rd = right.get(i + 3);
 
       final double dpa = la * ra;
       final double dpb = lb * rb;
@@ -42,7 +41,7 @@ public class RidgeRegression implements VecOptimization<L2> {
 
       result += (dpa + dpb) + (dpc + dpd);
     }
-    for (int i=size;i < left.dim();++i) {
+    for (int i = size; i < left.dim(); ++i) {
       result += left.get(i) * right.get(i);
     }
     return result;
@@ -56,12 +55,13 @@ public class RidgeRegression implements VecOptimization<L2> {
   public Linear fit(VecDataSet learn, L2 l2) {
     Vec target = l2.target;
     Mx data = learn.data();
-   return new Linear(fit(data,target));
+    return new Linear(fit(data, target));
   }
 
-  static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Ridge dot-products thread", -1);;
+  static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Ridge dot-products thread", -1);
+  ;
 
-  final public Vec fit(final Mx data,final Vec target) {
+  final public Vec fit(final Mx data, final Vec target) {
     final Mx cov = new VecBasedMx(data.columns(), data.columns());
     final Vec covTargetWithFeatures = new ArrayVec(data.columns());
 
@@ -72,7 +72,7 @@ public class RidgeRegression implements VecOptimization<L2> {
       exec.submit((Runnable) () -> {
         final Vec feature = data.col(i);
         cov.set(i, i, multiplyArrayVec(feature, feature));
-        cov.adjust(i,i, alpha);
+        cov.adjust(i, i, alpha);
         covTargetWithFeatures.set(i, multiplyArrayVec(feature, target));
         for (int j = i + 1; j < data.columns(); ++j) {
           final double val = multiplyArrayVec(feature, data.col(j));
