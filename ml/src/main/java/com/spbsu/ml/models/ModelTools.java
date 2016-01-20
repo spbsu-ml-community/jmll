@@ -1,17 +1,14 @@
 package com.spbsu.ml.models;
 
-import org.jetbrains.annotations.NotNull;
-
-
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.MathTools;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.commons.math.Func;
-import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.func.Ensemble;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
-import gnu.trove.procedure.TObjectDoubleProcedure;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -109,15 +106,19 @@ public final class ModelTools {
     }
   }
 
-  public static CompiledOTEnsemble compile(final Ensemble<ObliviousTree> input) {
-    final BFGrid grid = input.size() > 0 ? input.models[0].grid() : null;
+  public static CompiledOTEnsemble compile(final Ensemble<ObliviousTree> ensemble) {
+    final BFGrid grid = ensemble.size() > 0 ? ensemble.models[0].grid() : null;
     final TObjectDoubleHashMap<ConditionEntry> scores = new TObjectDoubleHashMap<>();
-    for (int i = 0; i < input.size(); i++) {
-      final ObliviousTree model = input.models[i];
-      final List<BFGrid.BinaryFeature> features = model.features();
-      for (int b = 0; b < model.values().length; b++) {
-        final Set<BFGrid.BinaryFeature> currentSet = new HashSet<BFGrid.BinaryFeature>();
-        final double[] values = model.values();
+
+    for (int treeIndex = 0; treeIndex < ensemble.size(); treeIndex++) {
+      final ObliviousTree tree = ensemble.models[treeIndex];
+
+      final List<BFGrid.BinaryFeature> features = tree.features();
+      final double[] values = tree.values();
+
+      for (int b = 0; b < tree.values().length; b++) {
+        final Set<BFGrid.BinaryFeature> currentSet = new HashSet<>();
+
         double value = 0;
         final int bitsB = MathTools.bits(b);
         for (int a = 0; a < values.length; a++) {
@@ -130,6 +131,7 @@ public final class ModelTools {
             currentSet.add(features.get(features.size() - f - 1));
           }
         }
+
         if (value != 0.) {
           final int[] currentSetA = new int[currentSet.size()];
           final Iterator<BFGrid.BinaryFeature> it = currentSet.iterator();
@@ -137,22 +139,17 @@ public final class ModelTools {
             currentSetA[j] = it.next().bfIndex;
           }
           Arrays.sort(currentSetA);
-          final ConditionEntry entry = new ConditionEntry(currentSetA);
-          if (scores.containsKey(entry))
-            scores.adjustValue(entry, input.weights.get(i) * value);
-          else
-            scores.put(entry, input.weights.get(i) * value);
+
+          final double addedValue = ensemble.weights.get(treeIndex) * value;
+          scores.adjustOrPutValue(new ConditionEntry(currentSetA), addedValue, addedValue);
         }
       }
     }
-    final List<Pair<ConditionEntry, Double>> sortedScores = new ArrayList<>();
 
-    scores.forEachEntry(new TObjectDoubleProcedure<ConditionEntry>() {
-      @Override
-      public boolean execute(final ConditionEntry a, final double b) {
-        sortedScores.add(Pair.create(a, b));
-        return true;
-      }
+    final List<Pair<ConditionEntry, Double>> sortedScores = new ArrayList<>();
+    scores.forEachEntry((entry, value) -> {
+      sortedScores.add(Pair.create(entry, value));
+      return true;
     });
     Collections.sort(sortedScores, new Comparator<Pair<ConditionEntry, Double>>() {
       @Override
@@ -170,13 +167,13 @@ public final class ModelTools {
     });
 
     final List<CompiledOTEnsemble.Entry> entries = new ArrayList<>(scores.size());
-    final int[] freqs = new int[grid.size()];
-
+//    final int[] freqs = new int[grid.size()];
+//
     for (final Pair<ConditionEntry, Double> score : sortedScores) {
       entries.add(new CompiledOTEnsemble.Entry(score.first.features, score.second));
-      for (int i = 0; i < score.first.features.length; i++) {
-        freqs[score.first.features[i]]++;
-      }
+//      for (int i = 0; i < score.first.features.length; i++) {
+//        freqs[score.first.features[i]]++;
+//      }
     }
 
     return new CompiledOTEnsemble(entries, grid);
