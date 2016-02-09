@@ -5,10 +5,12 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.TransC1;
 import com.spbsu.ml.func.generic.WSum;
+import org.jetbrains.annotations.NotNull;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
@@ -83,21 +85,27 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 
   public abstract int dim();
 
-  @SuppressWarnings("UnusedDeclaration")
-  public void printTopology(Topology topology, Vec allWeights, Writer to) throws IOException {
-//    for (int i = 0; i < topology.nodesCount(); i++) {
-//      to.append(Integer.toString(i)).append(" ");
-//
-//      for (int j = i + 1; j < topology.nodesCount(); j++) {
-//        final IntSeq connections = topology.connections(j);
-//        final Vec weights = topology.parameters(j, allWeights);
-//        final int index = ArrayTools.indexOf(i, connections);
-//        if(index >= 0)
-//          to.append(" ").append(Integer.toString(j)).append(':').append(CharSeqTools.prettyPrint.format(weights.get(index)));
-//      }
-//      to.append("\n");
-//    }
-//    to.flush();
+  public abstract String ppState(Vec state, Seq<T> seq);
+
+  protected String getString(Vec state, Seq<T> seq, int statesCount) {
+    final StringBuilder builder = new StringBuilder();
+    for (int i = 0; i <= seq.length(); i++) {
+      if (i > 0)
+        builder.append(seq.at(i - 1));
+      else
+        builder.append(" ");
+
+      for (int s = 0; s < statesCount; s++) {
+        builder.append("\t").append(CharSeqTools.prettyPrint.format(state.get(i * statesCount + s)));
+      }
+      builder.append('\n');
+    }
+    builder.append(" ");
+    for (int i = (seq.length() + 1) * statesCount; i < state.length(); i++) {
+      builder.append("\t").append(CharSeqTools.prettyPrint.format(state.get(i)));
+    }
+    builder.append('\n');
+    return builder.toString();
   }
 
   public Vec parametersGradient(S x, TransC1 target, Vec weights) {

@@ -2,6 +2,7 @@ package com.spbsu.ml.models.nn;
 
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.func.generic.*;
 
@@ -63,6 +64,11 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
   @Override
   public int dim() {
     return dim;
+  }
+
+  @Override
+  public String ppState(Vec state, Seq<Double> seq) {
+    return null;
   }
 
   @Override

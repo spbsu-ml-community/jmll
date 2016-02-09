@@ -34,6 +34,7 @@ import com.spbsu.ml.models.nn.nfa.NFANetworkWithLZW;
 import com.spbsu.ml.models.nn.nfa.SeqWeightsCalculator;
 import com.spbsu.ml.models.nn.nfa.WeightsCalculator;
 import com.spbsu.ml.testUtils.TestResourceLoader;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -42,14 +43,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.zip.GZIPInputStream;
 
-import static com.spbsu.commons.io.StreamTools.readFile;
-
 /**
  * User: solar
  * Date: 25.05.15
  * Time: 16:39
  */
-public abstract class NNTest {
+public class NNTest {
   private final FastRandom rng = new FastRandom(0);
   private Pool<QURLItem> featuresTxtPool;
 
@@ -98,12 +97,9 @@ public abstract class NNTest {
     };
     final Mx data = pool.vecData().data();
     final LL ll = pool.target(LL.class);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final Vec row = data.row(argument.id);
-        return network.decisionByInput(row);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final Vec row = data.row(argument.id);
+      return network.decisionByInput(row);
     });
     final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
     System.out.println(decision.x);
@@ -117,9 +113,9 @@ public abstract class NNTest {
 
   @Test
   public void testValueSeq() {
-      final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 5, 1, new CharSeqAdapter("ab"));
-      final Trans aba = nfa.decisionByInput(new CharSeqAdapter("aba"));
-      Assert.assertEquals(0.2 + 0.16 + 0.128, aba.trans(new ArrayVec(nfa.dim())).get(1), 0.0001);
+    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 5, 1, new CharSeqAdapter("ab"));
+    final Trans aba = nfa.decisionByInput(new CharSeqAdapter("aba"));
+    Assert.assertEquals(0.2 + 0.16 + 0.128, aba.trans(new ArrayVec(nfa.dim())).get(1), 0.0001);
   }
 
   @Test
@@ -139,8 +135,8 @@ public abstract class NNTest {
       final Vec gradientBa = ba.gradientTo(x, new ArrayVec(2), target);
       // composite result:  1/(1+e^x)*(1 + e^x/(1+e^y))
       message += "or: " + x + "\n"
-              + "ab: " + gradientAb + "\n"
-              + "ba: " + gradientBa + "\n";
+          + "ab: " + gradientAb + "\n"
+          + "ba: " + gradientBa + "\n";
       // composite gradient by x: -e^x/(1+e^x)*1/(1+e^x)*e^y/(1+e^y)
       Assert.assertEquals(message, -0.26894, gradientAb.get(0), 0.00001);
       // composite gradient by x: -e^y/(1+e^y)*1/(1+e^y)*1/(1+e^x)
@@ -154,8 +150,8 @@ public abstract class NNTest {
       final Vec gradientBa = ba.gradientTo(x, new ArrayVec(2), target);
       // composite result:  1/(1+e^x)*(1 + e^x/(1+e^y))
       message += "or: " + x + "\n"
-              + "ab: " + gradientAb + "\n"
-              + "ba: " + gradientBa + "\n";
+          + "ab: " + gradientAb + "\n"
+          + "ba: " + gradientBa + "\n";
       // composite gradient by x: -e^x/(1+e^x)*1/(1+e^x)*e^y/(1+e^y)
       Assert.assertEquals(message, 0.26894, gradientAb.get(0), 0.00001);
       // composite gradient by x: -e^y/(1+e^y)*1/(1+e^y)*1/(1+e^x)
@@ -172,7 +168,7 @@ public abstract class NNTest {
 
     final NeuralSpider.NeuralNet ab = nfa.decisionByInput(new CharSeqAdapter("ab"));
     final NeuralSpider.NeuralNet ba = nfa.decisionByInput(new CharSeqAdapter("ba"));
-    final Vec x = new ArrayVec(1,0, 0,1,  0,1, 0,0);
+    final Vec x = new ArrayVec(1, 0, 0, 1, 0, 1, 0, 0);
     message += nfa.ppState(ab.state(x), new CharSeqAdapter("ab"));
     message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
 
@@ -180,8 +176,8 @@ public abstract class NNTest {
     final Vec gradientAb = ab.gradientTo(x, new ArrayVec(x.dim()), target);
     final Vec gradientBa = ba.gradientTo(x, new ArrayVec(x.dim()), target);
     message += "\nor: " + x + "\n"
-            + "ab: " + gradientAb + "\n"
-            + "ba: " + gradientBa + "\n";
+        + "ab: " + gradientAb + "\n"
+        + "ba: " + gradientBa + "\n";
     Assert.assertTrue(message, VecTools.equals(gradientAb, new Vec2CharSequenceConverter().convertFrom("8 -0.18654 -0.02541 0 0 -0.04347 -0.11817 -0.03956 -0.03956"), 0.00001));
     Assert.assertTrue(message, VecTools.equals(gradientBa, new Vec2CharSequenceConverter().convertFrom("8 -0.04167 -0.01533 -0.04167 -0.11327 -0.057 -0.15494 0 0"), 0.00001));
   }
@@ -195,13 +191,13 @@ public abstract class NNTest {
     final NeuralSpider.NeuralNet ab = nfa.decisionByInput(new CharSeqAdapter("ab"));
     final NeuralSpider.NeuralNet ba = nfa.decisionByInput(new CharSeqAdapter("ba"));
     final Vec x = new ArrayVec(
-            1,0,0,
-            0,1,0,
-            0,0,1,
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1,
 
-            0,1,0,
-            0,0,1,
-            0,0,0);
+        0, 1, 0,
+        0, 0, 1,
+        0, 0, 0);
     message += nfa.ppState(ab.state(x), new CharSeqAdapter("ab"));
     message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
     final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(0, 1)), new ParallelFunc(2, new Log(1., 0.)));
@@ -209,8 +205,8 @@ public abstract class NNTest {
     final Vec gradientAb = ab.gradientTo(x, new ArrayVec(x.dim()), target);
     final Vec gradientBa = ba.gradientTo(x, new ArrayVec(x.dim()), target);
     message += "\nor: " + x + "\n"
-            + "ab: " + gradientAb + "\n"
-            + "ba: " + gradientBa + "\n";
+        + "ab: " + gradientAb + "\n"
+        + "ba: " + gradientBa + "\n";
     Assert.assertTrue(message, VecTools.equals(gradientAb, new Vec2CharSequenceConverter().convertFrom("18 -0.11105 -0.01512 -0.08577 0 0 0 0 0 0 -0.02588 -0.07035 -0.02588 -0.02355 -0.02355 -0.06401 0 0 0"), 0.00001));
   }
 
@@ -234,14 +230,7 @@ public abstract class NNTest {
     final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 1, 1000, 0.8) {
       @Override
       public void init(Vec cursor) {
-        final int paramsDim = (statesCount - 1) * (statesCount - 1);
         VecTools.fillUniform(cursor, rng);
-//        for (int i = 0; i < alpha.length(); i++) {
-//          final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(i * paramsDim, paramsDim));
-//          for (int j = 0; j < mx.rows(); j++) {
-//            mx.set(j, j, statesCount);
-//          }
-//        }
       }
     };
     final Action<Vec> pp = new Action<Vec>() {
@@ -266,12 +255,9 @@ public abstract class NNTest {
     };
     gradientDescent.addListener(pp);
     final BlockwiseMLL logit = pool.target(BlockwiseMLL.class);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), logit, new Computable<FakeItem, TransC1>() {
-      @Override
-      public TransC1 compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return nfa.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), logit, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return nfa.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
 
@@ -335,6 +321,7 @@ public abstract class NNTest {
     final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final Action<Vec> pp = new Action<Vec>() {
       int index = 0;
+
       @Override
       public void invoke(Vec vec) {
         if (++index % 100 == 1) {
@@ -343,12 +330,9 @@ public abstract class NNTest {
       }
     };
     gradientDescent.addListener(pp);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
     final Vec solution = fit.x;
@@ -384,29 +368,10 @@ public abstract class NNTest {
     final int statesCount = 5;
     final int finalStates = 1;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 10, 20000, 2){
-      @Override
-      public void init(Vec cursor) {
-        final int paramsDim = (statesCount - finalStates) * (statesCount - 1);
-        for (int c = 0; c < alpha.length(); c++) {
-          final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
-          VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
-          for (int j = 0; j < mx.rows(); j++) {
-            mx.set(j, j, 5);
-          }
-        }
-      }
-
-      @Override
-      public void normalizeGradient(Vec grad) {
-        for (int i = 0; i < grad.length(); i++) {
-          if (Math.abs(grad.get(i)) < 0.001)
-            grad.set(i, 0);
-        }
-      }
-    };
+    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount, finalStates);
     final Action<Vec> pp = new Action<Vec>() {
       int index = 0;
+
       @Override
       public void invoke(Vec vec) {
         if (++index % 1000 == 1) {
@@ -424,12 +389,9 @@ public abstract class NNTest {
     gradientDescent.init(initial);
 //    digIntoSolution(pool, network, ll, initial, "www.yandex.ru/yandsearch?text=xyu.htm", "www.yandex.ru");
 
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
 //    digIntoSolution(pool, network, ll, fit.x, "www.yamdex.ru/yandsearch?text=xyu.htm", "www.yamdex.ru");
@@ -442,24 +404,24 @@ public abstract class NNTest {
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     CharSeqTools.processLines(
-            new InputStreamReader(new GZIPInputStream(new FileInputStream("/Users/solar/tree/java/relpred/trunk/relpred/main/tests/data/in/train.txt.gz"))),
-            new Processor<CharSequence>() {
-              CharSequence[] parts = new CharSequence[2];
-              boolean next = true;
+        new InputStreamReader(new GZIPInputStream(new FileInputStream("/Users/solar/tree/java/relpred/trunk/relpred/main/tests/data/in/train.txt.gz"))),
+        new Processor<CharSequence>() {
+          CharSequence[] parts = new CharSequence[2];
+          boolean next = true;
 
-              @Override
-              public void process(CharSequence arg) {
-                CharSeqTools.split(arg, '\t', parts);
-                final CharSeq next = CharSeq.create(parts[0]);
-                final int nextClass = CharSeqTools.parseInt(CharSeqTools.split(parts[1], ':')[1]);
-                if (nextClass > 0 != this.next || next.length() > 20)
-                  return;
-                this.next = !this.next;
-                pbuilder.setFeature(0, next);
-                pbuilder.setTarget(0, nextClass);
-                pbuilder.nextItem();
-              }
-            });
+          @Override
+          public void process(CharSequence arg) {
+            CharSeqTools.split(arg, '\t', parts);
+            final CharSeq next = CharSeq.create(parts[0]);
+            final int nextClass = CharSeqTools.parseInt(CharSeqTools.split(parts[1], ':')[1]);
+            if (nextClass > 0 != this.next || next.length() > 20)
+              return;
+            this.next = !this.next;
+            pbuilder.setFeature(0, next);
+            pbuilder.setTarget(0, nextClass);
+            pbuilder.nextItem();
+          }
+        });
 
     final Pool<FakeItem> pool = pbuilder.create();
     final CharSeqArray alpha = new CharSeqArray('U', 'L', 'H', 'C', 'S', 'N', 'R', 'F', 'V', 'O');
@@ -469,13 +431,7 @@ public abstract class NNTest {
       @Override
       public void init(Vec cursor) {
         final int paramsDim = (statesCount - 1) * (statesCount - 1);
-        for (int c = 0; c < alpha.length(); c++) {
-          final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
-          VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
-          for (int j = 0; j < mx.rows(); j++) {
-            mx.set(j, j, 5);
-          }
-        }
+        initCursor(cursor, paramsDim, alpha, statesCount);
       }
 
       @Override
@@ -492,6 +448,7 @@ public abstract class NNTest {
     final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final Action<Vec> pp = new Action<Vec>() {
       int index = 0;
+
       @Override
       public void invoke(Vec vec) {
         if (++index % 10 == 1) {
@@ -499,7 +456,7 @@ public abstract class NNTest {
           int count = 0;
           int negative = 0;
           for (int i = 0; i < 1000; i++, count++) {
-            final double value = ll.block(i).value(network.decisionByInput((CharSeq) pool.feature(0, i)).trans(vec));
+            final double value = ll.block(i).value(network.decisionByInput(pool.feature(0, i)).trans(vec));
             sum += value;
             if (Math.exp(-value) > 2)
               negative++;
@@ -509,12 +466,9 @@ public abstract class NNTest {
       }
     };
     gradientDescent.addListener(pp);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
     final Vec vals = new ArrayVec(pool.size());
@@ -533,57 +487,15 @@ public abstract class NNTest {
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     final CharSequence[] secs = {"abrakadabra", "balalayka", "infinity", "element"};
     final Set<Character> alphaSet = new HashSet<>();
-    for (int i = 0; i < secs.length; i++) {
-      final Seq<Character> url = CharSeq.create(secs[i]);
-      pbuilder.setFeature(0, url);
-      pbuilder.setTarget(0, i + 1);
-      for (int j = 0; j < url.length(); j++) {
-        alphaSet.add(url.at(j));
-      }
-      pbuilder.nextItem();
-    }
-    final Pool<FakeItem> pool = pbuilder.create();
+    final Pool<FakeItem> pool = getFakeItemPool(pbuilder, secs, alphaSet);
 
     final CharSeqArray alpha = new CharSeqArray(alphaSet.toArray(new Character[alphaSet.size()]));
     final int statesCount = 8;
     final int finalStates = 4;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 10, 20000, 2) {
-      @Override
-      public void init(Vec cursor) {
-        final int paramsDim = (statesCount - finalStates) * (statesCount - 1);
-        for (int c = 0; c < alpha.length(); c++) {
-          final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
-          VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
-          for (int j = 0; j < mx.rows(); j++) {
-            mx.set(j, j, 5);
-          }
-        }
-      }
+    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount, finalStates);
 
-      @Override
-      public void normalizeGradient(Vec grad) {
-        for (int i = 0; i < grad.length(); i++) {
-          if (Math.abs(grad.get(i)) < 0.001)
-            grad.set(i, 0);
-        }
-      }
-    };
-
-    final Action<Vec> pp = new Action<Vec>() {
-      int index = 0;
-
-      @Override
-      public void invoke(Vec vec) {
-        if (++index == 1) {
-          for (int i = 0; i < secs.length; i++) {
-            System.out.println("Class: " + i);
-            final NeuralSpider.NeuralNet neuralNet = network.decisionByInput(CharSeq.create(secs[i]));
-            System.out.println(network.ppState(neuralNet.state(vec), CharSeq.create(secs[i])));
-          }
-        }
-      }
-    };
+    final Action<Vec> pp = getVecAction(secs, network);
     gradientDescent.addListener(pp);
 
     final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
@@ -606,7 +518,7 @@ public abstract class NNTest {
   }
 
 
-  @Test
+  //@Test
   public void testGenom() throws IOException {
 //    String str  = readFile(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq_accuracy.fa")).toString();
 //    String[] mass = str.split(">");
@@ -629,7 +541,7 @@ public abstract class NNTest {
     final File file = new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq.txt");
     final BufferedReader br = new BufferedReader(new FileReader(file));
     String line;
-    while((line = br.readLine()) != null) {
+    while ((line = br.readLine()) != null) {
       String[] strs = line.split("->");
       if (strs.length < 2)
         continue;
@@ -647,7 +559,6 @@ public abstract class NNTest {
       }
     }
     br.close();
-
 
 
     final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
@@ -678,13 +589,7 @@ public abstract class NNTest {
       @Override
       public void init(Vec cursor) {
         final int paramsDim = (statesCount - finalStates) * (statesCount - 1);
-        for (int c = 0; c < alpha.length(); c++) {
-          final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
-          VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
-          for (int j = 0; j < mx.rows(); j++) {
-            mx.set(j, j, 5);
-          }
-        }
+        initCursor(cursor, paramsDim, alpha, statesCount);
       }
 
       @Override
@@ -698,11 +603,12 @@ public abstract class NNTest {
 
     final Action<Vec> pp = new Action<Vec>() {
       double index = 0;
+
       @Override
       public void invoke(Vec vec) {
         index++;
         //if (index % 50 == 0) {
-          System.out.print(String.format("Learning: %s (%.2f%%)\r", index, index / iterations * 100));
+        System.out.print(String.format("Learning: %s (%.2f%%)\r", index, index / iterations * 100));
         //}
       }
     };
@@ -712,6 +618,70 @@ public abstract class NNTest {
     final ArrayVec initial = new ArrayVec(network.dim());
     gradientDescent.init(initial);
 
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
+    });
+    final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
+    System.out.println();
+
+    digIntoSolutionParallel(pool, network, ll, decision);
+  }
+
+
+  @Test
+  public void weightsCalculatorTest() {
+    Vec betta = new ArrayVec(36);
+    VecTools.fillUniform(betta, rng);
+    boolean[] booleans = {false, false, false, false, false};
+
+    WeightsCalculator weightsCalculator1 = new WeightsCalculator(5, 2, 12, 12);
+    weightsCalculator1.setDropOut(booleans);
+    Mx mx1 = weightsCalculator1.compute(betta);
+
+    WeightsCalculator weightsCalculator2 = new WeightsCalculator(5, 2, 0, 12);
+    weightsCalculator2.setDropOut(booleans);
+    Mx mx2 = weightsCalculator2.compute(betta);
+
+    WeightsCalculator weightsCalculator3 = new WeightsCalculator(5, 2, 24, 12);
+    weightsCalculator3.setDropOut(booleans);
+    Mx mx3 = weightsCalculator3.compute(betta);
+
+    SeqWeightsCalculator weightsCalculator = new SeqWeightsCalculator(5, 2, 12, 12, 0, 24);
+    weightsCalculator.setDropOut(booleans);
+    Mx mx = weightsCalculator.compute(betta);
+
+    Mx multiply = MxTools.multiply(mx3, MxTools.multiply(mx2, mx1));
+
+    for (int i = 0; i < mx.rows(); i++) {
+      for (int j = 0; j < mx.columns(); j++) {
+        Assert.assertEquals(multiply.get(i, j), mx.get(i, j), 0.0001);
+      }
+    }
+  }
+
+
+  //@Test
+  public void testSimpleMLLSeqWithLZW() {
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
+    pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
+    final CharSequence[] secs = {"abrakadabra", "balalayka", "infinity", "element"};
+    final Set<Character> alphaSet = new HashSet<>();
+    final Pool<FakeItem> pool = getFakeItemPool(pbuilder, secs, alphaSet);
+
+    final CharSeqArray alpha = new CharSeqArray(alphaSet.toArray(new Character[alphaSet.size()]));
+    final int statesCount = 8;
+    final int finalStates = 4;
+    final NFANetworkWithLZW<Character> network = new NFANetworkWithLZW<>(rng, 0.1, statesCount, finalStates, alpha);
+    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount, finalStates);
+
+    final Action<Vec> pp = getVecAction(secs, network);
+    gradientDescent.addListener(pp);
+
+    final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
+    final ArrayVec initial = new ArrayVec(network.dim());
+    gradientDescent.init(initial);
     final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
       @Override
       public NeuralSpider.NeuralNet compute(final FakeItem argument) {
@@ -720,9 +690,47 @@ public abstract class NNTest {
       }
     });
     final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
-    System.out.println();
+    System.out.println(decision.x);
 
-    digIntoSolutionParallel(pool, network, ll, decision);
+    for (int i = 0; i < secs.length; i++) {
+      System.out.println("Class: " + i);
+      System.out.println(decision.compute(pool.data().at(i)));
+    }
+  }
+
+
+  private void digIntoSolution(Pool<FakeItem> pool, NFANetwork<Character> network, BlockwiseMLL ll, Vec solution, String positiveExample, String negativeExample) {
+    if (positiveExample != null) {
+      System.out.println("Positive: ");
+      final CharSeqAdapter input = new CharSeqAdapter(positiveExample);
+      final NeuralSpider.NeuralNet positive = network.decisionByInput(input);
+      System.out.println(network.ppState(positive.state(solution), input));
+    }
+    if (negativeExample != null) {
+      System.out.println("Negative: ");
+      final CharSeqAdapter input = new CharSeqAdapter(negativeExample);
+      final NeuralSpider.NeuralNet negative = network.decisionByInput(input);
+      System.out.println(network.ppState(negative.state(solution), input));
+    }
+
+    int count = 0, negative = 0;
+    double llSum = 0;
+    for (int i = 0; i < ll.blocksCount(); i++) {
+      final CharSeq input = pool.feature(0, i);
+      final double llblock = ll.block(i).value(network.decisionByInput(input).trans(solution));
+      llSum += llblock;
+      final double pX = Math.exp(llblock);
+      count++;
+      if (pX < 0.5) {
+        negative++;
+        System.out.println("Input: [" + input + "]");
+        final NeuralSpider.NeuralNet net = network.decisionByInput(input);
+        System.out.println(network.ppState(net.state(solution), input));
+        System.out.println();
+      }
+    }
+    System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double) count);
+    Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
   }
 
   private void digIntoSolutionParallel(Pool<FakeItem> pool, NFANetwork<Character> network, BlockwiseMLL ll, DSSumFuncComposite<FakeItem>.Decision decision) {
@@ -781,88 +789,12 @@ public abstract class NNTest {
       System.out.println(ll.transformResultValue(llSum) + " " + (count - negative) / (double) count);
       System.out.println(positives);
       Assert.assertTrue(1.1 > ll.transformResultValue(llSum));
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    } catch (ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
   }
 
-
-  private void digIntoSolution(Pool<FakeItem> pool, NFANetwork<Character> network, BlockwiseMLL ll, Vec solution, String positiveExample, String negativeExample) {
-    if (positiveExample != null) {
-      System.out.println("Positive: ");
-      final CharSeqAdapter input = new CharSeqAdapter(positiveExample);
-      final NeuralSpider.NeuralNet positive = network.decisionByInput(input);
-      System.out.println(network.ppState(positive.state(solution), input));
-    }
-    if (negativeExample != null) {
-      System.out.println("Negative: ");
-      final CharSeqAdapter input = new CharSeqAdapter(negativeExample);
-      final NeuralSpider.NeuralNet negative = network.decisionByInput(input);
-      System.out.println(network.ppState(negative.state(solution), input));
-    }
-
-    int count = 0, negative = 0;
-    double llSum = 0;
-    for (int i = 0; i < ll.blocksCount(); i++) {
-      final CharSeq input = pool.feature(0, i);
-      final double llblock = ll.block(i).value(network.decisionByInput(input).trans(solution));
-      llSum += llblock;
-      final double pX = Math.exp(llblock);
-      count++;
-      if (pX < 0.5) {
-        negative++;
-        System.out.println("Input: [" + input + "]");
-        final NeuralSpider.NeuralNet net = network.decisionByInput(input);
-        System.out.println(network.ppState(net.state(solution), input));
-        System.out.println();
-      }
-    }
-    System.out.println(Math.exp(-llSum / ll.dim()) + " " + (count - negative) / (double)count);
-    Assert.assertTrue(1.1 > Math.exp(-llSum / ll.dim()));
-  }
-
-
-  @Test
-  public void weightsCalculatorTest() {
-    Vec betta = new ArrayVec(36);
-    VecTools.fillUniform(betta, rng);
-    boolean[] booleans = {false, false, false, false, false};
-
-    WeightsCalculator weightsCalculator1 = new WeightsCalculator(5, 2, 12, 12);
-    weightsCalculator1.setDropOut(booleans);
-    Mx mx1 = weightsCalculator1.compute(betta);
-
-    WeightsCalculator weightsCalculator2 = new WeightsCalculator(5, 2, 0, 12);
-    weightsCalculator2.setDropOut(booleans);
-    Mx mx2 = weightsCalculator2.compute(betta);
-
-    WeightsCalculator weightsCalculator3 = new WeightsCalculator(5, 2, 24, 12);
-    weightsCalculator3.setDropOut(booleans);
-    Mx mx3 = weightsCalculator3.compute(betta);
-
-    SeqWeightsCalculator weightsCalculator = new SeqWeightsCalculator(5, 2, 12, 12, 0, 24);
-    weightsCalculator.setDropOut(booleans);
-    Mx mx = weightsCalculator.compute(betta);
-
-    Mx multiply = MxTools.multiply(mx3, MxTools.multiply(mx2, mx1));
-
-    for (int i = 0; i < mx.rows(); i++) {
-      for (int j = 0; j < mx.columns(); j++) {
-        Assert.assertEquals(multiply.get(i, j), mx.get(i, j), 0.0001);
-      }
-    }
-  }
-
-
-  @Test
-  public void testSimpleMLLSeqWithLZW() {
-    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
-    pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
-    pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
-    final CharSequence[] secs = {"abrakadabra", "balalayka", "infinity", "element"};
-    final Set<Character> alphaSet = new HashSet<>();
+  private Pool<FakeItem> getFakeItemPool(PoolByRowsBuilder<FakeItem> pbuilder, CharSequence[] secs, Set<Character> alphaSet) {
     for (int i = 0; i < secs.length; i++) {
       final Seq<Character> url = CharSeq.create(secs[i]);
       pbuilder.setFeature(0, url);
@@ -872,23 +804,17 @@ public abstract class NNTest {
       }
       pbuilder.nextItem();
     }
-    final Pool<FakeItem> pool = pbuilder.create();
+    return pbuilder.create();
+  }
 
-    final CharSeqArray alpha = new CharSeqArray(alphaSet.toArray(new Character[alphaSet.size()]));
-    final int statesCount = 8;
-    final int finalStates = 4;
-    final NFANetworkWithLZW<Character> network = new NFANetworkWithLZW<>(rng, 0.1, statesCount, finalStates, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 10, 20000, 2) {
+
+  @NotNull
+  private StochasticGradientDescent<FakeItem> getStochasticGradientDescent(final CharSeqArray alpha, final int statesCount, final int finalStates) {
+    return new StochasticGradientDescent<FakeItem>(rng, 10, 20000, 2) {
       @Override
       public void init(Vec cursor) {
         final int paramsDim = (statesCount - finalStates) * (statesCount - 1);
-        for (int c = 0; c < alpha.length(); c++) {
-          final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
-          VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
-          for (int j = 0; j < mx.rows(); j++) {
-            mx.set(j, j, 5);
-          }
-        }
+        initCursor(cursor, paramsDim, alpha, statesCount);
       }
 
       @Override
@@ -899,8 +825,22 @@ public abstract class NNTest {
         }
       }
     };
+  }
 
-    final Action<Vec> pp = new Action<Vec>() {
+  private void initCursor(Vec cursor, int paramsDim, CharSeqArray alpha, int statesCount) {
+    for (int c = 0; c < alpha.length(); c++) {
+      final VecBasedMx mx = new VecBasedMx(statesCount - 1, cursor.sub(c * paramsDim, paramsDim));
+      VecTools.fillUniform(mx, rng, 5. / (statesCount - 1));
+      for (int j = 0; j < mx.rows(); j++) {
+        mx.set(j, j, 5);
+      }
+    }
+  }
+
+
+  @NotNull
+  private Action<Vec> getVecAction(final CharSequence[] secs, final NeuralSpider<Character, Seq<Character>> network) {
+    return new Action<Vec>() {
       int index = 0;
 
       @Override
@@ -914,25 +854,6 @@ public abstract class NNTest {
         }
       }
     };
-    gradientDescent.addListener(pp);
-
-    final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
-    final ArrayVec initial = new ArrayVec(network.dim());
-    gradientDescent.init(initial);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
-    });
-    final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
-    System.out.println(decision.x);
-
-    for (int i = 0; i < secs.length; i++) {
-      System.out.println("Class: " + i);
-      System.out.println(decision.compute(pool.data().at(i)));
-    }
   }
 
 }

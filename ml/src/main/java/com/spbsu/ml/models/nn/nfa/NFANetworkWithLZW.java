@@ -124,24 +124,7 @@ public class NFANetworkWithLZW<T> extends NeuralSpider<T, Seq<T>> {
   }
 
   public String ppState(Vec state, Seq<T> seq) {
-    final StringBuilder builder = new StringBuilder();
-    for (int i = 0; i <= seq.length(); i++) {
-      if (i > 0)
-        builder.append(seq.at(i - 1));
-      else
-        builder.append(" ");
-
-      for (int s = 0; s < statesCount; s++) {
-        builder.append("\t").append(CharSeqTools.prettyPrint.format(state.get(i * statesCount + s)));
-      }
-      builder.append('\n');
-    }
-    builder.append(" ");
-    for (int i = (seq.length() + 1) * statesCount; i < state.length(); i++) {
-      builder.append("\t").append(CharSeqTools.prettyPrint.format(state.get(i)));
-    }
-    builder.append('\n');
-    return builder.toString();
+    return getString(state, seq, statesCount);
   }
 
   protected class MyNode implements NeuralSpider.Node {
