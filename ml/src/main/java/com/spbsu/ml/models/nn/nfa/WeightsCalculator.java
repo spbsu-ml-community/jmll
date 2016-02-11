@@ -29,6 +29,11 @@ public class WeightsCalculator implements Computable<Vec,Mx> {
   public Mx computeInner(Vec betta) {
     final VecBasedMx b = new VecBasedMx(statesCount - 1, betta.sub(wStart, wLen));
     final VecBasedMx w = new VecBasedMx(statesCount, this.w.get(statesCount * statesCount));
+    makeMatrix(b, w);
+    return w;
+  }
+
+  protected void makeMatrix(VecBasedMx b, VecBasedMx w) {
     for (int i = 0; i < statesCount - finalStates; i++) {
       if (dropOut[i])
         continue;
@@ -45,7 +50,6 @@ public class WeightsCalculator implements Computable<Vec,Mx> {
         w.set(j, i, selectedExp / sum);
       }
     }
-    return w;
   }
 
   protected Vec cacheArg;

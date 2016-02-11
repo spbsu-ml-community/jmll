@@ -140,7 +140,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
           final int indexLocal = index;
           final int pStartLocal = pStart;
           final VecBasedMx grad = new VecBasedMx(bettaDim, to.sub(wStart, wLen));
-          for (int i = 0; i < bettaDim; i++) {
+          for (int i = 0; i < grad.rows(); i++) {
             final double selectedProbab = weights.get(indexLocal, i);
             for (int j = 0; j < bettaDim; j++) {
               double currentProbab = weights.get(j, i);

@@ -31,22 +31,7 @@ public class SeqWeightsCalculator extends WeightsCalculator {
   public Mx computeInner(Vec betta, int wStart, int wLen) {
     final VecBasedMx b = new VecBasedMx(statesCount - 1, betta.sub(wStart, wLen));
     final VecBasedMx w = new VecBasedMx(statesCount, new SparseVec(statesCount * statesCount));
-    for (int i = 0; i < statesCount - finalStates; i++) {
-      if (dropOut[i])
-        continue;
-      double sum = 1;
-      for (int j = 0; j < statesCount - 1; j++) {
-        if (dropOut[j])
-          continue;
-        sum += Math.exp(b.get(i, j));
-      }
-      for (int j = 0; j < statesCount; j++) {
-        if (dropOut[j])
-          continue;
-        final double selectedExp = j < statesCount - 1 ? Math.exp(b.get(i, j)) : 1;
-        w.set(j, i, selectedExp / sum);
-      }
-    }
+    makeMatrix(b, w);
     return w;
   }
 

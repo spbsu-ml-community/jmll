@@ -404,30 +404,34 @@ public class NNTest {
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     CharSeqTools.processLines(
-        new InputStreamReader(new GZIPInputStream(new FileInputStream("/Users/solar/tree/java/relpred/trunk/relpred/main/tests/data/in/train.txt.gz"))),
+        new InputStreamReader(new GZIPInputStream(new FileInputStream("src/test/resources/com/spbsu/ml/train.txt.gz"))),
         new Processor<CharSequence>() {
           CharSequence[] parts = new CharSequence[2];
           boolean next = true;
+          int index = 0;
 
           @Override
           public void process(CharSequence arg) {
-            CharSeqTools.split(arg, '\t', parts);
-            final CharSeq next = CharSeq.create(parts[0]);
-            final int nextClass = CharSeqTools.parseInt(CharSeqTools.split(parts[1], ':')[1]);
-            if (nextClass > 0 != this.next || next.length() > 20)
-              return;
-            this.next = !this.next;
-            pbuilder.setFeature(0, next);
-            pbuilder.setTarget(0, nextClass);
-            pbuilder.nextItem();
+            if (++index % 100 == 1) {
+              CharSeqTools.split(arg, '\t', parts);
+              final CharSeq next = CharSeq.create(parts[0]);
+              final int nextClass = CharSeqTools.parseInt(CharSeqTools.split(parts[1], ':')[1]);
+              if (nextClass > 0 != this.next || next.length() > 20)
+                return;
+              this.next = !this.next;
+              pbuilder.setFeature(0, next);
+              pbuilder.setTarget(0, nextClass);
+              pbuilder.nextItem();
+            }
           }
         });
 
     final Pool<FakeItem> pool = pbuilder.create();
+    System.out.println(pool.data().length());
     final CharSeqArray alpha = new CharSeqArray('U', 'L', 'H', 'C', 'S', 'N', 'R', 'F', 'V', 'O');
     final int statesCount = 10;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.5, statesCount, 1, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 100, 1000000, 1) {
+    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 10, 1000, 1) {
       @Override
       public void init(Vec cursor) {
         final int paramsDim = (statesCount - 1) * (statesCount - 1);
@@ -476,7 +480,7 @@ public class NNTest {
       vals.set(i, fit.compute(pool.data().at(i)).get(0));
     }
     network.ppSolution(fit.x);
-    digIntoSolution(pool, network, ll, fit.x, null, null);
+    digIntoSolutionParallel(pool, network, ll, fit);
     System.out.println(Math.exp(-ll.value(vals) / ll.dim()));
   }
 
