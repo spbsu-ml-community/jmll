@@ -71,7 +71,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
   protected Vec produceState(Topology topology, Vec weights, Vec state) {
     state.set(0, 1.);
     final int nodesCount = topology.length();
-    for (int nodeIndex = 1; nodeIndex < nodesCount; nodeIndex++) {
+    for (int nodeIndex = 1; nodeIndex < nodesCount; nodeIndex++) { //TODO Ноды всегда берем только с 1го, 0й пропускаем. В LayeredNetwork это учитывается, а в NFANetwork - нет
       if (topology.isDroppedOut(nodeIndex))
         continue;
       final Node node = topology.at(nodeIndex);

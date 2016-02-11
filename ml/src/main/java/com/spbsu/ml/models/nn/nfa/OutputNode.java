@@ -11,12 +11,14 @@ import com.spbsu.ml.models.nn.NeuralSpider;
 * Time: 17:28
 */
 class OutputNode implements NeuralSpider.Node {
-  private final int[] outputNodesConnections;
+  private final int statesCount;
+  private final int finalStateIndex;
   private final NeuralSpider.Node[] nodes;
 
-  public OutputNode(int[] outputNodesConnections, NeuralSpider.Node[] nodes) {
-    this.outputNodesConnections = outputNodesConnections;
+  public OutputNode(NeuralSpider.Node[] nodes, int statesCount, int finalStateIndex) {
     this.nodes = nodes;
+    this.statesCount = statesCount;
+    this.finalStateIndex = finalStateIndex;
   }
 
   @Override
@@ -24,8 +26,8 @@ class OutputNode implements NeuralSpider.Node {
     return new FuncC1.Stub() {
       @Override
       public Vec gradientTo(Vec x, Vec to) {
-        for (int i = 0; i < outputNodesConnections.length; i++) {
-          to.set(outputNodesConnections[i], 1);
+        for (int i = statesCount + finalStateIndex; i < nodes.length; i += statesCount) {
+          to.set(i, 1);
         }
         return to;
       }
@@ -33,8 +35,8 @@ class OutputNode implements NeuralSpider.Node {
       @Override
       public double value(Vec x) {
         double sum = 0;
-        for (int i = 0; i < outputNodesConnections.length; i++) {
-          sum += x.get(outputNodesConnections[i]);
+        for (int i = statesCount + finalStateIndex; i < nodes.length; i += statesCount) {
+          sum += x.get(i);
         }
         return sum;
       }
@@ -49,8 +51,8 @@ class OutputNode implements NeuralSpider.Node {
   @Override
   public FuncC1 transByParents(Vec state) {
     double sum = 0;
-    for (int i = 0; i < outputNodesConnections.length; i++) {
-      sum += state.get(outputNodesConnections[i]);
+    for (int i = statesCount + finalStateIndex; i < nodes.length; i += statesCount) {
+      sum += state.get(i);
     }
     return new Const(sum);
   }

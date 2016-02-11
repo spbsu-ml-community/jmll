@@ -5,7 +5,6 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.SeqTools;
 import com.spbsu.commons.util.ArrayTools;
@@ -14,7 +13,6 @@ import com.spbsu.ml.func.generic.Const;
 import com.spbsu.ml.func.generic.SubVecFuncC1;
 import com.spbsu.ml.func.generic.WSum;
 import com.spbsu.ml.models.nn.NeuralSpider;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * User: solar
@@ -64,7 +62,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
     if (dropout && rng.nextDouble() < this.dropout)
       dropoutArr[rng.nextInt(statesCount - finalStates - 1) + 1] = true;
 
-    final int[][] outputNodesConnections = new int[finalStates][seq.length()];
+//    final int[][] outputNodesConnections = new int[finalStates][seq.length()];
     for (int d = 0; d < seq.length(); d++) {
       final int elementIndex = ArrayTools.indexOf(seq.at(d), alpha);
       final int prevLayerStart = d * statesCount;
@@ -74,14 +72,14 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
         final int nodeIndex = (d + 1) * statesCount + i;
         nodes[nodeIndex] = new MyNode(i, elementIndex * transitionMxDim, transitionMxDim, dim, prevLayerStart, statesCount, nodes.length, calcer);
       }
-      for (int i = 0; i < finalStates; i++) {
-        outputNodesConnections[i][d] = (d + 2) * statesCount - finalStates + i;
-      }
+//      for (int i = 0; i < finalStates; i++) {
+//        outputNodesConnections[i][d] = (d + 2) * statesCount - finalStates + i;
+//      }
     }
     final int lastLayerStart = seq.length() * statesCount;
     nodes[nodes.length - finalStates - 1] = new NonDeterminedNode(statesCount - finalStates, lastLayerStart, nodes.length);
     for (int i = 0; i < finalStates; i++) {
-      nodes[nodes.length - finalStates + i] = new OutputNode(outputNodesConnections[i], nodes);
+      nodes[nodes.length - finalStates + i] = new OutputNode(nodes, statesCount, statesCount - finalStates + i);
     }
 
     return new NFATopology<>(statesCount, finalStates, dropout, nodes, dropoutArr);
