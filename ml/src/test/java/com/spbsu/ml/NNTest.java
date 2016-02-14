@@ -48,7 +48,7 @@ import java.util.zip.GZIPInputStream;
  * Date: 25.05.15
  * Time: 16:39
  */
-public class NNTest {
+public abstract class NNTest {
   private final FastRandom rng = new FastRandom(0);
   private Pool<QURLItem> featuresTxtPool;
 
@@ -368,7 +368,8 @@ public class NNTest {
     final int statesCount = 5;
     final int finalStates = 1;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount, finalStates);
+    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount,
+            finalStates, 10, 20000, 2);
     final Action<Vec> pp = new Action<Vec>() {
       int index = 0;
 
@@ -497,7 +498,8 @@ public class NNTest {
     final int statesCount = 8;
     final int finalStates = 4;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount, finalStates);
+    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount,
+            finalStates, 10, 20000, 2);
 
     final Action<Vec> pp = getVecAction(secs, network);
     gradientDescent.addListener(pp);
@@ -505,12 +507,9 @@ public class NNTest {
     final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final ArrayVec initial = new ArrayVec(network.dim());
     gradientDescent.init(initial);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
     System.out.println(decision.x);
@@ -522,22 +521,8 @@ public class NNTest {
   }
 
 
-  //@Test
+  @Test
   public void testGenom() throws IOException {
-//    String str  = readFile(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq_accuracy.fa")).toString();
-//    String[] mass = str.split(">");
-//    PrintWriter printWriter = new PrintWriter(new File("src/test/resources/com/spbsu/ml/multiclass/HiSeq.txt"));
-//    for (String s: mass) {
-//      String[] array = s.split("\\s");
-//      if (array.length < 2)
-//        continue;
-//      String hiSeq = array[0].split("_HiSeq")[0];
-//      String genom = array[1] + (array.length > 2 ? array[2] : "");
-//      printWriter.println(hiSeq + "->" + genom);
-//    }
-//    printWriter.close();
-
-
     final Set<Character> alphaSet = new HashSet<>();
     final Map<String, List<Seq<Character>>> map = new HashMap<>();
 
@@ -588,22 +573,9 @@ public class NNTest {
     final int statesCount = 13;
     final int finalStates = types.size();
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.1, statesCount, finalStates, alpha);
-    int iterations = 10000;
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, iterations, 2) {
-      @Override
-      public void init(Vec cursor) {
-        final int paramsDim = (statesCount - finalStates) * (statesCount - 1);
-        initCursor(cursor, paramsDim, alpha, statesCount);
-      }
-
-      @Override
-      public void normalizeGradient(Vec grad) {
-        for (int i = 0; i < grad.length(); i++) {
-          if (Math.abs(grad.get(i)) < 0.001)
-            grad.set(i, 0);
-        }
-      }
-    };
+    int iterations = 1000;
+    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount, finalStates,
+            4, iterations, 2);
 
     final Action<Vec> pp = new Action<Vec>() {
       double index = 0;
@@ -611,9 +583,12 @@ public class NNTest {
       @Override
       public void invoke(Vec vec) {
         index++;
-        //if (index % 50 == 0) {
-        System.out.print(String.format("Learning: %s (%.2f%%)\r", index, index / iterations * 100));
-        //}
+        if (index % 50 == 0) {
+          System.out.println("iterations: " + index);
+          //System.out.print("\r");
+          //System.out.printf("Learning: %s (%.2f%%)", index, index / iterations * 100);
+          System.out.flush();
+        }
       }
     };
     gradientDescent.addListener(pp);
@@ -665,7 +640,7 @@ public class NNTest {
   }
 
 
-  //@Test
+  @Test
   public void testSimpleMLLSeqWithLZW() {
     final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
@@ -678,7 +653,8 @@ public class NNTest {
     final int statesCount = 8;
     final int finalStates = 4;
     final NFANetworkWithLZW<Character> network = new NFANetworkWithLZW<>(rng, 0.1, statesCount, finalStates, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount, finalStates);
+    final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount,
+            finalStates, 10, 20000, 2);
 
     final Action<Vec> pp = getVecAction(secs, network);
     gradientDescent.addListener(pp);
@@ -686,12 +662,9 @@ public class NNTest {
     final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final ArrayVec initial = new ArrayVec(network.dim());
     gradientDescent.init(initial);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
     System.out.println(decision.x);
@@ -813,8 +786,9 @@ public class NNTest {
 
 
   @NotNull
-  private StochasticGradientDescent<FakeItem> getStochasticGradientDescent(final CharSeqArray alpha, final int statesCount, final int finalStates) {
-    return new StochasticGradientDescent<FakeItem>(rng, 10, 20000, 2) {
+  private StochasticGradientDescent<FakeItem> getStochasticGradientDescent(final CharSeqArray alpha, final int statesCount,
+                                                                           final int finalStates, int couple, int T, double step) {
+    return new StochasticGradientDescent<FakeItem>(rng, couple, T, step) {
       @Override
       public void init(Vec cursor) {
         final int paramsDim = (statesCount - finalStates) * (statesCount - 1);
