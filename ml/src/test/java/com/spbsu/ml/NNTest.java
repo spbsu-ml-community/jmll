@@ -1,7 +1,6 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
-import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.io.Vec2CharSequenceConverter;
@@ -584,10 +583,7 @@ public abstract class NNTest {
       public void invoke(Vec vec) {
         index++;
         if (index % 50 == 0) {
-          System.out.println("iterations: " + index);
-          //System.out.print("\r");
-          //System.out.printf("Learning: %s (%.2f%%)", index, index / iterations * 100);
-          System.out.flush();
+          System.out.println("iterations: " + index + ", " + index / iterations * 100 + "%");
         }
       }
     };
