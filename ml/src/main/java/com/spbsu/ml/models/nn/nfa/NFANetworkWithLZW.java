@@ -56,7 +56,6 @@ public class NFANetworkWithLZW<T> extends NeuralSpider<T, Seq<T>> {
 
   @Override
   protected Topology topology(Seq<T> seq, boolean dropout) {
-//    final Node[] nodes = new Node[(seq.length() + 1) * statesCount + finalStates + 1];
     final int capacity = (seq.length() + 1) * statesCount + finalStates + 1;
     final List<Node> nodes = new ArrayList<>(capacity);
     for (int i = 0; i < statesCount; i++) {
@@ -68,32 +67,30 @@ public class NFANetworkWithLZW<T> extends NeuralSpider<T, Seq<T>> {
     if (dropout && rng.nextDouble() < this.dropout)
       dropoutArr[rng.nextInt(statesCount - finalStates - 1) + 1] = true;
 
-    //int start = 0, end = 0;
-    //for (int d = 0; d < seq.length() + 1; d++) {
-    for (int d = 0; d < seq.length(); d++) {
-//      if (end != seq.length())
-//        end++;
-//      Seq<T> sub = seq.sub(start, end);
-      Seq<T> sub = seq.sub(d, d + 1);
+    int start = 0, end = 0;
+    for (int d = 0; d < seq.length() + 1; d++) {
+      if (end != seq.length())
+        end++;
+      Seq<T> sub = seq.sub(start, end);
 
       SeqWeightsCalculator calcer = dictionary.get().get(sub);
-//      if (calcer == null) {
-      final int subLength = sub.length();
-      final int[] wStarts = new int[subLength];
-      for (int i = 0; i < subLength; i++) {
-        wStarts[i] = SeqTools.indexOf(alpha, sub.at(i)) * transitionMxDim;
-      }
-//        dictionary.get().put(sub, new SeqWeightsCalculator(statesCount, finalStates, transitionMxDim, wStarts));
-//
-//        final Seq<T> prevSub = sub.sub(0, subLength - 1);
-//        final SeqWeightsCalculator prevCalcer = dictionary.get().get(prevSub);
-//        fillLayer(nodes, outputNodesConnections, d, prevSub, prevCalcer, dropoutArr, maxCapacity);
-      fillLayer(nodes, d, sub, calcer, dropoutArr, capacity);
+      if (calcer == null || sub.length() > 1) {
+        final int subLength = sub.length();
+        final int[] wStarts = new int[subLength];
+        for (int i = 0; i < subLength; i++) {
+          wStarts[i] = SeqTools.indexOf(alpha, sub.at(i)) * transitionMxDim;
+        }
+        dictionary.get().put(sub, new SeqWeightsCalculator(statesCount, finalStates, transitionMxDim, wStarts));
 
-      //start += prevSub.length();
-//      } else if (end == seq.length()) {
-//        fillLayer(nodes, outputNodesConnections, d, sub, calcer, dropoutArr, maxCapacity);
-//      }
+        final Seq<T> prevSub = sub.sub(0, subLength - 1);
+        final SeqWeightsCalculator prevCalcer = dictionary.get().get(prevSub);
+        //System.out.println("put into network LAYER: " + prevSub);
+        fillLayer(nodes, prevSub, prevCalcer, dropoutArr, capacity);
+
+        start += prevSub.length();
+      } else if (end == seq.length()) {
+        fillLayer(nodes, sub, calcer, dropoutArr, capacity);
+      }
     }
     final int lastLayerStart = nodes.size() - statesCount;
     nodes.add(new NonDeterminedNode(statesCount - finalStates, lastLayerStart, capacity));
@@ -104,10 +101,11 @@ public class NFANetworkWithLZW<T> extends NeuralSpider<T, Seq<T>> {
     return new NFATopology<>(statesCount, finalStates, dropout, nodes.toArray(new Node[] {}), dropoutArr);
   }
 
-  private void fillLayer(List<Node> nodes, int d, Seq<T> sub,
+  private void fillLayer(List<Node> nodes, Seq<T> sub,
                          SeqWeightsCalculator calcer, boolean[] dropoutArr, int capacity) {
-    //final int prevLayerStart = (d - 1) * statesCount;
-    final int prevLayerStart = d * statesCount;
+    final int prevLayerStart = nodes.size() - statesCount;
+    //System.out.println("LAYER " + sub + " start from pStart: " + prevLayerStart);
+    //final int prevLayerStart = d * statesCount;
     calcer.setDropOut(dropoutArr);
     for (int i = 0; i < statesCount; i++) {
       nodes.add(new MyNode(i, transitionMxDim, dim, prevLayerStart, statesCount, capacity, calcer, sub));

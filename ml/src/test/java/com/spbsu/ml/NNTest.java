@@ -652,8 +652,8 @@ public abstract class NNTest {
     final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount,
             finalStates, 10, 20000, 2);
 
-    final Action<Vec> pp = getVecAction(secs, network);
-    gradientDescent.addListener(pp);
+    //final Action<Vec> pp = getVecAction(secs, network);
+    //gradientDescent.addListener(pp);
 
     final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final ArrayVec initial = new ArrayVec(network.dim());
@@ -669,6 +669,91 @@ public abstract class NNTest {
       System.out.println("Class: " + i);
       System.out.println(decision.compute(pool.data().at(i)));
     }
+  }
+
+
+  @Test
+  public void weightsCalculatorGradTest() {
+    Vec betta = new ArrayVec(24);
+    VecTools.fillUniform(betta, rng);
+    boolean[] booleans = {false, false, false, false, false};
+
+    System.out.println("betta: " + betta);
+
+    Vec x = new ArrayVec(1,0,0,0,0);
+
+    System.out.println("x: " + x);
+
+    WeightsCalculator weightsCalculator1 = new WeightsCalculator(5, 2, 0, 12);
+    weightsCalculator1.setDropOut(booleans);
+    Mx mx1 = weightsCalculator1.compute(betta);
+    Vec state1 = MxTools.multiply(mx1, x);
+
+    System.out.println("mx1:" + mx1);
+    System.out.println("state1: " + state1);
+
+    WeightsCalculator weightsCalculator2 = new WeightsCalculator(5, 2, 12, 12);
+    weightsCalculator2.setDropOut(booleans);
+    Mx mx2 = weightsCalculator2.compute(betta);
+    Vec state2 = MxTools.multiply(mx2, state1);
+
+    System.out.println("mx2:" + mx2);
+    System.out.println("state2: " + state2);
+
+    Vec states = new ArrayVec(15);
+    for (int i = 0; i < x.length(); i++) {
+      states.set(i, x.get(i));
+    }
+    for (int i = 0; i < state1.length(); i++) {
+      states.set(5 + i, state1.get(i));
+    }
+    for (int i = 0; i < state2.length(); i++) {
+      states.set(10 + i, state2.get(i));
+    }
+
+    System.out.println("states: " + states);
+
+    Vec grad = new ArrayVec(24);
+    final int indexOfNode = rng.nextInt(5);
+    System.out.println("indexOfNode: " + indexOfNode);
+
+    NFANetwork.MyNode node2 = new NFANetwork.MyNode(indexOfNode, 12, 12, 24, 5, 5, 15, weightsCalculator2);
+    node2.transByParents(states).gradientTo(betta, grad);
+    System.out.println("grad: " + grad);
+
+    Vec to = new ArrayVec(15);
+    node2.transByParameters(betta).gradientTo(states, to);
+    System.out.println("to: " + to);
+    System.out.println(mx2.row(indexOfNode));
+
+    for (int i = 0; i < 3; i++) {
+      Vec curGrad = new ArrayVec(24);
+      System.out.printf("[%s] curGrad: %s\n", i, curGrad);
+      NFANetwork.MyNode node1 = new NFANetwork.MyNode(i, 0, 12, 24, 0, 5, 15, weightsCalculator1);
+      node1.transByParents(states).gradientTo(betta, curGrad);
+      System.out.printf("[%s] curGrad: %s\n", i, curGrad);
+      VecTools.scale(curGrad, mx2.get(indexOfNode, i));
+      System.out.printf("[%s] scale: %s\n", i, mx2.get(indexOfNode, i));
+      System.out.printf("[%s] curGrad: %s\n", i, curGrad);
+      VecTools.append(grad, curGrad);
+      System.out.printf("[%s] grad: %s\n", i, grad);
+    }
+
+    System.out.println("grad: " + grad);
+
+    Vec seqGrad = new ArrayVec(24);
+    SeqWeightsCalculator weightsCalculator = new SeqWeightsCalculator(5, 2, 12, 0, 12);
+    weightsCalculator.setDropOut(booleans);
+    weightsCalculator.gradientTo(betta, seqGrad, x, indexOfNode);
+
+    System.out.println("seqGrad: " + seqGrad);
+//    Mx multiply = MxTools.multiply(mx3, MxTools.multiply(mx2, mx1));
+//
+//    for (int i = 0; i < mx.rows(); i++) {
+//      for (int j = 0; j < mx.columns(); j++) {
+//        Assert.assertEquals(multiply.get(i, j), mx.get(i, j), 0.0001);
+//      }
+//    }
   }
 
 
