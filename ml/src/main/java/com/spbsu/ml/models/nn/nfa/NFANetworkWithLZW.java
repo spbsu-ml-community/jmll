@@ -3,7 +3,9 @@ package com.spbsu.ml.models.nn.nfa;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.SeqTools;
 import com.spbsu.ml.FuncC1;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.spbsu.commons.math.vectors.VecTools.scale;
+import static com.spbsu.commons.math.vectors.VecTools.subtract;
 
 /**
  * Created by afonin.s on 06.11.2015.
@@ -74,7 +77,7 @@ public class NFANetworkWithLZW<T> extends NeuralSpider<T, Seq<T>> {
       Seq<T> sub = seq.sub(start, end);
 
       SeqWeightsCalculator calcer = dictionary.get().get(sub);
-      if (calcer == null || sub.length() > 1) {
+      if (calcer == null || sub.length() > 3) {
         final int subLength = sub.length();
         final int[] wStarts = new int[subLength];
         for (int i = 0; i < subLength; i++) {
@@ -108,7 +111,7 @@ public class NFANetworkWithLZW<T> extends NeuralSpider<T, Seq<T>> {
     //final int prevLayerStart = d * statesCount;
     calcer.setDropOut(dropoutArr);
     for (int i = 0; i < statesCount; i++) {
-      nodes.add(new MyNode(i, transitionMxDim, dim, prevLayerStart, statesCount, capacity, calcer, sub));
+      nodes.add(new MyNode(i, dim, prevLayerStart, statesCount, capacity, calcer));
     }
   }
 
@@ -118,28 +121,63 @@ public class NFANetworkWithLZW<T> extends NeuralSpider<T, Seq<T>> {
   }
 
   public String ppState(Vec state, Seq<T> seq) {
-    return getString(state, seq, statesCount);
+    final StringBuilder builder = new StringBuilder();
+    builder.append(dictionary.get().keySet()).append('\n');
+
+    List<Seq<T>> subs = new ArrayList<>(seq.length());
+    int start = 0, end = 0;
+    for (int d = 0; d <= seq.length(); d++) {
+      if (end != seq.length())
+        end++;
+
+//      System.out.println(start + " - " + end);
+      Seq<T> sub = seq.sub(start, end);
+      SeqWeightsCalculator calcer = dictionary.get().get(sub);
+      if (calcer == null) {
+        subs.add(seq.sub(start, end - 2));
+        start = end - 2;
+      } else if (end == seq.length()) {
+        subs.add(sub.sub(0, sub.length() - 1));
+        subs.add(sub.sub(sub.length() - 1, sub.length()));
+        break;
+      }
+    }
+
+    builder.append(subs).append('\n');
+    for (int i = 0; i < state.length(); i++) {
+      if (i % statesCount == 0) {
+        builder.append('\n');
+        int i1 = i / statesCount;
+        if (i1 > 0 && i1 <= subs.size()) {
+          builder.append(subs.get(i1 - 1));
+        }
+      }
+
+      builder.append("\t").append(CharSeqTools.prettyPrint.format(state.get(i)));
+    }
+//    builder.append(" ");
+//    for (int i = (subs.size() + 1) * statesCount; i < state.length(); i++) {
+//      builder.append("\t").append(CharSeqTools.prettyPrint.format(state.get(i)));
+//    }
+    builder.append('\n');
+    return builder.toString();
   }
 
   protected class MyNode implements NeuralSpider.Node {
     private final int index;
-    private final int wLen;
     private final int wDim;
     private final int pStart;
     private final int pLen;
     private final int maxCapacity;
     private final SeqWeightsCalculator calcer;
-    private final Seq<T> seq;
 
-    public MyNode(int index, int wLen, int wDim, int pStart, int pLen, int maxCapacity, SeqWeightsCalculator calcer, Seq<T> seq) {
+    public MyNode(int index, int wDim, int pStart, int pLen, int maxCapacity, SeqWeightsCalculator calcer) {
       this.index = index;
-      this.wLen = wLen;
       this.wDim = wDim;
       this.pStart = pStart;
       this.pLen = pLen;
       this.maxCapacity = maxCapacity;
       this.calcer = calcer;
-      this.seq = seq;
     }
 
     @Override

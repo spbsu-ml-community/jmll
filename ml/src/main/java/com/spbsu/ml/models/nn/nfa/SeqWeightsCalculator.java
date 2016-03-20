@@ -63,66 +63,45 @@ public class SeqWeightsCalculator extends WeightsCalculator {
   }
 
   public Vec gradientTo(Vec betta, Vec to, Vec subParents, int index) {
-    final int bettaDim = statesCount - 1;
-
-    if (wStarts.length == 1) {
-      final Mx grad = getGradMx(index, betta, bettaDim, 0);
-
-      for (int i = 0; i < grad.rows(); i++) {
-        for (int j = 0; j < grad.columns(); j++) {
-          to.set(wStarts[0] + i * bettaDim + j, grad.get(i, j) * subParents.get(i));
+    int bettaDim = statesCount - 1;
+    for (int r = 0; r < wStarts.length; r++) {
+      for (int i0 = 0; i0 < statesCount - finalStates; i0++) {
+        for (int j0 = 0; j0 < bettaDim; j0++) {
+          to.set(wStarts[r] + i0 * bettaDim + j0, VecTools.multiply(computeGradInner(betta, r, i0, j0).row(index), subParents));
         }
       }
-    } else if (wStarts.length == 2) {
-      for (int r = 0; r < 2; r++) {
-        final Mx grad = computeGradInner(index, betta, subParents, bettaDim, r == 0);
-
-        for (int i = 0; i < grad.rows(); i++) {
-          for (int j = 0; j < grad.columns(); j++) {
-            to.set(wStarts[r] + i * bettaDim + j, grad.get(i, j));
-          }
-        }
-      }
-    } else {
-      throw new RuntimeException("wStarts.lenght > 2: " + wStarts.length);
     }
+
     return to;
   }
 
-  private Mx computeGradInner(int gradIndex, Vec betta,  Vec subParents, int bettaDim, boolean first) {
+  private Mx computeGradInner(Vec betta, int r0, int i0, int j0) {
     Mx result;
-    if (first) {
-      final Mx weights = this.computeInner(betta, 1);
-      result = VecTools.scale(getGradMx(0, betta, bettaDim, 0), weights.get(gradIndex, 0));
-      for (int j = 1; j < statesCount - finalStates; j++) {
-        VecTools.append(result, VecTools.scale(getGradMx(j, betta, bettaDim, 0), weights.get(gradIndex, j)));
-      }
-      for (int i = 0; i < result.rows(); i++) {
-        VecTools.scale(result.row(i), subParents.get(i));
-      }
-    } else {
-      final Mx weights = this.computeInner(betta, 0);
-      final Vec vec = MxTools.multiply(weights, subParents);
-      result = getGradMx(gradIndex, betta, bettaDim, 1);
-      for (int i = 0; i < result.rows(); i++) {
-        VecTools.scale(result.row(i), vec.get(i));
-      }
+    if (r0 == 0)
+      result = getGradMx(betta, 0, i0, j0);
+    else
+      result = this.computeInner(betta, 0);
+    for (int r = 1; r < wStarts.length; r++) {
+      Mx mx;
+      if (r == r0)
+        mx = getGradMx(betta, r, i0, j0);
+      else
+        mx = this.computeInner(betta, r);
+      result = MxTools.multiply(mx, result);
     }
     return result;
   }
 
-  private Mx getGradMx(int gradIndex, Vec betta, int bettaDim, int index) {
-    final Mx weights = this.computeInner(betta, index);
-    final VecBasedMx grad = new VecBasedMx(bettaDim, gradW[index].get(wLen));
-    for (int i = 0; i < grad.rows(); i++) {
-      final double selectedProbab = weights.get(gradIndex, i);
-      for (int j = 0; j < bettaDim; j++) {
-        double currentProbab = weights.get(j, i);
-        if (j == gradIndex)
-          grad.set(i, j, selectedProbab * (1 - selectedProbab));
-        else
-          grad.set(i, j, -selectedProbab * currentProbab);
-      }
+  private Mx getGradMx(Vec betta, int r, int i0, int j0) {
+    final Mx weights = this.computeInner(betta, r);
+    final VecBasedMx grad = new VecBasedMx(statesCount, gradW[r].get(statesCount * statesCount));
+
+    final double selectedProbab = weights.get(j0, i0);
+    for (int i = 0; i < statesCount; i++) {
+      if (i == j0)
+        grad.set(i, i0, selectedProbab * (1 - selectedProbab));
+      else
+        grad.set(i, i0, -selectedProbab * weights.get(i, i0));
     }
     return grad;
   }

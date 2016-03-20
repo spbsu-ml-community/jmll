@@ -652,8 +652,8 @@ public abstract class NNTest {
     final StochasticGradientDescent<FakeItem> gradientDescent = getStochasticGradientDescent(alpha, statesCount,
             finalStates, 10, 20000, 2);
 
-    //final Action<Vec> pp = getVecAction(secs, network);
-    //gradientDescent.addListener(pp);
+    final Action<Vec> pp = getVecAction(secs, network);
+    gradientDescent.addListener(pp);
 
     final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
     final ArrayVec initial = new ArrayVec(network.dim());
@@ -680,8 +680,8 @@ public abstract class NNTest {
 
     System.out.println("betta: " + betta);
 
-    Vec x = new ArrayVec(1,0,0,0,0);
-
+    Vec x = new ArrayVec(5);
+    VecTools.fillUniform(x, rng);
     System.out.println("x: " + x);
 
     WeightsCalculator weightsCalculator1 = new WeightsCalculator(5, 2, 0, 12);
@@ -721,22 +721,12 @@ public abstract class NNTest {
     node2.transByParents(states).gradientTo(betta, grad);
     System.out.println("grad: " + grad);
 
-    Vec to = new ArrayVec(15);
-    node2.transByParameters(betta).gradientTo(states, to);
-    System.out.println("to: " + to);
-    System.out.println(mx2.row(indexOfNode));
-
     for (int i = 0; i < 3; i++) {
       Vec curGrad = new ArrayVec(24);
-      System.out.printf("[%s] curGrad: %s\n", i, curGrad);
       NFANetwork.MyNode node1 = new NFANetwork.MyNode(i, 0, 12, 24, 0, 5, 15, weightsCalculator1);
       node1.transByParents(states).gradientTo(betta, curGrad);
-      System.out.printf("[%s] curGrad: %s\n", i, curGrad);
       VecTools.scale(curGrad, mx2.get(indexOfNode, i));
-      System.out.printf("[%s] scale: %s\n", i, mx2.get(indexOfNode, i));
-      System.out.printf("[%s] curGrad: %s\n", i, curGrad);
       VecTools.append(grad, curGrad);
-      System.out.printf("[%s] grad: %s\n", i, grad);
     }
 
     System.out.println("grad: " + grad);
@@ -747,13 +737,10 @@ public abstract class NNTest {
     weightsCalculator.gradientTo(betta, seqGrad, x, indexOfNode);
 
     System.out.println("seqGrad: " + seqGrad);
-//    Mx multiply = MxTools.multiply(mx3, MxTools.multiply(mx2, mx1));
-//
-//    for (int i = 0; i < mx.rows(); i++) {
-//      for (int j = 0; j < mx.columns(); j++) {
-//        Assert.assertEquals(multiply.get(i, j), mx.get(i, j), 0.0001);
-//      }
-//    }
+
+    for (int i = 0; i < grad.length(); i++) {
+      Assert.assertEquals(grad.get(i), seqGrad.get(i), 0.0001);
+    }
   }
 
 
@@ -904,7 +891,8 @@ public abstract class NNTest {
 
       @Override
       public void invoke(Vec vec) {
-        if (++index == 1) {
+        index++;
+        if (index % 10000 == 1) {
           for (int i = 0; i < secs.length; i++) {
             System.out.println("Class: " + i);
             final NeuralSpider.NeuralNet neuralNet = network.decisionByInput(CharSeq.create(secs[i]));
