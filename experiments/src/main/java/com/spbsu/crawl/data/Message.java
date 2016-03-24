@@ -11,12 +11,12 @@ import java.util.stream.Stream;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface Message {
-  default Types type() {
-    return Stream.of(Types.values()).filter(t ->
+  default Protocol type() {
+    return Stream.of(Protocol.values()).filter(t ->
             getClass().equals(t.clazz())
     ).findFirst().orElse(null);
   }
-  enum Types {
+  enum Protocol {
     PING(PingCommand.class),
     PONG(PongMessage.class),
     LOGIN(LoginMessage.class),
@@ -29,7 +29,7 @@ public interface Message {
 
     private final Class<?> clazz;
 
-    Types(Class<?> clazz) {
+    Protocol(Class<?> clazz) {
       this.clazz = clazz;
     }
 

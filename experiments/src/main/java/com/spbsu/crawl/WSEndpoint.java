@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.seq.CharSequenceReader;
 import com.spbsu.crawl.data.Command;
-import com.spbsu.crawl.data.LoginMessage;
 import com.spbsu.crawl.data.Message;
 
 import javax.websocket.*;
@@ -112,12 +111,13 @@ public class WSEndpoint {
 
   public void onItem(JsonNode node) {
     try {
-      final Message.Types msg = Message.Types.valueOf(node.get("msg").asText().toUpperCase());
-      if (out instanceof Command) {
-        ((Command) out).execute(out);
+      final Message.Protocol msg = Message.Protocol.valueOf(node.get("msg").asText().toUpperCase());
+      final Message message = mapper.treeToValue(node, msg.clazz());
+      if (message instanceof Command) {
+        ((Command) message).execute(out);
       }
       else {
-        in.put(mapper.treeToValue(node, msg.clazz()));
+        in.put(message);
       }
     } catch (Exception e) {
       e.printStackTrace();
