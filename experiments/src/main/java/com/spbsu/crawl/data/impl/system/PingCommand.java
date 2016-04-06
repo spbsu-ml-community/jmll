@@ -1,4 +1,7 @@
-package com.spbsu.crawl.data;
+package com.spbsu.crawl.data.impl.system;
+
+import com.spbsu.crawl.data.Command;
+import com.spbsu.crawl.data.Message;
 
 import java.util.concurrent.BlockingQueue;
 

@@ -1,7 +1,7 @@
-package com.spbsu.crawl.data;
+package com.spbsu.crawl.data.impl.system;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
+import com.spbsu.crawl.data.Message;
 
 /**
  * Experts League

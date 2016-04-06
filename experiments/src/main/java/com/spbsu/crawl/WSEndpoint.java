@@ -9,11 +9,15 @@ import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.seq.CharSequenceReader;
 import com.spbsu.crawl.data.Command;
 import com.spbsu.crawl.data.Message;
+import com.spbsu.crawl.data.Protocol;
 
 import javax.websocket.*;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,7 +52,9 @@ public class WSEndpoint {
           final Message poll = out.take();
           final ObjectNode node = mapper.valueToTree(poll);
           node.set("msg", new TextNode(poll.type().name().toLowerCase()));
-          session.getAsyncRemote().sendText(mapper.writeValueAsString(node));
+          final String clientJson = mapper.writeValueAsString(node);
+          session.getAsyncRemote().sendText(clientJson);
+          System.out.println("[CLIENT]: " + clientJson);
         }
       } catch (InterruptedException | JsonProcessingException e) {
         throw new RuntimeException(e);
@@ -73,12 +79,11 @@ public class WSEndpoint {
 
   @OnMessage
   public void onMessage(String msg) {
-    System.out.println(">" + msg);
+    handleMessage(new StringReader(msg));
   }
 
   @OnMessage
   public void onMessage(ByteBuffer buffer) {
-//      System.out.println("Binary received");
     try {
       final ByteBuffer inBuffer = ByteBuffer.allocate(buffer.remaining() + 4);
       inBuffer.put(buffer);
@@ -96,22 +101,34 @@ public class WSEndpoint {
         builder.append(decoder.decode(outBuffer));
         outBuffer.compact();
       }
-      final JsonNode node = mapper.readTree(new CharSequenceReader(builder));
-      final JsonNode msgs = node.get("msgs");
-      if (msgs != null) {
-        for (JsonNode msg : msgs) {
-          onItem(msg);
-        }
-      } else onItem(node);
-      System.out.println(builder.toString());
-    } catch (DataFormatException | IOException e) {
+      handleMessage(new CharSequenceReader(builder));
+    } catch (DataFormatException | CharacterCodingException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public void onItem(JsonNode node) {
+  private void handleMessage(final Reader messageReader) {
+    final JsonNode node;
     try {
-      final Message.Protocol msg = Message.Protocol.valueOf(node.get("msg").asText().toUpperCase());
+      node = mapper.readTree(messageReader);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    final JsonNode msgs = node.get("msgs");
+    System.out.println("[SERVER]: " + node.toString());
+    if (msgs != null) {
+      for (JsonNode msg : msgs) {
+        onItem(msg);
+      }
+    } else {
+      onItem(node);
+    }
+  }
+
+  private void onItem(JsonNode node) {
+    try {
+      final Protocol msg = Protocol.valueOf(node.get("msg").asText().toUpperCase());
       final Message message = mapper.treeToValue(node, msg.clazz());
       if (message instanceof Command) {
         ((Command) message).execute(out);
@@ -130,5 +147,9 @@ public class WSEndpoint {
 
   public void send(Message message) {
     out.add(message);
+  }
+
+  public BlockingQueue<Message> getMessagesQueue() {
+    return in;
   }
 }

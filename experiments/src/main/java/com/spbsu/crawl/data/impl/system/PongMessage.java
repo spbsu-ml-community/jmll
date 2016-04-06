@@ -1,4 +1,6 @@
-package com.spbsu.crawl.data;
+package com.spbsu.crawl.data.impl.system;
+
+import com.spbsu.crawl.data.Message;
 
 /**
  * Experts League

@@ -1,9 +1,8 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.system.RuntimeUtils;
-import com.spbsu.crawl.data.LoginMessage;
 
-import javax.websocket.*;
+import javax.websocket.DeploymentException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -23,7 +22,8 @@ public class StartCrawl {
       bash.exec("bash ./run_server.sh");
       Thread.sleep(1000);
       final WSEndpoint endpoint = new WSEndpoint(new URI("ws://localhost:8080/socket"));
-      endpoint.send(new LoginMessage("asd", "asd"));
+      final GameProcess gameProcess = new GameProcess(endpoint);
+      gameProcess.start();
     }
     catch (Exception e) {
       e.printStackTrace();
