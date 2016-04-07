@@ -2,7 +2,8 @@ package com.spbsu.crawl.data.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.crawl.data.Message;
-import com.sun.tools.javac.util.List;
+
+import java.util.List;
 
 public class UpdateMapMessage implements Message {
 
