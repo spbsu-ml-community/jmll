@@ -6,5 +6,5 @@ import com.spbsu.crawl.data.Message;
  * User: qdeee
  * Date: 03.04.16
  */
-public class MapInfoMessage implements Message{
+public class MapInfoMessage implements Message {
 }
