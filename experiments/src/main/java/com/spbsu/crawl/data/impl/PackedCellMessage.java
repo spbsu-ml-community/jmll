@@ -33,7 +33,7 @@ public class PackedCellMessage implements Message {
   @JsonProperty("moldy")
   private boolean isMoldy;
 
-  @JsonProperty("glowingMold")
+  @JsonProperty("glowing_mold")
   private boolean isGlowingMold;
 
   @JsonProperty("sanctuary")
