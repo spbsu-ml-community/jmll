@@ -59,7 +59,7 @@ public class PackedCellMessage implements Message {
   private int bloodRotation;
 
   //i think, we don't need this
-  @JsonProperty("travelTrail")
+  @JsonProperty("travel_trail")
   private int travelTrail;
 
   @JsonProperty("heat_aura")
