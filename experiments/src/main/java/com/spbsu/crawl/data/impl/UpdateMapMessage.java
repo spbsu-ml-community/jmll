@@ -18,7 +18,7 @@ public class UpdateMapMessage implements Message {
 
 
   @JsonProperty("cells")
-  private List<UpdateMapCellMessage> Cells; //TODO: we'll it work like this???
+  private List<UpdateMapCellMessage> Cells;
 
 
 }

@@ -70,7 +70,7 @@ public class GameProcess {
 
     interact(new StartGameMessage("dcss-web-trunk"),  messages -> {
       final PlayerInfoMessage playerInfo = findMessage(messages, PlayerInfoMessage.class);
-      final MapInfoMessage mapInfo = findMessage(messages, MapInfoMessage.class);
+      final UpdateMapMessage updateMapMessage = findMessage(messages, UpdateMapMessage.class);
       //perform update initial models
     });
   }

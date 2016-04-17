@@ -32,7 +32,7 @@ public enum Protocol {
   CURSOR(IgnoreMessage.class),
   MSGS(IgnoreMessage.class),
   PLAYER(PlayerInfoMessage.class),
-  MAP(MapInfoMessage.class),
+  MAP(UpdateMapMessage.class),
   KEY(KeyMessage.class),
   INPUT(InputCommandMessage.class),
   ;

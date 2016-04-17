@@ -21,7 +21,7 @@ public class UpdateMapCellMessage implements Message {
   private int mapFeature;
 
   @JsonProperty("g")
-  private int glyph;
+  private String glyph;
 
   @JsonProperty("col")
   private int colour;
