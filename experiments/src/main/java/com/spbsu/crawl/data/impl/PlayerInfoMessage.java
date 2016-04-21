@@ -9,6 +9,9 @@ import org.jetbrains.annotations.NotNull;
  * Date: 03.04.16
  */
 public class PlayerInfoMessage implements Message {
+  @JsonProperty("title")
+  private String title;
+
   @JsonProperty("hp")
   private int healthPoints;
 
@@ -29,27 +32,29 @@ public class PlayerInfoMessage implements Message {
 
 
 
-  public int getHealthPoints() {
+  public int healthPoints() {
     return healthPoints;
   }
 
-  public int getManaPoints() {
+  public int manaPoints() {
     return manaPoints;
   }
 
-  public int getGold() {
+  public int gold() {
     return gold;
   }
 
-  public int getTime() {
+  public int time() {
     return time;
   }
 
-  public int getTurn() {
+  public int turn() {
     return turn;
   }
 
-
+  public String title() {
+    return title;
+  }
 
   @NotNull
   public PlayerPosition getPosition() {

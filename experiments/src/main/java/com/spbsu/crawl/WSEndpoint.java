@@ -13,14 +13,14 @@ import com.spbsu.crawl.data.Protocol;
 
 import javax.websocket.*;
 import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -30,6 +30,7 @@ import java.util.zip.Inflater;
  */
 @ClientEndpoint
 public class WSEndpoint {
+  private static final Logger log = Logger.getLogger(WSEndpoint.class.getName());
   private final Thread outThread;
   private BlockingQueue<Message> in = new LinkedBlockingQueue<>();
   private BlockingQueue<Message> out = new LinkedBlockingQueue<>();
@@ -39,11 +40,12 @@ public class WSEndpoint {
   private final ObjectMapper mapper;
 
   public WSEndpoint(URI uri) throws IOException, DeploymentException {
-    final WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-    mapper = new ObjectMapper();
-    session = container.connectToServer(this, uri);
     decoder = StreamTools.UTF.newDecoder();
+    mapper = new ObjectMapper();
     inflater = new Inflater(true);
+
+    final WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+    session = container.connectToServer(this, uri);
 
     outThread = new Thread(() -> {
       try {
@@ -54,7 +56,7 @@ public class WSEndpoint {
           node.set("msg", new TextNode(poll.type().name().toLowerCase()));
           final String clientJson = mapper.writeValueAsString(node);
           session.getAsyncRemote().sendText(clientJson);
-          System.out.println("[CLIENT]: " + clientJson);
+          log.info("[CLIENT]: " + clientJson);
         }
       } catch (InterruptedException | JsonProcessingException e) {
         throw new RuntimeException(e);
@@ -66,20 +68,20 @@ public class WSEndpoint {
 
   @OnClose
   public void close() {
-    System.out.println("Closed");
+    log.info("Closed");
     inflater.end();
   }
 
   @OnError
   public void error(Throwable th) {
     th.printStackTrace();
-    System.out.println("Error");
+    log.log(Level.WARNING, "Error", th);
     inflater.end();
   }
 
   @OnMessage
   public void onMessage(String msg) {
-    handleMessage(new StringReader(msg));
+    handleMessage(msg);
   }
 
   @OnMessage
@@ -101,22 +103,25 @@ public class WSEndpoint {
         builder.append(decoder.decode(outBuffer));
         outBuffer.compact();
       }
-      handleMessage(new CharSequenceReader(builder));
-    } catch (DataFormatException | CharacterCodingException e) {
-      throw new RuntimeException(e);
+      handleMessage(builder);
+    }
+    catch (DataFormatException | CharacterCodingException e) {
+      log.log(Level.WARNING, "WS message format exception: " + e.getMessage());
     }
   }
 
-  private void handleMessage(final Reader messageReader) {
+  private void handleMessage(final CharSequence message) {
     final JsonNode node;
     try {
-      node = mapper.readTree(messageReader);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      node = mapper.readTree(new CharSequenceReader(message));
+    }
+    catch (IOException e) {
+      log.log(Level.WARNING, "JSON format exception. Message: '" + message + "'. Exception msg: " + e.getMessage() + ". Skipping the message.");
+      return;
     }
 
     final JsonNode msgs = node.get("msgs");
-    System.out.println("[SERVER]: " + node.toString());
+    log.info("[SERVER]: " + node.toString());
     if (msgs != null) {
       for (JsonNode msg : msgs) {
         onItem(msg);

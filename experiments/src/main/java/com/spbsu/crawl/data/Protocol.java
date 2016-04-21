@@ -25,7 +25,8 @@ public enum Protocol {
   UI_STATE(IgnoreMessage.class),
   OPTIONS(IgnoreMessage.class),
   GAME_CLIENT(IgnoreMessage.class),
-  GAME_STARTED(IgnoreMessage.class),
+  GAME_STARTED(GameStarted.class),
+  GAME_ENDED(IgnoreMessage.class),
   VERSION(IgnoreMessage.class),
   LAYOUT(IgnoreMessage.class),
   INPUT_MODE(InputModeMessage.class),
@@ -35,6 +36,9 @@ public enum Protocol {
   MAP(UpdateMapMessage.class),
   KEY(KeyMessage.class),
   INPUT(InputCommandMessage.class),
+  CLOSE(IgnoreMessage.class),
+  TXT(IgnoreMessage.class),
+  STALE_PROCESSES(IgnoreMessage.class),
   ;
 
   private final Class<?> clazz;

@@ -1,6 +1,8 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.system.RuntimeUtils;
+import com.spbsu.crawl.data.GameSession;
+import com.spbsu.crawl.data.Hero;
 
 import javax.websocket.DeploymentException;
 import java.io.File;
@@ -22,7 +24,17 @@ public class StartCrawl {
       bash.exec("bash ./run_server.sh");
       Thread.sleep(1000);
       final WSEndpoint endpoint = new WSEndpoint(new URI("ws://localhost:8080/socket"));
-      final GameProcess gameProcess = new GameProcess(endpoint);
+      final GameProcess gameProcess = new GameProcess(endpoint, new GameSession() {
+        @Override
+        public Hero.Race race() {
+          return null;
+        }
+
+        @Override
+        public Hero.Spec spec() {
+          return null;
+        }
+      });
       gameProcess.start();
     }
     catch (Exception e) {

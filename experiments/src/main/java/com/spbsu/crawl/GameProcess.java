@@ -1,18 +1,16 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.util.ThreadTools;
+import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Message;
-import com.spbsu.crawl.data.impl.*;
-import com.spbsu.crawl.data.impl.system.GoLobbyMessage;
-import com.spbsu.crawl.data.impl.system.IgnoreMessage;
-import com.spbsu.crawl.data.impl.system.LoginMessage;
-import com.spbsu.crawl.data.impl.system.StartGameMessage;
+import com.spbsu.crawl.data.impl.InputModeMessage;
+import com.spbsu.crawl.data.impl.KeyCode;
+import com.spbsu.crawl.data.impl.KeyMessage;
+import com.spbsu.crawl.data.impl.system.*;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -21,44 +19,44 @@ import java.util.logging.Logger;
  */
 public class GameProcess {
   private static final Logger LOG = Logger.getLogger(GameProcess.class.getName());
+  public static final Predicate<Message> DUMP = message -> {
+    System.out.println("messages: " + message);
+    return false;
+  };
 
   private final WSEndpoint endpoint;
 
-  public GameProcess(WSEndpoint endpoint) {
+  public GameProcess(WSEndpoint endpoint, GameSession session) {
     this.endpoint = endpoint;
   }
 
   public void start() {
     initGame();
 
-    interact(new KeyMessage(KeyCode.LEFT), messages -> System.out.println("messages: " + messages));
-    interact(new KeyMessage(KeyCode.RIGHT), messages -> System.out.println("messages: " + messages));
-    interact(new KeyMessage(KeyCode.RIGHT), messages -> System.out.println("messages: " + messages));
+    interact(new KeyMessage(KeyCode.LEFT), DUMP);
+    interact(new KeyMessage(KeyCode.RIGHT), DUMP);
+    interact(new KeyMessage(KeyCode.RIGHT), DUMP);
 
 //    while (true) {
 //      ThreadTools.sleep(1000);
 //    }
   }
 
-  private void interact(final Message userMessage, final Consumer<List<Message>> handler) {
+  private void interact(final Message userMessage, final Predicate<Message> handler) {
     endpoint.send(userMessage);
     final BlockingQueue<Message> messagesQueue = endpoint.getMessagesQueue();
-    final List<Message> newMessages = new ArrayList<>();
 
     Message message;
     try {
-      while (!InputModeMessage.isEndMessage(message = messagesQueue.take())) {
-
-        if (InputModeMessage.isStartMessage(message) || message instanceof IgnoreMessage) {
-          continue;
-        }
-        newMessages.add(message);
+      do {
+        message = messagesQueue.take();
       }
+      while (InputModeMessage.isStartMessage(message) ||
+              message instanceof IgnoreMessage ||
+              !handler.test(message) && !InputModeMessage.isEndMessage(message));
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
-
-    handler.accept(newMessages);
   }
 
 
@@ -68,11 +66,16 @@ public class GameProcess {
     ThreadTools.sleep(1000);
     skipMessages();
 
-    interact(new StartGameMessage("dcss-web-trunk"),  messages -> {
-      final PlayerInfoMessage playerInfo = findMessage(messages, PlayerInfoMessage.class);
-      final UpdateMapMessage updateMapMessage = findMessage(messages, UpdateMapMessage.class);
-      //perform update initial models
-    });
+    interact(new StartGameMessage("dcss-web-trunk"),  message -> message instanceof GameStarted);
+
+//    if (message instanceof PlayerInfoMessage) {
+//      final PlayerInfoMessage playerInfo = (PlayerInfoMessage) message;
+//      System.out.println("Found player: " + playerInfo.title());
+//    }
+//    return false;
+//    final PlayerInfoMessage playerInfo = findMessage(message, PlayerInfoMessage.class);
+//    final UpdateMapMessage updateMapMessage = findMessage(message, UpdateMapMessage.class);
+    //perform update initial models
   }
 
   private <T extends Message> T findMessage(final Collection<Message> messages, final Class<T> cls) {

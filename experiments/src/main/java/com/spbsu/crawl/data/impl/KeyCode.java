@@ -9,10 +9,11 @@ public enum KeyCode {
   DOWN(-253),
   LEFT(-252),
   RIGHT(-251),
-
-  EXIT_GAME(19)
+  a(3),
+  n(15),
+  q(19),
+  EXIT_GAME(19),
   ;
-
 
   private final int code;
 
