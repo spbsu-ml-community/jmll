@@ -162,7 +162,7 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
       final int k = correlations.size() + 1;
       double totalWeight = weight(targetStat);
       double p = (weight  + 0.5) / (totalWeight + 1);
-      double entropy = -(p* FastMath.log(p) + (1 - p) * FastMath.log(1 - p));
+      double entropy = -(p * Math.log(p) + (1 - p) * Math.log(1 - p));
       return lambda;// * Math.log(k);//   / entropy;
     }
 

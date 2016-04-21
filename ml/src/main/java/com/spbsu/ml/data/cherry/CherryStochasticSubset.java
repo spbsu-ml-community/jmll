@@ -54,7 +54,7 @@ public class CherryStochasticSubset implements CherryPointsHolder {
     inside = factory.create();
     {
       for (int i = 0; i < weights.length; ++i) {
-        logInside[i] += FastMath.log(1 - FastMath.exp(currentLogOutside[i]));
+        logInside[i] += Math.log(1 - FastMath.exp(currentLogOutside[i]));
         weights[i] = FastMath.exp(logInside[i]);
         currentLogOutside[i] = 0;
       }
@@ -98,7 +98,7 @@ public class CherryStochasticSubset implements CherryPointsHolder {
       float rk = rank[points[i]];
       final double pLeft = leftProb(rk, leftRank);
       final double pRight = rightProb(rk, rightRank);
-      currentLogOutside[i] += FastMath.log(1 - pLeft * pRight);
+      currentLogOutside[i] += Math.log(1 - pLeft * pRight);
     }
   }
 

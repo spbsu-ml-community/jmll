@@ -75,6 +75,17 @@
             <artifactId>tyrus-container-jdk-client</artifactId>
             <version>1.8.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>1.12</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>1.12</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <properties>

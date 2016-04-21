@@ -1,11 +1,9 @@
 package com.spbsu.ml.methods.trees;
 
-import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
-import com.spbsu.ml.data.Aggregate;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.StatBasedLoss;
@@ -60,12 +58,7 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
     for (int level = 0; level < depth; level++) {
       Arrays.fill(scores, 0.);
       for (final BFOptimizationSubset leaf : leaves) {
-        leaf.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
-          @Override
-          public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
-            scores[bf.bfIndex] += loss.score(left) + loss.score(right);
-          }
-        });
+        leaf.visitAllSplits((bf, left, right) -> scores[bf.bfIndex] += loss.score(left) + loss.score(right));
       }
       final int bestSplit = ArrayTools.min(scores);
       if (bestSplit < 0 || scores[bestSplit] >= currentScore)
