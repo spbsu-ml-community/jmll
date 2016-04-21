@@ -22,8 +22,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class FastMathBenchmark {
   static FastRandom random = new FastRandom(0);
-  static int dim = 10000;
+  static int dim = 100000;
   static Vec target = randomVec(dim);
+  static Vec targetExp = randomVecExp(dim);
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
@@ -54,9 +55,9 @@ public class FastMathBenchmark {
   @OutputTimeUnit(TimeUnit.MICROSECONDS)
   public double becnhmarkFastMathExp() {
     double sum = 0;
-    double adjust = random.nextDouble();
-    for (int i = 0; i < target.dim(); ++i) {
-      sum += FastMath.exp(0.5 * (target.get(i) + adjust));
+    double adjust = Math.log(random.nextDouble());
+    for (int i = 0; i < targetExp.dim(); ++i) {
+      sum += Math.exp(0.5 * (targetExp.get(i) + adjust));
     }
     return sum / target.dim();
   }
@@ -66,9 +67,9 @@ public class FastMathBenchmark {
   @OutputTimeUnit(TimeUnit.MICROSECONDS)
   public double becnhmarkExp() {
     double sum = 0;
-    double adjust = random.nextDouble();
-    for (int i = 0; i < target.dim(); ++i) {
-      sum += Math.exp(0.5 * (target.get(i) + adjust));
+    double adjust = Math.log(random.nextDouble());
+    for (int i = 0; i < targetExp.dim(); ++i) {
+      sum += Math.exp(0.5 * (targetExp.get(i) + adjust));
     }
     return sum / target.dim();
   }
@@ -88,7 +89,14 @@ public class FastMathBenchmark {
   static Vec randomVec(int dim) {
     Vec vec = new ArrayVec(dim);
     for (int i = 0; i < vec.dim(); ++i)
-      vec.set(i, random.nextDouble() * 100000);
+      vec.set(i, random.nextDouble());
+    return vec;
+  }
+
+  static Vec randomVecExp(int dim) {
+    Vec vec = new ArrayVec(dim);
+    for (int i = 0; i < vec.dim(); ++i)
+      vec.set(i, Math.log(random.nextDouble()));
     return vec;
   }
 
