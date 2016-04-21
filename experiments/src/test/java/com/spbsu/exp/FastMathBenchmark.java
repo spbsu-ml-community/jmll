@@ -57,7 +57,7 @@ public class FastMathBenchmark {
     double sum = 0;
     double adjust = Math.log(random.nextDouble());
     for (int i = 0; i < targetExp.dim(); ++i) {
-      sum += Math.exp(0.5 * (targetExp.get(i) + adjust));
+      sum += FastMath.exp(0.5 * (targetExp.get(i) + adjust));
     }
     return sum / target.dim();
   }
