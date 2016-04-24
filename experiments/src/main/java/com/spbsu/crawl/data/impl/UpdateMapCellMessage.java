@@ -28,4 +28,39 @@ public class UpdateMapCellMessage implements Message {
 
   @JsonProperty("t")
   private PackedCellMessage packedCell;
+
+  @JsonProperty("mon")
+  private MonsterInfoMessage monsterInfoMessage;
+
+  public int getX() {
+    return x;
+  }
+
+  public int getY() {
+    return y;
+  }
+
+  public int getDungeonFeatureType() {
+    return dungeonFeatureType;
+  }
+
+  public int getMapFeature() {
+    return mapFeature;
+  }
+
+  public String getGlyph() {
+    return glyph;
+  }
+
+  public int getColour() {
+    return colour;
+  }
+
+  public MonsterInfoMessage getMonsterInfoMessage() {
+    return monsterInfoMessage;
+  }
+
+  public PackedCellMessage getPackedCell() {
+    return packedCell;
+  }
 }

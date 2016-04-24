@@ -16,9 +16,25 @@ public class UpdateMapMessage implements Message {
   @JsonProperty("vgrdc")
   private CoordinateMessage cursorPosition; //i'm not sure, that is't cursor coordinates without some magic
 
+  public boolean isForceFullRedraw() {
+    return forceFullRedraw;
+  }
+
+  public boolean isPlayerOnLevel() {
+    return isPlayerOnLevel;
+  }
+
+  public CoordinateMessage getCursorPosition() {
+    return cursorPosition;
+  }
+
+  public List<UpdateMapCellMessage> getCells() {
+    return Cells;
+  }
 
   @JsonProperty("cells")
   private List<UpdateMapCellMessage> Cells;
+
 
 
 }

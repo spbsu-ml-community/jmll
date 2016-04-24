@@ -34,6 +34,7 @@ public enum Protocol {
   MSGS(IgnoreMessage.class),
   PLAYER(PlayerInfoMessage.class),
   MAP(UpdateMapMessage.class),
+  MON(MonsterInfoMessage.class),
   KEY(KeyMessage.class),
   INPUT(InputCommandMessage.class),
   CLOSE(IgnoreMessage.class),

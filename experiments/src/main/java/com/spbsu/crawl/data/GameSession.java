@@ -1,11 +1,17 @@
 package com.spbsu.crawl.data;
 
+import com.spbsu.crawl.bl.map.Cell;
+
 /**
  * Experts League
  * Created by solar on 21/04/16.
  */
 public interface GameSession {
   Hero.Race race();
+
   Hero.Spec spec();
 
+  void heroPosition(int x, int y);
+
+  void observe(int x, int y, Cell cell);
 }

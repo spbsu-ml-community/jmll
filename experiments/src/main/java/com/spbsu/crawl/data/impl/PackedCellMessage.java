@@ -39,7 +39,6 @@ public class PackedCellMessage implements Message {
   @JsonProperty("sanctuary")
   private boolean isSanctuary;
 
-
   @JsonProperty("liquefied")
   private boolean isLiquefied;
 
@@ -65,10 +64,88 @@ public class PackedCellMessage implements Message {
   @JsonProperty("heat_aura")
   private int heatAura;
 
-
   @JsonProperty("flv")
   private FlavourMessage flavour;
 
+  public long getForeground() {
+    return foreground;
+  }
+
+  public int getBase() {
+    return base;
+  }
+
+  public long getBackground() {
+    return background;
+  }
+
+  public boolean isCloud() {
+    return isCloud;
+  }
+
+  public boolean isBloody() {
+    return isBloody;
+  }
+
+  public boolean isHasOldBlood() {
+    return hasOldBlood;
+  }
+
+  public boolean isSilenced() {
+    return isSilenced;
+  }
+
+  public int getHalo() {
+    return halo;
+  }
+
+  public boolean isMoldy() {
+    return isMoldy;
+  }
+
+  public boolean isGlowingMold() {
+    return isGlowingMold;
+  }
+
+  public boolean isSanctuary() {
+    return isSanctuary;
+  }
+
+  public boolean isLiquefied() {
+    return isLiquefied;
+  }
+
+  public int getOrbGlow() {
+    return orbGlow;
+  }
+
+  public boolean isHasOrbGlow() {
+    return hasOrbGlow;
+  }
+
+  public boolean isDisjunct() {
+    return isDisjunct;
+  }
+
+  public boolean isMangroveWater() {
+    return isMangroveWater;
+  }
+
+  public int getBloodRotation() {
+    return bloodRotation;
+  }
+
+  public int getTravelTrail() {
+    return travelTrail;
+  }
+
+  public int getHeatAura() {
+    return heatAura;
+  }
+
+  public FlavourMessage getFlavour() {
+    return flavour;
+  }
 
   //TODO: mcache, doll if we need them. line 1200+
 }

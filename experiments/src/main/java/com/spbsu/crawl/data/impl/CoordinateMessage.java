@@ -9,4 +9,12 @@ public class CoordinateMessage implements Message {
   @JsonProperty("y")
   private int y;
 
+  public int getY() {
+    return y;
+  }
+
+  public int getX() {
+
+    return x;
+  }
 }

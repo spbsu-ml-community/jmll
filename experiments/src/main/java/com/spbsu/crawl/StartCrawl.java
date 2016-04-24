@@ -1,6 +1,7 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.system.RuntimeUtils;
+import com.spbsu.crawl.bl.map.Cell;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Hero;
 
@@ -33,6 +34,16 @@ public class StartCrawl {
         @Override
         public Hero.Spec spec() {
           return null;
+        }
+
+        @Override
+        public void heroPosition(int x, int y) {
+
+        }
+
+        @Override
+        public void observe(int x, int y, Cell cell) {
+
         }
       });
       gameProcess.start();

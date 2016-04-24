@@ -1,11 +1,11 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.util.ThreadTools;
+import com.spbsu.crawl.bl.map.Cell;
+import com.spbsu.crawl.bl.map.CellType;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Message;
-import com.spbsu.crawl.data.impl.InputModeMessage;
-import com.spbsu.crawl.data.impl.KeyCode;
-import com.spbsu.crawl.data.impl.KeyMessage;
+import com.spbsu.crawl.data.impl.*;
 import com.spbsu.crawl.data.impl.system.*;
 
 import java.util.Collection;
@@ -25,10 +25,13 @@ public class GameProcess {
   };
 
   private final WSEndpoint endpoint;
+  private final GameSession session;
 
   public GameProcess(WSEndpoint endpoint, GameSession session) {
     this.endpoint = endpoint;
+    this.session = session;
   }
+
 
   public void start() {
     initGame();
@@ -59,6 +62,24 @@ public class GameProcess {
     }
   }
 
+  private void updateCellHandler(final UpdateMapCellMessage cellMessage) {
+    final int cellType = cellMessage.getDungeonFeatureType();
+    try {
+      Cell cell = (Cell) CellType.type(cellType).clazz().getConstructor().newInstance();
+      session.observe(cellMessage.getX(), cellMessage.getY(), cell);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void updateMapHandler(final UpdateMapMessage mapMessage) {
+    final CoordinateMessage coord = mapMessage.getCursorPosition();
+    session.heroPosition(coord.getX(), coord.getY());
+    mapMessage.getCells().stream()
+            .filter(cell -> cell.getDungeonFeatureType() != 0)
+            .forEach(this::updateCellHandler);
+
+  }
 
   private void initGame() {
     endpoint.send(new LoginMessage("asd", "asd"));
@@ -66,7 +87,8 @@ public class GameProcess {
     ThreadTools.sleep(1000);
     skipMessages();
 
-    interact(new StartGameMessage("dcss-web-trunk"),  message -> message instanceof GameStarted);
+    interact(new StartGameMessage("dcss-web-trunk"), message -> message instanceof GameStarted);
+
 
 //    if (message instanceof PlayerInfoMessage) {
 //      final PlayerInfoMessage playerInfo = (PlayerInfoMessage) message;
