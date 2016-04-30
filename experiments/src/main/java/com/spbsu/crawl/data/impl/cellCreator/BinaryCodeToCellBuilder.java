@@ -4,7 +4,6 @@ import com.spbsu.crawl.bl.map.Cell;
 import com.spbsu.crawl.bl.map.Floor;
 import com.spbsu.crawl.bl.map.Stair;
 import com.spbsu.crawl.bl.map.Wall;
-import com.spbsu.crawl.bl.map.props.Entrance;
 import com.spbsu.crawl.data.impl.UpdateMapCellMessage;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
@@ -95,9 +94,9 @@ public class BinaryCodeToCellBuilder {
     } else if (wallSet.contains(dungeonFeature)) {
       return new Wall(cellMessage.getX(), cellMessage.getY());
     } else if (upstairsSet.contains(dungeonFeature)) {
-      return new Stair(cellMessage.getX(), cellMessage.getY(), new Entrance(Entrance.Type.Up));
+      return new Stair(cellMessage.getX(), cellMessage.getY(), Stair.Direction.UP);
     } else if (downStairsSet.contains(dungeonFeature)) {
-      return new Stair(cellMessage.getX(), cellMessage.getY(), new Entrance(Entrance.Type.Up));
+      return new Stair(cellMessage.getX(), cellMessage.getY(), Stair.Direction.DOWN);
     }
     throw new IllegalArgumentException("cell type not  done yet");
   }

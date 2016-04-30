@@ -4,36 +4,38 @@ import com.spbsu.crawl.bl.map.actions.CellAction;
 import com.spbsu.crawl.bl.map.actions.GoDown;
 import com.spbsu.crawl.bl.map.actions.GoUp;
 import com.spbsu.crawl.bl.map.actions.StairsAction;
-import com.spbsu.crawl.bl.map.props.CellProperty;
-import com.spbsu.crawl.bl.map.props.Entrance;
 
-import java.util.Set;
 import java.util.stream.Stream;
 
 public class Stair extends Floor {
-  private Entrance entrance;
+  public enum Direction {
+    UP,
+    DOWN
+  }
+
+  private Direction direction;
   private StairsAction action;
 
   public void update(final Stair cell) {
-    entrance = cell.entrance;
+    direction = cell.direction;
     action = cell.action;
   }
 
   @Override
   public void merge(Cell cell) {
     super.merge(cell);
-    entrance = ((Stair) cell).entrance;
+    direction = ((Stair) cell).direction;
     action = ((Stair) cell).action;
   }
 
-  public Stair(int x, int y, Entrance entrance) {
+  public Stair(int x, int y, Direction direction) {
     super(x, y);
-    this.entrance = entrance;
-    switch (entrance.type()) {
-      case Up:
+    this.direction = direction;
+    switch (direction) {
+      case UP:
         this.action = new GoUp();
         break;
-      case Down:
+      case DOWN:
         this.action = new GoDown();
         break;
     }
@@ -43,13 +45,5 @@ public class Stair extends Floor {
   public Stream<CellAction> actions() {
     return Stream.concat(super.actions(), Stream.of(action));
   }
-
-  @Override
-  public Set<CellProperty> props() {
-    Set<CellProperty> propsSet = super.props();
-    propsSet.add(entrance);
-    return propsSet;
-  }
-
 
 }
