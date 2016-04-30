@@ -94,6 +94,10 @@ public class WSEndpoint {
       inBuffer.put((byte) -1);
       inBuffer.put((byte) -1);
       inBuffer.flip();
+      if (!inBuffer.hasArray()) {
+        System.out.println("Error: message with empty buffer");
+        return;
+      }
       inflater.setInput(inBuffer.array(), inBuffer.position(), inBuffer.remaining());
       final StringBuilder builder = new StringBuilder();
       final ByteBuffer outBuffer = ByteBuffer.allocate(4096);

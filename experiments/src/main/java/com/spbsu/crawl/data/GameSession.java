@@ -13,5 +13,9 @@ public interface GameSession {
 
   void heroPosition(int x, int y);
 
-  void observe(int x, int y, Cell cell);
+  void setDungeonLevel(int level);
+
+  void resetCells();
+
+  void observeCell(Cell cell);
 }

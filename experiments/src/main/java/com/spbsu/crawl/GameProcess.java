@@ -2,10 +2,10 @@ package com.spbsu.crawl;
 
 import com.spbsu.commons.util.ThreadTools;
 import com.spbsu.crawl.bl.map.Cell;
-import com.spbsu.crawl.bl.map.CellType;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Message;
 import com.spbsu.crawl.data.impl.*;
+import com.spbsu.crawl.data.impl.cellCreator.BinaryCodeToCellBuilder;
 import com.spbsu.crawl.data.impl.system.*;
 
 import java.util.Collection;
@@ -62,11 +62,11 @@ public class GameProcess {
     }
   }
 
-  private void updateCellHandler(final UpdateMapCellMessage cellMessage) {
+  private void cellHandler(final UpdateMapCellMessage cellMessage) {
     final int cellType = cellMessage.getDungeonFeatureType();
     try {
-      Cell cell = (Cell) CellType.type(cellType).clazz().getConstructor().newInstance();
-      session.observe(cellMessage.getX(), cellMessage.getY(), cell);
+      Cell cell = BinaryCodeToCellBuilder.buildFromMessage(cellMessage);
+
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -77,7 +77,7 @@ public class GameProcess {
     session.heroPosition(coord.getX(), coord.getY());
     mapMessage.getCells().stream()
             .filter(cell -> cell.getDungeonFeatureType() != 0)
-            .forEach(this::updateCellHandler);
+            .forEach(this::cellHandler);
 
   }
 

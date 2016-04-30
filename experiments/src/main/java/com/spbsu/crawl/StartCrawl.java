@@ -42,15 +42,27 @@ public class StartCrawl {
         }
 
         @Override
-        public void observe(int x, int y, Cell cell) {
+        public void setDungeonLevel(int level) {
 
         }
+
+        @Override
+        public void resetCells() {
+
+        }
+
+        @Override
+        public void observeCell(Cell cell) {
+
+        }
+
+
       });
       gameProcess.start();
     }
     catch (Exception e) {
       e.printStackTrace();
-//      bash.destroy();
+      bash.destroy();
     }
     finally {
       bash.waitFor();
