@@ -1,7 +1,6 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.system.RuntimeUtils;
-import com.spbsu.crawl.bl.map.Cell;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Hero;
 
@@ -45,17 +44,6 @@ public class StartCrawl {
         public void setDungeonLevel(int level) {
 
         }
-
-        @Override
-        public void resetCells() {
-
-        }
-
-        @Override
-        public void observeCell(Cell cell) {
-
-        }
-
 
       });
       gameProcess.start();

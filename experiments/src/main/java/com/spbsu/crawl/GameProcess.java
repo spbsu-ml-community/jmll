@@ -1,11 +1,12 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.util.ThreadTools;
-import com.spbsu.crawl.bl.map.Cell;
+import com.spbsu.crawl.bl.map.Level;
+import com.spbsu.crawl.bl.map.Map;
+import com.spbsu.crawl.bl.map.TerrainType;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Message;
 import com.spbsu.crawl.data.impl.*;
-import com.spbsu.crawl.data.impl.cellCreator.BinaryCodeToCellBuilder;
 import com.spbsu.crawl.data.impl.system.*;
 
 import java.util.Collection;
@@ -26,10 +27,13 @@ public class GameProcess {
 
   private final WSEndpoint endpoint;
   private final GameSession session;
+  private final Map map;
+  private Level currentLevel;
 
   public GameProcess(WSEndpoint endpoint, GameSession session) {
     this.endpoint = endpoint;
     this.session = session;
+    this.map = new Map();
   }
 
 
@@ -62,23 +66,21 @@ public class GameProcess {
     }
   }
 
-  private void cellHandler(final UpdateMapCellMessage cellMessage) {
-    final int cellType = cellMessage.getDungeonFeatureType();
-    try {
-      Cell cell = BinaryCodeToCellBuilder.buildFromMessage(cellMessage);
-
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+  private void cellHandler(final Level level, final UpdateMapCellMessage cellMessage) {
+    map.observeCell(level, cellMessage.getX(), cellMessage.getY(), TerrainType.fromMessage(cellMessage));
   }
 
-  private void updateMapHandler(final UpdateMapMessage mapMessage) {
+  private void updateMapHandler(final Level level, final UpdateMapMessage mapMessage) {
+    if (mapMessage.isForceFullRedraw()) {
+      map.clear(level);
+    }
+
     final CoordinateMessage coord = mapMessage.getCursorPosition();
     session.heroPosition(coord.getX(), coord.getY());
+
     mapMessage.getCells().stream()
             .filter(cell -> cell.getDungeonFeatureType() != 0)
-            .forEach(this::cellHandler);
-
+            .forEach(cellMessage -> cellHandler(level, cellMessage));
   }
 
   private void initGame() {
