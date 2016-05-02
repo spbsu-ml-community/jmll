@@ -18,7 +18,7 @@ public class Layer {
   }
 
   private int id(int x, int y) {
-    return x + y << 16;
+    return x + 100000 * y;
   }
 
   public Level level() {

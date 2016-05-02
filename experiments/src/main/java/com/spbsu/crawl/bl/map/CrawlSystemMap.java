@@ -65,6 +65,7 @@ public class CrawlSystemMap {
   public class Updater {
     UpdateMapMessage mapMessage;
     PlayerInfoMessage playerMessage;
+    Level current = new Level("1");
 
     public Updater() {
     }
@@ -93,7 +94,6 @@ public class CrawlSystemMap {
       tryMapUpdate();
     }
 
-    Level current = new Level("1");
     boolean tryMapUpdate() {
       if (mapMessage == null || playerMessage == null) {
         return false;
