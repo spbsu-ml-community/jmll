@@ -27,6 +27,13 @@ public class PlayerInfoMessage implements Message {
   @JsonProperty("turn")
   private int turn;
 
+  @JsonProperty("depth")
+  private String depth;
+
+  public String getDepth() {
+    return depth;
+  }
+
   @JsonProperty("pos")
   private PlayerPosition position;
 
