@@ -6,10 +6,13 @@ import com.spbsu.crawl.data.impl.PlayerInfoMessage;
 import com.spbsu.crawl.data.impl.UpdateMapCellMessage;
 import com.spbsu.crawl.data.impl.UpdateMapMessage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class CrawlSystemMap {
-  private Map<Level, Layer> layers;
+  private Layer layer;
+  private Level level = new Level("1");
   private List<MapEventListener> listeners;
   private Updater updater = new Updater();
 
@@ -20,7 +23,7 @@ public class CrawlSystemMap {
   }
 
   public CrawlSystemMap() {
-    layers = new HashMap<>();
+    layer = new Layer(level);
     listeners = new ArrayList<>();
   }
 
@@ -28,32 +31,22 @@ public class CrawlSystemMap {
     listeners.add(listener);
   }
 
-  public void observeCell(final Level level, final int x, final int y,
+  public void observeCell(final int x, final int y,
                           final TerrainType type) {
-    if (!layers.containsKey(level)) {
-      layers.put(level, new Layer(level));
-    }
 
-    final Layer layer = layers.get(level);
     final Optional<TerrainType> terrain = layer.getCell(x, y);
 
     if (terrain.isPresent()) {
       if (terrain.get() != type) {
         layer.setCell(x, y, type);
-        sendEvent(new CellMapEvent(x, y, MapEventType.CHANGED_CELL));
+        sendEvent(new CellMapEvent(x, y, MapEventType.CHANGED_CELL, type));
       }
     } else {
       layer.setCell(x, y, type);
-      sendEvent(new CellMapEvent(x, y, MapEventType.OBSERVED_CELL));
+      sendEvent(new CellMapEvent(x, y, MapEventType.OBSERVED_CELL, type));
     }
   }
 
-  public void clear(final Level level) {
-    if (layers.containsKey(level)) {
-      layers.get(level).clear();
-      sendEvent(new ForgetMapEvent());
-    }
-  }
 
   public Updater updater() {
     return updater;
@@ -75,18 +68,16 @@ public class CrawlSystemMap {
       tryMapUpdate();
     }
 
-    private void cellHandler(final UpdateMapCellMessage cellMessage, final Level level) {
-      observeCell(level, cellMessage.getX(), cellMessage.getY(), TerrainType.fromMessage(cellMessage));
+    private void clear() {
+      if (playerMessage.depth() != null) {
+        current = new Level(playerMessage.depth());
+      }
+      layer = new Layer(level);
+      sendEvent(new ChangeSystemMapEvent(level));
     }
 
-    private void updateMapHandler(final UpdateMapMessage mapMessage, final Level level) {
-      if (mapMessage.isForceFullRedraw()) {
-        clear(level);
-      }
-
-      mapMessage.getCells().stream()
-              .filter(cell -> cell.getDungeonFeatureType() != 0)
-              .forEach(cellMessage -> cellHandler(cellMessage, level));
+    private void cellHandler(final UpdateMapCellMessage cellMessage) {
+      observeCell(cellMessage.getX(), cellMessage.getY(), TerrainType.fromMessage(cellMessage));
     }
 
     public void message(final UpdateMapMessage message) {
@@ -94,16 +85,21 @@ public class CrawlSystemMap {
       tryMapUpdate();
     }
 
-    boolean tryMapUpdate() {
+    void tryMapUpdate() {
       if (mapMessage == null || playerMessage == null) {
-        return false;
+        return;
       }
-      if (playerMessage.getDepth() != null)
-        current = new Level(playerMessage.getDepth());
-      updateMapHandler(mapMessage, current);
+
+      if (mapMessage.isForceFullRedraw()) {
+        clear();
+      }
+
+      mapMessage.getCells().stream()
+              .filter(cell -> cell.getDungeonFeatureType() != 0)
+              .forEach(this::cellHandler);
+
       mapMessage = null;
       playerMessage = null;
-      return true;
     }
   }
 }

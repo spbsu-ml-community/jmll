@@ -7,5 +7,5 @@ package com.spbsu.crawl.bl.map.mapEvents;
 public enum MapEventType {
   OBSERVED_CELL,
   CHANGED_CELL,
-  FORGET_MAP
+  SYSTEM_MAP_CHANGED
 }

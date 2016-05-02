@@ -16,7 +16,7 @@ public interface Mob {
     MOVE_UP('k'),
     MOVE_DOWN('j'),
     MOVE_LEFT('h'),
-    MOVE_RIGHT('h'),
+    MOVE_RIGHT('l'),
     MOVE_UP_RIGHT('u'),
     MOVE_UP_LEFT('y'),
     MOVE_DOWN_RIGHT('n'),

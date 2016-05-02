@@ -30,13 +30,12 @@ public class PlayerInfoMessage implements Message {
   @JsonProperty("depth")
   private String depth;
 
-  public String getDepth() {
+  public String depth() {
     return depth;
   }
 
   @JsonProperty("pos")
   private PlayerPosition position;
-
 
 
   public int healthPoints() {
@@ -69,8 +68,10 @@ public class PlayerInfoMessage implements Message {
   }
 
   public static class PlayerPosition {
-    @JsonProperty("x") private int x;
-    @JsonProperty("y") private int y;
+    @JsonProperty("x")
+    private int x;
+    @JsonProperty("y")
+    private int y;
 
     public int getX() {
       return x;

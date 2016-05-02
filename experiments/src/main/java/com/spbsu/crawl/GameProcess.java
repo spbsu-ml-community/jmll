@@ -1,19 +1,21 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.ThreadTools;
 import com.spbsu.crawl.bl.Mob;
 import com.spbsu.crawl.bl.map.CrawlSystemMap;
 import com.spbsu.crawl.data.Command;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Hero;
 import com.spbsu.crawl.data.Message;
-import com.spbsu.crawl.data.impl.*;
-import com.spbsu.crawl.data.impl.system.*;
+import com.spbsu.crawl.data.impl.InputCommandMessage;
+import com.spbsu.crawl.data.impl.InputModeMessage;
+import com.spbsu.crawl.data.impl.PlayerInfoMessage;
+import com.spbsu.crawl.data.impl.UpdateMapMessage;
+import com.spbsu.crawl.data.impl.system.LobbyComplete;
+import com.spbsu.crawl.data.impl.system.RegisterMessage;
+import com.spbsu.crawl.data.impl.system.SetGameLinks;
+import com.spbsu.crawl.data.impl.system.StartGameMessage;
 
-import java.util.Collection;
-import java.util.concurrent.BlockingQueue;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -54,6 +56,10 @@ public class GameProcess implements Runnable {
         ((Command) message).execute(endpoint.out);
       } else if (message instanceof UpdateMapMessage) {
         crawlSystemMap.updater().message((UpdateMapMessage) message);
+        if (((UpdateMapMessage) message).getCursorPosition() != null) {
+          session.heroPosition(((UpdateMapMessage) message).getCursorPosition().getX(),
+                  ((UpdateMapMessage) message).getCursorPosition().getY());
+        }
       } else if (message instanceof PlayerInfoMessage) {
         crawlSystemMap.updater().message((PlayerInfoMessage) message);
       } else if (message instanceof InputModeMessage) {

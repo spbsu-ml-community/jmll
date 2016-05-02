@@ -12,7 +12,6 @@ public interface GameSession {
   Hero.Spec spec();
 
   void heroPosition(int x, int y);
-  void setDungeonLevel(int level);
 
   Mob.Action tick();
 
