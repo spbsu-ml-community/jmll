@@ -12,6 +12,25 @@ public interface Mob {
   Vec position();
   Stream<Action> actions();
 
-  interface Action extends Event {
+  enum Action {
+    MOVE_UP('k'),
+    MOVE_DOWN('j'),
+    MOVE_LEFT('h'),
+    MOVE_RIGHT('h'),
+    MOVE_UP_RIGHT('u'),
+    MOVE_UP_LEFT('y'),
+    MOVE_DOWN_RIGHT('n'),
+    MOVE_DOWN_LEFT('b'),
+    ;
+
+
+    private char code;
+    Action(char code) {
+      this.code = code;
+    }
+
+    public char code() {
+      return code;
+    }
   }
 }

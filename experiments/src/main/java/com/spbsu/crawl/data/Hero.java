@@ -1,7 +1,5 @@
 package com.spbsu.crawl.data;
 
-import com.spbsu.crawl.data.impl.KeyCode;
-
 /**
  * Experts League
  * Created by solar on 21/04/16.
@@ -9,27 +7,39 @@ import com.spbsu.crawl.data.impl.KeyCode;
 public class Hero {
 
   public enum Spec {
-    Fighter(KeyCode.a);
+    Fighter_Unarmed('a', 'a'),
+    Fighter_Axe('a', 'd'),
+    ;
 
-    private final KeyCode select;
-    Spec(KeyCode code) {
-      select = code;
+    private final char select_role;
+    private final Character select_spec;
+    Spec(char code, Character spec) {
+      select_role = code;
+      select_spec = spec;
     }
 
-    public KeyCode select() {
-      return select;
+    public char selectProf() {
+      return select_role;
+    }
+
+    public char selectSpec() {
+      return select_spec;
+    }
+
+    public boolean hasSpec() {
+      return select_spec != null;
     }
   }
 
   public enum Race {
-    Minotaur(KeyCode.n);
+    Minotaur('n');
 
-    private final KeyCode select;
-    Race(KeyCode code) {
+    private final char select;
+    Race(char code) {
       select = code;
     }
 
-    public KeyCode select() {
+    public char select() {
       return select;
     }
   }

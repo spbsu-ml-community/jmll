@@ -1,6 +1,9 @@
 package com.spbsu.crawl;
 
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.system.RuntimeUtils;
+import com.spbsu.crawl.bl.Mob;
+import com.spbsu.crawl.bl.map.mapEvents.MapEvent;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Hero;
 
@@ -9,6 +12,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Experts League
@@ -27,12 +32,28 @@ public class StartCrawl {
       final GameProcess gameProcess = new GameProcess(endpoint, new GameSession() {
         @Override
         public Hero.Race race() {
-          return null;
+          return Hero.Race.Minotaur;
         }
 
         @Override
         public Hero.Spec spec() {
-          return null;
+          return Hero.Spec.Fighter_Axe;
+        }
+
+
+        final Mob.Action[] moves;
+        {
+          moves = Stream.of(Mob.Action.values()).filter(action -> action.name().startsWith("MOVE")).collect(Collectors.toList()).toArray(new Mob.Action[]{});
+        }
+        final FastRandom rng = new FastRandom();
+        @Override
+        public Mob.Action tick() {
+          return moves[rng.nextInt(moves.length)];
+        }
+
+        @Override
+        public void updateMap(MapEvent event) {
+
         }
 
         @Override
@@ -46,7 +67,7 @@ public class StartCrawl {
         }
 
       });
-      gameProcess.start();
+      gameProcess.run();
     }
     catch (Exception e) {
       e.printStackTrace();

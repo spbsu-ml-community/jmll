@@ -19,6 +19,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
@@ -31,9 +32,10 @@ import java.util.zip.Inflater;
 @ClientEndpoint
 public class WSEndpoint {
   private static final Logger log = Logger.getLogger(WSEndpoint.class.getName());
+  @SuppressWarnings("FieldCanBeLocal")
   private final Thread outThread;
   private BlockingQueue<Message> in = new LinkedBlockingQueue<>();
-  private BlockingQueue<Message> out = new LinkedBlockingQueue<>();
+  BlockingQueue<Message> out = new LinkedBlockingQueue<>();
   private final Session session;
   private Inflater inflater;
   private CharsetDecoder decoder;
@@ -135,28 +137,38 @@ public class WSEndpoint {
     }
   }
 
+  public Message poll() {
+    try {
+      return in.poll(1, TimeUnit.HOURS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void send(Message msg) {
+    try {
+      out.put(msg);
+    }
+    catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   private void onItem(JsonNode node) {
     try {
       final Protocol msg = Protocol.valueOf(node.get("msg").asText().toUpperCase());
-      final Message message = mapper.treeToValue(node, msg.clazz());
-      if (message instanceof Command) {
-        ((Command) message).execute(out);
-      }
-      else {
-        in.put(message);
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
+      in.put(mapper.treeToValue(node, msg.clazz()));
+    }
+    catch (JsonProcessingException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    catch (IllegalArgumentException iae) {
+      log.warning("Unknown message type: " + node.get("msg").asText().toUpperCase());
     }
   }
 
   @OnOpen
   public void open(Session wsSession) {
-  }
-
-  public void send(Message message) {
-    out.add(message);
   }
 
   public BlockingQueue<Message> getMessagesQueue() {

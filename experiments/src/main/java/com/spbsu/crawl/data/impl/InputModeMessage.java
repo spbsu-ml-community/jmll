@@ -14,14 +14,14 @@ public class InputModeMessage implements Message {
   @JsonProperty("mode")
   private int inputMode;
 
-  public int getInputMode() {
+  public int inputMode() {
     return inputMode;
   }
 
   public static boolean isStartMessage(final Message message) {
     if (message instanceof InputModeMessage) {
       final InputModeMessage inputModeMessage = (InputModeMessage) message;
-      return inputModeMessage.getInputMode() == InputModeMessage.START_INPUT;
+      return inputModeMessage.inputMode() == InputModeMessage.START_INPUT;
     }
     return false;
   }
@@ -29,7 +29,7 @@ public class InputModeMessage implements Message {
   public static boolean isEndMessage(final Message message) {
     if (message instanceof InputModeMessage) {
       final InputModeMessage inputModeMessage = (InputModeMessage) message;
-      return inputModeMessage.getInputMode() == InputModeMessage.END_INPUT;
+      return inputModeMessage.inputMode() == InputModeMessage.END_INPUT;
     }
     return false;
   }

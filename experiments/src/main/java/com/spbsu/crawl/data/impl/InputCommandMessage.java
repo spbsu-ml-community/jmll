@@ -14,4 +14,9 @@ public class InputCommandMessage implements Message {
   public InputCommandMessage(KeyCommand keyCommand) {
     this.text = keyCommand.getText();
   }
+
+  public InputCommandMessage(char keyCommand) {
+    this.text = Character.toString(keyCommand);
+  }
+
 }

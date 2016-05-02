@@ -4,10 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.crawl.data.Message;
 
 public class PackedCellMessage implements Message {
-
-  @JsonProperty("fg")
-  private long foreground;
-
   //TODO: wtf it is. see tileweb.cc 1131
   @JsonProperty("base")
   private int base;
@@ -66,10 +62,6 @@ public class PackedCellMessage implements Message {
 
   @JsonProperty("flv")
   private FlavourMessage flavour;
-
-  public long getForeground() {
-    return foreground;
-  }
 
   public int getBase() {
     return base;

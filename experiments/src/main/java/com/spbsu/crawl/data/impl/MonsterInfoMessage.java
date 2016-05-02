@@ -8,7 +8,7 @@ import com.spbsu.crawl.data.Message;
  */
 public class MonsterInfoMessage implements Message {
 
-  private class MonsterStats implements Message {
+  public static class MonsterStats implements Message {
     @JsonProperty("avghp")
     private int averageHealthPoints;
     @JsonProperty("no_exp")
