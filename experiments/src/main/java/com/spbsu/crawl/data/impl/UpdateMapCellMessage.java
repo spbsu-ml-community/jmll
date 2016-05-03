@@ -9,10 +9,15 @@ public class UpdateMapCellMessage implements Message {
   //this properties send if prop was updated
   //Almost all ints are uint32.
   @JsonProperty("x")
-  private int x;
+  private int x = Integer.MAX_VALUE;
 
   @JsonProperty("y")
-  private int y;
+  private int y = Integer.MAX_VALUE;
+
+  public void setPoint(int x, int y) {
+    this.x = x;
+    this.y = y;
+  }
 
   @JsonProperty("f")
   private int dungeonFeatureType;
@@ -32,11 +37,11 @@ public class UpdateMapCellMessage implements Message {
   @JsonProperty("mon")
   private MonsterInfoMessage monsterInfoMessage;
 
-  public int getX() {
+  public int x() {
     return x;
   }
 
-  public int getY() {
+  public int y() {
     return y;
   }
 

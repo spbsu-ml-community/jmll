@@ -77,7 +77,7 @@ public class CrawlSystemMap {
     }
 
     private void cellHandler(final UpdateMapCellMessage cellMessage) {
-      observeCell(cellMessage.getX(), cellMessage.getY(), TerrainType.fromMessage(cellMessage));
+      observeCell(cellMessage.x(), cellMessage.y(), TerrainType.fromMessage(cellMessage));
     }
 
     public void message(final UpdateMapMessage message) {
@@ -94,7 +94,15 @@ public class CrawlSystemMap {
         clear();
       }
 
-      mapMessage.getCells().stream()
+      List<UpdateMapCellMessage> cells = mapMessage.getCells();
+
+      for (int i = 1; i < cells.size(); ++i) {
+        if (cells.get(i).x() == Integer.MAX_VALUE) {
+          cells.get(i).setPoint(cells.get(i - 1).x() + 1, cells.get(i - 1).y());
+        }
+      }
+
+      cells.stream()
               .filter(cell -> cell.getDungeonFeatureType() != 0)
               .forEach(this::cellHandler);
 
