@@ -5,10 +5,10 @@ import java.util.Arrays;
 /**
  * Created by noxoomo on 02/05/16.
  */
-public class CodeRange {
+public class CodeSet {
   int[] codes;
 
-  public CodeRange(int... codes) {
+  public CodeSet(int... codes) {
     this.codes = codes;
   }
 
@@ -17,9 +17,9 @@ public class CodeRange {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    CodeRange codeRange = (CodeRange) o;
+    CodeSet codeSet = (CodeSet) o;
 
-    return Arrays.equals(codes, codeRange.codes);
+    return Arrays.equals(codes, codeSet.codes);
 
   }
 

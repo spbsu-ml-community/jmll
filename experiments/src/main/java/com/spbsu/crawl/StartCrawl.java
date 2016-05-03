@@ -39,7 +39,7 @@ public class StartCrawl {
         private int x;
         private int y;
 
-        private boolean canMoveTo(int x, int y) {
+        private boolean canMoveTo(final int x, final int y) {
           Optional<TerrainType> terrain = crawlMap.terrainOnCurrentLevel(x, y);
           if (terrain.isPresent()) {
             return terrain.get() != TerrainType.WALL;
