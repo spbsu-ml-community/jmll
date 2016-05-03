@@ -1,6 +1,5 @@
 package com.spbsu.crawl;
 
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.crawl.bl.Mob;
@@ -22,6 +21,7 @@ public class WeightedRandomWalkGameSession implements GameSession {
   private final CrawlGameSessionMap crawlMap = new CrawlGameSessionMap();
   private int x;
   private int y;
+  private double increment = 0.2;
 
   class CellStats {
     int x;
@@ -45,7 +45,7 @@ public class WeightedRandomWalkGameSession implements GameSession {
 
   private CellStats getStats(int x, int y) {
     if (!stats.containsKey(idx(x, y))) {
-      stats.put(idx(x, y), new CellStats(x, y, 1));
+      stats.put(idx(x, y), new CellStats(x, y, increment));
     }
     return stats.get(idx(x, y));
   }
@@ -53,9 +53,9 @@ public class WeightedRandomWalkGameSession implements GameSession {
   private void incWeight(int x, int y) {
     final int key = idx(x, y);
     if (stats.containsKey(key)) {
-      stats.get(key).weight++;
+      stats.get(key).weight += increment;
     } else {
-      stats.put(key, new CellStats(x, y, 2));
+      stats.put(key, new CellStats(x, y, 2 * increment));
     }
   }
 
@@ -147,12 +147,12 @@ public class WeightedRandomWalkGameSession implements GameSession {
             .collect(Collectors.toList());
     double totalSum = 0;
     for (int i = 0; i < avaiableActions.size(); ++i) {
-      totalSum += 1.0 / MathTools.sqr((avaiableActions.get(i).getSecond().weight));
+      totalSum += Math.exp(-(avaiableActions.get(i).getSecond().weight));
     }
     double takenWeight = totalSum * rng.nextDouble();
     int i = 0;
     while (takenWeight > 0) {
-      takenWeight -= 1.0 / MathTools.sqr(avaiableActions.get(i).getSecond().weight);
+      takenWeight -= Math.exp(-avaiableActions.get(i).getSecond().weight);
       ++i;
     }
     --i;
