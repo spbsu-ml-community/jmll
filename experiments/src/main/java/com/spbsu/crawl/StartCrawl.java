@@ -53,21 +53,21 @@ public class StartCrawl {
           public boolean test(Mob.Action action) {
             switch (action) {
               case MOVE_DOWN_LEFT:
-                return canMoveTo(x - 1, y - 1);
+                return canMoveTo(x - 1, y + 1);
               case MOVE_DOWN_RIGHT:
-                return canMoveTo(x + 1, y - 1);
+                return canMoveTo(x + 1, y + 1);
               case MOVE_DOWN:
-                return canMoveTo(x, y - 1);
+                return canMoveTo(x, y + 1);
               case MOVE_LEFT:
                 return canMoveTo(x - 1, y);
               case MOVE_RIGHT:
                 return canMoveTo(x + 1, y);
               case MOVE_UP:
-                return canMoveTo(x, y + 1);
+                return canMoveTo(x, y - 1);
               case MOVE_UP_LEFT:
-                return canMoveTo(x - 1, y + 1);
+                return canMoveTo(x - 1, y - 1);
               case MOVE_UP_RIGHT:
-                return canMoveTo(x + 1, y + 1);
+                return canMoveTo(x + 1, y - 1);
               default:
                 return true;
             }

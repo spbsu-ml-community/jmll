@@ -14,7 +14,7 @@ public class UpdateMapCellMessage implements Message {
   @JsonProperty("y")
   private int y = Integer.MAX_VALUE;
 
-  public void setPoint(int x, int y) {
+  public void setPoint(final int x, final int y) {
     this.x = x;
     this.y = y;
   }
