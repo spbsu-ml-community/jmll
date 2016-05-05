@@ -1,24 +1,12 @@
 package com.spbsu.crawl;
 
-import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.system.RuntimeUtils;
-import com.spbsu.crawl.bl.Mob;
-import com.spbsu.crawl.bl.map.CrawlGameSessionMap;
-import com.spbsu.crawl.bl.map.TerrainType;
-import com.spbsu.crawl.bl.map.mapEvents.MapEvent;
-import com.spbsu.crawl.data.GameSession;
-import com.spbsu.crawl.data.Hero;
 
 import javax.websocket.DeploymentException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Experts League

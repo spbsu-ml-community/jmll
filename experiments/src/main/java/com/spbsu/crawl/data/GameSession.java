@@ -1,6 +1,5 @@
 package com.spbsu.crawl.data;
 
-import com.spbsu.crawl.bl.Mob;
 
 /**
  * Experts League
@@ -12,7 +11,7 @@ public interface GameSession extends MapListener {
 
   void heroPosition(int x, int y);
 
-  Mob.Action tick();
+  Action tick();
 
   Hero.Stat chooseStatForUpgrade();
 
