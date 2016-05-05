@@ -19,4 +19,7 @@ public class InputCommandMessage implements Message {
     this.text = Character.toString(keyCommand);
   }
 
+  public InputCommandMessage(String wordCommand) {
+    this.text = wordCommand;
+  }
 }

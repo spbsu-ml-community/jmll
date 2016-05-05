@@ -32,4 +32,8 @@ public class Layer {
     final int key = id(x, y);
     terrains.put(key, type);
   }
+
+  public int tilesCount() {
+    return terrains.size();
+  }
 }

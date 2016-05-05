@@ -39,6 +39,10 @@ public class CrawlSystemMap {
     return updater;
   }
 
+  public int knownCells() {
+    return layer.tilesCount();
+  }
+
   /**
    * User: noxoomo
    */

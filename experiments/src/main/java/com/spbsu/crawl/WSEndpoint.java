@@ -58,7 +58,7 @@ public class WSEndpoint {
           node.set("msg", new TextNode(poll.type().name().toLowerCase()));
           final String clientJson = mapper.writeValueAsString(node);
           session.getAsyncRemote().sendText(clientJson);
-          log.info("[CLIENT]: " + clientJson);
+//          log.info("[CLIENT]: " + clientJson);
         }
       } catch (InterruptedException | JsonProcessingException e) {
         throw new RuntimeException(e);
@@ -122,12 +122,12 @@ public class WSEndpoint {
       node = mapper.readTree(new CharSequenceReader(message));
     }
     catch (IOException e) {
-      log.log(Level.WARNING, "JSON format exception. Message: '" + message + "'. Exception msg: " + e.getMessage() + ". Skipping the message.");
+//      log.log(Level.WARNING, "JSON format exception. Message: '" + message + "'. Exception msg: " + e.getMessage() + ". Skipping the message.");
       return;
     }
 
     final JsonNode msgs = node.get("msgs");
-    log.info("[SERVER]: " + node.toString());
+//    log.info("[SERVER]: " + node.toString());
     if (msgs != null) {
       for (JsonNode msg : msgs) {
         onItem(msg);

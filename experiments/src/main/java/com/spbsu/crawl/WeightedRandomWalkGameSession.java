@@ -21,6 +21,19 @@ public class WeightedRandomWalkGameSession implements GameSession {
   private int x;
   private int y;
   private double increment = 0.2;
+  private double prevScore = 0;
+  private double step = 0.1;
+
+  public void alter(double score) {
+    if (score > prevScore) {
+      increment += step;
+    }
+    else {
+      step *= -0.9;
+      increment += step;
+    }
+    prevScore = score;
+  }
 
   class CellStats {
     int x;

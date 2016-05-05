@@ -28,7 +28,7 @@ public enum Protocol {
   OPTIONS(IgnoreMessage.class),
   GAME_CLIENT(IgnoreMessage.class),
   GAME_STARTED(GameStarted.class),
-  GAME_ENDED(IgnoreMessage.class),
+  GAME_ENDED(GameEnded.class),
   VERSION(IgnoreMessage.class),
   LAYOUT(IgnoreMessage.class),
   INPUT_MODE(InputModeMessage.class),
@@ -42,6 +42,12 @@ public enum Protocol {
   CLOSE(IgnoreMessage.class),
   TXT(IgnoreMessage.class),
   STALE_PROCESSES(IgnoreMessage.class),
+  DELAY(IgnoreMessage.class),
+  CLEAR_OVERLAYS(IgnoreMessage.class),
+  OVERLAY(IgnoreMessage.class),
+  UPDATE_MENU(IgnoreMessage.class),
+  CLOSE_MENU(IgnoreMessage.class),
+  FLASH(IgnoreMessage.class),
   ;
 
   private final Class<?> clazz;
