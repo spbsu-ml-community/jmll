@@ -2,9 +2,9 @@ package com.spbsu.crawl;
 
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.crawl.bl.Mob;
 import com.spbsu.crawl.bl.map.CrawlGameSessionMap;
 import com.spbsu.crawl.bl.map.TerrainType;
-import com.spbsu.crawl.data.Action;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Hero;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -66,9 +66,9 @@ public class WeightedRandomWalkGameSession implements GameSession {
     return true;
   }
 
-  private Function<Action, Pair<Action, CellStats>> dirWeights = new Function<Action, Pair<Action, CellStats>>() {
+  private Function<Mob.Action, Pair<Mob.Action, CellStats>> dirWeights = new Function<Mob.Action, Pair<Mob.Action, CellStats>>() {
     @Override
-    public Pair<Action, CellStats> apply(Action action) {
+    public Pair<Mob.Action, CellStats> apply(Mob.Action action) {
       switch (action) {
         case MOVE_DOWN_LEFT:
           return new Pair<>(action, getStats(x - 1, y + 1));
@@ -92,9 +92,9 @@ public class WeightedRandomWalkGameSession implements GameSession {
   };
 
 
-  private Predicate<Action> moveableDirection = new Predicate<Action>() {
+  private Predicate<Mob.Action> moveableDirection = new Predicate<Mob.Action>() {
     @Override
-    public boolean test(Action action) {
+    public boolean test(Mob.Action action) {
       switch (action) {
         case MOVE_DOWN_LEFT:
           return canMoveTo(x - 1, y + 1);
@@ -129,18 +129,18 @@ public class WeightedRandomWalkGameSession implements GameSession {
   }
 
 
-  final Action[] moves;
+  final Mob.Action[] moves;
 
   {
-    moves = Stream.of(Action.values()).filter(action -> action.name().startsWith("MOVE"))
-            .collect(Collectors.toList()).toArray(new Action[]{});
+    moves = Stream.of(Mob.Action.values()).filter(action -> action.name().startsWith("MOVE"))
+            .collect(Collectors.toList()).toArray(new Mob.Action[]{});
   }
 
   final FastRandom rng = new FastRandom();
 
   @Override
-  public Action tick() {
-    List<Pair<Action, CellStats>> avaiableActions = Stream.of(moves).filter(moveableDirection)
+  public Mob.Action tick() {
+    List<Pair<Mob.Action, CellStats>> avaiableActions = Stream.of(moves).filter(moveableDirection)
             .map(dirWeights)
             .collect(Collectors.toList());
     double totalSum = 0;

@@ -1,8 +1,12 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.crawl.bl.Mob;
 import com.spbsu.crawl.bl.map.CrawlSystemMap;
-import com.spbsu.crawl.data.*;
+import com.spbsu.crawl.data.Command;
+import com.spbsu.crawl.data.GameSession;
+import com.spbsu.crawl.data.Hero;
+import com.spbsu.crawl.data.Message;
 import com.spbsu.crawl.data.impl.InputCommandMessage;
 import com.spbsu.crawl.data.impl.InputModeMessage;
 import com.spbsu.crawl.data.impl.PlayerInfoMessage;
@@ -51,22 +55,19 @@ public class GameProcess implements Runnable {
       if (message instanceof Command) {
         ((Command) message).execute(endpoint.out);
       } else if (message instanceof UpdateMapMessage) {
-        final UpdateMapMessage updateMapMessage = (UpdateMapMessage) message;
-        crawlSystemMap.updater().message(updateMapMessage);
-        if (updateMapMessage.getCursorPosition() != null) {
-          session.heroPosition(
-                  updateMapMessage.getCursorPosition().getX(),
-                  updateMapMessage.getCursorPosition().getY()
-          );
+        crawlSystemMap.updater().message((UpdateMapMessage) message);
+        if (((UpdateMapMessage) message).getCursorPosition() != null) {
+          session.heroPosition(((UpdateMapMessage) message).getCursorPosition().getX(),
+                  ((UpdateMapMessage) message).getCursorPosition().getY());
         }
       } else if (message instanceof PlayerInfoMessage) {
         crawlSystemMap.updater().message((PlayerInfoMessage) message);
       } else if (message instanceof InputModeMessage) {
         switch (((InputModeMessage) message).inputMode()) {
-          case InputModeMessage.START_INPUT:
+          case 0:
             break;
-          case InputModeMessage.END_INPUT:
-            final Action tickAction = session.tick();
+          case 1:
+            final Mob.Action tickAction = session.tick();
             endpoint.send(new InputCommandMessage(tickAction.code()));
             break;
           case 5:
