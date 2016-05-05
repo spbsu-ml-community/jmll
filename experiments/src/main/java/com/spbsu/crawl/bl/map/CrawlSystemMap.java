@@ -1,7 +1,7 @@
 package com.spbsu.crawl.bl.map;
 
 
-import com.spbsu.crawl.bl.map.mapEvents.*;
+import com.spbsu.crawl.data.MapListener;
 import com.spbsu.crawl.data.impl.PlayerInfoMessage;
 import com.spbsu.crawl.data.impl.UpdateMapCellMessage;
 import com.spbsu.crawl.data.impl.UpdateMapMessage;
@@ -11,39 +11,26 @@ import java.util.List;
 import java.util.Optional;
 
 public class CrawlSystemMap {
-  private Layer layer;
-  private Level level = new Level("1");
-  private List<MapEventListener> listeners;
+  private Layer layer = new Layer();
+  private List<MapListener> listeners = new ArrayList<>();
   private Updater updater = new Updater();
 
-  private void sendEvent(final MapEvent event) {
-    for (MapEventListener listener : listeners) {
-      listener.observe(event);
-    }
-  }
-
-  public CrawlSystemMap() {
-    layer = new Layer(level);
-    listeners = new ArrayList<>();
-  }
-
-  public void subscribeToEvents(final MapEventListener listener) {
+  public void subscribeToEvents(final MapListener listener) {
     listeners.add(listener);
   }
 
-  public void observeCell(final int x, final int y,
-                          final TerrainType type) {
-
-    final Optional<TerrainType> terrain = layer.getCell(x, y);
+  public void observeCell(final int x, final int y, final TerrainType type) {
+    final Optional<TerrainType> terrain = layer.tile(x, y);
 
     if (terrain.isPresent()) {
       if (terrain.get() != type) {
-        layer.setCell(x, y, type);
-        sendEvent(new CellMapEvent(x, y, MapEventType.CHANGED_CELL, type));
+        layer.setTile(x, y, type);
+        listeners.stream().forEach(lst -> lst.tile(x, y, type));
       }
-    } else {
-      layer.setCell(x, y, type);
-      sendEvent(new CellMapEvent(x, y, MapEventType.OBSERVED_CELL, type));
+    }
+    else {
+      layer.setTile(x, y, type);
+      listeners.stream().forEach(lst -> lst.tile(x, y, type));
     }
   }
 
@@ -58,7 +45,6 @@ public class CrawlSystemMap {
   public class Updater {
     UpdateMapMessage mapMessage;
     PlayerInfoMessage playerMessage;
-    Level current = new Level("1");
 
     public Updater() {
     }
@@ -70,10 +56,10 @@ public class CrawlSystemMap {
 
     private void clear() {
       if (playerMessage.depth() != null) {
-        current = new Level(playerMessage.depth());
+        listeners.stream().forEach(lst -> lst.changeLevel(playerMessage.depth()));
       }
-      layer = new Layer(level);
-      sendEvent(new ChangeSystemMapEvent(level));
+      layer.clear();
+      listeners.stream().forEach(MapListener::resetPosition);
     }
 
     private void cellHandler(final UpdateMapCellMessage cellMessage) {

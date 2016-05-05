@@ -5,7 +5,6 @@ import com.spbsu.commons.util.Pair;
 import com.spbsu.crawl.bl.Mob;
 import com.spbsu.crawl.bl.map.CrawlGameSessionMap;
 import com.spbsu.crawl.bl.map.TerrainType;
-import com.spbsu.crawl.bl.map.mapEvents.MapEvent;
 import com.spbsu.crawl.data.GameSession;
 import com.spbsu.crawl.data.Hero;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -33,7 +32,6 @@ public class WeightedRandomWalkGameSession implements GameSession {
       this.y = y;
       this.weight = weight;
     }
-
   }
 
   private TIntObjectHashMap<CellStats> stats = new TIntObjectHashMap<>();
@@ -161,8 +159,23 @@ public class WeightedRandomWalkGameSession implements GameSession {
   }
 
   @Override
-  public void updateMap(MapEvent event) {
-    crawlMap.systemMapEvent(event);
+  public Hero.Stat chooseStatForUpgrade() {
+    return Hero.Stat.Strength;
+  }
+
+  @Override
+  public void tile(int x, int y, TerrainType type) {
+    crawlMap.tile(x, y, type);
+  }
+
+  @Override
+  public void changeLevel(String id) {
+    crawlMap.changeLevel(id);
+  }
+
+  @Override
+  public void resetPosition() {
+    crawlMap.resetPosition();
   }
 
   @Override

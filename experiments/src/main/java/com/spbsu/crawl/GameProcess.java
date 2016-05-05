@@ -49,7 +49,7 @@ public class GameProcess implements Runnable {
       endpoint.send(new InputCommandMessage(spec.selectSpec()));
     Message message;
 
-    crawlSystemMap.subscribeToEvents(session::updateMap);
+    crawlSystemMap.subscribeToEvents(session);
     do {
       message = endpoint.poll();
       if (message instanceof Command) {
@@ -74,6 +74,10 @@ public class GameProcess implements Runnable {
             endpoint.send(new InputCommandMessage(' '));
             break;
 
+          case 7:
+            final Hero.Stat stat = session.chooseStatForUpgrade();
+            endpoint.send(new InputCommandMessage(stat.select()));
+            break;
           default:
             LOG.warning("Unknown input mode received: " + message.json());
         }

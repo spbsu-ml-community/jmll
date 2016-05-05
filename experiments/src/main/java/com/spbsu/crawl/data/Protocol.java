@@ -15,6 +15,7 @@ public enum Protocol {
   LOBBY_ENTRY(IgnoreMessage.class),
   LOBBY_REMOVE(IgnoreMessage.class),
   LOBBY_CLEAR(IgnoreMessage.class),
+  MENU(MenuMessage.class),
   LOBBY_COMPLETE(LobbyComplete.class),
   LOGIN_SUCCESS(LoginSuccessMessage.class),
   GO_LOBBY(GoLobbyMessage.class),

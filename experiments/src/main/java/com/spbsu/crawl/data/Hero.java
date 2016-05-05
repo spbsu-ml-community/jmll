@@ -6,6 +6,22 @@ package com.spbsu.crawl.data;
  */
 public class Hero {
 
+  public enum Stat {
+    Strength('S'),
+    Intellegence('I'),
+    Dexterity('D'),
+    ;
+
+    private final char select_role;
+    Stat(char code) {
+      select_role = code;
+    }
+
+    public char select() {
+      return select_role;
+    }
+  }
+
   public enum Spec {
     Fighter_Unarmed('a', 'a'),
     Fighter_Axe('a', 'd'),

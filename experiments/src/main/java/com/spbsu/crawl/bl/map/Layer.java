@@ -9,27 +9,17 @@ import java.util.Optional;
  */
 
 public class Layer {
-  private final TIntObjectHashMap<TerrainType> terrains;
-  private final Level level;
-
-  public Layer(Level level) {
-    this.terrains = new TIntObjectHashMap<>();
-    this.level = level;
-  }
+  private final TIntObjectHashMap<TerrainType> terrains = new TIntObjectHashMap<>();
 
   private int id(int x, int y) {
     return x + 100000 * y;
-  }
-
-  public Level level() {
-    return level;
   }
 
   void clear() {
     terrains.clear();
   }
 
-  Optional<TerrainType> getCell(final int x, final int y) {
+  public Optional<TerrainType> tile(final int x, final int y) {
     final int key = id(x, y);
     if (terrains.containsKey(key)) {
       return Optional.of(terrains.get(key));
@@ -38,8 +28,7 @@ public class Layer {
     }
   }
 
-  void setCell(final int x, final int y,
-               final TerrainType type) {
+  void setTile(final int x, final int y, final TerrainType type) {
     final int key = id(x, y);
     terrains.put(key, type);
   }
