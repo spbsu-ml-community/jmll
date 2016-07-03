@@ -1,6 +1,7 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.crawl.bl.CrawlPlayerView;
 import com.spbsu.crawl.bl.Mob;
 import com.spbsu.crawl.bl.map.CrawlSystemMap;
 import com.spbsu.crawl.data.Command;
@@ -22,6 +23,7 @@ public class GameProcess implements Runnable {
   private final WSEndpoint endpoint;
   private final GameSession session;
   private CrawlSystemMap crawlSystemMap = new CrawlSystemMap();
+  private CrawlPlayerView crawlPlayerView = new CrawlPlayerView();
   private int turns;
 
   public GameProcess(WSEndpoint endpoint, GameSession session) {
@@ -59,6 +61,7 @@ public class GameProcess implements Runnable {
       }
       else if (message instanceof PlayerInfoMessage) {
         crawlSystemMap.updater().message((PlayerInfoMessage) message);
+        crawlPlayerView.updater().message((PlayerInfoMessage) message);
       }
       else if (message instanceof MenuMessage) {
         endpoint.send(new KeyMessage(KeyCode.ESCAPE));
