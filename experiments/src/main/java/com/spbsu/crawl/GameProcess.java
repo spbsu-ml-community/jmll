@@ -82,7 +82,7 @@ public class GameProcess implements Runnable {
           case 0:
             break;
           case 1:
-            final Mob.Action tickAction = session.tryAction();
+            final Mob.Action tickAction = session.action();
             endpoint.send(new InputCommandMessage(tickAction.code()));
             break;
           case 5:

@@ -157,7 +157,7 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
   final FastRandom rng = new FastRandom();
 
   @Override
-  public Mob.Action tryAction() {
+  public Mob.Action action() {
     List<Pair<Mob.Action, CellStats>> avaiableActions = Stream.of(moves).filter(moveableDirection)
             .map(dirWeights)
             .collect(Collectors.toList());

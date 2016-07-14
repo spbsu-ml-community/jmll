@@ -12,7 +12,7 @@ public interface GameSession {
   Hero.Race race();
   Hero.Spec spec();
 
-  Mob.Action tryAction();
+  Mob.Action action();
 
   Hero.Stat chooseStatForUpgrade();
 
