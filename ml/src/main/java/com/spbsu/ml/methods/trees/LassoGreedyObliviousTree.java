@@ -28,13 +28,11 @@ import java.util.stream.Collectors;
 
 public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
   private final GreedyObliviousTree<Loss> base;
-  final double lambdaRatio;
   final int nlambda;
   final double alpha;
 
-  public LassoGreedyObliviousTree(GreedyObliviousTree<Loss> base, double lambdaRatio, int nlambda, double alpha) {
+  public LassoGreedyObliviousTree(GreedyObliviousTree<Loss> base, int nlambda, double alpha) {
     this.base = base;
-    this.lambdaRatio = lambdaRatio;
     this.nlambda = nlambda;
     this.alpha = alpha;
   }
@@ -62,13 +60,13 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
     Vec target = new ArrayVec(points.length);
 
 
-    for (int i=0;i <  points.length;++i) {
+    for (int i = 0; i < points.length; ++i) {
       final int ind = points[i];
-      for (int f=0; f <base.grid.rows();++f) {
+      for (int f = 0; f < base.grid.rows(); ++f) {
         binary[f] = bds.bins(f)[ind];
       }
 
-      for (int j=0; j < otData.columns();++j) {
+      for (int j = 0; j < otData.columns(); ++j) {
         final int[] bfIndices = entryList.get(j).getBfIndices();
         double increment = 1.0;
         for (int k = 0; k < bfIndices.length; k++) {
@@ -77,7 +75,7 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
             break;
           }
         }
-        otData.set(i,j, increment);
+        otData.set(i, j, increment);
         target.set(i, sourceTarget.get(ind));
       }
     }
@@ -85,7 +83,7 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
   }
 
   @Override
-  public ModelTools.CompiledOTEnsemble  fit(final VecDataSet ds, final Loss loss) {
+  public ModelTools.CompiledOTEnsemble fit(final VecDataSet ds, final Loss loss) {
     ObliviousTree tree = base.fit(ds, loss);
     Ensemble<ObliviousTree> ensemble = new Ensemble<>(new ObliviousTree[]{tree}, VecTools.fill(new SingleValueVec(1), 1.0));
     ModelTools.CompiledOTEnsemble compiledOTEnsemble = ModelTools.compile(ensemble);
@@ -94,40 +92,44 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
 
     Vec target = VecTools.copy(loss.target());
     double bias = 0;
-    for (int i=0; i < target.dim();++i) {
+    for (int i = 0; i < target.dim(); ++i) {
       bias += target.get(i);
     }
     bias /= target.dim();
-    for (int i=0; i < target.dim();++i) {
+    for (int i = 0; i < target.dim(); ++i) {
       target.adjust(i, -bias);
     }
 
 
-    final BinarizedDataSet bds =  ds.cache().cache(Binarize.class, VecDataSet.class).binarize(base.grid);
+    final BinarizedDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(base.grid);
 
-    Pair<Mx,Vec> compiledLearn = filter(entryList, bds, target, learnPoints(loss, ds));
+    Pair<Mx, Vec> compiledLearn = filter(entryList, bds, target, learnPoints(loss, ds));
 
     Vec entryBias = colMean(compiledLearn.first);
     center(compiledLearn.first, entryBias);
 
 
-    Pair<Mx,Vec> compiledValidate = filter(entryList, bds, target, validationPoints(loss));
+    Pair<Mx, Vec> compiledValidate = filter(entryList, bds, target, validationPoints(loss));
     center(compiledValidate.first, entryBias);
 
-    ElasticNetMethod lasso = new ElasticNetMethod(1e-4, alpha, lambdaRatio);
-    List<Linear> weightsPath = lasso.fit(compiledLearn.first, compiledLearn.second, nlambda, lambdaRatio);
-    double[] scores = weightsPath.parallelStream().mapToDouble(linear -> VecTools.distance(linear.transAll(compiledValidate.first), compiledValidate.second)).toArray();
+    ElasticNetMethod lasso = new ElasticNetMethod(1e-4, alpha, 1.0);
+    List<Linear> weightsPath = lasso.fit(compiledLearn.first, compiledLearn.second, nlambda);
+    double[] scores = weightsPath.parallelStream().mapToDouble(linear -> {
+      final double testL2 = VecTools.l2(linear.transAll(compiledValidate.first), compiledValidate.second) / compiledValidate.first.rows();
+      final double learnL2 = VecTools.l2(linear.transAll(compiledLearn.first), compiledLearn.second) / compiledLearn.first.rows();
+      return 0.63 * testL2 + (1-0.63) * learnL2;
+    }).toArray();
     int best = 0;
     double bestScore = scores[0];
-    for (int i=0; i < scores.length;++i) {
+    for (int i = 0; i < scores.length; ++i) {
       if (scores[i] < bestScore) {
         bestScore = scores[i];
         best = i;
       }
     }
     Vec weights = weightsPath.get(best).weights;
-    ArrayList<ModelTools.CompiledOTEnsemble.Entry> newEntries  = new ArrayList<>();
-    for (int i=0; i < weights.dim();++i) {
+    ArrayList<ModelTools.CompiledOTEnsemble.Entry> newEntries = new ArrayList<>();
+    for (int i = 0; i < weights.dim(); ++i) {
       if (weights.get(i) != 0) {
         newEntries.add(new ModelTools.CompiledOTEnsemble.Entry(entryList.get(i).getBfIndices(), weights.get(i)));
         bias -= weights.get(i) * entryBias.get(i);
@@ -137,14 +139,14 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
       newEntries.add(new ModelTools.CompiledOTEnsemble.Entry(new int[0], bias));
     }
 
-    System.out.println("Next entries batch: " + newEntries.size() + " of " +  (entryList.size()+1) + " nonZero");
+    System.out.println("Next entries batch: " + newEntries.size() + " of " + (entryList.size() + 1) + " nonZero");
     return new ModelTools.CompiledOTEnsemble(newEntries, tree.grid());
   }
 
   private Vec colMean(Mx data) {
     Vec result = new ArrayVec(data.columns());
-    for (int i=0;i < data.rows();++i) {
-      for (int j=0;j < data.columns();++j) {
+    for (int i = 0; i < data.rows(); ++i) {
+      for (int j = 0; j < data.columns(); ++j) {
         result.adjust(j, data.get(i, j));
       }
     }
@@ -152,9 +154,9 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
   }
 
   private void center(Mx data, Vec bias) {
-      for (int j=0; j < data.rows();++j) {
-        for (int i=0; i < data.columns();++i) {
-          data.adjust(i,j, -bias.get(i));
+    for (int j = 0; j < data.rows(); ++j) {
+      for (int i = 0; i < data.columns(); ++i) {
+        data.adjust(i, j, -bias.get(i));
       }
     }
   }

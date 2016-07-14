@@ -126,7 +126,7 @@ public class WSEndpoint {
     }
 
     final JsonNode msgs = node.get("msgs");
-    log.info("[SERVER]: " + node.toString());
+//    log.info("[SERVER]: " + node.toString());
     if (msgs != null) {
       for (JsonNode msg : msgs) {
         onItem(msg);

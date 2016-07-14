@@ -55,14 +55,14 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
     return fit(cache);
   }
 
-  public final List<Linear> fit(final Mx data, final Vec target, int nlambda, double lambdaEps) {
+  public final List<Linear> fit(final Mx data, final Vec target, int nlambda) {
     final ElasticNetCache cache = new ElasticNetCache(data, target, alpha, lambda);
     double lambdaMax = Double.NEGATIVE_INFINITY;
     for (int i=0; i < data.columns();++i) {
       lambdaMax = FastMath.max(FastMath.abs(cache.targetProduct(i)), lambdaMax);
     }
     lambdaMax *= 1.0  / (alpha *  data.rows());
-    double lambdaMin = lambdaMax * lambdaEps;
+    double lambdaMin = 0.0; //lambdaMax * lambdaEps;
     double step = (lambdaMax - lambdaMin) / nlambda;
     List<Linear> path = new ArrayList<>(nlambda);
 

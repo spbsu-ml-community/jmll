@@ -11,18 +11,13 @@ import com.spbsu.ml.methods.trees.RidgeGreedyObliviousTree;
  */
 
 public class LassoGreedyObliviousTreeBuilder implements Factory<VecOptimization> {
-  private double lambdaRatio = 1e-6;
-  private int nlambda = 300;
-  private double alpha = 1.0;
+  private int nlambda = 50;
+  private double alpha = 0.5;
   private GreedyObliviousTree weak;
   private final GreedyObliviousTreeBuilder defaultWeakBuilder = new GreedyObliviousTreeBuilder();
 
   public void setWeak(final GreedyObliviousTree weak) {
     this.weak = weak;
-  }
-
-  public void setLambdaRatio(final double lambdaRatio) {
-    this.lambdaRatio = lambdaRatio;
   }
 
   public void setnlambda(final int nlambda) {
@@ -40,6 +35,6 @@ public class LassoGreedyObliviousTreeBuilder implements Factory<VecOptimization>
 
     }
     //noinspection unchecked
-    return new LassoGreedyObliviousTree(weak, lambdaRatio, nlambda, alpha);
+    return new LassoGreedyObliviousTree(weak,  nlambda, alpha);
   }
 }
