@@ -2,6 +2,7 @@ package com.spbsu.crawl.bl.map;
 
 
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.crawl.bl.helpers.CodeSet;
 import com.spbsu.crawl.data.impl.UpdateMapCellMessage;
 
 public enum TerrainType {

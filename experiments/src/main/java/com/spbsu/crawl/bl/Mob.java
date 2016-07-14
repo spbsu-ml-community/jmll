@@ -21,6 +21,14 @@ public interface Mob {
     MOVE_UP_LEFT('y'),
     MOVE_DOWN_RIGHT('n'),
     MOVE_DOWN_LEFT('b'),
+    EAT_FROM_FLOOR('e'),
+    CHOP_CORPSE('c'),
+    INSPECT_TILE(';'),
+    PICK_ITEM(','),
+    WAIT_A_TURN('.'),
+    REST('5'),
+    GO_UP('<'),
+    GO_DOWN('>'),
     ;
 
 

@@ -2,6 +2,7 @@ package com.spbsu.crawl.data.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.crawl.data.Message;
+import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
 
 
 public class UpdateMapCellMessage implements Message {
@@ -9,10 +10,10 @@ public class UpdateMapCellMessage implements Message {
   //this properties send if prop was updated
   //Almost all ints are uint32.
   @JsonProperty("x")
-  private int x = Integer.MAX_VALUE;
+  private int x = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("y")
-  private int y = Integer.MAX_VALUE;
+  private int y = EmptyFieldsDefault.emptyInt();
 
   public void setPoint(final int x, final int y) {
     this.x = x;
@@ -20,22 +21,22 @@ public class UpdateMapCellMessage implements Message {
   }
 
   @JsonProperty("f")
-  private int dungeonFeatureType;
+  private int dungeonFeatureType =  EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("mf")
-  private int mapFeature;
+  private int mapFeature = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("g")
-  private String glyph;
+  private String glyph =  EmptyFieldsDefault.emptyValue();
 
   @JsonProperty("col")
-  private int colour;
+  private int colour =  EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("t")
-  private PackedCellMessage packedCell;
+  private PackedCellMessage packedCell =  EmptyFieldsDefault.emptyValue();
 
   @JsonProperty("mon")
-  private MonsterInfoMessage monsterInfoMessage;
+  private MonsterInfoMessage monsterInfoMessage =  EmptyFieldsDefault.emptyValue();
 
   public int x() {
     return x;

@@ -1,12 +1,15 @@
-package com.spbsu.crawl;
+package com.spbsu.crawl.learning;
 
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.crawl.bl.Mob;
+import com.spbsu.crawl.bl.events.HeroListener;
+import com.spbsu.crawl.bl.events.MapListener;
+import com.spbsu.crawl.bl.events.TurnListener;
 import com.spbsu.crawl.bl.map.CrawlGameSessionMap;
 import com.spbsu.crawl.bl.map.TerrainType;
-import com.spbsu.crawl.data.GameSession;
-import com.spbsu.crawl.data.Hero;
+import com.spbsu.crawl.bl.GameSession;
+import com.spbsu.crawl.bl.Hero;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.List;
@@ -16,13 +19,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class WeightedRandomWalkGameSession implements GameSession {
+public class WeightedRandomWalkGameSession implements GameSession, MapListener, HeroListener {
   private final CrawlGameSessionMap crawlMap = new CrawlGameSessionMap();
   private int x;
   private int y;
   private double increment = 0.2;
   private double prevScore = 0;
   private double step = 0.1;
+  private int turn = 0;
 
   public void alter(double score) {
     if (score > prevScore) {
@@ -34,6 +38,7 @@ public class WeightedRandomWalkGameSession implements GameSession {
     }
     prevScore = score;
   }
+
 
   class CellStats {
     int x;
@@ -126,7 +131,7 @@ public class WeightedRandomWalkGameSession implements GameSession {
         case MOVE_UP_RIGHT:
           return canMoveTo(x + 1, y - 1);
         default:
-          return true;
+          return false;
       }
     }
   };
@@ -152,7 +157,7 @@ public class WeightedRandomWalkGameSession implements GameSession {
   final FastRandom rng = new FastRandom();
 
   @Override
-  public Mob.Action tick() {
+  public Mob.Action tryAction() {
     List<Pair<Mob.Action, CellStats>> avaiableActions = Stream.of(moves).filter(moveableDirection)
             .map(dirWeights)
             .collect(Collectors.toList());

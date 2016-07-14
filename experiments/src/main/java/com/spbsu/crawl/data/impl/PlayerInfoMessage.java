@@ -3,86 +3,92 @@ package com.spbsu.crawl.data.impl;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.crawl.data.Message;
-import org.jetbrains.annotations.NotNull;
+import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: qdeee
  * Date: 03.04.16
  */
 public class PlayerInfoMessage implements Message {
-  public static int STAT_EMPTY_FIELD_VALUE = -1;
-
   @JsonProperty("title")
-  private String title = null;
-
+  private String title = EmptyFieldsDefault.emptyValue();
+  
   @JsonProperty("hp")
-  private int healthPoints = STAT_EMPTY_FIELD_VALUE;
+  private int healthPoints = EmptyFieldsDefault.emptyInt();
   
   @JsonProperty("hp_max")
-  private int maxHealthPoints = STAT_EMPTY_FIELD_VALUE;
+  private int maxHealthPoints = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("mp")
-  private int manaPoints = STAT_EMPTY_FIELD_VALUE;
+  private int manaPoints = EmptyFieldsDefault.emptyInt();
   
   @JsonProperty("mp_max")
-  private int maxManPoints = STAT_EMPTY_FIELD_VALUE;
+  private int maxManPoints = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("gold")
-  private int gold = STAT_EMPTY_FIELD_VALUE;
+  private int gold = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("time")
-  private int time = STAT_EMPTY_FIELD_VALUE;
+  private int time = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("turn")
-  private int turn = STAT_EMPTY_FIELD_VALUE;
+  private int turn = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("depth")
-  private String depth = null;
+  private String depth = EmptyFieldsDefault.emptyValue();
   
   @JsonProperty("str")
-  private int strength = STAT_EMPTY_FIELD_VALUE;
+  private int strength = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("str_max")
-  private int maxStrength = STAT_EMPTY_FIELD_VALUE;
+  private int maxStrength = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("int")
-  private int intelegence = STAT_EMPTY_FIELD_VALUE;
+  private int intelligence = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("int_max")
-  private int maxIntelegence = STAT_EMPTY_FIELD_VALUE;
+  private int maxIntelligence = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("dex")
-  private int dexterity = STAT_EMPTY_FIELD_VALUE;
+  private int dexterity = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("dex_max")
-  private int maxDexterity = STAT_EMPTY_FIELD_VALUE;
+  private int maxDexterity = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("ac")
-  private int armorClass = STAT_EMPTY_FIELD_VALUE;
+  private int armorClass = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("sh")
-  private int shieldClass = STAT_EMPTY_FIELD_VALUE;
+  private int shieldClass = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("ev")
-  private int evasion = STAT_EMPTY_FIELD_VALUE;
+  private int evasion = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("xl")
-  private int experienceLevel = STAT_EMPTY_FIELD_VALUE;
+  private int experienceLevel = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("progress")
-  private int nextExpLevelProgress = STAT_EMPTY_FIELD_VALUE;
+  private int nextExpLevelProgress = EmptyFieldsDefault.emptyInt();
 
   @JsonProperty("status")
-  private List<PlayerStatus> statuses = null;
+  private List<PlayerStatus> statuses = EmptyFieldsDefault.emptyValue();
   
   public String depth() {
     return depth;
   }
 
   @JsonProperty("pos")
-  private PlayerPosition position = null;
+  private PlayerPosition position = EmptyFieldsDefault.emptyValue();
+
+  public Map<String, InventoryThing> items() {
+    return items;
+  }
+
+  @JsonProperty("inv")
+  private Map<String, InventoryThing> items = EmptyFieldsDefault.emptyValue();
 
 
   public int healthPoints() {
@@ -125,12 +131,12 @@ public class PlayerInfoMessage implements Message {
     return maxStrength;
   }
 
-  public int intelegence() {
-    return intelegence;
+  public int intelligence() {
+    return intelligence;
   }
 
-  public int maxIntelegence() {
-    return maxIntelegence;
+  public int maxIntelligence() {
+    return maxIntelligence;
   }
 
   public int dexterity() {
@@ -171,9 +177,9 @@ public class PlayerInfoMessage implements Message {
 
   public static class PlayerPosition {
     @JsonProperty("x")
-    private int x;
+    private int x = EmptyFieldsDefault.emptyInt();
     @JsonProperty("y")
-    private int y;
+    private int y = EmptyFieldsDefault.emptyInt();
 
     public int x() {
       return x;
@@ -184,35 +190,43 @@ public class PlayerInfoMessage implements Message {
     }
   }
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   public static class InventoryThing {
-    public static final InventoryThing NONE_ITEM = new InventoryThing(100, 0);
-
     @JsonProperty("base_type")
-    private int baseType;
+    private int baseType = EmptyFieldsDefault.emptyInt();
 
     @JsonProperty("quantity")
-    private int quantity;
+    private int quantity = EmptyFieldsDefault.emptyInt();
 
     @JsonProperty("sub_type")
-    private int subType;
+    private int subType = EmptyFieldsDefault.emptyInt();
 
     @JsonProperty("flags")
-    private int flags;
+    private int flags = EmptyFieldsDefault.emptyInt();
 
-    public InventoryThing(int baseType, int quantity) {
-      this.baseType = baseType;
-      this.quantity = quantity;
-    }
+    @JsonProperty("plus")
+    private int plus = EmptyFieldsDefault.emptyInt();
+
+    @JsonProperty("plus2")
+    private int plus2 = EmptyFieldsDefault.emptyInt();
+
+    @JsonProperty("inscription")
+    private String inscription = EmptyFieldsDefault.emptyValue();
+
+    @JsonProperty("name")
+    private String name = EmptyFieldsDefault.emptyValue();
+
+
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class PlayerStatus {
     @JsonProperty("light")
-    private String text;
+    private String text = EmptyFieldsDefault.emptyValue();
     @JsonProperty("text")
-    private String lightText;
+    private String lightText = EmptyFieldsDefault.emptyValue();
     @JsonProperty("col")
-    private int colour;
+    private int colour = EmptyFieldsDefault.emptyInt();
 
     public String text() {
       return text;
@@ -226,4 +240,5 @@ public class PlayerInfoMessage implements Message {
       return colour;
     }
   }
+
 }

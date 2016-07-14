@@ -1,4 +1,4 @@
-package com.spbsu.crawl.data;
+package com.spbsu.crawl.bl.events;
 
 import com.spbsu.crawl.bl.map.TerrainType;
 

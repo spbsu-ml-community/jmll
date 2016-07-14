@@ -1,6 +1,7 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.system.RuntimeUtils;
+import com.spbsu.crawl.learning.WeightedRandomWalkGameSession;
 
 import javax.websocket.DeploymentException;
 import java.io.File;

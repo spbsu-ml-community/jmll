@@ -15,7 +15,7 @@ public class Layer {
     return x + 100000 * y;
   }
 
-  void clear() {
+  public void clear() {
     terrains.clear();
   }
 
@@ -28,7 +28,7 @@ public class Layer {
     }
   }
 
-  void setTile(final int x, final int y, final TerrainType type) {
+  public void setTile(final int x, final int y, final TerrainType type) {
     final int key = id(x, y);
     terrains.put(key, type);
   }

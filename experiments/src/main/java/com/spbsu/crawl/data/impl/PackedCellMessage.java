@@ -2,20 +2,22 @@ package com.spbsu.crawl.data.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.spbsu.crawl.data.Message;
+import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
 
 public class PackedCellMessage implements Message {
-  //TODO: wtf it is. see tileweb.cc 1131
+  //TODO: wtf it is. see tileweb.cc 1131 (seems like "parent" for random items)
   @JsonProperty("base")
-  private int base;
-
+  private int base = EmptyFieldsDefault.emptyInt();
+  @JsonProperty("fg")
+  private PackedUnsignedLong foreground = EmptyFieldsDefault.emptyValue();
   @JsonProperty("bg")
-  private long background;
+  private PackedUnsignedLong background = EmptyFieldsDefault.emptyValue();
 
   @JsonProperty("cloud")
   private boolean isCloud;
 
   @JsonProperty("bloody")
-  private boolean isBloody;
+  private boolean isBloody ;
 
   @JsonProperty("old_blood")
   private boolean hasOldBlood;
@@ -67,8 +69,12 @@ public class PackedCellMessage implements Message {
     return base;
   }
 
-  public long getBackground() {
+  public PackedUnsignedLong getBackground() {
     return background;
+  }
+
+  public PackedUnsignedLong getForeground() {
+    return foreground;
   }
 
   public boolean isCloud() {
@@ -138,6 +144,7 @@ public class PackedCellMessage implements Message {
   public FlavourMessage getFlavour() {
     return flavour;
   }
+
 
   //TODO: mcache, doll if we need them. line 1200+
 }

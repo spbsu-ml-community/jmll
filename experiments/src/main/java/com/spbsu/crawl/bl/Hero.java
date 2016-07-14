@@ -1,4 +1,4 @@
-package com.spbsu.crawl.data;
+package com.spbsu.crawl.bl;
 
 /**
  * Experts League

@@ -1,12 +1,14 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.crawl.bl.CrawlPlayerView;
 import com.spbsu.crawl.bl.Mob;
-import com.spbsu.crawl.bl.map.CrawlSystemMap;
+import com.spbsu.crawl.bl.crawlSystemView.CrawlSystemView;
+import com.spbsu.crawl.bl.events.HeroListener;
+import com.spbsu.crawl.bl.events.MapListener;
+import com.spbsu.crawl.bl.events.TurnListener;
 import com.spbsu.crawl.data.Command;
-import com.spbsu.crawl.data.GameSession;
-import com.spbsu.crawl.data.Hero;
+import com.spbsu.crawl.bl.GameSession;
+import com.spbsu.crawl.bl.Hero;
 import com.spbsu.crawl.data.Message;
 import com.spbsu.crawl.data.impl.*;
 import com.spbsu.crawl.data.impl.system.*;
@@ -22,8 +24,8 @@ public class GameProcess implements Runnable {
 
   private final WSEndpoint endpoint;
   private final GameSession session;
-  private CrawlSystemMap crawlSystemMap = new CrawlSystemMap();
-  private CrawlPlayerView crawlPlayerView = new CrawlPlayerView();
+  private CrawlSystemView systemView = new CrawlSystemView();
+
   private int turns;
 
   public GameProcess(WSEndpoint endpoint, GameSession session) {
@@ -31,7 +33,20 @@ public class GameProcess implements Runnable {
     this.session = session;
   }
 
+  private void subscribe(GameSession session) {
+    if (session instanceof MapListener) {
+      systemView.mapView().subscribe((MapListener) session);
+    }
+    if (session instanceof HeroListener) {
+      systemView.heroView().subscribe((HeroListener) session);
+    }
+    if (session instanceof TurnListener) {
+      systemView.timeView().subscribe((TurnListener) session);
+    }
+  }
+
   private final FastRandom rng = new FastRandom();
+
   public void run() {
     skipTo(LobbyComplete.class);
     final String user = rng.nextLowerCaseString(10);
@@ -46,36 +61,28 @@ public class GameProcess implements Runnable {
       endpoint.send(new InputCommandMessage(spec.selectSpec()));
     Message message;
 
-    crawlSystemMap.subscribeToEvents(session);
+    subscribe(session);
+
+
     do {
       message = endpoint.poll();
       if (message instanceof Command) {
         ((Command) message).execute(endpoint.out);
-      }
-      else if (message instanceof UpdateMapMessage) {
-        crawlSystemMap.updater().message((UpdateMapMessage) message);
-        if (((UpdateMapMessage) message).getCursorPosition() != null) {
-          session.heroPosition(((UpdateMapMessage) message).getCursorPosition().getX(),
-                  ((UpdateMapMessage) message).getCursorPosition().getY());
-        }
-      }
-      else if (message instanceof PlayerInfoMessage) {
-        crawlSystemMap.updater().message((PlayerInfoMessage) message);
-        crawlPlayerView.updater().message((PlayerInfoMessage) message);
-      }
-      else if (message instanceof MenuMessage) {
+      } else if (message instanceof UpdateMapMessage) {
+        systemView.updater().message((UpdateMapMessage) message);
+      } else if (message instanceof PlayerInfoMessage) {
+        systemView.updater().message((PlayerInfoMessage) message);
+      } else if (message instanceof MenuMessage) {
         endpoint.send(new KeyMessage(KeyCode.ESCAPE));
-      }
-      else if (message instanceof GameEnded) {
+      } else if (message instanceof GameEnded) {
         break;
-      }
-      else if (message instanceof InputModeMessage) {
+      } else if (message instanceof InputModeMessage) {
         turns++;
         switch (((InputModeMessage) message).inputMode()) {
           case 0:
             break;
           case 1:
-            final Mob.Action tickAction = session.tick();
+            final Mob.Action tickAction = session.tryAction();
             endpoint.send(new InputCommandMessage(tickAction.code()));
             break;
           case 5:
@@ -101,17 +108,16 @@ public class GameProcess implements Runnable {
       message = endpoint.poll();
       if (message instanceof Command) {
         ((Command) message).execute(endpoint.out);
-      }
-      else {
+      } else {
 //        LOG.info("Skipped message: " + message.toString());
       }
     }
     while (!aClass.isAssignableFrom(message.getClass()));
     //noinspection unchecked
-    return (T)message;
+    return (T) message;
   }
 
   public double score() {
-    return crawlSystemMap.knownCells() / (double)turns;
+    return systemView.mapView().knownCells() / (double) turns;
   }
 }

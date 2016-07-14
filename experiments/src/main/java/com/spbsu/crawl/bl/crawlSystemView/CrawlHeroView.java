@@ -1,11 +1,17 @@
-package com.spbsu.crawl.bl;
+package com.spbsu.crawl.bl.crawlSystemView;
 
+import com.spbsu.crawl.bl.events.HeroListener;
 import com.spbsu.crawl.data.impl.PlayerInfoMessage;
+import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class CrawlPlayerView {
+public class CrawlHeroView {
   private Updater updater = new Updater();
+  private List<HeroListener> listeners = new ArrayList<>();
 
   private int currentHealthPoints;
   private int totalHealthPoints;
@@ -35,6 +41,9 @@ public class CrawlPlayerView {
   private int nextExpLevelProgress;
 
   private String level;
+  private Set<String> statusSet = new HashSet<>();
+  private Set<String> statusSetLight = new HashSet<>();
+
   private List<PlayerInfoMessage.PlayerStatus> status;
 
   public int healthPoints() {
@@ -65,6 +74,10 @@ public class CrawlPlayerView {
     return updater;
   }
 
+  public void subscribe(HeroListener heroListener) {
+    listeners.add(heroListener);
+  }
+
   public class Updater {
     public void message(final PlayerInfoMessage message) {
       updateStats(message);
@@ -76,69 +89,68 @@ public class CrawlPlayerView {
     private void updateStatus(final PlayerInfoMessage message) {
       if (message.statuses() != null) {
         status = message.statuses();
+        for (PlayerInfoMessage.PlayerStatus st : status) {
+          statusSet.add(st.text());
+          statusSetLight.add(st.lightText());
+        }
       }
     }
 
     private void updateStats(final PlayerInfoMessage message) {
-      if (message.healthPoints() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+      if (EmptyFieldsDefault.isEmpty(message.healthPoints())) {
         currentHealthPoints = message.healthPoints();
       }
-      if (message.maxHealthPoints() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+      if (EmptyFieldsDefault.isEmpty(message.maxHealthPoints())) {
         totalHealthPoints = message.maxHealthPoints();
       }
-      if (message.maxManaPoints() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.maxManaPoints())) {
         totalManaPoints = message.maxManaPoints();
       }
-      if (message.manaPoints() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.manaPoints())) {
         currentManaPoints = message.manaPoints();
       }
-      if (message.dexterity() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.dexterity())) {
         dexterity = message.dexterity();
       }
-      if (message.maxDexterity() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.maxDexterity())) {
         maxDexterity = message.dexterity();
       }
-
-      if (message.strength() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.strength())) {
         strength = message.strength();
       }
-      if (message.maxStrength() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.maxStrength())) {
         maxStrength = message.maxStrength();
       }
-
-      if (message.intelegence() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
-        intelegence = message.intelegence();
+       if (EmptyFieldsDefault.isEmpty(message.intelligence())) {
+        intelegence = message.intelligence();
       }
-      if (message.maxIntelegence() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
-        maxIntelegence = message.maxIntelegence();
+       if (EmptyFieldsDefault.isEmpty(message.maxIntelligence())) {
+        maxIntelegence = message.maxIntelligence();
       }
-
-      if (message.evasion() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.evasion())) {
         evasion = message.evasion();
       }
-
-      if (message.shieldClass() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.shieldClass())) {
         shieldClass = message.shieldClass();
       }
-
-      if (message.armorClass() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+       if (EmptyFieldsDefault.isEmpty(message.armorClass())) {
         armorClass = message.armorClass();
       }
     }
 
     private void updatePosition(final PlayerInfoMessage message) {
-      if (message.position() != null) {
+      if (!EmptyFieldsDefault.isEmpty(message.position())) {
         x = message.position().x();
         y = message.position().y();
+        listeners.forEach(heroListener -> heroListener.heroPosition(x, y));
       }
     }
 
-
     private void updateExperience(final PlayerInfoMessage message) {
-      if (message.experienceLevel() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+      if (EmptyFieldsDefault.isEmpty(message.experienceLevel())) {
         experienceLevel = message.experienceLevel();
       }
-      if (message.nextExpLevelProgress() != PlayerInfoMessage.STAT_EMPTY_FIELD_VALUE) {
+      if (EmptyFieldsDefault.isEmpty(message.nextExpLevelProgress())) {
         nextExpLevelProgress = message.nextExpLevelProgress();
       }
     }

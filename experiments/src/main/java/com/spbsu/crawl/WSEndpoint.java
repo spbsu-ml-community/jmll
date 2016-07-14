@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.seq.CharSequenceReader;
-import com.spbsu.crawl.data.Command;
 import com.spbsu.crawl.data.Message;
 import com.spbsu.crawl.data.Protocol;
 
@@ -127,7 +126,7 @@ public class WSEndpoint {
     }
 
     final JsonNode msgs = node.get("msgs");
-//    log.info("[SERVER]: " + node.toString());
+    log.info("[SERVER]: " + node.toString());
     if (msgs != null) {
       for (JsonNode msg : msgs) {
         onItem(msg);

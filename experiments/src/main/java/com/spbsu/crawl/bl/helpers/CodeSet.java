@@ -1,4 +1,4 @@
-package com.spbsu.crawl.bl.map;
+package com.spbsu.crawl.bl.helpers;
 
 import java.util.Arrays;
 
@@ -23,7 +23,7 @@ public class CodeSet {
 
   }
 
-  boolean contains(int i) {
+  public boolean contains(int i) {
     for (int idx : codes) {
       if (idx == i) {
         return true;

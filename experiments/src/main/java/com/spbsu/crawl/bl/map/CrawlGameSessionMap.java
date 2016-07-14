@@ -22,7 +22,7 @@ public class CrawlGameSessionMap {
     currentLayer().clear();
   }
 
-  public void tile(int x, int y, TerrainType type) {
+  public void tile(final int x, final int y, final TerrainType type) {
     currentLayer().setTile(x, y, type);
   }
 
