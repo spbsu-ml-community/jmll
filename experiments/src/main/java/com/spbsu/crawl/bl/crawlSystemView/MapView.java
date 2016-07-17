@@ -6,19 +6,13 @@ import com.spbsu.crawl.bl.map.TerrainType;
 import com.spbsu.crawl.bl.events.MapListener;
 import com.spbsu.crawl.data.impl.UpdateMapCellMessage;
 import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class CrawlSystemMapView {
+public class MapView extends Subscribable.Stub<MapListener> implements Subscribable<MapListener>{
   private Layer layer = new Layer();
-  private List<MapListener> listeners = new ArrayList<>();
   private Updater updater = new Updater();
 
-  public void subscribe(final MapListener listener) {
-    listeners.add(listener);
-  }
 
   public void observeCell(final int x, final int y,
                           final TerrainType type) {
@@ -27,11 +21,11 @@ public class CrawlSystemMapView {
     if (terrain.isPresent()) {
       if (terrain.get() != type) {
         layer.setTile(x, y, type);
-        listeners.stream().forEach(lst -> lst.tile(x, y, type));
+        listeners().forEach(lst -> lst.tile(x, y, type));
       }
     } else {
       layer.setTile(x, y, type);
-      listeners.stream().forEach(lst -> lst.tile(x, y, type));
+      listeners().forEach(lst -> lst.tile(x, y, type));
     }
   }
 
@@ -53,13 +47,13 @@ public class CrawlSystemMapView {
 
     void updateLevel(final String newLevel) {
       if (EmptyFieldsDefault.notEmpty(newLevel)) {
-        listeners.stream().forEach(lst -> lst.changeLevel(newLevel));
+        listeners().forEach(lst -> lst.changeLevel(newLevel));
       }
     }
 
     void clear() {
       layer.clear();
-      listeners.stream().forEach(MapListener::resetPosition);
+      listeners().forEach(MapListener::resetPosition);
     }
 
     private void cellHandler(final UpdateMapCellMessage cellMessage) {

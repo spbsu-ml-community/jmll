@@ -2,16 +2,16 @@ package com.spbsu.crawl;
 
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.crawl.bl.Mob;
-import com.spbsu.crawl.bl.crawlSystemView.CrawlSystemView;
-import com.spbsu.crawl.bl.events.HeroListener;
-import com.spbsu.crawl.bl.events.MapListener;
-import com.spbsu.crawl.bl.events.TurnListener;
+import com.spbsu.crawl.bl.crawlSystemView.SystemView;
 import com.spbsu.crawl.data.Command;
 import com.spbsu.crawl.bl.GameSession;
 import com.spbsu.crawl.bl.Hero;
 import com.spbsu.crawl.data.Message;
 import com.spbsu.crawl.data.impl.*;
 import com.spbsu.crawl.data.impl.system.*;
+import com.spbsu.crawl.learning.InventoryFeaturesBuilder;
+import com.spbsu.crawl.learning.LearnDataBuilder;
+import com.spbsu.crawl.learning.StatusFeaturesBuilder;
 
 import java.util.logging.Logger;
 
@@ -24,25 +24,14 @@ public class GameProcess implements Runnable {
 
   private final WSEndpoint endpoint;
   private final GameSession session;
-  private CrawlSystemView systemView = new CrawlSystemView();
+  private SystemView systemView = new SystemView();
+  private LearnDataBuilder learnDataBuilder = new LearnDataBuilder();
 
   private int turns;
 
   public GameProcess(WSEndpoint endpoint, GameSession session) {
     this.endpoint = endpoint;
     this.session = session;
-  }
-
-  private void subscribe(GameSession session) {
-    if (session instanceof MapListener) {
-      systemView.mapView().subscribe((MapListener) session);
-    }
-    if (session instanceof HeroListener) {
-      systemView.heroView().subscribe((HeroListener) session);
-    }
-    if (session instanceof TurnListener) {
-      systemView.timeView().subscribe((TurnListener) session);
-    }
   }
 
   private final FastRandom rng = new FastRandom();
@@ -61,8 +50,13 @@ public class GameProcess implements Runnable {
       endpoint.send(new InputCommandMessage(spec.selectSpec()));
     Message message;
 
-    subscribe(session);
+    systemView.subscribe(session);
+    final InventoryFeaturesBuilder featuresBuilder = new InventoryFeaturesBuilder();
+    systemView.subscribe(featuresBuilder);
 
+    final StatusFeaturesBuilder statusBuilder = new StatusFeaturesBuilder();
+    systemView.subscribe(statusBuilder);
+    learnDataBuilder.attach(systemView);
 
     do {
       message = endpoint.poll();
@@ -84,6 +78,7 @@ public class GameProcess implements Runnable {
           case 1:
             final Mob.Action tickAction = session.action();
             endpoint.send(new InputCommandMessage(tickAction.code()));
+            systemView.playerActionView().action(tickAction);
             break;
           case 5:
             endpoint.send(new InputCommandMessage(' '));

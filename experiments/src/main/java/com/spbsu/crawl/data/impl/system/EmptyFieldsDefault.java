@@ -17,6 +17,10 @@ public class EmptyFieldsDefault {
     return value == emptyInt();
   }
 
+  public static boolean notEmpty(int value) {
+    return !isEmpty(value);
+  }
+
   public static boolean isEmpty(long value) {
     return value == emptyLong();
   }

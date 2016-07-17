@@ -4,14 +4,14 @@ import com.spbsu.crawl.bl.events.HeroListener;
 import com.spbsu.crawl.data.impl.PlayerInfoMessage;
 import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class CrawlHeroView {
+public class HeroView extends Subscribable.Stub<HeroListener> implements Subscribable<HeroListener> {
   private Updater updater = new Updater();
-  private List<HeroListener> listeners = new ArrayList<>();
+  private int time = 0;
+  private int turn = 0;
 
   private int currentHealthPoints;
   private int totalHealthPoints;
@@ -74,16 +74,17 @@ public class CrawlHeroView {
     return updater;
   }
 
-  public void subscribe(HeroListener heroListener) {
-    listeners.add(heroListener);
-  }
-
   public class Updater {
     public void message(final PlayerInfoMessage message) {
       updateStats(message);
       updatePosition(message);
       updateExperience(message);
       updateStatus(message);
+
+      if (EmptyFieldsDefault.notEmpty(message.turn())) {
+        time = message.time();
+        turn = message.turn();
+      }
     }
 
     private void updateStatus(final PlayerInfoMessage message) {
@@ -97,57 +98,58 @@ public class CrawlHeroView {
     }
 
     private void updateStats(final PlayerInfoMessage message) {
-      if (EmptyFieldsDefault.isEmpty(message.healthPoints())) {
+      if (EmptyFieldsDefault.notEmpty(message.healthPoints())) {
         currentHealthPoints = message.healthPoints();
+        listeners().forEach(heroListener -> heroListener.hp(currentHealthPoints));
       }
-      if (EmptyFieldsDefault.isEmpty(message.maxHealthPoints())) {
+      if (EmptyFieldsDefault.notEmpty(message.maxHealthPoints())) {
         totalHealthPoints = message.maxHealthPoints();
       }
-       if (EmptyFieldsDefault.isEmpty(message.maxManaPoints())) {
+      if (EmptyFieldsDefault.notEmpty(message.maxManaPoints())) {
         totalManaPoints = message.maxManaPoints();
       }
-       if (EmptyFieldsDefault.isEmpty(message.manaPoints())) {
+      if (EmptyFieldsDefault.notEmpty(message.manaPoints())) {
         currentManaPoints = message.manaPoints();
       }
-       if (EmptyFieldsDefault.isEmpty(message.dexterity())) {
+      if (EmptyFieldsDefault.notEmpty(message.dexterity())) {
         dexterity = message.dexterity();
       }
-       if (EmptyFieldsDefault.isEmpty(message.maxDexterity())) {
+      if (EmptyFieldsDefault.notEmpty(message.maxDexterity())) {
         maxDexterity = message.dexterity();
       }
-       if (EmptyFieldsDefault.isEmpty(message.strength())) {
+      if (EmptyFieldsDefault.notEmpty(message.strength())) {
         strength = message.strength();
       }
-       if (EmptyFieldsDefault.isEmpty(message.maxStrength())) {
+      if (EmptyFieldsDefault.notEmpty(message.maxStrength())) {
         maxStrength = message.maxStrength();
       }
-       if (EmptyFieldsDefault.isEmpty(message.intelligence())) {
+      if (EmptyFieldsDefault.notEmpty(message.intelligence())) {
         intelegence = message.intelligence();
       }
-       if (EmptyFieldsDefault.isEmpty(message.maxIntelligence())) {
+      if (EmptyFieldsDefault.notEmpty(message.maxIntelligence())) {
         maxIntelegence = message.maxIntelligence();
       }
-       if (EmptyFieldsDefault.isEmpty(message.evasion())) {
+      if (EmptyFieldsDefault.notEmpty(message.evasion())) {
         evasion = message.evasion();
       }
-       if (EmptyFieldsDefault.isEmpty(message.shieldClass())) {
+      if (EmptyFieldsDefault.notEmpty(message.shieldClass())) {
         shieldClass = message.shieldClass();
       }
-       if (EmptyFieldsDefault.isEmpty(message.armorClass())) {
+      if (EmptyFieldsDefault.notEmpty(message.armorClass())) {
         armorClass = message.armorClass();
       }
     }
 
     private void updatePosition(final PlayerInfoMessage message) {
-      if (!EmptyFieldsDefault.isEmpty(message.position())) {
+      if (EmptyFieldsDefault.notEmpty(message.position())) {
         x = message.position().x();
         y = message.position().y();
-        listeners.forEach(heroListener -> heroListener.heroPosition(x, y));
+        listeners().forEach(heroListener -> heroListener.heroPosition(x, y));
       }
     }
 
     private void updateExperience(final PlayerInfoMessage message) {
-      if (EmptyFieldsDefault.isEmpty(message.experienceLevel())) {
+      if (EmptyFieldsDefault.notEmpty(message.experienceLevel())) {
         experienceLevel = message.experienceLevel();
       }
       if (EmptyFieldsDefault.isEmpty(message.nextExpLevelProgress())) {

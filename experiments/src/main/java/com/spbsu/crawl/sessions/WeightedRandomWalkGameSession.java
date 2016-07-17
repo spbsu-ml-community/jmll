@@ -1,11 +1,10 @@
-package com.spbsu.crawl.learning;
+package com.spbsu.crawl.sessions;
 
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.crawl.bl.Mob;
 import com.spbsu.crawl.bl.events.HeroListener;
 import com.spbsu.crawl.bl.events.MapListener;
-import com.spbsu.crawl.bl.events.TurnListener;
 import com.spbsu.crawl.bl.map.CrawlGameSessionMap;
 import com.spbsu.crawl.bl.map.TerrainType;
 import com.spbsu.crawl.bl.GameSession;
@@ -27,6 +26,7 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
   private double prevScore = 0;
   private double step = 0.1;
   private int turn = 0;
+  private int hp;
 
   public void alter(double score) {
     if (score > prevScore) {
@@ -202,4 +202,8 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
     this.y = y;
   }
 
+  @Override
+  public void hp(int hp) {
+    this.hp = hp;
+  }
 }

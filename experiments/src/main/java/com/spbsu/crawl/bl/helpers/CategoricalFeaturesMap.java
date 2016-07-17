@@ -1,4 +1,4 @@
-package com.spbsu.crawl.learning.featureBuilders;
+package com.spbsu.crawl.bl.helpers;
 
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +36,10 @@ public class CategoricalFeaturesMap {
       return inverse.get(id);
     }
     return null;
+  }
+
+  public int dictSize() {
+    return inverse.size();
   }
 
 }

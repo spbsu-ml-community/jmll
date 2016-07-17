@@ -1,14 +1,12 @@
 package com.spbsu.crawl.bl;
 
-import com.spbsu.crawl.bl.events.MapListener;
-import com.spbsu.crawl.bl.events.HeroListener;
-import com.spbsu.crawl.bl.events.TurnListener;
+import com.spbsu.crawl.bl.events.SystemViewListener;
 
 /**
  * Experts League
  * Created by solar on 21/04/16.
  */
-public interface GameSession {
+public interface GameSession extends SystemViewListener {
   Hero.Race race();
   Hero.Spec spec();
 

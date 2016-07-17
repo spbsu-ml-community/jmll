@@ -216,7 +216,21 @@ public class PlayerInfoMessage implements Message {
     @JsonProperty("name")
     private String name = EmptyFieldsDefault.emptyValue();
 
+    public int quantity() {
+      return quantity;
+    }
 
+    public String name() {
+      return name;
+    }
+
+    public int baseType() {
+      return baseType;
+    }
+
+    public int subType() {
+      return subType;
+    }
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
