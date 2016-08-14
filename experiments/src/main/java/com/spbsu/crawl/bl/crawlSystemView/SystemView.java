@@ -61,9 +61,7 @@ public class SystemView implements Subscribable<SystemViewListener> {
       }
       //player
       heroView.updater().message(playerMessage);
-
     }
-
 
     public void message(final UpdateMapMessage message) {
       final List<UpdateMapCellMessage> cells = message.getCells();
@@ -83,9 +81,7 @@ public class SystemView implements Subscribable<SystemViewListener> {
         mapView.updater().clear();
       }
       mapView.updater().update(mapMessage.getCells());
-
     }
-
   }
 
   public void subscribe(final SystemViewListener listener) {

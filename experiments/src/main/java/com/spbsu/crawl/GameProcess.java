@@ -1,18 +1,18 @@
 package com.spbsu.crawl;
 
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.crawl.bl.GameSession;
+import com.spbsu.crawl.bl.Hero;
 import com.spbsu.crawl.bl.Mob;
 import com.spbsu.crawl.bl.crawlSystemView.SystemView;
 import com.spbsu.crawl.data.Command;
-import com.spbsu.crawl.bl.GameSession;
-import com.spbsu.crawl.bl.Hero;
 import com.spbsu.crawl.data.Message;
 import com.spbsu.crawl.data.impl.*;
 import com.spbsu.crawl.data.impl.system.*;
-import com.spbsu.crawl.learning.InventoryFeaturesBuilder;
 import com.spbsu.crawl.learning.LearnDataBuilder;
-import com.spbsu.crawl.learning.StatusFeaturesBuilder;
 
+import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -25,13 +25,19 @@ public class GameProcess implements Runnable {
   private final WSEndpoint endpoint;
   private final GameSession session;
   private SystemView systemView = new SystemView();
-  private LearnDataBuilder learnDataBuilder = new LearnDataBuilder();
+  private LearnDataBuilder learnDataBuilder;
 
   private int turns;
 
   public GameProcess(WSEndpoint endpoint, GameSession session) {
     this.endpoint = endpoint;
     this.session = session;
+    try {
+      learnDataBuilder = new LearnDataBuilder();
+    } catch (IOException e) {
+      LOG.log(Level.WARNING, "Can't create learn data builder");
+      System.exit(1);
+    }
   }
 
   private final FastRandom rng = new FastRandom();
@@ -49,13 +55,7 @@ public class GameProcess implements Runnable {
     if (spec.hasSpec())
       endpoint.send(new InputCommandMessage(spec.selectSpec()));
     Message message;
-
     systemView.subscribe(session);
-    final InventoryFeaturesBuilder featuresBuilder = new InventoryFeaturesBuilder();
-    systemView.subscribe(featuresBuilder);
-
-    final StatusFeaturesBuilder statusBuilder = new StatusFeaturesBuilder();
-    systemView.subscribe(statusBuilder);
     learnDataBuilder.attach(systemView);
 
     do {
@@ -69,6 +69,7 @@ public class GameProcess implements Runnable {
       } else if (message instanceof MenuMessage) {
         endpoint.send(new KeyMessage(KeyCode.ESCAPE));
       } else if (message instanceof GameEnded) {
+        learnDataBuilder.endGame();
         break;
       } else if (message instanceof InputModeMessage) {
         turns++;

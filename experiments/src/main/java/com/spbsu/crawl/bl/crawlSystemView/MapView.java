@@ -1,15 +1,16 @@
 package com.spbsu.crawl.bl.crawlSystemView;
 
 
+import com.spbsu.crawl.bl.events.MapListener;
 import com.spbsu.crawl.bl.map.Layer;
 import com.spbsu.crawl.bl.map.TerrainType;
-import com.spbsu.crawl.bl.events.MapListener;
 import com.spbsu.crawl.data.impl.UpdateMapCellMessage;
 import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
+
 import java.util.List;
 import java.util.Optional;
 
-public class MapView extends Subscribable.Stub<MapListener> implements Subscribable<MapListener>{
+public class MapView extends Subscribable.Stub<MapListener> implements Subscribable<MapListener> {
   private Layer layer = new Layer();
   private Updater updater = new Updater();
 

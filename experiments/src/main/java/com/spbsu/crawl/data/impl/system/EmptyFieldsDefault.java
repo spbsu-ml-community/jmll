@@ -5,7 +5,7 @@ package com.spbsu.crawl.data.impl.system;
  */
 public class EmptyFieldsDefault {
 
-  final public static int emptyInt() {
+  public static int emptyInt() {
     return Integer.MIN_VALUE;
   }
 

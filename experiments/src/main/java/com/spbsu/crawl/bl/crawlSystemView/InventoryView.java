@@ -37,7 +37,6 @@ public class InventoryView extends Subscribable.Stub<InventoryListener> implemen
           listeners().forEach(inventoryListener -> inventoryListener.remove(id, -diff));
         }
       }
-
     }
 
     private boolean isEmptySlot(final int id) {

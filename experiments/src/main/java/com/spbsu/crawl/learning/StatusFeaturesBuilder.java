@@ -14,8 +14,12 @@ import java.util.stream.Stream;
  * Created by noxoomo on 16/07/16.
  */
 public class StatusFeaturesBuilder implements StatusListener, FeaturesBuilder {
-  private final static CategoricalFeaturesMap statusIndex = new CategoricalFeaturesMap();
+  private final CategoricalFeaturesMap statusIndex;
   private TIntSet currentStatus = new TIntHashSet();
+
+  public StatusFeaturesBuilder(final CategoricalFeaturesMap statusIndex) {
+    this.statusIndex = statusIndex;
+  }
 
   @Override
   public void addStatus(final String messages) {
