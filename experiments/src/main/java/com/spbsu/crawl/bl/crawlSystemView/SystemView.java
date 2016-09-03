@@ -1,6 +1,7 @@
 package com.spbsu.crawl.bl.crawlSystemView;
 
 import com.spbsu.crawl.bl.events.*;
+import com.spbsu.crawl.bl.map.PositionManager;
 import com.spbsu.crawl.data.impl.PlayerInfoMessage;
 import com.spbsu.crawl.data.impl.UpdateMapCellMessage;
 import com.spbsu.crawl.data.impl.UpdateMapMessage;
@@ -11,13 +12,15 @@ import java.util.List;
 /**
  * Created by noxoomo on 14/07/16.
  */
-
+//TODO: all diffs can be done via reflections, but needs rework
 public class SystemView implements Subscribable<SystemViewListener> {
+  private final PositionManager positionManager = new PositionManager();
   private final HeroView heroView = new HeroView();
-  private final MapView mapView = new MapView();
+  private final MapView mapView = new MapView(positionManager);
   private final PlayerActionView playerActionView = new PlayerActionView();
   private final InventoryView inventoryView = new InventoryView();
   private final StatusView statusView = new StatusView();
+  private final MobsView mobsView = new MobsView(positionManager);
   private Updater updater = new Updater();
 
   public HeroView heroView() {
@@ -73,14 +76,22 @@ public class SystemView implements Subscribable<SystemViewListener> {
       updateMap(message);
     }
 
+    private void clear() {
+      positionManager.clear();
+      ;
+      mapView.updater().clear();
+      mobsView.updater().clear();
+    }
+
     private void updateMap(final UpdateMapMessage mapMessage) {
       if (mapMessage.isForceFullRedraw()) {
         if (EmptyFieldsDefault.notEmpty(lastPlayerMessage.depth())) {
           mapView.updater().updateLevel(lastPlayerMessage.depth());
         }
-        mapView.updater().clear();
+        clear();
       }
       mapView.updater().update(mapMessage.getCells());
+      mobsView.updater().update(mapMessage.getCells());
     }
   }
 

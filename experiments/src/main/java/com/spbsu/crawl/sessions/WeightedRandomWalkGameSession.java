@@ -5,9 +5,11 @@ import com.spbsu.commons.util.Pair;
 import com.spbsu.crawl.bl.GameSession;
 import com.spbsu.crawl.bl.Hero;
 import com.spbsu.crawl.bl.Mob;
+import com.spbsu.crawl.bl.crawlSystemView.MobsListener;
 import com.spbsu.crawl.bl.events.HeroListener;
 import com.spbsu.crawl.bl.events.MapListener;
 import com.spbsu.crawl.bl.map.CrawlGameSessionMap;
+import com.spbsu.crawl.bl.map.Position;
 import com.spbsu.crawl.bl.map.TerrainType;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -15,10 +17,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class WeightedRandomWalkGameSession implements GameSession, MapListener, HeroListener {
+public class WeightedRandomWalkGameSession implements GameSession, MapListener, HeroListener, MobsListener {
+  private static final Logger LOG = Logger.getLogger(WeightedRandomWalkGameSession.class.getName());
   private final CrawlGameSessionMap crawlMap = new CrawlGameSessionMap();
   private int x;
   private int y;
@@ -31,12 +36,21 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
   public void alter(double score) {
     if (score > prevScore) {
       increment += step;
-    }
-    else {
+    } else {
       step *= -0.9;
       increment += step;
     }
     prevScore = score;
+  }
+
+  @Override
+  public void observeMonster(final Mob mob) {
+    LOG.log(Level.ALL, "Observe monster " + mob.toString());
+  }
+
+  @Override
+  public void lostMonster(final Mob mob) {
+    LOG.log(Level.ALL, "Lost monster " + mob.toString());
   }
 
 
@@ -78,10 +92,7 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
 
   private boolean canMoveTo(final int x, final int y) {
     Optional<TerrainType> terrain = crawlMap.terrainOnCurrentLevel(x, y);
-    if (terrain.isPresent()) {
-      return terrain.get() != TerrainType.WALL;
-    }
-    return true;
+    return !terrain.isPresent() || terrain.get() != TerrainType.WALL;
   }
 
   private Function<Mob.Action, Pair<Mob.Action, CellStats>> dirWeights = new Function<Mob.Action, Pair<Mob.Action, CellStats>>() {
@@ -182,8 +193,8 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
   }
 
   @Override
-  public void tile(int x, int y, TerrainType type) {
-    crawlMap.tile(x, y, type);
+  public void tile(final Position position, final TerrainType type) {
+    crawlMap.tile(position.x(), position.y(), type);
   }
 
   @Override

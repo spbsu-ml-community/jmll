@@ -8,18 +8,54 @@ import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
 /**
  * Created by noxoomo on 24/04/16.
  */
+
 public class MonsterInfoMessage implements Message {
+  private final boolean empty;
+  private static MonsterInfoMessage emptyMessage = new MonsterInfoMessage(true);
+
+  private MonsterInfoMessage(final boolean empty) {
+    this.empty = empty;
+  }
+
+  public static MonsterInfoMessage emptyMessage() {
+    return emptyMessage;
+  }
+
+  public MonsterInfoMessage() {
+    this.empty = false;
+  }
+
+  public boolean isEmpty() {
+    return empty;
+  }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class MonsterStats implements Message {
     @JsonProperty("avghp")
     private int averageHealthPoints =  EmptyFieldsDefault.emptyInt();
     @JsonProperty("no_exp")
-    boolean noExperience;
+    Boolean noExperience = null;
+
+    public int averageHealthPoints() {
+      return averageHealthPoints;
+    }
+
+    public void setAverageHealthPoints(final int averageHealthPoints) {
+      this.averageHealthPoints = averageHealthPoints;
+    }
+
+    public void setNoExperience(final Boolean noExperience) {
+      this.noExperience = noExperience;
+    }
+
+    public Boolean noExperience() {
+      return noExperience;
+    }
 
     boolean isUpdated() {
       return EmptyFieldsDefault.isEmpty(averageHealthPoints);
     }
+
   }
 
   @JsonProperty("id")
@@ -33,6 +69,10 @@ public class MonsterInfoMessage implements Message {
 
   @JsonProperty("type")
   private int type = EmptyFieldsDefault.emptyInt();
+
+  public int monsterType() {
+    return type;
+  }
 
   @JsonProperty("typedata")
   private MonsterStats monsterStats = EmptyFieldsDefault.emptyValue();
@@ -73,4 +113,39 @@ public class MonsterInfoMessage implements Message {
   public int threatLevel() {
     return threatLevel;
   }
+
+  public void setId(final int id) {
+    this.id = id;
+  }
+
+  public void setName(final String name) {
+    this.name = name;
+  }
+
+  public void setPlural(final String plural) {
+    this.plural = plural;
+  }
+
+  public void setType(final int type) {
+    this.type = type;
+  }
+
+  public MonsterInfoMessage setMonsterStats(final MonsterStats monsterStats) {
+    this.monsterStats = monsterStats;
+    return this;
+  }
+
+  public void setAttitude(final int attitude) {
+    this.attitude = attitude;
+  }
+
+  public void setBaseType(final int baseType) {
+    this.baseType = baseType;
+  }
+
+  public void setThreatLevel(final int threatLevel) {
+    this.threatLevel = threatLevel;
+  }
 }
+
+

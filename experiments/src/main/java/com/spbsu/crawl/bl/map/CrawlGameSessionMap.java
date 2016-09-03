@@ -6,12 +6,12 @@ import java.util.Map;
 import java.util.Optional;
 
 public class CrawlGameSessionMap {
-  private final Map<String, Layer> layers = new HashMap<>();
+  private final Map<String, Layer<TerrainType>> layers = new HashMap<>();
   private String currentLevel;
 
 
   public Optional<TerrainType> terrainOnCurrentLevel(int x, int y) {
-    return layers.get(currentLevel).tile(x, y);
+    return layers.get(currentLevel).item(x, y);
   }
 
   public void changeLevel(String id) {
@@ -23,13 +23,14 @@ public class CrawlGameSessionMap {
   }
 
   public void tile(final int x, final int y, final TerrainType type) {
-    currentLayer().setTile(x, y, type);
+    currentLayer().setItem(x, y, type);
   }
 
-  private Layer currentLayer() {
+  private Layer<TerrainType> currentLayer() {
     return layers.compute(currentLevel, (level, layer) -> {
-      if (layer == null)
-        layers.put(level, layer = new Layer());
+      if (layer == null) {
+        layers.put(level, layer = new Layer<>());
+      }
       return layer;
     });
   }

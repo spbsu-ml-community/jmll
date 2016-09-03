@@ -36,7 +36,7 @@ public class UpdateMapCellMessage implements Message {
   private PackedCellMessage packedCell =  EmptyFieldsDefault.emptyValue();
 
   @JsonProperty("mon")
-  private MonsterInfoMessage monsterInfoMessage =  EmptyFieldsDefault.emptyValue();
+  private MonsterInfoMessage monsterInfoMessage = MonsterInfoMessage.emptyMessage();
 
   public int x() {
     return x;
@@ -46,14 +46,25 @@ public class UpdateMapCellMessage implements Message {
     return y;
   }
 
+  public boolean hasDungeonFeatureType() {
+    return EmptyFieldsDefault.notEmpty(getDungeonFeatureType());
+  }
+
   public int getDungeonFeatureType() {
     return dungeonFeatureType;
+  }
+
+  public boolean hasMapFeature() {
+    return EmptyFieldsDefault.notEmpty(getMapFeature());
   }
 
   public int getMapFeature() {
     return mapFeature;
   }
 
+  public boolean hasGlyph() {
+    return EmptyFieldsDefault.notEmpty(getGlyph());
+  }
   public String getGlyph() {
     return glyph;
   }

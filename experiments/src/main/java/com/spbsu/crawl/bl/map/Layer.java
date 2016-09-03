@@ -8,32 +8,34 @@ import java.util.Optional;
  * Created by noxoomo on 02/05/16.
  */
 
-public class Layer {
-  private final TIntObjectHashMap<TerrainType> terrains = new TIntObjectHashMap<>();
+public class Layer<T> {
+  private final TIntObjectHashMap<T> data = new TIntObjectHashMap<>();
 
   private int id(int x, int y) {
     return x + 100000 * y;
   }
 
   public void clear() {
-    terrains.clear();
+    data.clear();
   }
 
-  public Optional<TerrainType> tile(final int x, final int y) {
+  public Optional<T> item(final int x, final int y) {
     final int key = id(x, y);
-    if (terrains.containsKey(key)) {
-      return Optional.of(terrains.get(key));
+    if (data.containsKey(key)) {
+      return Optional.of(data.get(key));
     } else {
       return Optional.empty();
     }
   }
 
-  public void setTile(final int x, final int y, final TerrainType type) {
+  public void setItem(final int x,
+                      final int y,
+                      final T type) {
     final int key = id(x, y);
-    terrains.put(key, type);
+    data.put(key, type);
   }
 
-  public int tilesCount() {
-    return terrains.size();
+  public int itemCount() {
+    return data.size();
   }
 }

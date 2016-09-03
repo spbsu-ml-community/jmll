@@ -1,7 +1,6 @@
 package com.spbsu.crawl.data.impl;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,7 +26,7 @@ public class PackedUnsignedLong {
 
     @Override
     public PackedUnsignedLong deserialize(JsonParser jsonParser,
-                                          DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                                          DeserializationContext deserializationContext) throws IOException {
 
       JsonNode node = jsonParser.getCodec().readTree(jsonParser);
       final int lowerbits;

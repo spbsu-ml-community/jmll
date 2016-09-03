@@ -5,6 +5,8 @@ import com.spbsu.crawl.data.Message;
 import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
 
 public class PackedCellMessage implements Message {
+  private static long FOREGROUND_MM_UNSEEN  = 0x00020000;
+  private static long FOREGROUND_UNSEEN  = 0x00040000;
   //TODO: wtf it is. see tileweb.cc 1131 (seems like "parent" for random items)
   @JsonProperty("base")
   private int base = EmptyFieldsDefault.emptyInt();
@@ -13,11 +15,61 @@ public class PackedCellMessage implements Message {
   @JsonProperty("bg")
   private PackedUnsignedLong background = EmptyFieldsDefault.emptyValue();
 
+  public boolean merge(final PackedCellMessage target) {
+    boolean updated = false;
+    if (target.hasBase()) {
+      base = target.getBase();
+      updated = true;
+    }
+    if (target.hasBackground()) {
+      background = target.background();
+      updated = true;
+    }
+
+    if (target.hasForeground()) {
+      foreground = target.foreground();
+      updated = true;
+    }
+
+    return updated;
+  }
+
+  static boolean visible(final PackedCellMessage cell) {
+//    return foreground.
+    return true;
+
+  }
+
+  public boolean hasBase() {
+    return EmptyFieldsDefault.notEmpty(base);
+  }
+
+  public int getBase() {
+    return base;
+  }
+
+  public boolean hasBackground() {
+    return EmptyFieldsDefault.notEmpty(background());
+  }
+
+  public PackedUnsignedLong background() {
+    return background;
+  }
+
+  public boolean hasForeground() {
+    return EmptyFieldsDefault.notEmpty(foreground());
+  }
+
+  public PackedUnsignedLong foreground() {
+    return foreground;
+  }
+
+  //Reserve for future. We don't use all this stuff
   @JsonProperty("cloud")
   private boolean isCloud;
 
   @JsonProperty("bloody")
-  private boolean isBloody ;
+  private boolean isBloody;
 
   @JsonProperty("old_blood")
   private boolean hasOldBlood;
@@ -65,17 +117,6 @@ public class PackedCellMessage implements Message {
   @JsonProperty("flv")
   private FlavourMessage flavour;
 
-  public int getBase() {
-    return base;
-  }
-
-  public PackedUnsignedLong getBackground() {
-    return background;
-  }
-
-  public PackedUnsignedLong getForeground() {
-    return foreground;
-  }
 
   public boolean isCloud() {
     return isCloud;

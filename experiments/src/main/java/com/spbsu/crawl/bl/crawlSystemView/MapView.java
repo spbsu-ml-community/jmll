@@ -2,31 +2,33 @@ package com.spbsu.crawl.bl.crawlSystemView;
 
 
 import com.spbsu.crawl.bl.events.MapListener;
-import com.spbsu.crawl.bl.map.Layer;
+import com.spbsu.crawl.bl.map.Position;
+import com.spbsu.crawl.bl.map.PositionManager;
 import com.spbsu.crawl.bl.map.TerrainType;
 import com.spbsu.crawl.data.impl.UpdateMapCellMessage;
 import com.spbsu.crawl.data.impl.system.EmptyFieldsDefault;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 public class MapView extends Subscribable.Stub<MapListener> implements Subscribable<MapListener> {
-  private Layer layer = new Layer();
+  private final PositionManager positionManager;
+  private Map<Position, TerrainType> layer = new HashMap<>();
   private Updater updater = new Updater();
+
+  public MapView(final PositionManager positionManager) {
+    this.positionManager = positionManager;
+  }
 
 
   public void observeCell(final int x, final int y,
                           final TerrainType type) {
-    final Optional<TerrainType> terrain = layer.tile(x, y);
-
-    if (terrain.isPresent()) {
-      if (terrain.get() != type) {
-        layer.setTile(x, y, type);
-        listeners().forEach(lst -> lst.tile(x, y, type));
-      }
-    } else {
-      layer.setTile(x, y, type);
-      listeners().forEach(lst -> lst.tile(x, y, type));
+    final Position position = positionManager.getOrCreate(x, y);
+    TerrainType terrain = layer.getOrDefault(position, null);
+    if (terrain != type) {
+      layer.put(position, type);
+      listeners().forEach(lst -> lst.tile(position, type));
     }
   }
 
@@ -36,7 +38,7 @@ public class MapView extends Subscribable.Stub<MapListener> implements Subscriba
   }
 
   public int knownCells() {
-    return layer.tilesCount();
+    return layer.size();
   }
 
   /**

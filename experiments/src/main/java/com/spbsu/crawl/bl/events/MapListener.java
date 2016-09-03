@@ -1,5 +1,6 @@
 package com.spbsu.crawl.bl.events;
 
+import com.spbsu.crawl.bl.map.Position;
 import com.spbsu.crawl.bl.map.TerrainType;
 
 /**
@@ -7,7 +8,7 @@ import com.spbsu.crawl.bl.map.TerrainType;
  * Created by solar on 05/05/16.
  */
 public interface MapListener extends SystemViewListener {
-  void tile(int x, int y, TerrainType type);
+  void tile(Position position, TerrainType type);
 
   void changeLevel(String id);
 
