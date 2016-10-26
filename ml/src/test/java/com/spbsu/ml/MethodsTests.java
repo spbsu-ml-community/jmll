@@ -543,28 +543,53 @@ public void testElasticNetBenchmark() {
 
 
   public void testGRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-            new BootstrapOptimization<L2>(
-                    new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn.vecData(), 32)), rng), L2.class, 10000, 0.02);
-    final Action counter = new ProgressHandler() {
-      int index = 0;
+      final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
+              new BootstrapOptimization<L2>(
+                      new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn.vecData(), 32)), rng), L2.class, 10000, 0.02);
+      final Action counter = new ProgressHandler() {
+          int index = 0;
 
-      @Override
-      public void invoke(final Trans partial) {
-        System.out.print("\n" + index++);
-      }
-    };
-    final L2 target = learn.target(L2.class);
-    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), target);
-    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
-    boosting.addListener(counter);
-    boosting.addListener(learnListener);
-    boosting.addListener(validateListener);
-    boosting.addListener(qualityCalcer);
+          @Override
+          public void invoke(final Trans partial) {
+              System.out.print("\n" + index++);
+          }
+      };
+      final L2 target = learn.target(L2.class);
+      final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), target);
+      final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
+      final Action modelPrinter = new ModelPrinter();
+      final Action qualityCalcer = new QualityCalcer();
+      boosting.addListener(counter);
+      boosting.addListener(learnListener);
+      boosting.addListener(validateListener);
+      boosting.addListener(qualityCalcer);
 //    boosting.addListener(modelPrinter);
-    boosting.fit(learn.vecData(), learn.target(L2.class));
+      boosting.fit(learn.vecData(), learn.target(L2.class));
+  }
+
+  public void testCARTTree() {
+      final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
+              new BootstrapOptimization<L2>(
+                      new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn.vecData(), 32)), rng), L2.class, 10000, 0.02);
+      final Action counter = new ProgressHandler() {
+          int index = 0;
+
+          @Override
+          public void invoke(final Trans partial) {
+              System.out.print("\n" + index++);
+          }
+      };
+      final L2 target = learn.target(L2.class);
+      final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), target);
+      final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
+      final Action modelPrinter = new ModelPrinter();
+      final Action qualityCalcer = new QualityCalcer();
+      boosting.addListener(counter);
+      boosting.addListener(learnListener);
+      boosting.addListener(validateListener);
+      boosting.addListener(qualityCalcer);
+//    boosting.addListener(modelPrinter);
+      boosting.fit(learn.vecData(), learn.target(L2.class));
   }
 
   public void testGTDRForestBoost() {
@@ -675,7 +700,7 @@ public void testElasticNetBenchmark() {
   }
 
 
-  public void testGTDRIBoost() {
+/*  public void testGTDRIBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting
             (new BootstrapOptimization<>(
                     new GreedyTDIterativeRegion<WeightedLoss<? extends StatBasedLoss>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.002);
@@ -698,7 +723,7 @@ public void testElasticNetBenchmark() {
 //    boosting.addListener(modelPrinter);
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
-
+*/
 
   public void testOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), LOOL2.class, 2000, 0.02);

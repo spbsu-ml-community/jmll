@@ -1,0 +1,46 @@
+{
+  "batchSize": 100,
+  "epochsNumber": 10,
+  "learningRate": 0.07,
+  "debug": true,
+  "initMethod": "RANDOM_OPTIMAL",
+  "net": {
+    "netConfig": {
+      "input": 1,
+      "output": 1,
+      "layers": [
+        "layer_1",
+        "layer_2",
+        "layer_3"
+      ]
+    },
+
+    "layer_1": {
+      "inputSize": 1,
+      "outputSize": 200,
+      "rectifierType": "SIGMOID",
+      "bias": 0,
+      "bias_b": 0.0,
+      "dropoutFraction": 0.0,
+      "isTrain": true
+    },
+    "layer_2": {
+      "inputSize": 200,
+      "outputSize": 50,
+      "rectifierType": "SIGMOID",
+      "bias": 0,
+      "bias_b": 0,
+      "dropoutFraction": 0,
+      "isTrain": true
+    },
+    "layer_3": {
+      "inputSize": 50,
+      "outputSize": 1,
+      "rectifierType": "FLAT",
+      "bias": 0,
+      "bias_b": 0,
+      "dropoutFraction": 0,
+      "isTrain": true
+    }
+  }
+}

@@ -39,7 +39,7 @@ public class Aggregate {
     int binsSize = 0;
     for (int i = 0; i < grid.rows(); ++i) {
       starts[i] = binsSize;
-      binsSize += grid.row(i).size() + 1;
+      binsSize += grid.row(i).size() + 1; // зачем +1?
     }
     this.bins = new AdditiveStatistics[binsSize];
     for (int i = 0; i < bins.length; i++) {

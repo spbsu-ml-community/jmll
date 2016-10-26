@@ -1,0 +1,35 @@
+{
+  "batchSize": 1000,
+  "epochsNumber": 123,
+  "learningRate": 1.0E-4,
+  "debug": true,
+  "net": {
+    "netConfig": {
+      "input": 10,
+      "output": 20,
+      "layers": [
+        "layer_1",
+        "layer_2"
+      ]
+    },
+
+    "layer_1": {
+      "inputSize": 10,
+      "outputSize": 40,
+      "rectifierType": "SIGMOID",
+      "bias": 0.1,
+      "bias_b": 0.0,
+      "dropoutFraction": 0.0,
+      "isTrain": true
+    },
+    "layer_2": {
+      "inputSize": 40,
+      "outputSize": 20,
+      "rectifierType": "FLAT",
+      "bias": 0.4,
+      "bias_b": 1.0,
+      "dropoutFraction": 5.0,
+      "isTrain": true
+    }
+  }
+}

@@ -1,0 +1,459 @@
+\documentclass[12pt,a4paper]{article}
+
+%\textwidth=5in
+%\addtolength{\oddsidemargin}{-1in}
+%\addtolength{\evensidemargin}{-1in}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage[OT1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+\usepackage[none]{hyphenat}
+
+\begin{document}
+
+\section{Формулы new click model}
+
+Обозначения:
+\begin{itemize}
+ \item $\Theta$ -- набор параметров модели;
+ \item $\mathbf{f}(R_i, R_j; \Theta)$ -- вес аттрактивности блока $R_j$, если пользователь просматривает блок $R_i$;
+ \item свойства блока $R_i=R(r_i)$ задаются вектором факторов аттрактивности блока $r_i=(r_{i,1}, r_{i,2}, \ldots, r_{i,|r|})$, среди факторов может быть тип блока, положение, размер, прокрашенность сниппета, яркость картинки, релевантность, предсказанная релевантность, и т.п. (future work: добавить блоконезависимые фичи -- тип запроса, свойства пользователя);
+ \item $f(r_i, r_j; \Theta) = \mathbf{f}(R(r_i), R(r_j); \Theta)$ -- параметризованное представление веса аттрактивности блока;
+ \item $P(R_i \to R_j; \Theta) = \frac{f(r_i, r_j; \Theta)}{\sum_k f(r_i, r_k; \Theta)}$ -- вероятность перехода взгляда пользователя с блока $R_i$ на блок $R_j$, зависит от всех блоков на SERP;
+
+ \item $O = \left((o_0, t_0), (o_1, t_1), \ldots, (o_{|O|}, t_{|O|})\right)$ -- список наблюдаемых действий пользователя, запросов и кликов. Пользователь выполняет запрос $t_0$, делает клик на блоке $R_{o_1}$ в момент времени $t_1$, и так далее, последний клик на блоке $R_{o_{|O-1|}}$ в момент времени $t_{|O-1|}$. Конец сессии -- тоже наблюдаемое действие $o_{|O|}$, но с неизвестным временем.
+
+ \item $V = \left((v_0, c_0, t_0), (v_1, c_1, t_1), \ldots, (v_{|V|}, c_{|V|}, t_{|V|})\right)$ -- путь просмотра пользователем SERP. Пользователь начинает просмотр с блока $R_{v_0}$ (блок "запрос") в момент времени $t_0$, переходит к просмотру блока $R_{v_1}$, делает или не делает клик $c_1 \in \{0,1\}$ в момент времени $t_1$. Затем процесс повторяется до просмотра последнего блока $R_{v_{|V|}}$ c (не)кликом $c_{|V|}$ в момент времени $t_{|V|}$. Считаем, что каждый путь просмотра начинается с блока ``запрос'', с кликом ($P(c_0=1)=1$) (так как выполнение запроса -- наблюдаемое действие).
+
+ \item Путь просмотра $V$, совместимый с наблюдаемыми действиями $O$, будем обозначать $V \to O$.
+
+ \item $P(c_i | v_i; \Theta) = P(c | r_{v_i}; \Theta)$ -- вероятность клика на блок $R_{v_i}$ после просмотра блока. Предположение марковской независимости: клик зависит только от свойств блока, не зависит от предыдущих просмотренных блоков и времени просмотра.
+
+ \item $D={O_d}$ -- множество запросных сессий в dataset.
+
+\end{itemize}
+
+\subsection{Оптимизация параметров модели методом "суммирование по путям"}
+
+{\it тут предварительные размышления, описание основного алгоритма в следующем разделе}
+
+Вероятность просмотра страницы по пути (зависимость от параметров модели $\Theta$ пока опустим и пока будем считать, что переходы не зависят от времени):
+\begin{align*}
+P(V) = & \prod_{i=1}^{|V|} P(R_{v_{i-1}} \to R_{v_i}) \cdot P(c_i | r_{v_i}) \\
+     = & \prod_{i=1}^{|V|} \frac{f(r_{v_{i-1}}, r_{v_i})}{\sum_k f(r_{v_{i-1}}, r_k)} \cdot P(c_i | r_{v_i})
+\end{align*}
+
+Loglikelihood набора сессий
+\begin{align*}
+L(D) = & \sum_{d \in D} \log \sum_{V \to O_d} \prod_{i=1}^{|V|} \frac{f(r_{d,v_{i-1}}, r_{d,v_i})}{\sum_k f(r_{d,v_{i-1}}, r_{d,k})} \cdot P(c_{v_i} | r_{v_i})
+\end{align*}
+
+Так как пути просмотра между кликами независимы, можно разделить пути просмотра $V_{d,j} \to O_d$ на интервалы между кликами $O_{d,\nu} \in O_d$.
+\begin{align*}
+L(D) = & \sum_{d \in D} \sum_{O_{d,\nu} \in O_d} \log \sum_{V \to O_{d,\nu}} \prod_{i=1}^{|V|}
+   P(r_{d,v_{i-1}} \to r_{d,v_i}) \cdot P(c_{v_i} | r_{v_i})
+\end{align*}
+подробнее:
+\begin{align}\label{eq:L}
+L(D) = & \sum_{d \in D} \sum_{O_{d,\nu} \in O_d} \log \sum_{V \to O_{d,\nu}} \prod_{i=1}^{|V|} \frac{f(r_{d,v_{i-1}}, r_{d,v_i})}{\sum_k f(r_{d,v_{i-1}}, r_{d,k})} \cdot P(c_{v_i} | r_{v_i})
+\end{align}
+
+Продифференцируем (\ref{eq:L}) по параметрам модели $\Theta$
+\begin{align}
+\frac{dL(D)}{d\Theta} = & \sum_{d \in D} \sum_{O_{d,\nu} \in O_d} \frac{d}{d\Theta} \log P(O_{d,\nu})
+\end{align}
+\begin{align*}
+\frac{d}{d\Theta} \log P(O_{d,\nu}) = & \frac{1}{P(O_{d,\nu})} \sum_{V \to O_{d,\nu}} \sum_{j=1}^{|V|}
+       \left(
+         \prod_{i=1, i \neq j}^{|V|} P(r_{v_{i-1}} \to r_{v_i}) \cdot P(c_{v_i} | r_{v_i})
+       \right) \cdot
+       \\
+       & \cdot \frac{d}{d\Theta}
+           \left(
+             P(r_{v_{j-1}} \to r_{v_j}) \cdot P(c_{v_j} | r_{v_j})
+           \right) \\
+  = & \frac{1}{P(O_{d,\nu})} \sum_{V \to O_{d,\nu}} \sum_{j=1}^{|V|}
+       \frac{P(V)}{ P(r_{v_{j-1}} \to r_{v_j}) \cdot P(c | r_{v_j}) } \cdot \\
+       & \cdot \frac{d}{d\Theta}
+           \left(
+             P(r_{v_{j-1}} \to r_{v_j}) \cdot P(c_{v_j} | r_{v_j})
+           \right)
+\end{align*}
+
+\begin{align}
+\frac{d}{d\Theta} \log P(O_{d,\nu}) = \sum_{V \to O_{d,\nu}} \frac{P(V)}{P(O_{d,\nu})}
+       \sum_{j=1}^{|V|} \frac{
+             P(c | r_{v_j}) \frac{d}{d\Theta} P(r_{v_{j-1}} \to r_{v_j})
+               + P(r_{v_{j-1}} \to r_{v_j}) \frac{d}{d\Theta} P(c | r_{v_j})
+           }{
+             P(r_{v_{j-1}} \to r_{v_j}) \cdot P(c | r_{v_j})
+           }
+\end{align}
+
+\begin{align}
+\frac{d}{d\Theta} P(r_{v_{j-1}} \to r_{v_j}) =
+  \frac{ \frac{df}{d\Theta}(r_{v_{i-1}}, r_{v_i}) }{ \sum_k f(r_{v_{i-1}}, r_k) }
+    +
+  \frac{ f(r_{v_{i-1}}, r_{v_i}) \cdot \sum_k \frac{df}{d\Theta}(r_{v_{i-1}}, r_k) }{
+    \left( \sum_k f(r_{v_{i-1}}, r_k) \right)^2
+    }
+\end{align}
+
+Для вычисления вероятности клика $P(O_{d,\nu}; \Theta)$ и ее производной требуется суммирование по всем путям $V \to O_{d,\nu}$, совместимым с кликом. Путей может быть бесконечно много, вероятность пути зависит от всех блоков SERP $d$. Для приближенного вычисления вероятности клика можно ограничить суммирование по $N$ наиболее вероятным путям $V \to O_{d,\nu}$ (в статье POM $N=5$). Поиск $N$-best path в графе осуществляется модифицированным алгоритмом Viterbi.
+
+\subsubsection{Поиск $N$-best path $V \to O_{d,\nu}$}
+
+Пусть путь $O_{d,\nu}$ начинается с блока $s$ и заканчивается блоком $e$. Обозначим $T$ -- количество блоков на странице, $T-1$ -- длина максимального пути без циклов.
+
+Шаг 1. Вычисляем матрицу $A(s,i,t)=\max_{V: |V|=t, v_0=s, v_t=i} P(V)$ -- вероятности наиболее вероятных путей длины $t$ из $s$ в $i$:
+\begin{align*}
+A(s,i,1) = & P(s \to i) \\
+A(s,i,t+1) = & \max_j A(s,j,t) P(j \to i)
+\end{align*}
+
+Шаг 2. Вероятность наиболее вероятного пути из $s$ в $e$ равна $\max_{t=1}^T A(s,e,t)$. Наиболее вероятный путь $V_1$ вычисляем обратным проходом (Viterbi decoding):
+\begin{align*}
+v_{t_1} =& e \\
+v_{k-1} =& \arg\max_j A(s,j,k-1) P(j \to v_k) \qquad k=t-1, \ldots, 1 \\
+v_0 =& s
+\end{align*}
+
+Второй наиболее вероятный путь $V_2$ либо имеет длину отличную от $|V_1|$, либо отличается в одной из вершин. Чтобы вычислить $V_2$, вычисляем матрицу $A(i,e,k)$ для всех $i$ аналогично шагу 1. Выбираем наибольшее из следующих чисел:
+\begin{align*}
+ A(s,e,t) & \qquad t\ne t_1 \\
+ A(s,i,k) \cdot A(i,e,t_1-k) &\qquad i \ne v_{1,k}, \; k=1,\ldots, t-1
+\end{align*}
+
+Шаг 3. Для вычисления $n$-го наиболее вероятного пути $V_n$ вычисляем сортированный список чисел:
+\begin{align*}
+ A(s,e,t) &\qquad t=1,\ldots, T \\
+ A(s,i,k) \cdot A(i,e,t-k) &\qquad \forall i, \; t=1,\ldots, T, \; k=1,\ldots, t-1
+\end{align*}
+затем последовательно идем по отсортированному списку и вычисляем $V_1,V_2,\ldots,V_n$ так, чтобы каждый следующий путь $V_i$ отличался от предыдущих по длине или по вершине.
+
+Сложность алгоритма (в количестве умножений и вычислений $P(i\to j)$): шаг 1 = $O(T^2)$, шаг 2 = $O(T^2)$, шаг 3 = $O(T^3)$.
+
+\subsection{Оптимизация параметров модели методом ``суммирование по длинам путей''}
+
+Для оптимизации параметров модели методом ``суммирование по путям'' требуется дорогая операция вычисления $N$ наиболее вероятных путей для каждого клика. Можно преобразовать выражение (\ref{eq:L}) так, чтобы включить вычисления, производимые внутри алгоритма Viterbi в вычисление loglikelihood. Разобьем множество путей просмотра $V \to O_{d,\nu}$, совместимых с наблюдением $O_{d,\nu}$ на слои по длинам $V^t \to O_{d,\nu}, \; |V^t|=t$:
+\begin{align}
+L(D) = & \sum_{d \in D} \sum_{O_{d,\nu} \in O_d}
+  \log \sum_{t=1}^T \sum_{V^t \to O_{d,\nu}} \prod_{i=1}^t
+     P(r_{d,v_{i-1}} \to r_{d,v_i}) \cdot P(c_{v_i} | r_{v_i})
+\\
+     = & \sum_{d \in D} \sum_{O_{d,\nu} \in O_d}
+  \log \sum_{t=1}^T \sum_{V^t \to O_{d,\nu}} \prod_{i=1}^t
+     \frac{f(r_{d,v_{i-1}}, r_{d,v_i})}{\sum_k f(r_{d,v_{i-1}}, r_{d,k})}  \cdot P(c_{v_i} | r_{v_i})
+\end{align}
+
+Обозначим $A(i,j,t)$ вероятность пройти без из блока $i$ в блок $j$, не сделав по пути ни одного клика:
+\begin{align}
+A(i,j,t) =& \sum_{V^t:\; v_0=i, v_t=j} \prod_{m=1}^t
+  P(r_{v_{m-1}} \to r_{v_m}) \cdot P(c=0 | r_{v_m})
+\end{align}
+
+Для каждого наблюдаемого действия $O_{d,\nu}$, начинающегося с блока $s$ и заканчивающегося блоком $e$ с (не)кликом $c_e$ вычислим значения матрицы $A$:
+\begin{align}
+A(s,i,1) =& P(s\to i) \cdot P(c=0 | i)              &\quad \forall i \\
+A(s,i,t+1) =& \sum_j A(s,j,t) \cdot P(j\to i) \cdot P(c=0 | i)  &\quad \forall i, t=1,\ldots,T
+\end{align}
+
+Критерий ранней остановки вычисления матрицы $A$: если 
+\begin{align}
+A(s,i,t+1) < \varepsilon \max_{i,u<=t} A(s,i,u)
+\end{align}
+то все пути длины $>t$ маловероятны по сравнению с путями длины $\le t$, и значения $A$ и $\frac{dA}{d\Theta}$ можно не вычислять.\\
+
+
+Теперь оптимизируемую функцию можно выразить через $A$:
+\begin{align}
+L(D) = & \sum_{d \in D} \sum_{(s,e,c_e) \in O_d}
+  \left(
+    \log \frac{P(c_e | r_e)}{P(c=0 | r_e)} + \log \sum_{t=1}^T A(s, e, t)
+  \right)
+\end{align}
+
+Вычислим теперь градиент $L(D;\Theta)$ по параметрам модели:
+\begin{align}
+\frac{dL}{d\Theta}(D;\Theta) = & \sum_{d \in D} \sum_{(s,e,c_e) \in O_d}
+  \left(
+    \frac{d}{d\Theta} \log \frac{P(c_e | r_e)}{P(c=0 | r_e)}
+    + \frac{d}{d\Theta} \log \sum_{t=1}^T A(s, e, t)
+  \right) \\
+\frac{d}{d\Theta} \log \sum_{t=1}^T A(s, e, t) = &
+  \frac{1}{\sum_{t=1}^T A(s, e, t)}
+  \sum_{t=1}^T \frac{dA}{d\Theta}(s, e, t)
+\end{align}
+
+Матрицу $\frac{dA}{d\Theta}(s, i, t)$ вычисляем последовательно:
+\begin{align*}
+\frac{dA}{d\Theta}(s,i,1) =& P(c=0 | i) \cdot \frac{d}{d\Theta}P(s\to i) + P(s\to i) \cdot \frac{d}{d\Theta} P(c=0|i) \qquad \forall i
+\\
+\frac{dA}{d\Theta}(s,i,t+1) =&
+  \frac{d}{d\Theta} P(c=0|i) \sum_j A(s,j,t) \cdot P(j\to i)
+  \\ & +
+  P(c=0|i) \sum_j \left( \frac{dA}{d\Theta}(s,j,t) \cdot P(j\to i)
+                       + A(s,j,t) \cdot \frac{d}{d\Theta} P(j\to i) \right)
+\\
+\frac{d}{d\Theta} P(i \to j) = &
+  \frac{ \frac{df}{d\Theta}(i, j) }{ \sum_k f(i, k) }
+    -
+  \frac{ f(i, j) \cdot \sum_k \frac{df}{d\Theta}(i, k) }{
+    \left( \sum_k f(i, k) \right)^2
+    } 
+  \\
+  =& \left(
+      \sum_k \frac{df}{d\Theta}(i, k) 
+        \cdot \left(
+          -\frac{ f(i, j) }{ \sum_k f(i, k) } \right)
+      + \frac{df}{d\Theta}(i, j) 
+     \right)
+     \cdot
+     \frac{1}{ \sum_k f(i, k) }
+%  \\
+%  =& \frac{1}{\left( \sum_k f(i, k) \right)^2} \cdot
+%     \sum_m \frac{df}{d\Theta}(i,m) \cdot
+%       \left( -f(i,j) + \mathbf{1}(m=j) \sum_k f(i, k) \right)
+\end{align*}
+
+Шаги вычисления значения и градиента для каждого наблюдаемого действия $P(O_{d,\nu}): (s,e,c_e)$. Оценка сложности в зависимости от количества блоков SERP $B \approx 12$ и количества параметров линейной модели $F$. Оценки даны для полного графа переходов между блоками (можно уточнить для урезанного графа).
+% @TODO Уточнить оценки скорости для неполного графа
+
+\begin{tabular}{|l|l|l|l|}
+\hline
+ & действие & сложность \\
+ &          & (*=SERP-wide) \\
+\hline
+1 & для каждой пары блоков $i$, $j$ вычислить $f(i,j)$     & $\mathbf{B^2 F}$ * \\
+2 & для каждого блока $i$ вычислить норму $\sum_k f(i, k)$ & $B^2$   * \\
+3 & для каждого блока $i$ вычислить $P(c=0|r_i)$           & $B$     * \\
+4 & для каждой пары блоков $i$, $j$ вычислить $P(i \to j)$ & $B^2$   * \\
+5 & для всех блоков $i$ и длин $t$ вычислить $A(s,i,t)$    & $\mathbf{B^3}$ \\
+6 & вычислить $P(O_{d,\nu})$                               & $B$ \\
+\hline
+7 & для каждой пары блоков $i$, $j$ вычислить $\frac{df}{d\Theta}(i,j)$ & $B^2 F$ * \\
+8 & для каждой пары блоков $i$, $j$ вычислить $\frac{d}{d\Theta}P(i,j)$ & $\mathbf{B^3 F}$ * \\
+9 & для всех блоков $i$ и длин $t$ вычислить $\frac{dA}{d\Theta}(s,i,t)$ & $\mathbf{B^3 F}$ \\
+10 & вычислить градиент $\frac{d}{d\Theta}P(O_{d,\nu})$ & $B$ \\
+\hline
+\end{tabular}
+
+
+\section{Эксперимент linear\_f100}
+
+Данные: dataset\_f100.
+
+Граф связей SERP:
+\begin{itemize}
+ \item переходы между соседними блоками выдачи, обозначим обычные блоки $R_i$
+ \item виртуальный блок $Q$=``начальный блок, запрос''. Выполнив запрос, пользователь  выбирает слудующий блок для просмотра согласно его аттрактивности и позиции.
+ \item виртуальный блок $S$=``пользователь снова начинает обзор страницы'', пользователь может перейти к блоку $S$ из любого блока с вероятностью ``аттрактивности $S$''. Находясь в блоке $S$ пользователь выбирает слудующий блок для просмотра согласно его аттрактивности и позиции, но вероятности перехода могут отличаться от вероятностей блока $Q$.
+ \item виртуальный блок $E$=окончание запросной сессии.
+\end{itemize}
+
+Функция аттрактивности перехода $r_s\to r_e$ (start to end): 
+\begin{align}
+f(r_s, r_e)=e^{<F(r_s, r_e), \Omega>}
+\end{align}
+ -- экспонента от линейной функции фич пары блоков (произведение весов бинарных фич, равных 1).
+
+Фичи пары блоков $F(r_s, r_e)$:
+\begin{itemize}
+ \item бинарные фичи для каждого типа блока $e$: [WEB, NEWS, IMAGES, DIRECT, VIDEO, OTHER]
+ \item бинарные фичи асессорской релевантности для блока $e$, 5 градаций + NOT\_ASED
+ \item бинарная фича ``переход к следующему блоку'' $R_i \to R_{i+1}$
+ \item бинарная фича ``переход к предыдущему блоку'' $R_i \to R_{i-1}$
+ \item бинарные фичи аттрактивности позиции $R_i$ для переходов $Q \to R_i$
+ \item бинарные фичи аттрактивности позиции $R_i$ для переходов $S \to R_i$
+ \item бинарные фичи для переходов, в зависимости от наличия клика $c\in \{0,1\}$: $(R_i, c) \to E$, $(R_i, c) \to Q$
+\end{itemize}
+
+Вероятности клика на блок не зависят от параметров модели и вычисляются на основе CTR первого блока. Cоответственно, подбор параметров модели производится только для функции аттрактивности блоков $f$, вычисление градиента упрощается за счет предположения $\frac{d}{d\Theta}P(c|r_i)=0$.
+
+Метод вычисления: Stochastic Gradient Descent. Шаг вычисления:
+\begin{align}
+\Theta^{(t+1)} =& \Theta^{(t)} + \eta^{(t)} 
+        \frac{1}{\mathrm{norm}} 
+        \frac{dL}{d\Theta}(D^{(t)}; \Theta^{(t)})
+\\
+\mathrm{norm} =& \sum_{d \in D} |O_d|
+\\
+|D^{(t)}| = & \mathrm{SGD\_blocksize} = 1
+\\
+\eta^{(t)} = & \eta_0 \left( \frac{a}{a+t} \right)^\gamma
+\\
+a = & \frac{|D|}{|D^{(t)}|}
+\\
+\gamma = & 0.75
+\\
+\eta_0 = & 0.1
+\end{align}
+
+Dataset $D$ разбиваем на случайные блоки размером SGD\_blocksize сессий. Производную $\frac{dL}{d\Theta}(D^{(t)}; \Theta^{(t)})$ вычисляем по случайному подмножеству dataset $D^{(t)} \subset D$.
+
+%На первой итерации вычисляем оптимальное значение $\eta_0$ перебором с шагом $1.5$, используем это $\eta_0$ еще 1000 итераций. 
+
+После каждого прохода по dataset вычисляем значение $L(D; \Theta)$. Если значение ухудшилось, то шаг слишком большой -- возвращаемся к предыдущему хорошему $\Theta$ и уменьшаем шаг итерации.
+
+Производим $\approx 100 * \frac{|D|}{|D^{(t)}|}$ итераций. Периодически считаем и выводим значение $L(D)$ по всему dataset.
+
+Функция $L(D; \Theta)$ -- невыпуклая; делаем оптимизацию для нескольких начальных приближений.
+
+% оптимизации с разнами начальными параметрами $\Theta^{(0)}$. Первую итерацию производим с ``разумно выбранным'' $\Theta^{(0)}$, остальные -- со случайным $\Theta^{(0)}$.
+
+Критерии успешного эксперимента:
+\begin{itemize}
+ \item улучшение $L$ на training set
+ \item улучшение $L$ на test set
+ \item на dataset with sorted clicks -- улучшение $L$ по сравнению с PFound
+ \item разумные значения предсказанных вероятностей переходов
+\end{itemize}
+
+\subsection{Нелинейная модель аттрактивности}
+
+\begin{itemize}
+ \item $P(R_i \to R_j; \Theta) = \frac{f(r_i, r_j; \Theta)}{\sum_k f(r_i, r_k; \Theta)}$ -- вероятность перехода взгляда пользователя с блока $R_i$ на блок $R_j$, зависит от всех блоков на SERP;
+ \item $f(r_i, r_j; \Theta)=\exp\left(GBRT(r_i, r_j; \Theta)\right)$ -- относительная аттрактивность блока $r_j$ при условии просмотра блока $r_i$ -- нелинейная GBRT-функция от фич блоков $r_i$, $r_j$;
+ \item Подбор параметров функции аттрактивности: градиентная оптимизация вероятности выполнить наблюдаемый набор кликов:
+\begin{align*}
+L(D) = & \sum_{d \in D} \sum_{O_{d,\nu} \in O_d}
+  \log \sum_{t=1}^T \sum_{V^t \to O_{d,\nu}} \prod_{i=1}^t
+     \frac{f(r_{d,v_{i-1}}, r_{d,v_i})}{\sum_k f(r_{d,v_{i-1}}, r_{d,k})}  \cdot P(c_{v_i} | r_{v_i})
+\end{align*}
+\end{itemize}
+
+
+\subsection{Related work}
+
+\begin{enumerate}
+
+\item Kuansan Wang, Nikolas Gloy, Xiaolong Li, Inferring search behaviors using partially observable Markov (POM) model, Proceedings of the third ACM international conference on Web search and data mining, February 04-06, 2010, New York, New York, USA  [doi>10.1145/1718487.1718514]
+
+  отличная постановка задачи - предсказать eye track по кликам
+
+  training: вариант EM-алгоритма "N-most probable paths", N=5
+
+    предполагается observation path без циклов - возможно, лишнее ограничение
+
+	переходы просмотра не зависят от аттрактивности - у нас это, как раз, самое сложное
+
+	разные виды результатов: web results, top ad, right column ad, right column query suggest - но от вида результата просмотр не зависит (в модели)
+
+    хитрый способ выбора начальной модели для EM-алгоритма (авторы утверждают, что лучше, чем cascade model): через решение СЛУ
+
+	5-8 итераций достаточно для сходимости
+  результаты:
+
+    "пользователи пропускают рекламу" - но может быть это проблема их алгоритма, не разделяющего plook и pclick
+
+\item Yin He and Kuansan Wang. 2011. Inferring search behaviors using partially observable markov model with duration (POMD). In Proceedings of the fourth ACM international conference on Web search and data mining (WSDM '11). ACM, New York, NY, USA, 415-424.
+
+  продолжение предыдущей работы про POM
+
+  добавлено моделирование времени между хопами eye track, длина пути eye track зависит от времени между кликами
+
+  время между хопами распределено по Poisson mixture - пользователь просматривает либо быстро, либо медленно, либо зависает (уходит от монитора)
+
+  параметры распределения времени подбираются EM
+
+  результаты сильно более реалистичны, сильно отличаются от результатов POM
+
+\item Katja Hofmann, Fritz Behr, and Filip Radlinski. 2012. On caption bias in interleaving experiments. In Proceedings of the 21st ACM international conference on Information and knowledge management (CIKM '12)
+
+  вычисление поправок к TDI на основе аттрактивности
+
+  строится линейная модель (логистическая регрессия) для вычисления вероятности клика, в зависимости от
+  (фичи релевантности, фичи позиции, фичи аттрактивности)
+
+  фичи аттрактивности выбираются мало зависящими от фич релевантности
+
+  "вероятность клика на основе только аттрактивности" используется вес клика в качестве поправки к TDI
+
+  evaluation слабый: показано, что результаты TDI становятся немного другими, с поправкой "в лучшую сторону"
+
+\item Flavio Chierichetti, Ravi Kumar, and Prabhakar Raghavan. 2011. Optimizing two-dimensional search results presentation. In Proceedings of the fourth ACM international conference on Web search and data mining (WSDM '11).
+
+  задача: для картиночной выдачи (в виде таблицы) угадать порядок просмотра и вероятность увидеть картинку, обучаясь на кликах
+
+  Theorem: the model estimation problem on grids is NP-hard. Proof
+
+  предложено три простых приближенных метода, Most Probable Path работает лучше всего
+
+  результаты согласуются с распределением eye tracks в среднем
+
+\item Fernando Diaz, Ryen White, Georg Buscher, and Dan Liebling. 2013. Robust models of mouse movement on dynamic web search results pages. In Proceedings of the 22nd ACM international conference on Conference on information \& knowledge management (CIKM '13).
+
+  рассматривается набор SERP из разнотипных, произвольно расположенных блоков,
+  и путь просмотра SERP'а пользователем в произвольном порядке (из любого блока можно перескочить на любой)
+
+  задача: предсказать путь просмотра SERP'а пользователем
+
+  dataset: просмотры SERP'ов "по мышке" (mouseover над блоком), и/или Eye Track
+
+  две модели данных SERP'а:
+
+        - feature-based attractiveness: вероятность перехода от блока i к блоку j зависит от набора фич блоков i, j и фич пары блоков,
+	  $P_{i,j} = f(i,j; \beta) / \sum_k f(i,k; \beta)$
+
+	  параметры $\beta$ обучаются логистической регрессией
+
+	  (прикольные ссылки, что эта модель разработана в 1966 году для вычисления потоков в супермаркетах)
+
+	- layout transition probabilities: вероятности переходов вычисляются напрямую (по mouse track или eye track),
+
+	  на основе подмножества dataset для точно таких же layouts
+
+	  предлагается замешивать с feature-based attractiveness, рассматривая feature-based attractiveness как Dirichlet prior
+
+  (напрашивается следующий шаг - скрестить эту модель с POMD)
+
+\item Chao Wang, Yiqun Liu, Min Zhang, Shaoping Ma, Meihong Zheng, Jing Qian, and Kuo Zhang. 2013. Incorporating vertical results into search click models. In Proceedings of the 36th international ACM SIGIR conference on Research and development in information retrieval (SIGIR '13).
+
+  простая модель нелинейного просмотра SERP with Vertical Results
+
+  (четыре варианта просмотра)
+
+  основной вывод: аттрактивные элементы привлекают пользователя, пользователь часто начинает смотреть, начиная с них,
+
+  это влияет на plook и кликабельность аттрактивного элемента и соседних результатов
+
+\item Dinesh Govindaraj, Tao Wang, S.V.N. Vishwanathan.
+Modeling Attractiveness and Multiple Clicks in Sponsored Search Results
+(Submitted on 1 Jan 2014)
+http://arxiv.org/abs/1401.0255
+
+ Хорошая постановка задачи: нелинейная модель просмотра реклами и обычных результатов с учетом аттрактивности блоков. Цель: предсказание кликов на рекламные результаты Bing'а.
+
+ Предложена навороченная Click Model.
+
+ Статья слабая, много лажи, плохое знакомство с литературой. Поэтому и была отклонена при рецензировании на SIGIR'2014.
+
+\item Chuklin A, Zhou K, Schuth A, Sietsma F, de Rijke M. Evaluating intuitiveness of vertical-aware click models. SIGIR'2014
+
+\item Dmitry Lagun, Chih-Hung Hsieh, Dale Webster, Vidhya Navalpakkam Towards Better Measurement of Attention and Satisfaction in Mobile Search. SIGIR'2014
+
+\item Huang, J. (2013). Modeling User Behavior and Attention in Search (Doctoral dissertation).
+
+\item Daxin Jiang, Jian Pei, and Hang Li. 2013. Mining search and browse logs for web search: A Survey. ACM Trans. Intell. Syst. Technol. 4, 4, Article 57 (October 2013), 37 pages.
+
+\item J. Arguello and F. Diaz, "Relevance Ranking of Vertical Search Engines," Vertical Selection and Aggregation. Elsevier, 2013.
+
+---
+\item Blei, D. M., Ng, A. Y., \& Jordan, M. I. (2003). Latent dirichlet allocation. the Journal of machine Learning research, 3, 993-1022.
+
+  рассматривается следующая проблема: для вычисления параметров LDA вычисление
+  Loss function представляет собой сложный интеграл $\sum \log \int \sum \prod (...))$, его нельзя вычислить напрямую или взять производную
+
+  для вычисления параметров LDA предложен метод Variational EM
+
+\item Griffiths, T. L., \& Steyvers, M. (2004). Finding scientific topics. Proceedings of the National academy of Sciences of the United States of America, 101(Suppl 1), 5228-5235.
+
+  показано, что для вычисления параметров LDA метод Gibbs Sampling быстрее и
+  лучше, чем Variational EM, предложенный Blei et al.
+
+\end{enumerate}
+
+\end{document}
