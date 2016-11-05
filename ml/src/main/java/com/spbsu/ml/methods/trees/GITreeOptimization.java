@@ -32,7 +32,7 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
 
     List<int[]> order = new ArrayList<>(learn.xdim());
     for (int i = 0; i < learn.xdim(); ++i) {
-      order.set(i, learn.order(i));
+      order.add(learn.order(i));
     }
 
     Mx data = learn.data();
