@@ -13,7 +13,7 @@ import java.util.List;
 
 import static com.spbsu.commons.math.MathTools.EPSILON;
 
-public class GiniIndexTree extends VecOptimization.Stub<L2> {
+public class GITreeOptimization extends VecOptimization.Stub<L2> {
   @Override
   public Trans fit(VecDataSet learn, L2 l2Reg) {
     List<Leaf> leaves = new ArrayList<>();
@@ -102,7 +102,7 @@ public class GiniIndexTree extends VecOptimization.Stub<L2> {
 
     } while (leaves.size() > leavesCount);
 
-    return new DecisionTree(leaves, learn.xdim(), l2Reg.ydim());
+    return new GiniIndexTree(leaves, learn.xdim(), l2Reg.ydim());
   }
 
   private class Leaf {
@@ -180,12 +180,12 @@ public class GiniIndexTree extends VecOptimization.Stub<L2> {
     }
   }
 
-  private class DecisionTree extends Trans.Stub {
+  private class GiniIndexTree extends Trans.Stub {
     private List<Leaf> leaves;
     private int xdim;
     private int ydim;
 
-    DecisionTree(List<Leaf> leaves, int xdim, int ydim) {
+    GiniIndexTree(List<Leaf> leaves, int xdim, int ydim) {
       this.leaves = leaves;
       this.xdim = xdim;
       this.ydim = ydim;
