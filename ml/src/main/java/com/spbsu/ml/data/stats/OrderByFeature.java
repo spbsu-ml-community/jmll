@@ -2,6 +2,7 @@ package com.spbsu.ml.data.stats;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -23,10 +24,15 @@ public class OrderByFeature implements Computable<DataSet, OrderByFeature> {
     return this;
   }
 
+  private int[] order(int featureIndex) {
+    final int[] result = ArrayTools.sequence(0, set.length());
+    ArrayTools.parallelSort(set.data().col(featureIndex).toArray(), result);
+    return result;
+  }
   public synchronized ArrayPermutation orderBy(final int featureNo) {
     ArrayPermutation result = orders.get(featureNo);
     if (result == null)
-      orders.put(featureNo, result = new ArrayPermutation(set.order(featureNo)));
+      orders.put(featureNo, result = new ArrayPermutation(order(featureNo)));
     return result;
   }
 }

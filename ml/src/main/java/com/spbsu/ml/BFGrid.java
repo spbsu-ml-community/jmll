@@ -74,7 +74,7 @@ public class BFGrid {
 
   public static class BFRow {
     private BFGrid owner;
-    public final int bfStart; //for what? is it id of row? then, isn't origFIndex id of row?
+    public final int bfStart;
     public final int bfEnd;
     public final int origFIndex;
     public final double[] borders;

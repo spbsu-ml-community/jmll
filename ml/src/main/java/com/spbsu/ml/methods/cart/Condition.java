@@ -1,10 +1,12 @@
+package com.spbsu.ml.methods.cart;
+
 import com.spbsu.commons.math.vectors.Vec;
 
 /**
  * Created by n_buga on 17.10.16.
  */
 public class Condition {
-    final private double eps = 10e-6;
+//    final private double eps = 10e-6;
 
     private int featureNo;
     private double barrier;
@@ -26,8 +28,10 @@ public class Condition {
 
     public boolean checkFeature(Vec x) {
         double a = x.at(featureNo);
-        boolean return_value = (x.at(featureNo) - barrier < -eps) && less || (x.at(featureNo) - barrier > -eps) && !less;
-        return return_value;
+        if (less)
+            return a < barrier;
+        else
+            return a >= barrier;
     }
 
     public Condition set(int featureNo, double barrier, boolean less) {

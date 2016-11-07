@@ -5,6 +5,7 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.Vectorization;
+import com.spbsu.ml.data.stats.OrderByFeature;
 import com.spbsu.ml.meta.FeatureMeta;
 
 /**
@@ -49,9 +50,8 @@ public interface VecDataSet extends DataSet<Vec> {
 
     @Override
     public int[] order(final int featureIndex) {
-      final int[] result = ArrayTools.sequence(0, length());
-      ArrayTools.parallelSort(data().col(featureIndex).toArray(), result);
-      return result;
+      OrderByFeature obf = cache().cache(OrderByFeature.class, DataSet.class);
+      return obf.orderBy(featureIndex).direct();
     }
 
     @Override

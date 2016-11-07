@@ -1,3 +1,5 @@
+package com.spbsu.ml.methods.cart;
+
 import com.spbsu.commons.math.vectors.Vec;
 
 import java.util.ArrayList;
@@ -13,7 +15,7 @@ public class ListFeatures {
 
     public ListFeatures(int nodeId) {
         this.nodeId = nodeId;
-        listFeatures = new ArrayList<Condition>();
+        listFeatures = new ArrayList<>();
     }
 
     public void addFeature(Condition t) {
