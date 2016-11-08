@@ -1,9 +1,9 @@
 package com.spbsu.ml.methods.trees;
 
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
@@ -20,15 +20,16 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
 
     Leaf grandLeaf = new Leaf();
     leaves.add(grandLeaf);
-    Integer grandLeafIdx = 0;
+    int grandLeafIdx = 0;
 
+    L2.MSEStats gLeafMSEStat = new L2.MSEStats(l2Reg.target);
     int[] leafIdxOf = new int[learn.length()];
     int len = learn.length();
     for (int i = 0; i < len; ++i) {
       leafIdxOf[i] = grandLeafIdx;
+      gLeafMSEStat.append(i, 1);
     }
-
-    grandLeaf.setMSEStat(new L2.MSEStats(l2Reg.target));
+    grandLeaf.setMSEStat(gLeafMSEStat);
 
     List<int[]> order = new ArrayList<>(learn.xdim());
     for (int i = 0; i < learn.xdim(); ++i) {
@@ -36,73 +37,91 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
     }
 
     Mx data = learn.data();
-    int leavesCount;
-    int n = learn.length();
-    int xdim = learn.xdim();
+    final int n = learn.length();
+    final int xdim = learn.xdim();
+    int prevLeavesCount;
+    int depth = 0;
     do {
-      leavesCount = leaves.size();
-      L2.MSEStats[][] leftMSEStats = new L2.MSEStats[xdim][leavesCount];
-      double[] impDeltaLeaf = new double[leavesCount];
-      Leaf[]   newLeaves    = new Leaf[2 * leavesCount];
+      depth++;
+      prevLeavesCount = leaves.size();
+      L2.MSEStats[] leftMSEStats = new L2.MSEStats[prevLeavesCount];
+      double[] leafScore = new double[prevLeavesCount];
+      Leaf[]   newLeaves = new Leaf[2 * prevLeavesCount];
+      for (int i = 0; i < prevLeavesCount; ++i) {
+        newLeaves[2 * i] = null;
+        newLeaves[2 * i + 1] = null;
+        leafScore[i] = l2Reg.score(leaves.get(i).getMSEStat());
+      }
 
       for (int f = 0; f < xdim; ++f) {
-        for (int i = 0; i < leaves.size(); ++i) {
-          leftMSEStats[f][i] = l2Reg.statsFactory().create();
-          impDeltaLeaf[i]    = l2Reg.value(leaves.get(i).getMSEStat());
-          newLeaves[2 * i] = null;
-          newLeaves[2 * i + 1] = null;
+        for (int i = 0; i < prevLeavesCount; ++i) {
+          leftMSEStats[i] = l2Reg.statsFactory().create();
         }
+        int[] curOrder = order.get(f);
         for (int i = 0; i < n; ++i) {
-          int idxCurPoint = order.get(f)[i];
+          int idxCurPoint = curOrder[i];
           int curLeafIdx  = leafIdxOf[idxCurPoint];
           L2.MSEStats cur   = leaves.get(curLeafIdx).getMSEStat();
-          L2.MSEStats left  = leftMSEStats[f][i].append(idxCurPoint, 1);
-          L2.MSEStats right = cur.remove(left);
+          L2.MSEStats left  = leftMSEStats[curLeafIdx].append(idxCurPoint, 1);
+          L2.MSEStats right = l2Reg.statsFactory().create();
+          right.append(cur);
+          right.remove(left);
 
-          double impurityDelta = l2Reg.value(cur) - left.sum / left.weight * l2Reg.value(left)
-                  - right.sum / right.weight * l2Reg.value(right);
+          double splitScore = l2Reg.score(left) + l2Reg.score(right);
 
-          if (impurityDelta < impDeltaLeaf[curLeafIdx]) {
+          if (splitScore < leafScore[curLeafIdx] &&
+                  (l2Reg.score(cur) - splitScore) > EPSILON) {
+            leafScore[curLeafIdx] = splitScore;
             double split = data.get(idxCurPoint, f);
-            newLeaves[2 * curLeafIdx]     = new Leaf(leaves.get(curLeafIdx));
-            newLeaves[2 * curLeafIdx + 1] = new Leaf(leaves.get(curLeafIdx));
+            newLeaves[2 * curLeafIdx]     = new Leaf(leaves.get(curLeafIdx), l2Reg);
+            newLeaves[2 * curLeafIdx + 1] = new Leaf(leaves.get(curLeafIdx), l2Reg);
             newLeaves[2 * curLeafIdx].addCondition(split, true, f, left);
             newLeaves[2 * curLeafIdx + 1].addCondition(split, false, f, right);
           }
-
-          leftMSEStats[f][curLeafIdx].append(idxCurPoint, 1);
         }
       }
 
-      int[] newLeafIdx = new int [2 * leavesCount];
-      int leavesSize = leaves.size();
-      for (int i = 0; i < leavesCount; ++i) {
+      ArrayList<Leaf> updateLeaves = new ArrayList<>(prevLeavesCount);
+      int[] newLeafIdx = new int[2 * prevLeavesCount];
+      int leavesCount = 0;
+      for (int i = 0; i < prevLeavesCount; ++i) {
         if (newLeaves[2 * i] != null) {
-          if (impDeltaLeaf[i] > EPSILON) {
-            leaves.remove(i);
-            leaves.add(newLeaves[2 * i]);
-            leaves.add(newLeaves[2 * i + 1]);
-            newLeafIdx[2 * i] = leavesSize;
-            newLeafIdx[2 * i + 1] = leavesSize + 1;
-            leavesSize += 1;
-          }
+          updateLeaves.add(newLeaves[2 * i]);
+          updateLeaves.add(newLeaves[2 * i + 1]);
+
+          newLeafIdx[2 * i] = leavesCount;
+          newLeafIdx[2 * i + 1] = leavesCount + 1;
+
+          leavesCount += 2;
+        } else {
+          updateLeaves.add(leaves.get(i));
+          newLeafIdx[2 * i] = leavesCount;
+          leavesCount += 1;
         }
       }
 
-      for (int i = 0; i < n; ++i) {
-        int curLeaf = leafIdxOf[i];
-        if (newLeaves[2 * curLeaf] != null) {
-          if (newLeaves[2 * curLeaf].checkConditions(data.row(i))) {
-            leafIdxOf[i] = newLeafIdx[2 * i];
+      if (leavesCount > prevLeavesCount) {
+        leaves = updateLeaves;
+
+        for (int i = 0; i < n; ++i) {
+          int curLeaf = leafIdxOf[i];
+          if (newLeaves[2 * curLeaf] == null) {
+            leafIdxOf[i] = newLeafIdx[2 * curLeaf];
           } else {
-            leafIdxOf[i] = newLeafIdx[2 * i + 1];
+            if (newLeaves[2 * curLeaf].checkConditions(data.row(i))) {
+              leafIdxOf[i] = newLeafIdx[2 * curLeaf];
+            } else {
+              leafIdxOf[i] = newLeafIdx[2 * curLeaf + 1];
+            }
           }
         }
       }
 
-    } while (leaves.size() > leavesCount);
+    } while (/*leaves.size() > prevLeavesCount */ depth < 7);
+    System.out.println();
+    System.out.print(leaves.size());
 
-    return new GiniIndexTree(leaves, learn.xdim(), l2Reg.ydim());
+    return new GiniIndexTree(leaves, learn.xdim());
   }
 
   private class Leaf {
@@ -117,11 +136,17 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
       isLefts      = new ArrayList<>();
     }
 
-    public Leaf(Leaf leaf) {
-      this.conditions   = leaf.getConditions();
-      this.isLefts      = leaf.getIsLefts();
-      this.condFIndexes = leaf.getCondFIndexes();
-      this.MSEStat      = leaf.getMSEStat();
+    public Leaf(Leaf leaf, L2 l2Reg) {
+      conditions   = new ArrayList<>();
+      condFIndexes = new ArrayList<>();
+      isLefts      = new ArrayList<>();
+
+      conditions.addAll(leaf.getConditions());
+      isLefts.addAll(leaf.getIsLefts());
+      condFIndexes.addAll(leaf.getCondFIndexes());
+
+      MSEStat = new L2.MSEStats(l2Reg.target());
+      MSEStat.append(leaf.getMSEStat());
     }
 
     public List<Double> getConditions() {
@@ -143,8 +168,8 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
       this.MSEStat = MSEStat;
     }
 
-    public Vec getMean() {
-      return new ArrayVec(MSEStat.sum / MSEStat.weight);
+    public double getMean() {
+      return MSEStat.sum / MSEStat.weight;
     }
 
     public L2.MSEStats getMSEStat() {
@@ -170,9 +195,9 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
         Integer fIdx = condFIndexes.get(i);
 
         if (isLeft) {
-          result = result && (vec.at(fIdx) < splitValue);
+          result = result && (vec.at(fIdx) <= splitValue);
         } else {
-          result = result && (vec.at(fIdx) >= splitValue);
+          result = result && (vec.at(fIdx) > splitValue);
         }
       }
 
@@ -180,35 +205,29 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
     }
   }
 
-  private class GiniIndexTree extends Trans.Stub {
+  private class GiniIndexTree extends Func.Stub {
     private List<Leaf> leaves;
     private int xdim;
-    private int ydim;
 
-    GiniIndexTree(List<Leaf> leaves, int xdim, int ydim) {
+    GiniIndexTree(List<Leaf> leaves, int xdim) {
       this.leaves = leaves;
       this.xdim = xdim;
-      this.ydim = ydim;
     }
 
     @Override
-    public int xdim() {
-      return xdim;
-    }
-
-    @Override
-    public int ydim() {
-      return ydim;
-    }
-
-    public Vec trans(final Vec vec) {
+    public double value(Vec x) {
       Leaf curLeaf = leaves.get(0);
       for (Leaf leaf : leaves) {
-        if (leaf.checkConditions(vec)) {
-           curLeaf = leaf;
+        if (leaf.checkConditions(x)) {
+          curLeaf = leaf;
         }
       }
       return curLeaf.getMean();
+    }
+
+    @Override
+    public int dim() {
+      return xdim;
     }
   }
 }
