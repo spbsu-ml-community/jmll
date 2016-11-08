@@ -118,8 +118,6 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
       }
 
     } while (/*leaves.size() > prevLeavesCount */ depth < 7);
-    System.out.println();
-    System.out.print(leaves.size());
 
     return new GiniIndexTree(leaves, learn.xdim());
   }
