@@ -1,113 +1,131 @@
 package learning;
 
 import automaton.DFA;
+import com.spbsu.commons.seq.Seq;
+import com.spbsu.commons.seq.regexp.Alphabet;
+import com.spbsu.commons.seq.regexp.Matcher;
+import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.list.array.TDoubleArrayList;
+import learning.transform.*;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.locks.Condition;
+import java.util.function.Function;
 
-public class IncrementalAutomatonBuilder {
-  private final static double LAMBDA = 0.2;
-  private final static double STATE_SIZE_COST_THRESHOLD = 0.1;
+public class IncrementalAutomatonBuilder<T> {
   private final static double INF = 1e18;
   private final static int MAX_STATE_COUNT = 10;
+  private final Function<LearningState<T>, Double> costFunction;
+  
+  public IncrementalAutomatonBuilder(final Function<LearningState<T>, Double> costFunction) {
+    this.costFunction = costFunction;  
+  }
 
-  public DFA buildAutomaton(List<TIntList> data, List<Boolean> classes, int alphabetSize, int iterCount) {
+  public DFA<T> buildAutomaton(final List<Seq<T>> data, final TIntList classes,
+                            final Alphabet<T> alphabet, final int classCount, final int iterCount) {
+    TDoubleList weights = new TDoubleArrayList(data.size());
+    for (int i = 0; i < data.size(); i++) {
+      weights.add(1.0 / data.size());
+    }
+    return buildAutomaton(data, classes, weights, alphabet, classCount, iterCount);
+  }
+
+  public DFA<T> buildAutomaton(final List<Seq<T>> data, final TIntList classes, final TDoubleList weights,
+                               final Alphabet<T> alphabet, final int classCount, final int iterCount) {
     if (data.size() != classes.size()) {
       throw new IllegalArgumentException("");
     }
 
-    LearningState learningState = new LearningState(alphabetSize, data, classes);
+    LearningState<T> learningState = new LearningState<>(alphabet, classCount, data, classes, weights);
 
-    double oldCost = getFullCost(learningState);
+    double oldCost = costFunction.apply(learningState);
     for (int iter = 0; iter < iterCount; iter++) {
 
       double optCost = INF;
-      Transform optTransform = null;
-      for (Transform transform: getTransforms(learningState, alphabetSize)) {
-        transform.applyTransform(learningState);
-        final double newCost = getFullCost(learningState);
+      Transform<T> optTransform = null;
+      for (Transform<T> transform: getTransforms(learningState, alphabet.size())) {
+        LearningState<T> newLearningState = transform.applyTransform(learningState);
+        final double newCost = costFunction.apply(newLearningState);
         if (newCost < optCost) {
           optCost = newCost;
           optTransform = transform;
         }
-        transform.cancelTransform(learningState);
       }
       if (optTransform == null || optCost >= oldCost) {
         break;
       }
-      optTransform.applyTransform(learningState);
-      removeUnreachableStates(learningState, alphabetSize);
-      System.out.printf("Iter=%d, transform=%s, newCost=%f, accuracy=%f, state count=%d\n",
-              iter, optTransform.getDescription(), optCost,
-              1 - 1.0 * getFailedSamplesCount(learningState) / data.size(), learningState.automaton.getStateCount());
+      learningState = optTransform.applyTransform(learningState);
+      removeUnreachableStates(learningState);
+      System.out.printf("Iter=%d, transform=%s, newCost=%f, state count=%d\n",
+              iter, optTransform.getDescription(), optCost, learningState.getAutomaton().getStateCount());
       oldCost = optCost;
     }
-    return learningState.automaton;
+    return finalizeAutomaton(learningState);
   }
 
-  private int getFailedSamplesCount(LearningState learningState) {
-    int count = 0;
-    final int stateCount = learningState.automaton.getStateCount();
+  private DFA<T> finalizeAutomaton(LearningState<T> learningState) {
+    final int classCount = learningState.getClassCount();
+    final DFA<T> automaton = learningState.getAutomaton();
+    final int stateCount = automaton.getStateCount();
+    final Alphabet<T> alphabet = learningState.getAlphabet();
+
+    final int[] endStates = new int[classCount];
+
+    for (int i = 0; i < classCount; i++) {
+      endStates[i] = automaton.createNewState(i);
+    /*  for (int c = 0; c < learningState.alphabetSize + 1; c++) {
+        automaton.addTransition(endStates[i], endStates[i], c);
+      }*/
+    }
     for (int i = 0; i < stateCount; i++) {
-      if (learningState.automaton.isStateFinal(i)) {
-        count += learningState.falseStringEndCount.get(i);
-      } else {
-        count += learningState.trueStringEndCount.get(i);
+      int maxClass = 0;
+      final double[] stateClassWeight = learningState.getStateClassWeight().get(i);
+      for (int clazz = 1; clazz < classCount; clazz++) {
+        if (stateClassWeight[clazz] > stateClassWeight[maxClass]) {
+          maxClass = clazz;
+        }
       }
+      automaton.setStateClass(i, maxClass); // TODO remove it
+      automaton.addTransition(i, endStates[maxClass], alphabet.getT(Matcher.Condition.ANY));
+/*      for (int c = 0; c < learningState.alphabetSize; c++) {
+        if (!automaton.hasTransition(i, c)) {
+          automaton.addTransition(i, endStates[maxClass], c);
+        }
+      }*/
     }
-    return count;
+    return automaton;
   }
 
-  private double getStateSizeCost(LearningState learningState) {
-    double cost = 0;
-    final int stateCount = learningState.automaton.getStateCount();
-    for (int state = 0; state < stateCount; state++) {
-      final int falseEnds = learningState.falseStringEndCount.get(state);
-      final int trueEnds = learningState.trueStringEndCount.get(state);
-      final int stateSize = falseEnds + trueEnds;
-      if (1.0 * Integer.min(falseEnds, trueEnds) / stateSize > STATE_SIZE_COST_THRESHOLD) {
-        cost += 1.0 * stateSize * stateSize;
-      }
-    }
-    return Math.sqrt(cost) * LAMBDA / learningState.data.size();
-  }
 
-  private double getFullCost(LearningState learningState) {
-    final List<TIntList> data = learningState.data;
-    return 1.0 * getFailedSamplesCount(learningState) / data.size() + getStateSizeCost(learningState);
-  }
-
-  List<Transform> getTransforms(LearningState learningState, int alphabetSize) {
-    final int stateCount = learningState.automaton.getStateCount();
-    final DFA automaton = learningState.automaton;
-    final List<Transform> transforms = new ArrayList<>();
+  private List<Transform<T>> getTransforms(LearningState<T> learningState, int alphabetSize) {
+    final DFA<T> automaton = learningState.getAutomaton();
+    final int stateCount = automaton.getStateCount();
+    final Alphabet<T> alphabet = learningState.getAlphabet();
+    final List<Transform<T>> transforms = new ArrayList<>();
     for (int from = 0; from < stateCount; from++) {
       for (int c = 0; c < alphabetSize; c++) {
-        if (automaton.hasTransition(from, c)) {
-          transforms.add(new RemoveTransitionTransform(from, c));
+        if (automaton.hasTransition(from, alphabet.getT(alphabet.get(c)))) {
+          transforms.add(new RemoveTransitionTransform<>(from, alphabet.getT(alphabet.get(c))));
           for (int to = 0; to < stateCount; to++) {
             if (to != from) {
-              transforms.add(new ReplaceTransitionTransform(from, to, c));
+              transforms.add(new ReplaceTransitionTransform<>(from, to, alphabet.getT(alphabet.get(c))));
             }
           }
         }
       }
       if (stateCount < MAX_STATE_COUNT) {
         for (int to = 0; to < stateCount; to++) {
-          transforms.add(new SplitStateTransform(from, alphabetSize));
+//          transforms.add(new SplitStateTransform(from, alphabetSize));
           for (int c = 0; c < alphabetSize; c++) {
-            if (!automaton.hasTransition(from, c)) {
-              transforms.add(new AddTransitionTransform(from, to, c));
+            if (!automaton.hasTransition(from, alphabet.getT(alphabet.get(c)))) {
+              T cT = alphabet.getT(alphabet.get(c));
+              transforms.add(new AddTransitionTransform<>(from, to, cT));
               for (int c1 = 0; c1 < alphabetSize; c1++) {
-                transforms.add(new AddNewStateTransform(from, to, c, c1));
+                transforms.add(new AddNewStateTransform<>(from, to, cT, alphabet.getT(alphabet.get(c1))));
               }
             }
           }
@@ -118,17 +136,18 @@ public class IncrementalAutomatonBuilder {
     return transforms;
   }
 
-  private void removeUnreachableStates(LearningState learningState, int alphabetSize) {
-    final DFA automaton = learningState.automaton;
+  private void removeUnreachableStates(LearningState<T> learningState) {
+    final DFA<T> automaton = learningState.getAutomaton();
     final Queue<Integer> queue = new LinkedList<>();
+    final Alphabet<T> alphabet = learningState.getAlphabet();
     queue.add(automaton.getStartState());
     final boolean[] reached = new boolean[automaton.getStateCount()];
     reached[automaton.getStartState()] = true;
 
     while (!queue.isEmpty()) {
       final int v = queue.poll();
-      for (int c = 0; c < alphabetSize; c++) {
-        final int to = automaton.getTransition(v, c);
+      for (int c = 0; c < learningState.getAlphabet().size(); c++) {
+        final int to = automaton.getTransition(v, alphabet.getT(alphabet.get(c)));
         if (to != -1 && !reached[to]) {
           queue.add(to);
           reached[to] = true;
@@ -136,100 +155,12 @@ public class IncrementalAutomatonBuilder {
       }
     }
     for (int i = automaton.getStateCount() - 1; i >= 0; i--) {
-      if (!reached[i] && i != automaton.getStartState() && i != learningState.finalState) {
+      if (!reached[i] && i != automaton.getStartState()) {
         automaton.removeState(i);
+        learningState.getSamplesEndState().remove(i);
+        learningState.getStateClassWeight().remove(i);
+        learningState.getSamplesViaState().remove(i);
       }
-    }
-  }
-
-  static class LearningState {
-    private final DFA automaton;
-    private final int finalState;
-    private List<TIntSet> samplesViaState = new ArrayList<>();
-    private List<TIntIntMap> samplesEndState = new ArrayList<>();
-    private TIntList falseStringEndCount = new TIntArrayList();
-    private TIntList trueStringEndCount = new TIntArrayList();
-    private List<TIntList> data;
-    private List<Boolean> classes;
-
-    LearningState(int alphabetSize, List<TIntList> data, List<Boolean> classes) {
-      automaton = new DFA(alphabetSize);
-      finalState = automaton.createNewState();
-      automaton.markFinalState(finalState, true);
-      this.data = data;
-      this.classes = classes;
-      final TIntSet allIndicesSet = new TIntHashSet();
-      final TIntIntMap allIndicesMap = new TIntIntHashMap();
-      int falseCount = 0;
-      int trueCount = 0;
-
-      for (int i = 0; i < data.size(); i++) {
-        allIndicesSet.add(i);
-        allIndicesMap.put(i, 0);
-        if (classes.get(i)) {
-          trueCount++;
-        } else {
-          falseCount++;
-        }
-      }
-
-      samplesEndState.add(allIndicesMap);
-      samplesViaState.add(allIndicesSet);
-      falseStringEndCount.add(falseCount);
-      trueStringEndCount.add(trueCount);
-
-      samplesEndState.add(new TIntIntHashMap());
-      samplesViaState.add(new TIntHashSet());
-      falseStringEndCount.add(0);
-      trueStringEndCount.add(0);
-    }
-
-    public DFA getAutomaton() {
-      return automaton;
-    }
-
-    public int getFinalState() {
-      return finalState;
-    }
-
-    public List<TIntSet> getSamplesViaState() {
-      return samplesViaState;
-    }
-
-    public List<TIntIntMap> getSamplesEndState() {
-      return samplesEndState;
-    }
-
-    public TIntList getFalseStringEndCount() {
-      return falseStringEndCount;
-    }
-
-    public TIntList getTrueStringEndCount() {
-      return trueStringEndCount;
-    }
-
-    public List<TIntList> getData() {
-      return data;
-    }
-
-    public List<Boolean> getClasses() {
-      return classes;
-    }
-
-    public void setSamplesViaState(List<TIntSet> samplesViaState) {
-      this.samplesViaState = samplesViaState;
-    }
-
-    public void setSamplesEndState(List<TIntIntMap> samplesEndState) {
-      this.samplesEndState = samplesEndState;
-    }
-
-    public void setFalseStringEndCount(TIntList falseStringEndCount) {
-      this.falseStringEndCount = falseStringEndCount;
-    }
-
-    public void setTrueStringEndCount(TIntList trueStringEndCount) {
-      this.trueStringEndCount = trueStringEndCount;
     }
   }
 }
