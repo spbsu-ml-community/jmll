@@ -707,7 +707,7 @@ public void testElasticNetBenchmark() {
   }
 
   public void testOTBoost2() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new GITreeOptimization(), LOOL2.class, 2000, 0.002);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new GITreeOptimization(), L2.class, 2000, 0.002);
     new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
   }
 
