@@ -13,12 +13,11 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.locks.Condition;
 import java.util.function.Function;
 
 public class IncrementalAutomatonBuilder<T> {
   private final static double INF = 1e18;
-  private final static int MAX_STATE_COUNT = 10;
+  private final static int MAX_STATE_COUNT = 15;
   private final Function<LearningState<T>, Double> costFunction;
   
   public IncrementalAutomatonBuilder(final Function<LearningState<T>, Double> costFunction) {
@@ -47,7 +46,7 @@ public class IncrementalAutomatonBuilder<T> {
 
       double optCost = INF;
       Transform<T> optTransform = null;
-      for (Transform<T> transform: getTransforms(learningState, alphabet.size())) {
+      for (Transform<T> transform: getTransforms(learningState)) {
         LearningState<T> newLearningState = transform.applyTransform(learningState);
         final double newCost = costFunction.apply(newLearningState);
         if (newCost < optCost) {
@@ -55,7 +54,7 @@ public class IncrementalAutomatonBuilder<T> {
           optTransform = transform;
         }
       }
-      if (optTransform == null || optCost >= oldCost) {
+      if (optTransform == null || optCost >= oldCost - 1e-9) {
         break;
       }
       learningState = optTransform.applyTransform(learningState);
@@ -67,7 +66,7 @@ public class IncrementalAutomatonBuilder<T> {
     return finalizeAutomaton(learningState);
   }
 
-  private DFA<T> finalizeAutomaton(LearningState<T> learningState) {
+  private DFA<T> finalizeAutomaton(final LearningState<T> learningState) {
     final int classCount = learningState.getClassCount();
     final DFA<T> automaton = learningState.getAutomaton();
     final int stateCount = automaton.getStateCount();
@@ -101,13 +100,13 @@ public class IncrementalAutomatonBuilder<T> {
   }
 
 
-  private List<Transform<T>> getTransforms(LearningState<T> learningState, int alphabetSize) {
+  private List<Transform<T>> getTransforms(final LearningState<T> learningState) {
     final DFA<T> automaton = learningState.getAutomaton();
     final int stateCount = automaton.getStateCount();
     final Alphabet<T> alphabet = learningState.getAlphabet();
     final List<Transform<T>> transforms = new ArrayList<>();
     for (int from = 0; from < stateCount; from++) {
-      for (int c = 0; c < alphabetSize; c++) {
+      for (int c = 0; c < alphabet.size(); c++) {
         if (automaton.hasTransition(from, alphabet.getT(alphabet.get(c)))) {
           transforms.add(new RemoveTransitionTransform<>(from, alphabet.getT(alphabet.get(c))));
           for (int to = 0; to < stateCount; to++) {
@@ -120,11 +119,11 @@ public class IncrementalAutomatonBuilder<T> {
       if (stateCount < MAX_STATE_COUNT) {
         for (int to = 0; to < stateCount; to++) {
 //          transforms.add(new SplitStateTransform(from, alphabetSize));
-          for (int c = 0; c < alphabetSize; c++) {
+          for (int c = 0; c < alphabet.size(); c++) {
             if (!automaton.hasTransition(from, alphabet.getT(alphabet.get(c)))) {
               T cT = alphabet.getT(alphabet.get(c));
               transforms.add(new AddTransitionTransform<>(from, to, cT));
-              for (int c1 = 0; c1 < alphabetSize; c1++) {
+              for (int c1 = 0; c1 < alphabet.size(); c1++) {
                 transforms.add(new AddNewStateTransform<>(from, to, cT, alphabet.getT(alphabet.get(c1))));
               }
             }
@@ -136,7 +135,7 @@ public class IncrementalAutomatonBuilder<T> {
     return transforms;
   }
 
-  private void removeUnreachableStates(LearningState<T> learningState) {
+  private void removeUnreachableStates(final LearningState<T> learningState) {
     final DFA<T> automaton = learningState.getAutomaton();
     final Queue<Integer> queue = new LinkedList<>();
     final Alphabet<T> alphabet = learningState.getAlphabet();
