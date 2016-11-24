@@ -3,16 +3,12 @@ package com.spbsu.ml.methods.trees;
 import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.VecOptimization;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class GITreeOptimization extends VecOptimization.Stub<WeightedLoss<? extends L2>> {
+public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? extends L2>> {
   @Override
   public Trans fit(final VecDataSet learn, final WeightedLoss<? extends L2> loss) {
     Optimizer opt = new Optimizer(learn, loss);
@@ -102,9 +98,9 @@ public class GITreeOptimization extends VecOptimization.Stub<WeightedLoss<? exte
       return countSplits != 0;
     }
 
-    public GiniIndexTree getTree() {
+    public CARTree getTree() {
       final AbstractNode root = setManager.constructTree();
-      return new GiniIndexTree(root, learn.xdim());
+      return new CARTree(root, learn.xdim());
     }
   }
 
@@ -300,6 +296,7 @@ public class GITreeOptimization extends VecOptimization.Stub<WeightedLoss<? exte
     public final AbstractNode constructTree() {
       if (root == null) {
         root = new Leaf(sets[0].getValue(loss));
+        return root;
       }
 
       for (int i = 0; i < sets.length; ++i) {
@@ -332,11 +329,11 @@ public class GITreeOptimization extends VecOptimization.Stub<WeightedLoss<? exte
     }
   }
 
-  private class GiniIndexTree extends Func.Stub {
+  private class CARTree extends Func.Stub {
     private final AbstractNode root;
     private final int xdim;
 
-    GiniIndexTree(AbstractNode root, int xdim) {
+    CARTree(AbstractNode root, int xdim) {
       this.root = root;
       this.xdim = xdim;
     }

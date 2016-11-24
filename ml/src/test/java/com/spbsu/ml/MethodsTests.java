@@ -2,6 +2,7 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.func.ScopedCache;
 import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.*;
@@ -13,6 +14,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.ArraySeq;
 import com.spbsu.commons.seq.IntSeqBuilder;
+import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Interval;
@@ -28,6 +30,8 @@ import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.func.NormalizedLinear;
 import com.spbsu.ml.loss.*;
+import com.spbsu.ml.meta.DataSetMeta;
+import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.TargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.*;
@@ -35,7 +39,7 @@ import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDIterativeRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
 import com.spbsu.ml.methods.greedyRegion.RegionForest;
-import com.spbsu.ml.methods.trees.GITreeOptimization;
+import com.spbsu.ml.methods.trees.CARTreeOptimization;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
 import com.spbsu.ml.models.ModelTools;
 import com.spbsu.ml.models.ObliviousTree;
@@ -46,6 +50,7 @@ import gnu.trove.map.hash.TDoubleIntHashMap;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -707,8 +712,76 @@ public void testElasticNetBenchmark() {
   }
 
   public void testOTBoost2() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GITreeOptimization(), rng), L2.class, 2000, 0.002);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new CARTreeOptimization(), rng), L2.class, 2000, 0.002);
     new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
+  }
+
+  public void testToyCARTree() {
+    //    X = [[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]]
+    //    y = [-1, -1, -1, 1, 1, 1]
+    //    T = [[-1, -1], [2, 2], [3, 2]]
+    //    true_result = [-1, 1, 1]
+    final VecBasedMx learn_data = new VecBasedMx(2, new ArrayVec(new double[]{
+            -2, -1,
+            -1, -1,
+            -1, -2,
+            1,  1,
+            1, 2,
+            2, 1
+    }));
+
+    final VecBasedMx test_data = new VecBasedMx(2, new ArrayVec(new double[]{
+            -1, -1,
+            2, 2,
+            3, 2
+    }));
+
+    Vec target = new ArrayVec(-1, -1, -1, 1, 1, 1);
+
+    VecDataSet learn = new VecDataSetImpl(learn_data, null);
+
+    Trans tree = (new CARTreeOptimization()).fit(learn, new WeightedLoss<L2>(new L2(target, learn), new int[]{1, 1, 1, 1, 1, 1}));
+
+    assertEquals(-1., tree.trans(test_data.row(0)).get(0));
+    assertEquals(1., tree.trans(test_data.row(1)).get(0));
+    assertEquals(1., tree.trans(test_data.row(2)).get(0));
+  }
+
+  public void testCARTreeXOR() {
+    VecBasedMx learn_data = new VecBasedMx(100, 2);
+    for (int i = 0; i < 100; ++i) {
+      learn_data.set(i, 0, i / 10);
+      learn_data.set(i, 1, i % 10);
+    }
+
+    Vec target = new ArrayVec(
+            1.,  1.,  1.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,
+            1.,  1.,  1.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,
+            1.,  1.,  1.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,
+            1.,  1.,  1.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,
+            1.,  1.,  1.,  1.,  1.,  0.,  0.,  0.,  0.,  0.,
+            0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  1.,
+            0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  1.,
+            0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  1.,
+            0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  1.,
+            0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  1.);
+
+    int[] weights = new int[100];
+    Arrays.fill(weights, 1);
+
+    VecDataSet learn = new VecDataSetImpl(learn_data, null);
+
+    Trans tree = (new CARTreeOptimization()).fit(learn, new WeightedLoss<L2>(new L2(target, learn), weights));
+
+    Mx yPred = tree.transAll(learn_data);
+
+    double score = 0;
+    for (int i = 0; i < 100; ++i) {
+      score += yPred.get(i, 0);
+    }
+    score /= 100;
+
+    System.out.println(score);
   }
 
   public void testOTBoost1() throws IOException {
