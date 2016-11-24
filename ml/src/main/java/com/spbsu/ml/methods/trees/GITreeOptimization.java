@@ -6,235 +6,321 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.VecOptimization;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class GITreeOptimization extends VecOptimization.Stub<L2> {
+public class GITreeOptimization extends VecOptimization.Stub<WeightedLoss<? extends L2>> {
   @Override
-  public Trans fit(final VecDataSet learn, final L2 l2) {
-    final int featureCount = learn.xdim();
-    final int learnSize = learn.length();
-    final int[][] order = new int[featureCount][learnSize];
-    for (int i = 0; i < featureCount; ++i) {
-      order[i] = learn.order(i);
+  public Trans fit(final VecDataSet learn, final WeightedLoss<? extends L2> loss) {
+    Optimizer opt = new Optimizer(learn, loss);
+    for (int i = 0; i < 8; ++i) {
+      opt.step();
     }
 
-    int[] setIdxOfPoint = new int[learnSize];
-    L2.MSEStats baseMSEStat = l2.statsFactory().create();
-    for (int i = 0; i < learnSize; ++i) {
-      baseMSEStat.append(i, 1);
-      setIdxOfPoint[i] = 0;
+    return opt.getTree();
+  }
+
+  private class Optimizer {
+    private final VecDataSet learn;
+    private final WeightedLoss loss;
+
+    private final int[][] order;
+    private final int featureCount;
+    private final int learnSize;
+
+    private SetManager setManager;
+
+    public Optimizer(final VecDataSet learn, final WeightedLoss loss) {
+      this.learn = learn;
+      this.loss = loss;
+      learnSize = learn.length();
+      featureCount = learn.xdim();
+
+      order = new int[featureCount][learnSize];
+      for (int i = 0; i < featureCount; ++i) {
+        order[i] = learn.order(i);
+      }
+
+      setManager = new SetManager(learnSize, loss, learn);
     }
 
-    OptimizationSetInfo baseOptSetInfo = new OptimizationSetInfo(baseMSEStat, l2, 0);
-    List<OptimizationSetInfo> optSetsInfo = new ArrayList<>();
-    optSetsInfo.add(baseOptSetInfo);
+    public boolean step() {
+      final int setsCount = setManager.getSetsCount();
 
-    List<Leaf> leaves = new ArrayList<>();
-    Leaf baseLeaf = new Leaf(new ArrayList<>(), baseOptSetInfo.getMean());
-    leaves.add(baseLeaf);
+      WeightedLoss.Stat[] leftStats = new WeightedLoss.Stat[setsCount];
+      WeightedLoss.Stat[] bestRightStats = new WeightedLoss.Stat[setsCount];
+      double[] bestScores  = new double[setsCount];
+      int[]    bestFeature = new int[setsCount];
+      double[] bestSplit   = new double[setsCount];
 
-    boolean wasSplitted;
-    int depth = 0;
-    do {
-      depth++;
-      Pair<List<OptimizationSetInfo>, Condition[]> result = findBestSubsets(learn, l2, setIdxOfPoint, order, optSetsInfo);
-      List<OptimizationSetInfo> newSetsInfo = result.first;
-      Condition[] conditions = result.second;
+      for (int i = 0; i < setsCount; ++i) {
+        bestScores[i] = setManager.getScore(i);
+      }
 
-      int newSetsCount = newSetsInfo.size();
+      for (int f = 0; f < featureCount; ++f) {
+        for (int i = 0; i < setsCount; ++i) {
+          leftStats[i] = (WeightedLoss.Stat)loss.statsFactory().create();
+        }
 
-      List<Leaf> newLeaves = new ArrayList<>(newSetsCount);
-      int[] newSetIdx = new int[2 * optSetsInfo.size()];
+        for (int i = 0; i < learnSize - 1; ++i) {
+          final int curPoint = order[f][i];
+          final int curSetIdx = setManager.which(curPoint);
+          final WeightedLoss.Stat left = leftStats[curSetIdx].append(curPoint, loss.weight(curPoint));
+          final WeightedLoss.Stat right = setManager.getComplement(curSetIdx, left);
 
-      for (int i = 0; i < newSetsCount; ++i) {
-        int parentIndex = newSetsInfo.get(i).getParentIndex();
-        if (conditions[2 * parentIndex] != null) {
-          double leftMean = newSetsInfo.get(i).getMean();
-          double rightMean = newSetsInfo.get(i + 1).getMean();
+          double score = loss.score(left) + loss.score(right);
 
-          Leaf parentLeaf = leaves.get(parentIndex);
-          Leaf left = parentLeaf.leftSplit(conditions[2 * parentIndex], leftMean);
-          Leaf right = parentLeaf.rightSplit(conditions[2 * parentIndex + 1], rightMean);
-
-          newLeaves.add(left);
-          newLeaves.add(right);
-
-          newSetsInfo.get(i).setParentIndex(i);
-          newSetsInfo.get(i + 1).setParentIndex(i + 1);
-
-          newSetIdx[2 * parentIndex] = i;
-          newSetIdx[2 * parentIndex + 1] = i + 1;
-
-          i++;
-        } else {
-          newLeaves.add(leaves.get(parentIndex));
-          newSetsInfo.get(i).setParentIndex(i);
-          newSetIdx[2 * parentIndex] = i;
+          double curSplit = learn.data().get(curPoint, f);
+          double nextSplit = learn.data().get(order[f][i + 1], f);
+          if (score < bestScores[curSetIdx] && /*left.weight > 0.0 && right.weight > 0.0 &&*/ nextSplit != curSplit) {
+            bestScores[curSetIdx]  = score;
+            bestFeature[curSetIdx] = f;
+            bestSplit[curSetIdx]   = curSplit;
+            bestRightStats[curSetIdx] = right;
+          }
         }
       }
 
-      leaves = newLeaves;
-      optSetsInfo = newSetsInfo;
+      Condition[] newConds = new Condition[setsCount];
+      boolean[] updatedSets = new boolean[setsCount];
+      int countSplits = 0;
+      for (int i = 0; i < setsCount; ++i) {
+        if (bestScores[i] < setManager.getScore(i)) {
+          newConds[i] = new Condition(bestSplit[i], bestFeature[i]);
+          updatedSets[i] = true;
+          countSplits++;
+        } else {
+          updatedSets[i] = false;
+        }
+      }
 
-      for (int i = 0; i < learnSize; ++i) {
-        int prevSetIdx = setIdxOfPoint[i];
-        if (conditions[2 * prevSetIdx] != null) {
-          int feature = conditions[2 * prevSetIdx].getCondFeature();
-          double value = conditions[2 * prevSetIdx].getValue();
-          if (learn.data().get(i, feature) <= value) {
-            setIdxOfPoint[i] = newSetIdx[2 * prevSetIdx];
+      setManager.update(learn, updatedSets, countSplits, newConds, bestRightStats);
+
+      return countSplits != 0;
+    }
+
+    public GiniIndexTree getTree() {
+      final AbstractNode root = setManager.constructTree();
+      return new GiniIndexTree(root, learn.xdim());
+    }
+  }
+
+  private interface AbstractNode {
+    double getValue(Vec x);
+  }
+
+  private class Leaf implements AbstractNode {
+    private final double value;
+
+    public Leaf(final double value) {
+      this.value = value;
+    }
+
+    public double getValue(Vec x) {
+      return value;
+    }
+  }
+
+  private class Node implements AbstractNode {
+    private Condition cond;
+    private AbstractNode left;
+    private AbstractNode right;
+
+    public Node(final Condition cond) {
+      this.cond = cond;
+      left = null;
+      right = null;
+    }
+
+    public double getValue(Vec x) {
+      if (cond.satisfied(x)) {
+        return left.getValue(x);
+      } else {
+        return right.getValue(x);
+      }
+    }
+
+    public final AbstractNode update(boolean isLeft, Condition cond) {
+      if (isLeft) {
+        left = new Node(cond);
+        return left;
+      } else {
+        right = new Node(cond);
+        return right;
+      }
+    }
+
+    public void setLeaf(boolean isLeft, double value) {
+      if (isLeft) {
+        left = new Leaf(value);
+      } else {
+        right = new Leaf(value);
+      }
+    }
+  }
+
+  private class Set {
+    private final WeightedLoss.Stat stat;
+    private final Node lastNode;
+    private final boolean isLeft;
+
+    public Set(final WeightedLoss.Stat stat, final Node lastNode, final boolean isLeft) {
+      this.stat = stat;
+      this.lastNode = lastNode;
+      this.isLeft = isLeft;
+    }
+
+    public Node getLastNode() {
+      return lastNode;
+    }
+
+    public boolean isLeft() {
+      return isLeft;
+    }
+
+    public double getScore(final WeightedLoss loss) {
+      return loss.score(stat);
+    }
+
+    public double getValue(final WeightedLoss loss) {
+      return loss.bestIncrement(stat);
+    }
+
+    public WeightedLoss.Stat getComplement(final WeightedLoss loss, final WeightedLoss.Stat stat) {
+      WeightedLoss.Stat complStat = (WeightedLoss.Stat)loss.statsFactory().create();
+      complStat.append(this.stat);
+      complStat.remove(stat);
+      return complStat;
+    }
+  }
+
+  private class SetManager {
+    private int[] setIdxOfPoint;
+    private final int numPoints;
+    private final WeightedLoss loss;
+
+    private Set[] sets;
+    AbstractNode root;
+
+    public SetManager(final int numPoints, final WeightedLoss loss, final VecDataSet learn) {
+      this.loss = loss;
+      this.numPoints = numPoints;
+      setIdxOfPoint = new int[numPoints];
+      for (int i = 0; i < numPoints; i++) {
+        setIdxOfPoint[i] = 0;
+      }
+
+      root = null;
+      WeightedLoss.Stat baseStat = (WeightedLoss.Stat)loss.statsFactory().create();
+      for (int i = 0; i < learn.length(); ++i) {
+        baseStat.append(i, loss.weight(i));
+      }
+
+      sets = new Set[1];
+      sets[0] = new Set(baseStat, (Node)root, true);
+    }
+
+    public final double getScore(int i) {
+      return sets[i].getScore(loss);
+    }
+
+    public final WeightedLoss.Stat getComplement(int i, final WeightedLoss.Stat stat) {
+      return sets[i].getComplement(loss, stat);
+    }
+
+    public int getSetsCount() {
+      return sets.length;
+    }
+
+    public int which(final int pointIdx) {
+      return setIdxOfPoint[pointIdx];
+    }
+
+    public void update(final VecDataSet learn,
+                       final boolean[] updatedSets, final int count,
+                       final Condition[] conditions,
+                       final WeightedLoss.Stat[] bestRightStats) {
+      final int[] newIdx = newSetIndexes(updatedSets);
+
+      Set[] newSets = new Set[sets.length + count];
+      for (int i = 0; i < sets.length; ++i) {
+        if (updatedSets[i]) {
+          final Node lastNode = sets[i].getLastNode();
+          if (lastNode == null) {
+            root = new Node(conditions[0]);
+            WeightedLoss.Stat leftStat = sets[0].getComplement(loss, bestRightStats[0]);
+            newSets[0] = new Set(leftStat, (Node)root, true);
+            newSets[1] = new Set(bestRightStats[0], (Node)root, false);
           } else {
-            setIdxOfPoint[i] = newSetIdx[2 * prevSetIdx + 1];
+            final Node newNode = (Node) lastNode.update(sets[i].isLeft(), conditions[i]);
+            WeightedLoss.Stat leftStat = sets[i].getComplement(loss, bestRightStats[i]);
+            newSets[newIdx[i]] = new Set(leftStat, newNode, true);
+            newSets[newIdx[i] + 1] = new Set(bestRightStats[i], newNode, false);
           }
         } else {
-          setIdxOfPoint[i] = newSetIdx[2 * prevSetIdx];
+          newSets[newIdx[i]] = sets[i];
         }
       }
 
-      wasSplitted = newSetsCount > 0;
-    } while (/*wasSplitted*/ depth < 7);
+      sets = newSets;
 
-    return new GiniIndexTree(leaves, featureCount);
-  }
-
-  private Pair<List<OptimizationSetInfo>, Condition[]> findBestSubsets(final VecDataSet learn, final L2 l2,
-                                                                       final int[] setIdxOfPoint, final int[][] order,
-                                                                       final List<OptimizationSetInfo> optSetsInfo) {
-    final int setsCount = optSetsInfo.size();
-    final int maxNewSets = 2 * optSetsInfo.size();
-    Condition[] conditions = new Condition[maxNewSets];
-    List<OptimizationSetInfo> newSets = new ArrayList<>(maxNewSets);
-
-    final int xdim = learn.xdim();
-    final int numSamples = learn.length();
-
-    L2.MSEStats[] leftMSEStats = new L2.MSEStats[setsCount];
-    L2.MSEStats[] bestLeftMSEStats = new L2.MSEStats[setsCount];
-    double[] bestScores = new double[setsCount];
-    int[] bestFeature = new int[setsCount];
-    double[] bestSplit = new double[setsCount];
-    for (int i = 0; i < setsCount; ++i) {
-      bestLeftMSEStats[i] = l2.statsFactory().create();
-      bestScores[i] = optSetsInfo.get(i).getScore();
-    }
-
-    for (int f = 0; f < xdim; ++f) {
-      for (int i = 0; i < setsCount; ++i) {
-        leftMSEStats[i] = l2.statsFactory().create();
-      }
-
-      for (int i = 0; i < numSamples - 1; ++i) {
-        final int curPoint = order[f][i];
-        final int curSetIdx = setIdxOfPoint[curPoint];
-        final L2.MSEStats left = leftMSEStats[curSetIdx].append(curPoint, 1);
-        final L2.MSEStats right = optSetsInfo.get(curSetIdx).getComplement(left, l2);
-
-        double score = l2.score(left) + l2.score(right);
-
-        double curSplit = learn.data().get(curPoint, f);
-        double nextSplit = learn.data().get(order[f][i + 1], f);
-        if (score < bestScores[curSetIdx] && left.weight > 0.0 && right.weight > 0.0 && nextSplit != curSplit) {
-          bestScores[curSetIdx]  = score;
-          bestFeature[curSetIdx] = f;
-          bestSplit[curSetIdx]   = curSplit;
-          bestLeftMSEStats[curSetIdx].sum = left.sum;
-          bestLeftMSEStats[curSetIdx].sum2 = left.sum2;
-          bestLeftMSEStats[curSetIdx].weight = left.weight;
+      for (int i = 0; i < numPoints; ++i) {
+        int setIdx = setIdxOfPoint[i];
+        if (updatedSets[setIdx]) {
+          int feature = conditions[setIdx].getCondFeature();
+          double value = conditions[setIdx].getValue();
+          if (learn.data().get(i, feature) <= value) {
+            setIdxOfPoint[i] = newIdx[setIdx];
+          } else {
+            setIdxOfPoint[i] = newIdx[setIdx] + 1;
+          }
+        } else {
+          setIdxOfPoint[i] = newIdx[setIdx];
         }
       }
     }
 
-    for (int i = 0; i < setsCount; ++i) {
-      if (bestScores[i] < optSetsInfo.get(i).getScore()) {
-        conditions[2 * i] = new Condition(bestSplit[i], bestFeature[i], true);
-        conditions[2 * i + 1] = new Condition(bestSplit[i], bestFeature[i], false);
-        newSets.add(optSetsInfo.get(i).leftSplit(bestLeftMSEStats[i], l2));
-        newSets.add(optSetsInfo.get(i).rightSplit(bestLeftMSEStats[i], l2));
-      } else {
-        conditions[2 * i] = null;
-        conditions[2 * i + 1] = null;
-        newSets.add(optSetsInfo.get(i));
+    private int[] newSetIndexes(final boolean[] updatedSets) {
+      int[] newIdx = new int[sets.length];
+      int idx = 0;
+      for (int i = 0; i < sets.length; ++i) {
+        newIdx[i] = idx;
+        if (updatedSets[i]) {
+          idx++;
+        }
+        idx++;
       }
+
+      return newIdx;
     }
 
-    return new Pair<>(newSets, conditions);
-  }
+    public final AbstractNode constructTree() {
+      if (root == null) {
+        root = new Leaf(sets[0].getValue(loss));
+      }
 
-  private class OptimizationSetInfo {
-    final private double score;
-    final private double sum;
-    final private double sum2;
-    final private double weight;
-
-    private int parentIndex;
-
-    public OptimizationSetInfo(final L2.MSEStats stats, final L2 l2, int parentIndex) {
-      sum = stats.sum;
-      sum2 = stats.sum2;
-      weight = stats.weight;
-      score = l2.score(stats);
-      this.parentIndex = parentIndex;
-    }
-
-    public L2.MSEStats getComplement(final L2.MSEStats stats, final L2 l2) {
-      L2.MSEStats compl = l2.statsFactory().create();
-      compl.sum = sum;
-      compl.sum2 = sum2;
-      compl.weight = weight;
-      compl.remove(stats);
-      return compl;
-    }
-
-    public double getMean() {
-      return sum / weight;
-    }
-
-    public double getScore() {
-      return score;
-    }
-
-    public int getParentIndex() {
-      return parentIndex;
-    }
-
-    public void setParentIndex(int parentIndex) {
-      this.parentIndex = parentIndex;
-    }
-
-    public OptimizationSetInfo leftSplit(final L2.MSEStats leftStat, L2 l2) {
-      return new OptimizationSetInfo(leftStat, l2, parentIndex);
-    }
-
-    public OptimizationSetInfo rightSplit(final L2.MSEStats leftStat, L2 l2) {
-      L2.MSEStats rightStat = l2.statsFactory().create();
-      rightStat.sum = sum;
-      rightStat.sum2 = sum2;
-      rightStat.weight = weight;
-      rightStat.remove(leftStat);
-      return new OptimizationSetInfo(rightStat, l2, parentIndex);
+      for (int i = 0; i < sets.length; ++i) {
+        Node lastNode = sets[i].getLastNode();
+        lastNode.setLeaf(sets[i].isLeft(), sets[i].getValue(loss));
+      }
+      return root;
     }
   }
 
   private class Condition {
     private final double value;
     private final int condFeature;
-    private final boolean isLeft;
 
-    public Condition(double value, int condFeature, boolean isLeft) {
+    public Condition(double value, int condFeature) {
       this.value = value;
       this.condFeature = condFeature;
-      this.isLeft = isLeft;
     }
 
     public boolean satisfied(Vec x) {
-      if (isLeft) {
-        return x.get(condFeature) <= value;
-      } else {
-        return x.get(condFeature) > value;
-      }
+      return x.get(condFeature) <= value;
     }
 
     public int getCondFeature() {
@@ -246,60 +332,18 @@ public class GITreeOptimization extends VecOptimization.Stub<L2> {
     }
   }
 
-  private class Leaf {
-    private final List<Condition> conditions;
-    private final double value;
-
-    public Leaf(List<Condition> conditions, double value) {
-      this.conditions = conditions;
-      this.value = value;
-    }
-
-    public Leaf leftSplit(Condition condition, double value) {
-      List<Condition> newConditions = new ArrayList<>(conditions.size() + 1);
-      newConditions.addAll(conditions);
-      newConditions.add(condition);
-      return new Leaf(newConditions, value);
-    }
-
-    public Leaf rightSplit(Condition condition, double value) {
-      List<Condition> newConditions = new ArrayList<>(conditions.size() + 1);
-      newConditions.addAll(conditions);
-      newConditions.add(condition);
-      return new Leaf(newConditions, value);
-    }
-
-    public boolean contains(Vec x) {
-      boolean isIn = true;
-      for (Condition c: conditions) {
-        isIn &= c.satisfied(x);
-      }
-      return isIn;
-    }
-
-    public double getValue() {
-      return value;
-    }
-  }
-
   private class GiniIndexTree extends Func.Stub {
-    private final List<Leaf> leaves;
+    private final AbstractNode root;
     private final int xdim;
 
-    GiniIndexTree(List<Leaf> leaves, int xdim) {
-      this.leaves = leaves;
+    GiniIndexTree(AbstractNode root, int xdim) {
+      this.root = root;
       this.xdim = xdim;
     }
 
     @Override
     public double value(Vec x) {
-      Leaf curLeaf = leaves.get(0);
-      for (Leaf leaf : leaves) {
-        if (leaf.contains(x)) {
-          curLeaf = leaf;
-        }
-      }
-      return curLeaf.getValue();
+      return root.getValue(x);
     }
 
     @Override
