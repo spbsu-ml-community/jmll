@@ -1,4 +1,3 @@
-/*
 package com.spbsu.ml.cart;
 
 import com.spbsu.commons.math.Trans;
@@ -10,15 +9,19 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.WeightedL2;
+import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.cart.CARTTreeOptimization;
+import com.spbsu.ml.methods.cart.CARTTreeOptimizationFixError;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Random;
 
-*/
+
 /**
  * Created by n_buga on 16.10.16.
- *//*
+ */
 
 
 public class TestCART {
@@ -27,7 +30,7 @@ public class TestCART {
     double nextDouble(double range1, double range2) {
         return range1 + r.nextDouble()*(range2 - range1);
     }
-
+/*
     @Test
     public void TestSimple1Dim() { // i -> i^2
         final CARTTreeOptimization testObj = new CARTTreeOptimization();
@@ -138,12 +141,11 @@ public class TestCART {
             System.out.printf("%f %f", quest[2*i], quest[2*i + 1]);
             System.out.println(f.compute(new ArrayVec(quest, 2*i, 2)));
         }
-    } *//*
+    } */
 
 
     @Test
     public void testnDim() { //function majority
-        final CARTTreeOptimization testObj = new CARTTreeOptimization();
         int n = 3;
         int k = 10;
         Vec data[] = new Vec[k];
@@ -175,7 +177,11 @@ public class TestCART {
         Mx mx = new RowsVecArrayMx(data);
         VecDataSet learn = new VecDataSetImpl(mx, null);
 
-        L2 func = new L2(target, learn);
+        final CARTTreeOptimizationFixError testObj = new CARTTreeOptimizationFixError(learn);
+
+        int weights[] = new int[learn.length()];
+        Arrays.fill(weights, 1);
+        WeightedLoss func = new WeightedLoss(new L2(target, learn), weights);
         Trans f = testObj.fit(learn, func);
 
         double disp = 0;
@@ -199,8 +205,6 @@ public class TestCART {
 
     @Test
     public void testnDimRand() { //function majority
-        double max_error = 0.6;
-        final CARTTreeOptimization testObj = new CARTTreeOptimization();
         int n = 10;
         int k = 201;
         Vec data[] = new Vec[k];
@@ -223,7 +227,11 @@ public class TestCART {
         Mx mx = new RowsVecArrayMx(data);
         VecDataSet learn = new VecDataSetImpl(mx, null);
 
-        L2 func = new L2(target, learn);
+        final CARTTreeOptimization testObj = new CARTTreeOptimization(learn);
+
+        int weights[] = new int[learn.length()];
+        Arrays.fill(weights, 1);
+        WeightedLoss func = new WeightedLoss(new L2(target, learn), weights);
         Trans f = testObj.fit(learn, func);
 
         double disp = 0;
@@ -255,4 +263,4 @@ public class TestCART {
         }
     }
 }
-*/
+

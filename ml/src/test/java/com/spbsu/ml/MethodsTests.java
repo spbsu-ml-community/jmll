@@ -32,6 +32,7 @@ import com.spbsu.ml.meta.TargetMeta;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.*;
 import com.spbsu.ml.methods.cart.CARTTreeOptimization;
+import com.spbsu.ml.methods.cart.CARTTreeOptimizationFixError;
 import com.spbsu.ml.methods.greedyRegion.GreedyRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDIterativeRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDRegion;
@@ -546,7 +547,7 @@ public void testElasticNetBenchmark() {
   public void testGRBoost() {
       final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
               new BootstrapOptimization<L2>(
-                      new CARTTreeOptimization(learn.vecData()), rng), L2.class, 10000, 0.002);      final Action counter = new ProgressHandler() {
+                      new CARTTreeOptimizationFixError(learn.vecData()), rng), L2.class, 10000, 0.002);      final Action counter = new ProgressHandler() {
           int index = 0;
 
           @Override

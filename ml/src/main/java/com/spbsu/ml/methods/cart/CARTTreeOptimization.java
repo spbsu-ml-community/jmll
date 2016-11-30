@@ -1,5 +1,6 @@
 package com.spbsu.ml.methods.cart;
 
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -96,11 +97,13 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
                 int curCount[] = new int[tree.size()];
                 double partSum[] = new double[tree.size()];
                 double last[] = new double[tree.size()];
+                double partSqrtSum[] = new double[tree.size()];
 
                 for (int j = 0; j < tree.size(); j++) {
                     curCount[j] = 0;
                     partSum[j] = 0;
                     last[j] = 0;
+                    partSqrtSum[j] = 0;
                 }
 
                 for (int j = 0; j < length; j++) { //sort out vector on barrier
@@ -115,9 +118,11 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
                         final int firstPartCount = curCount[leafNumber];
                         final double secondPartSum = curLeaf.getSum() - firstPartSum;
                         final int secondPartCount = curLeaf.getCount() - firstPartCount;
-                        final double curError = curLeaf.getSqrSum() -
-                                (firstPartSum * firstPartSum) / firstPartCount -
-                                (secondPartSum * secondPartSum) / secondPartCount;
+                        final double firstPartSqrSum = partSqrtSum[leafNumber];
+                        final double secondPartSqrSum = curLeaf.getSqrSum() - firstPartSqrSum;
+                        final double errorLeft = score(firstPartSum, firstPartCount, firstPartSqrSum);
+                        final double errorRight = score(secondPartSum, secondPartCount, secondPartSqrSum);
+                        final double curError = errorLeft + errorRight;
                         synchronized (curLeaf) {
                             if (curError < bestError[leafNumber] && curError < curLeaf.getError()) {
                                 bestError[leafNumber] = curError; // и это тоже
@@ -126,9 +131,13 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
                         }
                     }
 
-                    partSum[leafNumber] += target.get(curIndex);
+                    double y = target.get(curIndex);
+
+                    partSum[leafNumber] += y;
                     curCount[leafNumber]++;
                     last[leafNumber] = x_ji;
+                    partSqrtSum[leafNumber] += y*y;
+
                     //last value of data in this leaf
                 }
             });
@@ -206,6 +215,21 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         // лист умеет обновляться и делится - вынести в лист.
         // secondPartsum - внутрь лифов.
 
+        // Функция слишком большая - разделить
+        // Метод для подсчёта ошибки
+
         return maxErr;
+    }
+
+    private double score(double sum, int count, double sqrSum) {
+
+        double score;
+        if (count <= 2) {
+            score = Double.POSITIVE_INFINITY;
+        } else {
+            score = (( - (sum * sum) / count)*(count + 1)/ (count - 1));
+        }
+
+        return score;
     }
 }

@@ -82,7 +82,11 @@ public class Leaf {
     }
 
     public void calcError() {
-        error = sqrSum - sum*sum/count;
+        if (count == 1) {
+            error = 0;
+        } else {
+            error = (sqrSum - sum * sum / count)/(1);
+        }
     }
 
     public void calcValue() {
