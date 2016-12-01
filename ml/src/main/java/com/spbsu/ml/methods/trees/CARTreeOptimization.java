@@ -149,11 +149,11 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
       }
     }
 
-    public void setLeaf(boolean isLeft, double value) {
+    public void setLeaf(boolean isLeft, double value, double weight) {
       if (isLeft) {
-        left = new Leaf(value);
+        left = new Leaf(value * (weight/(1. + weight)));
       } else {
-        right = new Leaf(value);
+        right = new Leaf(value * (weight/(1. + weight)));
       }
     }
   }
@@ -301,7 +301,7 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
 
       for (int i = 0; i < sets.length; ++i) {
         Node lastNode = sets[i].getLastNode();
-        lastNode.setLeaf(sets[i].isLeft(), sets[i].getValue(loss));
+        lastNode.setLeaf(sets[i].isLeft(), sets[i].getValue(loss), ((L2.MSEStats)sets[i].stat.inside).weight);
       }
       return root;
     }
