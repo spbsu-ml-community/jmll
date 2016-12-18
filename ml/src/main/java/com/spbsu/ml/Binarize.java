@@ -3,6 +3,8 @@ package com.spbsu.ml;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
+import com.spbsu.ml.data.softBorders.dataSet.SoftDataSet;
+import com.spbsu.ml.data.softBorders.dataSet.SoftGrid;
 import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;
 
@@ -17,6 +19,7 @@ import java.util.Map;
 public class Binarize implements Computable<VecDataSet, Binarize> {
   Map<BFGrid, BinarizedDataSet> grids = new HashMap<>(1);
   Map<DynamicGrid, BinarizedDynamicDataSet> dynamicGrids = new HashMap<>(1);
+  Map<SoftGrid, SoftDataSet> softGrids = new HashMap<>(1);
   VecDataSet set;
 
   public synchronized BinarizedDataSet binarize(final BFGrid grid) {
@@ -31,6 +34,14 @@ public class Binarize implements Computable<VecDataSet, Binarize> {
     if (result == null)
       dynamicGrids.put(grid, result = new BinarizedDynamicDataSet(set, grid));
     return result;
+  }
+
+  public synchronized SoftDataSet softBinarize(final SoftGrid grid) {
+    SoftDataSet softDataSet = softGrids.get(grid);
+    if (softDataSet == null) {
+      softGrids.put(grid, softDataSet = new SoftDataSet(set, grid));
+    }
+    return softDataSet;
   }
 
   @Override

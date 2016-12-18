@@ -18,7 +18,6 @@ public class GibbsExpWeightedPermutationsWalker implements Sampler<int[]> {
   private final List<int[]> blockPermutations;
   private final double[] localWeights;
   private final int[] localRanks;
-  private final double[] localRankWeights;
   private final FastRandom random = new FastRandom();
 
   private final double[] rankWeights;
@@ -36,7 +35,16 @@ public class GibbsExpWeightedPermutationsWalker implements Sampler<int[]> {
     this.blockSize = Math.min(4, n);
 
     this.cursor = ArrayTools.sequence(0, n);
-    this.rankWeights = rankWeights;
+    if (rankWeights != null) {
+      assert (rankWeights.length == n);
+      this.rankWeights = rankWeights;
+    } else {
+      this.rankWeights = new double[n];
+      ArrayTools.fill(this.rankWeights, 1.0);
+    }
+    for (int i = 1; i < n; ++i) {
+      this.rankWeights[i] += this.rankWeights[i - 1];
+    }
     this.lambda = lambda;
 
     this.blockPermutations = new ArrayList<>();
@@ -47,33 +55,21 @@ public class GibbsExpWeightedPermutationsWalker implements Sampler<int[]> {
 
     this.localWeights = new double[blockPermutations.size()];
     this.localRanks = new int[blockSize];
-    if (this.rankWeights != null) {
-      this.localRankWeights = new double[blockSize];
-    } else {
-      this.localRankWeights = null;
-    }
   }
 
   private void sampleBlock(int start) {
-
-    for (int i = 0; i < blockSize; ++i) {
-      localRanks[i] = cursor[start + i];
-      if (rankWeights != null) {
-        localRankWeights[i] = rankWeights[start + i];
-      }
-    }
-
+    System.arraycopy(cursor, start, localRanks, 0, blockSize);
 
     double totalWeight = 0;
-
     for (int idx = 0; idx < blockPermutations.size(); ++idx) {
       final int[] permutation = blockPermutations.get(idx);
 
       double permutationWeight = 0;
+
       for (int j = 0; j < blockSize; ++j) {
-        final double rk = localRanks[permutation[j]];
-        final double weight = localRankWeights != null ? localRankWeights[permutation[j]] : 1.0;
-        permutationWeight += weight * Math.abs(rk - start - j);
+        final int rk = localRanks[permutation[j]];
+        final double weightDiff = Math.abs(rankWeights[rk] - rankWeights[start + j]);
+        permutationWeight += weightDiff;
       }
       permutationWeight *= lambda;
       localWeights[idx] = Math.exp(-permutationWeight);
@@ -89,10 +85,6 @@ public class GibbsExpWeightedPermutationsWalker implements Sampler<int[]> {
     final int[] permutation = blockPermutations.get(takenIdx);
     for (int i = 0; i < blockSize; ++i) {
       cursor[start + i] = localRanks[permutation[i]];
-      if (rankWeights != null) {
-        assert(localRankWeights != null);
-        rankWeights[start + i] = localRankWeights[permutation[i]];
-      }
     }
   }
 
@@ -103,13 +95,10 @@ public class GibbsExpWeightedPermutationsWalker implements Sampler<int[]> {
     return cursor;
   }
 
-
-
   public static void main(final String[] args) {
-    GibbsExpWeightedPermutationsWalker permutations = new GibbsExpWeightedPermutationsWalker(200, 2);
+    final GibbsExpWeightedPermutationsWalker permutations = new GibbsExpWeightedPermutationsWalker(20, 0.5);
     for (int i = 0; i < 50; ++i) {
       System.out.println(Arrays.toString(permutations.sample()));
     }
   }
-
 }
