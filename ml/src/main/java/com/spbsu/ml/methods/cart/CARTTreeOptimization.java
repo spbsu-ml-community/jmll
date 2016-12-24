@@ -25,7 +25,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
     private Vec[] orderedFeatures;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
-    private final double lambda = 0.5;
+    private final double lambda = 0.4;
 
     public CARTTreeOptimization(VecDataSet learn) {
         orderedFeatures = new Vec[learn.xdim()];
@@ -231,7 +231,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
     private double score(double sum, int count, double sqrSum) {
 
         double score;
-        if (count <= 1) {
+        if (count <= 2) {
             score = Double.POSITIVE_INFINITY;
         } else {
             score = ((sqrSum - (sum * sum) / count))*count*(count - 2)/(count*count - 3*count + 1);
