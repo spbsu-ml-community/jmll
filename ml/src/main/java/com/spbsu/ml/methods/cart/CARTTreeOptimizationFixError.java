@@ -12,12 +12,12 @@ import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.VecOptimization;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by n_buga on 16.10.16.
@@ -29,10 +29,21 @@ public class CARTTreeOptimizationFixError extends VecOptimization.Stub<WeightedL
     private Vec[] oldOrderedFeatures;
     private VecDataSet newLearn;
 
+    private static Map<Double, Integer> lambdas = new HashMap<>();
+
     private BiFunction<Func, Vec, Double> retCheckDataError;
     private Function<Vec, Vec> retLearnTarget;
 
     final ExecutorService executorService = Executors.newFixedThreadPool(4);
+
+    public static void repaint() {
+        System.out.println();
+        lambdas.keySet().stream().forEach(lmbd -> System.out.printf("%.2f - %d;", lmbd, lambdas.get(lmbd)));
+        System.out.println();
+        System.out.printf("E = %.3f", lambdas.keySet().stream()
+                .flatMap(lmbd -> Stream.generate(() -> lmbd).limit(lambdas.get(lmbd)))
+                .collect(Collectors.averagingDouble(d -> d)));
+    }
 
     public CARTTreeOptimizationFixError(VecDataSet learn) {
         newLearn = separate(learn);
@@ -79,7 +90,7 @@ public class CARTTreeOptimizationFixError extends VecOptimization.Stub<WeightedL
                 double realAns = target.get(newCheckIndex);
                 error += Math.abs(funcAns - realAns);
             }
-            error /= newCheckIndexes.length;
+//            error /= newCheckIndexes.length;
             return error;
         };
 
@@ -114,6 +125,9 @@ public class CARTTreeOptimizationFixError extends VecOptimization.Stub<WeightedL
                 fixCoeff = j;
             }
         }
+
+        lambdas.put(fixCoeff, lambdas.getOrDefault(fixCoeff, 0) + 1);
+        repaint();
 
         return constructTree(learn, target, fixCoeff, oldOrderedFeatures);
     }
@@ -300,7 +314,7 @@ public class CARTTreeOptimizationFixError extends VecOptimization.Stub<WeightedL
         if (count <= 1) {
             score = Double.POSITIVE_INFINITY;
         } else {
-            score = ((sqrSum - (sum * sum) / count)*(count + 1)/(count - 1));
+            score = ((sqrSum - (sum * sum) / count)*(count)*(count + 2)/(count*count - 3*count + 1));
         }
 
         return score;
@@ -308,8 +322,8 @@ public class CARTTreeOptimizationFixError extends VecOptimization.Stub<WeightedL
 
     private double entropy(int genCount, int leftCount) {
         int rightCount = genCount - leftCount;
-        double p1 = (leftCount + 1)*1.0/(genCount + 2);
-        double p2 = (rightCount + 1)*1.0/(genCount + 2);
-        return -(-p1*Math.log(p1) - p2*Math.log(p2));
+        double p1 = (leftCount + 1)*1.0;
+        double p2 = (rightCount + 1)*1.0;
+        return (- p1*Math.log(p1) - p2*Math.log(p2));
     }
 }

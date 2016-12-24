@@ -547,7 +547,7 @@ public void testElasticNetBenchmark() {
   public void testGRBoost() {
       final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
               new BootstrapOptimization<L2>(
-                      new CARTTreeOptimizationFixError(learn.vecData()), rng), L2.class, 10000, 0.002);      final Action counter = new ProgressHandler() {
+                      new CARTTreeOptimization(learn.vecData()), rng), L2.class, 10000, 0.002);      final Action counter = new ProgressHandler() {
           int index = 0;
 
           @Override

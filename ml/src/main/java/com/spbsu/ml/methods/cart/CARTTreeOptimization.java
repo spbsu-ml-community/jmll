@@ -20,10 +20,12 @@ import java.util.concurrent.*;
  */
 public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? extends L2>> {
 
+
     private List<Leaf> ownerLeafOfData;
     private Vec[] orderedFeatures;
 
-    final ExecutorService executorService = Executors.newFixedThreadPool(4);
+    private final ExecutorService executorService = Executors.newFixedThreadPool(4);
+    private final double lambda = 0.5;
 
     public CARTTreeOptimization(VecDataSet learn) {
         orderedFeatures = new Vec[learn.xdim()];
@@ -90,57 +92,9 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
 
         for (int i = 0; i < dim; i++) { // sort out feature
             final int k = i;
-            tasks[i] = executorService.submit(() -> {
-                final int[] order = learn.order(k);
-                final Vec orderedFeature = orderedFeatures[k];
-
-                int curCount[] = new int[tree.size()];
-                double partSum[] = new double[tree.size()];
-                double last[] = new double[tree.size()];
-                double partSqrtSum[] = new double[tree.size()];
-
-                for (int j = 0; j < tree.size(); j++) {
-                    curCount[j] = 0;
-                    partSum[j] = 0;
-                    last[j] = 0;
-                    partSqrtSum[j] = 0;
-                }
-
-                for (int j = 0; j < length; j++) { //sort out vector on barrier
-                    final int curIndex = order[j];                  //check error of this barrier
-                    final Leaf curLeaf = ownerLeafOfData.get(curIndex);
-                    final int leafNumber = curLeaf.getLeafNumber();
-
-                    final double x_ji = orderedFeature.get(j);
-
-                    if (curCount[leafNumber] > 0 && last[leafNumber] < x_ji) { // catch boarder
-                        final double firstPartSum = partSum[leafNumber];
-                        final int firstPartCount = curCount[leafNumber];
-                        final double secondPartSum = curLeaf.getSum() - firstPartSum;
-                        final int secondPartCount = curLeaf.getCount() - firstPartCount;
-                        final double firstPartSqrSum = partSqrtSum[leafNumber];
-                        final double secondPartSqrSum = curLeaf.getSqrSum() - firstPartSqrSum;
-                        final double errorLeft = score(firstPartSum, firstPartCount, firstPartSqrSum);
-                        final double errorRight = score(secondPartSum, secondPartCount, secondPartSqrSum);
-                        final double curError = errorLeft + errorRight;
-                        synchronized (curLeaf) {
-                            if (curError < bestError[leafNumber] && curError < curLeaf.getError()) {
-                                bestError[leafNumber] = curError; // и это тоже
-                                bestCondition[leafNumber].set(k, x_ji, true);
-                            }
-                        }
-                    }
-
-                    double y = target.get(curIndex);
-
-                    partSum[leafNumber] += y;
-                    curCount[leafNumber]++;
-                    last[leafNumber] = x_ji;
-                    partSqrtSum[leafNumber] += y*y;
-
-                    //last value of data in this leaf
-                }
-            });
+            tasks[i] = executorService.submit(() -> handleFeature(learn, target, orderedFeatures,
+                    bestError, bestCondition,
+                    k, tree.size(), length));
         }
 
         int countLeavesBefore = tree.size();
@@ -221,15 +175,78 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         return maxErr;
     }
 
+    private void handleFeature(VecDataSet learn, Vec target, Vec[] orderedFeatures,
+                               double[] bestError, Condition[] bestCondition,
+                               int numFeature, int treeSize, int learnLength) {
+        final int[] order = learn.order(numFeature);
+        final Vec orderedFeature = orderedFeatures[numFeature];
+
+        int curCount[] = new int[treeSize];
+        double partSum[] = new double[treeSize];
+        double last[] = new double[treeSize];
+        double partSqrtSum[] = new double[treeSize];
+
+        for (int j = 0; j < treeSize; j++) {
+            curCount[j] = 0;
+            partSum[j] = 0;
+            last[j] = 0;
+            partSqrtSum[j] = 0;
+        }
+
+        for (int j = 0; j < learnLength; j++) { //sort out vector on barrier
+            final int curIndex = order[j];                  //check error of this barrier
+            final Leaf curLeaf = ownerLeafOfData.get(curIndex);
+            final int leafNumber = curLeaf.getLeafNumber();
+
+            final double x_ji = orderedFeature.get(j);
+
+            if (curCount[leafNumber] > 0 && last[leafNumber] < x_ji) { // catch boarder
+                final double firstPartSum = partSum[leafNumber];
+                final int firstPartCount = curCount[leafNumber];
+                final double secondPartSum = curLeaf.getSum() - firstPartSum;
+                final int secondPartCount = curLeaf.getCount() - firstPartCount;
+                final double firstPartSqrSum = partSqrtSum[leafNumber];
+                final double secondPartSqrSum = curLeaf.getSqrSum() - firstPartSqrSum;
+                final double errorLeft = score(firstPartSum, firstPartCount, firstPartSqrSum);
+                final double errorRight = score(secondPartSum, secondPartCount, secondPartSqrSum);
+                final double curError = errorLeft + errorRight + lambda*entropy(curLeaf.getCount(),
+                        firstPartCount, learnLength, treeSize);
+                synchronized (curLeaf) {
+                    if (curError < bestError[leafNumber] && curError < curLeaf.getError()) {
+                        bestError[leafNumber] = curError;
+                        bestCondition[leafNumber].set(numFeature, x_ji, true);
+                    }
+                }
+            }
+
+            double y = target.get(curIndex);
+
+            partSum[leafNumber] += y;
+            curCount[leafNumber]++;
+            last[leafNumber] = x_ji; //last value of data in this leaf
+            partSqrtSum[leafNumber] += y*y;
+        }
+    }
+
     private double score(double sum, int count, double sqrSum) {
 
         double score;
-        if (count <= 2) {
+        if (count <= 1) {
             score = Double.POSITIVE_INFINITY;
         } else {
-            score = (( - (sum * sum) / count)*(count + 1)/ (count - 1));
+            score = ((sqrSum - (sum * sum) / count))*count*(count - 2)/(count*count - 3*count + 1);
         }
 
         return score;
+    }
+
+    private double entropy(int genCount, int leftCount, int n, int leathCount) {
+        int rightCount = genCount - leftCount;
+        double p1 = (leftCount + 1)*1.0/(genCount + 2)*(genCount + 1)/(n + leathCount);
+        double p2 = (rightCount + 1)*1.0/(genCount + 2)*(genCount + 1)/(n + leathCount);
+
+//        double p1 = (leftCount + 1)*1.0/(genCount + leftCount);
+//        double p2 = (rightCount + 1)*1.0/(genCount + leftCount);
+        return -(-p1*Math.log(p1) - p2*Math.log(p2));
     }
 }
