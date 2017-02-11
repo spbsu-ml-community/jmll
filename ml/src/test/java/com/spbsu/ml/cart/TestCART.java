@@ -4,6 +4,7 @@ import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
+import com.spbsu.commons.math.vectors.IndexTransformation;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -13,12 +14,14 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeqTools;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
@@ -26,17 +29,23 @@ import com.spbsu.ml.methods.cart.CARTTreeOptimization;
 import com.spbsu.ml.methods.cart.CARTTreeOptimizationFixError;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
+import org.apache.commons.math3.util.MathArrays;
+import org.apache.commons.math3.util.Pair;
 import org.junit.Test;
 
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Random;
+import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
+import static com.spbsu.commons.math.MathTools.cubic;
 import static com.spbsu.commons.math.MathTools.sqr;
+import static java.lang.Math.exp;
 import static java.lang.Math.log;
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -46,11 +55,14 @@ import static java.lang.Math.log;
 ///home/n_buga/git_repository/jmll/ml/src/test/resources/com/spbsu/ml/allstate_learn.csv
 
 public class TestCART {
-    private static final String learnAllstateFileName = "allstate_learn.csv.gz";
-    private static final String testAllstateFileName = "allstate_test.csv.gz";
-    private static final String learnHIGGSFileName = "HIGGS_learn.csv.gz";
-    private static final String testHIGGSFileName = "HIGGS_test.csv.gz";
+    private static final String LearnAllstateFileName = "allstate_learn.csv.gz";
+    private static final String TestAllstateFileName = "allstate_test.csv.gz";
+    private static final String LearnHIGGSFileName = "HIGGS_learn.csv.gz";
+    private static final String TestHIGGSFileName = "HIGGS_test.csv.gz";
     private static final String dir = "src/test/resources/com/spbsu/ml";
+    private static final FastRandom rng = new FastRandom(0);
+    private static final String TestBaseDataName = "featuresTest.txt.gz";
+    private static final String LearnBaseDataName = "features.txt.gz";
 
     private Random r = new Random();
 
@@ -290,6 +302,89 @@ public class TestCART {
         }
     }
 
+    private class AUCCalcer implements ProgressHandler {
+        final String message;
+        final Vec current;
+        private  final VecDataSet ds;
+        private final Vec rightAns;
+        int allNegative = 0;
+        int allPositive = 0;
+
+        public AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns) {
+            this.message = message;
+            this.ds = ds;
+            this.rightAns = rightAns;
+            current = new ArrayVec(ds.length());
+            for (int i = 0; i < rightAns.dim(); i++) {
+                if (rightAns.at(i) == 1) {
+                    allPositive += 1;
+                } else {
+                    allNegative += 1;
+                }
+            }
+        }
+
+        double min = 1e10;
+
+        private int[] getOrdered(Vec array) {
+            int[] order = ArrayTools.sequence(0, array.dim());
+            ArrayTools.parallelSort(array.toArray().clone(), order);
+            return order;
+        }
+
+        @Override
+        public void invoke(final Trans partial) {
+            int length = ds.length();
+
+            if (partial instanceof Ensemble) {
+                final Ensemble linear = (Ensemble) partial;
+                final Trans increment = linear.last();
+                for (int i = 0; i < length; i++) {
+                    if (increment instanceof Ensemble) {
+                        current.adjust(i, linear.wlast() * (increment.trans(ds.data().row(i)).get(0)));
+                    } else {
+                        current.adjust(i, linear.wlast() * ((Func) increment).value(ds.data().row(i)));
+                    }
+                }
+            }
+            else {
+                for (int i = 0; i < length; i++) {
+                    current.set(i, ((Func) partial).value(ds.data().row(i)));
+                }
+            }
+
+            int ordered[] = getOrdered(current);
+            int trueNegative = 0;
+            int falseNegative = 0;
+
+            double sum = 0;
+            int curPos = 0;
+
+            double prevFPR = 1;
+            int cntOfSteps = 0;
+            while (curPos < ordered.length) {
+                cntOfSteps += 1;
+                if (rightAns.get(ordered[curPos++]) != 1) { //!!!!
+                    trueNegative += 1;
+                } else {
+                    falseNegative += 1;
+                    continue;
+                }
+                double falsePositive = allNegative - trueNegative;
+                double truePositive = allPositive - falseNegative;
+                double TPR = 1.0*truePositive/allPositive;
+                double FPR = 1.0*falsePositive/allNegative;
+
+                sum += TPR * (prevFPR - FPR);
+                prevFPR = FPR;
+            }
+            final double value = sum / cntOfSteps;
+            System.out.print(message + value);
+            min = Math.min(value, min);
+            System.out.print(" best = " + min);
+        }
+    }
+
     protected static class ScoreCalcer implements ProgressHandler {
         final String message;
         final Vec current;
@@ -322,7 +417,8 @@ public class TestCART {
                     current.set(i, ((Func) partial).value(ds.data().row(i)));
                 }
             }
-            final double value = target.value(current);
+            final double value = exp(-target.value(current)/target.dim());
+
             System.out.print(message + value);
             min = Math.min(value, min);
             System.out.print(" best = " + min);
@@ -393,39 +489,108 @@ public class TestCART {
         public int getFeaturesCount() {
             return featuresCount;
         }
+
+        protected abstract void init();
+
+        public void wipe() {
+            targetBuilder = new VecBuilder();
+            featuresBuilder = new VecBuilder();
+            featuresCount = -1;
+            init();
+        }
+    }
+
+    private static class BaseDataReadProcessor extends TestProcessor {
+        protected void init() {};
+
+        @Override
+        public void process(CharSequence arg) {
+            final CharSequence[] parts = CharSeqTools.split(arg, '\t');
+            targetBuilder.append(CharSeqTools.parseDouble(parts[1]));
+            if (featuresCount < 0)
+                featuresCount = parts.length - 4;
+            else if (featuresCount != parts.length - 4)
+                throw new RuntimeException("\"Failed to parse line \" + lindex + \":\"");
+            for (int i = 4; i < parts.length; i++) {
+                featuresBuilder.append(CharSeqTools.parseDouble(parts[i]));
+            }
+        }
     }
 
     private static class AllstateReadProcessor extends TestProcessor {
+        protected void init() {};
 
-        public AllstateReadProcessor() {
-            featuresCount = 15;
+        public void addCategoricalParameter(int value, int boundValue) {
+            for (int i = 0; i < value && i < boundValue; i++) {
+                featuresBuilder.append(0);
+            }
+            if (value < boundValue)
+                featuresBuilder.append(1);
+            for (int i = value + 1; i < boundValue; i++) {
+                featuresBuilder.append(0);
+            }
         }
 
         @Override
         public void process(CharSequence arg) {
+            int curCountFeatures = 0;
             final CharSequence[] parts = CharSeqTools.split(arg, ',');
             targetBuilder.append(CharSeqTools.parseDouble(parts[34]));
             featuresBuilder.append(CharSeqTools.parseInt(parts[3]));
+            curCountFeatures += 1;
             featuresBuilder.append(CharSeqTools.parseInt(parts[4]));
+            curCountFeatures += 1;
+
+            String vehicleMake = parts[5].toString();
+            int value = 0;
+            for (int i = 0; i < vehicleMake.length(); i++) {
+                value *= 24;
+                value += (int)vehicleMake.charAt(i) - (int)'A';
+            }
+            addCategoricalParameter(value, 78);
+            curCountFeatures += 78;
+
+            int[] boundValues = {11, 4, 7, 4, 4, 7, 5, 4, 2, 4, 7, 7};
+            for (int i = 0; i < 12; i++) {
+                int curCat = (int)parts[8 + i].charAt(0) - (int)'A';
+                addCategoricalParameter(curCat, boundValues[i]);
+                curCountFeatures += boundValues[i];
+            }
+
             for (int i = 20; i <= 28; i++) {
                 featuresBuilder.append(CharSeqTools.parseDouble(parts[i]));
+                curCountFeatures += 1;
             }
+
+            int nvCat = (int)parts[29].charAt(0) - (int)'A';
+            addCategoricalParameter(nvCat, 15);
+            curCountFeatures += 15;
+
             for (int i = 30; i <= 33; i++) {
                 featuresBuilder.append(CharSeqTools.parseDouble(parts[i]));
+                curCountFeatures += 1;
+            }
+            if (featuresCount == -1) {
+                featuresCount = curCountFeatures;
+            } else {
+                assert(featuresCount == curCountFeatures);
             }
         }
     }
 
     private class HIGGSReadProcessor extends TestProcessor {
+        protected void init() { featuresCount = 28; }
 
         public HIGGSReadProcessor() {
-            featuresCount = 28;
+            init();
         }
 
         @Override
         public void process(CharSequence arg) {
             final CharSequence[] parts = CharSeqTools.split(arg, ',');
-            targetBuilder.append(CharSeqTools.parseDouble(parts[0]));
+            int curAns = (int)CharSeqTools.parseDouble(parts[0]);
+            if (curAns == 0) curAns = -1;
+            targetBuilder.append(curAns);
             for (int i = 1; i <= 28; i++) {
                 featuresBuilder.append(CharSeqTools.parseDouble(parts[i]));
             }
@@ -482,6 +647,7 @@ public class TestCART {
                 processor.getFeaturesBuilder().build());
         VecDataSet learnFeatures = new VecDataSetImpl(data, null);
         Vec learnTarget = processor.getTargetBuilder().build();
+        processor.wipe();
         CharSeqTools.processLines(inTest, processor);
         data = new VecBasedMx(processor.getFeaturesCount(),
                 processor.getFeaturesBuilder().build());
@@ -490,13 +656,39 @@ public class TestCART {
         return new DataML(learnFeatures, learnTarget, testFeatures, testTarget);
     }
 
-    public void grBoost(DataML data) {
-        FastRandom rng = new FastRandom(0);
+    private void grBoostL2(DataML data) {
+        final L2 learnTargetL2 = new L2(data.getLearnTarget(), data.getLearnFeatures());
+        final L2 testTargetL2 = new L2(data.getTestTarget(), data.getTestFeatures());
 
         final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
                 new BootstrapOptimization<L2>(
                         new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
                 10000, 0.002);
+
+        grBoost(data, learnTargetL2, testTargetL2, boosting);
+    }
+
+    private void grBoostLLLogit(DataML data) {
+        final LLLogit learnTargetLLLogit = new LLLogit(data.getLearnTarget(), data.getLearnFeatures());
+        final LLLogit testTargetLLLogit = new LLLogit(data.getTestTarget(), data.getTestFeatures());
+
+        final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
+                new BootstrapOptimization<L2>(
+                        new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                10000, 0.002);
+
+        final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
+                data.getLearnTarget());
+        final AUCCalcer aucCalcerTest = new AUCCalcer("\tAUC test:\t", data.getTestFeatures(),
+                data.getTestTarget());
+        boosting.addListener(aucCalcerLearn);
+        boosting.addListener(aucCalcerTest);
+        grBoost(data, learnTargetLLLogit, testTargetLLLogit, boosting);
+    }
+
+    private <T extends TargetFunc> void grBoost(DataML data, T learnTargetL2, TargetFunc testTargetL2,
+                        GradientBoosting<T> boosting) {
+
         final Action counter = new ProgressHandler() {
             int index = 0;
 
@@ -505,30 +697,42 @@ public class TestCART {
                 System.out.print("\n" + index++);
             }
         };
-        final L2 learnTargetL2 = new L2(data.getLearnTarget(), data.getLearnFeatures());
-        final L2 testTargetL2 = new L2(data.getTestTarget(), data.getTestFeatures());
-        final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(), learnTargetL2);
-        final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(), testTargetL2);
-        final Action qualityCalcer = new QualityCalcer(data.getLearnTarget(), data.getLearnFeatures());
+
+        final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(),
+                learnTargetL2);
+        final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(),
+                testTargetL2);
+//        final Action qualityCalcer = new QualityCalcer(data.getLearnTarget(), data.getLearnFeatures());
         boosting.addListener(counter);
         boosting.addListener(learnListener);
         boosting.addListener(validateListener);
-        boosting.addListener(qualityCalcer);
+//        boosting.addListener(qualityCalcer);
         boosting.fit(data.getLearnFeatures(), learnTargetL2);
     }
 
     @Test
     public void testGRBoostCARTAllstate() throws IOException {
         TestProcessor processor = new AllstateReadProcessor();
-        DataML data = readData(processor, learnAllstateFileName, testAllstateFileName);
-        grBoost(data);
+        DataML data = readData(processor, LearnAllstateFileName, TestAllstateFileName);
+        grBoostL2(data);
     }
 
     @Test
     public void testGRBoostCARTHIGGS() throws IOException {
         TestProcessor processor = new HIGGSReadProcessor();
-        DataML data = readData(processor, learnHIGGSFileName, testHIGGSFileName);
-        grBoost(data);
+        DataML data = readData(processor, LearnHIGGSFileName, TestHIGGSFileName);
+        grBoostLLLogit(data);
+    }
+
+    @Test
+    public void testGRBoostBaseData() throws IOException {
+        TestProcessor processor = new BaseDataReadProcessor();
+        DataML data = readData(processor, LearnBaseDataName, TestBaseDataName);
+        assertEquals(50, data.getLearnFeatures().data().columns());
+        assertEquals(50, data.getTestFeatures().data().columns());
+        assertEquals(12465, data.getLearnFeatures().data().rows());
+        assertEquals(46596, data.getTestFeatures().data().rows());
+        grBoostL2(data);
     }
 }
 
