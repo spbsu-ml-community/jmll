@@ -86,8 +86,7 @@ public class MethodsBuilder {
         }
       }
       if (setter == null || setter.getParameterTypes().length > 1 || setter.getParameterTypes().length < 1) {
-        System.err.println("Can not set up parameter: " + name + " to value: " + value + ". No setter in builder.");
-        continue;
+        throw new IllegalArgumentException("Can not set up parameter: " + name + " to value: " + value + ". No setter in builder.");
       }
       final Class type = setter.getParameterTypes()[0];
       try {
@@ -102,7 +101,7 @@ public class MethodsBuilder {
         } else if (Optimization.class.isAssignableFrom(type)) {
           setter.invoke(factory, chooseMethod(value));
         } else {
-          System.err.println("Can not set up parameter: " + name + " to value: " + value + ". Unknown parameter type: " + type + "");
+          throw new IllegalArgumentException("Can not set up parameter: " + name + " to value: " + value + ". Unknown parameter type: " + type + "");
         }
       } catch (Exception e) {
         throw new RuntimeException("Can not set up parameter: " + name + " to value: " + value + "", e);
