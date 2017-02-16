@@ -8,6 +8,8 @@ import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.VecOptimization;
 
+import java.util.concurrent.*;
+
 public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? extends L2>> {
   @Override
   public Trans fit(final VecDataSet learn, final WeightedLoss<? extends L2> loss) {
@@ -29,6 +31,8 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
 
     private SetManager setManager;
 
+    private final ExecutorService service;
+
     public Optimizer(final VecDataSet learn, final WeightedLoss loss) {
       this.learn = learn;
       this.loss = loss;
@@ -41,41 +45,78 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
       }
 
       setManager = new SetManager(learnSize, loss, learn);
+
+      service = Executors.newFixedThreadPool(4);
     }
 
     public boolean step() {
       final int setsCount = setManager.getSetsCount();
+      final int numThreads = 4;
 
-      WeightedLoss.Stat[] leftStats = new WeightedLoss.Stat[setsCount];
-      WeightedLoss.Stat[] bestRightStats = new WeightedLoss.Stat[setsCount];
-      double[] bestScores  = new double[setsCount];
-      int[]    bestFeature = new int[setsCount];
-      double[] bestSplit   = new double[setsCount];
+      WeightedLoss.Stat[][] bestRightStats = new WeightedLoss.Stat[numThreads][setsCount];
+      double[][] bestScores  = new double[numThreads][setsCount];
+      int[][]    bestFeature = new int[numThreads][setsCount];
+      double[][] bestSplit   = new double[numThreads][setsCount];
 
-      for (int i = 0; i < setsCount; ++i) {
-        bestScores[i] = setManager.getScore(i);
+
+      for (int tr = 0; tr < numThreads; tr++) {
+        for (int i = 0; i < setsCount; ++i) {
+          bestScores[tr][i] = setManager.getScore(i);
+          bestRightStats[tr][i] = (WeightedLoss.Stat)loss.statsFactory().create();
+        }
       }
 
-      for (int f = 0; f < featureCount; ++f) {
-        for (int i = 0; i < setsCount; ++i) {
-          leftStats[i] = (WeightedLoss.Stat)loss.statsFactory().create();
+
+      int bucketSize = featureCount / numThreads;
+      Future[] tasks = new Future[numThreads];
+      for (int tr = 0; tr < numThreads; ++tr) {
+        final int f_start = tr * bucketSize;
+        final int tr_ = tr;
+        tasks[tr] = service.submit(() -> {
+          WeightedLoss.Stat[] leftStats = new WeightedLoss.Stat[setsCount];
+
+
+          for (int f_ = f_start; f_ < f_start + bucketSize; f_++) {
+            for (int i = 0; i < setsCount; ++i) {
+              leftStats[i] = (WeightedLoss.Stat)loss.statsFactory().create();
+            }
+
+            for (int i = 0; i < learnSize - 1; ++i) {
+              final int curPoint = order[f_][i];
+              final int curSetIdx = setManager.which(curPoint);
+              final WeightedLoss.Stat left = leftStats[curSetIdx].append(curPoint, loss.weight(curPoint));
+              final WeightedLoss.Stat right = setManager.getComplement(curSetIdx, left);
+
+              double score = loss.score(left) + loss.score(right);
+
+              double curSplit = learn.data().get(curPoint, f_);
+              double nextSplit = learn.data().get(order[f_][i + 1], f_);
+              if (score < bestScores[tr_][curSetIdx] && nextSplit != curSplit) {
+                bestScores[tr_][curSetIdx]  = score;
+                bestFeature[tr_][curSetIdx] = f_;
+                bestSplit[tr_][curSetIdx]   = curSplit;
+                bestRightStats[tr_][curSetIdx] = right;
+              }
+            }
+          }
+        });
+      }
+
+      try {
+        for (Future task : tasks) {
+          task.get();
         }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
 
-        for (int i = 0; i < learnSize - 1; ++i) {
-          final int curPoint = order[f][i];
-          final int curSetIdx = setManager.which(curPoint);
-          final WeightedLoss.Stat left = leftStats[curSetIdx].append(curPoint, loss.weight(curPoint));
-          final WeightedLoss.Stat right = setManager.getComplement(curSetIdx, left);
-
-          double score = loss.score(left) + loss.score(right);
-
-          double curSplit = learn.data().get(curPoint, f);
-          double nextSplit = learn.data().get(order[f][i + 1], f);
-          if (score < bestScores[curSetIdx] && /*left.weight > 0.0 && right.weight > 0.0 &&*/ nextSplit != curSplit) {
-            bestScores[curSetIdx]  = score;
-            bestFeature[curSetIdx] = f;
-            bestSplit[curSetIdx]   = curSplit;
-            bestRightStats[curSetIdx] = right;
+      for (int i = 1; i < numThreads; i++) {
+        for (int j = 0; j < setsCount; j++) {
+          if (bestScores[0][j] > bestScores[i][j]) {
+            bestScores[0][j]  = bestScores[i][j];
+            bestFeature[0][j] = bestFeature[i][j];
+            bestSplit[0][j]   = bestSplit[i][j];
+            bestRightStats[0][j] = bestRightStats[i][j];
           }
         }
       }
@@ -84,8 +125,8 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
       boolean[] updatedSets = new boolean[setsCount];
       int countSplits = 0;
       for (int i = 0; i < setsCount; ++i) {
-        if (bestScores[i] < setManager.getScore(i)) {
-          newConds[i] = new Condition(bestSplit[i], bestFeature[i]);
+        if (bestScores[0][i] < setManager.getScore(i)) {
+          newConds[i] = new Condition(bestSplit[0][i], bestFeature[0][i]);
           updatedSets[i] = true;
           countSplits++;
         } else {
@@ -93,7 +134,7 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
         }
       }
 
-      setManager.update(learn, updatedSets, countSplits, newConds, bestRightStats);
+      setManager.update(learn, updatedSets, countSplits, newConds, bestRightStats[0]);
 
       return countSplits != 0;
     }
@@ -149,11 +190,25 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
       }
     }
 
-    public void setLeaf(boolean isLeft, double value, double weight) {
+    public void setLeaf(boolean isLeft, double value, double weight, double sigma2, double sum2) {
       if (isLeft) {
-        left = new Leaf(value * (weight/(1. + weight)));
+//        left = new Leaf(value);
+//        stein--
+//        left = new Leaf(value * (weight/(1. + weight)));
+        if (weight <= 2 || sum2 <= 1e-6) {
+          left = new Leaf(value);
+          return;
+        }
+        left = new Leaf(value * (1 - (weight - 2) * sigma2 / sum2));
       } else {
-        right = new Leaf(value * (weight/(1. + weight)));
+//        right = new Leaf(value);
+//        stein--
+//        right = new Leaf(value * (weight/(1. + weight)));
+        if (weight <= 2 || sum2 <= 1e-6) {
+          right = new Leaf(value);
+          return;
+        }
+        right = new Leaf(value * (1 - (weight - 2) * sigma2 / sum2));
       }
     }
   }
@@ -198,6 +253,7 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
     private final int numPoints;
     private final WeightedLoss loss;
 
+    private final double sigma2;
     private Set[] sets;
     AbstractNode root;
 
@@ -211,9 +267,16 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
 
       root = null;
       WeightedLoss.Stat baseStat = (WeightedLoss.Stat)loss.statsFactory().create();
+      Vec target = loss.target();
+      double min = 0;
+      double max = 0;
       for (int i = 0; i < learn.length(); ++i) {
+        min = Math.min(target.get(i), min);
+        max = Math.max(target.get(i), max);
         baseStat.append(i, loss.weight(i));
       }
+
+      sigma2 = (max - min) * (max - min) * 0.01;
 
       sets = new Set[1];
       sets[0] = new Set(baseStat, (Node)root, true);
@@ -301,7 +364,10 @@ public class CARTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ext
 
       for (int i = 0; i < sets.length; ++i) {
         Node lastNode = sets[i].getLastNode();
-        lastNode.setLeaf(sets[i].isLeft(), sets[i].getValue(loss), ((L2.MSEStats)sets[i].stat.inside).weight);
+        lastNode.setLeaf(sets[i].isLeft(), sets[i].getValue(loss),
+                ((L2.MSEStats)sets[i].stat.inside).weight,
+                sigma2,
+                ((L2.MSEStats)sets[i].stat.inside).sum2);
       }
       return root;
     }
