@@ -1,6 +1,5 @@
 package com.spbsu.ml.methods.cart;
 
-import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -9,7 +8,6 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.VecOptimization;
-import jdk.management.resource.internal.FutureWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +48,10 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         }
 
         firstLeaf.calcError();
-        firstLeaf.calcValue();
+        firstLeaf.calcMean();
+
+        double sigma2 = firstLeaf.getError()/firstLeaf.getCount();
+        Leaf.setSigma2(sigma2);
 
         tree.add(firstLeaf);
 
@@ -62,7 +63,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
     private void constructTree(List<Leaf> tree, VecDataSet learn, WeightedLoss loss) {
         int count = 0;
         int old_size = tree.size();
-        while (count < 7) {
+        while (count < 6) { //!!!!
             makeStep(tree, learn, loss);
             count++;
             if (old_size == tree.size()) {
@@ -117,7 +118,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
 
         for (int i = 0; i < countLeavesBefore; i++) {
             Leaf leaf = tree.get(i);
-            if (leaf.getError() <= bestError[i]) { // if new error worse then old
+            if (leaf.getError() <= bestError[i]) { // if new error is worse then old
                 pairLeaf[i] = leaf;
                 continue;
             }
@@ -156,7 +157,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
                 continue;
             }
             leaf.calcError();
-            leaf.calcValue();
+            leaf.calcMean();
             maxErr = Math.max(maxErr, leaf.getError());
         }
 
@@ -234,10 +235,14 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         if (count <= 2) {
             score = Double.POSITIVE_INFINITY;
         } else {
-            score = ((sqrSum - (sum * sum) / count))*count*(count - 2)/(count*count - 3*count + 1);
+            score = (getnDisp(sum, count, sqrSum))*count*(count - 2)/(count*count - 3*count + 1);
         }
 
         return score;
+    }
+
+    private double getnDisp(double sum, int count, double sqrSum) {
+        return sqrSum - (sum * sum) / count;
     }
 
     private double entropy(int genCount, int leftCount, int n, int leathCount) {

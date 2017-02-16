@@ -83,6 +83,12 @@
         <artifactId>xchart</artifactId>
         <version>2.4.2</version>
     </dependency>
+      <dependency>
+          <groupId>org.knowm.xchart</groupId>
+          <artifactId>xchart</artifactId>
+          <version>3.0.3</version>
+          <scope>test</scope>
+      </dependency>
   </dependencies>
 
   <properties>

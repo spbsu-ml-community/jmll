@@ -4,7 +4,6 @@ import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
-import com.spbsu.commons.math.vectors.IndexTransformation;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -15,6 +14,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.ml.GridTools;
 import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -27,21 +27,22 @@ import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.cart.CARTTreeOptimization;
 import com.spbsu.ml.methods.cart.CARTTreeOptimizationFixError;
+import com.spbsu.ml.methods.trees.GreedyObliviousTree;
+import com.xeiam.xchart.Chart;
+import com.xeiam.xchart.QuickChart;
+import com.xeiam.xchart.SwingWrapper;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
-import org.apache.commons.math3.util.MathArrays;
-import org.apache.commons.math3.util.Pair;
 import org.junit.Test;
+import org.knowm.xchart.XYChart;
 
 import java.io.*;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Random;
-import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
-import static com.spbsu.commons.math.MathTools.cubic;
 import static com.spbsu.commons.math.MathTools.sqr;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -57,7 +58,7 @@ import static org.junit.Assert.assertEquals;
 public class TestCART {
     private static final String LearnAllstateFileName = "allstate_learn.csv.gz";
     private static final String TestAllstateFileName = "allstate_test.csv.gz";
-    private static final String LearnHIGGSFileName = "HIGGS_learn.csv.gz";
+    private static final String LearnHIGGSFileName = "HIGGS_learn_1M.csv.gz";
     private static final String TestHIGGSFileName = "HIGGS_test.csv.gz";
     private static final String dir = "src/test/resources/com/spbsu/ml";
     private static final FastRandom rng = new FastRandom(0);
@@ -324,7 +325,7 @@ public class TestCART {
             }
         }
 
-        double min = 1e10;
+        double max = 0;
 
         private int[] getOrdered(Vec array) {
             int[] order = ArrayTools.sequence(0, array.dim());
@@ -361,9 +362,11 @@ public class TestCART {
             int curPos = 0;
 
             double prevFPR = 1;
-            int cntOfSteps = 0;
+
+//            ArrayList<Double> x = new ArrayList<>();
+//            ArrayList<Double> y = new ArrayList<>();
+
             while (curPos < ordered.length) {
-                cntOfSteps += 1;
                 if (rightAns.get(ordered[curPos++]) != 1) { //!!!!
                     trueNegative += 1;
                 } else {
@@ -375,13 +378,20 @@ public class TestCART {
                 double TPR = 1.0*truePositive/allPositive;
                 double FPR = 1.0*falsePositive/allNegative;
 
+//                x.add(FPR);
+//                y.add(TPR);
                 sum += TPR * (prevFPR - FPR);
                 prevFPR = FPR;
             }
-            final double value = sum / cntOfSteps;
+
+/*            XYChart ex = org.knowm.xchart.QuickChart.getChart("Simple chart", "x", "y",
+                    "y(x)", x, y);
+            new org.knowm.xchart.SwingWrapper<>(ex).displayChart(); */
+
+            final double value = sum;
             System.out.print(message + value);
-            min = Math.min(value, min);
-            System.out.print(" best = " + min);
+            max = Math.max(value, max);
+            System.out.print(" best = " + max);
         }
     }
 
@@ -398,6 +408,7 @@ public class TestCART {
             current = new ArrayVec(ds.length());
         }
 
+        double max = 0;
         double min = 1e10;
 
         @Override
@@ -417,11 +428,14 @@ public class TestCART {
                     current.set(i, ((Func) partial).value(ds.data().row(i)));
                 }
             }
-            final double value = exp(-target.value(current)/target.dim());
 
-            System.out.print(message + value);
+            final double value = target.value(current);
+            final double valuePerp = exp(-target.value(current)/target.dim());
+
+            System.out.print(message + valuePerp + " | " + value);
+            max = Math.max(valuePerp, max);
             min = Math.min(value, min);
-            System.out.print(" best = " + min);
+            System.out.print(" best = " + max + " | " + min);
         }
     }
 
@@ -668,14 +682,35 @@ public class TestCART {
         grBoost(data, learnTargetL2, testTargetL2, boosting);
     }
 
+    private void grBoostL2test(DataML data) {
+        final L2 learnTargetL2 = new L2(data.getLearnTarget(), data.getLearnFeatures());
+        final L2 testTargetL2 = new L2(data.getTestTarget(), data.getTestFeatures());
+
+        final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
+                new BootstrapOptimization<L2>(
+                        new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                10000, 0.002);
+
+        final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
+                data.getLearnTarget());
+        final AUCCalcer aucCalcerTest = new AUCCalcer("\tAUC test:\t", data.getTestFeatures(),
+                data.getTestTarget());
+        boosting.addListener(aucCalcerLearn);
+        boosting.addListener(aucCalcerTest);
+
+        grBoost(data, learnTargetL2, testTargetL2, boosting);
+    }
+
     private void grBoostLLLogit(DataML data) {
         final LLLogit learnTargetLLLogit = new LLLogit(data.getLearnTarget(), data.getLearnFeatures());
         final LLLogit testTargetLLLogit = new LLLogit(data.getTestTarget(), data.getTestFeatures());
 
         final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
                 new BootstrapOptimization<L2>(
-                        new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
-                10000, 0.002);
+                        new GreedyObliviousTree(GridTools.medianGrid(data.getLearnFeatures(), 32), 6),
+                        rng),
+                        L2.class,
+                10000, 1.6);
 
         final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
                 data.getLearnTarget());
@@ -721,6 +756,7 @@ public class TestCART {
     public void testGRBoostCARTHIGGS() throws IOException {
         TestProcessor processor = new HIGGSReadProcessor();
         DataML data = readData(processor, LearnHIGGSFileName, TestHIGGSFileName);
+//        grBoostL2test(data);
         grBoostLLLogit(data);
     }
 

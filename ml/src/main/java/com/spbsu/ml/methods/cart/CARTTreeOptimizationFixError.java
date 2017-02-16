@@ -143,7 +143,7 @@ public class CARTTreeOptimizationFixError extends VecOptimization.Stub<WeightedL
         }
 
         firstLeaf.calcError();
-        firstLeaf.calcValue();
+        firstLeaf.calcMean();
 
         tree.add(firstLeaf);
 
@@ -236,7 +236,7 @@ public class CARTTreeOptimizationFixError extends VecOptimization.Stub<WeightedL
                 continue;
             }
             leaf.calcError();
-            leaf.calcValue();
+            leaf.calcMean();
             maxErr = Math.max(maxErr, leaf.getError());
         }
 
