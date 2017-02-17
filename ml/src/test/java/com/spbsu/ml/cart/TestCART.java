@@ -25,21 +25,20 @@ import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.Optimization;
+import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.cart.CARTTreeOptimization;
 import com.spbsu.ml.methods.cart.CARTTreeOptimizationFixError;
 import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.xeiam.xchart.Chart;
-import com.xeiam.xchart.QuickChart;
-import com.xeiam.xchart.SwingWrapper;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
 import org.junit.Test;
-import org.knowm.xchart.XYChart;
 
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.zip.GZIPInputStream;
 
@@ -303,7 +302,7 @@ public class TestCART {
         }
     }
 
-    private class AUCCalcer implements ProgressHandler {
+    private static class AUCCalcer implements ProgressHandler {
         final String message;
         final Vec current;
         private  final VecDataSet ds;
@@ -670,94 +669,124 @@ public class TestCART {
         return new DataML(learnFeatures, learnTarget, testFeatures, testTarget);
     }
 
-    private void grBoostL2(DataML data) {
-        final L2 learnTargetL2 = new L2(data.getLearnTarget(), data.getLearnFeatures());
-        final L2 testTargetL2 = new L2(data.getTestTarget(), data.getTestFeatures());
+    private static class RGBoostRunner {
+        private final DataML data;
+        private final TargetFunc learnTarget;
+        private final TargetFunc testTarget;
+        private List<Action<? super Trans>> handlers = new ArrayList<>();
+        private int iterationsCount = 10000;
+        private double step = 0.002;
+        private FuncKind funcKind;
 
-        final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-                new BootstrapOptimization<L2>(
-                        new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
-                10000, 0.002);
+        public enum FuncKind {
+            LLLogit,
+            L2
+        }
 
-        grBoost(data, learnTargetL2, testTargetL2, boosting);
-    }
-
-    private void grBoostL2test(DataML data) {
-        final L2 learnTargetL2 = new L2(data.getLearnTarget(), data.getLearnFeatures());
-        final L2 testTargetL2 = new L2(data.getTestTarget(), data.getTestFeatures());
-
-        final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-                new BootstrapOptimization<L2>(
-                        new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
-                10000, 0.002);
-
-        final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
-                data.getLearnTarget());
-        final AUCCalcer aucCalcerTest = new AUCCalcer("\tAUC test:\t", data.getTestFeatures(),
-                data.getTestTarget());
-        boosting.addListener(aucCalcerLearn);
-        boosting.addListener(aucCalcerTest);
-
-        grBoost(data, learnTargetL2, testTargetL2, boosting);
-    }
-
-    private void grBoostLLLogit(DataML data) {
-        final LLLogit learnTargetLLLogit = new LLLogit(data.getLearnTarget(), data.getLearnFeatures());
-        final LLLogit testTargetLLLogit = new LLLogit(data.getTestTarget(), data.getTestFeatures());
-
-        final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
-                new BootstrapOptimization<L2>(
-                        new GreedyObliviousTree(GridTools.medianGrid(data.getLearnFeatures(), 32), 6),
-                        rng),
-                        L2.class,
-                10000, 1.6);
-
-        final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
-                data.getLearnTarget());
-        final AUCCalcer aucCalcerTest = new AUCCalcer("\tAUC test:\t", data.getTestFeatures(),
-                data.getTestTarget());
-        boosting.addListener(aucCalcerLearn);
-        boosting.addListener(aucCalcerTest);
-        grBoost(data, learnTargetLLLogit, testTargetLLLogit, boosting);
-    }
-
-    private <T extends TargetFunc> void grBoost(DataML data, T learnTargetL2, TargetFunc testTargetL2,
-                        GradientBoosting<T> boosting) {
-
-        final Action counter = new ProgressHandler() {
-            int index = 0;
-
-            @Override
-            public void invoke(final Trans partial) {
-                System.out.print("\n" + index++);
+        public RGBoostRunner(DataML data, FuncKind funcKind) {
+            this.data = data;
+            this.funcKind = funcKind;
+            if (funcKind == FuncKind.L2) {
+                learnTarget = new L2(data.getLearnTarget(), data.getLearnFeatures());
+                testTarget = new L2(data.getTestTarget(), data.getTestFeatures());
+            } else {
+                learnTarget = new LLLogit(data.getLearnTarget(), data.getLearnFeatures());
+                testTarget = new LLLogit(data.getTestTarget(), data.getTestFeatures());
             }
-        };
 
-        final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(),
-                learnTargetL2);
-        final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(),
-                testTargetL2);
-//        final Action qualityCalcer = new QualityCalcer(data.getLearnTarget(), data.getLearnFeatures());
-        boosting.addListener(counter);
-        boosting.addListener(learnListener);
-        boosting.addListener(validateListener);
-//        boosting.addListener(qualityCalcer);
-        boosting.fit(data.getLearnFeatures(), learnTargetL2);
+            final Action counter = new ProgressHandler() {
+                int index = 0;
+
+                @Override
+                public void invoke(final Trans partial) {
+                    System.out.print("\n" + index++);
+                }
+            };
+            handlers.add(counter);
+        }
+
+        public RGBoostRunner setStep(double step) {
+            this.step = step;
+            return this;
+        }
+
+        public RGBoostRunner addScoreCalcerLearn() {
+            final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(),
+                    learnTarget);
+            handlers.add(learnListener);
+            return this;
+        }
+
+        public RGBoostRunner addScoreCalcerTest() {
+            final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(),
+                    testTarget);
+            handlers.add(validateListener);
+            return this;
+        }
+
+        public RGBoostRunner addAUCCalcerTest() {
+            final AUCCalcer aucCalcerTest = new AUCCalcer("\tAUC test:\t", data.getTestFeatures(),
+                    data.getTestTarget());
+            handlers.add(aucCalcerTest);
+            return this;
+        }
+
+        public RGBoostRunner addAUCCalcerLearn() {
+            final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
+                    data.getLearnTarget());
+            handlers.add(aucCalcerLearn);
+            return this;
+        }
+
+        public void run() {
+            if (funcKind == FuncKind.L2) {
+                final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
+                        new BootstrapOptimization<L2>(
+                                new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                        iterationsCount, step);
+                for (Action<? super Trans> action: handlers) {
+                    boosting.addListener(action);
+                }
+
+                boosting.fit(data.getLearnFeatures(), (L2)learnTarget);
+            } else {
+                final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
+                        new BootstrapOptimization<L2>(
+                                new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                        iterationsCount, step);
+                for (Action<? super Trans> action: handlers) {
+                    boosting.addListener(action);
+                }
+
+                boosting.fit(data.getLearnFeatures(), (LLLogit)learnTarget);
+            }
+        }
     }
 
     @Test
     public void testGRBoostCARTAllstate() throws IOException {
         TestProcessor processor = new AllstateReadProcessor();
         DataML data = readData(processor, LearnAllstateFileName, TestAllstateFileName);
-        grBoostL2(data);
+        RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
+        rgBoostRunner
+                .addScoreCalcerLearn()
+                .addScoreCalcerTest()
+                .run();
     }
 
     @Test
     public void testGRBoostCARTHIGGS() throws IOException {
         TestProcessor processor = new HIGGSReadProcessor();
         DataML data = readData(processor, LearnHIGGSFileName, TestHIGGSFileName);
-//        grBoostL2test(data);
-        grBoostLLLogit(data);
+        RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
+        rgBoostRunner
+                .addScoreCalcerLearn()
+                .addScoreCalcerTest()
+                .addAUCCalcerLearn()
+                .addAUCCalcerTest()
+                .setStep(1.6);
+
+        rgBoostRunner.run();
     }
 
     @Test
@@ -768,7 +797,26 @@ public class TestCART {
         assertEquals(50, data.getTestFeatures().data().columns());
         assertEquals(12465, data.getLearnFeatures().data().rows());
         assertEquals(46596, data.getTestFeatures().data().rows());
-        grBoostL2(data);
+        RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
+        rgBoostRunner.addScoreCalcerLearn()
+                .addScoreCalcerTest().
+                run();
     }
+
+/*    @Test
+    public void testGRBoostBaseDataConfInterval() throws IOException {
+        TestProcessor processor = new BaseDataReadProcessor();
+        DataML data = readData(processor, LearnBaseDataName, TestBaseDataName);
+
+        final int M = 1000;
+        double perplexity[] = new double[M];
+
+        RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
+        perplexity[0] = rgBoostRunner.findBestPerplexity();
+        for (int i = 1; i < M; i++) {
+            data = Bootstrap(data);
+            perplexity[i] = 
+        }
+    } */
 }
 
