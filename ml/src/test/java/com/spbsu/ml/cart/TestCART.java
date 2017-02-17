@@ -6,7 +6,6 @@ import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
@@ -14,7 +13,6 @@ import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.GridTools;
 import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -25,13 +23,8 @@ import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.Optimization;
-import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.cart.CARTTreeOptimization;
 import com.spbsu.ml.methods.cart.CARTTreeOptimizationFixError;
-import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import gnu.trove.map.hash.TDoubleDoubleHashMap;
-import gnu.trove.map.hash.TDoubleIntHashMap;
 import org.junit.Test;
 
 import java.io.*;
@@ -42,10 +35,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.zip.GZIPInputStream;
 
-import static com.spbsu.commons.math.MathTools.sqr;
 import static java.lang.Math.exp;
-import static java.lang.Math.log;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -303,16 +295,22 @@ public class TestCART {
     }
 
     private static class AUCCalcer implements ProgressHandler {
-        final String message;
-        final Vec current;
+        private final String message;
+        private final Vec current;
         private  final VecDataSet ds;
         private final Vec rightAns;
-        int allNegative = 0;
-        int allPositive = 0;
+        private int allNegative = 0;
+        private int allPositive = 0;
+        private boolean isWrite = true;
 
         public AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns) {
+            this(message, ds, rightAns, true);
+        }
+
+        public AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns, boolean isWrite) {
             this.message = message;
             this.ds = ds;
+            this.isWrite = isWrite;
             this.rightAns = rightAns;
             current = new ArrayVec(ds.length());
             for (int i = 0; i < rightAns.dim(); i++) {
@@ -324,7 +322,11 @@ public class TestCART {
             }
         }
 
-        double max = 0;
+        private double max = 0;
+
+        public double getMax() {
+            return max;
+        }
 
         private int[] getOrdered(Vec array) {
             int[] order = ArrayTools.sequence(0, array.dim());
@@ -388,20 +390,26 @@ public class TestCART {
             new org.knowm.xchart.SwingWrapper<>(ex).displayChart(); */
 
             final double value = sum;
-            System.out.print(message + value);
+            if (isWrite) System.out.print(message + value);
             max = Math.max(value, max);
-            System.out.print(" best = " + max);
+            if (isWrite) System.out.print(" best = " + max);
         }
     }
 
     protected static class ScoreCalcer implements ProgressHandler {
-        final String message;
-        final Vec current;
+        private final String message;
+        private final Vec current;
         private final VecDataSet ds;
         private final TargetFunc target;
+        private boolean isWrite = true;
 
         public ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target) {
+            this(message, ds, target, true);
+        }
+
+        public ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target, boolean isWrite) {
             this.message = message;
+            this.isWrite = isWrite;
             this.ds = ds;
             this.target = target;
             current = new ArrayVec(ds.length());
@@ -409,6 +417,10 @@ public class TestCART {
 
         double max = 0;
         double min = 1e10;
+
+        public double getMax() {
+            return max;
+        }
 
         @Override
         public void invoke(final Trans partial) {
@@ -431,58 +443,10 @@ public class TestCART {
             final double value = target.value(current);
             final double valuePerp = exp(-target.value(current)/target.dim());
 
-            System.out.print(message + valuePerp + " | " + value);
+            if (isWrite) System.out.print(message + valuePerp + " | " + value);
             max = Math.max(valuePerp, max);
             min = Math.min(value, min);
-            System.out.print(" best = " + max + " | " + min);
-        }
-    }
-
-    private class QualityCalcer implements ProgressHandler {
-        Vec residues;
-        VecDataSet learn;
-        double total = 0;
-        int index = 0;
-
-        QualityCalcer(Vec learnTarget, VecDataSet learn) {
-            residues = VecTools.copy(learnTarget);
-            this.learn = learn;
-        }
-
-        @Override
-        public void invoke(final Trans partial) {
-            if (partial instanceof Ensemble) {
-                final Ensemble model = (Ensemble) partial;
-                final Trans increment = model.last();
-
-                final TDoubleIntHashMap values = new TDoubleIntHashMap();
-                final TDoubleDoubleHashMap dispersionDiff = new TDoubleDoubleHashMap();
-                int index = 0;
-                final VecDataSet ds = learn;
-                for (int i = 0; i < ds.data().rows(); i++) {
-                    final double value;
-                    if (increment instanceof Ensemble) {
-                        value = increment.trans(ds.data().row(i)).get(0);
-                    } else {
-                        value = ((Func) increment).value(ds.data().row(i));
-                    }
-                    values.adjustOrPutValue(value, 1, 1);
-                    final double ddiff = sqr(residues.get(index)) - sqr(residues.get(index) - value);
-                    residues.adjust(index, -model.wlast() * value);
-                    dispersionDiff.adjustOrPutValue(value, ddiff, ddiff);
-                    index++;
-                }
-//          double totalDispersion = VecTools.multiply(residues, residues);
-                double score = 0;
-                for (final double key : values.keys()) {
-                    final double regularizer = 1 - 2 * log(2) / log(values.get(key) + 1);
-                    score += dispersionDiff.get(key) * regularizer;
-                }
-//          score /= totalDispersion;
-                total += score;
-                this.index++;
-                System.out.print("\tscore:\t" + score + "\tmean:\t" + (total / this.index));
-            }
+            if (isWrite) System.out.print(" best = " + max + " | " + min);
         }
     }
 
@@ -610,6 +574,56 @@ public class TestCART {
         }
     }
 
+/*    private static class BestPerplexityCalcer implements ProgressHandler {
+        final String message = "Best perplexity";
+        final Vec current;
+        private final VecDataSet ds;
+        private final TargetFunc target;
+
+        public BestPerplexityCalcer(final VecDataSet ds, final TargetFunc target) {
+            this.ds = ds;
+            this.target = target;
+            current = new ArrayVec(ds.length());
+        }
+
+        double max = 0;
+        int counter = 0;
+        int stepNumber = 0;
+
+        @Override
+        public void invoke(final Trans partial) {
+            counter++;
+            if (partial instanceof Ensemble) {
+                final Ensemble linear = (Ensemble) partial;
+                final Trans increment = linear.last();
+                for (int i = 0; i < ds.length(); i++) {
+                    if (increment instanceof Ensemble) {
+                        current.adjust(i, linear.wlast() * (increment.trans(ds.data().row(i)).get(0)));
+                    } else {
+                        current.adjust(i, linear.wlast() * ((Func) increment).value(ds.data().row(i)));
+                    }
+                }
+            } else {
+                for (int i = 0; i < ds.length(); i++) {
+                    current.set(i, ((Func) partial).value(ds.data().row(i)));
+                }
+            }
+
+            final double value = target.value(current);
+            final double valuePerp = exp(-target.value(current) / target.dim());
+
+//            System.out.print(message + valuePerp + " | " + value);
+            if (max < valuePerp) {
+                max = Math.max(valuePerp, max);
+                stepNumber = counter;
+            }
+        }
+
+        public double getMax() {
+            return max;
+        }
+    } */
+
     private static String getFullPath(String file) {
         return Paths.get(System.getProperty("user.dir"), dir, file).toString();
     }
@@ -705,6 +719,11 @@ public class TestCART {
             handlers.add(counter);
         }
 
+        public RGBoostRunner setIterations(int iterations) {
+            this.iterationsCount = iterations;
+            return this;
+        }
+
         public RGBoostRunner setStep(double step) {
             this.step = step;
             return this;
@@ -761,6 +780,40 @@ public class TestCART {
                 boosting.fit(data.getLearnFeatures(), (LLLogit)learnTarget);
             }
         }
+
+        public double findBestTestScore() {
+            if (funcKind == FuncKind.L2) {
+                final ScoreCalcer bestPerplexityCalcer = new ScoreCalcer("", data.getTestFeatures(),
+                        testTarget, false);
+                final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
+                        new BootstrapOptimization<L2>(
+                                new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                        iterationsCount, step);
+
+                for (Action<? super Trans> action: handlers) {
+                    boosting.addListener(action);
+                }
+
+                boosting.addListener(bestPerplexityCalcer);
+                boosting.fit(data.getLearnFeatures(), (L2) learnTarget);
+                return bestPerplexityCalcer.getMax();
+            } else if (funcKind == FuncKind.LLLogit) {
+                final AUCCalcer bestAUCCalcer = new AUCCalcer("", data.getTestFeatures(),
+                        data.getTestTarget(), false);
+                final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
+                        new BootstrapOptimization<L2>(
+                                new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                        iterationsCount, step);
+                for (Action<? super Trans> action: handlers) {
+                    boosting.addListener(action);
+                }
+
+                boosting.addListener(bestAUCCalcer);
+                boosting.fit(data.getLearnFeatures(), (LLLogit)learnTarget);
+                return bestAUCCalcer.getMax();
+            }
+            return 0;
+        }
     }
 
     @Test
@@ -803,20 +856,40 @@ public class TestCART {
                 run();
     }
 
-/*    @Test
+    @Test
     public void testGRBoostBaseDataConfInterval() throws IOException {
         TestProcessor processor = new BaseDataReadProcessor();
         DataML data = readData(processor, LearnBaseDataName, TestBaseDataName);
 
-        final int M = 1000;
-        double perplexity[] = new double[M];
+        final int M = 3;
+        double scores[] = new double[M];
 
         RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
-        perplexity[0] = rgBoostRunner.findBestPerplexity();
+        scores[0] = rgBoostRunner.setIterations(1000).findBestTestScore();
         for (int i = 1; i < M; i++) {
-            data = Bootstrap(data);
-            perplexity[i] = 
+            rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
+            scores[i] = rgBoostRunner.setIterations(1000).findBestTestScore();
         }
-    } */
+        Arrays.sort(scores);
+        System.out.printf("%.4f %.4f\n", scores[4], scores[M - 5]);
+    }
+
+    @Test
+    public void testGRBoostHIGGSDataConfInterval() throws IOException {
+        TestProcessor processor = new HIGGSReadProcessor();
+        DataML data = readData(processor, LearnHIGGSFileName, TestHIGGSFileName);
+
+        final int M = 6;
+        double scores[] = new double[M];
+
+        RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
+        scores[0] = rgBoostRunner.setIterations(5).findBestTestScore();
+        for (int i = 1; i < M; i++) {
+            rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
+            scores[i] = rgBoostRunner.setIterations(5).findBestTestScore();
+        }
+        Arrays.sort(scores);
+        System.out.printf("%.4f %.4f\n", scores[4], scores[M - 5]);
+    }
 }
 
