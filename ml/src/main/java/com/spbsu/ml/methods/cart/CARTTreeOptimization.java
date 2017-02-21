@@ -44,7 +44,9 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         ownerLeafOfData = new ArrayList<>(learn.length());
         for (int i = 0; i < learn.length(); i++) {
             ownerLeafOfData.add(firstLeaf);
-            firstLeaf.addNewItem(loss.target().get(i));
+            for (int j = 0; j < loss.weight(i); j++) {
+                firstLeaf.addNewItem(loss.target().get(i));
+            }
         }
 
         firstLeaf.calcError();
@@ -93,7 +95,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
 
         for (int i = 0; i < dim; i++) { // sort out feature
             final int k = i;
-            tasks[i] = executorService.submit(() -> handleFeature(learn, target, orderedFeatures,
+            tasks[i] = executorService.submit(() -> handleFeature(learn, loss, target, orderedFeatures,
                     bestError, bestCondition,
                     k, tree.size(), length));
         }
@@ -147,7 +149,9 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
 
         for (int i = 0; i < learn.length(); i++) {
             Leaf curLeaf = ownerLeafOfData.get(i);
-            curLeaf.addNewItem(target.get(i));
+            for (int j = 0; j < loss.weight(i); j++) {
+                curLeaf.addNewItem(target.get(i));
+            }
         }
 
         double maxErr = 0; //the return value
@@ -176,7 +180,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         return maxErr;
     }
 
-    private void handleFeature(VecDataSet learn, Vec target, Vec[] orderedFeatures,
+    private void handleFeature(VecDataSet learn, WeightedLoss loss, Vec target, Vec[] orderedFeatures,
                                double[] bestError, Condition[] bestCondition,
                                int numFeature, int treeSize, int learnLength) {
         final int[] order = learn.order(numFeature);
@@ -196,6 +200,10 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
 
         for (int j = 0; j < learnLength; j++) { //sort out vector on barrier
             final int curIndex = order[j];                  //check error of this barrier
+            final double weight = loss.weight(curIndex);
+            if (weight == 0) {
+                continue;
+            }
             final Leaf curLeaf = ownerLeafOfData.get(curIndex);
             final int leafNumber = curLeaf.getLeafNumber();
 
@@ -222,10 +230,10 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
 
             double y = target.get(curIndex);
 
-            partSum[leafNumber] += y;
-            curCount[leafNumber]++;
+            partSum[leafNumber] += y*weight;
+            curCount[leafNumber] += weight;
             last[leafNumber] = x_ji; //last value of data in this leaf
-            partSqrtSum[leafNumber] += y*y;
+            partSqrtSum[leafNumber] += y*y*weight;
         }
     }
 

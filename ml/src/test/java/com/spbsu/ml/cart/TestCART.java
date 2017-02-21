@@ -17,6 +17,7 @@ import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
+import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
@@ -52,7 +53,7 @@ public class TestCART {
     private static final String LearnHIGGSFileName = "HIGGS_learn_1M.csv.gz";
     private static final String TestHIGGSFileName = "HIGGS_test.csv.gz";
     private static final String dir = "src/test/resources/com/spbsu/ml";
-    private static final FastRandom rng = new FastRandom(0);
+    private static final FastRandom rnd = new FastRandom(0);
     private static final String TestBaseDataName = "featuresTest.txt.gz";
     private static final String LearnBaseDataName = "features.txt.gz";
 
@@ -701,6 +702,10 @@ public class TestCART {
             this.data = data;
             this.funcKind = funcKind;
             if (funcKind == FuncKind.L2) {
+/*                final int[] weights = new int[data.getLearnTarget().dim()];
+                for (int i = 0; i < weights.length; i++)
+                    weights[i] = rnd.nextPoisson(1);
+                learnTarget = new WeightedLoss<>(new L2(data.getLearnTarget(), data.getLearnFeatures()), weights); */
                 learnTarget = new L2(data.getLearnTarget(), data.getLearnFeatures());
                 testTarget = new L2(data.getTestTarget(), data.getTestFeatures());
             } else {
@@ -761,7 +766,7 @@ public class TestCART {
             if (funcKind == FuncKind.L2) {
                 final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
                         new BootstrapOptimization<L2>(
-                                new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                                new CARTTreeOptimization(data.getLearnFeatures()), rnd), L2.class,
                         iterationsCount, step);
                 for (Action<? super Trans> action: handlers) {
                     boosting.addListener(action);
@@ -771,7 +776,7 @@ public class TestCART {
             } else {
                 final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
                         new BootstrapOptimization<L2>(
-                                new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                                new CARTTreeOptimization(data.getLearnFeatures()), rnd), L2.class,
                         iterationsCount, step);
                 for (Action<? super Trans> action: handlers) {
                     boosting.addListener(action);
@@ -787,7 +792,7 @@ public class TestCART {
                         testTarget, false);
                 final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
                         new BootstrapOptimization<L2>(
-                                new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                                new CARTTreeOptimization(data.getLearnFeatures()), rnd), L2.class,
                         iterationsCount, step);
 
                 for (Action<? super Trans> action: handlers) {
@@ -802,7 +807,7 @@ public class TestCART {
                         data.getTestTarget(), false);
                 final GradientBoosting<LLLogit> boosting = new GradientBoosting<LLLogit>(
                         new BootstrapOptimization<L2>(
-                                new CARTTreeOptimization(data.getLearnFeatures()), rng), L2.class,
+                                new CARTTreeOptimization(data.getLearnFeatures()), rnd), L2.class,
                         iterationsCount, step);
                 for (Action<? super Trans> action: handlers) {
                     boosting.addListener(action);
@@ -877,6 +882,7 @@ public class TestCART {
     @Test
     public void testGRBoostHIGGSDataConfInterval() throws IOException {
         TestProcessor processor = new HIGGSReadProcessor();
+
         DataML data = readData(processor, LearnHIGGSFileName, TestHIGGSFileName);
 
         final int M = 6;
@@ -885,11 +891,46 @@ public class TestCART {
         RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
         scores[0] = rgBoostRunner.setIterations(5).findBestTestScore();
         for (int i = 1; i < M; i++) {
+
             rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
             scores[i] = rgBoostRunner.setIterations(5).findBestTestScore();
         }
         Arrays.sort(scores);
         System.out.printf("%.4f %.4f\n", scores[4], scores[M - 5]);
     }
+
+/*    DataML bootstrap(DataML data) {
+        VecBuilder targetBuilder = new VecBuilder();
+        double featuresBuilder[]
+        for (int i = 0; i < data.getLearnFeatures().length(); i++) {
+            int cnt_i = rnd.nextPoisson(1.);
+
+        }
+        return new WeightedLoss<LocalLoss>(loss, poissonWeights);
+    }
+
+    + weightedLoss в карт-трее оптимизация
+    */
+
+    @Test
+    public void testGRBoostHIGGSDataConfInterval1() throws IOException {
+        TestProcessor processor = new HIGGSReadProcessor();
+        DataML data = readData(processor, LearnHIGGSFileName, TestHIGGSFileName);
+
+        final int M = 6;
+        double scores[] = new double[M];
+
+        RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
+        scores[0] = rgBoostRunner.setIterations(5).findBestTestScore();
+        for (int i = 1; i < M; i++) {
+            L2 localLoss = new L2(data.getTestTarget(), data.getTestFeatures());
+            WeightedLoss<L2> ll = DataTools.bootstrap(localLoss, rnd);
+            rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
+            scores[i] = rgBoostRunner.setIterations(5).findBestTestScore();
+        }
+        Arrays.sort(scores);
+        System.out.printf("%.4f %.4f\n", scores[4], scores[M - 5]);
+    }
+
 }
 
