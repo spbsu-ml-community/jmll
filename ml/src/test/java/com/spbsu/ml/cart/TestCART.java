@@ -861,22 +861,46 @@ public class TestCART {
                 run();
     }
 
+    DataML bootstrap(DataML data) {
+        VecBuilder targetBuilder = new VecBuilder();
+        VecBuilder featureBuilder = new VecBuilder();
+        int countFeatures = data.getLearnFeatures().xdim();
+        for (int i = 0; i < data.getLearnFeatures().length(); i++) {
+            int cnt_i = rnd.nextPoisson(1.);
+            Vec curVec = data.getLearnFeatures().at(i);
+            for (int j = 0; j < cnt_i; j++) {
+                for (int k = 0; k < curVec.dim(); k++) {
+                    featureBuilder.add(curVec.get(k));
+                }
+                targetBuilder.append(data.getLearnTarget().get(i));
+            }
+        }
+
+        Mx dataMX = new VecBasedMx(countFeatures,
+                featureBuilder.build());
+        VecDataSet learnFeatures = new VecDataSetImpl(dataMX, null);
+
+        return new DataML(learnFeatures, targetBuilder.build(),
+                data.getTestFeatures(), data.getTestTarget());
+    }
+
     @Test
     public void testGRBoostBaseDataConfInterval() throws IOException {
         TestProcessor processor = new BaseDataReadProcessor();
         DataML data = readData(processor, LearnBaseDataName, TestBaseDataName);
 
-        final int M = 3;
+        final int M = 10;
         double scores[] = new double[M];
 
         RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
         scores[0] = rgBoostRunner.setIterations(1000).findBestTestScore();
         for (int i = 1; i < M; i++) {
+            data = bootstrap(data);
             rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
             scores[i] = rgBoostRunner.setIterations(1000).findBestTestScore();
         }
         Arrays.sort(scores);
-        System.out.printf("%.4f %.4f\n", scores[4], scores[M - 5]);
+        System.out.printf("\n%.6f %.6f\n", scores[4], scores[M - 5]);
     }
 
     @Test
@@ -899,20 +923,7 @@ public class TestCART {
         System.out.printf("%.4f %.4f\n", scores[4], scores[M - 5]);
     }
 
-/*    DataML bootstrap(DataML data) {
-        VecBuilder targetBuilder = new VecBuilder();
-        double featuresBuilder[]
-        for (int i = 0; i < data.getLearnFeatures().length(); i++) {
-            int cnt_i = rnd.nextPoisson(1.);
-
-        }
-        return new WeightedLoss<LocalLoss>(loss, poissonWeights);
-    }
-
-    + weightedLoss в карт-трее оптимизация
-    */
-
-    @Test
+/*    @Test
     public void testGRBoostHIGGSDataConfInterval1() throws IOException {
         TestProcessor processor = new HIGGSReadProcessor();
         DataML data = readData(processor, LearnHIGGSFileName, TestHIGGSFileName);
@@ -923,14 +934,13 @@ public class TestCART {
         RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
         scores[0] = rgBoostRunner.setIterations(5).findBestTestScore();
         for (int i = 1; i < M; i++) {
-            L2 localLoss = new L2(data.getTestTarget(), data.getTestFeatures());
-            WeightedLoss<L2> ll = DataTools.bootstrap(localLoss, rnd);
+            data = bootstrap(data);
             rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
             scores[i] = rgBoostRunner.setIterations(5).findBestTestScore();
         }
         Arrays.sort(scores);
         System.out.printf("%.4f %.4f\n", scores[4], scores[M - 5]);
-    }
+    } */
 
 }
 
