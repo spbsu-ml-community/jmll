@@ -88,10 +88,10 @@ public class Leaf {
     }
 
     public void calcError() {
-        if (count == 1) {
+        if (count <= 2) {
             error = 0;
         } else {
-            error = (sqrSum - sum * sum / count)/(1);
+            error = Scores.scoreSat(sum, count, sqrSum);
         }
     }
 
@@ -100,7 +100,8 @@ public class Leaf {
     }
 
     public double getValue() {
-        return sum/(count + 1);
+        return mean;
+        //        return sum/(count + 1);
 /*        if (count <= 2 || sqrSum < 1e-6)
             return sum/(count + 1);
         return (1 - (count - 2)*Sigma2/sqrSum)*mean; */

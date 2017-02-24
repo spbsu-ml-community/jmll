@@ -23,7 +23,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
     private Vec[] orderedFeatures;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
-    private final double lambda = 0.4;
+    private final double lambda = 0;
 
     public CARTTreeOptimization(VecDataSet learn) {
         orderedFeatures = new Vec[learn.xdim()];
@@ -181,7 +181,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
     }
 
     private void handleFeature(VecDataSet learn, WeightedLoss loss, Vec target, Vec[] orderedFeatures,
-                               double[] bestError, Condition[] bestCondition,
+                               double[] bestScore, Condition[] bestCondition,
                                int numFeature, int treeSize, int learnLength) {
         final int[] order = learn.order(numFeature);
         final Vec orderedFeature = orderedFeatures[numFeature];
@@ -221,8 +221,8 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
                 final double curError = errorLeft + errorRight + lambda*entropy(curLeaf.getCount(),
                         firstPartCount, learnLength, treeSize);
                 synchronized (curLeaf) {
-                    if (curError < bestError[leafNumber] && curError < curLeaf.getError()) {
-                        bestError[leafNumber] = curError;
+                    if (curError < bestScore[leafNumber] && curError < curLeaf.getError()) {
+                        bestScore[leafNumber] = curError;
                         bestCondition[leafNumber].set(numFeature, x_ji, true);
                     }
                 }
@@ -238,19 +238,13 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
     }
 
     private double score(double sum, int count, double sqrSum) {
-
         double score;
         if (count <= 2) {
             score = Double.POSITIVE_INFINITY;
         } else {
-            score = (getnDisp(sum, count, sqrSum))*count*(count - 2)/(count*count - 3*count + 1);
+            score = Scores.getnDisp(sum, count, sqrSum);
         }
-
         return score;
-    }
-
-    private double getnDisp(double sum, int count, double sqrSum) {
-        return sqrSum - (sum * sum) / count;
     }
 
     private double entropy(int genCount, int leftCount, int n, int leathCount) {

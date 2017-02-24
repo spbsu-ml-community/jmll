@@ -56,6 +56,8 @@ public class TestCART {
     private static final FastRandom rnd = new FastRandom(0);
     private static final String TestBaseDataName = "featuresTest.txt.gz";
     private static final String LearnBaseDataName = "features.txt.gz";
+    private static final String LearnCTSliceFileName = "slice_localization_data_learn.csv";
+    private static final String TestCTSliceFileName = "slice_localization_data_test.csv";
 
     private Random r = new Random();
 
@@ -479,6 +481,7 @@ public class TestCART {
     }
 
     private static class BaseDataReadProcessor extends TestProcessor {
+
         protected void init() {};
 
         @Override
@@ -570,6 +573,23 @@ public class TestCART {
             if (curAns == 0) curAns = -1;
             targetBuilder.append(curAns);
             for (int i = 1; i <= 28; i++) {
+                featuresBuilder.append(CharSeqTools.parseDouble(parts[i]));
+            }
+        }
+    }
+
+    private class CTSliceReadProcessor extends TestProcessor {
+        public CTSliceReadProcessor() {
+            init();
+        }
+
+        protected void init() { featuresCount = 384; }
+
+        @Override
+        public void process(CharSequence arg) {
+            final CharSequence[] parts = CharSeqTools.split(arg, ',');
+            targetBuilder.append(CharSeqTools.parseDouble(parts[385]));
+            for (int i = 1; i < 385; i++) {
                 featuresBuilder.append(CharSeqTools.parseDouble(parts[i]));
             }
         }
@@ -915,12 +935,45 @@ public class TestCART {
         RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
         scores[0] = rgBoostRunner.setIterations(5).findBestTestScore();
         for (int i = 1; i < M; i++) {
-
+            data = bootstrap(data);
             rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.LLLogit);
             scores[i] = rgBoostRunner.setIterations(5).findBestTestScore();
         }
         Arrays.sort(scores);
         System.out.printf("%.4f %.4f\n", scores[4], scores[M - 5]);
+    }
+
+    @Test
+    public void testCTSliceData() throws IOException {
+        TestProcessor processor = new CTSliceReadProcessor();
+
+        DataML data = readData(processor, LearnCTSliceFileName, TestCTSliceFileName);
+        RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
+        rgBoostRunner.addScoreCalcerLearn()
+                .setStep(0.2)
+                .addScoreCalcerTest()
+                .run();
+    }
+
+    @Test
+    public void testGRBoostCTSliceDataConfInterval() throws IOException {
+        TestProcessor processor = new CTSliceReadProcessor();
+
+        DataML data = readData(processor, LearnCTSliceFileName, TestCTSliceFileName);
+
+        final int M = 100;
+        double scores[] = new double[M];
+
+        RGBoostRunner rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
+        scores[0] = rgBoostRunner.setIterations(1200).setStep(0.2).findBestTestScore();
+        for (int i = 1; i < M; i++) {
+            System.out.printf("!!%d ", i);
+            data = bootstrap(data);
+            rgBoostRunner = new RGBoostRunner(data, RGBoostRunner.FuncKind.L2);
+            scores[i] = rgBoostRunner.setIterations(1200).setStep(0.2).findBestTestScore();
+        }
+        Arrays.sort(scores);
+        System.out.printf("%.7f %.7f\n", scores[5], scores[M - 5]);
     }
 
 /*    @Test
