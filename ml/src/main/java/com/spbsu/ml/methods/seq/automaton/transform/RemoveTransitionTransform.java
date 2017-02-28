@@ -1,18 +1,20 @@
-package learning.transform;
+package com.spbsu.ml.methods.seq.automaton.transform;
 
-import automaton.DFA;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.Seq;
-import com.spbsu.commons.seq.regexp.Alphabet;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.methods.seq.automaton.AutomatonStats;
+import com.spbsu.ml.methods.seq.automaton.DFA;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import learning.LearningState;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class RemoveTransitionTransform<T> implements Transform<T> {
@@ -26,34 +28,33 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
   }
 
   @Override
-  public LearningState<T> applyTransform(LearningState<T> learningState) {
-    final LearningState<T> result = new LearningState<>(learningState);
+  public AutomatonStats<T> applyTransform(AutomatonStats<T> automatonStats) {
+    final AutomatonStats<T> result = new AutomatonStats<>(automatonStats);
     final DFA<T> automaton = result.getAutomaton();
-    final List<Seq<T>> data = learningState.getData();
-    final TIntList classes = learningState.getClasses();
-    final TDoubleList weights = learningState.getWeights();
-    final List<TIntIntMap> samplesEndState = learningState.getSamplesEndState();
-    final List<TIntSet> samplesViaState = learningState.getSamplesViaState();
+    final DataSet<Seq<T>> data = automatonStats.getDataSet();
+    final Vec target = automatonStats.getTarget();
+    final List<TIntIntMap> samplesEndState = automatonStats.getSamplesEndState();
+    final List<TIntSet> samplesViaState = automatonStats.getSamplesViaState();
     final int stateCount = automaton.getStateCount();
 
     final List<TIntSet> newVia = new ArrayList<>(stateCount);
-    final List<double[]> newStateClassWeight = new ArrayList<>(stateCount);
     final List<TIntIntMap> newSamplesEndState = new ArrayList<>(stateCount);
 
-    learningState.getStateClassWeight().forEach(stateClassCount -> {
-      newStateClassWeight.add(Arrays.copyOf(stateClassCount, learningState.getClassCount()));
+    final TIntList newStateSize = new TIntArrayList(automatonStats.getStateSize());
+    final TDoubleList newStateSum = new TDoubleArrayList(automatonStats.getStateSum());
+    final TDoubleList newStateSum2 = new TDoubleArrayList(automatonStats.getStateSum2());
+
+    for (int i = 0; i < stateCount; i++) {
       newVia.add(null);
       newSamplesEndState.add(null);
-    });
+    }
 
     to = automaton.getTransition(from, c);
     automaton.removeTransition(from, c);
 
-    //newVia.set(from, new TIntHashSet());
-
-    TIntSet statesVia = new TIntHashSet();
+    final TIntSet statesVia = new TIntHashSet();
     samplesViaState.get(from).forEach(index -> {
-      final Seq<T> word = data.get(index);
+      final Seq<T> word = data.at(index);
       int curState = automaton.getStartState();
       int endI = 0;
 
@@ -68,7 +69,8 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
         statesVia.add(curState);
       }
 
-      final int clazz = classes.get(index);
+      final double w = target.get(index);
+
       for (int i = 0; i < stateCount; i++) {
         if (samplesViaState.get(i).contains(index) && !statesVia.contains(i)) {
           if (newVia.get(i) == null) {
@@ -81,7 +83,9 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
             newSamplesEndState.set(i, new TIntIntHashMap(samplesEndState.get(i)));
           }
           newSamplesEndState.get(i).remove(index);
-          newStateClassWeight.get(i)[clazz] -= weights.get(index);
+          newStateSum.set(i, newStateSum.get(i) - w);
+          newStateSum2.set(i, newStateSum2.get(i) - w * w);
+          newStateSize.set(i, newStateSize.get(i) - 1);
         }
       }
 
@@ -89,7 +93,9 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
         newSamplesEndState.set(curState, new TIntIntHashMap(samplesEndState.get(curState)));
       }
       newSamplesEndState.get(curState).put(index, endI);
-      newStateClassWeight.get(curState)[clazz] += weights.get(index);
+      newStateSum.set(curState, newStateSum.get(curState) + w);
+      newStateSum2.set(curState, newStateSum2.get(curState) + w * w);
+      newStateSize.set(curState, newStateSize.get(curState) + 1);
 
       return true;
     });
@@ -102,7 +108,10 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
         result.getSamplesEndState().set(i, newSamplesEndState.get(i));
       }
     }
-    result.setStateClassWeight(newStateClassWeight);
+    result.setStateSize(newStateSize);
+    result.setStateSum(newStateSum);
+    result.setStateSum2(newStateSum2);
+
     return result;
   }
 

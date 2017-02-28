@@ -1,10 +1,14 @@
-package learning;
+package com.spbsu.ml.methods.seq.automaton;
 
-import automaton.DFA;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
+import com.spbsu.ml.data.set.DataSet;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.TIntSet;
@@ -13,49 +17,46 @@ import gnu.trove.set.hash.TIntHashSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LearningState<T> {
+public class AutomatonStats<T> {
   private DFA<T> automaton;
-  private final int classCount;
 
   private final Alphabet<T> alphabet;
-  private final List<Seq<T>> data;
-  private final TIntList classes;
-  private final TDoubleList weights;
+  private final DataSet<Seq<T>> dataSet;
+  private final Vec target;
+  private TDoubleList stateSum = new TDoubleArrayList();
+  private TDoubleList stateSum2 = new TDoubleArrayList();
+  private TIntList stateSize = new TIntArrayList();
   private List<TIntSet> samplesViaState = new ArrayList<>();
   private List<TIntIntMap> samplesEndState = new ArrayList<>();
-  private List<double[]> stateClassWeight = new ArrayList<>();
 
-
-  public LearningState(LearningState<T> other) {
+  public AutomatonStats(AutomatonStats<T> other) {
     automaton = other.automaton.copy();
-    classCount = other.classCount;
     alphabet = other.alphabet;
-    data = other.data;
-    classes = other.classes;
-    weights = other.weights;
+    dataSet = other.dataSet;
+    target = other.target;
     samplesEndState = new ArrayList<>(other.samplesEndState);
     samplesViaState = new ArrayList<>(other.samplesViaState);
-    stateClassWeight = new ArrayList<>(other.stateClassWeight);
+    stateSum = new TDoubleArrayList(other.stateSum);
+    stateSum2 = new TDoubleArrayList(other.stateSum2);
+    stateSize = new TIntArrayList(other.stateSize);
   }
 
-  public LearningState(Alphabet<T> alphabet, int classCount, List<Seq<T>> data, TIntList classes, TDoubleList weights) {
+  public AutomatonStats(Alphabet<T> alphabet, DataSet<Seq<T>> dataSet, Vec target) {
     automaton = new DFA<T>(alphabet);
-    this.data = data;
-    this.classes = classes;
-    this.weights = weights;
-    this.classCount = classCount;
+    this.dataSet = dataSet;
+    this.target = target;
     this.alphabet = alphabet;
     final TIntSet allIndicesSet = new TIntHashSet();
     final TIntIntMap allIndicesMap = new TIntIntHashMap();
 
-    stateClassWeight.add(new double[classCount]);
-
-    for (int i = 0; i < data.size(); i++) {
+    for (int i = 0; i < dataSet.length(); i++) {
       allIndicesSet.add(i);
       allIndicesMap.put(i, 0);
-      stateClassWeight.get(0)[classes.get(i)] += weights.get(i);
     }
 
+    stateSize.add(dataSet.length());
+    stateSum.add(VecTools.sum(target));
+    stateSum2.add(VecTools.sum2(target));
 
     samplesEndState.add(allIndicesMap);
     samplesViaState.add(allIndicesSet);
@@ -80,20 +81,16 @@ public class LearningState<T> {
     return samplesEndState;
   }
 
-  public List<double[]> getStateClassWeight() {
-    return stateClassWeight;
+  public DataSet<Seq<T>> getDataSet() {
+    return dataSet;
   }
 
-  public List<Seq<T>> getData() {
-    return data;
+  public TDoubleList getStateSum() {
+    return stateSum;
   }
 
-  public TIntList getClasses() {
-    return classes;
-  }
-
-  public TDoubleList getWeights() {
-    return weights;
+  public TDoubleList getStateSum2() {
+    return stateSum2;
   }
 
   public void setSamplesViaState(List<TIntSet> samplesViaState) {
@@ -104,12 +101,24 @@ public class LearningState<T> {
     this.samplesEndState = samplesEndState;
   }
 
-  public void setStateClassWeight(List<double[]> stateClassWeight) {
-    this.stateClassWeight = stateClassWeight;
+  public TIntList getStateSize() {
+    return stateSize;
   }
 
-  public int getClassCount() {
-    return classCount;
+  public Vec getTarget() {
+    return target;
+  }
+
+  public void setStateSum(TDoubleList stateSum) {
+    this.stateSum = stateSum;
+  }
+
+  public void setStateSum2(TDoubleList stateSum2) {
+    this.stateSum2 = stateSum2;
+  }
+
+  public void setStateSize(TIntList stateSize) {
+    this.stateSize = stateSize;
   }
 
   public void setAutomaton(DFA<T> automaton) {
