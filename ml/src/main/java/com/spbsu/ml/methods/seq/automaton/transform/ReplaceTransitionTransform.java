@@ -1,6 +1,6 @@
-package learning.transform;
+package com.spbsu.ml.methods.seq.automaton.transform;
 
-import learning.LearningState;
+import com.spbsu.ml.methods.seq.automaton.AutomatonStats;
 
 public class ReplaceTransitionTransform<T> implements Transform<T> {
   private final int from;
@@ -14,8 +14,8 @@ public class ReplaceTransitionTransform<T> implements Transform<T> {
   }
 
   @Override
-  public LearningState<T> applyTransform(LearningState<T> learningState) {
-    LearningState<T> state1 = new RemoveTransitionTransform<>(from, c).applyTransform(learningState);
+  public AutomatonStats<T> applyTransform(AutomatonStats<T> automatonStats) {
+    AutomatonStats<T> state1 = new RemoveTransitionTransform<>(from, c).applyTransform(automatonStats);
     return new AddTransitionTransform<>(from, to, c).applyTransform(state1);
   }
 

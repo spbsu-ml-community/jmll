@@ -1,18 +1,20 @@
-package learning.transform;
+package com.spbsu.ml.methods.seq.automaton.transform;
 
-import automaton.DFA;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.Seq;
-import com.spbsu.commons.seq.regexp.Alphabet;
+import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.methods.seq.automaton.AutomatonStats;
+import com.spbsu.ml.methods.seq.automaton.DFA;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import learning.LearningState;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class AddTransitionTransform<T> implements Transform<T> {
@@ -27,31 +29,32 @@ public class AddTransitionTransform<T> implements Transform<T> {
   }
 
   @Override
-  public LearningState<T> applyTransform(LearningState<T> learningState) {
-    final LearningState<T> result = new LearningState<>(learningState);
+  public AutomatonStats<T> applyTransform(AutomatonStats<T> automatonStats) {
+    final AutomatonStats<T> result = new AutomatonStats<>(automatonStats);
     final DFA<T> automaton = result.getAutomaton();
     final int stateCount = automaton.getStateCount();
-    final List<Seq<T>> data = learningState.getData();
-    final TIntList classes = learningState.getClasses();
-    final TDoubleList weights = learningState.getWeights();
-    final List<TIntIntMap> samplesEndState = learningState.getSamplesEndState();
+    final DataSet<Seq<T>> data = automatonStats.getDataSet();
+    final Vec target = automatonStats.getTarget();
+    final List<TIntIntMap> samplesEndState = automatonStats.getSamplesEndState();
 
     final List<TIntSet> newVia = new ArrayList<>(stateCount);
-    final List<double[]> newStateClassWeight = new ArrayList<>(stateCount);
     final List<TIntIntMap> newSamplesEndState = new ArrayList<>(stateCount);
 
-    learningState.getStateClassWeight().forEach(stateClassCount -> {
-      newStateClassWeight.add(Arrays.copyOf(stateClassCount, learningState.getClassCount()));
+    final TIntList newStateSize = new TIntArrayList(automatonStats.getStateSize());
+    final TDoubleList newStateSum = new TDoubleArrayList(automatonStats.getStateSum());
+    final TDoubleList newStateSum2 = new TDoubleArrayList(automatonStats.getStateSum2());
+
+    for (int i = 0; i < stateCount; i++) {
       newVia.add(null);
       newSamplesEndState.add(null);
-    });
+    }
 
     automaton.addTransition(from, to, c);
     newSamplesEndState.set(from, new TIntIntHashMap(samplesEndState.get(from)));
     samplesEndState.get(from).forEachEntry((index, endI) -> {
       int curState = from;
       int newEndI = endI;
-      final Seq<T> word = data.get(index);
+      final Seq<T> word = data.at(index);
       for (int i = endI; i < word.length(); i++, newEndI = i) {
         final T c = word.at(i);
         if (!automaton.hasTransition(curState, c)) {
@@ -59,13 +62,21 @@ public class AddTransitionTransform<T> implements Transform<T> {
         }
         curState = automaton.getTransition(curState, c);
         if (newVia.get(curState) == null) {
-          newVia.set(curState, new TIntHashSet(learningState.getSamplesViaState().get(curState)));
+          newVia.set(curState, new TIntHashSet(automatonStats.getSamplesViaState().get(curState)));
         }
         newVia.get(curState).add(index);
       }
 
-      newStateClassWeight.get(from)[classes.get(index)] -= weights.get(index);
-      newStateClassWeight.get(curState)[classes.get(index)] += weights.get(index);
+
+      final double w = target.get(index);
+      newStateSum.set(from, newStateSum.get(from) - w);
+      newStateSum2.set(from, newStateSum2.get(from) - w * w);
+      newStateSize.set(from, newStateSize.get(from) - 1);
+
+      newStateSum.set(curState, newStateSum.get(curState) + w);
+      newStateSum2.set(curState, newStateSum2.get(curState) + w * w);
+      newStateSize.set(curState, newStateSize.get(curState) + 1);
+
       if (newSamplesEndState.get(curState) == null) {
         newSamplesEndState.set(curState, new TIntIntHashMap(samplesEndState.get(curState)));
       }
@@ -82,7 +93,11 @@ public class AddTransitionTransform<T> implements Transform<T> {
         result.getSamplesEndState().set(i, newSamplesEndState.get(i));
       }
     }
-    result.setStateClassWeight(newStateClassWeight);
+
+    result.setStateSize(newStateSize);
+    result.setStateSum(newStateSum);
+    result.setStateSum2(newStateSum2);
+
     return result;
   }
 

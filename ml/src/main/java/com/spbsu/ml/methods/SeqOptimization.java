@@ -9,5 +9,5 @@ import com.spbsu.ml.data.set.DataSet;
  * Date: 07.07.14
  * Time: 11:06
  */
-public interface SeqOptimization<Loss extends TargetFunc> extends Optimization<Loss, DataSet<Seq>, Seq>{
+public interface SeqOptimization<T, Loss extends TargetFunc> extends Optimization<Loss, DataSet<Seq<T>>, Seq<T>>{
 }

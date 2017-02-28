@@ -1,21 +1,26 @@
-package automaton;
+package com.spbsu.ml.methods.seq.automaton;
 
+import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.math.vectors.SingleValueVec;
+import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
-import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TIntArrayList;
 
-import java.util.*;
+import java.util.Arrays;
 
-public class DFA<T> {
+public class DFA<T> implements Computable<Seq<T>, Vec> {
   private int stateCount = 0;
   private int[][] transitions = new int[0][];
   private final Alphabet<T> alphabet;
-  private int[]stateClasses = new int[0];
 
   public DFA(Alphabet<T> alphabet) {
     this.alphabet = alphabet;
     createNewState();
+  }
+
+  @Override
+  public Vec compute(Seq<T> argument) {
+    return new SingleValueVec(run(argument));
   }
 
   public int getStateCount() {
@@ -23,20 +28,12 @@ public class DFA<T> {
   }
 
   public int createNewState() {
-    return createNewState(0);
-  }
-
-  public int createNewState(int stateClass) {
     int[][] newTransitions = new int[stateCount + 1][];
     System.arraycopy(transitions, 0, newTransitions, 0, stateCount);
     newTransitions[stateCount] = new int[alphabet.size() + 1];
     Arrays.fill(newTransitions[stateCount], -1);
     transitions = newTransitions;
 
-    int[] newStateClasses = new int[stateCount + 1];
-    System.arraycopy(stateClasses, 0, newStateClasses, 0, stateCount);
-    stateClasses = newStateClasses;
-    stateClasses[stateCount] = stateClass;
     return stateCount++;
   }
 
@@ -46,10 +43,6 @@ public class DFA<T> {
     System.arraycopy(transitions, state + 1, newTransitions, state, stateCount - state - 1);
     transitions = newTransitions;
 
-    int[] newStateClasses = new int[stateCount - 1];
-    System.arraycopy(stateClasses, 0, newStateClasses, 0, state);
-    System.arraycopy(stateClasses, state + 1, newStateClasses, state, stateCount - state - 1);
-    stateClasses = newStateClasses;
     stateCount--;
 
     for (int i = 0; i < stateCount; i++) {
@@ -75,18 +68,6 @@ public class DFA<T> {
 
   public void removeTransition(int from, T c) {
     transitions[from][alphabet.index(c)] = -1;
-  }
-
-  public void setStateClass(int state, int stateClass) {
-    stateClasses[state] = stateClass;
-  }
-
-  public int getStateClass(int state) {
-    return stateClasses[state];
-  }
-
-  public int getWordClass(final Seq<T> word) {
-    return stateClasses[run(word)];
   }
 
   public int getStartState() {
@@ -126,7 +107,6 @@ public class DFA<T> {
   public DFA<T> copy() {
     DFA<T> result = new DFA<>(alphabet);
     result.stateCount = stateCount;
-    result.stateClasses = Arrays.copyOf(stateClasses, stateCount);
     result.transitions = new int[stateCount][];
     for (int i = 0; i < stateCount; i++) {
       result.transitions[i] = Arrays.copyOf(transitions[i], alphabet.size() + 1);
@@ -147,8 +127,7 @@ public class DFA<T> {
 
     return other.alphabet.equals(alphabet)
             && other.stateCount == stateCount
-            && Arrays.deepEquals(other.transitions, transitions)
-            && Arrays.equals(other.stateClasses, stateClasses);
+            && Arrays.deepEquals(other.transitions, transitions);
 
   }
 }
