@@ -17,7 +17,6 @@ import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
-import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
@@ -25,7 +24,6 @@ import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.cart.CARTTreeOptimization;
-import com.spbsu.ml.methods.cart.CARTTreeOptimizationFixError;
 import org.junit.Test;
 
 import java.io.*;
@@ -178,7 +176,7 @@ public class TestCART {
     } */
 
 
-    @Test
+/*    @Test
     public void testnDim() { //function majority
         int n = 3;
         int k = 10;
@@ -236,7 +234,7 @@ public class TestCART {
 
         System.out.println(disp/k);
     }
-
+*/
     @Test
     public void testnDimRand() { //function majority
         int n = 10;

@@ -13,7 +13,6 @@
     <module>commons</module>
     <module>ml</module>
     <module>experiments</module>
-    <module>nadyaExperiments</module>
   </modules>
 
 </project>

@@ -1,5 +1,6 @@
 package com.spbsu.ml.methods.cart;
 
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
@@ -23,7 +24,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
     private Vec[] orderedFeatures;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
-    private final double lambda = 0;
+    private final double lambda = 0.4;
 
     public CARTTreeOptimization(VecDataSet learn) {
         orderedFeatures = new Vec[learn.xdim()];
@@ -65,7 +66,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
     private void constructTree(List<Leaf> tree, VecDataSet learn, WeightedLoss loss) {
         int count = 0;
         int old_size = tree.size();
-        while (count < 6) { //!!!!
+        while (count < 6) {
             makeStep(tree, learn, loss);
             count++;
             if (old_size == tree.size()) {
@@ -84,8 +85,6 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
             bestError[i] = Double.POSITIVE_INFINITY;
             bestCondition[i] = new Condition();
         }
-
-        //предподсчитать
 
         final int dim = learn.xdim();
         final Vec target = loss.target();
@@ -110,13 +109,6 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-
-/*        executorService.shutdown();
-        try {
-            executorService.awaitTermination(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } */
 
         for (int i = 0; i < countLeavesBefore; i++) {
             Leaf leaf = tree.get(i);
@@ -165,18 +157,6 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
             maxErr = Math.max(maxErr, leaf.getError());
         }
 
-        //0.075, ограничить размер глубины 7.
-
-        //распараллетить нахождение лучше ошибки(например, по value или по feature)
-        // дисперсия, исправленная дисперсия, средневыборочная
-        // выкинуть фрейм(иконка) - для дебага
-        // код грязный, внести апдейт внутрь листа, чтобы до приватных переменных не дошло
-        // лист умеет обновляться и делится - вынести в лист.
-        // secondPartsum - внутрь лифов.
-
-        // Функция слишком большая - разделить
-        // Метод для подсчёта ошибки
-
         return maxErr;
     }
 
@@ -209,7 +189,7 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
 
             final double x_ji = orderedFeature.get(j);
 
-            if (curCount[leafNumber] > 0 && last[leafNumber] < x_ji) { // catch boarder
+            if (curCount[leafNumber] > 0 && last[leafNumber] < x_ji) {
                 final double firstPartSum = partSum[leafNumber];
                 final int firstPartCount = curCount[leafNumber];
                 final double secondPartSum = curLeaf.getSum() - firstPartSum;
@@ -242,7 +222,8 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         if (count <= 2) {
             score = Double.POSITIVE_INFINITY;
         } else {
-            score = Scores.getnDisp(sum, count, sqrSum);
+            score = Scores.scoreSat(sum, count, sqrSum);
+                    //getnDisp(sum, count, sqrSum);
         }
         return score;
     }
@@ -252,8 +233,6 @@ public class CARTTreeOptimization extends VecOptimization.Stub<WeightedLoss<? ex
         double p1 = (leftCount + 1)*1.0/(genCount + 2)*(genCount + 1)/(n + leathCount);
         double p2 = (rightCount + 1)*1.0/(genCount + 2)*(genCount + 1)/(n + leathCount);
 
-//        double p1 = (leftCount + 1)*1.0/(genCount + leftCount);
-//        double p2 = (rightCount + 1)*1.0/(genCount + leftCount);
         return -(-p1*Math.log(p1) - p2*Math.log(p2));
     }
 }

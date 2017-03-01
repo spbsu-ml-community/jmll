@@ -65,7 +65,7 @@ local.properties
 .buildpath
 
 ### Maven ###
-*/target/*
+**/target
 
 ### Java ###
 *.class
