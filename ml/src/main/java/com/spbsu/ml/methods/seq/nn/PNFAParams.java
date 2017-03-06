@@ -9,22 +9,20 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
-import com.spbsu.ml.data.set.DataSet;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 import java.util.List;
 import java.util.Random;
 
-import static com.spbsu.commons.math.vectors.VecTools.incscale;
-import static com.spbsu.commons.math.vectors.VecTools.scale;
-
 public class PNFAParams<T> {
   private Vec values; //todo getter and private
   private Mx[] w;
-  private Mx[] wTrans;
 
   private final Alphabet<T> alphabet;
   private final int stateCount;
+
+  private final Mx[] wGrad;
+  private final Vec valuesGrad;
 
   private Mx[] beta;
 
@@ -35,25 +33,28 @@ public class PNFAParams<T> {
     beta = new Mx[alphabet.size()];
     values = new ArrayVec(stateCount);
     w = new Mx[alphabet.size()];
-    wTrans = new Mx[alphabet.size()];
+
+    wGrad = new Mx[alphabet.size()];
+    valuesGrad = new ArrayVec(stateCount);
 
     for (int i = 0; i < alphabet.size(); i++) {
       w[i] = new VecBasedMx(stateCount, stateCount);
-      wTrans[i] = new VecBasedMx(stateCount, stateCount);
       beta[i] = new VecBasedMx(stateCount, stateCount - 1);
+
+      wGrad[i] = new VecBasedMx(stateCount, stateCount);
     }
 
     for (int i = 0; i < stateCount; i++) {
-      values.set(i, random.nextGaussian());
+      values.set(i, 1);
     }
 
-    for (int a = 0; a < alphabet.size(); a++) {
-      for (int i = 0; i < stateCount; i++) {
-        for (int j = 0; j < stateCount - 1; j++) {
-          beta[a].set(i, j, random.nextGaussian());
-        }
-      }
-    }
+//    for (int a = 0; a < alphabet.size(); a++) {
+//      for (int i = 0; i < stateCount; i++) {
+//        for (int j = 0; j < stateCount - 1; j++) {
+//          beta[a].set(i, j, random.nextDouble() - 0.5);
+//        }
+//      }
+//    }
     updateWeights();
   }
 
@@ -64,63 +65,57 @@ public class PNFAParams<T> {
       alphabetMap.put(seqAlphabet[i], i);
     }
 
-    final Mx[] betaGrad = new Mx[seqAlphabet.length];
+    final Mx[] wGrad = new Mx[seqAlphabet.length];
     for (int i = 0; i < seqAlphabet.length; i++) {
-      betaGrad[i] = new VecBasedMx(stateCount, stateCount - 1);
+      wGrad[i] = new VecBasedMx(stateCount, stateCount);
     }
+    final Vec valuesGrad = new ArrayVec(stateCount);
 
     final Vec[] distributions = new Vec[seq.length() + 1];
-/*
+
     for (int i = 0; i <= seq.length(); i++) {
       distributions[i] = new ArrayVec(stateCount);
     }
-    */
-    distributions[0] = new ArrayVec(stateCount);
-    //VecTools.fill(distributions[0], 1.0 / stateCount);
     distributions[0].set(0, 1);
 
     for (int i = 0; i < seq.length(); i++) {
-      distributions[i + 1] = MxTools.multiply(wTrans[alphabet.index(seq.at(i))], distributions[i]);
-      //mulLeftTo(distributions[i], w[alphabet.index(seq.at(i))], distributions[i + 1]);
+      mulLeftTo(distributions[i], w[alphabet.index(seq.at(i))], distributions[i + 1]);
     }
 
-    Vec expectedValue = new ArrayVec(stateCount);
-    Vec curDistr = new ArrayVec(stateCount);
+    Mx rightProd = new VecBasedMx(stateCount, stateCount), tmpProd = new VecBasedMx(stateCount, stateCount);
+    Vec curDistr = new ArrayVec(stateCount), rightDistribution = new ArrayVec(stateCount);
 
     for (int i = 0; i < stateCount; i++) {
-      expectedValue.set(i, values.get(i));
+      rightProd.set(i, i, values.get(i));
     }
 
     for (int i = seq.length() - 1; i >= 0; i--) {
-      final int c = alphabet.index(seq.at(i));
-      final int a = alphabetMap.get(c);
+      final int a = alphabetMap.get(alphabet.index(seq.at(i)));
 
       for (int to = 0; to < stateCount; to++) {
         VecTools.fill(curDistr, 0);
         curDistr.set(to, 1);
+        mulLeftTo(curDistr, rightProd, rightDistribution);
+        final double sum = VecTools.sum(rightDistribution);
         for (int from = 0; from < stateCount; from++) {
-          for (int j = 0; j < stateCount - 1; j++) {
-            final double grad = 2 * diff * distributions[i].get(from) * expectedValue.get(to);
-            final double curW = w[c].get(from, to);
-            if (j == to) {
-              betaGrad[a].adjust(from, j, grad * curW * (1 - curW));
-            } else {
-              betaGrad[a].adjust(from, j, -grad * curW * w[c].get(from, j));
-            }
-          }
+          wGrad[a].adjust(from, to, 2 * diff * distributions[i].get(from) * sum);
         }
       }
-      expectedValue = MxTools.multiply(w[c], expectedValue);
+      VecTools.fill(tmpProd, 0);
+      MxTools.multiplyTo(w[a], rightProd, tmpProd);
+      Mx tmp = tmpProd;
+      tmpProd = rightProd;
+      rightProd = tmp;
+
     }
 
-    final Vec valuesGrad = new ArrayVec(stateCount);
     for (int i = 0 ; i < stateCount; i++) {
       valuesGrad.set(i, 2 * diff * distributions[seq.length()].at(i));
     }
 
-    return new PNFAParamsGrad(betaGrad, valuesGrad);
+    return new PNFAParamsGrad(wGrad, valuesGrad);
   }
-/*
+
   public PNFAParamsGrad calcPathGrad(final Seq<Seq<T>> learn, final Vec target, final int[] path) {
     for (int a = 0; a < alphabet.size(); a++) {
       VecTools.fill(wGrad[a], 0);
@@ -151,76 +146,41 @@ public class PNFAParams<T> {
 
     return new PNFAParamsGrad(wGrad, valuesGrad);
   }
-*/
+
   public double getSeqValue(final Seq<T> seq) {
-    Vec distrib = new ArrayVec(stateCount);
-    //VecTools.fill(distrib, 1.0 / stateCount);
-    distrib.set(0, 1);
-    for (int s = 0; s < seq.length(); s++) {
-      distrib = MxTools.multiply(wTrans[alphabet.index(seq.at(s))], distrib);
+    Mx distribution = new VecBasedMx(1, stateCount), distribution1 = new VecBasedMx(1, stateCount);
+    distribution.set(0, 1);
+    final int length = seq.length();
+    for (int j = 0; j < length; j++) {
+      VecTools.fill(distribution1, 0);
+      MxTools.multiplyTo(distribution, w[alphabet.index(seq.at(j))], distribution1);
+      final Mx tmp = distribution;
+      distribution = distribution1;
+      distribution1 = tmp;
     }
-    return VecTools.multiply(distrib, values);
+    return VecTools.multiply(distribution, values);
   }
 
-  public void updateParams(final Mx[] addB, Vec vGradients, final DataSet<Seq<T>> ds, Vec target, Vec[] distribs, double step) {
-    incscale(values, vGradients, step);
-    for (int c = 0; c < addB.length; c++) {
-      incscale(beta[c], addB[c], step);
-    }
-    for (int c = 0; c < addB.length; c++) { // updating w
-      for (int i = 0; i < stateCount; i++) {
-        double sum = 0;
-        for (int j = 0; j < stateCount - 1; j++) {
-          sum += Math.exp(beta[c].get(i, j));
-        }
-        for (int j = 0; j < stateCount - 1; j++) {
-          final double val = Math.exp(beta[c].get(i, j)) / (1 + sum);
-          if (!Double.isNaN(val)) {
-            w[c].set(i, j, val);
-            wTrans[c].set(j, i, val);
-          }
-          else {
-            w[c].set(i, j, 1);
-            wTrans[c].set(j, i, 1);
-          }
-        }
-        w[c].set(i, stateCount - 1, 1 / (1 + sum));
-        wTrans[c].set(stateCount - 1, i, 1 / (1 + sum));
-      }
-    }
-/*
-    final Vec totals = new ArrayVec(stateCount);
-    for (int i = 0; i < ds.length(); i++) {
-      final Seq<T> seq = ds.at(i);
-      final double seqTarget = target.get(i);
-      Vec distrib = new ArrayVec(stateCount);
-      distrib.set(0, 1);
-      for (int s = 0; s < seq.length(); s++) {
-        distrib = MxTools.multiply(wTrans[alphabet.index(seq.at(s))], distrib);
-      }
-      incscale(totals, distrib, seqTarget);
-      distribs[i] = distrib;
-    }
-*/
-    //incscale(values, valuesGrad, step);
-//    scale(totals, 1. / ds.length());
-//    values = totals;
+  public void updateParams(final Mx[] addW, final Vec addValues, final double step) {
+    updateParams(addW, addValues, step, null);
   }
 
+  public void updateParams(final Mx[] addW, final Vec addValues, final double step, final int[] alpha) {
+    VecTools.incscale(values, addValues, step);
 
-  public void updateParams(final Mx[] addBeta, final Vec addValues, final double step) {
-    updateParams(addBeta, addValues, step, null);
-  }
-
-  public void updateParams(final Mx[] addBeta, final Vec addValues, final double step, final int[] alpha) {
-    incscale(values, addValues, step);
     final int alphabetSize = alpha == null ? alphabet.size() : alpha.length;
 
     for (int charId = 0; charId < alphabetSize; charId++) {
       final int c = alpha == null ? charId : alpha[charId];
       for (int i = 0; i < stateCount; i++) {
         for (int j = 0; j < stateCount - 1; j++) {
-          beta[c].adjust(i, j, addBeta[charId].get(i, j) * step);
+          for (int k = 0; k < stateCount; k++) {
+            if (j == k) {
+              beta[c].adjust(i, j, addW[charId].get(i, k) * w[c].get(i, k) * (1 - w[c].get(i, k)) * step);
+            } else {
+              beta[c].adjust(i, j, addW[charId].get(i, k) * -w[c].get(i, k) * w[c].get(i, j) * step);
+            }
+          }
         }
       }
     }
@@ -268,7 +228,7 @@ public class PNFAParams<T> {
     return values;
   }
 
-  public void updateWeights() {
+  private void updateWeights() {
     updateWeights(null);
   }
 
@@ -284,18 +244,13 @@ public class PNFAParams<T> {
           sum += Math.exp(beta[c].get(i, j));
         }
         for (int j = 0; j < stateCount - 1; j++) {
-          final double val = Math.exp(beta[c].get(i, j)) / (1 + sum);
-          w[c].set(i, j, val);
-          wTrans[c].set(j, i, val);
+          w[c].set(i, j, Math.exp(beta[c].get(i, j)) / (1 + sum));
         }
-
         w[c].set(i, stateCount - 1, 1 / (1 + sum));
-        wTrans[c].set(stateCount - 1, i, 1 / (1 + sum));
       }
     }
   }
 
-  /*
   private void mulLeftTo(final Vec vec, final Mx mx, final Vec dest) {
     for (int i = 0; i < vec.length(); i++) {
       dest.set(i, 0);
@@ -304,19 +259,18 @@ public class PNFAParams<T> {
       }
     }
   }
-*/
 
   public static class PNFAParamsGrad {
-    private Mx[] betaGrad;
+    private Mx[] wGrad;
     private Vec valuesGrad;
 
-    PNFAParamsGrad(final Mx[] betaGrad, final Vec valuesGrad) {
-      this.betaGrad = betaGrad;
+    PNFAParamsGrad(final Mx[] wGrad, final Vec valuesGrad) {
+      this.wGrad = wGrad;
       this.valuesGrad = valuesGrad;
     }
 
-    public Mx[] getBetaGrad() {
-      return betaGrad;
+    public Mx[] getWGrad() {
+      return wGrad;
     }
 
     public Vec getValuesGrad() {
