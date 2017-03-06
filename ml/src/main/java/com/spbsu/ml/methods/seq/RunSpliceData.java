@@ -7,6 +7,7 @@ import com.spbsu.commons.io.codec.seq.Dictionary;
 import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqArray;
 import com.spbsu.commons.seq.IntSeq;
@@ -34,12 +35,12 @@ import java.util.zip.GZIPInputStream;
 public class RunSpliceData {
   private static final List<String> CLASSES = Arrays.asList("EI", "IE", "N");
   private static final int ALPHABET_SIZE = 10;
-  private static final int BOOST_ITERS = 300;
-  private static final double BOOST_STEP = 0.02;
-  private static final int MAX_STATE_COUNT = 4;
+  private static final int BOOST_ITERS = 30000;
+  private static final double BOOST_STEP = 0.1;
+  private static final int MAX_STATE_COUNT = 8;
   private static final int DESCENT_STEP_COUNT = 100000;
   private static final double GRAD_STEP = 0.75;
-  private static final Random random = new Random(239);
+  private static final FastRandom random = new FastRandom(239);
 
   final List<Seq<Integer>> trainData = new ArrayList<>();
   Vec trainTarget;
@@ -153,7 +154,7 @@ public class RunSpliceData {
     long start = System.nanoTime();
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
             //new IncrementalAutomatonBuilder<>(alphabet, new OptimizedStateEvaluation<>(), i),
-            new PNFANetworkGD<>(alphabet, MAX_STATE_COUNT, random, GRAD_STEP, DESCENT_STEP_COUNT),
+            new PNFANetworkGD<>(alphabet, MAX_STATE_COUNT, random, GRAD_STEP, DESCENT_STEP_COUNT, 4),
             BOOST_ITERS, BOOST_STEP);
 
     Action<Computable<Seq<Integer>, Vec>> listener = classifier -> {

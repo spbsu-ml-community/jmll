@@ -45,16 +45,16 @@ public class PNFAParams<T> {
     }
 
     for (int i = 0; i < stateCount; i++) {
-      values.set(i, random.nextDouble() - 0.5);
+      values.set(i, 1);
     }
 
-    for (int a = 0; a < alphabet.size(); a++) {
-      for (int i = 0; i < stateCount; i++) {
-        for (int j = 0; j < stateCount - 1; j++) {
-          beta[a].set(i, j, random.nextDouble() - 0.5);
-        }
-      }
-    }
+//    for (int a = 0; a < alphabet.size(); a++) {
+//      for (int i = 0; i < stateCount; i++) {
+//        for (int j = 0; j < stateCount - 1; j++) {
+//          beta[a].set(i, j, random.nextDouble() - 0.5);
+//        }
+//      }
+//    }
     updateWeights();
   }
 
@@ -150,7 +150,8 @@ public class PNFAParams<T> {
   public double getSeqValue(final Seq<T> seq) {
     Mx distribution = new VecBasedMx(1, stateCount), distribution1 = new VecBasedMx(1, stateCount);
     distribution.set(0, 1);
-    for (int j = 0; j < seq.length(); j++) {
+    final int length = seq.length();
+    for (int j = 0; j < length; j++) {
       VecTools.fill(distribution1, 0);
       MxTools.multiplyTo(distribution, w[alphabet.index(seq.at(j))], distribution1);
       final Mx tmp = distribution;
