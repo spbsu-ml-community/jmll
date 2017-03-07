@@ -78,43 +78,40 @@ public final class SmallPoolReader {
   public static Pool<? extends DSItem> readPoolFrom(final Reader input, final Filter<JsonFeatureMeta> featureFilter) throws IOException {
     try {
       final PoolBuilder builder = new PoolBuilder();
-      final Processor<String[]> seqProcessor = new Processor<String[]>() {
-        @Override
-        public void process(final String[] parts) {
-          try {
-            final JsonParser parser = JSONTools.parseJSON(parts[1]);
-            switch (parts[0]) {
-              case "items": {
-                final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
-                builder.setMeta(meta);
+      final Processor<String[]> seqProcessor = parts -> {
+        try {
+          final JsonParser parser = JSONTools.parseJSON(parts[1]);
+          switch (parts[0]) {
+            case "items": {
+              final JsonDataSetMeta meta = parser.readValueAs(JsonDataSetMeta.class);
+              builder.setMeta(meta);
 
-                final JsonParser parseItems = JSONTools.parseJSON(parts[2]);
-                final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
-                final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
-                final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
-                for (final DSItem myObject : myObjects) {
-                  builder.addItem(myObject);
-                }
-                break;
+              final JsonParser parseItems = JSONTools.parseJSON(parts[2]);
+              final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
+              final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
+              final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
+              for (final DSItem myObject : myObjects) {
+                builder.addItem(myObject);
               }
-              case "feature": {
-                final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
-                if (featureFilter != null && !featureFilter.accept(fmeta))
-                  break;
-                final TypeConverter<String, ? extends Vec> typeConverter = fmeta.type() == FeatureMeta.ValueType.SPARSE_VEC ? string2SparseVecConverter : string2VecConverter;
-                builder.newFeature(fmeta, typeConverter.convert(parts[2]));
-                break;
-              }
-              case "target": {
-                final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
-                final TypeConverter<String, ? extends Vec> typeConverter = fmeta.type() == FeatureMeta.ValueType.SPARSE_VEC ? string2SparseVecConverter : string2VecConverter;
-                builder.newTarget(fmeta, typeConverter.convert(parts[2]));
-                break;
-              }
+              break;
             }
-          } catch (IOException e) {
-            throw new RuntimeException(e);
+            case "feature": {
+              final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
+              if (featureFilter != null && !featureFilter.accept(fmeta))
+                break;
+              final TypeConverter<String, ? extends Vec> typeConverter = fmeta.type() == FeatureMeta.ValueType.SPARSE_VEC ? string2SparseVecConverter : string2VecConverter;
+              builder.newFeature(fmeta, typeConverter.convert(parts[2]));
+              break;
+            }
+            case "target": {
+              final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
+              final TypeConverter<String, ? extends Vec> typeConverter = fmeta.type() == FeatureMeta.ValueType.SPARSE_VEC ? string2SparseVecConverter : string2VecConverter;
+              builder.newTarget(fmeta, typeConverter.convert(parts[2]));
+              break;
+            }
           }
+        } catch (IOException e) {
+          throw new RuntimeException(e);
         }
       };
       final LineNumberReader lineNumberReader = new LineNumberReader(input);

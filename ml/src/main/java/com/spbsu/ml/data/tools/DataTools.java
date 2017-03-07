@@ -303,7 +303,6 @@ public class DataTools {
     return dim > 1 ? new VecBasedMx(dim, results.build()) : results.build();
   }
 
-  @Nullable
   public static <Target extends TargetFunc> Target newTarget(final Class<Target> targetClass, final Seq<?> values, final DataSet<?> ds) {
     Target target = null;
     target = RuntimeUtils.newInstanceByAssignable(targetClass, values, ds);

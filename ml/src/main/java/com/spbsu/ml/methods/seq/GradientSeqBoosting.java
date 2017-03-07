@@ -5,6 +5,7 @@ import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.TargetFunc;
@@ -43,6 +44,7 @@ public class GradientSeqBoosting<T, GlobalLoss extends TargetFunc> extends WeakL
     for (int t = 0; t < iterationsCount; t++) {
       final Vec gradientValueAtCursor = gradient.trans(cursor);
       final L2 localLoss = DataTools.newTarget(factory, gradientValueAtCursor, learn);
+      System.out.println("Iteration " + t + ". Gradient norm: " + VecTools.norm(localLoss.target));
       final Computable<Seq<T>, Vec> weakModel = weak.fit(learn, localLoss);
       weakModels.add(weakModel);
       final Computable<Seq<T>, Vec> curRes = getResult(new ArrayList<>(weakModels));

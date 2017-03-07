@@ -36,7 +36,7 @@ public class RunSpliceData {
   private static final List<String> CLASSES = Arrays.asList("EI", "IE", "N");
   private static final int ALPHABET_SIZE = 10;
   private static final int BOOST_ITERS = 30000;
-  private static final double BOOST_STEP = 0.1;
+  private static final double BOOST_STEP = 0.7;
   private static final int MAX_STATE_COUNT = 8;
   private static final int DESCENT_STEP_COUNT = 100000;
   private static final double GRAD_STEP = 0.75;
