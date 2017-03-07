@@ -9,14 +9,19 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
+import com.spbsu.ml.data.set.DataSet;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 import java.util.List;
 import java.util.Random;
 
+import static com.spbsu.commons.math.vectors.VecTools.incscale;
+import static com.spbsu.commons.math.vectors.VecTools.scale;
+
 public class PNFAParams<T> {
   private Vec values; //todo getter and private
   private Mx[] w;
+  private Mx[] wTrans;
 
   private final Alphabet<T> alphabet;
   private final int stateCount;
@@ -33,28 +38,30 @@ public class PNFAParams<T> {
     beta = new Mx[alphabet.size()];
     values = new ArrayVec(stateCount);
     w = new Mx[alphabet.size()];
+    wTrans = new Mx[alphabet.size()];
 
     wGrad = new Mx[alphabet.size()];
     valuesGrad = new ArrayVec(stateCount);
 
     for (int i = 0; i < alphabet.size(); i++) {
       w[i] = new VecBasedMx(stateCount, stateCount);
+      wTrans[i] = new VecBasedMx(stateCount, stateCount);
       beta[i] = new VecBasedMx(stateCount, stateCount - 1);
 
       wGrad[i] = new VecBasedMx(stateCount, stateCount);
     }
 
     for (int i = 0; i < stateCount; i++) {
-      values.set(i, 1);
+      values.set(i, random.nextGaussian());
     }
 
-//    for (int a = 0; a < alphabet.size(); a++) {
-//      for (int i = 0; i < stateCount; i++) {
-//        for (int j = 0; j < stateCount - 1; j++) {
-//          beta[a].set(i, j, random.nextDouble() - 0.5);
-//        }
-//      }
-//    }
+    for (int a = 0; a < alphabet.size(); a++) {
+      for (int i = 0; i < stateCount; i++) {
+        for (int j = 0; j < stateCount - 1; j++) {
+          beta[a].set(i, j, random.nextGaussian());
+        }
+      }
+    }
     updateWeights();
   }
 
@@ -148,25 +155,65 @@ public class PNFAParams<T> {
   }
 
   public double getSeqValue(final Seq<T> seq) {
-    Mx distribution = new VecBasedMx(1, stateCount), distribution1 = new VecBasedMx(1, stateCount);
-    distribution.set(0, 1);
-    final int length = seq.length();
-    for (int j = 0; j < length; j++) {
-      VecTools.fill(distribution1, 0);
-      MxTools.multiplyTo(distribution, w[alphabet.index(seq.at(j))], distribution1);
-      final Mx tmp = distribution;
-      distribution = distribution1;
-      distribution1 = tmp;
+    Vec distrib = new ArrayVec(stateCount);
+    distrib.set(0, 1);
+    for (int s = 0; s < seq.length(); s++) {
+      distrib = MxTools.multiply(wTrans[alphabet.index(seq.at(s))], distrib);
     }
-    return VecTools.multiply(distribution, values);
+    return VecTools.multiply(distrib, values);
   }
+
+  public void updateParams(final Mx[] addB, Vec vGradients, final DataSet<Seq<T>> ds, Vec target, Vec[] distribs, double step) {
+    incscale(values, vGradients, step);
+
+    for (int c = 0; c < addB.length; c++) {
+      incscale(beta[c], addB[c], step);
+    }
+    for (int c = 0; c < addB.length; c++) { // updating w
+      for (int i = 0; i < stateCount; i++) {
+        double sum = 0;
+        for (int j = 0; j < stateCount - 1; j++) {
+          sum += Math.exp(beta[c].get(i, j));
+        }
+        for (int j = 0; j < stateCount - 1; j++) {
+          final double val = Math.exp(beta[c].get(i, j)) / (1 + sum);
+          if (!Double.isNaN(val)) {
+            w[c].set(i, j, val);
+            wTrans[c].set(j, i, val);
+          }
+          else {
+            w[c].set(i, j, 1);
+            wTrans[c].set(j, i, 1);
+          }
+        }
+        w[c].set(i, stateCount - 1, 1 / (1 + sum));
+        wTrans[c].set(stateCount - 1, i, 1 / (1 + sum));
+      }
+    }
+
+    final Vec totals = new ArrayVec(stateCount);
+    for (int i = 0; i < ds.length(); i++) {
+      final Seq<T> seq = ds.at(i);
+      final double seqTarget = target.get(i);
+      Vec distrib = new ArrayVec(stateCount);
+      distrib.set(0, 1);
+      for (int s = 0; s < seq.length(); s++) {
+        distrib = MxTools.multiply(wTrans[alphabet.index(seq.at(s))], distrib);
+      }
+      incscale(totals, distrib, seqTarget);
+      distribs[i] = distrib;
+    }
+//    scale(totals, 1. / ds.length());
+//    values = totals;
+  }
+
 
   public void updateParams(final Mx[] addW, final Vec addValues, final double step) {
     updateParams(addW, addValues, step, null);
   }
 
   public void updateParams(final Mx[] addW, final Vec addValues, final double step, final int[] alpha) {
-    VecTools.incscale(values, addValues, step);
+    incscale(values, addValues, step);
 
     final int alphabetSize = alpha == null ? alphabet.size() : alpha.length;
 

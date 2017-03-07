@@ -60,18 +60,15 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
     final BFGrid.BinaryFeature[] bestRowFeatures = new BFGrid.BinaryFeature[grid.rows()];
     final boolean[] masks = new boolean[grid.rows()];
 
-    current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
-      @Override
-      public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
-        final double leftScore = score(left);
-        final double rightScore = score(right);
-        final double bestScore = leftScore > rightScore ? rightScore : leftScore;
+    current.visitAllSplits((bf, left, right) -> {
+      final double leftScore = score(left);
+      final double rightScore = score(right);
+      final double bestScore = leftScore > rightScore ? rightScore : leftScore;
 
-        if (bestScore < bestRowScores[bf.findex]) {
-          bestRowScores[bf.findex] = bestScore;
-          masks[bf.findex] = leftScore > rightScore;
-          bestRowFeatures[bf.findex] = bf;
-        }
+      if (bestScore < bestRowScores[bf.findex]) {
+        bestRowScores[bf.findex] = bestScore;
+        masks[bf.findex] = leftScore > rightScore;
+        bestRowFeatures[bf.findex] = bf;
       }
     });
 
