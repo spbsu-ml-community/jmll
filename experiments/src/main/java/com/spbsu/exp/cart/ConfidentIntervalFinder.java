@@ -1,4 +1,4 @@
-package com.spbsu.cart;
+package com.spbsu.exp.cart;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Processor;
@@ -11,8 +11,10 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.ml.GridTools;
 import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -20,12 +22,16 @@ import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
+import com.spbsu.ml.loss.LOOL2;
+import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.cart.CARTTreeOptimization;
+import org.knowm.xchart.XYChart;
 
 import java.io.*;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
@@ -43,8 +49,11 @@ public class ConfidentIntervalFinder {
     private static final String TestKSHouseFileName = "test_ks_house.csv";
     private static final String LearnHIGGSFileName = "HIGGS_learn_1M.csv.gz";
     private static final String TestHIGGSFileName = "HIGGS_test.csv.gz";
+    private static final String LearnCancerFileName = "Cancer_learn.csv";
+    private static final String TestCancerFileName = "Cancer_test.csv";
+    private static Writer writer;
 
-    private static final FastRandom rnd = new FastRandom(0);
+    private static final FastRandom rnd = new FastRandom(System.currentTimeMillis());
 
     private static class AUCCalcer implements ProgressHandler {
         private final String message;
@@ -116,8 +125,10 @@ public class ConfidentIntervalFinder {
 
             double prevFPR = 1;
 
-//            ArrayList<Double> x = new ArrayList<>();
-//            ArrayList<Double> y = new ArrayList<>();
+/*            ArrayList<Double> x = new ArrayList<>();
+            ArrayList<Double> y = new ArrayList<>(); */
+
+            double max_accuracy = 0;
 
             while (curPos < ordered.length) {
                 if (rightAns.get(ordered[curPos++]) != 1) { //!!!!
@@ -135,6 +146,9 @@ public class ConfidentIntervalFinder {
 //                y.add(TPR);
                 sum += TPR * (prevFPR - FPR);
                 prevFPR = FPR;
+
+                double cur_accuracy = 1.0*(trueNegative + truePositive)/(allPositive + allNegative);
+                max_accuracy = Math.max(max_accuracy, cur_accuracy);
             }
 
 /*            XYChart ex = org.knowm.xchart.QuickChart.getChart("Simple chart", "x", "y",
@@ -145,6 +159,8 @@ public class ConfidentIntervalFinder {
             if (isWrite) System.out.print(message + value);
             max = Math.max(value, max);
             if (isWrite) System.out.print(" best = " + max);
+
+            System.out.printf(" rate = %.3f", max_accuracy);
         }
     }
 
@@ -285,6 +301,41 @@ public class ConfidentIntervalFinder {
         }
     }
 
+    private static class CancerTestProcessor extends TestProcessor {
+        private VecBuilder targetBuilder = new VecBuilder();
+        private VecBuilder featuresBuilder = new VecBuilder();
+        private int featureCount = -1;
+
+        @Override
+        public void process(CharSequence arg) {
+            final CharSequence[] parts = CharSeqTools.split(arg, ',');
+            featureCount = parts.length - 2;
+            if (parts[1].charAt(0) == 'M') {
+                targetBuilder.append(-1);
+            } else {
+                targetBuilder.append(1);
+            }
+            for (int i = 2; i < featureCount + 2; i++) {
+                featuresBuilder.append(CharSeqTools.parseDouble(parts[i]));
+            }
+        }
+
+        @Override
+        public VecBuilder getTargetBuilder() {
+            return targetBuilder;
+        }
+
+        @Override
+        public VecBuilder getFeaturesBuilder() {
+            return featuresBuilder;
+        }
+
+        @Override
+        public int getFeaturesCount() {
+            return featureCount;
+        }
+    }
+
     private static class BaseDataReadProcessor extends TestProcessor {
         private VecBuilder targetBuilder = new VecBuilder();
         private VecBuilder featuresBuilder = new VecBuilder();
@@ -379,13 +430,61 @@ public class ConfidentIntervalFinder {
     }
 
     public static void main(String[] args) throws IOException {
-//        baseDataBestRMSE(1000, 0.002);
+        //baseDataBestRMSE(1000, 0.002);
         //        bestRSMECTSliceData();
 //        findIntervalCTSliceData();
-        findIntervalHiggsData();
+   //     findIntervalHiggsData();
+        writer = new FileWriter("result.txt");
+
+        findIntervalCancerData("L2", L2.class);
+        findIntervalCancerData("LOO", LOOL2.class);
+        findIntervalCancerData("SAT", SatL2.class);
+
+        writer.flush();
+        writer.close();
     }
 
-    private static void findIntervalHiggsData() {
+    private static void findIntervalCancerData(String msg, Class funcClass) {
+        int M = 100;
+        int iterations = 40;
+        double step = 0.002;
+
+        double best[] = new double[M];
+
+        try {
+            TestProcessor processor = new CancerTestProcessor();
+
+            DataML data = readData(processor, LearnCancerFileName, TestCancerFileName);
+
+            DataML cur_data = data;
+            for (int i = 0; i < M; i++) {
+                System.out.printf("!!!%d", i);
+                double auc = findBestAUC(cur_data, iterations, step, funcClass);
+                best[i] = auc;
+                System.out.printf("\nThe Best AUC = %.4fc\n", auc);
+                cur_data = bootstrap(data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            Arrays.sort(best);
+            int i = 0;
+            while (i < M && best[i] == 0) {
+                i++;
+            }
+            try {
+                writer.append(String.format("The interval for CancerData %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
+                        msg, M, iterations, step, best[i + 5], best[M - 6]));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.printf("The interval: %d times, %d iterations, %.4f step, [%.7f, %.7f]", M, iterations, step,
+                    best[i + 5], best[M - 6]);
+            System.exit(0);
+        }
+    }
+
+/*    private static void findIntervalHiggsData() {
         int M = 100;
         int iterations = 150;
         double step = 0.1;
@@ -415,10 +514,9 @@ public class ConfidentIntervalFinder {
             }
             System.out.printf("The interval: %d times, %d iterations, %.4f step, [%.7f, %.7f]", M, iterations, step,
                     best[i + 5], best[M - 6]);
-
-//            System.exit(0);
+            System.exit(0);
         }
-    }
+    } */
 
     private static void bestRSMECTSliceData() {
         try {
@@ -463,10 +561,11 @@ public class ConfidentIntervalFinder {
         return findBestRMSE(data, iterations, step);
     }
 
-    private static double findBestAUC(DataML data, int iterations, double step) {
+    private static double findBestAUC(DataML data, int iterations, double step, Class func) {
         final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
                 new BootstrapOptimization<L2>(
-                        new CARTTreeOptimization(data.getLearnFeatures()), rnd), L2.class, iterations, step);
+                        new com.spbsu.exp.cart.CARTTreeOptimization(
+                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6), rnd), func, iterations, step);
         final Action counter = new ProgressHandler() {
             int index = 0;
 
@@ -493,7 +592,8 @@ public class ConfidentIntervalFinder {
     private static double findBestRMSE(DataML data, int iterations, double step) {
         final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
                 new BootstrapOptimization<L2>(
-                        new CARTTreeOptimization(data.getLearnFeatures()), rnd), L2.class, iterations, step);
+                        new com.spbsu.exp.cart.CARTTreeOptimization(
+                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6), rnd), L2.class, iterations, step);
         final Action counter = new ProgressHandler() {
             int index = 0;
 

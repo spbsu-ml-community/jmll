@@ -86,6 +86,11 @@
             <version>1.12</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.knowm.xchart</groupId>
+            <artifactId>xchart</artifactId>
+            <version>3.2.2</version>
+        </dependency>
     </dependencies>
 
     <properties>
