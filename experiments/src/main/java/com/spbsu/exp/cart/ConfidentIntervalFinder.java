@@ -432,21 +432,29 @@ public class ConfidentIntervalFinder {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream("result.txt"), "utf-8"));
 
+        findIntervalCancerData("SteinDifficult", SteinDifficult.class, writer);
+        findIntervalCancerData("SteinEasy", SteinEasy.class, writer);
         findIntervalCancerData("L2", L2.class, writer);
         findIntervalCancerData("LOO", LOOL2.class, writer);
         findIntervalCancerData("SAT", SatL2.class, writer);
 
         findIntervalCTSliceData("L2", L2.class, writer);
         findIntervalCTSliceData("LOO", LOOL2.class, writer);
-        findIntervalHiggsData("SAT", SatL2.class, writer);
+        findIntervalCTSliceData("SAT", SatL2.class, writer);
+        findIntervalCTSliceData("SteinDifficult", SteinDifficult.class, writer);
+        findIntervalCTSliceData("SteinEasy", SteinEasy.class, writer);
 
         findIntervalHiggsData("L2", L2.class, writer);
         findIntervalHiggsData("LOO", LOOL2.class, writer);
         findIntervalHiggsData("SAT", SatL2.class, writer);
+        findIntervalHiggsData("SteinDifficult", SteinDifficult.class, writer);
+        findIntervalHiggsData("SteinEasy", SteinEasy.class, writer);
 
         findIntervalKSHouseData("L2", L2.class, writer);
         findIntervalKSHouseData("LOO", LOOL2.class, writer);
         findIntervalKSHouseData("SAT", SatL2.class, writer);
+        findIntervalKSHouseData("SteinDifficult", SteinDifficult.class, writer);
+        findIntervalKSHouseData("SteinEasy", SteinEasy.class, writer);
 
         writer.close();
         System.exit(0);
