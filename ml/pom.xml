@@ -144,7 +144,7 @@
                 <!--<archive>-->
                     <!--<manifest>-->
                         <!--<mainClass>-->
-                            <!--com.spbsu.cart.ConfidentIntervalFinder-->
+                            <!--ConfidentIntervalFinder-->
                         <!--</mainClass>-->
                     <!--</manifest>-->
                 <!--</archive>-->

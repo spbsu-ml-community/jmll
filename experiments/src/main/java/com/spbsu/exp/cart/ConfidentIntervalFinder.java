@@ -43,15 +43,14 @@ public class ConfidentIntervalFinder {
     private static final String dir = "ml/src/test/resources/com/spbsu/ml";
     private static final String TestBaseDataName = "featuresTest.txt.gz";
     private static final String LearnBaseDataName = "features.txt.gz";
-    private static final String LearnCTSliceFileName = "slice_localization_data_learn.csv";
-    private static final String TestCTSliceFileName = "slice_localization_data_test.csv";
+    private static final String LearnCTSliceFileName = "slice_train.csv";
+    private static final String TestCTSliceFileName = "slice_test.csv";
     private static final String LearnKSHouseFileName = "learn_ks_house.csv";
     private static final String TestKSHouseFileName = "test_ks_house.csv";
     private static final String LearnHIGGSFileName = "HIGGS_learn_1M.csv.gz";
     private static final String TestHIGGSFileName = "HIGGS_test.csv.gz";
     private static final String LearnCancerFileName = "Cancer_learn.csv";
     private static final String TestCancerFileName = "Cancer_test.csv";
-    private static Writer writer;
 
     private static final FastRandom rnd = new FastRandom(System.currentTimeMillis());
 
@@ -249,7 +248,7 @@ public class ConfidentIntervalFinder {
         public void process(CharSequence arg) {
             final CharSequence[] parts = CharSeqTools.split(arg, ',');
             targetBuilder.append(CharSeqTools.parseDouble(parts[2]));
-            for (int i = 3; i < 20; i++) {
+            for (int i = 3; i <= 20; i++) {
                 featuresBuilder.append(CharSeqTools.parseDouble(parts[i]));
             }
             featuresBuilder.append(CharSeqTools.parseDouble(parts[1]));
@@ -430,21 +429,30 @@ public class ConfidentIntervalFinder {
     }
 
     public static void main(String[] args) throws IOException {
-        //baseDataBestRMSE(1000, 0.002);
-        //        bestRSMECTSliceData();
-//        findIntervalCTSliceData();
-   //     findIntervalHiggsData();
-        writer = new FileWriter("result.txt");
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream("result.txt"), "utf-8"));
 
-        findIntervalCancerData("L2", L2.class);
-        findIntervalCancerData("LOO", LOOL2.class);
-        findIntervalCancerData("SAT", SatL2.class);
+        findIntervalCancerData("L2", L2.class, writer);
+        findIntervalCancerData("LOO", LOOL2.class, writer);
+        findIntervalCancerData("SAT", SatL2.class, writer);
 
-        writer.flush();
+        findIntervalCTSliceData("L2", L2.class, writer);
+        findIntervalCTSliceData("LOO", LOOL2.class, writer);
+        findIntervalHiggsData("SAT", SatL2.class, writer);
+
+        findIntervalHiggsData("L2", L2.class, writer);
+        findIntervalHiggsData("LOO", LOOL2.class, writer);
+        findIntervalHiggsData("SAT", SatL2.class, writer);
+
+        findIntervalKSHouseData("L2", L2.class, writer);
+        findIntervalKSHouseData("LOO", LOOL2.class, writer);
+        findIntervalKSHouseData("SAT", SatL2.class, writer);
+
         writer.close();
+        System.exit(0);
     }
 
-    private static void findIntervalCancerData(String msg, Class funcClass) {
+    private static void findIntervalCancerData(String msg, Class funcClass, BufferedWriter writer) {
         int M = 100;
         int iterations = 40;
         double step = 0.002;
@@ -461,7 +469,7 @@ public class ConfidentIntervalFinder {
                 System.out.printf("!!!%d", i);
                 double auc = findBestAUC(cur_data, iterations, step, funcClass);
                 best[i] = auc;
-                System.out.printf("\nThe Best AUC = %.4fc\n", auc);
+                System.out.printf("\nThe Best AUC for cancerData = %.4fc\n", auc);
                 cur_data = bootstrap(data);
             }
         } catch (IOException e) {
@@ -472,19 +480,59 @@ public class ConfidentIntervalFinder {
             while (i < M && best[i] == 0) {
                 i++;
             }
+            String info = String.format("The interval for cancerData + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
+                    msg, M, iterations, step,
+                    best[i + 5], best[M - 6]);
+            System.out.printf(info);
             try {
-                writer.append(String.format("The interval for CancerData %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
-                        msg, M, iterations, step, best[i + 5], best[M - 6]));
+                writer.write(info);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.printf("The interval: %d times, %d iterations, %.4f step, [%.7f, %.7f]", M, iterations, step,
-                    best[i + 5], best[M - 6]);
-            System.exit(0);
         }
     }
 
-/*    private static void findIntervalHiggsData() {
+    private static void findIntervalKSHouseData(String msg, Class funcClass, BufferedWriter writer) {
+        int M = 100;
+        int iterations = 150;
+        double step = 0.1;
+
+        double best[] = new double[M];
+
+        try {
+            TestProcessor processor = new KSHouseReadProcessor();
+
+            DataML data = readData(processor, LearnKSHouseFileName, TestKSHouseFileName);
+
+            DataML cur_data = data;
+            for (int i = 0; i < M; i++) {
+                System.out.printf("!!!%d", i);
+                double rmse = findBestRMSE(cur_data, iterations, step, funcClass);
+                best[i] = rmse;
+                System.out.printf("\nThe Best RMSE for ks_House = %.4fc\n", rmse);
+                cur_data = bootstrap(data);
+            }
+        } catch (IOException|NumberFormatException e) {
+            e.printStackTrace();
+        } finally {
+            Arrays.sort(best);
+            int i = 0;
+            while (i < M && best[i] == 0) {
+                i++;
+            }
+            String info = String.format("The interval for ks_house + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
+                    msg, M, iterations, step,
+                    best[i + 5], best[M - 6]);
+            System.out.printf(info);
+            try {
+                writer.write(info);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void findIntervalHiggsData(String msg, Class funcClass, BufferedWriter writer) {
         int M = 100;
         int iterations = 150;
         double step = 0.1;
@@ -499,9 +547,9 @@ public class ConfidentIntervalFinder {
             DataML cur_data = data;
             for (int i = 0; i < M; i++) {
                 System.out.printf("!!!%d", i);
-                double auc = findBestAUC(cur_data, iterations, step);
+                double auc = findBestAUC(cur_data, iterations, step, funcClass);
                 best[i] = auc;
-                System.out.printf("\nThe Best AUC = %.4fc\n", auc);
+                System.out.printf("\nThe Best AUC HIGGS = %.4fc\n", auc);
                 cur_data = bootstrap(data);
             }
         } catch (IOException e) {
@@ -512,13 +560,19 @@ public class ConfidentIntervalFinder {
             while (i < M && best[i] == 0) {
                 i++;
             }
-            System.out.printf("The interval: %d times, %d iterations, %.4f step, [%.7f, %.7f]", M, iterations, step,
+            String info = String.format("The interval for HIGGS + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
+                    msg, M, iterations, step,
                     best[i + 5], best[M - 6]);
-            System.exit(0);
+            System.out.printf(info);
+            try {
+                writer.write(info);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-    } */
+    }
 
-    private static void bestRSMECTSliceData() {
+/*    private static void bestRSMECTSliceData() {
         try {
             CTSliceReadProcessor processor = new CTSliceReadProcessor();
             DataML data = readData(processor, LearnCTSliceFileName, TestCTSliceFileName);
@@ -527,38 +581,49 @@ public class ConfidentIntervalFinder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+    } */
 
-    private static void findIntervalCTSliceData() {
+    private static void findIntervalCTSliceData(String msg, Class funcClass, BufferedWriter writer) {
+        int M = 100;
+        int iterations = 100;
+        double step = 0.1;
+        double best[] = new double[M];
+
         try {
-            int M = 100;
-            int iterations = 100;
-            double step = 0.1;
             CTSliceReadProcessor processor = new CTSliceReadProcessor();
             DataML data = readData(processor, LearnCTSliceFileName, TestCTSliceFileName);
             DataML cur_data = data;
-            double best[] = new double[M];
             for (int i = 0; i < M; i++) {
-                double rmse = findBestRMSE(cur_data, iterations, step);
+                double rmse = findBestRMSE(cur_data, iterations, step, funcClass);
                 best[i] = rmse;
-                System.out.printf("\nThe Best RMSE = %.4fc\n", rmse);
+                System.out.printf("\nThe Best RMSE for CTSlices = %.4fc\n", rmse);
                 cur_data = bootstrap(data);
             }
-            Arrays.sort(best);
-            System.out.printf("The interval: %d times, %d iterations, %.4f step, [%.7f, %.7f]", M, iterations, step,
-                    best[5], best[M - 6]);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            System.exit(0);
+                Arrays.sort(best);
+                int i = 0;
+                while (i < M && best[i] == 0) {
+                    i++;
+                }
+                String info = String.format("The interval for CT slices + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
+                        msg, M, iterations, step,
+                        best[i + 5], best[M - 6]);
+                System.out.printf(info);
+                try {
+                        writer.write(info);
+                } catch (IOException e) {
+                        e.printStackTrace();
+                }
         }
     }
 
-    private static double baseDataBestRMSE(int iterations, double step) throws IOException {
+    private static double baseDataBestRMSE(int iterations, double step, Class funcClass) throws IOException {
         BaseDataReadProcessor processor = new BaseDataReadProcessor();
         DataML data = readData(processor, LearnBaseDataName, TestBaseDataName);
 
-        return findBestRMSE(data, iterations, step);
+        return findBestRMSE(data, iterations, step, funcClass);
     }
 
     private static double findBestAUC(DataML data, int iterations, double step, Class func) {
@@ -589,11 +654,11 @@ public class ConfidentIntervalFinder {
         return aucCalcerTest.getMax();
     }
 
-    private static double findBestRMSE(DataML data, int iterations, double step) {
-        final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-                new BootstrapOptimization<L2>(
+    private static double findBestRMSE(DataML data, int iterations, double step, Class funcClass) {
+        final GradientBoosting<L2> boosting = new GradientBoosting<>(
+                new BootstrapOptimization<>(
                         new com.spbsu.exp.cart.CARTTreeOptimization(
-                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6), rnd), L2.class, iterations, step);
+                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6), rnd), funcClass, iterations, step);
         final Action counter = new ProgressHandler() {
             int index = 0;
 
