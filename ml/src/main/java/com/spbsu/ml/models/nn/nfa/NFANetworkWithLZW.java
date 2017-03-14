@@ -1,14 +1,13 @@
 package com.spbsu.ml.models.nn.nfa;
 
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.SeqTools;
-import com.spbsu.ml.FuncC1;
 import com.spbsu.ml.func.generic.Const;
 import com.spbsu.ml.func.generic.SubVecFuncC1;
 import com.spbsu.ml.func.generic.WSum;
@@ -18,9 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.spbsu.commons.math.vectors.VecTools.scale;
-import static com.spbsu.commons.math.vectors.VecTools.subtract;
 
 /**
  * Created by afonin.s on 06.11.2015.
