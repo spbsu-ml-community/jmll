@@ -1,5 +1,7 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.Func;
+
 /**
  * User: solar
  * Date: 01.06.15

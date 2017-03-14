@@ -1,7 +1,7 @@
 package com.spbsu.ml.dynamicGrid.models;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
 import com.spbsu.ml.dynamicGrid.interfaces.BinaryFeature;
 import com.spbsu.ml.dynamicGrid.interfaces.DynamicGrid;

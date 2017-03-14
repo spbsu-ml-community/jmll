@@ -113,7 +113,7 @@ public class DataToolsTest extends GridTest {
 
   public void testSplit() throws Exception {
     final CharSequence[] split = CharSeqTools.split("1 2 3 ", ' ');
-    assertEquals(3, split.length);
+    assertEquals(4, split.length);
     System.out.println(Arrays.toString(split));
 
     final CharSequence[] split1 = CharSeqTools.split("1 2 3", " ");

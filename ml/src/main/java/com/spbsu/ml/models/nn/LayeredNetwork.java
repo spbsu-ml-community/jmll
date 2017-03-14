@@ -3,7 +3,7 @@ package com.spbsu.ml.models.nn;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.Seq;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.func.generic.*;
 
 import java.util.ArrayList;

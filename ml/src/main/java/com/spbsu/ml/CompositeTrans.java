@@ -1,5 +1,6 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;

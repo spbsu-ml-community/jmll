@@ -2,7 +2,9 @@ package com.spbsu.exp.multiclass.spoc;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.MathTools;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;

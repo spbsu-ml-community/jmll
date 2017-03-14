@@ -19,6 +19,7 @@ public class MethodsBuilder {
   public void setGridBuilder(final Factory<BFGrid> gridFactory) {
     GreedyObliviousTreeBuilder.defaultGridBuilder = gridFactory;
     GreedyTDRegionBuilder.defaultGridBuilder = gridFactory;
+    GreedyTDBumpyRegionBuilder.defaultGridBuilder = gridFactory;
     RegionForestBuilder.defaultGridBuilder = gridFactory;
     GreedyTDCherryRegionBuilder.defaultGridBuilder = gridFactory;
     RidgeRegressionLeavesObliviousTreeBuilder.defaultGridBuilder = gridFactory;

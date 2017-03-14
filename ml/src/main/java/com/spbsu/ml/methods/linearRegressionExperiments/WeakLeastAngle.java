@@ -4,7 +4,7 @@ import com.spbsu.commons.math.stat.StatTools;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;

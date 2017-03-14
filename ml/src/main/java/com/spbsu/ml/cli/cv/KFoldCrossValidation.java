@@ -6,7 +6,7 @@ import com.spbsu.commons.util.BestHolder;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.TargetFunc;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.cli.builders.methods.MethodsBuilder;
 import com.spbsu.ml.cli.gridsearch.ParametersGridEnumerator;
 import com.spbsu.ml.data.tools.DataTools;

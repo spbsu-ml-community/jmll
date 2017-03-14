@@ -2,7 +2,7 @@ package com.spbsu.ml.models.multilabel;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.func.FuncJoin;
 
 /**

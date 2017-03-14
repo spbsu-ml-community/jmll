@@ -1,7 +1,7 @@
 package com.spbsu.ml.methods;
 
 import com.spbsu.ml.TargetFunc;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 
 import java.lang.reflect.Array;

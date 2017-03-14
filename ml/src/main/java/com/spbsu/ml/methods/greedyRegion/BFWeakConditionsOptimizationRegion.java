@@ -51,7 +51,7 @@ public class BFWeakConditionsOptimizationRegion {
       if (failed < maxFailed) {
         this.nonCriticalTotal.append(index, 1);
       } else if (failed == maxFailed) {
-        maxFailedPoints.add(i);
+        maxFailedPoints.add(index);
       } else {
         excluded.append(index, 1);
       }
@@ -98,6 +98,7 @@ public class BFWeakConditionsOptimizationRegion {
     final byte[] bins = bds.bins(feature.findex);
     final TIntArrayList newCriticalPoints = new TIntArrayList();
     final AdditiveStatistics newCritical = oracle.statsFactory().create();
+    final AdditiveStatistics test = oracle.statsFactory().create();
 
     for (int i = 0; i < failedBorders[maxFailed]; ++i) {
       final int index = points[i];
@@ -109,6 +110,7 @@ public class BFWeakConditionsOptimizationRegion {
         } else if (failedCount[i] == (maxFailed + 1)) {
           out.add(index);
           excluded.append(index, 1);
+          test.append(index, 1);
         }
       }
     }

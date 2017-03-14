@@ -1,7 +1,7 @@
 package com.spbsu.ml.optimization;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 
 /**
  * User: qdeee

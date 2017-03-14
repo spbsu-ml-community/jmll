@@ -3,8 +3,8 @@ package com.spbsu.ml.io;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.types.ConversionPack;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.models.multiclass.JoinedProbsModel;
 
 /**

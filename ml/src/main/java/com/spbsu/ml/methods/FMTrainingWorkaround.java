@@ -3,7 +3,7 @@ package com.spbsu.ml.methods;
 import com.spbsu.commons.func.converters.Vec2StringConverter;
 import com.spbsu.commons.math.vectors.MxIterator;
 import com.spbsu.commons.text.StringUtils;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.loss.L2;

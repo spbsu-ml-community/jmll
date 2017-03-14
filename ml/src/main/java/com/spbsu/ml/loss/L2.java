@@ -4,7 +4,7 @@ import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 import org.jetbrains.annotations.NotNull;

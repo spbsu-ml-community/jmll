@@ -7,7 +7,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 

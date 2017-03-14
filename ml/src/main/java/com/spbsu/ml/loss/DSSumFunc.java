@@ -1,7 +1,7 @@
 package com.spbsu.ml.loss;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 

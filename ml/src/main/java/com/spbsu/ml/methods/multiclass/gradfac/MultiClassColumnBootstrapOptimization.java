@@ -3,7 +3,7 @@ package com.spbsu.ml.methods.multiclass.gradfac;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.loss.L2;

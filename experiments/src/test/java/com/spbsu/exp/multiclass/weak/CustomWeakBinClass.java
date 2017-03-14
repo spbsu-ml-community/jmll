@@ -3,7 +3,7 @@ package com.spbsu.exp.multiclass.weak;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.loss.LLLogit;

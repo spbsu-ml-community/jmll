@@ -23,6 +23,6 @@ public class QURLItem implements DSItem {
 
   @Override
   public String id() {
-    return url + "@" + queryId;
+    return url;// + "@" + queryId;
   }
 }

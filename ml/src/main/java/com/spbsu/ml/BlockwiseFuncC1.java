@@ -1,5 +1,6 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
@@ -29,7 +30,7 @@ public interface BlockwiseFuncC1 extends FuncC1 {
     }
 
     @Override
-    public final Vec gradient(final Vec x) {
+    public final Mx gradient(final Vec x) {
       return gradient(x instanceof Mx ? (Mx)x : new VecBasedMx(blockSize(), x));
     }
 

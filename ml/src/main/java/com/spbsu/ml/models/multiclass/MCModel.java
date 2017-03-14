@@ -2,7 +2,7 @@ package com.spbsu.ml.models.multiclass;
 
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 
 /**
  * User: qdeee

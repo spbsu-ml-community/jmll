@@ -1,8 +1,8 @@
 package com.spbsu.ml.methods.multiclass.spoc;
 
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;

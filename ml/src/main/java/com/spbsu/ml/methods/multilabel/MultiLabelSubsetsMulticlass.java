@@ -10,7 +10,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.MxByRowsBuilder;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;

@@ -1,7 +1,7 @@
 package com.spbsu.ml.loss.multilabel;
 
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 import com.spbsu.ml.TargetFunc;
 
 /**

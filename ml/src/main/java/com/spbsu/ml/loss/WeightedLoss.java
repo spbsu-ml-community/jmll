@@ -3,8 +3,8 @@ package com.spbsu.ml.loss;
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.func.Factory;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.DataSet;
 import gnu.trove.list.array.TIntArrayList;
 import org.jetbrains.annotations.Nullable;
@@ -83,9 +83,18 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   }
 
   public int[] points() {
-    final TIntArrayList result = new TIntArrayList(weights.length + 1000);
+    final TIntArrayList result = new TIntArrayList(weights.length + 1000); // Julian ????
     for(int i = 0; i < weights.length; i++) {
       if (weights[i] > 0)
+        result.add(i);
+    }
+    return result.toArray();
+  }
+
+  public int[] zeroPoints() {
+    final TIntArrayList result = new TIntArrayList(weights.length);
+    for(int i = 0; i < weights.length; i++) {
+      if (weights[i] == 0)
         result.add(i);
     }
     return result.toArray();

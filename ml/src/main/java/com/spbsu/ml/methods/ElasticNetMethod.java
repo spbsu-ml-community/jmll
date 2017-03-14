@@ -4,11 +4,15 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.func.Linear;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.models.ShifftedTrans;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.spbsu.commons.math.vectors.VecTools.adjust;
 import static com.spbsu.commons.math.vectors.VecTools.copy;
@@ -51,6 +55,24 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
     return fit(cache);
   }
 
+  public final List<Linear> fit(final Mx data, final Vec target, int nlambda) {
+    final ElasticNetCache cache = new ElasticNetCache(data, target, alpha, lambda);
+    double lambdaMax = Double.NEGATIVE_INFINITY;
+    for (int i=0; i < data.columns();++i) {
+      lambdaMax = FastMath.max(FastMath.abs(cache.targetProduct(i)), lambdaMax);
+    }
+    lambdaMax *= 1.0  / (alpha *  data.rows());
+    double lambdaMin = 0.0; //lambdaMax * lambdaEps;
+    double step = (lambdaMax - lambdaMin) / nlambda;
+    List<Linear> path = new ArrayList<>(nlambda);
+
+    for (double lambda = lambdaMax; lambda > lambdaMin; lambda -= step) {
+      cache.setLambda(lambda);
+      path.add(fit(cache));
+    }
+    return path;
+  }
+
   public int checkIterations = 2;
 
   public Linear fit(ElasticNetCache cache) {
@@ -79,7 +101,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
   public static class ElasticNetCache {
     private final Mx data;
     private final Vec target;
-    private final double equalsTolerance = 1e-15;
+    private final double equalsTolerance = 1e-10;
     private final boolean[] isFeaturesProductCached;
     private final boolean[] isTargetCached;
     private final double[] gradient;

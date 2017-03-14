@@ -6,7 +6,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.loss.LLLogit;

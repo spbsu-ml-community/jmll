@@ -12,7 +12,7 @@ import junit.framework.TestCase;
  * User: qdeee
  * Date: 09.09.13
  */
-public class TensorNetFuncTest extends TestCase {
+public abstract class TensorNetFuncTest extends TestCase {
   private static final double EPS = 1e-4;
 
   public void testGradient() throws Exception {

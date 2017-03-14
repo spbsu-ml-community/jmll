@@ -7,7 +7,7 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 

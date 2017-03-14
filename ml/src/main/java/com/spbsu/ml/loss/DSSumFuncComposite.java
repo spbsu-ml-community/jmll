@@ -5,9 +5,9 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.BlockedTargetFunc;
-import com.spbsu.ml.FuncC1;
-import com.spbsu.ml.Trans;
-import com.spbsu.ml.TransC1;
+import com.spbsu.commons.math.FuncC1;
+import com.spbsu.commons.math.Trans;
+import com.spbsu.commons.math.TransC1;
 import com.spbsu.ml.data.set.DataSet;
 
 /**

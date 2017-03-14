@@ -1,7 +1,7 @@
 package com.spbsu.ml.func.generic;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 
 /**
  * User: solar

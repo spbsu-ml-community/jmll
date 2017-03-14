@@ -212,7 +212,7 @@ class RVMCache {
         diffs[i] = Double.POSITIVE_INFINITY;
         return Result.Add;
       } else {
-        diffs[i] = FastMath.abs(FastMath.log(oldAlpha) - FastMath.log(alpha[i]));
+        diffs[i] = FastMath.abs(Math.log(oldAlpha) - Math.log(alpha[i]));
         return Result.Updated;
       }
     } else if (theta[i] < 0 && Math.abs(alpha[i]) <= Double.MAX_VALUE) {

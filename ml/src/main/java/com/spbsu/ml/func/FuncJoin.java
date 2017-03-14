@@ -2,8 +2,8 @@ package com.spbsu.ml.func;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.Func;
-import com.spbsu.ml.Trans;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.Trans;
 
 /**
  * User: solar

@@ -3,6 +3,8 @@ package com.spbsu.ml;
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.math.MathTools;
+import com.spbsu.commons.math.Trans;
+import com.spbsu.commons.math.TransC1;
 import com.spbsu.commons.math.io.Vec2CharSequenceConverter;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
@@ -112,25 +114,24 @@ public abstract class NNTest {
 
   @Test
   public void testValueSeq() {
-    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 5, 1, new CharSeqAdapter("ab"));
-    final Trans aba = nfa.decisionByInput(new CharSeqAdapter("aba"));
+    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 5, 1, CharSeq.create("ab"));
+    final Trans aba = nfa.decisionByInput(CharSeq.create("aba"));
     Assert.assertEquals(0.2 + 0.16 + 0.128, aba.trans(new ArrayVec(nfa.dim())).get(1), 0.0001);
   }
 
   @Test
   public void testSeqGradient1() {
     String message = "\n";
+    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 2, 1, CharSeq.create("ab"));
 
-    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 2, 1, new CharSeqAdapter("ab"));
-
-    final NeuralSpider.NeuralNet ab = nfa.decisionByInput(new CharSeqAdapter("ab"));
-    final NeuralSpider.NeuralNet ba = nfa.decisionByInput(new CharSeqAdapter("ba"));
+    final NeuralSpider.NeuralNet ab = nfa.decisionByInput(CharSeq.create("ab"));
+    final NeuralSpider.NeuralNet ba = nfa.decisionByInput(CharSeq.create("ba"));
     final Vec x = new ArrayVec(1., 2.);
-    message += nfa.ppState(ab.state(x), new CharSeqAdapter("ab"));
+    message += nfa.ppState(ab.state(x), CharSeq.create("ab"));
     { // Positive
       final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(0, 1)), new ParallelFunc(2, new Log(1., 0.)));
       final Vec gradientAb = ab.gradientTo(x, new ArrayVec(2), target);
-      message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
+      message += nfa.ppState(ba.state(x), CharSeq.create("ba"));
       final Vec gradientBa = ba.gradientTo(x, new ArrayVec(2), target);
       // composite result:  1/(1+e^x)*(1 + e^x/(1+e^y))
       message += "or: " + x + "\n"
@@ -145,7 +146,7 @@ public abstract class NNTest {
     { // Negative
       final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(1, 0)), new ParallelFunc(2, new Log(1., 0.)));
       final Vec gradientAb = ab.gradientTo(x, new ArrayVec(2), target);
-      message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
+      message += nfa.ppState(ba.state(x), CharSeq.create("ba"));
       final Vec gradientBa = ba.gradientTo(x, new ArrayVec(2), target);
       // composite result:  1/(1+e^x)*(1 + e^x/(1+e^y))
       message += "or: " + x + "\n"
@@ -162,14 +163,13 @@ public abstract class NNTest {
   @Test
   public void testSeqGradient2() {
     String message = "\n";
+    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 3, 1, CharSeq.create("ab"));
 
-    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 3, 1, new CharSeqAdapter("ab"));
-
-    final NeuralSpider.NeuralNet ab = nfa.decisionByInput(new CharSeqAdapter("ab"));
-    final NeuralSpider.NeuralNet ba = nfa.decisionByInput(new CharSeqAdapter("ba"));
+    final NeuralSpider.NeuralNet ab = nfa.decisionByInput(CharSeq.create("ab"));
+    final NeuralSpider.NeuralNet ba = nfa.decisionByInput(CharSeq.create("ba"));
     final Vec x = new ArrayVec(1, 0, 0, 1, 0, 1, 0, 0);
-    message += nfa.ppState(ab.state(x), new CharSeqAdapter("ab"));
-    message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
+    message += nfa.ppState(ab.state(x), CharSeq.create("ab"));
+    message += nfa.ppState(ba.state(x), CharSeq.create("ba"));
 
     final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(0, 1)), new ParallelFunc(2, new Log(1., 0.)));
     final Vec gradientAb = ab.gradientTo(x, new ArrayVec(x.dim()), target);
@@ -184,21 +184,19 @@ public abstract class NNTest {
   @Test
   public void testSeqGradient3() {
     String message = "\n";
+    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 4, 1, CharSeq.create("ab"));
 
-    final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0., 4, 1, new CharSeqAdapter("ab"));
-
-    final NeuralSpider.NeuralNet ab = nfa.decisionByInput(new CharSeqAdapter("ab"));
-    final NeuralSpider.NeuralNet ba = nfa.decisionByInput(new CharSeqAdapter("ba"));
+    final NeuralSpider.NeuralNet ab = nfa.decisionByInput(CharSeq.create("ab"));
+    final NeuralSpider.NeuralNet ba = nfa.decisionByInput(CharSeq.create("ba"));
     final Vec x = new ArrayVec(
         1, 0, 0,
         0, 1, 0,
         0, 0, 1,
-
         0, 1, 0,
         0, 0, 1,
         0, 0, 0);
-    message += nfa.ppState(ab.state(x), new CharSeqAdapter("ab"));
-    message += nfa.ppState(ba.state(x), new CharSeqAdapter("ba"));
+    message += nfa.ppState(ab.state(x), CharSeq.create("ab"));
+    message += nfa.ppState(ba.state(x), CharSeq.create("ba"));
     final CompositeFunc target = new CompositeFunc(new WSum(new ArrayVec(0, 1)), new ParallelFunc(2, new Log(1., 0.)));
 
     final Vec gradientAb = ab.gradientTo(x, new ArrayVec(x.dim()), target);
@@ -212,16 +210,16 @@ public abstract class NNTest {
   @Test
   public void testSimpleSeq() {
     final int statesCount = 3;
-    final CharSeqAdapter alpha = new CharSeqAdapter("ab");
+    final CharSeq alpha = CharSeq.create("ab");
     final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0.1, statesCount, 1, alpha);
 
     final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
-    pbuilder.setFeature(0, new CharSeqAdapter("abba"));
+    pbuilder.setFeature(0, CharSeq.create("abba"));
     pbuilder.setTarget(0, 1);
     pbuilder.nextItem();
-    pbuilder.setFeature(0, new CharSeqAdapter("baba"));
+    pbuilder.setFeature(0, CharSeq.create("baba"));
     pbuilder.setTarget(0, 0);
     pbuilder.nextItem();
     final Pool<FakeItem> pool = pbuilder.create();
@@ -241,13 +239,13 @@ public abstract class NNTest {
           nfa.ppSolution(vec);
           {
             System.out.println("Positive: ");
-            final NeuralSpider.NeuralNet abba = nfa.decisionByInput(new CharSeqAdapter("abba"));
-            System.out.println(nfa.ppState(abba.state(vec), new CharSeqAdapter("abba")));
+            final NeuralSpider.NeuralNet abba = nfa.decisionByInput(CharSeq.create("abba"));
+            System.out.println(nfa.ppState(abba.state(vec), CharSeq.create("abba")));
           }
           {
             System.out.println("Negative: ");
-            final NeuralSpider.NeuralNet baba = nfa.decisionByInput(new CharSeqAdapter("baba"));
-            System.out.println(nfa.ppState(baba.state(vec), new CharSeqAdapter("baba")));
+            final NeuralSpider.NeuralNet baba = nfa.decisionByInput(CharSeq.create("baba"));
+            System.out.println(nfa.ppState(baba.state(vec), CharSeq.create("baba")));
           }
         }
       }
@@ -264,14 +262,14 @@ public abstract class NNTest {
     nfa.ppSolution(solution);
     {
       System.out.println("Positive: ");
-      final NeuralSpider.NeuralNet abba = nfa.decisionByInput(new CharSeqAdapter("abba"));
-      System.out.println(nfa.ppState(abba.state(solution), new CharSeqAdapter("abba")));
+      final NeuralSpider.NeuralNet abba = nfa.decisionByInput(CharSeq.create("abba"));
+      System.out.println(nfa.ppState(abba.state(solution), CharSeq.create("abba")));
       Assert.assertTrue(abba.trans(solution).get(1) > 0.95);
     }
     {
       System.out.println("Negative: ");
-      final NeuralSpider.NeuralNet baba = nfa.decisionByInput(new CharSeqAdapter("baba"));
-      System.out.println(nfa.ppState(baba.state(solution), new CharSeqAdapter("baba")));
+      final NeuralSpider.NeuralNet baba = nfa.decisionByInput(CharSeq.create("baba"));
+      System.out.println(nfa.ppState(baba.state(solution), CharSeq.create("baba")));
       Assert.assertTrue(baba.trans(solution).get(1) < 0.05);
     }
   }
@@ -440,13 +438,13 @@ public abstract class NNTest {
 
       @Override
       public void normalizeGradient(Vec grad) {
-        for (int i = 0; i < grad.length(); i++) {
-          final double v = grad.get(i);
-          if (Math.abs(v) < 0.001)
-            grad.set(i, 0);
-          else
-            grad.set(i, Math.signum(v) * (Math.abs(v) - 0.001));
-        }
+//        for (int i = 0; i < grad.length(); i++) {
+//          final double v = grad.get(i);
+//          if (Math.abs(v) < 0.001)
+//            grad.set(i, 0);
+//          else
+//            grad.set(i, Math.signum(v) * (Math.abs(v) - 0.001));
+//        }
       }
     };
     final BlockwiseMLL ll = pool.target(BlockwiseMLL.class);
@@ -747,13 +745,13 @@ public abstract class NNTest {
   private void digIntoSolution(Pool<FakeItem> pool, NFANetwork<Character> network, BlockwiseMLL ll, Vec solution, String positiveExample, String negativeExample) {
     if (positiveExample != null) {
       System.out.println("Positive: ");
-      final CharSeqAdapter input = new CharSeqAdapter(positiveExample);
+      final CharSeq input = CharSeq.create(positiveExample);
       final NeuralSpider.NeuralNet positive = network.decisionByInput(input);
       System.out.println(network.ppState(positive.state(solution), input));
     }
     if (negativeExample != null) {
       System.out.println("Negative: ");
-      final CharSeqAdapter input = new CharSeqAdapter(negativeExample);
+      final CharSeq input = CharSeq.create(negativeExample);
       final NeuralSpider.NeuralNet negative = network.decisionByInput(input);
       System.out.println(network.ppState(negative.state(solution), input));
     }

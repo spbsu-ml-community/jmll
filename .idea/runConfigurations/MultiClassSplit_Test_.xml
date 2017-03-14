@@ -2,7 +2,7 @@
   <configuration default="false" name="MultiClassSplit Test " type="Application" factoryName="Application">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
       <pattern>
-        <option name="PATTERN" value="com.spbsu.ml.*" />
+        <option name="PATTERN" value="com.spbsu.commons.math.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

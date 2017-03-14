@@ -1,6 +1,8 @@
 Java Machine Learning Library
 =============================
 
+[![Build Status](https://travis-ci.org/spbsu-ml-community/jmll.svg?branch=master)](https://travis-ci.org/spbsu-ml-community/jmll)
+
 ###About
 
 This is machine learning library, written in Java and providing various machine learning algorithms. Mostly contributed by people form Applied Mathematics faculty of SPBSU.

@@ -3,7 +3,7 @@ package com.spbsu.ml.loss;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.data.set.DataSet;
 
 /**

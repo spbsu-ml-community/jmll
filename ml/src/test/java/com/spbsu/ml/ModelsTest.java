@@ -1,5 +1,6 @@
 package com.spbsu.ml;
 
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.func.FuncEnsemble;
 import com.spbsu.ml.models.ModelTools;

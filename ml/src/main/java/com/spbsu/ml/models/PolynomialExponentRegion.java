@@ -2,7 +2,7 @@ package com.spbsu.ml.models;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.BFGrid;
-import com.spbsu.ml.Func;
+import com.spbsu.commons.math.Func;
 
 /**
  * Created by towelenee on 20.02.14.

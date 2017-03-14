@@ -1,6 +1,7 @@
 package com.spbsu.ml;
 
 import com.spbsu.commons.func.Action;
+import com.spbsu.commons.math.Trans;
 
 /**
  * User: solar

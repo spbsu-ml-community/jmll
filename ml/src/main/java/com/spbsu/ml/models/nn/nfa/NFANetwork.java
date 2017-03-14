@@ -8,7 +8,7 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.SeqTools;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.FuncC1;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.ml.func.generic.Const;
 import com.spbsu.ml.func.generic.SubVecFuncC1;
 import com.spbsu.ml.func.generic.WSum;
