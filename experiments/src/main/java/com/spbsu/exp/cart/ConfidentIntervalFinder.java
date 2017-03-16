@@ -6,12 +6,10 @@ import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.GridTools;
@@ -26,21 +24,20 @@ import com.spbsu.ml.loss.LOOL2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.cart.CARTTreeOptimization;
-import org.knowm.xchart.XYChart;
 
 import java.io.*;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
 
 /**
  * Created by n_buga on 23.02.17.
+ * Estimate the accuracy of the CART tree.
  */
 public class ConfidentIntervalFinder {
     private static final String dir = "ml/src/test/resources/com/spbsu/ml";
+//    private static final String dir = "./resources";
     private static final String TestBaseDataName = "featuresTest.txt.gz";
     private static final String LearnBaseDataName = "features.txt.gz";
     private static final String LearnCTSliceFileName = "slice_train.csv";
@@ -63,11 +60,11 @@ public class ConfidentIntervalFinder {
         private int allPositive = 0;
         private boolean isWrite = true;
 
-        public AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns) {
+        AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns) {
             this(message, ds, rightAns, true);
         }
 
-        public AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns, boolean isWrite) {
+        AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns, boolean isWrite) {
             this.message = message;
             this.ds = ds;
             this.isWrite = isWrite;
@@ -84,7 +81,7 @@ public class ConfidentIntervalFinder {
 
         private double max = 0;
 
-        public double getMax() {
+        double getMax() {
             return max;
         }
 
@@ -192,26 +189,26 @@ public class ConfidentIntervalFinder {
         final private VecDataSet testFeatures;
         final private Vec testTarget;
 
-        public DataML(VecDataSet learnFeatures, Vec learnTarget, VecDataSet testFeatures, Vec testTarget) {
+        DataML(VecDataSet learnFeatures, Vec learnTarget, VecDataSet testFeatures, Vec testTarget) {
             this.learnFeatures = learnFeatures;
             this.learnTarget = learnTarget;
             this.testFeatures = testFeatures;
             this.testTarget = testTarget;
         }
 
-        public VecDataSet getLearnFeatures() {
+        VecDataSet getLearnFeatures() {
             return learnFeatures;
         }
 
-        public Vec getLearnTarget() {
+        Vec getLearnTarget() {
             return learnTarget;
         }
 
-        public VecDataSet getTestFeatures() {
+        VecDataSet getTestFeatures() {
             return testFeatures;
         }
 
-        public Vec getTestTarget() {
+        Vec getTestTarget() {
             return testTarget;
         }
     }
@@ -432,35 +429,39 @@ public class ConfidentIntervalFinder {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream("result.txt"), "utf-8"));
 
-        findIntervalCancerData("SteinDifficult", SteinDifficult.class, writer);
-        findIntervalCancerData("SteinEasy", SteinEasy.class, writer);
-        findIntervalCancerData("L2", L2.class, writer);
-        findIntervalCancerData("LOO", LOOL2.class, writer);
-        findIntervalCancerData("SAT", SatL2.class, writer);
+        findIntervalCancerData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+        findIntervalCancerData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+        findIntervalCancerData("L2", CARTL2.class, writer, 0);
+        findIntervalCancerData("LOO", CARTLOOL2.class, writer, 0);
+        findIntervalCancerData("SAT", CARTSatL2.class, writer, 0);
+        findIntervalCancerData("Reg with 0.4", CARTL2.class, writer, 0.4);
 
-        findIntervalCTSliceData("L2", L2.class, writer);
-        findIntervalCTSliceData("LOO", LOOL2.class, writer);
-        findIntervalCTSliceData("SAT", SatL2.class, writer);
-        findIntervalCTSliceData("SteinDifficult", SteinDifficult.class, writer);
-        findIntervalCTSliceData("SteinEasy", SteinEasy.class, writer);
+        findIntervalCTSliceData("L2", L2.class, writer, 0);
+        findIntervalCTSliceData("LOO", LOOL2.class, writer, 0);
+        findIntervalCTSliceData("SAT", SatL2.class, writer, 0);
+        findIntervalCTSliceData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+        findIntervalCTSliceData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+        findIntervalCTSliceData("Reg with 0.4", CARTL2.class, writer, 0.4);
 
-        findIntervalHiggsData("L2", L2.class, writer);
-        findIntervalHiggsData("LOO", LOOL2.class, writer);
-        findIntervalHiggsData("SAT", SatL2.class, writer);
-        findIntervalHiggsData("SteinDifficult", SteinDifficult.class, writer);
-        findIntervalHiggsData("SteinEasy", SteinEasy.class, writer);
+        findIntervalHiggsData("L2", L2.class, writer, 0);
+        findIntervalHiggsData("LOO", LOOL2.class, writer, 0);
+        findIntervalHiggsData("SAT", SatL2.class, writer, 0);
+        findIntervalHiggsData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+        findIntervalHiggsData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+        findIntervalHiggsData("Reg with 0.4", CARTL2.class, writer, 0.4);
 
-        findIntervalKSHouseData("L2", L2.class, writer);
-        findIntervalKSHouseData("LOO", LOOL2.class, writer);
-        findIntervalKSHouseData("SAT", SatL2.class, writer);
-        findIntervalKSHouseData("SteinDifficult", SteinDifficult.class, writer);
-        findIntervalKSHouseData("SteinEasy", SteinEasy.class, writer);
+        findIntervalKSHouseData("L2", L2.class, writer, 0);
+        findIntervalKSHouseData("LOO", LOOL2.class, writer, 0);
+        findIntervalKSHouseData("SAT", SatL2.class, writer, 0);
+        findIntervalKSHouseData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+        findIntervalKSHouseData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+        findIntervalKSHouseData("Reg with 0.4", CARTL2.class, writer, 0.4);
 
         writer.close();
         System.exit(0);
     }
 
-    private static void findIntervalCancerData(String msg, Class funcClass, BufferedWriter writer) {
+    private static void findIntervalCancerData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
         int M = 100;
         int iterations = 40;
         double step = 0.002;
@@ -475,7 +476,7 @@ public class ConfidentIntervalFinder {
             DataML cur_data = data;
             for (int i = 0; i < M; i++) {
                 System.out.printf("!!!%d", i);
-                double auc = findBestAUC(cur_data, iterations, step, funcClass);
+                double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff);
                 best[i] = auc;
                 System.out.printf("\nThe Best AUC for cancerData = %.4fc\n", auc);
                 cur_data = bootstrap(data);
@@ -500,7 +501,7 @@ public class ConfidentIntervalFinder {
         }
     }
 
-    private static void findIntervalKSHouseData(String msg, Class funcClass, BufferedWriter writer) {
+    private static void findIntervalKSHouseData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
         int M = 100;
         int iterations = 150;
         double step = 0.1;
@@ -515,7 +516,7 @@ public class ConfidentIntervalFinder {
             DataML cur_data = data;
             for (int i = 0; i < M; i++) {
                 System.out.printf("!!!%d", i);
-                double rmse = findBestRMSE(cur_data, iterations, step, funcClass);
+                double rmse = findBestRMSE(cur_data, iterations, step, funcClass, regCoeff);
                 best[i] = rmse;
                 System.out.printf("\nThe Best RMSE for ks_House = %.4fc\n", rmse);
                 cur_data = bootstrap(data);
@@ -540,7 +541,7 @@ public class ConfidentIntervalFinder {
         }
     }
 
-    private static void findIntervalHiggsData(String msg, Class funcClass, BufferedWriter writer) {
+    private static void findIntervalHiggsData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
         int M = 100;
         int iterations = 150;
         double step = 0.1;
@@ -555,7 +556,7 @@ public class ConfidentIntervalFinder {
             DataML cur_data = data;
             for (int i = 0; i < M; i++) {
                 System.out.printf("!!!%d", i);
-                double auc = findBestAUC(cur_data, iterations, step, funcClass);
+                double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff);
                 best[i] = auc;
                 System.out.printf("\nThe Best AUC HIGGS = %.4fc\n", auc);
                 cur_data = bootstrap(data);
@@ -591,7 +592,7 @@ public class ConfidentIntervalFinder {
         }
     } */
 
-    private static void findIntervalCTSliceData(String msg, Class funcClass, BufferedWriter writer) {
+    private static void findIntervalCTSliceData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
         int M = 100;
         int iterations = 100;
         double step = 0.1;
@@ -602,7 +603,7 @@ public class ConfidentIntervalFinder {
             DataML data = readData(processor, LearnCTSliceFileName, TestCTSliceFileName);
             DataML cur_data = data;
             for (int i = 0; i < M; i++) {
-                double rmse = findBestRMSE(cur_data, iterations, step, funcClass);
+                double rmse = findBestRMSE(cur_data, iterations, step, funcClass, regCoeff);
                 best[i] = rmse;
                 System.out.printf("\nThe Best RMSE for CTSlices = %.4fc\n", rmse);
                 cur_data = bootstrap(data);
@@ -627,18 +628,19 @@ public class ConfidentIntervalFinder {
         }
     }
 
-    private static double baseDataBestRMSE(int iterations, double step, Class funcClass) throws IOException {
+ /*   private static double baseDataBestRMSE(int iterations, double step, Class funcClass) throws IOException {
         BaseDataReadProcessor processor = new BaseDataReadProcessor();
         DataML data = readData(processor, LearnBaseDataName, TestBaseDataName);
 
         return findBestRMSE(data, iterations, step, funcClass);
-    }
+    } */
 
-    private static double findBestAUC(DataML data, int iterations, double step, Class func) {
+    private static double findBestAUC(final DataML data, final int iterations, final double step,
+                                      final Class func, final double regCoeff) {
         final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
-                new BootstrapOptimization<L2>(
+                new BootstrapOptimization<>(
                         new com.spbsu.exp.cart.CARTTreeOptimization(
-                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6), rnd), func, iterations, step);
+                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6, regCoeff), rnd), func, iterations, step);
         final Action counter = new ProgressHandler() {
             int index = 0;
 
@@ -662,11 +664,12 @@ public class ConfidentIntervalFinder {
         return aucCalcerTest.getMax();
     }
 
-    private static double findBestRMSE(DataML data, int iterations, double step, Class funcClass) {
+    private static double findBestRMSE(final DataML data, final int iterations, final double step,
+                                       final Class funcClass, final double regCoeff) {
         final GradientBoosting<L2> boosting = new GradientBoosting<>(
                 new BootstrapOptimization<>(
                         new com.spbsu.exp.cart.CARTTreeOptimization(
-                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6), rnd), funcClass, iterations, step);
+                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6, regCoeff), rnd), funcClass, iterations, step);
         final Action counter = new ProgressHandler() {
             int index = 0;
 
@@ -694,11 +697,11 @@ public class ConfidentIntervalFinder {
         private final TargetFunc target;
         private boolean isWrite = true;
 
-        public ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target) {
+        ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target) {
             this(message, ds, target, true);
         }
 
-        public ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target, boolean isWrite) {
+        ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target, boolean isWrite) {
             this.message = message;
             this.isWrite = isWrite;
             this.ds = ds;
@@ -708,7 +711,7 @@ public class ConfidentIntervalFinder {
 
         double min = 1e10;
 
-        public double getMinRMSE() {
+        double getMinRMSE() {
             return min;
         }
 
