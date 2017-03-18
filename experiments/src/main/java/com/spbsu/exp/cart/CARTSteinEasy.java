@@ -8,7 +8,7 @@ import com.spbsu.ml.loss.L2;
 /**
  * Created by n_buga on 13.03.17.
  */
-public class CARTSteinEasy extends CARTL2 {
+public class CARTSteinEasy extends L2 {
 
     public CARTSteinEasy(Vec target, DataSet<?> owner) {
         super(target, owner);

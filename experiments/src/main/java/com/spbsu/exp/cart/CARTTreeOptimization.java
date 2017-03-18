@@ -71,6 +71,7 @@ public class CARTTreeOptimization<Loss extends StatBasedLoss> extends VecOptimiz
                                         loss.score(right) +
                 lambda*reg(left, right, leavesSize, dsSize));
                 final int bestSplit = ArrayTools.min(scores);
+                final double score = loss.score(leaf.total());
                 if (bestSplit < 0 || scores[bestSplit] >= loss.score(leaf.total())) {
                     next.add(leaf);
                     nextCond.add(leafConditions.get(leafNum));

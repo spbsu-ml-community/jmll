@@ -48,6 +48,7 @@ public class ConfidentIntervalFinder {
     private static final String TestHIGGSFileName = "HIGGS_test.csv.gz";
     private static final String LearnCancerFileName = "Cancer_learn.csv";
     private static final String TestCancerFileName = "Cancer_test.csv";
+    private static final String ResultFile = "result2.txt";
 
     private static final FastRandom rnd = new FastRandom(System.currentTimeMillis());
 
@@ -156,7 +157,7 @@ public class ConfidentIntervalFinder {
             max = Math.max(value, max);
             if (isWrite) System.out.print(" best = " + max);
 
-            System.out.printf(" rate = %.3f", max_accuracy);
+            System.out.printf(" rate = %.5f", max_accuracy);
         }
     }
 
@@ -426,45 +427,47 @@ public class ConfidentIntervalFinder {
     }
 
     public static void main(String[] args) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream("result.txt"), "utf-8"));
 
-        findIntervalCancerData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
-        findIntervalCancerData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-        findIntervalCancerData("L2", CARTL2.class, writer, 0);
-        findIntervalCancerData("LOO", CARTLOOL2.class, writer, 0);
-        findIntervalCancerData("SAT", CARTSatL2.class, writer, 0);
-        findIntervalCancerData("Reg with 0.4", CARTL2.class, writer, 0.4);
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream("result2.txt"), "utf-8"))) {
+            findIntervalCancerData("L2", L2.class, writer, 0);
+            findIntervalCancerData("SteinDifficult", CARTSteinDifficult.class, writer, 0);
+            findIntervalCancerData("SteinEasy", CARTSteinEasy.class, writer, 0);
+            findIntervalCancerData("LOO", LOOL2.class, writer, 0);
+            findIntervalCancerData("SAT", SatL2.class, writer, 0);
+            findIntervalCancerData("Reg with 0.4", L2.class, writer, 0.4);
+            findIntervalCancerData("SAT + SteinDifficult", CARTSatSteinL2.class, writer, 0);
 
-        findIntervalCTSliceData("L2", L2.class, writer, 0);
-        findIntervalCTSliceData("LOO", LOOL2.class, writer, 0);
-        findIntervalCTSliceData("SAT", SatL2.class, writer, 0);
-        findIntervalCTSliceData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
-        findIntervalCTSliceData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-        findIntervalCTSliceData("Reg with 0.4", CARTL2.class, writer, 0.4);
 
-        findIntervalHiggsData("L2", L2.class, writer, 0);
-        findIntervalHiggsData("LOO", LOOL2.class, writer, 0);
-        findIntervalHiggsData("SAT", SatL2.class, writer, 0);
-        findIntervalHiggsData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
-        findIntervalHiggsData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-        findIntervalHiggsData("Reg with 0.4", CARTL2.class, writer, 0.4);
+/*            findIntervalCTSliceData("L2", L2.class, writer, 0);
+            findIntervalCTSliceData("LOO", LOOL2.class, writer, 0);
+            findIntervalCTSliceData("SAT", SatL2.class, writer, 0);
+            findIntervalCTSliceData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+            findIntervalCTSliceData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+            findIntervalCTSliceData("Reg with 0.4", L2.class, writer, 0.4); /*
 
-        findIntervalKSHouseData("L2", L2.class, writer, 0);
-        findIntervalKSHouseData("LOO", LOOL2.class, writer, 0);
-        findIntervalKSHouseData("SAT", SatL2.class, writer, 0);
-        findIntervalKSHouseData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
-        findIntervalKSHouseData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-        findIntervalKSHouseData("Reg with 0.4", CARTL2.class, writer, 0.4);
+            findIntervalHiggsData("L2", L2.class, writer, 0);
+            findIntervalHiggsData("LOO", LOOL2.class, writer, 0);
+            findIntervalHiggsData("SAT", SatL2.class, writer, 0);
+            findIntervalHiggsData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+            findIntervalHiggsData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+            findIntervalHiggsData("Reg with 0.4", CARTL2.class, writer, 0.4);
 
-        writer.close();
+            findIntervalKSHouseData("L2", CARTL2.class, writer, 0);
+            findIntervalKSHouseData("LOO", LOOL2.class, writer, 0);
+            findIntervalKSHouseData("SAT", SatL2.class, writer, 0);
+            findIntervalKSHouseData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+            findIntervalKSHouseData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+            findIntervalKSHouseData("Reg with 0.4", CARTL2.class, writer, 0.4); */
+        }
         System.exit(0);
     }
 
     private static void findIntervalCancerData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
         int M = 100;
-        int iterations = 40;
-        double step = 0.002;
+        int iterations = 1000;
+        double step = 0.05;
+        int depth = 3;
 
         double best[] = new double[M];
 
@@ -476,7 +479,7 @@ public class ConfidentIntervalFinder {
             DataML cur_data = data;
             for (int i = 0; i < M; i++) {
                 System.out.printf("!!!%d", i);
-                double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff);
+                double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff, depth);
                 best[i] = auc;
                 System.out.printf("\nThe Best AUC for cancerData = %.4fc\n", auc);
                 cur_data = bootstrap(data);
@@ -489,12 +492,16 @@ public class ConfidentIntervalFinder {
             while (i < M && best[i] == 0) {
                 i++;
             }
-            String info = String.format("The interval for cancerData + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
-                    msg, M, iterations, step,
+            String info = String.format("The interval for cancerData + %s: %d times, %d iterations, %.4f step," +
+                            "%d depth [%.7f, %.7f]\n",
+                    msg, M, iterations, step, depth,
                     best[i + 5], best[M - 6]);
+//            String info = String.format("The value for %d iterations and %.4f step is %.7f",
+//                    iterations, step, best[0]);
             System.out.printf(info);
             try {
                 writer.write(info);
+                writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -503,7 +510,7 @@ public class ConfidentIntervalFinder {
 
     private static void findIntervalKSHouseData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
         int M = 100;
-        int iterations = 150;
+        int iterations = 200;
         double step = 0.1;
 
         double best[] = new double[M];
@@ -535,6 +542,7 @@ public class ConfidentIntervalFinder {
             System.out.printf(info);
             try {
                 writer.write(info);
+                writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -545,6 +553,7 @@ public class ConfidentIntervalFinder {
         int M = 100;
         int iterations = 150;
         double step = 0.1;
+        int depth = 6;
 
         double best[] = new double[M];
 
@@ -556,7 +565,7 @@ public class ConfidentIntervalFinder {
             DataML cur_data = data;
             for (int i = 0; i < M; i++) {
                 System.out.printf("!!!%d", i);
-                double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff);
+                double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff, depth);
                 best[i] = auc;
                 System.out.printf("\nThe Best AUC HIGGS = %.4fc\n", auc);
                 cur_data = bootstrap(data);
@@ -575,6 +584,7 @@ public class ConfidentIntervalFinder {
             System.out.printf(info);
             try {
                 writer.write(info);
+                writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -621,7 +631,8 @@ public class ConfidentIntervalFinder {
                         best[i + 5], best[M - 6]);
                 System.out.printf(info);
                 try {
-                        writer.write(info);
+                    writer.write(info);
+                    writer.flush();
                 } catch (IOException e) {
                         e.printStackTrace();
                 }
@@ -636,11 +647,11 @@ public class ConfidentIntervalFinder {
     } */
 
     private static double findBestAUC(final DataML data, final int iterations, final double step,
-                                      final Class func, final double regCoeff) {
+                                      final Class func, final double regCoeff, int depth) {
         final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
                 new BootstrapOptimization<>(
                         new com.spbsu.exp.cart.CARTTreeOptimization(
-                                GridTools.medianGrid(data.getLearnFeatures(), 32), 6, regCoeff), rnd), func, iterations, step);
+                                GridTools.medianGrid(data.getLearnFeatures(), 32), depth, regCoeff), rnd), func, iterations, step);
         final Action counter = new ProgressHandler() {
             int index = 0;
 
