@@ -430,13 +430,14 @@ public class ConfidentIntervalFinder {
 
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream("result2.txt"), "utf-8"))) {
-            findIntervalCancerData("L2", L2.class, writer, 0);
+/*            findIntervalCancerData("L2", L2.class, writer, 0);
             findIntervalCancerData("SteinDifficult", CARTSteinDifficult.class, writer, 0);
             findIntervalCancerData("SteinEasy", CARTSteinEasy.class, writer, 0);
             findIntervalCancerData("LOO", LOOL2.class, writer, 0);
             findIntervalCancerData("SAT", SatL2.class, writer, 0);
             findIntervalCancerData("Reg with 0.4", L2.class, writer, 0.4);
-            findIntervalCancerData("SAT + SteinDifficult", CARTSatSteinL2.class, writer, 0);
+            findIntervalCancerData("SAT + SteinDifficult", CARTSatSteinL2.class, writer, 0); */
+            findIntervalCancerData("Reg with 0.4 + SteinDifficult", CARTSteinDifficult.class, writer, 0.4);
 
 
 /*            findIntervalCTSliceData("L2", L2.class, writer, 0);
