@@ -17,6 +17,6 @@ public class CARTSatSteinL2 extends SatL2 {
     public double bestIncrement(final MSEStats stats) {
         if (stats.weight <= 2 || stats.sum2 < 1e-6)
             return super.bestIncrement(stats);
-        return (1 - (stats.weight - 2)*score(stats)/stats.sum2)*(stats.sum/stats.weight);
+        return (1 - (stats.weight - 2)*score(stats)/(stats.sum2*stats.weight))*(stats.sum/stats.weight);
     }
 }
