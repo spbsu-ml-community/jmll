@@ -13,6 +13,7 @@ import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -93,63 +94,23 @@ public class BroadMatch {
         break;
       }
       case "-depends": {
-        final double alpha = 0.5;
         final TIntList freqsLA = new TIntArrayList();
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqsLA);
 
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqsLA);
         model.loadStatistics(args[2]);
 
-        for (int i = 3; i < args.length; i++) {
-          final String fileName = args[i];
-          CharSeqTools.processLines(StreamTools.openTextFile(fileName), new Action<CharSequence>() {
-            long ts;
-            String query;
-            String user;
-            IntSeq prevQSeq;
+        Arrays.asList(args)
+                .subList(3, args.length)
+                .forEach(inputFile -> {
+                  try {
+                    CharSeqTools.processLines(StreamTools.openTextFile(inputFile), new DependsProcessor(inputFile, dict, model));
+                  } catch (Exception e) {
+                    System.err.println(String.format("Failed to process %s: %s", inputFile, e.toString()));
+                  }
+                });
 
-            @Override
-            public void invoke(CharSequence line) {
-              final CharSequence[] parts = new CharSequence[3];
-              if (CharSeqTools.split(line, '\t', parts).length != 3)
-                throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + fileName + ":" + index + " does not.");
-              if (CharSeqTools.startsWith(parts[0], "uu/") || CharSeqTools.startsWith(parts[0], "r"))
-                return;
-              final long ts = CharSeqTools.parseLong(parts[1]);
-              final String query = normalizeQuery(parts[2].toString());
-              if (query == null || query.equals(this.query)) {
-                this.ts = ts;
-                return;
-              }
-              final IntSeq currentQSeq = dropUnknown(dict.parse(convertToSeq(query), model.freqs, model.totalFreq));
-              if (currentQSeq == null) {
-                this.ts = ts;
-                return;
-              }
-              model.processSeq(currentQSeq);
-              final String prev = parts[0].equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.query : null;
-              this.query = parts[2].toString();
-              this.user = parts[0].toString();
-              this.ts = ts;
-              if (prev != null && prevQSeq != null) {
-                model.processGeneration(prevQSeq, currentQSeq, alpha);
-              }
-              prevQSeq = currentQSeq;
-              if (++index % 10000000 == 0) {
-                try (final Writer out = new OutputStreamWriter(new FileOutputStream("output-" + (index / 10000000) + ".txt"))) {
-                  model.print(out, true);
-                } catch (IOException e) {
-                  e.printStackTrace();
-                }
-              }
-            }
-          });
-        }
-        try (final Writer out = new OutputStreamWriter(new FileOutputStream("output-" + (index / 10000000) + ".txt"))) {
-          model.print(out, false);
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
+        DependsProcessor.dump(model);
         break;
       }
       case "-stats": {
