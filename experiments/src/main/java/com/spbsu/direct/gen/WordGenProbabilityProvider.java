@@ -218,8 +218,9 @@ public class WordGenProbabilityProvider {
   double probab;
 
   private double pAB(int windex) {
-    //      final double pB = all[windex].probab;
-//      return pB + (1 - pB) * pGenB;
+    // final double pB = all[windex].probab;
+    // return pB + (1 - pB) * pGenB;
+
     return pGen(windex);
   }
 
