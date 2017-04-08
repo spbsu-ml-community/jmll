@@ -4,6 +4,7 @@ import com.spbsu.commons.func.Action;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.io.codec.seq.ListDictionary;
 import com.spbsu.commons.seq.*;
+import com.spbsu.commons.text.StringUtils;
 import gnu.trove.list.TIntList;
 import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.custom_hash.TObjectDoubleCustomHashMap;
@@ -15,10 +16,41 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Stack;
 
 
 public final class Utils {
   private static final int SEQ_SIZE = 100;
+
+  /**
+   * Class is responsible for time measurements
+   * Use it in a single thread!
+   */
+  public static final class Timer {
+    static Stack<Long> times = new Stack<>();
+
+    private static String indent() {
+      return StringUtils.repeatWithDelimeter("", "\t", times.size());
+    }
+
+    public static void start(final String tag) {
+      if (tag != null) {
+        System.out.println(indent() + tag);
+      }
+
+      times.push(System.currentTimeMillis());
+    }
+
+    public static void stop(final String tag) {
+      final double duration = (System.currentTimeMillis() - times.pop()) / 1000.0;
+
+      if (tag != null) {
+        System.out.println(String.format("%s%s: %.3fs", indent(), tag, duration));
+      } else {
+        System.out.println(String.format("%s%.3fs", indent(), duration));
+      }
+    }
+  }
 
   @Nullable
   public static IntSeq dropUnknown(IntSeq parse) {

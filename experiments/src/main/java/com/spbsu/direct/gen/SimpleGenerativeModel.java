@@ -10,9 +10,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.*;
 import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.direct.BroadMatch;
 import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 import gnu.trove.procedure.TIntDoubleProcedure;
 
@@ -43,7 +41,7 @@ public class SimpleGenerativeModel {
   public SimpleGenerativeModel(final Dictionary<CharSeq> dict,
                                final TIntList freqsLA) {
     this.dict = dict;
-    this.providers = new WordGenProbabilityProvider[dict.size() + 1];
+    this.providers = new WordGenProbabilityProvider[dict.size() + 1]; // +1 -- for EMPTY word
     this.freqs = freqsLA;
     this.totalFreq = freqsLA.sum();
   }
@@ -68,7 +66,7 @@ public class SimpleGenerativeModel {
 
         final int index = dict.parse(builder.build()).intAt(0);
 
-        // TODO: is it possible situation?
+        // skip unnecessary words
         if (index < 0) {
           return;
         }
@@ -82,11 +80,13 @@ public class SimpleGenerativeModel {
       provider.beta = VecTools.copySparse(vec); // optimize storage space
     });
 
+    // TODO: is it necessary?
     double totalBigramFreq = 0;
     for(int i = 0; i < providers.length; ++i) {
       totalBigramFreq += l1(providers[i].beta);
     }
 
+    // TODO: is it necessary?
     for(int i = 0; i < providers.length; ++i) {
       providers[i].probab = (l1(providers[i].beta) + 1) / (totalBigramFreq + providers.length);
     }
@@ -110,7 +110,9 @@ public class SimpleGenerativeModel {
     }
   }
 
-  public void processGeneration(IntSeq prevQSeq, IntSeq currentQSeq, double alpha) {
+  public void processGeneration(final IntSeq prevQSeq,
+                                final IntSeq currentQSeq,
+                                final double alpha) {
     if (prevQSeq.length() * currentQSeq.length() > 10) {
       // too many variants of bipartite graph
       return;
@@ -140,6 +142,7 @@ public class SimpleGenerativeModel {
         variantLogProBab += providers[index].logP(fragment, currentQSeq);
       }
 
+      // TODO: to replace or not to replace...
       for (int i = 0; i < currentQSeq.length(); ++i, generated >>= 1) {
         if ((generated & 1) == 1) {
           continue;
@@ -163,17 +166,16 @@ public class SimpleGenerativeModel {
 
       for (int i = 0; i < GIBBS_COUNT; ++i) {
         final int bestVariant = rng.nextSimple(weights, sum);
-        gradientStep(prevQSeq, currentQSeq, alpha / GIBBS_COUNT, mask, bestVariant);
+        applyGeneration(prevQSeq, currentQSeq, alpha / GIBBS_COUNT, bestVariant);
       }
     }
   }
 
-  private void gradientStep(final IntSeq prevQSeq,
-                            final IntSeq currentQSeq,
-                            final double alpha,
-                            final int mask,
-                            int bestVariant) {
-    // maximization gradient descent step
+  private void applyGeneration(final IntSeq prevQSeq,
+                               final IntSeq currentQSeq,
+                               final double alpha,
+                               int bestVariant) {
+    final int mask = (1 << currentQSeq.length()) - 1;
 
     for (int i = 0; i < prevQSeq.length(); ++i, bestVariant >>= currentQSeq.length()) {
       final int fragment = bestVariant & mask;
@@ -184,11 +186,12 @@ public class SimpleGenerativeModel {
         continue;
       }
 
-      providers[index].update(fragment, currentQSeq, alpha, dict, BroadMatch.debug);
+      providers[index].update(fragment, currentQSeq, alpha);
     }
   }
 
-  public void printProviders(final Writer out, final boolean limit) {
+  public void printProviders(final Writer out,
+                             final boolean limit) {
     for (int i = 0; i < providers.length; ++i) {
       providers[i].print(dict, out, limit);
     }
@@ -201,7 +204,7 @@ public class SimpleGenerativeModel {
       public void invoke(CharSequence line) {
         if (line.equals("}")) {
           WordGenProbabilityProvider provider = new WordGenProbabilityProvider(builder.toString(), dict);
-          providers[provider.aindex] = provider;
+          providers[provider.providerIndex] = provider;
           builder.delete(0, builder.length());
         } else {
           builder.append(line);

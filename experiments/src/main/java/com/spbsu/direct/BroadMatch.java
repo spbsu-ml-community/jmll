@@ -95,10 +95,18 @@ public class BroadMatch {
       }
       case "-depends": {
         final TIntList freqsLA = new TIntArrayList();
+
+        // TODO: debug
+        Timer.start("Reading dictionary...");
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqsLA);
+        Timer.stop("Finished reading");
 
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqsLA);
+
+        // TODO: debug
+        Timer.start("Reading statistics...");
         model.loadStatistics(args[2]);
+        Timer.stop("Finished reading");
 
         Arrays.asList(args)
                 .subList(3, args.length)

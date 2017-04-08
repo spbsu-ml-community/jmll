@@ -90,7 +90,7 @@ public class DependsProcessor implements Action<CharSequence> {
 
   public static void dump(final SimpleGenerativeModel model) {
     try (final Writer out = new OutputStreamWriter(new FileOutputStream("output-" + (index / DUMP_FREQ) + ".txt"))) {
-      model.print(out, true);
+      model.printProviders(out, true);
     } catch (IOException e) {
       e.printStackTrace();
     }
