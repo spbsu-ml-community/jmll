@@ -18,10 +18,7 @@ import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.LOOL2;
-import com.spbsu.ml.loss.SatL2;
+import com.spbsu.ml.loss.*;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
 
@@ -430,35 +427,37 @@ public class ConfidentIntervalFinder {
 
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream("result2.txt"), "utf-8"))) {
-            findIntervalCancerData("L2", L2.class, writer, 0);
-            findIntervalCancerData("SteinDifficult", CARTSteinDifficult.class, writer, 0);
-            findIntervalCancerData("SteinEasy", CARTSteinEasy.class, writer, 0);
-            findIntervalCancerData("LOO", LOOL2.class, writer, 0);
-            findIntervalCancerData("SAT", SatL2.class, writer, 0);
-            findIntervalCancerData("Reg with 0.4", L2.class, writer, 0.4);
-            findIntervalCancerData("SAT + SteinDifficult", CARTSatSteinL2.class, writer, 0);
+//            findIntervalCancerData("L2", L2.class, writer, 0);
+//            findIntervalCancerData("SteinDifficult", CARTSteinDifficult.class, writer, 0);
+//            findIntervalCancerData("SteinEasy", CARTSteinEasy.class, writer, 0);
+//            findIntervalCancerData("LOO", LOOL2.class, writer, 0);
+//            findIntervalCancerData("SAT", SatL2.class, writer, 0);
+//            findIntervalCancerData("Reg with 0.4", L2.class, writer, 0.4);
+//            findIntervalCancerData("SAT + SteinDifficult", CARTSatSteinL2.class, writer, 0);
 
 
-/*            findIntervalCTSliceData("L2", L2.class, writer, 0);
-            findIntervalCTSliceData("LOO", LOOL2.class, writer, 0);
-            findIntervalCTSliceData("SAT", SatL2.class, writer, 0);
-            findIntervalCTSliceData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
-            findIntervalCTSliceData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-            findIntervalCTSliceData("Reg with 0.4", L2.class, writer, 0.4); /*
+//            findIntervalCTSliceData("L2", L2.class, writer, 0, 0.03, 3300, 1);
+//            findIntervalCTSliceData("LOO", LOOL2.class, writer, 0, 0.03, 5300, 1);
+//            findIntervalCTSliceData("SAT", SatL2.class, writer, 0, 0.03, 3300, 1);
+//            findIntervalCTSliceData("SAT + SteinDifficult", CARTSatSteinL2.class, writer, 0, 0.03, 3300, 1);
+//            findIntervalCTSliceData("CARTSteinDifficult", JNL2.class, writer, 0, 0.03, 5300, 1);
+//            findIntervalCTSliceData("CARTSteinEasy", CARTSteinEasy.class, writer, 0, 0.03, 3300, 1);
+//            findIntervalCTSliceData("Reg with 2", L2Reg.class, writer, 0, 0.025, 3300, 1);
+//            findIntervalCTSliceData("Reg + LOO + Stein--", CARTSteinEasyReg.class, writer, 0, 0.03, 3300, 1);
 
-            findIntervalHiggsData("L2", L2.class, writer, 0);
-            findIntervalHiggsData("LOO", LOOL2.class, writer, 0);
-            findIntervalHiggsData("SAT", SatL2.class, writer, 0);
-            findIntervalHiggsData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
-            findIntervalHiggsData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-            findIntervalHiggsData("Reg with 0.4", CARTL2.class, writer, 0.4);
-
-            findIntervalKSHouseData("L2", CARTL2.class, writer, 0);
-            findIntervalKSHouseData("LOO", LOOL2.class, writer, 0);
-            findIntervalKSHouseData("SAT", SatL2.class, writer, 0);
-            findIntervalKSHouseData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
-            findIntervalKSHouseData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-            findIntervalKSHouseData("Reg with 0.4", CARTL2.class, writer, 0.4); */
+//            findIntervalHiggsData("L2", L2.class, writer, 0);
+//            findIntervalHiggsData("LOO", LOOL2.class, writer, 0);
+//            findIntervalHiggsData("SAT", SatL2.class, writer, 0);
+//            findIntervalHiggsData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+//            findIntervalHiggsData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+//            findIntervalHiggsData("Reg with 0.4", CARTL2.class, writer, 0.4);
+//
+            findIntervalKSHouseData("L2", L2.class, writer, 0);
+//            findIntervalKSHouseData("LOO", LOOL2.class, writer, 0);
+//            findIntervalKSHouseData("SAT", SatL2.class, writer, 0);
+//            findIntervalKSHouseData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+//            findIntervalKSHouseData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
+//            findIntervalKSHouseData("Reg with 0.4", CARTL2.class, writer, 0.4);
         }
         System.exit(0);
     }
@@ -602,17 +601,16 @@ public class ConfidentIntervalFinder {
         }
     } */
 
-    private static void findIntervalCTSliceData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
-        int M = 100;
-        int iterations = 100;
-        double step = 0.1;
-        double best[] = new double[M];
+    private static void findIntervalCTSliceData(String msg, Class funcClass, BufferedWriter writer,
+                                                double regCoeff, double step,
+                                                int iterations, int averageSize) {
+        double best[] = new double[averageSize];
 
         try {
             CTSliceReadProcessor processor = new CTSliceReadProcessor();
             DataML data = readData(processor, LearnCTSliceFileName, TestCTSliceFileName);
             DataML cur_data = data;
-            for (int i = 0; i < M; i++) {
+            for (int i = 0; i < averageSize; i++) {
                 double rmse = findBestRMSE(cur_data, iterations, step, funcClass, regCoeff);
                 best[i] = rmse;
                 System.out.printf("\nThe Best RMSE for CTSlices = %.4fc\n", rmse);
@@ -620,15 +618,15 @@ public class ConfidentIntervalFinder {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
+        } /*finally {
                 Arrays.sort(best);
                 int i = 0;
-                while (i < M && best[i] == 0) {
+                while (i < averageSize && best[i] == 0) {
                     i++;
                 }
                 String info = String.format("The interval for CT slices + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
-                        msg, M, iterations, step,
-                        best[i + 5], best[M - 6]);
+                        msg, averageSize, iterations, step,
+                        best[i + 5], best[averageSize - 6]);
                 System.out.printf(info);
                 try {
                     writer.write(info);
@@ -636,7 +634,7 @@ public class ConfidentIntervalFinder {
                 } catch (IOException e) {
                         e.printStackTrace();
                 }
-        }
+        }*/
     }
 
  /*   private static double baseDataBestRMSE(int iterations, double step, Class funcClass) throws IOException {

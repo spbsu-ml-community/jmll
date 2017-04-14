@@ -67,9 +67,8 @@ public class CARTTreeOptimization<Loss extends StatBasedLoss> extends VecOptimiz
                 final int dsSize = ds.length();
                 leaf.visitAllSplits((bf, left, right) ->
                         scores[bf.bfIndex] =
-                                loss.score(left) +
-                                        loss.score(right) +
-                lambda*reg(left, right, leavesSize, dsSize));
+                                (loss.score(left) + loss.score(right))*
+                                        (1 + lambda*reg(left, right, leavesSize, dsSize)));
                 final int bestSplit = ArrayTools.min(scores);
                 final double score = loss.score(leaf.total());
                 if (bestSplit < 0 || scores[bestSplit] >= loss.score(leaf.total())) {
@@ -102,8 +101,8 @@ public class CARTTreeOptimization<Loss extends StatBasedLoss> extends VecOptimiz
         L2.MSEStats rightMSE = (L2.MSEStats) ((WeightedLoss.Stat) right).inside;
         double genCount = leftMSE.weight + rightMSE.weight;
         double c = 1.0/(genCount + 2)*(genCount + 1)/(dsSize + leavesSize);
-        double p1 = (leftMSE.weight + 1)*c;
-        double p2 = (rightMSE.weight + 1)*c;
+        double p1 = c*(leftMSE.weight + 1);
+        double p2 = c*(rightMSE.weight + 1);
         return -(-p1*Math.log(p1) - p2*Math.log(p2));
     }
 }
