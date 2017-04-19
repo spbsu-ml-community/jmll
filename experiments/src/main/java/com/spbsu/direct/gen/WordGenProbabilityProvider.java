@@ -6,18 +6,21 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.spbsu.commons.io.codec.seq.Dictionary;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.math.AnalyticFunc;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.seq.*;
 import com.spbsu.commons.util.ArrayTools;
+import gnu.trove.iterator.TIntIntIterator;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.procedure.TIntDoubleProcedure;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,124 +36,109 @@ public class WordGenProbabilityProvider {
   public static boolean DEBUG = true;
 
   public static final int MINIMUM_STATISTICS_TO_OUTPUT = 20;
-  private double poissonLambdaSum = 1;
-  private double poissonLambdaCount = 1;
-  private double denominator;
 
-  // TODO: remove
-  private double undefined;
+  private static final int POOL_SIZE = 20;
+  private static final int BUFFER_SIZE = 10;
+  private static final int MAX_ITERATION_COUNT = 1000;
+  private static final double EPS = 1e-5;
+  private static final double INF = 1e18;
 
   private static Pattern headerPattern = Pattern.compile("(\\[(?:[^, ]+(?:, )?)*\\]): \\{(.*)");
 
-  private double dpAlpha = Double.NaN;
+  private Dictionary<CharSeq> dict;
 
-  SparseVec beta;
-  SparseVec gamma;
+  private double poissonLambdaSum = 1;
+  private double poissonLambdaCount = 1;
 
-  private int totalTermsCount;
+  private double dpAlpha = 1.0; // TODO: think about good initialization
+  private double undefinedGamma = 0;
+  private double denominator;
+
+  private SparseVec count;
+  private SparseVec gamma;
+
+  private int totalCount;
   private int uniqueTermsCount;
+  private int newTermsTotalCount;
+  private final TIntIntMap newTermsCount = new TIntIntHashMap();
+  private final ArrayList<Integer> generationIndices = new ArrayList<>();
 
   final int providerIndex; // for debug purposes
 
-  // TODO: is it necessary?
-  double probab;
+  public WordGenProbabilityProvider(final int index,
+                                    final Dictionary<CharSeq> dictionary) {
+    dict = dictionary;
+    providerIndex = index;
+    count = new SparseVec(dictionary.size(), 0); // without empty word
+    gamma = new SparseVec(dictionary.size(), 0); // parameters to learn
 
-  // TODO: is it necessary?
-  private Dictionary<CharSeq> dict;
-
-  // TODO: is it necessary?
-  private WordGenProbabilityProvider[] all;
-
-  private int poolSize;
-  private final List<Integer> termsOccurrences = new ArrayList<>();
-  private final TIntIntMap newTermsCount = new TIntIntHashMap();
-
-  public WordGenProbabilityProvider(final int dim,
-                                    final int wordIndex) {
-    providerIndex = wordIndex;
-    beta = new SparseVec(dim, 0); // without empty word
-
-    gamma = new SparseVec(dim, 0); // parameters to learn
-    denominator = 1 + dim; // 1 + \sum_i e^gamma[i] = 1 + \sum_i e^0
+    denominator = 1;
   }
 
 
-  /** Returns the log-probability of fragment generation by the current term
+  /**
+   * Returns the log-probability of fragment generation by the current term
    * p = Poisson(\lambda) * p(fragment | current term)
-   *
+   * <p>
    * If the given fragment is empty, p(fragment | current term) = \frac{1}{1 + \sum_i e^gamma[i]} * \frac{n - 1}{\alpha + n - 1}
    * Otherwise, p(fragment | current term) = \prod_{t \in fragment} p(t | current term)
-   *
+   * <p>
    * If t is new class, p(t | current term) = \frac{1}{N - m} * \frac{\alpha}{\alpha + n - 1}
    * Otherwise, p(t | current term) = \frac{e^gamma[t]}{1 + \sum_i e^gamma[i]} * \frac{n - 1}{\alpha + n - 1}
-   *
+   * <p>
    * Where:
    * n -- the number of the current word
    * N -- total count of classes (size of the dictionary)
    * m -- count of classes for the current term
-   *
+   * <p>
    * Additional description:
    * denominator = 1 + \sum_i e^gamma[i]
    *
-   * @param variant the mask of generated terms
+   * @param variant  the mask of generated terms
    * @param fragment the sequence of terms
    * @return log-probability of fragment generation by the current term
    */
-  public double logP(int variant,
+  public double logP(final int variant,
                      final IntSeq fragment) {
-    int n = totalTermsCount;
+    int n = totalCount;
     int uniqueCount = uniqueTermsCount;
+    double denominator = this.denominator;
 
     double result = MathTools.logPoissonProbability(poissonLambdaSum / poissonLambdaCount, Integer.bitCount(variant));
+
+    int [] newTerms = new int[BUFFER_SIZE];
+    int tail = 0;
+    ArrayTools.fill(newTerms, -1);
 
     if (variant == 0) {
       result += -log(denominator) + log(n) - log(dpAlpha + n);
     } else {
-      final List<Integer> newTerms = new LinkedList<>();
-
-      for (int i = 0; i < fragment.length(); i++, variant >>= 1) {
-        if ((variant & 1) == 0) {
+      for (int i = 0, mask = variant; i < fragment.length(); i++, mask >>= 1) {
+        if ((mask & 1) == 0) {
           continue; // skip not generated term
         }
 
         ++n; // met new generated word
-        final int termIndex = fragment.intAt(i);
+        final int index = fragment.intAt(i);
 
-        boolean isNewTerm = false;
-        if (beta.get(termIndex) == 0) {
-          isNewTerm = newTerms.indexOf(termIndex) == -1;
-        }
+        if (count.get(index) == 0) {
+          if (ArrayTools.indexOf(index, newTerms) == -1) { // TODO: optimize performance
+            newTerms[tail++] = index; // mark that we have met this term
+            denominator += exp(undefinedGamma);
 
-        if (isNewTerm) {
-          result += -log(dict.size() - uniqueCount) + log(dpAlpha) - log(dpAlpha + n - 1);
-          ++uniqueCount;
-          newTerms.add(termIndex);
+            result += -log(dict.size() - uniqueCount) + log(dpAlpha) - log(dpAlpha + n - 1);
+            ++uniqueCount;
+          } else {
+            result += undefinedGamma - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
+          }
         } else {
-          result += gamma.get(termIndex) - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
+          result += gamma.get(index) - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
         }
       }
     }
 
     return result;
   }
-
-
-  // TODO: merge with constructor
-  public void init(final WordGenProbabilityProvider[] providers,
-                   final Dictionary<CharSeq> dictionary) {
-    all = providers;
-    dict = dictionary;
-
-    uniqueTermsCount = 0;
-
-    final VecIterator nz = beta.nonZeroes();
-    while (nz.advance()) {
-      final int count = (int) nz.value();
-      totalTermsCount += count;
-      uniqueTermsCount++;
-    }
-  }
-
 
   public void update(int variant,
                      final IntSeq seq,
@@ -160,68 +148,93 @@ public class WordGenProbabilityProvider {
     poissonLambdaCount++;
     poissonLambdaSum += Integer.bitCount(variant);
 
-    if (DEBUG) {
-      System.out.print(wordText(providerIndex, dict) + "->");
-    }
-
     for (int i = 0; i < length; ++i, variant >>= 1) {
       if ((variant & 1) == 0) {
         continue; // skip not generated term
       }
 
-      final int termIndex = seq.intAt(i);
-      termsOccurrences.add(termIndex);
-      newTermsCount.adjustOrPutValue(termIndex, 1, 1);
+      final int index = seq.intAt(i);
 
-      if (DEBUG) {
-        System.out.print(" " + wordText(termIndex, dict));
+      if (count.get(index) == 0) {
+        applyUpdates(alpha); // new term -- need to apply previous changes
+
+        gamma.set(index, undefinedGamma);
+        denominator += exp(undefinedGamma);
+
+        ++uniqueTermsCount;
+        count.adjust(index, 1);
+
+        generationIndices.add(totalCount++);
+
+        dpAlpha = findDpAlpha();
+      } else {
+        ++newTermsTotalCount;
+        newTermsCount.adjustOrPutValue(index, 1, 1);
       }
     }
 
-    poolSize++;
-    if (!DEBUG && poolSize < poissonLambdaCount / 20.) {
+    // TODO: review
+    if (!DEBUG && newTermsTotalCount / poissonLambdaCount < POOL_SIZE) {
       return;
     }
 
     applyUpdates(alpha);
   }
 
-  private double gradientDescentGamma(final List<Integer> termsOccurrences) {
-    // TODO: iplement
-    return 0.0;
+  private void gradientDescentGamma(double alpha) {
+    alpha /= totalCount; // TODO: is it okay?
+
+    double delta = INF;
+
+    for (int iteration = 1; iteration < MAX_ITERATION_COUNT && delta > EPS; ++iteration) {
+      double newDenominator = 1;
+
+      VecIterator it = count.nonZeroes();
+      while (it.advance()) {
+        int index = it.index();
+
+        double x = gamma.get(index);
+        double gradient = (count.get(index) - 1) - (totalCount - uniqueTermsCount) * exp(x) / denominator;
+        double new_x = x + alpha * gradient;
+
+        gamma.set(index, new_x);
+        newDenominator += exp(new_x);
+
+        delta = max(delta, abs(x - new_x));
+      }
+
+      undefinedGamma -= (totalCount - uniqueTermsCount) / denominator;
+      denominator = newDenominator;
+    }
   }
 
   /**
    * Finds optimal alpha for dirichlet process
    *
-   * @param termsCount the number of terms
-   * @param newTermsIndices the indices of new terms
+   * \alpha = \argmax_{\alpha} \sum_{t=1}^T I{t is new} * \log{\frac{\alpha}{\alpha + t - 1}} + I{t is old} * \log{\frac{t - 1}{\alpha + t - 1}}
+   *
    * @return new optimal alpha for dirichlet process
    *
    * TODO: calculate minDpAlpha and maxDpAlpha
-   * TODO: replace ArrayList<Integer>
-   * TODO: totalTermsCount + i replace with counter
    */
-  private double findNewDpAlpha(final int termsCount,
-                                final ArrayList<Integer> newTermsIndices) {
+  private double findDpAlpha() {
     final double minDpAlpha = 1e-3;
-    final double maxDpAlpha = totalTermsCount;
+    final double maxDpAlpha = totalCount;
 
     return MathTools.bisection(minDpAlpha, maxDpAlpha, new AnalyticFunc.Stub() {
       @Override
-      public double value(double x) {
+      public double value(double alpha) {
         double result = 0;
 
-        for (int i = 0, it = 0; i < termsCount; ++i) {
-          if (it < newTermsIndices.size() && newTermsIndices.get(it) < i) {
+        for (int i = 0, it = 0; i < totalCount; ++i) {
+          if (it < generationIndices.size() && generationIndices.get(it) < i) {
             ++it;
           }
 
-          // the number of the current word = totalTermsCount + i + 1
-          if (it < newTermsIndices.size() && i == newTermsIndices.get(it)) {
-            result += (totalTermsCount + i) / (dpAlpha * (dpAlpha + totalTermsCount + i));
+          if (it < generationIndices.size() && i == generationIndices.get(it)) {
+            result += i / (alpha * (alpha + i));
           } else {
-            result += -1 / (dpAlpha + totalTermsCount + i);
+            result += -1 / (alpha + i);
           }
         }
 
@@ -231,21 +244,24 @@ public class WordGenProbabilityProvider {
   }
 
   public void applyUpdates(final double alpha) {
-    final ArrayList<Integer> newTermsIndices = new ArrayList<>();
-
-    for (int index : termsOccurrences) {
-      if (beta.get(index) == 0) {
-        newTermsIndices.add(index);
-      }
-
-      beta.set(index, beta.get(index) + 1);
+    // if nothing to apply
+    if (newTermsTotalCount == 0) {
+      return;
     }
 
-    dpAlpha = findNewDpAlpha(termsOccurrences.size(), newTermsIndices);
-    // gradientDescentGamma(alpha);
+    // update count values
+    totalCount += newTermsTotalCount;
 
+    TIntIntIterator it = newTermsCount.iterator();
+    while (it.hasNext()) {
+      count.set(it.key(), count.get(it.key()) + it.value());
+      it.advance();
+    }
 
-    termsOccurrences.clear();
+    dpAlpha = findDpAlpha();
+    gradientDescentGamma(alpha);
+
+    newTermsTotalCount = 0;
     newTermsCount.clear();
   }
 
@@ -261,7 +277,7 @@ public class WordGenProbabilityProvider {
       double[] oldValues = new double[updates.length];
       for (int i = 0; i < updates.length; i++) {
         final int windex = updates[i];
-        double value = oldValues[i] = beta.get(windex);
+        double value = oldValues[i] = count.get(windex);
         double pAB = exp(value + undefined) / denominator;
         if (abs(pAB) < 1e-10)
           continue;
@@ -271,7 +287,7 @@ public class WordGenProbabilityProvider {
         return;
       final double newUndefined = undefined - alpha * gradientTermSum * pGen(-1);
 
-      final VecIterator it = beta.nonZeroes();
+      final VecIterator it = count.nonZeroes();
       int nzCount = 0;
       double newDenominator = 1;
       while (it.advance()) { // updating all non zeroes as if they were negative, then we will change the gradientDescentGamma for positives
@@ -306,9 +322,9 @@ public class WordGenProbabilityProvider {
 
         nzCount++;
         newDenominator += exp(value);
-        beta.set(windex, value - newUndefined);
+        count.set(windex, value - newUndefined);
       }
-      newDenominator += exp(undefined) * (beta.dim() - nzCount);
+      newDenominator += exp(undefined) * (count.dim() - nzCount);
 
       undefined = newUndefined;
       if (newDenominator < 0)
@@ -323,16 +339,16 @@ public class WordGenProbabilityProvider {
     double logPGenB = 0;
 
     if (!Double.isNaN(dpAlpha)) { // DP model
-      final double statPower = denominator - beta.dim();
+      final double statPower = denominator - count.dim();
 
-      if (windex < 0 || windex >= beta.dim() || beta.get(windex) < MathTools.EPSILON)
+      if (windex < 0 || windex >= count.dim() || count.get(windex) < MathTools.EPSILON)
         // log(\frac{1}{N - m + 1} {\alpha \over \alpha + n - 1}),
         // where N -- vocabulary size, m -- number of words, occurred in statistics, \alpha -- DP expansion parameter, n -- statistics power
-        logPGenB = -log(beta.dim() - beta.size() + 1) + log(dpAlpha) - log(dpAlpha + statPower - 1);
+        logPGenB = -log(count.dim() - count.size() + 1) + log(dpAlpha) - log(dpAlpha + statPower - 1);
       else
         // log({\e^s_i \over \alpha + n - 1}),
         // where N -- vocabulary size, m -- number of words, occurred in statistics, \alpha -- DP expansion parameter, n -- statistics power
-        logPGenB = log(beta.get(windex) - 1) - log(dpAlpha + statPower - 1);
+        logPGenB = log(count.get(windex) - 1) - log(dpAlpha + statPower - 1);
     }
 
     return exp(logPGenB);
@@ -342,7 +358,7 @@ public class WordGenProbabilityProvider {
 
   // TODO: refactor, review
   public void visitVariants(final TIntDoubleProcedure todo) {
-    final VecIterator it = beta.nonZeroes();
+    final VecIterator it = count.nonZeroes();
     while (it.advance()) {
       todo.execute(it.index(), pGen(it.index()));
     }
@@ -377,16 +393,16 @@ public class WordGenProbabilityProvider {
     final ObjectNode output = mapper.get().createObjectNode();
     output.put("poissonSum", poissonLambdaSum);
     output.put("poissonCount", poissonLambdaCount);
-    output.put("undefined", undefined);
+    output.put("undefined", undefinedGamma);
     output.put("denominator", denominator);
 
     final ObjectNode wordsNode = output.putObject("words");
-    final int[] myIndices = new int[beta.size() + 1];
-    final double[] myProbabs = new double[beta.size() + 1];
+    final int[] myIndices = new int[count.size() + 1];
+    final double[] myProbabs = new double[count.size() + 1];
 
     int index = 0;
 
-    final VecIterator nz = beta.nonZeroes();
+    final VecIterator nz = count.nonZeroes();
     while (nz.advance()) {
       myIndices[index] = nz.index();
       myProbabs[index] = pGen(nz.index());
@@ -448,14 +464,14 @@ public class WordGenProbabilityProvider {
       providerIndex = dict.search(phraseBuilder.build());
     }
     final ObjectReader reader = mapper.get().reader();
-    beta = new SparseVec(dict.size());
+    count = new SparseVec(dict.size());
 
     try {
       final JsonNode node = reader.readTree(json);
       poissonLambdaSum = node.get("poissonSum").asDouble();
       poissonLambdaCount = node.get("poissonCount").asDouble();
       denominator = node.get("denominator").asDouble();
-      undefined = node.get("undefined").asDouble();
+      undefinedGamma = node.get("undefined").asDouble();
       final JsonNode words = node.get("words");
       final Iterator<Map.Entry<String, JsonNode>> fieldsIt = words.fields();
       final SeqBuilder<CharSeq> phraseBuilder = new ArraySeqBuilder<>(CharSeq.class);
@@ -470,28 +486,24 @@ public class WordGenProbabilityProvider {
 
         final double weight = log(denominator * next.getValue().asDouble());
         totalWeight += weight;
-        beta.set(dict.search(phraseBuilder.build()), weight);
+        count.set(dict.search(phraseBuilder.build()), weight);
         phraseBuilder.clear();
 
       }
 
       { // DP schema
-        dpAlpha = optimalExpansionDP(totalWeight, beta.size());
+        dpAlpha = optimalExpansionDP(totalWeight, count.size());
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  // TODO: refactor, review
-  private String wordText(final int index,
-                          final Dictionary<CharSeq> dict) {
+  private String termToText(final int index,
+                            final Dictionary<CharSeq> dict) {
     if (index < 0 || index >= dict.size()) {
       return SimpleGenerativeModel.EMPTY_ID;
     }
-
-    // TODO: is it bug?
-    this.dict = dict;
 
     return dict.get(index).toString();
   }

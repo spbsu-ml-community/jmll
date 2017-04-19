@@ -42,13 +42,19 @@ public class SimpleGenerativeModel {
                                final TIntList freqsLA) {
     this.dict = dict;
     this.providers = new WordGenProbabilityProvider[dict.size() + 1]; // +1 -- for EMPTY word
+
+    for (int i = 0; i < providers.length; ++i) {
+      this.providers[i] = new WordGenProbabilityProvider(i, dict);
+    }
+
     this.freqs = freqsLA;
     this.totalFreq = freqsLA.sum();
   }
 
+  /*
   public void loadStatistics(final String fileName) throws IOException {
     for (int i = 0; i < providers.length; ++i) {
-      providers[i] = new WordGenProbabilityProvider(dict.size(), i);
+      providers[i] = new WordGenProbabilityProvider(dict);
     }
 
     final Vec2CharSequenceConverter converter = new Vec2CharSequenceConverter();
@@ -94,7 +100,7 @@ public class SimpleGenerativeModel {
     for(int i = 0; i < providers.length; ++i) {
       providers[i].init(providers, dict);
     }
-  }
+  }*/
 
   public void processSeq(final IntSeq prevQSeq) {
     for (int i = 0; i < prevQSeq.length(); ++i) {
@@ -142,14 +148,7 @@ public class SimpleGenerativeModel {
         variantLogProBab += providers[index].logP(fragment, currentQSeq);
       }
 
-      // TODO: to replace or not to replace...
-      for (int i = 0; i < currentQSeq.length(); ++i, generated >>= 1) {
-        if ((generated & 1) == 1) {
-          continue;
-        }
-
-        variantLogProBab += log(freqs.get(currentQSeq.intAt(i)) + 1.) - log(totalFreq + freqs.size());
-      }
+      variantLogProBab += providers[dict.size()].logP(~generated, currentQSeq);
 
       // Gibbs
       weights.set(currVariant, variantLogProBab);
