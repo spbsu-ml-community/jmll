@@ -103,11 +103,6 @@ public class BroadMatch {
 
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqsLA);
 
-        // TODO: debug
-        Timer.start("Reading statistics...");
-        model.loadStatistics(args[2]);
-        Timer.stop("Finished reading");
-
         Arrays.asList(args)
                 .subList(3, args.length)
                 .forEach(inputFile -> {
