@@ -4,23 +4,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.spbsu.commons.io.codec.seq.Dictionary;
-import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.math.AnalyticFunc;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.seq.*;
 import com.spbsu.commons.util.ArrayTools;
-import gnu.trove.iterator.TIntIntIterator;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.procedure.TIntDoubleProcedure;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,9 +35,6 @@ public class WordGenProbabilityProvider {
 
   private static final int POOL_SIZE = 20;
   private static final int BUFFER_SIZE = 10;
-  private static final int MAX_ITERATION_COUNT = 1000;
-  private static final double EPS = 1e-5;
-  private static final double INF = 1e18;
 
   private static Pattern headerPattern = Pattern.compile("(\\[(?:[^, ]+(?:, )?)*\\]): \\{(.*)");
 
@@ -59,8 +52,8 @@ public class WordGenProbabilityProvider {
 
   private int totalCount;
   private int uniqueTermsCount;
-  private int newTermsTotalCount;
-  private final TIntIntMap newTermsCount = new TIntIntHashMap();
+  private final ArrayList<Integer> allTerms = new ArrayList<>();
+  private final ArrayList<Integer> newTerms = new ArrayList<>();
   private final ArrayList<Integer> generationIndices = new ArrayList<>();
 
   final int providerIndex; // for debug purposes
@@ -75,6 +68,28 @@ public class WordGenProbabilityProvider {
     denominator = 1;
   }
 
+  /**
+   * Returns the log-probability of generation of all terms by the current term
+   *
+   * @return the log-probability of generation of all terms
+   */
+  private double logProbabilityOfAllTerms() {
+    double result = 0;
+
+    for (int i = 0, it = 0; i < allTerms.size(); ++i) {
+      if (it < generationIndices.size() && generationIndices.get(it) < i) {
+        ++it;
+      }
+
+      if (it < generationIndices.size() && i == generationIndices.get(it)) {
+        result += -log(dict.size() - it) + log(dpAlpha) - log(dpAlpha + i);
+      } else {
+        result += gamma.get(allTerms.get(i)) - log(denominator) + log(i) - log(dpAlpha + i);
+      }
+    }
+
+    return result;
+  }
 
   /**
    * Returns the log-probability of fragment generation by the current term
@@ -94,7 +109,7 @@ public class WordGenProbabilityProvider {
    * Additional description:
    * denominator = 1 + \sum_i e^gamma[i]
    *
-   * @param variant  the mask of generated terms
+   * @param variant the mask of generated terms by the current term
    * @param fragment the sequence of terms
    * @return log-probability of fragment generation by the current term
    */
@@ -106,7 +121,7 @@ public class WordGenProbabilityProvider {
 
     double result = MathTools.logPoissonProbability(poissonLambdaSum / poissonLambdaCount, Integer.bitCount(variant));
 
-    int [] newTerms = new int[BUFFER_SIZE];
+    int[] newTerms = new int[BUFFER_SIZE];
     int tail = 0;
     ArrayTools.fill(newTerms, -1);
 
@@ -140,6 +155,16 @@ public class WordGenProbabilityProvider {
     return result;
   }
 
+  /**
+   * Updates model:
+   * - affects poisson distribution
+   * - applies updates if variant includes new term
+   * - applies updates if provider has a lot of updates
+   *
+   * @param variant the mask of generated terms by the current term
+   * @param seq the sequence of terms
+   * @param alpha descent parameter
+   */
   public void update(int variant,
                      final IntSeq seq,
                      final double alpha) {
@@ -154,6 +179,7 @@ public class WordGenProbabilityProvider {
       }
 
       final int index = seq.intAt(i);
+      allTerms.add(index);
 
       if (count.get(index) == 0) {
         applyUpdates(alpha); // new term -- need to apply previous changes
@@ -168,53 +194,64 @@ public class WordGenProbabilityProvider {
 
         dpAlpha = findDpAlpha();
       } else {
-        ++newTermsTotalCount;
-        newTermsCount.adjustOrPutValue(index, 1, 1);
+        newTerms.add(index);
       }
     }
 
     // TODO: review
-    if (!DEBUG && newTermsTotalCount / poissonLambdaCount < POOL_SIZE) {
+    if (!DEBUG && newTerms.size() / poissonLambdaCount < POOL_SIZE) {
       return;
     }
 
     applyUpdates(alpha);
   }
 
-  private void gradientDescentGamma(double alpha) {
+  /**
+   * Simulates gradient descent steps one by one for all new terms
+   *
+   * @param alpha descent parameter
+   */
+  private void gradientDescent(double alpha) {
     alpha /= totalCount; // TODO: is it okay?
 
-    double delta = INF;
-
-    for (int iteration = 1; iteration < MAX_ITERATION_COUNT && delta > EPS; ++iteration) {
-      double newDenominator = 1;
-
-      VecIterator it = count.nonZeroes();
-      while (it.advance()) {
-        int index = it.index();
-
-        double x = gamma.get(index);
-        double gradient = (count.get(index) - 1) - (totalCount - uniqueTermsCount) * exp(x) / denominator;
-        double new_x = x + alpha * gradient;
-
-        gamma.set(index, new_x);
-        newDenominator += exp(new_x);
-
-        delta = max(delta, abs(x - new_x));
-      }
-
-      undefinedGamma -= (totalCount - uniqueTermsCount) / denominator;
-      denominator = newDenominator;
+    for (int term : newTerms) {
+      gradientDescentStep(alpha, term);
     }
   }
 
   /**
-   * Finds optimal alpha for dirichlet process
+   * Simulates one gradient descent step
    *
+   * @param alpha descent parameter
+   * @param term index of the new generated term
+   */
+  private void gradientDescentStep(final double alpha,
+                                   final int term) {
+    double newDenominator = 1;
+
+    VecIterator it = count.nonZeroes();
+    while (it.advance()) {
+      int index = it.index();
+
+      double x = gamma.get(index);
+      double gradient = (index == term ? 1 : 0) - exp(x) / denominator;
+      double new_x = x + alpha * gradient;
+
+      gamma.set(index, new_x);
+      newDenominator += exp(new_x);
+    }
+
+    undefinedGamma -= 1 / denominator;
+    denominator = newDenominator;
+  }
+
+  /**
+   * Finds optimal alpha for dirichlet process
+   * <p>
    * \alpha = \argmax_{\alpha} \sum_{t=1}^T I{t is new} * \log{\frac{\alpha}{\alpha + t - 1}} + I{t is old} * \log{\frac{t - 1}{\alpha + t - 1}}
    *
    * @return new optimal alpha for dirichlet process
-   *
+   * <p>
    * TODO: calculate minDpAlpha and maxDpAlpha
    */
   private double findDpAlpha() {
@@ -243,115 +280,30 @@ public class WordGenProbabilityProvider {
     });
   }
 
+  /**
+   * Applies updates:
+   * - updates words count
+   * - finds new dpAlpha
+   * - runs gradient descent
+   *
+   * @param alpha descent parameter
+   */
   public void applyUpdates(final double alpha) {
     // if nothing to apply
-    if (newTermsTotalCount == 0) {
+    if (newTerms.isEmpty()) {
       return;
     }
 
     // update count values
-    totalCount += newTermsTotalCount;
-
-    TIntIntIterator it = newTermsCount.iterator();
-    while (it.hasNext()) {
-      count.set(it.key(), count.get(it.key()) + it.value());
-      it.advance();
+    for (int term : newTerms) {
+      count.adjust(term, 1);
+      ++totalCount;
     }
 
     dpAlpha = findDpAlpha();
-    gradientDescentGamma(alpha);
+    gradientDescent(alpha);
 
-    newTermsTotalCount = 0;
-    newTermsCount.clear();
-  }
-
-
-  /*
-  public void update(TIntIntMap weightsPools, double alpha) {
-    alpha /= poolSize;
-
-    final int[] updates = weightsPools.keys();
-    final int[] count = weightsPools.values();
-    { // gradientDescentGamma step
-      double gradientTermSum = 0;
-      double[] oldValues = new double[updates.length];
-      for (int i = 0; i < updates.length; i++) {
-        final int windex = updates[i];
-        double value = oldValues[i] = count.get(windex);
-        double pAB = exp(value + undefined) / denominator;
-        if (abs(pAB) < 1e-10)
-          continue;
-        gradientTermSum += count[i];
-      }
-      if (gradientTermSum == 0)
-        return;
-      final double newUndefined = undefined - alpha * gradientTermSum * pGen(-1);
-
-      final VecIterator it = count.nonZeroes();
-      int nzCount = 0;
-      double newDenominator = 1;
-      while (it.advance()) { // updating all non zeroes as if they were negative, then we will change the gradientDescentGamma for positives
-        double value = it.value() + undefined;
-        final double pAI = exp(value) / denominator;
-        value += -alpha * gradientTermSum * pAI;
-        if (abs(value) > 100)
-          System.out.println();
-        nzCount++;
-        final double exp = exp(value);
-        newDenominator += exp;
-        it.setValue(value - newUndefined);
-      }
-
-      for (int i = 0; i < updates.length; i++) {
-        final int windex = updates[i];
-        double value = oldValues[i] + undefined;
-        final double pAB = exp(value) / denominator;
-
-        if (value != undefined) { // reverting changes made in previous loop for this example
-          final double exp = exp(value - alpha * gradientTermSum * pAB);
-          newDenominator -= exp;
-          if (newDenominator < 0)
-            System.out.println();
-          nzCount--;
-        }
-        final double positiveGradientTerm = 1;
-        final double grad = -(gradientTermSum - count[i] * positiveGradientTerm) * pAB + count[i] * positiveGradientTerm * (1 - pAB);
-        value += alpha * grad;
-        if (abs(value) > 100)
-          System.out.println();
-
-        nzCount++;
-        newDenominator += exp(value);
-        count.set(windex, value - newUndefined);
-      }
-      newDenominator += exp(undefined) * (count.dim() - nzCount);
-
-      undefined = newUndefined;
-      if (newDenominator < 0)
-        System.out.println();
-      denominator = newDenominator;
-    }
-  }
-  */
-
-  // TODO: implement
-  public double pGen(int windex) {
-    double logPGenB = 0;
-
-    if (!Double.isNaN(dpAlpha)) { // DP model
-      final double statPower = denominator - count.dim();
-
-      if (windex < 0 || windex >= count.dim() || count.get(windex) < MathTools.EPSILON)
-        // log(\frac{1}{N - m + 1} {\alpha \over \alpha + n - 1}),
-        // where N -- vocabulary size, m -- number of words, occurred in statistics, \alpha -- DP expansion parameter, n -- statistics power
-        logPGenB = -log(count.dim() - count.size() + 1) + log(dpAlpha) - log(dpAlpha + statPower - 1);
-      else
-        // log({\e^s_i \over \alpha + n - 1}),
-        // where N -- vocabulary size, m -- number of words, occurred in statistics, \alpha -- DP expansion parameter, n -- statistics power
-        logPGenB = log(count.get(windex) - 1) - log(dpAlpha + statPower - 1);
-    }
-
-    return exp(logPGenB);
+    newTerms.clear();
   }
 
   private static final ThreadLocal<ObjectMapper> mapper = ThreadLocal.withInitial(ObjectMapper::new);
@@ -359,14 +311,9 @@ public class WordGenProbabilityProvider {
   // TODO: refactor, review
   public void visitVariants(final TIntDoubleProcedure todo) {
     final VecIterator it = count.nonZeroes();
-    while (it.advance()) {
+    /*while (it.advance()) {
       todo.execute(it.index(), pGen(it.index()));
-    }
-  }
-
-  // TODO: refactor, review
-  public boolean isMeaningful(int index) {
-    return pGen(index) > 0.0005;
+    }*/
   }
 
   /**
@@ -382,72 +329,65 @@ public class WordGenProbabilityProvider {
     });
   }
 
-  // TODO: refactor, review
-  public void print(final Dictionary<CharSeq> words,
-                    final Writer to,
+  public void print(final Writer to,
                     final boolean limit) {
     if (poissonLambdaCount < MINIMUM_STATISTICS_TO_OUTPUT && limit) {
       return;
     }
 
     final ObjectNode output = mapper.get().createObjectNode();
+
     output.put("poissonSum", poissonLambdaSum);
     output.put("poissonCount", poissonLambdaCount);
     output.put("undefined", undefinedGamma);
     output.put("denominator", denominator);
 
     final ObjectNode wordsNode = output.putObject("words");
-    final int[] myIndices = new int[count.size() + 1];
-    final double[] myProbabs = new double[count.size() + 1];
 
     int index = 0;
+    final int[] indices = new int[count.size() + 1];
+    final double[] probabilities = new double[count.size() + 1];
 
     final VecIterator nz = count.nonZeroes();
     while (nz.advance()) {
-      myIndices[index] = nz.index();
-      myProbabs[index] = pGen(nz.index());
-      index++;
+      indices[index] = nz.index();
+      probabilities[index] = gamma.get(nz.index());
+      ++index;
     }
 
-    ArrayTools.parallelSort(myProbabs, myIndices);
-    int wordsCount = 0;
-    for (int i = myIndices.length - 1; i >= 0; i--) {
-      if (myProbabs[i] < 1e-6 && limit) {
+    ArrayTools.parallelSort(probabilities, indices);
+
+    for (int i = indices.length - 1; i >= 0; i--) {
+      if (probabilities[i] < 1e-6 && limit) {
         break;
       }
 
-      final int windex = myIndices[i];
-      wordsCount++;
-
-      if (words.size() > windex) {
-        wordsNode.put(words.get(windex).toString(), myProbabs[i]);
-      } else {
-        wordsNode.put(SimpleGenerativeModel.EMPTY_ID, myProbabs[i]);
-      }
+      final ObjectNode node = wordsNode.putObject(termToText(indices[i], dict));
+      node.put("prob", gamma.get(indices[i]));
+      node.put("gamma", gamma.get(indices[i]));
+      node.put("count", count.get(indices[i]));
     }
 
-    if (wordsCount < 2) {
-      return;
+    final ArrayNode indicesNode = output.putArray("indices");
+    for (int i : generationIndices) {
+      indicesNode.add(i);
     }
 
     final ObjectWriter writer = mapper.get().writerWithDefaultPrettyPrinter();
     try {
-      if (providerIndex < dict.size()) {
-        to.append(dict.get(providerIndex).toString()).append(": ");
-      } else {
-        to.append(SimpleGenerativeModel.EMPTY_ID).append(": ");
-      }
-
-      to.append(writer.writeValueAsString(output));
-      to.append("\n");
+      to.append(termToText(providerIndex, dict))
+              .append(": ")
+              .append(writer.writeValueAsString(output))
+              .append("\n");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
 
-  // TODO: refactor, review
-  public WordGenProbabilityProvider(CharSequence presentation, Dictionary<CharSeq> dict) {
+  // TODO: refactor, review, implement
+  public WordGenProbabilityProvider(final CharSequence presentation,
+                                    final Dictionary<CharSeq> dict) {
     final String json;
     {
       final SeqBuilder<CharSeq> phraseBuilder = new ArraySeqBuilder<>(CharSeq.class);
@@ -468,17 +408,21 @@ public class WordGenProbabilityProvider {
 
     try {
       final JsonNode node = reader.readTree(json);
+
       poissonLambdaSum = node.get("poissonSum").asDouble();
       poissonLambdaCount = node.get("poissonCount").asDouble();
-      denominator = node.get("denominator").asDouble();
       undefinedGamma = node.get("undefined").asDouble();
+      denominator = node.get("denominator").asDouble();
+
       final JsonNode words = node.get("words");
       final Iterator<Map.Entry<String, JsonNode>> fieldsIt = words.fields();
       final SeqBuilder<CharSeq> phraseBuilder = new ArraySeqBuilder<>(CharSeq.class);
+
       double totalWeight = 0;
       while (fieldsIt.hasNext()) {
         final Map.Entry<String, JsonNode> next = fieldsIt.next();
         final String phrase = next.getKey();
+
         final CharSequence[] parts = CharSeqTools.split(phrase.subSequence(1, phrase.length() - 1), ", ");
         for (final CharSequence part : parts) {
           phraseBuilder.add(CharSeq.create(part.toString()));

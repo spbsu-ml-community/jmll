@@ -192,7 +192,7 @@ public class SimpleGenerativeModel {
   public void printProviders(final Writer out,
                              final boolean limit) {
     for (int i = 0; i < providers.length; ++i) {
-      providers[i].print(dict, out, limit);
+      providers[i].print(out, limit);
     }
   }
 
@@ -213,7 +213,7 @@ public class SimpleGenerativeModel {
   }
 
   // TODO: refactor
-  public String findTheBestExpansion(ArraySeq<CharSeq> arg) {
+  /*public String findTheBestExpansion(ArraySeq<CharSeq> arg) {
     final StringBuilder builder = new StringBuilder();
     final TObjectDoubleHashMap<Seq<CharSeq>> expansionScores = new TObjectDoubleHashMap<>();
     final double[] normalize = new double[1];
@@ -252,9 +252,10 @@ public class SimpleGenerativeModel {
       builder.append(keys[order[i]].toString()).append(" -> ").append(prob).append("\n");
     }
     return builder.toString();
-  }
+  }*/
 
   // TODO: refactor
+  /*
   private void visitExpVariants(final int index, TIntDoubleProcedure todo, double genProb) {
     if (genProb < 1e-10 || index < 0)
       return;
@@ -273,5 +274,5 @@ public class SimpleGenerativeModel {
         return true;
       });
     }
-  }
+  }*/
 }
