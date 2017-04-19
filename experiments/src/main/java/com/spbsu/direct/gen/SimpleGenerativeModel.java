@@ -148,10 +148,10 @@ public class SimpleGenerativeModel {
         variantLogProBab += providers[index].logP(fragment, currentQSeq);
       }
 
-      variantLogProBab += providers[dict.size()].logP(~generated, currentQSeq);
+      variantLogProBab += providers[dict.size()].logP((~generated) & mask, currentQSeq);
 
       // Gibbs
-      weights.set(currVariant, variantLogProBab);
+      weights.set(currVariant, Math.max(variantLogProBab, -50));
     }
 
     { // Gibbs
@@ -176,8 +176,11 @@ public class SimpleGenerativeModel {
                                int bestVariant) {
     final int mask = (1 << currentQSeq.length()) - 1;
 
+    int generated = 0;
+
     for (int i = 0; i < prevQSeq.length(); ++i, bestVariant >>= currentQSeq.length()) {
       final int fragment = bestVariant & mask;
+      generated |= fragment;
 
       // TODO: check useless and remove
       final int index = prevQSeq.intAt(i);
@@ -187,6 +190,8 @@ public class SimpleGenerativeModel {
 
       providers[index].update(fragment, currentQSeq, alpha);
     }
+
+    providers[dict.size()].update((~generated) & mask, currentQSeq, alpha);
   }
 
   public void printProviders(final Writer out,

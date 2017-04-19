@@ -13,6 +13,7 @@ import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.seq.*;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.direct.Utils;
 import gnu.trove.procedure.TIntDoubleProcedure;
 
 import java.io.IOException;
@@ -253,32 +254,69 @@ public class WordGenProbabilityProvider {
    * @return new optimal alpha for dirichlet process
    * <p>
    * TODO: calculate minDpAlpha and maxDpAlpha
+   * TODO: may be stochastic
    */
   private double findDpAlpha() {
+    if (totalCount == 1) {
+      return dpAlpha; // not enough data
+    }
+
     final double minDpAlpha = 1e-3;
-    final double maxDpAlpha = totalCount;
+    final double maxDpAlpha = 10_000;
 
-    return MathTools.bisection(minDpAlpha, maxDpAlpha, new AnalyticFunc.Stub() {
-      @Override
-      public double value(double alpha) {
-        double result = 0;
+    double alpha = dpAlpha;
 
-        for (int i = 0, it = 0; i < totalCount; ++i) {
-          if (it < generationIndices.size() && generationIndices.get(it) < i) {
-            ++it;
-          }
+    while (alpha >= minDpAlpha && alpha <= maxDpAlpha) {
+      final double prob = getAlpha(alpha);
+      final double grad = getAlphaGradient(alpha);
+      alpha += grad / totalCount;
+      final double newProb = getAlpha(alpha);
 
-          if (it < generationIndices.size() && i == generationIndices.get(it)) {
-            result += i / (alpha * (alpha + i));
-          } else {
-            result += -1 / (alpha + i);
-          }
-        }
-
-        return result;
+      if (abs(newProb - prob) < 1e-4) {
+        break;
       }
-    });
+    }
+
+    alpha = Math.max(minDpAlpha, Math.min(alpha, maxDpAlpha));
+    return alpha;
   }
+
+  private double getAlpha(double alpha) {
+    double result = 0;
+
+    for (int i = 0, it = 0; i < totalCount; ++i) {
+      if (it < generationIndices.size() && generationIndices.get(it) < i) {
+        ++it;
+      }
+
+      if (it < generationIndices.size() && i == generationIndices.get(it)) {
+        result += -log(dict.size() - it) + log(alpha) - log(alpha + i);
+      } else {
+        result += gamma.get(allTerms.get(i)) - log(denominator) + log(i) - log(alpha + i);
+      }
+    }
+
+    return result;
+  }
+
+  private double getAlphaGradient(double alpha) {
+    double result = 0;
+
+    for (int i = 0, it = 0; i < totalCount; ++i) {
+      if (it < generationIndices.size() && generationIndices.get(it) < i) {
+        ++it;
+      }
+
+      if (it < generationIndices.size() && i == generationIndices.get(it)) {
+        result += i / (alpha * (alpha + i));
+      } else {
+        result += -1 / (alpha + i);
+      }
+    }
+
+    return result;
+  }
+
 
   /**
    * Applies updates:
@@ -300,8 +338,10 @@ public class WordGenProbabilityProvider {
       ++totalCount;
     }
 
+    // Utils.Timer.start(String.format("Before  (dpAlpha = %f, prob = %f)", dpAlpha, logProbabilityOfAllTerms()));
     dpAlpha = findDpAlpha();
     gradientDescent(alpha);
+    // Utils.Timer.stop(String.format("After (dpAlpha = %f, prob = %f)", dpAlpha, logProbabilityOfAllTerms()));
 
     newTerms.clear();
   }

@@ -211,6 +211,7 @@ public class BroadMatch {
           break;
         }
       }
+      /*
       case "-query": {
         final TIntList freqs = new TIntArrayList();
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqs);
@@ -221,7 +222,7 @@ public class BroadMatch {
           normalizeQuery(query);
           System.out.println(model.findTheBestExpansion(convertToSeq(normalizeQuery(arg.toString()))));
         });
-      }
+      }*/
     }
   }
 }

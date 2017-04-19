@@ -19,7 +19,7 @@ import static com.spbsu.direct.Utils.normalizeQuery;
 
 
 public class DependsProcessor implements Action<CharSequence> {
-  private final static int DUMP_FREQ = 10_000_000;
+  private final static int DUMP_FREQ = 5_000;
   private final static double ALPHA = 0.5;
 
   private volatile static int index;
@@ -42,12 +42,12 @@ public class DependsProcessor implements Action<CharSequence> {
     this.model = model;
   }
 
+  // TODO: process timestamps
   @Override
   public void invoke(CharSequence line) {
-    final CharSequence[] parts = new CharSequence[3];
+    final CharSequence[] parts = new CharSequence[2];
 
-    // TODO: is it possible to replace with String::split?
-    if (CharSeqTools.split(line, '\t', parts).length != 3) {
+    if (CharSeqTools.split(line, '\t', parts).length != 2) {
       throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + inputFile + ":" + index + " does not.");
     }
 
@@ -55,8 +55,9 @@ public class DependsProcessor implements Action<CharSequence> {
       return;
     }
 
-    final long ts = CharSeqTools.parseLong(parts[1]);
-    final String query = normalizeQuery(parts[2].toString());
+    //final long ts = CharSeqTools.parseLong(parts[1]);
+
+    final String query = normalizeQuery(parts[1].toString());
 
     // TODO: use case?
     if (query == null || query.equals(this.query)) {
@@ -72,10 +73,11 @@ public class DependsProcessor implements Action<CharSequence> {
     }
 
     model.processSeq(currentQSeq);
-    final String prev = parts[0].equals(this.user) && ts - this.ts < TimeUnit.MINUTES.toSeconds(30) ? this.query : null;
-    this.query = parts[2].toString();
+    final String prev = parts[0].equals(this.user) /*&& ts - this.ts < TimeUnit.MINUTES.toSeconds(30)*/ ? this.query : null;
+    this.query = parts[1].toString();
     this.user = parts[0].toString();
-    this.ts = ts;
+
+    // this.ts = ts;
 
     if (prev != null && prevQSeq != null) {
       model.processGeneration(prevQSeq, currentQSeq, ALPHA);
