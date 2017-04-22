@@ -8,6 +8,7 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.Binarize;
@@ -30,6 +31,7 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
   protected final BFGrid grid;
   private final int depth;
   private final double lambda;
+  private final FastRandom random = new FastRandom();
 
 
   public GreedyTDLinearRegion(final BFGrid grid,
@@ -51,8 +53,6 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
 
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     double currentScore = Double.POSITIVE_INFINITY;
-    final BFOptimizationRegion current =
-            new BFOptimizationRegion(bds, loss, ArrayTools.sequence(0, learn.length()));
 
     final boolean[] isRight = new boolean[grid.size()];
     final double[] scores = new double[grid.size()];
@@ -62,20 +62,14 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
     TDoubleArrayList sums = new TDoubleArrayList(depth);
     TDoubleArrayList weights = new TDoubleArrayList(depth);
 
-    final double totalSum2;
-//    final double totalSum;
-    final double totalWeight;
+    final BFOptimizationRegion current  = new BFOptimizationRegion(bds, loss, points);
     {
-      AdditiveStatistics statistics = (AdditiveStatistics) loss.statsFactory().create();
-      for (int point : points) {
-        statistics.append(point, 1);
-      }
+      AdditiveStatistics statistics = current.total();
       sums.add(sum(statistics));
-      totalWeight = weight(statistics);
+      final double totalWeight = weight(statistics);
       weights.add(totalWeight);
-      totalSum2 = sum2(statistics);
-//      totalSum = sum(statistics);
     }
+
 
     for (int level = 0; level < depth; ++level) {
       current.visitAllSplits((bf, left, right) -> {
@@ -93,21 +87,13 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
 
 
           {
-            if (minExcluded > 2) {
+            if (minExcluded > 3) {
               final Vec regularizer = makeRegularizer(weights, leftWeight);
               Mx invCov = makeInvMatrix(weights, leftWeight, regularizer);
-//              Mx cov = makeMatrix(weights, leftWeight);
-//              Mx invCov = MxTools.inverseCholesky(cov);
               Vec target = makeVector(sums, sum(left));
               Vec adjustTarget = adjustTarget(target, weights, leftWeight);
-//              EmpericalBayesianLinearEstimator estimator = new EmpericalBayesianLinearEstimator(totalSum, totalSum2, totalWeight, cov, target);
-//              leftBetas = estimator.mu();
-//              leftScore = estimator.score(leftBetas);
               leftBetas = MxTools.multiply(invCov, adjustTarget);
-//              for (int i = 0; i< leftBetas.dim(); ++i) {
-//                leftBetas.
-//              }
-              leftScore = calcScore(totalSum2, totalWeight, invCov, target, leftBetas);
+              leftScore = calcScore(invCov, target, leftBetas);
             } else {
               leftBetas = null;
               leftScore = Double.POSITIVE_INFINITY;
@@ -117,21 +103,13 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
           Vec rightBetas;
           final double rightScore;
           {
-            if (minExcluded > 2) {
+            if (minExcluded > 3) {
               final Vec regularizer = makeRegularizer(weights, rightWeight);
               Mx invCov = makeInvMatrix(weights, rightWeight, regularizer);
-//              Mx cov = makeMatrix(weights, rightWeight);
-//              Mx invCov = MxTools.inverseCholesky(cov);//makeMatrix(weights, rightWeight);
               Vec target = makeVector(sums, sum(right));
               Vec adjustTarget = adjustTarget(target, weights, rightWeight);
               rightBetas = MxTools.multiply(invCov, adjustTarget);
-              rightScore = calcScore(totalSum2, totalWeight, invCov, target, rightBetas);
-//              EmpericalBayesianLinearEstimator estimator = new EmpericalBayesianLinearEstimator(totalSum, totalSum2, totalWeight, cov, target);
-//              rightBetas =  estimator.mu();
-//              rightScore = estimator.score(rightBetas);
-//              invCov = makeInvMatrix(weights, rightWeight, null);
-//              rightBetas = MxTools.multiply(invCov, target);
-
+              rightScore = calcScore(invCov, target, rightBetas);
             } else {
               rightBetas = null;
               rightScore = Double.POSITIVE_INFINITY;
@@ -186,7 +164,7 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
   }
 
   private Vec adjustTarget(Vec target, TDoubleArrayList weights, double weight) {
-    Vec adjusted = VecTools.copy(target);
+    final Vec adjusted = VecTools.copy(target);
     for (int i = 0; i < target.dim(); ++i) {
       final double w = i < weights.size() ? weights.get(i) : weight;
 //      adjusted.set(i, target.get(i) * w / (w + 1));
@@ -196,25 +174,13 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
   }
 
 
-  private double calcScore(final double sum2, final double n,
-                           final Mx sigma, final Vec targetProj, final Vec betas) {
+  private double calcScore(final Mx sigma, final Vec targetProj, final Vec betas) {
     final double targetBetasProd = VecTools.multiply(targetProj, betas);
     final Vec tmp = MxTools.multiply(sigma, targetProj);
     final double targetThroughInvSigmaDot = VecTools.multiply(targetProj, tmp);
 //    final double rss = sum2 - 2 * targetThroughInvSigmaDot + targetBetasProd;
-    return (0.5 * targetBetasProd - targetThroughInvSigmaDot) / (n - betas.dim());
+    return (0.5 * targetBetasProd - targetThroughInvSigmaDot);
 //     return n * Math.log(rss / (n - targetProj.dim())) + betas.dim() * Math.log(n);
-
-  }
-
-  private double sum2(AdditiveStatistics stat) {
-    if (stat instanceof L2.MSEStats) {
-      return ((L2.MSEStats) stat).sum2;
-    } else if (stat instanceof WeightedLoss.Stat) {
-      return sum2(((WeightedLoss.Stat) stat).inside);
-    } else {
-      throw new RuntimeException("error");
-    }
   }
 
   private Vec makeVector(TDoubleArrayList sums, double sum) {
@@ -229,8 +195,8 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
   private Vec makeRegularizer(TDoubleArrayList weights, double weight) {
     final Vec reg = new ArrayVec(weights.size() + 1);
     VecTools.fill(reg, lambda);
-    reg.set(0, 0);
 //    reg.set(weights.size(), lambda);
+    reg.set(0, 0);
     return reg;
   }
 
