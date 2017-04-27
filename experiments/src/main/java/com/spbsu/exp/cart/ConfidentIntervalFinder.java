@@ -48,7 +48,7 @@ public class ConfidentIntervalFinder {
     private static final String TestHIGGSFileName = "HIGGS_test.csv.gz";
     private static final String LearnCancerFileName = "Cancer_learn.csv";
     private static final String TestCancerFileName = "Cancer_test.csv";
-    private static final String ResultFile = "result2.txt";
+    private static final String ResultFile = "result6.txt";
 
     private static final FastRandom rnd = new FastRandom(System.currentTimeMillis());
 
@@ -429,14 +429,17 @@ public class ConfidentIntervalFinder {
     public static void main(String[] args) throws IOException {
 
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream("result2.txt"), "utf-8"))) {
-            findIntervalCancerData("L2", L2.class, writer, 0);
+                new FileOutputStream(ResultFile), "utf-8"))) {
+
+            baseDataBestRMSE(1000, 0.005, SatL2.class);
+
+/*            findIntervalCancerData("L2", L2.class, writer, 0);
             findIntervalCancerData("SteinDifficult", CARTSteinDifficult.class, writer, 0);
             findIntervalCancerData("SteinEasy", CARTSteinEasy.class, writer, 0);
             findIntervalCancerData("LOO", LOOL2.class, writer, 0);
             findIntervalCancerData("SAT", SatL2.class, writer, 0);
             findIntervalCancerData("Reg with 0.4", L2.class, writer, 0.4);
-            findIntervalCancerData("SAT + SteinDifficult", CARTSatSteinL2.class, writer, 0);
+            findIntervalCancerData("SAT + SteinDifficult", CARTSatSteinL2.class, writer, 0); */
 
 
 /*            findIntervalCTSliceData("L2", L2.class, writer, 0);
@@ -444,21 +447,22 @@ public class ConfidentIntervalFinder {
             findIntervalCTSliceData("SAT", SatL2.class, writer, 0);
             findIntervalCTSliceData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
             findIntervalCTSliceData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-            findIntervalCTSliceData("Reg with 0.4", L2.class, writer, 0.4); /*
+            findIntervalCTSliceData("Reg with 0.4", L2.class, writer, 0.4); */
 
-            findIntervalHiggsData("L2", L2.class, writer, 0);
+/*            findIntervalHiggsData("L2", L2.class, writer, 0);
             findIntervalHiggsData("LOO", LOOL2.class, writer, 0);
             findIntervalHiggsData("SAT", SatL2.class, writer, 0);
-            findIntervalHiggsData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
+//            findIntervalHiggsData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
             findIntervalHiggsData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-            findIntervalHiggsData("Reg with 0.4", CARTL2.class, writer, 0.4);
+/*            findIntervalHiggsData("Reg with 0.4", CARTL2.class, writer, 0.4); */
 
-            findIntervalKSHouseData("L2", CARTL2.class, writer, 0);
+/*            findIntervalKSHouseData("L2", L2.class, writer, 0);
             findIntervalKSHouseData("LOO", LOOL2.class, writer, 0);
             findIntervalKSHouseData("SAT", SatL2.class, writer, 0);
             findIntervalKSHouseData("CARTSteinDifficult", CARTSteinDifficult.class, writer, 0);
             findIntervalKSHouseData("CARTSteinEasy", CARTSteinEasy.class, writer, 0);
-            findIntervalKSHouseData("Reg with 0.4", CARTL2.class, writer, 0.4); */
+            findIntervalKSHouseData("Reg with 0.4", L2.class, writer, 0.4);
+            findIntervalKSHouseData("Sat + Stein-- + Reg + 0.4", CARTSatSteinL2.class, writer, 0.4); */
         }
         System.exit(0);
     }
@@ -510,8 +514,8 @@ public class ConfidentIntervalFinder {
 
     private static void findIntervalKSHouseData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
         int M = 100;
-        int iterations = 200;
-        double step = 0.1;
+        int iterations = 2600;
+        double step = 0.008;
 
         double best[] = new double[M];
 
@@ -532,13 +536,16 @@ public class ConfidentIntervalFinder {
             e.printStackTrace();
         } finally {
             Arrays.sort(best);
-            int i = 0;
-            while (i < M && best[i] == 0) {
-                i++;
+            String info;
+            if (5 < M && M - 6 >= 0) {
+                info = String.format("The interval for ks_house + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
+                        msg, M, iterations, step,
+                        best[5], best[M - 6]);
+            } else {
+                info = String.format("The interval for ks_house + %s: %d iterations, %.4f step, %.7f\n",
+                        msg, iterations, step,
+                        best[0]);
             }
-            String info = String.format("The interval for ks_house + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
-                    msg, M, iterations, step,
-                    best[i + 5], best[M - 6]);
             System.out.printf(info);
             try {
                 writer.write(info);
@@ -551,8 +558,8 @@ public class ConfidentIntervalFinder {
 
     private static void findIntervalHiggsData(String msg, Class funcClass, BufferedWriter writer, double regCoeff) {
         int M = 100;
-        int iterations = 150;
-        double step = 0.1;
+        int iterations = 4000;
+        double step = 0.3;
         int depth = 6;
 
         double best[] = new double[M];
@@ -574,13 +581,16 @@ public class ConfidentIntervalFinder {
             e.printStackTrace();
         } finally {
             Arrays.sort(best);
-            int i = 0;
-            while (i < M && best[i] == 0) {
-                i++;
+            String info;
+            if (M > 5) {
+                info = String.format("The interval for HIGGS + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
+                        msg, M, iterations, step,
+                        best[5], best[M - 6]);
+            } else {
+                info = String.format("The interval for HIGGS + %s: %d times, %d iterations, %.4f step, %.7f\n",
+                        msg, M, iterations, step,
+                        best[0]);
             }
-            String info = String.format("The interval for HIGGS + %s: %d times, %d iterations, %.4f step, [%.7f, %.7f]\n",
-                    msg, M, iterations, step,
-                    best[i + 5], best[M - 6]);
             System.out.printf(info);
             try {
                 writer.write(info);
@@ -639,12 +649,12 @@ public class ConfidentIntervalFinder {
         }
     }
 
- /*   private static double baseDataBestRMSE(int iterations, double step, Class funcClass) throws IOException {
+    private static double baseDataBestRMSE(int iterations, double step, Class funcClass) throws IOException {
         BaseDataReadProcessor processor = new BaseDataReadProcessor();
         DataML data = readData(processor, LearnBaseDataName, TestBaseDataName);
 
-        return findBestRMSE(data, iterations, step, funcClass);
-    } */
+        return findBestRMSE(data, iterations, step, funcClass, 0);
+    }
 
     private static double findBestAUC(final DataML data, final int iterations, final double step,
                                       final Class func, final double regCoeff, int depth) {
