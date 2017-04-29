@@ -1,4 +1,4 @@
-package com.spbsu.exp.cart;
+package com.spbsu.ml.methods.cart;
 
 import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.vectors.Vec;

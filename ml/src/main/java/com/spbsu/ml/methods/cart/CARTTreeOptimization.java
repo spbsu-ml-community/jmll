@@ -1,4 +1,4 @@
-package com.spbsu.exp.cart;
+package com.spbsu.ml.methods.cart;
 
 import com.spbsu.commons.func.AdditiveStatistics;
 import com.spbsu.commons.util.ArrayTools;

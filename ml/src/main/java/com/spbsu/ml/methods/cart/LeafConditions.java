@@ -1,12 +1,7 @@
-package com.spbsu.exp.cart;
+package com.spbsu.ml.methods.cart;
 
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.BFGrid.BinaryFeature;
-import com.spbsu.ml.methods.cart.Leaf;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by n_buga on 11.03.17.

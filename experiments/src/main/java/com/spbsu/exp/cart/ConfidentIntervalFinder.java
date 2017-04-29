@@ -20,10 +20,10 @@ import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.LOOL2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.cart.CARTTreeOptimization;
 
 import java.io.*;
 import java.nio.file.Paths;
@@ -660,7 +660,7 @@ public class ConfidentIntervalFinder {
                                       final Class func, final double regCoeff, int depth) {
         final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
                 new BootstrapOptimization<>(
-                        new com.spbsu.exp.cart.CARTTreeOptimization(
+                        new CARTTreeOptimization(
                                 GridTools.medianGrid(data.getLearnFeatures(), 32), depth, regCoeff), rnd), func, iterations, step);
         final Action counter = new ProgressHandler() {
             int index = 0;
@@ -689,7 +689,7 @@ public class ConfidentIntervalFinder {
                                        final Class funcClass, final double regCoeff) {
         final GradientBoosting<L2> boosting = new GradientBoosting<>(
                 new BootstrapOptimization<>(
-                        new com.spbsu.exp.cart.CARTTreeOptimization(
+                        new CARTTreeOptimization(
                                 GridTools.medianGrid(data.getLearnFeatures(), 32), 6, regCoeff), rnd), funcClass, iterations, step);
         final Action counter = new ProgressHandler() {
             int index = 0;
