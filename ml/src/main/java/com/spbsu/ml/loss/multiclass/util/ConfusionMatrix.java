@@ -56,6 +56,10 @@ public class ConfusionMatrix {
     return (tp(c) + fp(c) > 0) ? tp(c) / (tp(c) + fp(c) + 0.) : 0;
   }
 
+  public int getCount(final int c) {
+    return ArrayTools.sum(counts[c]);
+  }
+
   public double getRecall(final int c) {
     return (tp(c) + fn(c) > 0) ? tp(c) / (tp(c) + fn(c) + 0.) : 0;
   }
@@ -204,9 +208,9 @@ public class ConfusionMatrix {
   }
 
   public String toClassDetailsString() {
-    final TableBuilder tableBuilder = new TableBuilder("class", "precision", "recall", "f1-measure");
+    final TableBuilder tableBuilder = new TableBuilder("class", "count", "precision", "recall", "f1-measure");
     for (int i = 0; i < counts.length; i++) {
-      tableBuilder.addRow(String.valueOf(i), getPrecision(i), getRecall(i), getF1Measure(i));
+      tableBuilder.addRow(String.valueOf(i), getCount(i), getPrecision(i), getRecall(i), getF1Measure(i));
     }
     return "=== Detailed Accuracy By Class ===\n" + tableBuilder.build();
   }
