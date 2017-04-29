@@ -29,7 +29,7 @@ import static java.lang.Math.log;
  */
 public class SimpleGenerativeModel {
   public static final String EMPTY_ID = "##EMPTY##";
-  public static final int GIBBS_COUNT = 10;
+  public static final int GIBBS_COUNT = 5;
 
   private final WordGenProbabilityProvider[] providers;
   private final Dictionary<CharSeq> dict;

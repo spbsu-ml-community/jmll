@@ -97,9 +97,9 @@ public class BroadMatch {
         final TIntList freqsLA = new TIntArrayList();
 
         // TODO: debug
-        Timer.start("Reading dictionary...");
+        Timer.start("reading dictionary...", true);
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqsLA);
-        Timer.stop("Finished reading");
+        Timer.stop("reading", true);
 
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqsLA);
 

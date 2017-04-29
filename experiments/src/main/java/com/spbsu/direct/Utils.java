@@ -13,10 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 
 public final class Utils {
@@ -28,27 +25,52 @@ public final class Utils {
    */
   public static final class Timer {
     static Stack<Long> times = new Stack<>();
+    static Map<String, Double> durations = new HashMap<>();
 
     private static String indent() {
       return StringUtils.repeatWithDelimeter("", "\t", times.size());
     }
 
-    public static void start(final String tag) {
-      if (tag != null) {
+    public static void start(final String tag, final boolean show) {
+      if (tag != null && show) {
         System.out.println(indent() + tag);
       }
 
       times.push(System.currentTimeMillis());
     }
 
-    public static void stop(final String tag) {
+    public static void stop(final String tag, final boolean show) {
       final double duration = (System.currentTimeMillis() - times.pop()) / 1000.0;
 
       if (tag != null) {
-        System.out.println(String.format("%s%s: %.3fs", indent(), tag, duration));
+        durations.put(tag, durations.getOrDefault(tag, 0.0) + duration);
+
+        if (show) {
+          System.out.println(String.format("%s%s: %.3fs", indent(), tag, duration));
+        }
       } else {
-        System.out.println(String.format("%s%.3fs", indent(), duration));
+        durations.put("other", durations.getOrDefault("other", 0.0) + duration);
+
+        if (show) {
+          System.out.println(String.format("%s%.3fs", indent(), duration));
+        }
       }
+    }
+
+    public static void showStatistics(final String relativeTag) {
+      System.out.println("\nStatistics:");
+      durations.entrySet().forEach(it -> {
+        if (relativeTag != null) {
+          System.out.println(String.format("%s: %.3fs (%.3f%%)", it.getKey(), it.getValue(), 100 * it.getValue() / durations.get(relativeTag)));
+        } else {
+          System.out.println(String.format("%s: %.3fs", it.getKey(), it.getValue()));
+        }
+      });
+      System.out.println();
+    }
+
+    public static void clearStatistics() {
+      durations.clear();
     }
   }
 

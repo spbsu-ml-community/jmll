@@ -30,11 +30,10 @@ import static java.lang.Math.*;
  * Time: 11:33
  */
 public class WordGenProbabilityProvider {
-  public static boolean DEBUG = true;
+  public static boolean DEBUG = false;
 
-  public static final int MINIMUM_STATISTICS_TO_OUTPUT = 20;
-
-  private static final int POOL_SIZE = 20;
+  public static final int MINIMUM_STATISTICS_TO_OUTPUT = 50;
+  private static final int POOL_SIZE = 50;
   private static final int BUFFER_SIZE = 10;
 
   private static Pattern headerPattern = Pattern.compile("(\\[(?:[^, ]+(?:, )?)*\\]): \\{(.*)");
@@ -43,6 +42,8 @@ public class WordGenProbabilityProvider {
 
   private double poissonLambdaSum = 1;
   private double poissonLambdaCount = 1;
+
+  private int updatesCount = 1; // TODO: debug
 
   private double dpAlpha = 1.0; // TODO: think about good initialization
   private double undefinedGamma = 0;
@@ -74,7 +75,7 @@ public class WordGenProbabilityProvider {
    *
    * @return the log-probability of generation of all terms
    */
-  private double logProbabilityOfAllTerms() {
+  private double logProbabilityOfAllTerms(final double alpha) {
     double result = 0;
 
     for (int i = 0, it = 0; i < allTerms.size(); ++i) {
@@ -83,9 +84,9 @@ public class WordGenProbabilityProvider {
       }
 
       if (it < generationIndices.size() && i == generationIndices.get(it)) {
-        result += -log(dict.size() - it) + log(dpAlpha) - log(dpAlpha + i);
+        result += -log(dict.size() - it) + log(alpha) - log(alpha + i);
       } else {
-        result += gamma.get(allTerms.get(i)) - log(denominator) + log(i) - log(dpAlpha + i);
+        result += gamma.get(allTerms.get(i)) - log(denominator) + log(i) - log(alpha + i);
       }
     }
 
@@ -193,14 +194,14 @@ public class WordGenProbabilityProvider {
 
         generationIndices.add(totalCount++);
 
-        dpAlpha = findDpAlpha();
+        dpAlpha = findDpAlphaFast();
       } else {
         newTerms.add(index);
       }
     }
 
     // TODO: review
-    if (!DEBUG && newTerms.size() / poissonLambdaCount < POOL_SIZE) {
+    if (!DEBUG && newTerms.size() < updatesCount * POOL_SIZE) {
       return;
     }
 
@@ -213,11 +214,15 @@ public class WordGenProbabilityProvider {
    * @param alpha descent parameter
    */
   private void gradientDescent(double alpha) {
+    Utils.Timer.start("gradient", false);
+
     alpha /= totalCount; // TODO: is it okay?
 
     for (int term : newTerms) {
       gradientDescentStep(alpha, term);
     }
+
+    Utils.Timer.stop("gradient", false);
   }
 
   /**
@@ -256,10 +261,12 @@ public class WordGenProbabilityProvider {
    * TODO: calculate minDpAlpha and maxDpAlpha
    * TODO: may be stochastic
    */
-  private double findDpAlpha() {
+  private double findDpAlphaSlow() {
     if (totalCount == 1) {
       return dpAlpha; // not enough data
     }
+
+    Utils.Timer.start("alpha", false);
 
     final double minDpAlpha = 1e-3;
     final double maxDpAlpha = 10_000;
@@ -278,6 +285,16 @@ public class WordGenProbabilityProvider {
     }
 
     alpha = Math.max(minDpAlpha, Math.min(alpha, maxDpAlpha));
+
+    Utils.Timer.stop("alpha", false);
+
+    return alpha;
+  }
+
+  private double findDpAlphaFast() {
+    Utils.Timer.start("alpha", false);
+    final double alpha = optimalExpansionDP(totalCount, uniqueTermsCount);
+    Utils.Timer.stop("alpha", false);
     return alpha;
   }
 
@@ -332,18 +349,24 @@ public class WordGenProbabilityProvider {
       return;
     }
 
+    ++updatesCount;
+    //Utils.Timer.start(String.format("Before  (dpAlpha = %f, dpAlpha2 = %f, prob = %f, prob2 = %f)", dpAlpha, dpAlpha2, logProbabilityOfAllTerms(dpAlpha), logProbabilityOfAllTerms(dpAlpha2)), true);
+
     // update count values
     for (int term : newTerms) {
       count.adjust(term, 1);
       ++totalCount;
     }
 
-    // Utils.Timer.start(String.format("Before  (dpAlpha = %f, prob = %f)", dpAlpha, logProbabilityOfAllTerms()));
-    dpAlpha = findDpAlpha();
+    dpAlpha = findDpAlphaFast();
+
     gradientDescent(alpha);
-    // Utils.Timer.stop(String.format("After (dpAlpha = %f, prob = %f)", dpAlpha, logProbabilityOfAllTerms()));
 
     newTerms.clear();
+
+    logProbabilityOfAllTerms(dpAlpha);
+
+    //Utils.Timer.stop(String.format("After (dpAlpha = %f, dpAlfa2 = %f, prob = %f, prob2 = %f)", dpAlpha, dpAlpha2, logProbabilityOfAllTerms(dpAlpha), logProbabilityOfAllTerms(dpAlpha2)), true);
   }
 
   private static final ThreadLocal<ObjectMapper> mapper = ThreadLocal.withInitial(ObjectMapper::new);
@@ -391,7 +414,7 @@ public class WordGenProbabilityProvider {
     final VecIterator nz = count.nonZeroes();
     while (nz.advance()) {
       indices[index] = nz.index();
-      probabilities[index] = gamma.get(nz.index());
+      probabilities[index] = exp(gamma.get(nz.index())) / denominator;
       ++index;
     }
 
@@ -403,7 +426,7 @@ public class WordGenProbabilityProvider {
       }
 
       final ObjectNode node = wordsNode.putObject(termToText(indices[i], dict));
-      node.put("prob", gamma.get(indices[i]));
+      node.put("prob", probabilities[i]);
       node.put("gamma", gamma.get(indices[i]));
       node.put("count", count.get(indices[i]));
     }

@@ -11,7 +11,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.concurrent.TimeUnit;
 
 import static com.spbsu.direct.Utils.convertToSeq;
 import static com.spbsu.direct.Utils.dropUnknown;
@@ -19,7 +18,7 @@ import static com.spbsu.direct.Utils.normalizeQuery;
 
 
 public class DependsProcessor implements Action<CharSequence> {
-  private final static int DUMP_FREQ = 5_000;
+  private final static int DUMP_FREQ = 100_000;
   private final static double ALPHA = 0.5;
 
   private volatile static int index;
@@ -72,6 +71,15 @@ public class DependsProcessor implements Action<CharSequence> {
       return;
     }
 
+    if (index % DUMP_FREQ == 0) {
+      Utils.Timer.clearStatistics();
+      Utils.Timer.start("new block", true);
+    }
+
+    if (index % 1000 == 0) {
+      Utils.Timer.start("new small block", true);
+    }
+
     model.processSeq(currentQSeq);
     final String prev = parts[0].equals(this.user) /*&& ts - this.ts < TimeUnit.MINUTES.toSeconds(30)*/ ? this.query : null;
     this.query = parts[1].toString();
@@ -85,7 +93,14 @@ public class DependsProcessor implements Action<CharSequence> {
 
     prevQSeq = currentQSeq;
 
-    if (++index % DUMP_FREQ == 0) {
+    if (++index % 1000 == 0) {
+      System.out.println(String.format("processed %d", index));
+      Utils.Timer.stop("processing", true);
+    }
+
+    if (index % DUMP_FREQ == 0) {
+      Utils.Timer.stop("total", true);
+      Utils.Timer.showStatistics("total");
       dump(model);
     }
   }
