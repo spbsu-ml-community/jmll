@@ -8,6 +8,7 @@ import com.spbsu.ml.data.impl.BinarizedDataSet;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.IntStream;
 
 /**
  * User: solar
@@ -101,7 +102,8 @@ public class Aggregate {
 
   public <T extends AdditiveStatistics> void visit(final SplitVisitor<T> visitor) {
     final T total = (T) total();
-    for (int f = 0; f < grid.rows(); f++) {
+    IntStream.range(0, grid.rows()).parallel().forEach(f -> {
+//    for (int f = 0; f < grid.rows(); f++) {
       final T left = (T) factory.create();
       final T right = (T) factory.create().append(total);
       final BFGrid.BFRow row = grid.row(f);
@@ -111,7 +113,7 @@ public class Aggregate {
         right.remove(bins[offset + b]);
         visitor.accept(row.bf(b), left, right);
       }
-    }
+    });
   }
 
   public <T extends AdditiveStatistics> void visit(final IntervalVisitor<T> visitor) {
