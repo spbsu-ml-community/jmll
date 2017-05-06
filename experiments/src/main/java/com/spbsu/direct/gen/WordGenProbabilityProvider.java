@@ -52,8 +52,8 @@ public class WordGenProbabilityProvider {
   private SparseVec count;
   private SparseVec gamma;
 
-  private int totalCount;
-  private int uniqueTermsCount;
+  private int totalCount; // TODO: save to get real dpAlpha
+  private int uniqueTermsCount; // TODO: save to get real dpAlpha
   private final ArrayList<Integer> allTerms = new ArrayList<>();
   private final ArrayList<Integer> newTerms = new ArrayList<>();
   private final ArrayList<Integer> generationIndices = new ArrayList<>();
@@ -350,7 +350,6 @@ public class WordGenProbabilityProvider {
     }
 
     ++updatesCount;
-    //Utils.Timer.start(String.format("Before  (dpAlpha = %f, dpAlpha2 = %f, prob = %f, prob2 = %f)", dpAlpha, dpAlpha2, logProbabilityOfAllTerms(dpAlpha), logProbabilityOfAllTerms(dpAlpha2)), true);
 
     // update count values
     for (int term : newTerms) {
@@ -365,8 +364,6 @@ public class WordGenProbabilityProvider {
     newTerms.clear();
 
     logProbabilityOfAllTerms(dpAlpha);
-
-    //Utils.Timer.stop(String.format("After (dpAlpha = %f, dpAlfa2 = %f, prob = %f, prob2 = %f)", dpAlpha, dpAlpha2, logProbabilityOfAllTerms(dpAlpha), logProbabilityOfAllTerms(dpAlpha2)), true);
   }
 
   private static final ThreadLocal<ObjectMapper> mapper = ThreadLocal.withInitial(ObjectMapper::new);
@@ -403,7 +400,7 @@ public class WordGenProbabilityProvider {
     output.put("poissonSum", poissonLambdaSum);
     output.put("poissonCount", poissonLambdaCount);
     output.put("undefined", undefinedGamma);
-    output.put("denominator", denominator);
+    // output.put("denominator", denominator);
 
     final ObjectNode wordsNode = output.putObject("words");
 
@@ -450,7 +447,7 @@ public class WordGenProbabilityProvider {
 
   // TODO: refactor, review, implement
   public WordGenProbabilityProvider(final CharSequence presentation,
-                                    final Dictionary<CharSeq> dict) {
+                                    final Dictionary<CharSeq> dictionary) {
     final String json;
     {
       final SeqBuilder<CharSeq> phraseBuilder = new ArraySeqBuilder<>(CharSeq.class);
@@ -464,10 +461,21 @@ public class WordGenProbabilityProvider {
         phraseBuilder.add(CharSeq.create(part.toString()));
       }
       json = "{" + matcher.group(2) + "}";
-      providerIndex = dict.search(phraseBuilder.build());
+
+      int index = dictionary.size();
+      try {
+        index = dictionary.search(phraseBuilder.build());
+      } catch (RuntimeException e) {
+        // empty word
+      }
+
+      providerIndex = index;
     }
     final ObjectReader reader = mapper.get().reader();
-    count = new SparseVec(dict.size());
+
+    count = new SparseVec(dictionary.size(), 0); // without empty word
+    gamma = new SparseVec(dictionary.size(), 0); // parameters to learn
+    denominator = 1;
 
     try {
       final JsonNode node = reader.readTree(json);
@@ -475,32 +483,44 @@ public class WordGenProbabilityProvider {
       poissonLambdaSum = node.get("poissonSum").asDouble();
       poissonLambdaCount = node.get("poissonCount").asDouble();
       undefinedGamma = node.get("undefined").asDouble();
-      denominator = node.get("denominator").asDouble();
+      // denominator = node.get("denominator").asDouble();
 
       final JsonNode words = node.get("words");
-      final Iterator<Map.Entry<String, JsonNode>> fieldsIt = words.fields();
+      final Iterator<Map.Entry<String, JsonNode>> wordsIt = words.fields();
       final SeqBuilder<CharSeq> phraseBuilder = new ArraySeqBuilder<>(CharSeq.class);
 
-      double totalWeight = 0;
-      while (fieldsIt.hasNext()) {
-        final Map.Entry<String, JsonNode> next = fieldsIt.next();
+      /*
+      while (wordsIt.hasNext()) {
+        final Map.Entry<String, JsonNode> next = wordsIt.next();
         final String phrase = next.getKey();
+        final JsonNode value = next.getValue();
 
         final CharSequence[] parts = CharSeqTools.split(phrase.subSequence(1, phrase.length() - 1), ", ");
         for (final CharSequence part : parts) {
           phraseBuilder.add(CharSeq.create(part.toString()));
         }
 
-        final double weight = log(denominator * next.getValue().asDouble());
-        totalWeight += weight;
-        count.set(dict.search(phraseBuilder.build()), weight);
+        final int index = dictionary.search(phraseBuilder.build());
+        final int countValue = value.get("count").asInt();
+        final double gammaValue = value.get("gamma").asDouble();
+
+        count.set(index, countValue);
+        gamma.set(index, gammaValue);
+
+        denominator += exp(gammaValue);
+        totalCount += countValue;
+        ++uniqueTermsCount;
+
         phraseBuilder.clear();
+      }*/
 
-      }
+      /*
+      final JsonNode indices = node.get("indices");
+      for (final JsonNode indexNode : indices) {
+        generationIndices.add(indexNode.asInt());
+      }*/
 
-      { // DP schema
-        dpAlpha = optimalExpansionDP(totalWeight, count.size());
-      }
+      //dpAlpha = findDpAlphaFast();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -509,7 +529,7 @@ public class WordGenProbabilityProvider {
   private String termToText(final int index,
                             final Dictionary<CharSeq> dict) {
     if (index < 0 || index >= dict.size()) {
-      return SimpleGenerativeModel.EMPTY_ID;
+      return "[" + SimpleGenerativeModel.EMPTY_ID + "]";
     }
 
     return dict.get(index).toString();

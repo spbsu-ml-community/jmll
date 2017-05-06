@@ -96,7 +96,6 @@ public class BroadMatch {
       case "-depends": {
         final TIntList freqsLA = new TIntArrayList();
 
-        // TODO: debug
         Timer.start("reading dictionary...", true);
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqsLA);
         Timer.stop("reading", true);
@@ -211,18 +210,25 @@ public class BroadMatch {
           break;
         }
       }
-      /*
+
       case "-query": {
         final TIntList freqs = new TIntArrayList();
+
+        Timer.start("reading dictionary...", true);
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqs);
+        Timer.stop("reading", true);
+
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqs);
         model.load(args[2]);
+
+        /*
         CharSeqTools.processLines(new InputStreamReader(System.in, StreamTools.UTF), (Action<CharSequence>) arg -> {
           String query = arg.toString();
           normalizeQuery(query);
           System.out.println(model.findTheBestExpansion(convertToSeq(normalizeQuery(arg.toString()))));
-        });
-      }*/
+        });*/
+
+      }
     }
   }
 }
