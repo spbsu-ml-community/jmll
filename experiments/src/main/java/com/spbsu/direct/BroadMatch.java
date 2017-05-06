@@ -227,7 +227,6 @@ public class BroadMatch {
           normalizeQuery(query);
           System.out.println(model.findTheBestExpansion(convertToSeq(normalizeQuery(arg.toString()))));
         });*/
-
       }
     }
   }
