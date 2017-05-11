@@ -7,7 +7,7 @@ import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.math.Func;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.factorization.OuterFactorization;
+import com.spbsu.ml.factorization.Factorization;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.func.ScaledFunc;
 import com.spbsu.ml.loss.L2;
@@ -20,15 +20,15 @@ import com.spbsu.ml.methods.VecOptimization;
  */
 public class GradFacBootstrapMulticlass implements VecOptimization<L2> {
   private final VecOptimization inner;
-  private final OuterFactorization matrixDecomposition;
+  private final Factorization matrixDecomposition;
   private final Class<? extends L2> local;
   private final boolean printErrors;
 
-  public GradFacBootstrapMulticlass(final VecOptimization<L2> inner, final OuterFactorization matrixDecomposition, final Class<? extends L2> local) {
+  public GradFacBootstrapMulticlass(final VecOptimization<L2> inner, final Factorization matrixDecomposition, final Class<? extends L2> local) {
     this(inner, matrixDecomposition, local, false);
   }
 
-  public GradFacBootstrapMulticlass(final VecOptimization<L2> inner, final OuterFactorization matrixDecomposition, final Class<? extends L2> local, final boolean printErrors) {
+  public GradFacBootstrapMulticlass(final VecOptimization<L2> inner, final Factorization matrixDecomposition, final Class<? extends L2> local, final boolean printErrors) {
     this.inner = inner;
     this.matrixDecomposition = matrixDecomposition;
     this.local = local;

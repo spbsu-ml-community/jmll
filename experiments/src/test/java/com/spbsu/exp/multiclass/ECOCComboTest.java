@@ -12,6 +12,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.exp.multiclass.spoc.full.mx.optimization.ECOCMulticlass;
 import com.spbsu.exp.multiclass.spoc.full.mx.optimization.SeparatedMLLLogit;
 import com.spbsu.exp.multiclass.weak.CustomWeakBinClass;
@@ -25,9 +26,10 @@ import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
-import com.spbsu.ml.factorization.OuterFactorization;
+import com.spbsu.ml.factorization.Factorization;
 import com.spbsu.ml.factorization.impl.ALS;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
+import com.spbsu.ml.factorization.impl.StochasticALS;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
@@ -72,7 +74,7 @@ public class ECOCComboTest extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
-    init();
+//    init();
   }
 
   public void testFit() throws Exception {
@@ -295,7 +297,33 @@ public class ECOCComboTest extends TestCase {
     }
   }
 
-  private static void applyFactorMethod(final OuterFactorization method) {
+  public void testStochasticALS() {
+    final FastRandom rng = new FastRandom(0);
+    final Mx X = new VecBasedMx(100000, 100);
+    VecTools.fillGaussian(X, rng);
+    final StochasticALS sals = new StochasticALS(rng, 1000);
+    final ALS als = new ALS(10);
+    Interval.start();
+    final Pair<Vec, Vec> pair = sals.factorize(X);
+    Interval.stopAndPrint("SALS");
+    Interval.start();
+    final Pair<Vec, Vec> reference = als.factorize(X);
+    Interval.stopAndPrint("ALS");
+    final VecBasedMx u = new VecBasedMx(pair.first.dim(), pair.first);
+    final VecBasedMx v = new VecBasedMx(1, pair.second);
+    Mx mx = VecTools.outer(u, v);
+
+    final VecBasedMx u1 = new VecBasedMx(reference.first.dim(), reference.first);
+    final VecBasedMx v1 = new VecBasedMx(1, reference.second);
+    Mx mx1 = VecTools.outer(u1, v1);
+
+    System.out.println(VecTools.distance(mx, X));
+    System.out.println(VecTools.distance(mx1, X));
+    assertEquals(VecTools.distance(pair.first, reference.first), 0.001);
+    assertEquals(VecTools.distance(pair.second, reference.second), 0.001);
+  }
+
+  private static void applyFactorMethod(final Factorization method) {
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
     final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
     final Pair<Vec, Vec> pair = method.factorize(gradient);

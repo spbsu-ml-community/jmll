@@ -1,5 +1,6 @@
 package com.spbsu.exp.multiclass.weak;
 
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.seq.IntSeq;
@@ -33,6 +34,16 @@ public class CustomWeakBinClass extends VecOptimization.Stub<LLLogit> {
 
     final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(iters, step);
     final MultiClassModel mcm = (MultiClassModel) customWeakMultiClass.fit(learn, new BlockwiseMLLLogit(mcTarget, learn));
-    return mcm.getInternModel().dirs()[0];
+    return new Func.Stub() {
+      @Override
+      public double value(Vec x) {
+        return mcm.getInternModel().trans(x).get(0);
+      }
+
+      @Override
+      public int dim() {
+        return mcm.getInternModel().xdim();
+      }
+    };
   }
 }

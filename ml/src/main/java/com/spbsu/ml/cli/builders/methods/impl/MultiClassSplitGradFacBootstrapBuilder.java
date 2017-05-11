@@ -2,7 +2,7 @@ package com.spbsu.ml.cli.builders.methods.impl;
 
 import com.spbsu.commons.func.Factory;
 import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.factorization.OuterFactorization;
+import com.spbsu.ml.factorization.Factorization;
 import com.spbsu.ml.factorization.impl.ALS;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
 import com.spbsu.ml.loss.L2;
@@ -52,7 +52,7 @@ public class MultiClassSplitGradFacBootstrapBuilder implements Factory<GradFacBo
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
-    final OuterFactorization factorization;
+    final Factorization factorization;
     if (method.equals("als")) {
       factorization = new ALS(alsIters, alsLambda);
     } else {

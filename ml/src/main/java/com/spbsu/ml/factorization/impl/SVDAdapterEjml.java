@@ -5,7 +5,7 @@ import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.ml.factorization.OuterFactorization;
+import com.spbsu.ml.factorization.Factorization;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.factory.DecompositionFactory;
 import org.ejml.interfaces.decomposition.SingularValueDecomposition;
@@ -15,7 +15,7 @@ import org.ejml.ops.SingularOps;
  * User: qdeee
  * Date: 12.01.15
  */
-public class SVDAdapterEjml implements OuterFactorization {
+public class SVDAdapterEjml implements Factorization {
   private final int factorDim;
   private final boolean needCompact;
 

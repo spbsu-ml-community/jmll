@@ -7,13 +7,13 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.ml.factorization.OuterFactorization;
+import com.spbsu.ml.factorization.Factorization;
 
 /**
  * User: qdeee
  * Date: 25.02.15
  */
-public class ElasticNetFactorization extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements OuterFactorization {
+public class ElasticNetFactorization extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements Factorization {
   private final int iters;
   private final double tolerance;
   private final double alpha;

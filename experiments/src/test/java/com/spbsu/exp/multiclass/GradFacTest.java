@@ -1,5 +1,6 @@
 package com.spbsu.exp.multiclass;
 
+import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.Vec;
@@ -15,10 +16,11 @@ import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.MCTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.SubPool;
-import com.spbsu.ml.factorization.OuterFactorization;
+import com.spbsu.ml.factorization.Factorization;
 import com.spbsu.ml.factorization.impl.ALS;
 import com.spbsu.ml.factorization.impl.ElasticNetFactorization;
 import com.spbsu.ml.factorization.impl.SVDAdapterEjml;
+import com.spbsu.ml.factorization.impl.StochasticALS;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
@@ -29,6 +31,7 @@ import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.impl.fake.FakeTargetMeta;
 import com.spbsu.ml.methods.GradientBoosting;
 import com.spbsu.ml.methods.MultiClass;
+import com.spbsu.ml.methods.multiclass.gradfac.FMCBoosting;
 import com.spbsu.ml.methods.multiclass.gradfac.GradFacMulticlass;
 import com.spbsu.ml.methods.multiclass.gradfac.GradFacSvdNMulticlass;
 import com.spbsu.ml.methods.multiclass.gradfac.MultiClassColumnBootstrapOptimization;
@@ -191,6 +194,31 @@ public class GradFacTest extends TestCase {
     fitModel(boosting);
   }
 
+  public void testGradFacSALS() throws Exception {
+    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
+        new GradFacMulticlass(
+            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+            new StochasticALS(new FastRandom(0), 100),
+            LogL2.class
+        ),
+        L2.class,
+        400,
+        7
+    );
+    fitModel(boosting);
+  }
+
+  public void testFMCBoostSALS() throws Exception {
+    final FMCBoosting boosting = new FMCBoosting(
+            new StochasticALS(new FastRandom(0), 100),
+            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+            L2.class,
+            400,
+            7
+    );
+    fitModel(boosting);
+  }
+
   public void testGradFacElasticNet() throws Exception {
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
         new GradFacMulticlass(
@@ -288,7 +316,22 @@ public class GradFacTest extends TestCase {
     System.out.println(testResult);
   }
 
-  private static void applyFactorMethod(final Mx x, final OuterFactorization method) {
+  private void fitModel(final FMCBoosting boosting) {
+    final VecDataSet vecDataSet = learn.vecData();
+    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
+    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(learn, test);
+    boosting.addListener(multiclassProgressPrinter);
+
+    final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+    final Trans joined = ensemble.last() instanceof FuncJoin ? MCTools.joinBoostingResult(ensemble) : ensemble;
+    final MultiClassModel multiclassModel = new MultiClassModel(joined);
+    final String learnResult = MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false);
+    final String testResult = MCTools.evalModel(multiclassModel, test, "[TEST] ", false);
+    System.out.println(learnResult);
+    System.out.println(testResult);
+  }
+
+  private static void applyFactorMethod(final Mx x, final Factorization method) {
     final Pair<Vec, Vec> pair = method.factorize(x);
     final Vec h = pair.getFirst();
     final Vec b = pair.getSecond();
