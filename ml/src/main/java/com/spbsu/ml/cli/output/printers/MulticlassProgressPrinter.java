@@ -10,7 +10,6 @@ import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.spbsu.ml.loss.multiclass.util.ConfusionMatrix;
 import com.spbsu.ml.models.multiclass.MCModel;
@@ -53,10 +52,10 @@ public class MulticlassProgressPrinter implements ProgressHandler {
 
   @Override
   public void invoke(final Trans partial) {
-    if (isBoostingMulticlassProcess(partial)) {
+    if (partial instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) partial;
       final double step = ensemble.wlast();
-      final FuncJoin model = (FuncJoin) ensemble.last();
+      final Trans model = ensemble.last();
 
       //caching boosting results
       append(learnValues, scale(model.transAll(learn.data()), step));
@@ -68,7 +67,7 @@ public class MulticlassProgressPrinter implements ProgressHandler {
       final IntSeq learnPredicted;
       final IntSeq testPredicted;
 
-      if (isBoostingMulticlassProcess(partial)) {
+      if (partial instanceof Ensemble) {
         learnPredicted = convertTransResults(learnValues);
         testPredicted = convertTransResults(testValues);
       } else if (partial instanceof MCModel) {
@@ -89,10 +88,6 @@ public class MulticlassProgressPrinter implements ProgressHandler {
       System.out.print("\t" + testConfusionMatrix.oneLineReport());
       System.out.println();
     }
-  }
-
-  private static boolean isBoostingMulticlassProcess(final Trans partial) {
-    return partial instanceof Ensemble && ((Ensemble) partial).last() instanceof FuncJoin;
   }
 
   private static IntSeq convertTransResults(final Mx trans) {

@@ -21,7 +21,7 @@ public class MultiClassModelConversionPack implements ConversionPack<MultiClassM
 
     @Override
     public CharSequence convert(final MultiClassModel from) {
-      final TransJoin internModel = from.getInternModel();
+      final Trans internModel = from.getInternModel();
       return repository.convert(internModel, CharSequence.class);
     }
 

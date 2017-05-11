@@ -1,5 +1,6 @@
 package com.spbsu.ml.models;
 
+import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.ArrayTools;
@@ -13,17 +14,17 @@ import com.spbsu.ml.models.multiclass.MCModel;
  * Time: 10:59
  */
 public class MultiClassModel extends MCModel.Stub {
-  protected final FuncJoin model;
+  protected final Trans model;
 
   public MultiClassModel(final Func[] dirs) {
     this.model = new FuncJoin(dirs);
   }
 
-  public MultiClassModel(final FuncJoin model) {
+  public MultiClassModel(final Trans model) {
     this.model = model;
   }
 
-  public FuncJoin getInternModel() {
+  public Trans getInternModel() {
     return model;
   }
 

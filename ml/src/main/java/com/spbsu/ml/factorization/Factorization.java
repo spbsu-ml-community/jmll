@@ -8,6 +8,6 @@ import com.spbsu.commons.util.Pair;
  * User: qdeee
  * Date: 12.01.15
  */
-public interface OuterFactorization {
+public interface Factorization {
   Pair<Vec, Vec> factorize(final Mx X);
 }

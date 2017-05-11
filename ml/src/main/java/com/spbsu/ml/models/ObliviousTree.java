@@ -28,6 +28,8 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
   }
 
   public ObliviousTree(final List<BFGrid.BinaryFeature> features, final double[] values, final double[] basedOn) {
+    if (features.size() == 0)
+      throw new RuntimeException("Creating oblivious tree of zero depth");
     grid = features.get(0).row().grid();
     this.basedOn = basedOn;
     this.features = features.toArray(new BFGrid.BinaryFeature[features.size()]);

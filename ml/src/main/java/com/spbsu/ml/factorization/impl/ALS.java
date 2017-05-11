@@ -6,13 +6,13 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.ml.factorization.OuterFactorization;
+import com.spbsu.ml.factorization.Factorization;
 
 /**
  * User: qdeee
  * Date: 09.09.13
  */
-public class ALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements OuterFactorization {
+public class ALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements Factorization {
   private final int iterCount;
   private final double lambda;
   private Vec x0;
