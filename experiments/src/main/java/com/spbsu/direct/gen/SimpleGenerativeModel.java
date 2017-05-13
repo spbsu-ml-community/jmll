@@ -176,12 +176,13 @@ public class SimpleGenerativeModel {
         return true;
       }
 
-      for (int i = 0; i < seq.length(); i++) {
+      for (int i = 0; i <= seq.length(); i++) {
         if (i > 0) {
           builder.append(" ");
         }
 
-        final int symIndex = seq.intAt(i);
+        final int symIndex = i < seq.length() ? seq.intAt(i) : dict.size();
+
         visitExpVariants(symIndex, (a, b) -> {
           final double symProbab = b * exp(probab);
           normalize[0] = max(exp(probab), normalize[0]);
@@ -189,8 +190,6 @@ public class SimpleGenerativeModel {
           return true;
         }, 1.);
       }
-
-      // TODO: visitExpVariants from the EMPTY word
 
       return true;
     });
