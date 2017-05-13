@@ -95,23 +95,20 @@ public class SimpleGenerativeModel {
 
       variantLogProBab += providers[dict.size()].logP((~generated) & mask, currentQSeq);
 
-      // Gibbs
       weights.set(currVariant, Math.max(variantLogProBab, -50));
     }
 
-    { // Gibbs
-      double sum = 0;
-      double normalizer = weights.get(0);
+    double sum = 0;
+    double normalizer = weights.get(0);
 
-      for (int i = 0; i < variantsCount; ++i) {
-        weights.set(i, exp(weights.get(i) - normalizer));
-        sum += weights.get(i);
-      }
+    for (int i = 0; i < variantsCount; ++i) {
+      weights.set(i, exp(weights.get(i) - normalizer));
+      sum += weights.get(i);
+    }
 
-      for (int i = 0; i < GIBBS_COUNT; ++i) {
-        final int bestVariant = rng.nextSimple(weights, sum);
-        applyGeneration(prevQSeq, currentQSeq, alpha / GIBBS_COUNT, bestVariant);
-      }
+    for (int i = 0; i < GIBBS_COUNT; ++i) {
+      final int bestVariant = rng.nextSimple(weights, sum);
+      applyGeneration(prevQSeq, currentQSeq, alpha / GIBBS_COUNT, bestVariant);
     }
   }
 
@@ -146,14 +143,14 @@ public class SimpleGenerativeModel {
     }
   }
 
-  public void load(String inputFile) throws IOException {
+  public void load(final String inputFile) throws IOException {
     CharSeqTools.processLines(StreamTools.openTextFile(inputFile), new Action<CharSequence>() {
       final StringBuilder builder = new StringBuilder();
       int linesCount = 0;
 
       public void invoke(CharSequence line) {
-        if (++linesCount % 100_000 == 0) {
-          System.out.println(linesCount);
+        if (++linesCount % 1_000_000 == 0) {
+          System.out.println(String.format("processed %d lines", linesCount));
         }
 
         if (line.equals("}")) {
@@ -184,18 +181,12 @@ public class SimpleGenerativeModel {
 
         final int symIndex = seq.intAt(i);
         visitExpVariants(symIndex, (a, b) -> {
-//          System.out.println(dict.get(a).toString() + " " + b);
           final double symProbab = b * exp(probab);
-//          double logProbab = log(symProbab);
-//          if (logProbab < 1e-20)
-//            return false;
           normalize[0] = max(exp(probab), normalize[0]);
           expansionScores.adjustOrPutValue(dict.get(a), symProbab, symProbab);
           return true;
         }, 1.);
-//        builder.append(dict.get(symIndex));
       }
-//      builder.append("\t").append(probab).append("\n");
       return true;
     });
 
@@ -206,7 +197,7 @@ public class SimpleGenerativeModel {
     ArrayTools.parallelSort(scores, order);
     for (int i = order.length - 1; i >= 0; i--) {
       final double prob = scores[i] / normalize[0];
-      if (prob < 1e-7)
+      if (prob < 1e-4)
         break;
 
       builder.append(keys[order[i]].toString()).append(" -> ").append(prob).append("\n");
@@ -216,14 +207,11 @@ public class SimpleGenerativeModel {
   }
 
   private void visitExpVariants(final int index, TIntDoubleProcedure todo, double genProb) {
-    if (genProb < 1e-5 || index < 0) {
+    if (genProb < 1e-4 || index < 0) {
       return;
     }
 
     WordGenProbabilityProvider provider = providers[index];
-
-    final Seq<CharSeq> phrase = dict.get(index);
-    // System.out.println("Expanding: " + phrase);
 
     if (provider != null) {
       provider.visitVariants((symIndex, symProb) -> {

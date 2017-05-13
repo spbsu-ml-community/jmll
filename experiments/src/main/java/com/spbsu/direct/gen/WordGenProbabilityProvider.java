@@ -196,13 +196,14 @@ public class WordGenProbabilityProvider {
       if (count.get(index) == 0) {
         applyUpdates(alpha); // new term -- need to apply previous changes
 
+        generationIndices.add(totalCount);
+
         gamma.set(index, undefinedGamma);
         denominator += exp(undefinedGamma);
 
         ++uniqueTermsCount;
+        ++totalCount;
         count.adjust(index, 1);
-
-        generationIndices.add(totalCount++);
 
         dpAlpha = findDpAlphaFast();
       } else {
@@ -263,11 +264,10 @@ public class WordGenProbabilityProvider {
 
   /**
    * Finds optimal alpha for dirichlet process
-   * <p>
    * \alpha = \argmax_{\alpha} \sum_{t=1}^T I{t is new} * \log{\frac{\alpha}{\alpha + t - 1}} + I{t is old} * \log{\frac{t - 1}{\alpha + t - 1}}
    *
    * @return new optimal alpha for dirichlet process
-   * <p>
+   *
    * TODO: calculate minDpAlpha and maxDpAlpha
    * TODO: may be stochastic
    */
@@ -298,13 +298,6 @@ public class WordGenProbabilityProvider {
 
     Utils.Timer.stop("alpha", false);
 
-    return alpha;
-  }
-
-  private double findDpAlphaFast() {
-    Utils.Timer.start("alpha", false);
-    final double alpha = optimalExpansionDP(totalCount, uniqueTermsCount);
-    Utils.Timer.stop("alpha", false);
     return alpha;
   }
 
@@ -344,6 +337,26 @@ public class WordGenProbabilityProvider {
     return result;
   }
 
+  /**
+   * Finds alpha from the equation below:
+   * m = \alpha log(1 + \frac{n}{\alpha})
+   * where n -- terms total count, m -- unique terms found
+   *
+   * @return new optimal alpha for dirichlet process
+   */
+  private double findDpAlphaFast() {
+    Utils.Timer.start("alpha", false);
+
+    final double alpha = MathTools.bisection(0, uniqueTermsCount, new AnalyticFunc.Stub() {
+      @Override
+      public double value(double x) {
+        return x * log(1 + totalCount / x) - uniqueTermsCount;
+      }
+    });
+
+    Utils.Timer.stop("alpha", false);
+    return alpha;
+  }
 
   /**
    * Applies updates:
@@ -368,28 +381,12 @@ public class WordGenProbabilityProvider {
     }
 
     dpAlpha = findDpAlphaFast();
-
     gradientDescent(alpha);
 
     newTerms.clear();
-
-    logProbabilityOfAllTerms(dpAlpha);
   }
 
   private static final ThreadLocal<ObjectMapper> mapper = ThreadLocal.withInitial(ObjectMapper::new);
-
-  /**
-   * m = \alpha log(1 + \frac{n}{\alpha})
-   * where n -- draws count, m -- classes found
-   */
-  private double optimalExpansionDP(double statPower, int classes) {
-    return MathTools.bisection(0, classes, new AnalyticFunc.Stub() {
-      @Override
-      public double value(double x) {
-        return x * log(1 + statPower / x) - classes;
-      }
-    });
-  }
 
   public void print(final Writer to,
                     final boolean limit) {
@@ -402,7 +399,6 @@ public class WordGenProbabilityProvider {
     output.put("poissonSum", poissonLambdaSum);
     output.put("poissonCount", poissonLambdaCount);
     output.put("undefined", undefinedGamma);
-    // output.put("denominator", denominator);
 
     final ObjectNode wordsNode = output.putObject("words");
 
@@ -484,7 +480,6 @@ public class WordGenProbabilityProvider {
       poissonLambdaSum = node.get("poissonSum").asDouble();
       poissonLambdaCount = node.get("poissonCount").asDouble();
       undefinedGamma = node.get("undefined").asDouble();
-      // denominator = node.get("denominator").asDouble();
 
       final JsonNode words = node.get("words");
       final Iterator<Map.Entry<String, JsonNode>> wordsIt = words.fields();
