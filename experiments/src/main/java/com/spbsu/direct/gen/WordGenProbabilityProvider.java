@@ -258,7 +258,7 @@ public class WordGenProbabilityProvider {
       newDenominator += exp(new_x);
     }
 
-    undefinedGamma -= 1 / denominator;
+    undefinedGamma -= alpha * exp(undefinedGamma) / denominator;
     denominator = newDenominator;
   }
 
