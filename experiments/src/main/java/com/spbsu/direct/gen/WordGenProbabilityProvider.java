@@ -157,6 +157,16 @@ public class WordGenProbabilityProvider {
     return result;
   }
 
+  public double logP(final int index) {
+    final int n = totalCount + 1;
+
+    if (count.get(index) == 0) {
+      return -log(dict.size() - uniqueTermsCount) + log(dpAlpha) - log(dpAlpha + n - 1);
+    } else {
+      return gamma.get(index) - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
+    }
+  }
+
   /**
    * Updates model:
    * - affects poisson distribution
@@ -368,14 +378,6 @@ public class WordGenProbabilityProvider {
 
   private static final ThreadLocal<ObjectMapper> mapper = ThreadLocal.withInitial(ObjectMapper::new);
 
-  // TODO: refactor, review
-  public void visitVariants(final TIntDoubleProcedure todo) {
-    final VecIterator it = count.nonZeroes();
-    /*while (it.advance()) {
-      todo.execute(it.index(), pGen(it.index()));
-    }*/
-  }
-
   /**
    * m = \alpha log(1 + \frac{n}{\alpha})
    * where n -- draws count, m -- classes found
@@ -444,16 +446,15 @@ public class WordGenProbabilityProvider {
     }
   }
 
-
-  // TODO: refactor, review, implement
   public WordGenProbabilityProvider(final CharSequence presentation,
                                     final Dictionary<CharSeq> dictionary) {
     final String json;
     {
       final SeqBuilder<CharSeq> phraseBuilder = new ArraySeqBuilder<>(CharSeq.class);
       final Matcher matcher = headerPattern.matcher(presentation);
-      if (!matcher.find())
+      if (!matcher.find()) {
         throw new IllegalArgumentException(presentation.toString());
+      }
 
       final String phrase = matcher.group(1);
       final CharSequence[] parts = CharSeqTools.split(phrase.subSequence(1, phrase.length() - 1), ", ");
@@ -489,7 +490,6 @@ public class WordGenProbabilityProvider {
       final Iterator<Map.Entry<String, JsonNode>> wordsIt = words.fields();
       final SeqBuilder<CharSeq> phraseBuilder = new ArraySeqBuilder<>(CharSeq.class);
 
-      /*
       while (wordsIt.hasNext()) {
         final Map.Entry<String, JsonNode> next = wordsIt.next();
         final String phrase = next.getKey();
@@ -512,17 +512,23 @@ public class WordGenProbabilityProvider {
         ++uniqueTermsCount;
 
         phraseBuilder.clear();
-      }*/
+      }
 
-      /*
       final JsonNode indices = node.get("indices");
       for (final JsonNode indexNode : indices) {
         generationIndices.add(indexNode.asInt());
-      }*/
+      }
 
-      //dpAlpha = findDpAlphaFast();
+      dpAlpha = findDpAlphaFast();
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  public void visitVariants(final TIntDoubleProcedure todo) {
+    final VecIterator it = count.nonZeroes();
+    while (it.advance()) {
+      todo.execute(it.index(), logP(it.index()));
     }
   }
 

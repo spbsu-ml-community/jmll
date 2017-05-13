@@ -219,14 +219,16 @@ public class BroadMatch {
         Timer.stop("reading", true);
 
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqs);
+        Timer.start("loading model...", true);
         model.load(args[2]);
+        Timer.stop("loading", true);
 
-        /*
+
         CharSeqTools.processLines(new InputStreamReader(System.in, StreamTools.UTF), (Action<CharSequence>) arg -> {
-          String query = arg.toString();
-          normalizeQuery(query);
+          Timer.start("start expansion...", true);
           System.out.println(model.findTheBestExpansion(convertToSeq(normalizeQuery(arg.toString()))));
-        });*/
+          Timer.stop("expansion", true);
+        });
       }
     }
   }
