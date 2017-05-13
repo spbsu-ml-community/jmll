@@ -26,8 +26,6 @@ import static com.spbsu.direct.Utils.*;
  * Time: 15:56
  */
 public class BroadMatch {
-  public static boolean debug = true;
-
   volatile static int index = 0;
   volatile static int windex = 0;
 

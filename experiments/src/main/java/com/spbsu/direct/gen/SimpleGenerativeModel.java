@@ -24,6 +24,8 @@ import static java.lang.StrictMath.max;
  * Time: 11:33
  */
 public class SimpleGenerativeModel {
+  public static final int MAX_TERMS_COUNT_TO_PRINT = 15;
+
   public static final String EMPTY_ID = "##EMPTY##";
   public static final int GIBBS_COUNT = 5;
 
@@ -187,6 +189,9 @@ public class SimpleGenerativeModel {
           return true;
         }, 1.);
       }
+
+      // TODO: visitExpVariants from the EMPTY word
+
       return true;
     });
 
@@ -195,7 +200,8 @@ public class SimpleGenerativeModel {
     final double[] scores = expansionScores.values();
     final int[] order = ArrayTools.sequence(0, keys.length);
     ArrayTools.parallelSort(scores, order);
-    for (int i = order.length - 1; i >= 0; i--) {
+
+    for (int i = order.length - 1, cnt = 0; i >= 0 && cnt < MAX_TERMS_COUNT_TO_PRINT; --i, ++cnt) {
       final double prob = scores[i] / normalize[0];
       if (prob < 1e-4)
         break;

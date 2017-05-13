@@ -31,10 +31,9 @@ import static java.lang.Math.*;
  */
 public class WordGenProbabilityProvider {
   public static boolean DEBUG = false;
-
   public static final int MINIMUM_STATISTICS_TO_OUTPUT = 50;
-  private static final int POOL_SIZE = 50;
-  private static final int BUFFER_SIZE = 10;
+
+  private static final int POOL_SIZE = 30;
 
   private static Pattern headerPattern = Pattern.compile("(\\[(?:[^, ]+(?:, )?)*\\]): \\{(.*)");
 
@@ -111,59 +110,54 @@ public class WordGenProbabilityProvider {
    * Additional description:
    * denominator = 1 + \sum_i e^gamma[i]
    *
-   * @param variant the mask of generated terms by the current term
+   * @param variant  the mask of generated terms by the current term
    * @param fragment the sequence of terms
    * @return log-probability of fragment generation by the current term
    */
   public double logP(final int variant,
                      final IntSeq fragment) {
+    double result = MathTools.logPoissonProbability(poissonLambdaSum / poissonLambdaCount, Integer.bitCount(variant));
+
+    if (variant == 0) {
+      return result;
+    }
+
     int n = totalCount;
     int uniqueCount = uniqueTermsCount;
     double denominator = this.denominator;
 
-    double result = MathTools.logPoissonProbability(poissonLambdaSum / poissonLambdaCount, Integer.bitCount(variant));
+    for (int i = 0, mask = variant; i < fragment.length(); i++, mask >>= 1) {
+      if ((mask & 1) == 0) {
+        continue; // skip not generated term
+      }
 
-    int[] newTerms = new int[BUFFER_SIZE];
-    int tail = 0;
-    ArrayTools.fill(newTerms, -1);
+      ++n; // met new generated word
+      final int index = fragment.intAt(i);
 
-    if (variant == 0) {
-      result += -log(denominator) + log(n) - log(dpAlpha + n);
-    } else {
-      for (int i = 0, mask = variant; i < fragment.length(); i++, mask >>= 1) {
-        if ((mask & 1) == 0) {
-          continue; // skip not generated term
-        }
-
-        ++n; // met new generated word
-        final int index = fragment.intAt(i);
-
-        if (count.get(index) == 0) {
-          if (ArrayTools.indexOf(index, newTerms) == -1) { // TODO: optimize performance
-            newTerms[tail++] = index; // mark that we have met this term
-            denominator += exp(undefinedGamma);
-
-            result += -log(dict.size() - uniqueCount) + log(dpAlpha) - log(dpAlpha + n - 1);
-            ++uniqueCount;
-          } else {
-            result += undefinedGamma - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
-          }
-        } else {
-          result += gamma.get(index) - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
-        }
+      if (count.get(index) == 0) {
+        result += -log(dict.size() - uniqueCount) + log(dpAlpha) - log(dpAlpha + n - 1);
+      } else {
+        result += gamma.get(index) - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
       }
     }
 
     return result;
   }
 
+  /**
+   * Returns the log-probability of term generation by the current term
+   *
+   * @param index index of the generated term
+   * @return log-probability of term generation by the current term
+   */
   public double logP(final int index) {
     final int n = totalCount + 1;
+    double result = MathTools.logPoissonProbability(poissonLambdaSum / poissonLambdaCount, 1);
 
     if (count.get(index) == 0) {
-      return -log(dict.size() - uniqueTermsCount) + log(dpAlpha) - log(dpAlpha + n - 1);
+      return result - log(dict.size() - uniqueTermsCount) + log(dpAlpha) - log(dpAlpha + n - 1);
     } else {
-      return gamma.get(index) - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
+      return result + gamma.get(index) - log(denominator) + log(n - 1) - log(dpAlpha + n - 1);
     }
   }
 
@@ -174,8 +168,8 @@ public class WordGenProbabilityProvider {
    * - applies updates if provider has a lot of updates
    *
    * @param variant the mask of generated terms by the current term
-   * @param seq the sequence of terms
-   * @param alpha descent parameter
+   * @param seq     the sequence of terms
+   * @param alpha   descent parameter
    */
   public void update(int variant,
                      final IntSeq seq,
@@ -240,7 +234,7 @@ public class WordGenProbabilityProvider {
    * Simulates one gradient descent step
    *
    * @param alpha descent parameter
-   * @param term index of the new generated term
+   * @param term  index of the new generated term
    */
   private void gradientDescentStep(final double alpha,
                                    final int term) {
@@ -267,7 +261,7 @@ public class WordGenProbabilityProvider {
    * \alpha = \argmax_{\alpha} \sum_{t=1}^T I{t is new} * \log{\frac{\alpha}{\alpha + t - 1}} + I{t is old} * \log{\frac{t - 1}{\alpha + t - 1}}
    *
    * @return new optimal alpha for dirichlet process
-   *
+   * <p>
    * TODO: calculate minDpAlpha and maxDpAlpha
    * TODO: may be stochastic
    */
@@ -525,6 +519,7 @@ public class WordGenProbabilityProvider {
     while (it.advance()) {
       todo.execute(it.index(), logP(it.index()));
     }
+
   }
 
   private String termToText(final int index,
