@@ -23,7 +23,7 @@ import static com.spbsu.direct.Utils.normalizeQuery;
 
 public class DependsProcessor implements Action<CharSequence> {
   private final static int DUMP_FREQ = 100_000;
-  private final static double ALPHA = 0.5;
+  private final static double ALPHA = 0.001;
 
   private volatile static int index;
 

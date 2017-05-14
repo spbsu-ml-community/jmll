@@ -221,8 +221,6 @@ public class WordGenProbabilityProvider {
   private void gradientDescent(double alpha) {
     Utils.Timer.start("gradient", false);
 
-    alpha /= totalCount; // TODO: is it okay?
-
     for (int term : newTerms) {
       gradientDescentStep(alpha, term);
     }
