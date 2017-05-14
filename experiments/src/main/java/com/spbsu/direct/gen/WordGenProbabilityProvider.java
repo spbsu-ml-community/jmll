@@ -508,6 +508,10 @@ public class WordGenProbabilityProvider {
         generationIndices.add(indexNode.asInt());
       }
 
+      if (totalCount == 0) {
+        return; // no statistics to process
+      }
+
       dpAlpha = findDpAlphaFast();
     } catch (IOException e) {
       throw new RuntimeException(e);

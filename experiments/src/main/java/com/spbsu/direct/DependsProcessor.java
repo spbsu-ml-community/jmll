@@ -2,6 +2,7 @@ package com.spbsu.direct;
 
 import com.spbsu.commons.func.Action;
 import com.spbsu.commons.io.codec.seq.ListDictionary;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.IntSeq;
@@ -23,7 +24,6 @@ import static com.spbsu.direct.Utils.normalizeQuery;
 public class DependsProcessor implements Action<CharSequence> {
   private final static int DUMP_FREQ = 100_000;
   private final static double ALPHA = 0.5;
-  private final static int MAX_ATTEMPTS_COUNT = 5;
 
   private volatile static int index;
 
@@ -31,10 +31,15 @@ public class DependsProcessor implements Action<CharSequence> {
   private final SimpleGenerativeModel model;
   private final String inputFile;
 
-  private final Random rand = new Random();
+  private final FastRandom rand = new FastRandom();
 
+  private int succeeded;
+
+  private int count;
   private String user;
-  private final List<String> queries;
+  private String prevQuery;
+  private String selectedPrevQuery;
+  private String selectedCurrQuery;
 
   public DependsProcessor(final String inputFile,
                           final ListDictionary<CharSeq> dictionary,
@@ -43,8 +48,6 @@ public class DependsProcessor implements Action<CharSequence> {
 
     this.dictionary = dictionary;
     this.model = model;
-
-    this.queries = new ArrayList<>();
   }
 
   // TODO: process timestamps
@@ -67,8 +70,7 @@ public class DependsProcessor implements Action<CharSequence> {
     final String query = normalizeQuery(parts[1].toString());
 
     if (this.user == null || !this.user.equals(user)) {
-      if (!this.queries.isEmpty()) {
-
+      if (this.user != null) {
         // TODO: debug output
         if (index % DUMP_FREQ == 0) {
           Utils.Timer.clearStatistics();
@@ -79,35 +81,30 @@ public class DependsProcessor implements Action<CharSequence> {
           Utils.Timer.start("new small block", true);
         }
 
-        for (int attempt = 0; attempt < MAX_ATTEMPTS_COUNT; ++attempt) {
-          final int index = rand.nextInt(this.queries.size()) - 1;
-          final IntSeq currQSeq = dropUnknown(dictionary.parse(convertToSeq(queries.get(index + 1)), model.freqs, model.totalFreq));
+        final IntSeq currQSeq = dropUnknown(dictionary.parse(convertToSeq(selectedCurrQuery), model.freqs, model.totalFreq));
 
-          if (currQSeq == null) {
-            continue;
-          }
-
-          if (index == -1) {
+        if (selectedPrevQuery == null) {
+          if (currQSeq != null) {
             model.processSeq(currQSeq);
             model.processGeneration(IntSeq.EMPTY, currQSeq, ALPHA);
-            break;
-          } else {
-            final IntSeq prevQSeq = dropUnknown(dictionary.parse(convertToSeq(queries.get(index)), model.freqs, model.totalFreq));
 
-            if (prevQSeq == null) {
-              continue;
-            }
+            ++succeeded;
+          }
+        } else {
+          final IntSeq prevQSeq = dropUnknown(dictionary.parse(convertToSeq(selectedPrevQuery), model.freqs, model.totalFreq));
 
+          if (currQSeq != null && prevQSeq != null) {
             model.processSeq(prevQSeq);
             model.processSeq(currQSeq);
             model.processGeneration(prevQSeq, currQSeq, ALPHA);
-            break;
+
+            ++succeeded;
           }
         }
 
         // TODO: debug output
         if (++index % 1000 == 0) {
-          System.out.println(String.format("processed %d", index));
+          System.out.println(String.format("processed %d (succeeded %d)", index, succeeded));
           Utils.Timer.stop("processing", true);
         }
 
@@ -118,11 +115,21 @@ public class DependsProcessor implements Action<CharSequence> {
         }
       }
 
-      this.queries.clear();
       this.user = user;
+
+      count = 0;
+      prevQuery = null;
+      selectedPrevQuery = null;
+      selectedCurrQuery = null;
     }
 
-    this.queries.add(query);
+    ++count;
+    if (rand.nextInt(count) == 0) {
+      selectedPrevQuery = prevQuery;
+      selectedCurrQuery = query;
+    }
+
+    prevQuery = query;
   }
 
   public static void dump(final SimpleGenerativeModel model) {

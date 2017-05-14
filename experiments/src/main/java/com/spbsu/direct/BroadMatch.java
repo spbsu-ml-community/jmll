@@ -221,7 +221,6 @@ public class BroadMatch {
         model.load(args[2]);
         Timer.stop("loading", true);
 
-
         CharSeqTools.processLines(new InputStreamReader(System.in, StreamTools.UTF), (Action<CharSequence>) arg -> {
           Timer.start("start expansion...", true);
           System.out.println(model.findTheBestExpansion(convertToSeq(normalizeQuery(arg.toString()))));
