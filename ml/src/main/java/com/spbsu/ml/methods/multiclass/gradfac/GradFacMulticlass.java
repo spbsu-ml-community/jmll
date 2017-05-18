@@ -1,16 +1,15 @@
 package com.spbsu.ml.methods.multiclass.gradfac;
 
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.commons.math.Func;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.factorization.Factorization;
-import com.spbsu.ml.func.FuncJoin;
-import com.spbsu.ml.func.ScaledFunc;
+import com.spbsu.ml.func.ScaledVectorFunc;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.VecOptimization;
 import com.spbsu.ml.methods.multiclass.MultiClassOneVsRest;
@@ -37,7 +36,7 @@ public class GradFacMulticlass implements VecOptimization<L2> {
   }
 
   @Override
-  public FuncJoin fit(VecDataSet learn, L2 mllLogitGradient) {
+  public ScaledVectorFunc fit(VecDataSet learn, L2 mllLogitGradient) {
     final Mx gradient = mllLogitGradient.target instanceof Mx
         ? (Mx)mllLogitGradient.target
         : new VecBasedMx(mllLogitGradient.target.dim() / learn.length(), mllLogitGradient.target);
@@ -52,12 +51,7 @@ public class GradFacMulticlass implements VecOptimization<L2> {
 
     final L2 loss = DataTools.newTarget(local, h, learn);
     final Func model = MultiClassOneVsRest.extractFunc(inner.fit(learn, loss));
-
-    final Func[] models = new Func[gradient.columns()];
-    for (int c = 0; c < models.length; c++) {
-      models[c] = new ScaledFunc(b.get(c), model);
-    }
-    final FuncJoin resultModel = new FuncJoin(models);
+    final ScaledVectorFunc resultModel = new ScaledVectorFunc(model, b);
 
     if (printErrors) {
       final Mx mxAfterFactor = VecTools.outer(h, b);
@@ -73,3 +67,33 @@ public class GradFacMulticlass implements VecOptimization<L2> {
     return resultModel; //not MultiClassModel, for boosting compatibility
   }
 }
+
+
+// cn \t gradnorm \t rel_fact_err
+/*
+if (printErrors) {
+      final RealMatrix realMatrix = new Array2DRowRealMatrix(gradient.rows(), gradient.columns());
+      final int rows = gradient.rows();
+      final int columns = gradient.columns();
+      for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < columns; j++) {
+          realMatrix.setEntry(i, j, gradient.get(i, j));
+        }
+      }
+      final SingularValueDecomposition singularValueDecomposition = new SingularValueDecomposition(realMatrix);
+      System.out.print(singularValueDecomposition.getConditionNumber() + "\t");
+
+
+      final Mx mxAfterFactor = VecTools.outer(h, b);
+//      final Mx mxAfterFit = resultModel.transAll(learn.data());
+      final double gradNorm = VecTools.norm(gradient);
+      final double error1 = VecTools.distance(gradient, mxAfterFactor);
+//      final double error2 = VecTools.distance(mxAfterFactor, mxAfterFit);
+//      final double totalError = VecTools.distance(gradient, mxAfterFit);
+
+//      System.out.println(String.format("%f\t%f\t%f\t%f", gradNorm, error1, error2, totalError));
+      System.out.print(gradNorm + "\t");
+      System.out.print(error1 / gradNorm + "\n");
+    }
+
+*/
