@@ -3,10 +3,12 @@ package com.spbsu.ml.methods.multiclass.gradfac;
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
 import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
-import com.spbsu.commons.math.vectors.*;
+import com.spbsu.commons.math.vectors.Mx;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.seq.*;
+import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.Binarize;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
@@ -14,6 +16,7 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.factorization.Factorization;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.func.ScaledVectorFunc;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
@@ -33,9 +36,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   protected final VecOptimization<L2> weak;
   private final Class<? extends L2> factory;
   private final Factorization factorize;
-  int iterationsCount;
-
-  double step;
+  private final int iterationsCount;
+  private final double step;
 
   public FMCBoosting(Factorization factorize, VecOptimization<L2> weak, int iterationsCount, double step) {
     this(factorize, weak, SatL2.class, iterationsCount, step);
@@ -62,38 +64,10 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       final L2 localLoss = DataTools.newTarget(factory, factorize.first, learn);
       final Func weakModel = (Func) weak.fit(learn, localLoss);
       weakModels.add(weakModel);
-      ensamble.add(new ScaledVectorFunc(factorize.second, weakModel));
+      ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
       invoke(new Ensemble<>(ensamble, -step));
     }
     return new Ensemble<>(ensamble, -step);
-  }
-
-  public static class ScaledVectorFunc extends Trans.Stub {
-    private final Vec vec;
-    private final Func base;
-
-    public ScaledVectorFunc(Vec vec, Func base) {
-      this.vec = vec;
-
-      this.base = base;
-    }
-
-    @Override
-    public Vec transTo(Vec argument, Vec to) {
-      VecTools.assign(to, vec);
-      VecTools.scale(to, base.value(argument));
-      return to;
-    }
-
-    @Override
-    public int xdim() {
-      return base.xdim();
-    }
-
-    @Override
-    public int ydim() {
-      return vec.dim();
-    }
   }
 
   private class LazyGradientCursor implements Seq<Vec> {
