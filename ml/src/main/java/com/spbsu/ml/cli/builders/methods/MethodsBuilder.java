@@ -34,6 +34,7 @@ public class MethodsBuilder {
     BootstrapOptimizationBuilder.defaultRandom = random;
     RandomForestBuilder.defaultRandom = random;
     MultiClassSplitGradFacBuilder.defaultRandom = random;
+    FMCBoostingBuilder.defaultRandom = random;
     RidgeRegressionLeavesObliviousTreeBuilder.defaultRandom = random;
   }
 
