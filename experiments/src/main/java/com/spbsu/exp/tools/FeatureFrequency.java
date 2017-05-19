@@ -1,11 +1,12 @@
 package com.spbsu.exp.tools;
 
-import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.Trans;
+import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncEnsemble;
+import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.models.MultiClassModel;
 import com.spbsu.ml.models.ObliviousTree;
 
@@ -50,9 +51,14 @@ public class FeatureFrequency {
   }
 
   private static void calcFreq(final MultiClassModel multiClassModel, final int[] counts) {
-    final Func[] dirs = multiClassModel.getInternModel().dirs();
-    for (Func func : dirs) {
-      callCorrespond(func, counts);
+    final Trans internModel = multiClassModel.getInternModel();
+    if (internModel instanceof FuncJoin) {
+      final Func[] dirs = ((FuncJoin) internModel).dirs();
+      for (Func func : dirs) {
+        callCorrespond(func, counts);
+      }
+    } else {
+      throw new UnsupportedOperationException("Unknown model type: " + internModel.getClass().getSimpleName());
     }
   }
 
