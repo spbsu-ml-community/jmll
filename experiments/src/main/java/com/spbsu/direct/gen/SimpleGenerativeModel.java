@@ -27,7 +27,7 @@ public class SimpleGenerativeModel {
   public static final int MAX_TERMS_COUNT_TO_PRINT = 15;
 
   public static final String EMPTY_ID = "##EMPTY##";
-  public static final int GIBBS_COUNT = 5;
+  public static final int GIBBS_COUNT = 1;
 
   private final WordGenProbabilityProvider[] providers;
   private final Dictionary<CharSeq> dict;

@@ -8,10 +8,7 @@ import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.direct.gen.SimpleGenerativeModel;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -41,6 +38,12 @@ public class DependsProcessor implements Action<CharSequence> {
   private String selectedPrevQuery;
   private String selectedCurrQuery;
 
+  private CharSequence prevLine; // debug
+  private CharSequence selectedPrevLine; // debug
+  private CharSequence selectedCurrLine; // debug
+
+  private Writer debugOutput;
+
   public DependsProcessor(final String inputFile,
                           final ListDictionary<CharSeq> dictionary,
                           final SimpleGenerativeModel model) {
@@ -48,6 +51,12 @@ public class DependsProcessor implements Action<CharSequence> {
 
     this.dictionary = dictionary;
     this.model = model;
+
+    try {
+      this.debugOutput = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("queries.txt"), "utf-8"));
+    } catch (IOException e) {
+      System.err.println(e.toString());
+    }
   }
 
   // TODO: process timestamps
@@ -64,10 +73,15 @@ public class DependsProcessor implements Action<CharSequence> {
       return;
     }
 
+    // TODO: process timestamp
     //final long ts = CharSeqTools.parseLong(parts[1]);
 
     final String user = parts[0].toString();
     final String query = normalizeQuery(parts[1].toString());
+
+    if (query == null) {
+      return;
+    }
 
     if (this.user == null || !this.user.equals(user)) {
       if (this.user != null) {
@@ -98,6 +112,12 @@ public class DependsProcessor implements Action<CharSequence> {
             model.processSeq(currQSeq);
             model.processGeneration(prevQSeq, currQSeq, ALPHA);
 
+            try {
+              debugOutput.write(String.format("\n%s\n%s\n", selectedPrevLine.toString(), selectedCurrLine.toString()));
+            } catch (IOException e) {
+              System.err.println(e.toString());
+            }
+
             ++succeeded;
           }
         }
@@ -123,13 +143,24 @@ public class DependsProcessor implements Action<CharSequence> {
       selectedCurrQuery = null;
     }
 
-    ++count;
-    if (rand.nextInt(count) == 0) {
-      selectedPrevQuery = prevQuery;
-      selectedCurrQuery = query;
+    // TODO: skip similar prev query
+    if (prevQuery == null || prevQuery.compareTo(query) != 0) {
+      ++count;
+      if (rand.nextInt(count) == 0) {
+        selectedPrevQuery = prevQuery;
+        selectedCurrQuery = query;
+
+        selectedPrevLine = prevLine;
+        selectedCurrLine = line;
+      }
+
+
+      prevQuery = query;
+
+      prevLine = line;
     }
 
-    prevQuery = query;
+    // TODO: else { update timestamp }
   }
 
   public static void dump(final SimpleGenerativeModel model) {
