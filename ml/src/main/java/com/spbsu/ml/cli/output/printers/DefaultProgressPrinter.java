@@ -6,7 +6,9 @@ import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.ml.*;
+import com.spbsu.ml.BinModelWithGrid;
+import com.spbsu.ml.Binarize;
+import com.spbsu.ml.ProgressHandler;
 import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.Pool;
@@ -84,7 +86,7 @@ public class DefaultProgressPrinter implements ProgressHandler {
     }
 
     System.out.print(iteration);
-    System.out.print(" " + loss.value(learnValues));
+    System.out.print("\t" + loss.value(learnValues));
     for (int i = 0; i < testMetrics.length; i++) {
       System.out.print("\t" + testMetrics[i].value(testValuesArray[i]));
     }

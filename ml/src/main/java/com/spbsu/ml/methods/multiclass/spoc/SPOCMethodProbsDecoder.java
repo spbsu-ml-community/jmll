@@ -1,8 +1,7 @@
 package com.spbsu.ml.methods.multiclass.spoc;
 
-import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.Func;
-import com.spbsu.commons.math.Trans;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
@@ -35,7 +34,7 @@ public class SPOCMethodProbsDecoder extends SPOCMethodClassic {
   }
 
   @Override
-  protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final BlockwiseMLLLogit llLogit) {
+  protected MulticlassCodingMatrixModelProbsDecoder createModel(final Func[] binClass, final VecDataSet learnDS, final BlockwiseMLLLogit llLogit) {
     final CMLMetricOptimization metricOptimization = new CMLMetricOptimization(learnDS, llLogit, S, metricC, metricStep);
     final Mx mu = metricOptimization.trainProbs(codeMatrix, binClass);
     return new MulticlassCodingMatrixModelProbsDecoder(codeMatrix, binClass, MX_IGNORE_THRESHOLD, mu);
