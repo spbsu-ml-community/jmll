@@ -1,6 +1,7 @@
 package com.spbsu.ml.methods.multiclass.spoc;
 
 import com.spbsu.commons.func.impl.WeakListenerHolderImpl;
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.MxTools;
 import com.spbsu.commons.math.vectors.VecTools;
@@ -10,8 +11,6 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.util.Combinatorics;
 import com.spbsu.commons.util.Pair;
-import com.spbsu.commons.math.Func;
-import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;
@@ -38,16 +37,17 @@ import java.util.concurrent.*;
 public class ECOCCombo extends WeakListenerHolderImpl<MulticlassCodingMatrixModel> implements VecOptimization<BlockwiseMLLLogit> {
   private static final int UNITS = Runtime.getRuntime().availableProcessors();
   private static final double MX_IGNORE_THRESHOLD = 0.1;
+
   private final ExecutorService executor;
 
-  protected final int k;
-  protected final int l;
-  protected final double lambdaC;
-  protected final double lambdaR;
-  protected final double lambda1;
-  protected final Mx S;
+  private final int k;
+  private final int l;
+  private final double lambdaC;
+  private final double lambdaR;
+  private final double lambda1;
+  private final Mx S;
 
-  protected final VecOptimization<LLLogit> weak;
+  private final VecOptimization<LLLogit> weak;
 
   public ECOCCombo(
       final int k,
@@ -79,7 +79,7 @@ public class ECOCCombo extends WeakListenerHolderImpl<MulticlassCodingMatrixMode
   }
 
   @Override
-  public Trans fit(final VecDataSet learn, final BlockwiseMLLLogit mllLogit) {
+  public MulticlassCodingMatrixModel fit(final VecDataSet learn, final BlockwiseMLLLogit mllLogit) {
     final long permutationsForOneProcessor = (long)(Math.pow(2, k) + UNITS - 1) / UNITS;
     final Mx mxB = new VecBasedMx(k, l);
     final List<Func> classifiers = new ArrayList<>(l);

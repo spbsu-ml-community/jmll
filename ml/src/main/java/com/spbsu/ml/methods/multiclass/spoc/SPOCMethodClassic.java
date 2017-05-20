@@ -1,13 +1,12 @@
 package com.spbsu.ml.methods.multiclass.spoc;
 
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
-import com.spbsu.commons.math.Func;
-import com.spbsu.commons.math.Trans;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
 import com.spbsu.ml.data.tools.MCTools;
@@ -37,12 +36,8 @@ public class SPOCMethodClassic extends VecOptimization.Stub<BlockwiseMLLLogit> {
     CMLHelper.normalizeMx(this.codeMatrix, MX_IGNORE_THRESHOLD);
   }
 
-  protected Trans createModel(final Func[] binClass, final VecDataSet learnDS, final BlockwiseMLLLogit llLogit) {
-    return new MulticlassCodingMatrixModel(codeMatrix, binClass, MX_IGNORE_THRESHOLD);
-  }
-
   @Override
-  public Trans fit(final VecDataSet learn, final BlockwiseMLLLogit llLogit) {
+  public MulticlassCodingMatrixModel fit(final VecDataSet learn, final BlockwiseMLLLogit llLogit) {
 //    System.out.println("coding matrix: \n" + codeMatrix.toString());
 
     final TIntObjectMap<TIntList> indexes = MCTools.splitClassesIdxs(llLogit.labels());
@@ -73,5 +68,9 @@ public class SPOCMethodClassic extends VecOptimization.Stub<BlockwiseMLLLogit> {
       binClassifiers[j] = (Func) weak.fit(dataSet, loss);
     }
     return createModel(binClassifiers, learn, llLogit);
+  }
+
+  protected MulticlassCodingMatrixModel createModel(final Func[] binClass, final VecDataSet learnDS, final BlockwiseMLLLogit llLogit) {
+    return new MulticlassCodingMatrixModel(codeMatrix, binClass, MX_IGNORE_THRESHOLD);
   }
 }
