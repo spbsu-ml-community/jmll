@@ -12,18 +12,31 @@ import com.spbsu.ml.factorization.Factorization;
 /**
  * User: qdeee
  * Date: 25.02.15
+ *
+ * Solves the next problem:
+ *    u^{*}, v^{*} = argmin_{u,v} \sum_{i,j}(X_{i,j} - u_i * v_j) +
+ *    + lambda * (alpha * (norm2(u) + norm2(v)) + (1 - alpha) * (norm1(u) + norm1(v)))
  */
 public class ElasticNetFactorization extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements Factorization {
   private final int iters;
   private final double tolerance;
   private final double alpha;
-  private final double lambda;
+  private final double lambdau;
+  private final double lambdav;
 
-  public ElasticNetFactorization(final int iters, final double tolerance, final double alpha, final double lambda) {
+  public ElasticNetFactorization(final int iters, final double tolerance, final double alpha, final double lambdau, final double lambdav) {
     this.iters = iters;
     this.tolerance = tolerance;
     this.alpha = alpha;
-    this.lambda = lambda;
+    this.lambdau = lambdau;
+    this.lambdav = lambdav;
+  }
+
+  public ElasticNetFactorization(int iters, double tolerance, double alpha, double lambda) {
+    this.iters = iters;
+    this.tolerance = tolerance;
+    this.alpha = alpha;
+    this.lambdau = this.lambdav = lambda;
   }
 
   @Override
@@ -34,10 +47,10 @@ public class ElasticNetFactorization extends WeakListenerHolderImpl<Pair<Vec, Ve
 
     for (int iter = 0; iter < iters; iter++) {
       //fix v, search u:
-      VecTools.assign(currentU, findElasticNetSolution(currentV, X, tolerance, alpha, lambda, 2));
+      VecTools.assign(currentU, findElasticNetSolution(currentV, X, tolerance, alpha, lambdau, 2));
 
       //fix u, search v:
-      VecTools.assign(currentV, findElasticNetSolution(currentU, transposeX, tolerance, alpha, lambda, 2));
+      VecTools.assign(currentV, findElasticNetSolution(currentU, transposeX, tolerance, alpha, lambdav, 2));
 
       invoke(Pair.create(currentU, currentV));
     }
@@ -68,9 +81,9 @@ public class ElasticNetFactorization extends WeakListenerHolderImpl<Pair<Vec, Ve
       for (int i = 0; i < checkIterations; i++) {
         for (int k = 0; k < columns; k++) {
           final int N = rightSideMx.dim();
-          double newBeta = gradient[k];
-          newBeta = softThreshold(newBeta, N * lambda * alpha);
-          newBeta /= (selfFeatureProduct + N * lambda * (1 - alpha));
+          double newBeta = softThreshold(gradient[k], N * lambda * alpha)
+                           /
+                           (selfFeatureProduct + N * lambda * (1 - alpha));
           if (Math.abs(newBeta - betas.get(k)) > 1e-15) {
             betas.set(k, newBeta);
             anyUpdated = true;
