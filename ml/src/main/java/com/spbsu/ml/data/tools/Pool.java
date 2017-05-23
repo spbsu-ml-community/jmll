@@ -7,6 +7,7 @@ import com.spbsu.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.spbsu.commons.math.vectors.impl.mx.ColsVecSeqMx;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.seq.ArraySeq;
+import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.VecSeq;
 import com.spbsu.commons.system.RuntimeUtils;
@@ -190,7 +191,7 @@ public class Pool<I extends DSItem> {
     try {
       return multiTarget(targetClass);
     } catch (Exception e) {
-      throw new RuntimeException("No proper constructor found");
+      throw new RuntimeException("No proper constructor found", e);
     }
   }
 
@@ -212,12 +213,18 @@ public class Pool<I extends DSItem> {
       final Seq<?> target = targets.get(j).second;
       if (target instanceof Vec) {
         VecTools.assign(targetsValues.col(j), (Vec) target);
-      } else {
+      }
+      else if (target instanceof IntSeq) {
+        final IntSeq intSeq = (IntSeq) target;
+        for (int i = 0; i < target.length(); i++)
+          targetsValues.set(i, j, intSeq.intAt(i));
+      }
+      else {
         throw new RuntimeException("Unsupported target type: " + target.getClass().getName());
       }
     }
 
-    final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targetsValues);
+    final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targetsValues, data());
     if (target != null) {
       return target;
     } else {

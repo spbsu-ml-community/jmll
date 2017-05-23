@@ -326,7 +326,7 @@ public class DataTools {
         generator.writeStringField("author", pool.meta().author());
         generator.writeStringField("source", pool.meta().source());
         generator.writeNumberField("created", pool.meta().created().getTime());
-        generator.writeStringField("type", pool.meta().type().name());
+        generator.writeStringField("type", pool.meta().type().getCanonicalName());
         generator.writeEndObject();
         generator.close();
         out.append(writer.getBuffer());
@@ -399,7 +399,7 @@ public class DataTools {
             final JsonParser parseItems = JSONTools.parseJSON(chopper.chop('\n'));
             final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
+            final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type());
             final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
             for (int i = 0; i < myObjects.size(); i++) {
               builder.addItem(myObjects.get(i));

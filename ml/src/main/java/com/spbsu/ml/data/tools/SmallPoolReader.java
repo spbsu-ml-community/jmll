@@ -90,7 +90,7 @@ public final class SmallPoolReader {
 
                 final JsonParser parseItems = JSONTools.parseJSON(parts[2]);
                 final ObjectMapper mapper = (ObjectMapper) parseItems.getCodec();
-                final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type().clazz());
+                final CollectionType itemsGroupType = mapper.getTypeFactory().constructCollectionType(List.class, meta.type());
                 final List<? extends DSItem> myObjects = mapper.readValue(parseItems, itemsGroupType);
                 for (final DSItem myObject : myObjects) {
                   builder.addItem(myObject);

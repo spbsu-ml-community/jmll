@@ -2,6 +2,7 @@ package com.spbsu.ml;
 
 import com.spbsu.commons.func.Converter;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.ml.data.impl.BinarizedDataSet;
 import com.spbsu.ml.io.BFGridStringConverter;
 
 import java.util.Arrays;
@@ -185,6 +186,10 @@ public class BFGrid {
 
     public boolean value(final Vec vec) {
       return vec.get(findex) > condition;
+    }
+
+    public boolean value(int index, BinarizedDataSet bds) {
+      return bds.bins(findex)[index] > binNo;
     }
 
     public BFRow row() {
