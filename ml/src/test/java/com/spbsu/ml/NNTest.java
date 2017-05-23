@@ -13,7 +13,10 @@ import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.seq.*;
+import com.spbsu.commons.seq.CharSeq;
+import com.spbsu.commons.seq.CharSeqArray;
+import com.spbsu.commons.seq.CharSeqTools;
+import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.data.tools.PoolByRowsBuilder;
 import com.spbsu.ml.func.generic.Log;
@@ -23,13 +26,12 @@ import com.spbsu.ml.loss.CompositeFunc;
 import com.spbsu.ml.loss.DSSumFuncComposite;
 import com.spbsu.ml.loss.LL;
 import com.spbsu.ml.loss.MLL;
-import com.spbsu.ml.meta.DataSetMeta;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.items.FakeItem;
 import com.spbsu.ml.meta.items.QURLItem;
 import com.spbsu.ml.methods.StochasticGradientDescent;
-import com.spbsu.ml.models.nn.NeuralSpider;
 import com.spbsu.ml.models.nn.LayeredNetwork;
+import com.spbsu.ml.models.nn.NeuralSpider;
 import com.spbsu.ml.models.nn.nfa.NFANetwork;
 import com.spbsu.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
@@ -75,7 +77,7 @@ public abstract class NNTest {
 
   @Test
   public void testConvergence() {
-    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(FakeItem.class);
     pbuilder.allocateFakeFeatures(3, FeatureMeta.ValueType.VEC);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     for (int i = 0; i < 10000; i++) {
@@ -218,7 +220,7 @@ public abstract class NNTest {
     final CharSeq alpha = CharSeq.create("ab");
     final NFANetwork<Character> nfa = new NFANetwork<>(rng, 0.1, statesCount, alpha);
 
-    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(FakeItem.class);
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     pbuilder.setFeature(0, CharSeq.create("abba"));
@@ -292,7 +294,7 @@ public abstract class NNTest {
   @Test
   public void testUrlConvergence() throws Exception {
     //noinspection unchecked
-    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(FakeItem.class);
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     final Set<Character> alphaSet = new HashSet<>();
@@ -356,7 +358,7 @@ public abstract class NNTest {
   @Test
   public void testUrlConvergence2() throws Exception {
     //noinspection unchecked
-    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(FakeItem.class);
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     final Set<Character> alphaSet = new HashSet<>();
@@ -434,7 +436,7 @@ public abstract class NNTest {
 
   @Test
   public void testSeqConvergence() throws Exception {
-    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(DataSetMeta.ItemType.FAKE);
+    final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(FakeItem.class);
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     CharSeqTools.processLines(
@@ -495,7 +497,7 @@ public abstract class NNTest {
           int count = 0;
           int negative = 0;
           for (int i = 0; i < 1000; i++, count++) {
-            final double value = ll.block(i).value(network.decisionByInput((CharSeq) pool.feature(0, i)).trans(vec));
+            final double value = ll.block(i).value(network.decisionByInput(pool.feature(0, i)).trans(vec));
             sum += value;
             if (Math.exp(-value) > 2)
               negative++;
@@ -505,12 +507,9 @@ public abstract class NNTest {
       }
     };
     gradientDescent.addListener(pp);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
     final Vec vals = new ArrayVec(pool.size());

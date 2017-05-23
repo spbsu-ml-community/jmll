@@ -14,17 +14,14 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  * Time: 13:26
  */
 public class JsonDataSetMeta implements DataSetMeta {
+  public String id;
   public Pool owner;
   public String source;
   public String author;
   public Date created;
-  public ItemType type;
-  public String id;
+  public Class<?> type;
 
-  public JsonDataSetMeta(final Pool owner, final String source, final String author, final Date created, final ItemType type,
-                         final String id)
-  {
-    this.owner = owner;
+  public JsonDataSetMeta(final String source, final String author, final Date created, final Class<?> type, final String id) {
     this.source = source;
     this.author = author;
     this.created = created;
@@ -61,7 +58,7 @@ public class JsonDataSetMeta implements DataSetMeta {
   }
 
   @Override
-  public ItemType type() {
+  public Class<?> type() {
     return type;
   }
 

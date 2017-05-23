@@ -7,6 +7,8 @@ import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.func.Ensemble;
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 import org.jetbrains.annotations.NotNull;
 
@@ -133,37 +135,45 @@ public final class ModelTools {
         }
 
         if (value != 0.) {
-          final int[] currentSetA = new int[currentSet.size()];
-          final Iterator<BFGrid.BinaryFeature> it = currentSet.iterator();
-          for (int j = 0; j < currentSetA.length; j++) {
-            currentSetA[j] = it.next().bfIndex;
+          final TIntArrayList conditions = new TIntArrayList(currentSet.size());
+          for (BFGrid.BinaryFeature aCurrentSet : currentSet) {
+            conditions.add(aCurrentSet.bfIndex);
           }
-          Arrays.sort(currentSetA);
+          conditions.sort();
+          if (grid != null) { // minimize
+            final TIntIterator iterator = conditions.iterator();
+            BFGrid.BinaryFeature prev = null;
+            while (iterator.hasNext()) {
+              final BFGrid.BinaryFeature next = grid.bf(iterator.next());
+              if (prev != null && prev.findex == next.findex) {
+                iterator.remove();
+              }
+              prev = next;
+            }
+          }
 
           final double addedValue = ensemble.weights.get(treeIndex) * value;
-          scores.adjustOrPutValue(new ConditionEntry(currentSetA), addedValue, addedValue);
+          scores.adjustOrPutValue(new ConditionEntry(conditions.toArray()), addedValue, addedValue);
         }
       }
     }
 
     final List<Pair<ConditionEntry, Double>> sortedScores = new ArrayList<>();
     scores.forEachEntry((entry, value) -> {
-      sortedScores.add(Pair.create(entry, value));
+      if (Math.abs(value) > 0)
+        sortedScores.add(Pair.create(entry, value));
       return true;
     });
-    Collections.sort(sortedScores, new Comparator<Pair<ConditionEntry, Double>>() {
-      @Override
-      public int compare(final Pair<ConditionEntry, Double> o1, final Pair<ConditionEntry, Double> o2) {
-        if (o1.first.features.length > o2.first.features.length)
-          return 1;
-        if (o1.first.features.length == o2.first.features.length) {
-          int index = 0;
-          while (o1.first.features[index] == o2.first.features[index])
-            index++;
-          return Integer.compare(o1.first.features[index], o2.first.features[index]);
-        }
-        return -1;
+    sortedScores.sort((o1, o2) -> {
+      if (o1.first.features.length > o2.first.features.length)
+        return 1;
+      if (o1.first.features.length == o2.first.features.length) {
+        int index = 0;
+        while (o1.first.features[index] == o2.first.features[index])
+          index++;
+        return Integer.compare(o1.first.features[index], o2.first.features[index]);
       }
+      return -1;
     });
 
     final List<CompiledOTEnsemble.Entry> entries = new ArrayList<>(scores.size());

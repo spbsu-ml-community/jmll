@@ -175,7 +175,7 @@ public class FakePool extends Pool<FakeItem> {
     }
 
     @Override
-    public ItemType type() { return ItemType.FAKE; }
+    public Class<?> type() { return FakeItem.class; }
 
     @Override
     public Date created() {

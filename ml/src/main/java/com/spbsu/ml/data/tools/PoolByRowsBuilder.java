@@ -31,11 +31,7 @@ public class PoolByRowsBuilder<Item extends DSItem> implements Factory<Pool<Item
   private JsonDataSetMeta meta = new JsonDataSetMeta();
   private List<Item> items = new ArrayList<>();
 
-  public PoolByRowsBuilder() {
-    this(DataSetMeta.ItemType.FAKE);
-  }
-
-  public PoolByRowsBuilder(DataSetMeta.ItemType type) {
+  public PoolByRowsBuilder(Class<Item> type) {
     meta.type = type;
     meta.author = System.getProperty("user.name");
     meta.created = new Date();
@@ -48,7 +44,7 @@ public class PoolByRowsBuilder<Item extends DSItem> implements Factory<Pool<Item
   @Override
   public Pool<Item> create() {
     //noinspection unchecked
-    return create((Class<Item>)meta.type().clazz());
+    return create((Class<Item>)meta.type());
   }
 
   public Pool<Item> create(final Class<Item> clazz) {
@@ -103,9 +99,9 @@ public class PoolByRowsBuilder<Item extends DSItem> implements Factory<Pool<Item
     this.meta = meta;
   }
 
-  public void setItemType(DataSetMeta.ItemType type) {
-    this.meta.type = type;
-  }
+//  public void setItemType(DataSetMeta.ItemType type) {
+//    this.meta.type = type;
+//  }
 
   public void addItem(final Item item, final Vectorization<Item> vec) {
     items.add(item);

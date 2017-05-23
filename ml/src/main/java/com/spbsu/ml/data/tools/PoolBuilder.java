@@ -21,6 +21,7 @@ import com.spbsu.ml.meta.impl.JsonTargetMeta;
  * Date: 07.07.14
  * Time: 12:55
  */
+@SuppressWarnings("unchecked")
 public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
   private JsonDataSetMeta meta;
   private List<DSItem> items = new ArrayList<>();
@@ -29,7 +30,7 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
 
   @Override
   public Pool<? extends DSItem> create() {
-    return create(meta.type().clazz());
+    return create((Class<DSItem>)meta.type());
   }
 
   public <Item extends DSItem> Pool<Item> create(final Class<Item> clazz) {
@@ -79,10 +80,12 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
   }
 
   public void newFeature(final JsonFeatureMeta meta, final Seq<?> values) {
+    meta.associated = this.meta.id();
     features.add(Pair.<JsonFeatureMeta, Seq<?>>create(meta, values));
   }
 
   public void newTarget(final JsonTargetMeta meta, final Seq<?> target) {
+    meta.associated = this.meta.id();
     this.targets.add(Pair.<JsonTargetMeta, Seq<?>>create(meta, target));
   }
 }

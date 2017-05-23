@@ -179,7 +179,7 @@ public class FeaturesTxtPool extends Pool<QURLItem> {
     }
 
     @Override
-    public ItemType type() { return ItemType.QURL; }
+    public Class<QURLItem> type() { return QURLItem.class; }
 
     @Override
     public Date created() {

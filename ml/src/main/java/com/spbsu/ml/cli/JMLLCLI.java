@@ -108,6 +108,7 @@ public class JMLLCLI {
       case "print-pool-info":           return new PrintPoolInfo();
       case "grid-search":               return new GridSearch();
       case "cross-validation":          return new CrossValidation();
+      case "interpret":                 return new InterpretModel();
       default:
         throw new RuntimeException("Mode " + mode + " is not recognized");
     }
