@@ -20,6 +20,7 @@ public class JMLLCLI {
   public static final String JSON_FORMAT = "j";
   public static final String TEST_OPTION = "t";
   public static final String CROSS_VALIDATION_OPTION = "X";
+  public static final String INTERPRET_MODE_OPTION = "I";
 
   public static final String TARGET_OPTION = "T";
   public static final String METRICS_OPTION = "M";
@@ -68,7 +69,8 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
 
     options.addOption(OptionBuilder.withLongOpt("ranges").withDescription("parameters ranges").hasArg().create(RANGES_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("seed").withLongOpt("random seed").hasArg().create(RANGES_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("seed").withDescription("random seed").hasArg().create(RANGES_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("view").withDescription("Comma separated interpret views. Possible values are: histogram for by feature histograms, linear for list of linear components of the ensemble, splits(k) for top k influencing splits").hasArg().create(INTERPRET_MODE_OPTION));
   }
 
   public static void main(final String[] args) throws IOException {
