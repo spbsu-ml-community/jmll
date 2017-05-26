@@ -23,6 +23,7 @@ public class MethodsBuilder {
     RegionForestBuilder.defaultGridBuilder = gridFactory;
     GreedyTDCherryRegionBuilder.defaultGridBuilder = gridFactory;
     RidgeRegressionLeavesObliviousTreeBuilder.defaultGridBuilder = gridFactory;
+    RegGreedyObliviousTreeBuilder.defaultGridBuilder = gridFactory;
   }
 
   public void setDynamicGridBuilder(final Factory<DynamicGrid> dynamicGridFactory) {
