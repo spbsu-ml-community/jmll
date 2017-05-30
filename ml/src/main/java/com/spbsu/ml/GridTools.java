@@ -1,10 +1,7 @@
 package com.spbsu.ml;
 
-import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.stats.OrderByFeature;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
@@ -17,11 +14,10 @@ import java.util.Arrays;
  * Time: 17:42
  */
 public class GridTools {
-    public static BFGrid medianGrid(final DataSet<Vec> ds, final int binFactor) {
-        final int dim = ((VecDataSet) ds).xdim();
+    public static BFGrid medianGrid(final VecDataSet ds, final int binFactor) {
+        final int dim = ds.xdim();
         final BFGrid.BFRow[] rows = new BFGrid.BFRow[dim];
         final TIntHashSet known = new TIntHashSet();
-        final OrderByFeature byFeature = ds.cache().cache(OrderByFeature.class, DataSet.class);
         final TIntArrayList borders = new TIntArrayList();
         int bfCount = 0;
 
@@ -29,7 +25,7 @@ public class GridTools {
         for (int f = 0; f < dim; f++) {
             borders.clear();
             borders.add(ds.length());
-            final ArrayPermutation permutation = byFeature.orderBy(f);
+            final ArrayPermutation permutation = new ArrayPermutation(ds.order(f));
             final int[] order = permutation.direct();
             final int[] reverse = permutation.reverse();
             boolean haveDiffrentElements = false;
