@@ -1,5 +1,6 @@
 package com.spbsu.ml.loss;
 
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.data.set.DataSet;
 
@@ -9,15 +10,18 @@ import com.spbsu.ml.data.set.DataSet;
  * Time: 22:37:55
  */
 public class L2Reg extends L2 {
-
-
   public L2Reg(final Vec target, final DataSet<?> base) {
     super(target, base);
   }
 
   @Override
   public double value(final MSEStats stats) {
-    return stats.weight >= 1 ? stats.sum / stats.weight : 0;
+    return stats.weight >= 1 ? stats.sum / (stats.weight + 1): 0;
+  }
+
+  @Override
+  public double bestIncrement(MSEStats stats) {
+    return stats.weight > MathTools.EPSILON ? stats.sum / (stats.weight + 1) : 0;
   }
 
   @Override

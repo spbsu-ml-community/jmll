@@ -24,15 +24,13 @@ import com.spbsu.commons.math.vectors.impl.vectors.IndexTransVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.seq.ArraySeq;
-import com.spbsu.commons.seq.CharSeqTools;
-import com.spbsu.commons.seq.ReaderChopper;
-import com.spbsu.commons.seq.Seq;
+import com.spbsu.commons.seq.*;
 import com.spbsu.commons.system.RuntimeUtils;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.JSONTools;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.commons.util.logging.Logger;
 import com.spbsu.ml.*;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -61,23 +59,33 @@ import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
+
+import static com.spbsu.commons.seq.CharSeqTools.lines;
+import static com.spbsu.commons.seq.CharSeqTools.split;
 
 /**
  * User: solar
  * Date: 26.12.10
  * Time: 19:05
  */
+@SuppressWarnings("unused")
 public class DataTools {
+  public static Logger log = Logger.create(DataTools.class);
+
   public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
       new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
 
@@ -563,5 +571,37 @@ public class DataTools {
       out.write("\n");
     }
     out.flush();
+  }
+
+  public static void readCSVWithHeader(String file, Consumer<Function<String, Optional<CharSequence>>> processor) {
+    final TObjectIntMap<String> names = new TObjectIntHashMap<>();
+    try {
+      final Stream<CharSeq> lines = lines(new InputStreamReader(new FileInputStream(file), StreamTools.UTF), false);
+      final Spliterator<CharSeq> spliterator = lines.spliterator();
+      spliterator.tryAdvance(header -> {
+        final CharSequence[] headerSplit = CharSeqTools.split(header, ',');
+        for (int i = 0; i < headerSplit.length; i++) {
+          names.put(headerSplit[i].toString(), i + 1);
+        }
+      });
+      StreamSupport.stream(spliterator, false).forEach(line -> {
+        final CharSequence[] split = split(line, ",");
+        try {
+          processor.accept(name -> {
+            final int index = names.get(name);
+            if (index == 0)
+              throw new RuntimeException("File " + file + " does not contain required column " + name + "!");
+            final CharSequence part = split[index - 1];
+            return part.length() > 0 ? Optional.of(part) : Optional.empty();
+          });
+        }
+        catch (Exception e) {
+          log.error("Unable to parse line: " + line, e);
+        }
+      });
+    }
+    catch (FileNotFoundException e) {
+      e.printStackTrace();
+    }
   }
 }

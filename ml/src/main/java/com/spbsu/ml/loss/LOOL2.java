@@ -21,6 +21,6 @@ public class LOOL2 extends L2 {
 
   @Override
   public double score(final MSEStats stats) {
-    return stats.weight > 1 ? (stats.sum2 - stats.sum * stats.sum / stats.weight) * MathTools.sqr(stats.weight / (stats.weight - 1.)) : stats.sum2;
+    return stats.weight > 1 ? (- stats.sum * stats.sum / stats.weight) * MathTools.sqr(stats.weight / (stats.weight - 1.)) : 0;
   }
 }

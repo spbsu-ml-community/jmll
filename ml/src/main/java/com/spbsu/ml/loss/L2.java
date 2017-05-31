@@ -50,12 +50,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
 
   @Override
   public Factory<MSEStats> statsFactory() {
-    return new Factory<MSEStats>() {
-      @Override
-      public MSEStats create() {
-        return new MSEStats(target);
-      }
-    };
+    return () -> new MSEStats(target);
   }
 
   @Override
@@ -70,7 +65,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
 
   @Override
   public double score(final MSEStats stats) {
-    return stats.weight > MathTools.EPSILON ? (stats.sum2 - stats.sum * stats.sum / stats.weight)/* + 5 * stats.weight2*/: stats.sum2 /*+ 5 * stats.weight2*/;
+    return stats.weight > MathTools.EPSILON ? (- stats.sum * stats.sum / stats.weight)/* + 5 * stats.weight2*/: 0/*+ 5 * stats.weight2*/;
   }
 
   @Override
