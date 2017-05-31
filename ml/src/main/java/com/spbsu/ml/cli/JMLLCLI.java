@@ -111,6 +111,8 @@ public class JMLLCLI {
       case "grid-search":               return new GridSearch();
       case "cross-validation":          return new CrossValidation();
       case "interpret":                 return new InterpretModel();
+      case "eval-model":                return new EvaluateModel();
+
       default:
         throw new RuntimeException("Mode " + mode + " is not recognized");
     }
