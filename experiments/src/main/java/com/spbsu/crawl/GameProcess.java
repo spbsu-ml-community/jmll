@@ -69,10 +69,11 @@ public class GameProcess implements Runnable {
       } else if (message instanceof MenuMessage) {
         endpoint.send(new KeyMessage(KeyCode.ESCAPE));
       } else if (message instanceof GameEnded) {
-        learnDataBuilder.endGame();
+        session.finish();
         break;
       } else if (message instanceof InputModeMessage) {
         turns++;
+        session.features(learnDataBuilder.features());
         switch (((InputModeMessage) message).inputMode()) {
           case 0:
             break;

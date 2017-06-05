@@ -24,21 +24,11 @@ public class CategoricalFeaturesMap {
   private TObjectIntHashMap<String> direct = new TObjectIntHashMap<>();
   private List<String> inverse = new ArrayList<>();
 
-  private synchronized int addNewEntryAndReturn(String value) {
-    if (direct.containsKey(value)) {
-      return direct.get(value);
-    }
-    final int nextId = direct.size();
-    direct.put(value, nextId);
-    inverse.add(value);
-    return nextId;
-  }
-
   public int value(@NotNull String message) {
     if (direct.containsKey(message)) {
       return direct.get(message);
     } else {
-      return addNewEntryAndReturn(message);
+      return -1;
     }
   }
 
@@ -120,7 +110,7 @@ public class CategoricalFeaturesMap {
       }
 
       final CategoricalFeaturesMap map = new CategoricalFeaturesMap();
-      data.inverseIndex().forEach(map::addNewEntryAndReturn);
+//      data.inverseIndex().forEach(map::addNewEntryAndReturn);
       return map;
     }
   }
