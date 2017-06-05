@@ -166,7 +166,7 @@ public class GreedyTDProbRegion<Loss extends WeightedLoss<? extends L2>> extends
                     target.adjust(points[i], -p[i]*betas[level]);
                 }
 
-                points = sample(p, weights);
+                points = sampleAndChangeWeights(p, weights);
 
             }
 
@@ -298,7 +298,7 @@ public class GreedyTDProbRegion<Loss extends WeightedLoss<? extends L2>> extends
         return new Pair<>(beta, score);
     }
 
-    private int[] sample(double p[], double weights[]) {
+    private int[] sampleAndChangeWeights(double p[], double weights[]) {
         final TIntArrayList result = new TIntArrayList(weights.length);
         for (int i = 0; i < weights.length; i++) {
             int cntPnts = (int)weights[i];
