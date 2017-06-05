@@ -16,9 +16,9 @@ import org.jetbrains.annotations.Nullable;
  */
 public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub implements StatBasedLoss<WeightedLoss.Stat> {
   private final BasedOn metric;
-  private final int[] weights;
+  private final double[] weights;
 
-  public WeightedLoss(final BasedOn metric, final int[] weights) {
+  public WeightedLoss(final BasedOn metric, final double[] weights) {
     this.metric = metric;
     this.weights = weights;
   }
@@ -102,16 +102,16 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
 
   public static class Stat implements AdditiveStatistics {
     public AdditiveStatistics inside;
-    private final int[] weights;
+    private final double[] weights;
 
-    public Stat(final int[] weights, final AdditiveStatistics inside) {
+    public Stat(final double[] weights, final AdditiveStatistics inside) {
       this.weights = weights;
       this.inside = inside;
     }
 
     @Override
     public Stat append(final int index, final int times) {
-      final int count = weights[index];
+      final double count = weights[index];
       inside.append(index, count * times);
       return this;
     }
@@ -124,7 +124,7 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
 
     @Override
     public Stat remove(final int index, final int times) {
-      final int count = weights[index];
+      final double count = weights[index];
       inside.remove(index, count * times);
       return this;
     }
@@ -137,14 +137,14 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
 
     @Override
     public Stat append(int index, double weight) {
-      final int count = weights[index];
+      final double count = weights[index];
       inside.append(index,weight*count);
       return this;
     }
 
     @Override
     public Stat remove(int index, double weight) {
-      final int count = weights[index];
+      final double count = weights[index];
       inside.remove(index,weight*count);
       return this;
     }

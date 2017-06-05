@@ -1,5 +1,6 @@
 package com.spbsu.exp.cart;
 
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.loss.L2;
@@ -15,8 +16,6 @@ public class CARTSatSteinL2 extends SatL2 {
 
     @Override
     public double bestIncrement(final MSEStats stats) {
-        if (stats.weight <= 2 || stats.sum2 < 1e-6)
-            return super.bestIncrement(stats);
-        return (1 - (stats.weight - 2)*score(stats)/(stats.sum2*stats.weight))*(stats.sum/stats.weight);
+        return stats.weight > MathTools.EPSILON ? stats.sum / (stats.weight + 1) : 0;
     }
 }

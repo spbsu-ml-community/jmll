@@ -132,7 +132,7 @@ public class Utils {
                                     final Class func, final double regCoeff) {
     final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
             new BootstrapOptimization<>(
-                    new com.spbsu.exp.cart.CARTTreeOptimization(
+                    new com.spbsu.ml.methods.cart.CARTTreeOptimization<>(
                             GridTools.medianGrid(data.getLearnFeatures(), 32), 6, regCoeff), RND), func, iterations, step);
     final Action counter = new ProgressHandler() {
       int index = 0;
@@ -161,7 +161,7 @@ public class Utils {
                                      final Class funcClass, final double regCoeff) {
     final GradientBoosting<L2> boosting = new GradientBoosting<>(
             new BootstrapOptimization<>(
-                    new com.spbsu.exp.cart.CARTTreeOptimization(
+                    new com.spbsu.ml.methods.cart.CARTTreeOptimization(
                             GridTools.medianGrid(data.getLearnFeatures(), 32), 6, regCoeff), RND), funcClass, iterations, step);
     final Action counter = new ProgressHandler() {
       int index = 0;

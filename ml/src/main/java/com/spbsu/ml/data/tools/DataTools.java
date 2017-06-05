@@ -259,7 +259,7 @@ public class DataTools {
   }
 
   public static <LocalLoss extends StatBasedLoss> WeightedLoss<LocalLoss> bootstrap(final LocalLoss loss, final FastRandom rnd) {
-    final int[] poissonWeights = new int[loss.xdim()];
+    final double[] poissonWeights = new double[loss.xdim()];
     for (int i = 0; i < loss.xdim(); i++) {
       poissonWeights[i] = rnd.nextPoisson(1.);
     }

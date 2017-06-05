@@ -74,10 +74,10 @@ public class GradFacBootstrapMulticlass implements VecOptimization<L2> {
       throw new IllegalArgumentException("What the fuck with dimensions?");
     }
 
-    final int[] weights = new int[lossForFit.dim()];
+    final double[] weights = new double[lossForFit.dim()];
     for (int i = 0; i < gradMx.rows(); i++) {
       final double error = VecTools.l1(VecTools.subtract(gradMx.row(i), approxMx.row(i)));
-      weights[i] = (int) (gradMx.columns() / error);
+      weights[i] = (gradMx.columns() / error);
     }
     return new WeightedLoss<>(lossForFit, weights);
   }
