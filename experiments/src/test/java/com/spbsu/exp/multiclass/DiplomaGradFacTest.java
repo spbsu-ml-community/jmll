@@ -1,6 +1,7 @@
 package com.spbsu.exp.multiclass;
 
 import com.spbsu.commons.random.FastRandom;
+import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.GridTools;
 import com.spbsu.ml.cli.output.printers.MulticlassProgressPrinter;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -106,10 +107,17 @@ public class DiplomaGradFacTest extends TestCase{
     boosting.addListener(multiclassProgressPrinter);
     final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
 
-    final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
-    final MultiClassModel multiclassModel = new MultiClassModel(joined);
+    final MultiClassModel multiclassModel;
+    if (ensemble.last() instanceof FuncJoin) {
+      final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
+      multiclassModel = new MultiClassModel(joined);
+    }
+    else
+      multiclassModel = new MultiClassModel(ensemble);
 
+    Interval.start();
     System.out.println(MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false));
     System.out.println(MCTools.evalModel(multiclassModel, test, "[TEST] ", false));
+    Interval.stopAndPrint();
   }
 }

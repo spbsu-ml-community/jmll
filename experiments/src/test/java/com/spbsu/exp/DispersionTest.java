@@ -278,4 +278,14 @@ public class DispersionTest extends TestCase {
       System.out.println(m + "\t" + sumAvgNaive / 1000 + "\t" + sumAvgJS / 1000 + "\t" + sumDGP / 1000);
     }
   }
+
+  public void testPlotDisp() {
+    final double[] disp = new double[1000];
+    final FastRandom rng = new FastRandom();
+    for (int i = 0 ; i < 1000; i++) {
+        for (int j = 0; j < 100; j++) {
+
+        }
+    }
+  }
 }
