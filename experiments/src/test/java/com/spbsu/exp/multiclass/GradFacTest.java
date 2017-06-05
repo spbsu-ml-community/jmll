@@ -9,6 +9,7 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
+import com.spbsu.commons.util.logging.Interval;
 import com.spbsu.ml.GridTools;
 import com.spbsu.ml.cli.output.printers.MulticlassProgressPrinter;
 import com.spbsu.ml.data.set.VecDataSet;
@@ -24,6 +25,7 @@ import com.spbsu.ml.factorization.impl.StochasticALS;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.func.FuncJoin;
 import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.loss.LogL2;
 import com.spbsu.ml.loss.SatL2;
 import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
@@ -56,7 +58,7 @@ public class GradFacTest extends TestCase {
       pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS),
           VecTools.toIntSeq(pool.target(L2.class).target)
       );
-      final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100500), 0.8, 0.5);
+      final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100500), 0.9, 0.1);
       learn = new SubPool<>(pool, idxs[0]);
       test = new SubPool<>(pool, idxs[1]);
     }
@@ -184,12 +186,12 @@ public class GradFacTest extends TestCase {
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
         new GradFacMulticlass(
             new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-            new SVDAdapterEjml(1),
+            new ALS(20),
             LogL2.class
         ),
         L2.class,
-        400,
-        7
+        10000,
+        14
     );
     fitModel(boosting);
   }
@@ -202,10 +204,32 @@ public class GradFacTest extends TestCase {
             LogL2.class
         ),
         L2.class,
-        400,
-        7
+        10000,
+        5
     );
     fitModel(boosting);
+  }
+
+  public void testOVR() throws Exception {
+    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
+            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+            2000,
+            5
+    );
+    final VecDataSet vecDataSet = learn.vecData();
+    final LLLogit globalLoss = learn.target(LLLogit.class);
+//    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(learn, test);
+//    boosting.addListener(multiclassProgressPrinter);
+
+    Interval.start();
+    final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+    Interval.stopAndPrint();
+//
+//    Interval.start();
+//    System.out.println(MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false));
+//    System.out.println(MCTools.evalModel(multiclassModel, test, "[TEST] ", false));
+//    Interval.stopAndPrint();
+//    System.out.println(multiclassModel.count + " times");
   }
 
   public void testFMCBoostSALS() throws Exception {
@@ -213,8 +237,8 @@ public class GradFacTest extends TestCase {
             new StochasticALS(new FastRandom(0), 100),
             new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
             L2.class,
-            400,
-            7
+            2500,
+            5
     );
     fitModel(boosting);
   }
@@ -227,7 +251,7 @@ public class GradFacTest extends TestCase {
             SatL2.class
         ),
         L2.class,
-        400,
+        20000,
         7
     );
     fitModel(boosting);
@@ -294,8 +318,8 @@ public class GradFacTest extends TestCase {
             LogL2.class
         ),
         L2.class,
-        400,
-        0.3
+        2000,
+        7
     );
     fitModel(boosting);
   }
@@ -304,16 +328,25 @@ public class GradFacTest extends TestCase {
     final VecDataSet vecDataSet = learn.vecData();
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
     final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(learn, test);
-    boosting.addListener(multiclassProgressPrinter);
+//    boosting.addListener(multiclassProgressPrinter);
 
+    Interval.start();
     final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+    Interval.stopAndPrint();
 
-    final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
-    final MultiClassModel multiclassModel = new MultiClassModel(joined);
-    final String learnResult = MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false);
-    final String testResult = MCTools.evalModel(multiclassModel, test, "[TEST] ", false);
-    System.out.println(learnResult);
-    System.out.println(testResult);
+    final MultiClassModel multiclassModel;
+    if (ensemble.last() instanceof FuncJoin) {
+      final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
+      multiclassModel = new MultiClassModel(joined);
+    }
+    else
+      multiclassModel = new MultiClassModel(ensemble);
+
+    Interval.start();
+    System.out.println(MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false));
+    System.out.println(MCTools.evalModel(multiclassModel, test, "[TEST] ", false));
+    Interval.stopAndPrint();
+    System.out.println(multiclassModel.count + " times");
   }
 
   private void fitModel(final FMCBoosting boosting) {
