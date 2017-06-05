@@ -48,22 +48,16 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
 
   @Override
   public int ydim() {
-    return models[ArrayTools.max(models, new Evaluator<F>() {
-      @Override
-      public double value(final F f) {
-        return f.ydim();
-      }
-    })].ydim();
+    return models[ArrayTools.max(models, Trans::ydim)].ydim();
   }
 
   @Override
   public Trans gradient() {
-    return new Ensemble<Trans>(ArrayTools.map(models, Trans.class, new Computable<F, Trans>() {
-      @Override
-      public Trans compute(final F argument) {
-        return argument.gradient();
-      }
-    }), weights);
+    return new Ensemble<>(ArrayTools.map(models, Trans.class, Trans::gradient), weights);
+  }
+
+  public Class<? extends Trans> componentType() {
+    return models.length > 0 ? models[0].getClass() : Trans.class;
   }
 
   @Override
@@ -82,10 +76,7 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
 
     final Ensemble ensemble = (Ensemble) o;
 
-    if (!Arrays.equals(models, ensemble.models)) {
-      return false;
-    }
-    return weights.equals(ensemble.weights);
+    return Arrays.equals(models, ensemble.models) && weights.equals(ensemble.weights);
   }
 
   @Override

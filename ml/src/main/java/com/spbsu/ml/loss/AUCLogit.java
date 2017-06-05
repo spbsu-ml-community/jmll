@@ -111,7 +111,8 @@ public class AUCLogit extends Func.Stub implements TargetFunc {
       double TPR = 1.0 * truePositive / allPositive;
       double FPR = 1.0 * falsePositive / allNegative;
       out.append(String.valueOf(FPR)).append("\t")
-          .append(String.valueOf(TPR)).append("\n");
+          .append(String.valueOf(TPR)).append("\t")
+          .append(String.valueOf(x.get(order[curPos - 1]))).append("\n");
 
       sumT += (TPR + prevTPR)/2 * (prevFPR - FPR);
       sum += TPR * (prevFPR - FPR);
