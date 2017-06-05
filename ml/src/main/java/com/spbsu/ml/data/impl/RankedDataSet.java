@@ -13,7 +13,7 @@ import com.spbsu.ml.data.stats.OrderByFeature;
 public class RankedDataSet {
   private final DataSet base;
   private final float[][] ranks;
-  final OrderByFeature byFeature;
+  public final OrderByFeature byFeature;
 
   public RankedDataSet(DataSet base) {
     this.base = base;

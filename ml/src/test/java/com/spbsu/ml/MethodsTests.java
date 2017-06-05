@@ -664,7 +664,29 @@ public void testElasticNetBenchmark() {
 
     public void testGreedyTDSimpleRegionBoost() {
         final GradientBoosting<L2> boosting = new GradientBoosting(
-                new BootstrapOptimization<>(new GreedyTDSimpleRegion(GridTools.medianGrid(learn.vecData(), 32), 7, 1e-3), rng), L2.class, 3000, 0.005);
+                new BootstrapOptimization<>(new GreedyTDSimpleRegion<>(GridTools.medianGrid(learn.vecData(), 32), 7, 1e-3), rng), L2.class, 3000, 0.005);
+        final Action counter = new ProgressHandler() {
+            int index = 0;
+
+            @Override
+            public void invoke(Trans partial) {
+                System.out.print("\n" + index++);
+            }
+        };
+        final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
+        final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
+        final Action modelPrinter = new ModelPrinter();
+        final Action qualityCalcer = new QualityCalcer();
+        boosting.addListener(counter);
+        boosting.addListener(learnListener);
+        boosting.addListener(validateListener);
+        boosting.addListener(qualityCalcer);
+        boosting.fit(learn.vecData(), learn.target(L2.class));
+    }
+
+    public void testGreedyTDProbRegionBoost() {
+        final GradientBoosting<L2> boosting = new GradientBoosting(
+                new BootstrapOptimization<>(new GreedyTDProbRegion(GridTools.medianGrid(learn.vecData(), 32), 7, 1e-3, 1, 1), rng), L2.class, 3000, 0.005);
         final Action counter = new ProgressHandler() {
             int index = 0;
 
