@@ -2,6 +2,7 @@ package com.spbsu.ml.cli.modes.impl;
 
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
+import com.spbsu.commons.math.Func;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.seq.CharSeqBuilder;
 import com.spbsu.ml.BFGrid;
@@ -11,6 +12,7 @@ import com.spbsu.ml.cli.modes.AbstractMode;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
+import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.io.ModelsSerializationRepository;
 import com.spbsu.ml.meta.DSItem;
 import org.apache.commons.cli.CommandLine;
@@ -59,9 +61,14 @@ public class Apply extends AbstractMode {
         value.append('\t');
 //        value.append(MathTools.CONVERSION.convert(vecDataSet.parent().at(i), CharSequence.class));
 //        value.append('\t');
-        value.append(MathTools.CONVERSION.convert(vecDataSet.at(i), CharSequence.class));
-        value.append('\t');
-        value.append(MathTools.CONVERSION.convert(model.compute(vecDataSet.at(i)), CharSequence.class));
+//        value.append(MathTools.CONVERSION.convert(vecDataSet.at(i), CharSequence.class));
+//        value.append('\t');
+        if (model instanceof Func)
+          value.append(MathTools.CONVERSION.convert(((Func) model).value(vecDataSet.at(i)), CharSequence.class));
+        else if (model instanceof Ensemble && Func.class.isAssignableFrom(((Ensemble) model).componentType()))
+          value.append(MathTools.CONVERSION.convert(((Ensemble) model).compute(vecDataSet.at(i)).get(0), CharSequence.class));
+        else
+          value.append(MathTools.CONVERSION.convert(model.compute(vecDataSet.at(i)), CharSequence.class));
         writer.append(value).append('\n');
       }
     }
