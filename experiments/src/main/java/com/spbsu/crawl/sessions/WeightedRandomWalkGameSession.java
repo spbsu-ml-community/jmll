@@ -1,5 +1,9 @@
 package com.spbsu.crawl.sessions;
 
+import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
+import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.crawl.bl.GameSession;
@@ -11,8 +15,12 @@ import com.spbsu.crawl.bl.events.MapListener;
 import com.spbsu.crawl.bl.map.CrawlGameSessionMap;
 import com.spbsu.crawl.bl.map.Position;
 import com.spbsu.crawl.bl.map.TerrainType;
+import com.spbsu.crawl.bl.GameSession;
+import com.spbsu.crawl.bl.Hero;
+import com.spbsu.crawl.learning.features.Feature;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.io.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -67,7 +75,6 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
   }
 
   private TIntObjectHashMap<CellStats> stats = new TIntObjectHashMap<>();
-
 
   private int idx(int x, int y) {
     return x * 1000000 + y;
@@ -193,6 +200,34 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
   }
 
   @Override
+  public void features(List<Feature> features) {
+    final VecBuilder builder = new VecBuilder();
+    for (Feature feature : features) {
+      for (int i = 0; i < feature.dim(); i++)
+        builder.add((double)feature.at(i));
+    }
+    try {
+      final Vec vec = builder.build();
+//      if (vec.dim() > 5)
+//        System.out.println();
+      featuresWriter.append(TypeConvertersCollection.ROOT.convert(vec, String.class));
+      featuresWriter.append('\n');
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void finish() {
+    try {
+      featuresWriter.flush();
+      featuresWriter.close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public void tile(final Position position, final TerrainType type) {
     crawlMap.tile(position.x(), position.y(), type);
   }
@@ -216,5 +251,12 @@ public class WeightedRandomWalkGameSession implements GameSession, MapListener, 
   @Override
   public void hp(int hp) {
     this.hp = hp;
+  }
+
+  Writer featuresWriter;
+  public WeightedRandomWalkGameSession(File file) throws IOException {
+    //noinspection ResultOfMethodCallIgnored
+    file.createNewFile();
+    featuresWriter = new OutputStreamWriter(new FileOutputStream(file));
   }
 }

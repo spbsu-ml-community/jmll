@@ -1,6 +1,9 @@
 package com.spbsu.crawl.bl;
 
 import com.spbsu.crawl.bl.events.SystemViewListener;
+import com.spbsu.crawl.learning.features.Feature;
+
+import java.util.List;
 
 /**
  * Experts League
@@ -14,4 +17,6 @@ public interface GameSession extends SystemViewListener {
 
   Hero.Stat chooseStatForUpgrade();
 
+  void features(List<Feature> features);
+  void finish();
 }

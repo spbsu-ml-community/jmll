@@ -25,8 +25,9 @@ public class StartCrawl {
       bash.exec("bash ./run_server.sh");
       Thread.sleep(1000);
       final WSEndpoint endpoint = new WSEndpoint(new URI("ws://localhost:8080/socket"));
-      final WeightedRandomWalkGameSession session = new WeightedRandomWalkGameSession();
+      int index = 0;
       while(true) {
+        final WeightedRandomWalkGameSession session = new WeightedRandomWalkGameSession(new File("session-" + (index++) + ".txt"));
         final GameProcess gameProcess = new GameProcess(endpoint, session);
         gameProcess.run();
         log.info("Session finished with score: " + gameProcess.score());

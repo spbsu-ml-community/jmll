@@ -29,6 +29,7 @@ public class LearnDataBuilder implements PlayerActionListener {
     }
     builders.add(new StatusFeaturesBuilder(catFeaturesMap));
     builders.add(new HeroFeaturesBuilder());
+    builders.add(new TickFeatureBuilder());
   }
 
   @Override
@@ -48,5 +49,9 @@ public class LearnDataBuilder implements PlayerActionListener {
 
   public void endGame() {
     catFeaturesMap.save(new File(STATUS_DICT_FILE));
+  }
+
+  public List<Feature> features() {
+    return builders.stream().flatMap(FeaturesBuilder::tickFeatures).collect(Collectors.toList());
   }
 }
