@@ -1,13 +1,21 @@
 package com.spbsu.ml.loss.blockwise;
 
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecIterator;
+import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.util.ArrayTools;
+import com.spbsu.commons.util.ThreadTools;
 import com.spbsu.ml.BlockwiseFuncC1;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 
+import java.util.concurrent.CountDownLatch;
+
+import static com.spbsu.commons.math.vectors.VecTools.assign;
+import static com.spbsu.commons.math.vectors.VecTools.exp;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
@@ -42,16 +50,27 @@ public class BlockwiseMLLLogit extends BlockwiseFuncC1.Stub implements TargetFun
   @Override
   public void gradient(final Vec pointBlock, final Vec result, final int blockId) {
     final int blockSize = blockSize();
-    double sum = 0.0;
-    for (int c = 0; c < blockSize; c++) {
-      sum += exp(pointBlock.get(c));
-    }
+    assign(result, pointBlock);
+    exp(result);
+    final double sum = VecTools.sum(result);
     final int pointClass = target.at(blockId);
     for (int c = 0; c < blockSize; c++) {
       if (pointClass == c)
-        result.set(c, -(1. + sum - exp(pointBlock.get(c))) / (1. + sum));
+        result.set(c, -1 + result.get(c) / (1. + sum));
       else
-        result.set(c, exp(pointBlock.get(c))/ (1. + sum));
+        result.set(c, result.get(c)/ (1. + sum));
+    }
+  }
+
+  public void gradient(final Vec result, final int blockId) {
+    final int blockSize = blockSize();
+    final double sum = VecTools.sum(result);
+    final int pointClass = target.at(blockId);
+    for (int c = 0; c < blockSize; c++) {
+      if (pointClass == c)
+        result.set(c, -1 + result.get(c) / (1. + sum));
+      else
+        result.set(c, result.get(c)/ (1. + sum));
     }
   }
 
@@ -70,6 +89,30 @@ public class BlockwiseMLLLogit extends BlockwiseFuncC1.Stub implements TargetFun
       result += log(1. / (1. + sum));
     }
     return result;
+  }
+
+  @Override
+  public Vec gradientTo(Vec x, Vec to) {
+    assign(to, x);
+    exp(to);
+    final int blockSize = blockSize();
+    final Mx result = new VecBasedMx(blockSize, to);
+    final CountDownLatch latch = new CountDownLatch(ThreadTools.COMPUTE_UNITS - 1);
+    for (int t = 0; t < ThreadTools.COMPUTE_UNITS - 1; t++) {
+      final int finalT = t;
+      pool.execute(() -> {
+        for (int i = finalT; i < result.rows(); i += ThreadTools.COMPUTE_UNITS - 1) {
+          gradient(result.row(i), i);
+        }
+        latch.countDown();
+      });
+    }
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    return to;
   }
 
   @Override
