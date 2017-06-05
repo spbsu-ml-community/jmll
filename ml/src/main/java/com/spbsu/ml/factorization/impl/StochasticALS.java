@@ -43,11 +43,12 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
     int k = 0;
     { // iterations
       double a;
+      double u_hat;
       do {
         k++;
         final int i = rng.nextInt(m);
         final Vec row = X.row(i);
-        final double u_hat = multiply(row, v);
+        u_hat = multiply(row, v);
         a = 0;
         for (int j = 0; j < n; j++) {
           final double val = gamma * (u_hat * (v.get(j) * u_hat - row.get(j))) / Math.log(1 + k);
@@ -57,9 +58,10 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
         }
         scale(v, 1 / norm(v));
       }
-      while (a > 0.001 * gamma);
+      while (a > 0.2 * gamma * u_hat * u_hat);
     }
 
+//    System.out.println("SALS iterations: " + k);
     scale(v, 1 / norm(v));
     final Vec u = new ArrayVec(m);
     for (int i = 0; i < m; i++) {

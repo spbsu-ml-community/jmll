@@ -43,9 +43,10 @@ public class GradientBoosting<GlobalLoss extends TargetFunc> extends WeakListene
     final Vec cursor = new ArrayVec(globalLoss.xdim());
     final List<Trans> weakModels = new ArrayList<>(iterationsCount);
     final Trans gradient = globalLoss.gradient();
+    final Vec gradientValueAtCursor = new ArrayVec(globalLoss.xdim());
 
     for (int t = 0; t < iterationsCount; t++) {
-      final Vec gradientValueAtCursor = gradient.trans(cursor);
+      gradient.transTo(cursor, gradientValueAtCursor);
       final L2 localLoss = DataTools.newTarget(factory, gradientValueAtCursor, learn);
       final Trans weakModel = weak.fit(learn, localLoss);
       weakModels.add(weakModel);
