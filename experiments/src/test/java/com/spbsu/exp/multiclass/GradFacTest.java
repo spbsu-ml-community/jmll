@@ -346,7 +346,7 @@ public class GradFacTest extends TestCase {
     System.out.println(MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false));
     System.out.println(MCTools.evalModel(multiclassModel, test, "[TEST] ", false));
     Interval.stopAndPrint();
-    System.out.println(multiclassModel.count + " times");
+    System.out.println(multiclassModel + " times");
   }
 
   private void fitModel(final FMCBoosting boosting) {
