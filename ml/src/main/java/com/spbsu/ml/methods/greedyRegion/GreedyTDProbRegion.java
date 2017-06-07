@@ -76,6 +76,7 @@ public class GreedyTDProbRegion<Loss extends WeightedLoss<? extends L2>> extends
         int betasSize = 1;
 
         double previousScore = -1;
+        double newScore = -1;
 
         for (int level = 1; level < depth; level++) {
             final L2 curLoss = DataTools.newTarget(loss.base().getClass(), target, learn);
@@ -83,16 +84,7 @@ public class GreedyTDProbRegion<Loss extends WeightedLoss<? extends L2>> extends
 
             final BFOptimizationSimpleRegion current = new BFOptimizationSimpleRegion(bds, wCurLoss, points);
 
-            double newScore = getScore(current.total(), 0);
-//            if (previousScore != -1 && newScore > previousScore) {
-//                break;
-//            }
-
-            System.out.println(previousScore);
-
             betasSize = level + 1;
-
-            previousScore = newScore;
 
             final double[] scores = new double[grid.size()];
             final double[] solution = new double[grid.size()];
@@ -144,7 +136,18 @@ public class GreedyTDProbRegion<Loss extends WeightedLoss<? extends L2>> extends
             if (bestSplit < 0)
                 break;
 
+
             final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
+
+            newScore = scores[bestSplitBF.bfIndex];
+
+            if (previousScore != -1 && newScore > previousScore) {
+                break;
+            }
+
+            System.out.println(newScore);
+            previousScore = newScore;
+
             final boolean bestSplitMask = isRight[bestSplitBF.bfIndex];
 
             betas[level] = solution[bestSplit];
@@ -166,13 +169,14 @@ public class GreedyTDProbRegion<Loss extends WeightedLoss<? extends L2>> extends
                     target.adjust(points[i], -p[i]*betas[level]);
                 }
 
-                points = sampleAndChangeWeights(p, weights);
+                points = sampleAndChangeWeights(p, weights, points);
 
             }
 
             conditions.add(bestSplitBF);
             usedBF[bestSplitBF.bfIndex] = true;
             mask.add(bestSplitMask);
+
         }
 
         final boolean[] masks = new boolean[mask.size()];
@@ -280,36 +284,36 @@ public class GreedyTDProbRegion<Loss extends WeightedLoss<? extends L2>> extends
 
     private Pair<Double, Double> getStat(double[] p, Vec target, double[] w) {
         double py = 0;
-        double py2 = 0;
+        double y2 = 0;
         double psum = 0;
 
         double score = 0;
         double beta = 0;
 
         for (int i = 0; i < p.length; i++) {
-            py2 += p[i]*w[i]*target.at(i)*target.get(i);
+            y2 += w[i]*target.at(i)*target.get(i);
             py += w[i]*target.at(i)*p[i];
             psum += w[i]*p[i];
         }
 
         beta = py/psum;
-        score = py2 - py*py/psum;
+        score = (y2 + beta*beta*psum - 2*beta*py)*MathTools.sqr(psum / (psum - 1));
 
         return new Pair<>(beta, score);
     }
 
-    private int[] sampleAndChangeWeights(double p[], double weights[]) {
+    private int[] sampleAndChangeWeights(double p[], double weights[], int points[]) {
         final TIntArrayList result = new TIntArrayList(weights.length);
-        for (int i = 0; i < weights.length; i++) {
-            int cntPnts = (int)weights[i];
+        for (int i = 0; i < points.length; i++) {
+            int cntPnts = (int)weights[points[i]];
             for (int j = 0; j < cntPnts; j++) {
                 double v = rnd.nextDouble();
-                if (v > p[i]) {
-                    weights[i] -= 1;
+                if (v > p[points[i]]) {
+                    weights[points[i]] -= 1;
                 }
             }
-            if (weights[i] > MathTools.EPSILON) {
-                result.add(i);
+            if (weights[points[i]] > MathTools.EPSILON) {
+                result.add(points[i]);
             }
         }
         return result.toArray();

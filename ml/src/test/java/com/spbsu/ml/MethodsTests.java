@@ -686,7 +686,7 @@ public void testElasticNetBenchmark() {
 
     public void testGreedyTDProbRegionBoost() {
         final GradientBoosting<L2> boosting = new GradientBoosting(
-                new BootstrapOptimization<>(new GreedyTDProbRegion(GridTools.medianGrid(learn.vecData(), 32), 7, 1e-3, 1, 1), rng), L2.class, 3000, 0.005);
+                new BootstrapOptimization<>(new GreedyTDProbRegion(GridTools.medianGrid(learn.vecData(), 32), 7, 1e-3, 2, 2), rng), L2.class, 3000, 0.005);
         final Action counter = new ProgressHandler() {
             int index = 0;
 
