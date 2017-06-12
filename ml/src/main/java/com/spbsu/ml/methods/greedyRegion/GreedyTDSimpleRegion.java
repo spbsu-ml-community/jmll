@@ -24,130 +24,102 @@ import java.util.List;
  * Created by au-rikka on 29.04.17.
  */
 public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> extends VecOptimization.Stub<Loss> {
-    protected final BFGrid grid;
-    private final int depth;
-    private final double lambda;
+  protected final BFGrid grid;
+  private final int depth;
+  private final double lambda;
 
-    public GreedyTDSimpleRegion(final BFGrid grid,
-                                final int depth,
-                                final double lambda) {
-        this.grid = grid;
-        this.depth = depth;
-        this.lambda = lambda;
-    }
+  public GreedyTDSimpleRegion(final BFGrid grid,
+                              final int depth,
+                              final double lambda) {
+    this.grid = grid;
+    this.depth = depth;
+    this.lambda = lambda;
+  }
 
-    @Override
-    public LinearRegion fit(final VecDataSet learn, final Loss loss) {
+  @Override
+  public LinearRegion fit(final VecDataSet learn, final Loss loss) {
 
-        Vec target = VecTools.copy(loss.target());
-        double weights[] = extractWeights(loss);
+    Vec target = VecTools.copy(loss.target());
+    double weights[] = extractWeights(loss);
 
-        double betas[] = new double[depth];
+    double betas[] = new double[depth];
 
-        final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(depth);
-        final List<Boolean> mask = new ArrayList<>();
-        final boolean[] usedBF = new boolean[grid.size()];
+    final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(depth);
+    final List<Boolean> mask = new ArrayList<>();
+    final boolean[] usedBF = new boolean[grid.size()];
 
-        int[] points = learnPoints(loss, learn);
+    int[] points = learnPoints(loss, learn);
 
-        final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+    final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 
 //        double currentScore = Double.POSITIVE_INFINITY;
 
-        WeightedLoss.Stat stat = loss.statsFactory().create();
-        for (int i = 0; i < points.length; i++) {
-            stat.append(points[i], 1);
-        }
-        betas[0] = loss.bestIncrement(stat);
-        for (int i = 0; i < points.length; i++) {
-            target.adjust(points[i], -betas[0]);
-        }
+    WeightedLoss.Stat stat = loss.statsFactory().create();
+    for (int i = 0; i < points.length; i++) {
+      stat.append(points[i], 1);
+    }
+    betas[0] = loss.bestIncrement(stat);
+    for (int i = 0; i < points.length; i++) {
+      target.adjust(points[i], -betas[0]);
+    }
 
-        int betasSize = 1;
+    int betasSize = 1;
 
-        for (int level = 1; level < depth; level++) {
-            betasSize = level + 1;
+    for (int level = 1; level < depth; level++) {
+      betasSize = level + 1;
 //            weights = sample();
-            final L2 curLoss = DataTools.newTarget(loss.base().getClass(), target, learn);
-            final WeightedLoss<L2> wCurLoss = new WeightedLoss<L2>(curLoss, weights);
+      final L2 curLoss = DataTools.newTarget(loss.base().getClass(), target, learn);
+      final WeightedLoss<L2> wCurLoss = new WeightedLoss<>(curLoss, weights);
 
-            final BFOptimizationSimpleRegion current = new BFOptimizationSimpleRegion(bds, wCurLoss, points);
+      final BFOptimizationSimpleRegion current = new BFOptimizationSimpleRegion(bds, wCurLoss, points);
 
-            final double[] scores = new double[grid.size()];
-            final double[] solution = new double[grid.size()];
-            final boolean[] isRight = new boolean[grid.size()];
+      final double[] scores = new double[grid.size()];
+      final double[] solution = new double[grid.size()];
+      final boolean[] isRight = new boolean[grid.size()];
 //            final FastRandom rng = new FastRandom();
-            current.visitAllSplits((bf, left, right) -> {
-                if (usedBF[bf.bfIndex]) {
-                    scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
-                    solution[bf.bfIndex] = -1;
-                } else {
-                    final double leftWeight = weight(left);
-                    final double rightWeight = weight(right);
-                    final double minExcluded = Math.min(leftWeight, rightWeight);
+      current.visitAllSplits((bf, left, right) -> {
+        final double leftBeta = wCurLoss.bestIncrement((WeightedLoss.Stat) left);
+        final double rightBeta = wCurLoss.bestIncrement((WeightedLoss.Stat) right) ;
+        final double leftScore = getScore(left, leftBeta) + getScore(right, 0);
+        final double rightScore = getScore(left, 0) + getScore(right, rightBeta);
+        scores[bf.bfIndex] = Math.min(leftScore, rightScore);
+        isRight[bf.bfIndex] = scores[bf.bfIndex] == rightScore;
+        solution[bf.bfIndex] = isRight[bf.bfIndex] ? rightBeta : leftBeta;
+      });
 
-                    final double leftScore;
-                    double leftBeta = -1;
-
-                    double rightBeta = -1;
-                    final double rightScore;
-
-
-                    if (minExcluded > 3) {
-                        leftBeta = wCurLoss.bestIncrement((WeightedLoss.Stat) left);
-                        leftScore = getScore(left, leftBeta) + getScore(right, 0);
-                    } else {
-                        leftScore = Double.POSITIVE_INFINITY;
-                    }
-
-                    if (minExcluded > 3) {
-                        rightBeta = wCurLoss.bestIncrement((WeightedLoss.Stat) right);
-                        rightScore = getScore(right, rightBeta) + getScore(left, 0);
-                    } else {
-                        rightScore = Double.POSITIVE_INFINITY;
-                    }
-                    scores[bf.bfIndex] = leftScore > rightScore ? rightScore : leftScore;
-                    isRight[bf.bfIndex] = leftScore > rightScore;
-                    solution[bf.bfIndex] = isRight[bf.bfIndex] ? rightBeta : leftBeta;
-                }
-            });
-
-            final int bestSplit = ArrayTools.min(scores);
-            if (bestSplit < 0)
-                break;
+      final int bestSplit = ArrayTools.min(scores);
+      if (bestSplit < 0)
+        break;
 
 //            if ((scores[bestSplit] >= currentScore))
 //                break;
 
-            final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
-            final boolean bestSplitMask = isRight[bestSplitBF.bfIndex];
+      final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
+      final boolean bestSplitMask = isRight[bestSplitBF.bfIndex];
 
-            betas[level] = solution[bestSplit];
+      betas[level] = solution[bestSplit];
 
-            if (level < (depth - 1)) {
+      if (level < (depth - 1)) {
+        current.split(bestSplitBF, bestSplitMask);
+        int[] nextPoints = current.getPoints();
+        points = nextPoints;
 
-                current.split(bestSplitBF, bestSplitMask);
-                points = current.getPoints();
+        double currentScore = getScore1(current.total(), betas[level]);
+//        if (currentScore >= 0)
+//          break;
 
-                double previousScore = getScore(current.total(), 0);
-                double currentScore = getScore(current.total(), betas[level]);
-                if (previousScore <= currentScore) {
-                    //                   betasSize -= 1;
-                    break;
-                }
+//        System.out.println(currentScore);
 
-                System.out.println(currentScore);
+        stat = wCurLoss.statsFactory().create();
+        for (int i = 0; i < nextPoints.length; i++) {
+          stat.append(points[i], 1);
+        }
+        double a = wCurLoss.bestIncrement(stat);
+        assert (Math.abs(a - betas[level]) < MathTools.EPSILON);
 
-                stat = wCurLoss.statsFactory().create();
-                for (int i = 0; i < current.getPoints().length; i++) {
-                    stat.append(points[i], 1);
-                }
-                double a = wCurLoss.bestIncrement(stat);
-                assert (Math.abs(a - betas[level]) < MathTools.EPSILON);
-
-                for (int i = 0; i < points.length; i++) {
-                    target.adjust(points[i], -betas[level]);
-                }
+        for (int i = 0; i < points.length; i++) {
+          target.adjust(points[i], -betas[level]);
+        }
 
 //                stat = wCurLoss.statsFactory().create();
 //                for (int i = 0; i < current.getPoints().length; i++) {
@@ -156,61 +128,66 @@ public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> exten
 //                double a2 = wCurLoss.bestIncrement(stat);
 //                assert (Math.abs(a2) < MathTools.EPSILON);
 
-            }
+      }
 
-            conditions.add(bestSplitBF);
-            usedBF[bestSplitBF.bfIndex] = true;
-            mask.add(bestSplitMask);
-        }
+      conditions.add(bestSplitBF);
+      usedBF[bestSplitBF.bfIndex] = true;
+      mask.add(bestSplitMask);
+    }
 
-        final boolean[] masks = new boolean[mask.size()];
-        for (int i = 0; i < masks.length; i++) {
-            masks[i] = mask.get(i);
-        }
+    final boolean[] masks = new boolean[mask.size()];
+    for (int i = 0; i < masks.length; i++) {
+      masks[i] = mask.get(i);
+    }
 
 //
-        final double bias = betas[0];
-        final double[] values = new double[betasSize - 1];
-        System.arraycopy(betas, 1, values, 0, values.length);
+    final double bias = betas[0];
+    final double[] values = new double[betasSize - 1];
+    System.arraycopy(betas, 1, values, 0, values.length);
 
-        return new LinearRegion(conditions, masks, bias, values);
-    }
+    return new LinearRegion(conditions, masks, bias, values);
+  }
 
-    private double[] extractWeights(Loss loss) {
-        double[] weights = new double[loss.dim()];
-        for (int i = 0; i < loss.dim(); i++) {
-            weights[i] = loss.weight(i);
-        }
-        return weights;
+  private double[] extractWeights(Loss loss) {
+    double[] weights = new double[loss.dim()];
+    for (int i = 0; i < loss.dim(); i++) {
+      weights[i] = loss.weight(i);
     }
+    return weights;
+  }
 
-    private int[] learnPoints(Loss loss, VecDataSet ds) {
-        if (loss instanceof WeightedLoss) {
-            return ((WeightedLoss) loss).points();
-        } else
-            return ArrayTools.sequence(0, ds.length());
+  private int[] learnPoints(Loss loss, VecDataSet ds) {
+    if (loss != null) {
+      return loss.points();
     }
+    else
+      return ArrayTools.sequence(0, ds.length());
+  }
 
-    private double weight(final AdditiveStatistics stat) {
-        if (stat instanceof L2.MSEStats) {
-            return ((L2.MSEStats) stat).weight;
-        } else if (stat instanceof WeightedLoss.Stat) {
-            return weight(((WeightedLoss.Stat) stat).inside);
-        } else {
-            throw new RuntimeException("error");
-        }
+  private double weight(final AdditiveStatistics stat) {
+    if (stat instanceof L2.MSEStats) {
+      return ((L2.MSEStats) stat).weight;
     }
+    else if (stat instanceof WeightedLoss.Stat) {
+      return weight(((WeightedLoss.Stat) stat).inside);
+    }
+    else {
+      throw new RuntimeException("error");
+    }
+  }
 
-    private double mean(final AdditiveStatistics stat) {
-        if (stat instanceof L2.MSEStats) {
-            L2.MSEStats curStat = (L2.MSEStats) stat;
-            return curStat.sum / (curStat.weight + 1);
-        } else if (stat instanceof WeightedLoss.Stat) {
-            return mean(((WeightedLoss.Stat) stat).inside);
-        } else {
-            throw new RuntimeException("error");
-        }
+  private double mean(final AdditiveStatistics stat) {
+    if (stat instanceof L2.MSEStats) {
+      L2.MSEStats curStat = (L2.MSEStats) stat;
+      return curStat.sum / (curStat.weight + 1);
     }
+    else if (stat instanceof WeightedLoss.Stat) {
+      return mean(((WeightedLoss.Stat) stat).inside);
+    }
+    else {
+      throw new RuntimeException("error");
+    }
+  }
 
 //    private double getScore(Vec target, int[] points) {
 //        double score = 0;
@@ -220,17 +197,34 @@ public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> exten
 //        return score*MathTools.sqr(points.length/(points.length - 1));
 //    }
 
-    private double getScore(AdditiveStatistics stat, double v) {
-        L2.MSEStats statL2;
-        if (stat instanceof WeightedLoss.Stat) {
-            statL2 = (L2.MSEStats) ((WeightedLoss.Stat) stat).inside;
-        } else if (stat instanceof L2.MSEStats){
-            statL2 = (L2.MSEStats) stat;
-        } else {
-            return -1;
-        }
-        return (statL2.sum2 - 2 * v * statL2.sum + v * v * statL2.weight) * MathTools.sqr(statL2.weight / (statL2.weight - 1));
+  private double getScore(AdditiveStatistics stat, double v) {
+    L2.MSEStats statL2;
+    if (stat instanceof WeightedLoss.Stat) {
+      statL2 = (L2.MSEStats) ((WeightedLoss.Stat) stat).inside;
     }
+    else if (stat instanceof L2.MSEStats) {
+      statL2 = (L2.MSEStats) stat;
+    }
+    else {
+      throw new RuntimeException("Unsupported loss");
+    }
+    return statL2.weight > 1 ? (statL2.sum2 - 2 * v * statL2.sum + v * v * statL2.weight) * MathTools.sqr(statL2.weight / (statL2.weight - 1)) : Double.POSITIVE_INFINITY;
+  }
+
+  private double getScore1(AdditiveStatistics stat, double v) {
+    L2.MSEStats statL2;
+    if (stat instanceof WeightedLoss.Stat) {
+      statL2 = (L2.MSEStats) ((WeightedLoss.Stat) stat).inside;
+    }
+    else if (stat instanceof L2.MSEStats) {
+      statL2 = (L2.MSEStats) stat;
+    }
+    else {
+      throw new RuntimeException("Unsupported loss");
+    }
+    double weight = statL2.weight;
+    return statL2.weight > 2 ? -v * statL2.sum * statL2.weight * (statL2.weight - 2) / (weight * weight - 3 * weight + 1) : 0;// * (1. + 2 * Math.log(1 + weight)) : 0;/
+  }
 
 
 //    private WeightedLoss.Stat totalStat(final WeightedLoss loss, final ) {

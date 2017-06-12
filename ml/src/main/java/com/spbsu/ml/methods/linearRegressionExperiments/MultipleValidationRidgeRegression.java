@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.spbsu.commons.math.vectors.VecTools.distanceL2;
 import static com.spbsu.commons.math.vectors.VecTools.l2;
 
 /**
@@ -107,7 +108,7 @@ public class MultipleValidationRidgeRegression {
                 final Mx data = validationDs[ind].data();
                 if (data.rows() != 0) {
                   Vec predictions = model.transAll(data);
-                  scores[index] = l2(predictions, valLoss[ind].target) / data.rows();
+                  scores[index] = distanceL2(predictions, valLoss[ind].target) / data.rows();
                 }
               }
               latch.countDown();

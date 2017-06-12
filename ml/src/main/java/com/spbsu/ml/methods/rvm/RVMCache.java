@@ -83,7 +83,7 @@ class RVMCache {
         denum += alpha[index] * sigma.get(i++);
       }
     }
-    return VecTools.l2(predictions, target) / denum;
+    return VecTools.distanceL2(predictions, target) / denum;
   }
 
 
