@@ -293,4 +293,19 @@ public class Pool<I extends DSItem> {
     //noinspection unchecked
     return (T)features[findex].second.at(iindex);
   }
+
+  public TargetFunc targetByName(String metricName) {
+    final String loss;
+    String name = null;
+    if (metricName.contains("(")) { // has taget name
+      final int nameIndex = metricName.indexOf("(") + 1;
+      loss = metricName.substring(0, nameIndex);
+      name = metricName.substring(nameIndex + 1, metricName.length() - 1);
+    }
+    else loss = metricName;
+
+    final Class<? extends TargetFunc> lossFunc = DataTools.targetByName(loss);
+
+    return name != null ? target(name, lossFunc) : target(lossFunc);
+  }
 }

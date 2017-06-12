@@ -16,7 +16,13 @@ public class Runner {
 
     final String className = args[0];
     try {
-      final Class<?> runClass = Class.forName("com.spbsu.exp." + className);
+      Class<?> runClass;
+      try {
+        runClass = Class.forName("com.spbsu.exp." + className);
+      }
+      catch (ClassNotFoundException cnfe) {
+        runClass = Class.forName(className);
+      }
       final Method mainMethod = runClass.getDeclaredMethod("main", String[].class);
       final String[] methodArgs = Arrays.copyOfRange(args, 1, args.length);
       mainMethod.invoke(null, (Object)methodArgs);

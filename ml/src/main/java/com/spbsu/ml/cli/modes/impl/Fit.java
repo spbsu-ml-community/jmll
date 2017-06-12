@@ -98,10 +98,10 @@ public class Fit extends AbstractMode {
     if (metricNames != null) {
       metrics = new Func[metricNames.length];
       for (int i = 0; i < metricNames.length; i++) {
-        metrics[i] = test.target(DataTools.targetByName(metricNames[i]));
+        metrics[i] = test.targetByName(metricNames[i]);
       }
     } else {
-      metrics = new Func[]{test.target(DataTools.targetByName(target))};
+      metrics = new Func[]{test.targetByName(target)};
     }
 
 
