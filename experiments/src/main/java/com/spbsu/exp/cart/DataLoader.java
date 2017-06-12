@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 import java.util.zip.GZIPInputStream;
 
 public class DataLoader {
-  static DataFrame bootstrap(DataFrame data, long seed) {
+  static public DataFrame bootstrap(DataFrame data, long seed) {
     FastRandom rnd = new FastRandom(seed);
 
     VecBuilder targetBuilder = new VecBuilder();
@@ -40,7 +40,7 @@ public class DataLoader {
             data.getTestFeatures(), data.getTestTarget());
   }
 
-  static class DataFrame {
+  static public class DataFrame {
     final private VecDataSet learnFeatures;
     final private Vec learnTarget;
     final private VecDataSet testFeatures;
@@ -298,7 +298,7 @@ public class DataLoader {
     }
   }
 
-  static DataFrame readData(TestProcessor processor, String directory, String learnFileName, String testFileName)
+  public static DataFrame readData(TestProcessor processor, String directory, String learnFileName, String testFileName)
           throws IOException {
 
     final Reader inLearn = getReader(learnFileName, directory);
