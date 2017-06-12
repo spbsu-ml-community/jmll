@@ -1,6 +1,7 @@
 package com.spbsu.ml.cli.modes.impl;
 
 import com.spbsu.commons.io.StreamTools;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.BestHolder;
@@ -16,9 +17,10 @@ import com.spbsu.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.spbsu.ml.cli.JMLLCLI.*;
 
@@ -40,10 +42,14 @@ public class CrossValidation extends AbstractMode {
   private static final Logger LOG = Logger.create(CrossValidation.class);
 
   public void run(final CommandLine command) throws MissingArgumentException, IOException {
+
     if (!command.hasOption(LEARN_OPTION)) {
       throw new MissingArgumentException("Please provide 'LEARN_OPTION'");
     }
-    if (!command.hasOption(OPTIMIZATION_OPTION)) {
+
+    final boolean schemeBatchComparision = command.hasOption(LOAD_OPTIMIZATION_SCHEMES_FROM_FILE_OPTION);
+
+    if (!schemeBatchComparision && !command.hasOption(OPTIMIZATION_OPTION)) {
       throw new MissingArgumentException("Please provide 'OPTIMIZATION_OPTION'");
     }
     if (!command.hasOption(CROSS_VALIDATION_OPTION)) {
@@ -74,20 +80,84 @@ public class CrossValidation extends AbstractMode {
 
 
     final String targetClassName = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
-    final String commonScheme = command.getOptionValue(OPTIMIZATION_OPTION);
-
     final KFoldCrossValidation crossValidation = new KFoldCrossValidation(sourcePool, random, foldsCount, targetClassName, methodsBuilder);
-    final double score;
-    if (command.hasOption(RANGES_OPTION)) {
-      final String[][] parametersSpace = ParametersExtractor.parse(command.getOptionValue(RANGES_OPTION));
-      final BestHolder<Object[]> bestHolder = crossValidation.evaluateParametersRange(commonScheme, parametersSpace);
-      score = bestHolder.getScore();
-      LOG.info("Best parameters: " + Arrays.toString(bestHolder.getValue()));
 
+    if (schemeBatchComparision) {
+      if (command.hasOption(RANGES_OPTION)) {
+        throw new RuntimeException("Error: range option is not supported for batch model comparision cv mode");
+      }
+      List<String> schemes = loadSchemesFromFile(command.getOptionValue(LOAD_OPTIMIZATION_SCHEMES_FROM_FILE_OPTION));
+      KFoldCrossValidation.CrossValidationModelComparisonResult result = crossValidation.evaluateSchemesBatch(schemes);
+      dumpResult(result, command.getOptionValue(CROSS_VALIDATION_RESULT_OPTION, DEFAULT_MODELS_COMPARISION_CV_OUTPUT_FILE));
     } else {
-      score = crossValidation.evaluate(commonScheme);
-    }
+      final String commonScheme = command.getOptionValue(OPTIMIZATION_OPTION);
 
-    LOG.info("Final score: " + score);
+      final double score;
+      if (command.hasOption(RANGES_OPTION)) {
+        final String[][] parametersSpace = ParametersExtractor.parse(command.getOptionValue(RANGES_OPTION));
+        final BestHolder<Object[]> bestHolder = crossValidation.evaluateParametersRange(commonScheme, parametersSpace);
+        score = bestHolder.getScore();
+        LOG.info("Best parameters: " + Arrays.toString(bestHolder.getValue()));
+
+      } else {
+        score = crossValidation.evaluate(commonScheme);
+      }
+
+      LOG.info("Final score: " + score);
+    }
+  }
+
+  private void dumpResult(KFoldCrossValidation.CrossValidationModelComparisonResult result, final String fileName) throws IOException {
+    LOG.debug("Schemes");
+    final BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+    final String scheme = result.getSchemes().collect(Collectors.joining("\t"));
+    writer.write("Scheme\n");
+    writer.write(scheme  + "\n");
+    LOG.debug(scheme);
+
+    final String modelScores = Arrays.stream(result.getScores().toArray()).mapToObj(String::valueOf).collect(Collectors.joining("\t"));
+
+    LOG.debug("Scores for models");
+    LOG.debug(modelScores);
+
+    writer.write("scores\n");
+    writer.write(modelScores + "\n");
+
+    LOG.debug("Pairwise scores diffs");
+    final String tsvDiffs = matrixToTsv(result.getPairwiseDiffs());
+    LOG.debug(tsvDiffs);
+    writer.write("scores_diffs\n");
+    writer.write(tsvDiffs);
+
+    LOG.debug("WX test");
+    final String wxTable = matrixToTsv(result.getWxStats());
+    LOG.debug(wxTable);
+    writer.write("wx_test_table\n");
+    writer.write(wxTable);
+    writer.flush();
+    writer.close();
+  }
+
+  private String matrixToTsv(Mx data) {
+    final StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < data.rows(); ++i) {
+      for (int j = 0; j < data.columns(); ++j) {
+        builder.append(data.get(i, j));
+        if (j + 1 != data.columns()) {
+          builder.append("\t");
+        }
+      }
+      builder.append("\n");
+    }
+    return builder.toString();
+  }
+
+  private List<String> loadSchemesFromFile(String file) {
+    try {
+      final BufferedReader reader = new BufferedReader(new FileReader(file));
+      return reader.lines().collect(Collectors.toList());
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
