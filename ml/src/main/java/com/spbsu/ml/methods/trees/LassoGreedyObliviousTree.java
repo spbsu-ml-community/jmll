@@ -115,8 +115,8 @@ public class LassoGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOpt
     ElasticNetMethod lasso = new ElasticNetMethod(1e-4, alpha, 1.0);
     List<Linear> weightsPath = lasso.fit(compiledLearn.first, compiledLearn.second, nlambda);
     double[] scores = weightsPath.parallelStream().mapToDouble(linear -> {
-      final double testL2 = VecTools.l2(linear.transAll(compiledValidate.first), compiledValidate.second) / compiledValidate.first.rows();
-      final double learnL2 = VecTools.l2(linear.transAll(compiledLearn.first), compiledLearn.second) / compiledLearn.first.rows();
+      final double testL2 = VecTools.distanceL2(linear.transAll(compiledValidate.first), compiledValidate.second) / compiledValidate.first.rows();
+      final double learnL2 = VecTools.distanceL2(linear.transAll(compiledLearn.first), compiledLearn.second) / compiledLearn.first.rows();
       return 0.63 * testL2 + (1-0.63) * learnL2;
     }).toArray();
     int best = 0;

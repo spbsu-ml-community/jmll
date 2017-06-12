@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 
 import com.spbsu.commons.func.Factory;
@@ -87,5 +88,9 @@ public class PoolBuilder implements Factory<Pool<? extends DSItem>> {
   public void newTarget(final JsonTargetMeta meta, final Seq<?> target) {
     meta.associated = this.meta.id();
     this.targets.add(Pair.<JsonTargetMeta, Seq<?>>create(meta, target));
+  }
+
+  public <Item extends DSItem> Stream<Item> items() {
+    return (Stream<Item>) items.stream();
   }
 }

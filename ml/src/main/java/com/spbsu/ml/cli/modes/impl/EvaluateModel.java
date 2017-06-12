@@ -3,7 +3,6 @@ package com.spbsu.ml.cli.modes.impl;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderClassic;
@@ -64,7 +63,7 @@ public class EvaluateModel extends AbstractMode {
     {
       final Mx mx = model.transAll(pool.vecData().data());
       for (final String metricName : command.getOptionValues(METRICS_OPTION)) {
-        final TargetFunc target = pool.target(DataTools.targetByName(metricName));
+        final TargetFunc target = pool.targetByName(metricName);
         target.printResult(mx, System.out);
       }
     }

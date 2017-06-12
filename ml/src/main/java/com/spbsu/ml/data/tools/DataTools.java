@@ -4,9 +4,11 @@ package com.spbsu.ml.data.tools;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.func.Processor;
 import com.spbsu.commons.func.types.SerializationRepository;
@@ -62,11 +64,14 @@ import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.time.DateParser;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.ParseException;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -75,6 +80,7 @@ import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 
 import static com.spbsu.commons.seq.CharSeqTools.lines;
+import static com.spbsu.commons.seq.CharSeqTools.parseDouble;
 import static com.spbsu.commons.seq.CharSeqTools.split;
 
 /**
@@ -326,9 +332,14 @@ public class DataTools {
     jsonFactory.configure(JsonParser.Feature.ALLOW_COMMENTS, false);
     { // meta
       out.append("items").append('\t');
+      final ObjectMapper mapper = new ObjectMapper(jsonFactory);
+      final AnnotationIntrospector introspector =
+          new JaxbAnnotationIntrospector(mapper.getTypeFactory());
       {
         final StringWriter writer = new StringWriter();
         final JsonGenerator generator = jsonFactory.createGenerator(writer);
+
+        mapper.setAnnotationIntrospector(introspector);
         generator.writeStartObject();
         generator.writeStringField("id", pool.meta().id());
         generator.writeStringField("author", pool.meta().author());
@@ -344,7 +355,7 @@ public class DataTools {
       {
         final StringWriter writer = new StringWriter();
         final JsonGenerator generator = jsonFactory.createGenerator(writer);
-        generator.setCodec(new ObjectMapper(jsonFactory));
+        generator.setCodec(mapper);
         generator.writeStartArray();
 
         for (int i = 0; i < pool.size(); i++) {
@@ -573,10 +584,54 @@ public class DataTools {
     out.flush();
   }
 
-  public static void readCSVWithHeader(String file, Consumer<Function<String, Optional<CharSequence>>> processor) {
+  @SuppressWarnings("OptionalGetWithoutIsPresent")
+  public interface RowHandler extends Function<String, Optional<CharSequence>> {
+    default double asDouble(String header) {
+      return CharSeqTools.parseDouble(apply(header).get());
+    }
+
+    default double asDouble(String name, double defaultV) {
+      try {
+        return apply(name).map(CharSeqTools::parseDouble).orElse(defaultV);
+      }
+      catch (IllegalArgumentException iae) {
+        return defaultV;
+      }
+    }
+
+    default int asInt(String header) {
+      return CharSeqTools.parseInt(apply(header).get());
+    }
+
+    default int asInt(String name, int defaultV) {
+      try {
+        return apply(name).map(CharSeqTools::parseInt).orElse(defaultV);
+      }
+      catch (IllegalArgumentException iae) {
+        return defaultV;
+      }
+    }
+
+    Map<String, DateParser> dateParsers = new HashMap<>();
+    default Date asDate(String name, String pattern) {
+      final DateParser parser = dateParsers.compute(pattern, (p, v) -> v != null ? v : FastDateFormat.getInstance(p));
+      try {
+        return parser.parse(apply(name).get().toString());
+      }
+      catch (ParseException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    default String asString(String name) {
+      return apply(name).get().toString();
+    }
+  }
+
+  public static void readCSVWithHeader(String file, Consumer<RowHandler> processor) {
     final TObjectIntMap<String> names = new TObjectIntHashMap<>();
     try {
-      final Stream<CharSeq> lines = lines(new InputStreamReader(new FileInputStream(file), StreamTools.UTF), false);
+      final Stream<CharSeq> lines = lines(StreamTools.openTextFile(file), false);
       final Spliterator<CharSeq> spliterator = lines.spliterator();
       spliterator.tryAdvance(header -> {
         final CharSequence[] headerSplit = CharSeqTools.split(header, ',');
@@ -600,8 +655,8 @@ public class DataTools {
         }
       });
     }
-    catch (FileNotFoundException e) {
-      e.printStackTrace();
+    catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }
