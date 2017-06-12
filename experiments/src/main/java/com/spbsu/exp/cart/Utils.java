@@ -14,8 +14,15 @@ import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.func.Ensemble;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
+import com.spbsu.ml.loss.WeightedLoss;
 import com.spbsu.ml.methods.BootstrapOptimization;
 import com.spbsu.ml.methods.GradientBoosting;
+import com.spbsu.ml.methods.VecOptimization;
+import com.spbsu.ml.methods.greedyRegion.GreedyTDLinearRegion;
+import com.spbsu.ml.methods.greedyRegion.GreedyTDProbRegion;
+import com.spbsu.ml.methods.greedyRegion.GreedyTDSimpleRegion;
+
+import javax.xml.crypto.Data;
 
 public class Utils {
   private static final FastRandom RND = new FastRandom(System.currentTimeMillis());
@@ -183,6 +190,88 @@ public class Utils {
     return validateListener.getMinRMSE();
   }
 
+  static double findBestAUCRegions(final VecOptimization.Stub<WeightedLoss<? extends L2>> weak,
+                                   final DataLoader.DataFrame data, final int iterations, final double step,
+                                   final Class funcClass) {
+
+    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
+            new BootstrapOptimization<L2>(weak, RND), funcClass, iterations, step);
+
+    final Action counter = new ProgressHandler() {
+      int index = 0;
+
+      @Override
+      public void invoke(final Trans partial) {
+        System.out.print("\n" + index++);
+      }
+    };
+    final LLLogit learnTarget = new LLLogit(data.getLearnTarget(), data.getLearnFeatures());
+    final LLLogit testTarget = new LLLogit(data.getTestTarget(), data.getTestFeatures());
+
+    final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
+            data.getLearnTarget());
+    final AUCCalcer aucCalcerTest = new AUCCalcer("\tAUC test:\t", data.getTestFeatures(),
+            data.getTestTarget());
+
+    boosting.addListener(counter);
+    boosting.addListener(aucCalcerLearn);
+    boosting.addListener(aucCalcerTest);
+    boosting.fit(data.getLearnFeatures(), learnTarget);
+    return aucCalcerTest.getMax();
+  }
+
+  static double findBestRMSERegions(final VecOptimization.Stub<WeightedLoss<? extends L2>> weak,
+                                    final DataLoader.DataFrame data, final int iterations, final double step,
+                                    final Class funcClass) {
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+            new BootstrapOptimization<L2>(weak, RND), funcClass, iterations, step);
+    final Action counter = new ProgressHandler() {
+      int index = 0;
+
+      @Override
+      public void invoke(final Trans partial) {
+        System.out.print("\n" + index++);
+      }
+    };
+    final L2 learnTarget = new L2(data.getLearnTarget(), data.getLearnFeatures());
+    final L2 testTarget = new L2(data.getTestTarget(), data.getTestFeatures());
+    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(), learnTarget);
+    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(), testTarget);
+
+    boosting.addListener(counter);
+    boosting.addListener(learnListener);
+    boosting.addListener(validateListener);
+    boosting.fit(data.getLearnFeatures(), learnTarget);
+    return validateListener.getMinRMSE();
+  }
+
+  public static double findBestRMSEGreedyProbRegion(final DataLoader.DataFrame data, final int iterations, final double step,
+                                              final Class funcClass, final double regCoeff, double beta, double alpha) {
+    return findBestRMSERegions(new GreedyTDProbRegion<>(
+                    GridTools.medianGrid(data.getLearnFeatures(), 32), 7, regCoeff, beta, alpha), data,
+    iterations, step, funcClass);
+  }
+
+  public static double findBestRMSEGreedyLinearRegion(final DataLoader.DataFrame data, final int iterations, final double step,
+                                                      final Class funcClass, double regGoeff) {
+    return findBestRMSERegions(new GreedyTDLinearRegion<>(
+                    GridTools.medianGrid(data.getLearnFeatures(), 32), 10, regGoeff), data,
+            iterations, step, funcClass);
+  }
+
+  public static double findBestRMSEGreedySimpleRegion(final DataLoader.DataFrame data, final int iterations, final double step,
+                                                      final Class funcClass, final double regCoeff) {
+    return findBestRMSERegions(new GreedyTDSimpleRegion<>(
+                    GridTools.medianGrid(data.getLearnFeatures(), 32), 7, regCoeff), data,
+            iterations, step, funcClass);
+  }
+
+  public static double findBestAUCGreedySimpleRegion(final DataLoader.DataFrame data, final int iterations, final double step,
+                                                     final Class funcClass, final double regCoeff) {
+    return findBestAUCRegions(new GreedyTDSimpleRegion<>(GridTools.medianGrid(data.getLearnFeatures(), 32), 7, regCoeff), data,
+            iterations, step, funcClass);
+  }
+
   protected static class ScoreCalcer implements ProgressHandler {
     private final String message;
     private final Vec current;
@@ -202,10 +291,10 @@ public class Utils {
       current = new ArrayVec(ds.length());
     }
 
-    double min = 1e10;
+    double mmin = 1e10;
 
     double getMinRMSE() {
-      return min;
+      return mmin;
     }
 
     @Override
@@ -228,9 +317,11 @@ public class Utils {
 
       final double value = target.value(current);
 
-//      if (isWrite) System.out.print(message + " " + value);
-      min = Math.min(value, min);
-//      if (isWrite) System.out.print(" best = " + min);
+      if (isWrite) System.out.print(message + " " + value);
+      mmin = Math.min(value, mmin);
+      if (isWrite) System.out.print(" best = " + mmin);
+      if (message.equals("\ttest:\t"))
+        System.out.print("\n");
     }
   }
 }
