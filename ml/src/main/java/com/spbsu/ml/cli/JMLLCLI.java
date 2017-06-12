@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 @SuppressWarnings("UnusedDeclaration,AccessStaticViaInstance")
 public class JMLLCLI {
   public static final String DEFAULT_TARGET = "L2";
+  public static final String DEFAULT_MODELS_COMPARISION_CV_OUTPUT_FILE = "results";
   public static final String DEFAULT_OPTIMIZATION_SCHEME = "GradientBoosting(local=SatL2, weak=GreedyObliviousTree(depth=6), step=0.02, iterations=1000)";
 
   public static final String LEARN_OPTION = "f";
@@ -28,6 +29,8 @@ public class JMLLCLI {
   public static final String BIN_FOLDS_COUNT_OPTION = "x";
   public static final String GRID_OPTION = "g";
   public static final String OPTIMIZATION_OPTION = "O";
+  public static final String LOAD_OPTIMIZATION_SCHEMES_FROM_FILE_OPTION = "s";
+  public static final String CROSS_VALIDATION_RESULT_OPTION = "R";
 
   public static final String VERBOSE_OPTION = "v";
   public static final String PRINT_PERIOD = "i";
@@ -56,6 +59,8 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("bin-folds-count").withDescription("binarization precision: how many binary features inferred from real one").hasArg().create(BIN_FOLDS_COUNT_OPTION));
     options.addOption(OptionBuilder.withLongOpt("grid").withDescription("file with already precomputed grid").hasArg().create(GRID_OPTION));
     options.addOption(OptionBuilder.withLongOpt("optimization").withDescription("optimization scheme: Strong/Weak or just Strong (" + DEFAULT_OPTIMIZATION_SCHEME + ")").hasArg().create(OPTIMIZATION_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("file-based-optimization").withDescription("optimization schemes in file: Strong/Weak or just Strong").hasArg().create(LOAD_OPTIMIZATION_SCHEMES_FROM_FILE_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("file-with-results").withDescription("result file for cross validation").hasArg().create(CROSS_VALIDATION_RESULT_OPTION));
 
     options.addOption(OptionBuilder.withLongOpt("out").withDescription("output file name").hasArg().create(OUTPUT_OPTION));
     options.addOption(OptionBuilder.withLongOpt("matrixnetbin").withDescription("write model in matrix-net bin format").hasArg(false).create(WRITE_BIN_FORMULA));
