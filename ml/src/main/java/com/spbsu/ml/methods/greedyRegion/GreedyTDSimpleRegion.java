@@ -93,6 +93,7 @@ public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> exten
       if (bestSplit < 0)
         break;
 
+
 //            if ((scores[bestSplit] >= currentScore))
 //                break;
 
@@ -112,6 +113,8 @@ public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> exten
 
 //        System.out.println(currentScore);
 
+        double oldScore = getScoreForStop(target, level);
+
         stat = wCurLoss.statsFactory().create();
         for (int i = 0; i < nextPoints.length; i++) {
           stat.append(points[i], 1);
@@ -121,6 +124,12 @@ public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> exten
 
         for (int i = 0; i < points.length; i++) {
           target.adjust(points[i], -betas[level]);
+        }
+
+        double newScore = getScoreForStop(target, level + 1);
+
+        if (newScore > oldScore) {
+          break;
         }
 
 //                stat = wCurLoss.statsFactory().create();
@@ -148,6 +157,15 @@ public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> exten
     System.arraycopy(betas, 1, values, 0, values.length);
 
     return new LinearRegion(conditions, masks, bias, values);
+  }
+
+  private double getScoreForStop(Vec target, int level) {
+    double sum2 = 0;
+    for (int i = 0; i < target.dim(); i++) {
+      sum2 += MathTools.sqr(target.get(i));
+    }
+    sum2 /= level;
+    return sum2;
   }
 
   private double[] extractWeights(Loss loss) {
