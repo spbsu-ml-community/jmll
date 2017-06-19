@@ -164,7 +164,7 @@ public class Utils {
 
       @Override
       public void invoke(final Trans partial) {
-        System.out.print("\n" + index++);
+        writer.write("\n" + index++);
       }
     };
     final LLLogit learnTarget = new LLLogit(data.getLearnTarget(), data.getLearnFeatures());
@@ -283,7 +283,7 @@ public class Utils {
 
       @Override
       public void invoke(final Trans partial) {
-        System.out.print("\n" + index++);
+        writer.write("\n" + index++);
       }
     };
     final L2 learnTarget = new L2(data.getLearnTarget(), data.getLearnFeatures());
@@ -322,7 +322,7 @@ public class Utils {
   public static double findBestRMSEGreedySimpleRegion(final DataLoader.DataFrame data, final int iterations, final double step,
                                                       final Class funcClass, final double regCoeff, String logFile) {
     return findBestRMSERegions(new GreedyTDSimpleRegion<>(
-                    GridTools.medianGrid(data.getLearnFeatures(), 32), 7, regCoeff), data,
+                    GridTools.medianGrid(data.getLearnFeatures(), 32), 15, regCoeff), data,
             iterations, step, funcClass, logFile);
   }
 
