@@ -85,9 +85,9 @@ public class ConfidentIntervalFinder {
       DataLoader.DataFrame cur_data = data;
       for (int i = 0; i < M; i++) {
         System.out.printf("!!!%d", i);
-        double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff);
-        best[i] = auc;
-        System.out.printf("\nThe Best AUC for cancerData = %.4fc\n", auc);
+//        double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff);
+//        best[i] = auc;
+//        System.out.printf("\nThe Best AUC for cancerData = %.4fc\n", auc);
         cur_data = bootstrap(data, System.currentTimeMillis());
       }
     } catch (IOException e) {
@@ -128,11 +128,11 @@ public class ConfidentIntervalFinder {
 
       DataLoader.DataFrame cur_data = data;
       for (int i = 0; i < M; i++) {
-        System.out.printf("!!!%d", i);
-        double rmse = findBestRMSE(cur_data, iterations, step, funcClass, regCoeff);
-        best[i] = rmse;
-        System.out.printf("\nThe Best RMSE for ks_House = %.4fc\n", rmse);
-        cur_data = bootstrap(data, System.currentTimeMillis());
+//        System.out.printf("!!!%d", i);
+//        double rmse = findBestRMSE(cur_data, iterations, step, funcClass, regCoeff);
+//        best[i] = rmse;
+//        System.out.printf("\nThe Best RMSE for ks_House = %.4fc\n", rmse);
+//        cur_data = bootstrap(data, System.currentTimeMillis());
       }
     } catch (IOException | NumberFormatException e) {
       e.printStackTrace();
@@ -169,11 +169,11 @@ public class ConfidentIntervalFinder {
 
       DataLoader.DataFrame cur_data = data;
       for (int i = 0; i < M; i++) {
-        System.out.printf("!!!%d", i);
-        double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff);
-        best[i] = auc;
-        System.out.printf("\nThe Best AUC HIGGS = %.4fc\n", auc);
-        cur_data = bootstrap(data, System.currentTimeMillis());
+//        System.out.printf("!!!%d", i);
+//        double auc = findBestAUC(cur_data, iterations, step, funcClass, regCoeff);
+//        best[i] = auc;
+//        System.out.printf("\nThe Best AUC HIGGS = %.4fc\n", auc);
+//        cur_data = bootstrap(data, System.currentTimeMillis());
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -206,10 +206,10 @@ public class ConfidentIntervalFinder {
       DataLoader.DataFrame data = readData(processor, dir, LearnCTSliceFileName, TestCTSliceFileName);
       DataLoader.DataFrame cur_data = data;
       for (int i = 0; i < averageSize; i++) {
-        double rmse = findBestRMSE(cur_data, iterations, step, funcClass, regCoeff);
-        best[i] = rmse;
-        System.out.printf("\nThe Best RMSE for CTSlices = %.4fc\n", rmse);
-        cur_data = bootstrap(data, System.currentTimeMillis());
+//        double rmse = findBestRMSE(cur_data, iterations, step, funcClass, regCoeff);
+//        best[i] = rmse;
+//        System.out.printf("\nThe Best RMSE for CTSlices = %.4fc\n", rmse);
+//        cur_data = bootstrap(data, System.currentTimeMillis());
       }
     } catch (IOException e) {
       e.printStackTrace();

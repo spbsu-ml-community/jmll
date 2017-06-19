@@ -99,38 +99,38 @@ public class VotedInterval {
     DataLoader.DataFrame data = readData(processor,
             PATH_TO_DATA, "slice_train.csv", "slice_test.csv");
 
-    String path = PATH_TO_DATA + "/ct_slice/";
-    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, L2.class, 0.0, path + "/without.txt");
-    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, LOOL2.class, 0.0, path + "/loo.txt");
-    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, CARTSteinEasy.class, 0.0, path + "/bayes.txt");
-    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, L2.class, 0.4, path + "/reg.txt");
-    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, CARTSteinEasy.class, 0.4, path + "/combo.txt");
-    runXGBoost(data, path);
-
-    System.out.println("CT SLICE ENDED!");
-
-    path = PATH_TO_DATA + "/kc_house/";
-    processor = new DataLoader.KSHouseReadProcessor();
-    data = readData(processor, PATH_TO_DATA, "learn_ks_house.csv",
-            "test_ks_house.csv");
-    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, L2.class, 0.0, path + "/without.txt");
-    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, LOOL2.class, 0.0, path + "/loo.txt");
-    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, CARTSteinEasy.class, 0.0, path + "/bayes.txt");
-    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, L2.class, 0.4, path + "/reg.txt");
-    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, CARTSteinEasy.class, 0.4, path + "/combo.txt");
-    runXGBoost(data, path);
-
-    System.out.println("KC HOUSE ENDED!");
-
-    path = PATH_TO_DATA + "/higgs/";
-    processor = new DataLoader.HIGGSReadProcessor();
-    data = readData(processor, PATH_TO_DATA, "HIGGS_learn_1M.csv",
-            "HIGGS_test.csv");
-    runExperiment(data, Utils::findBestAUC, 4000, 0.3, L2.class, 0.0, path + "/without.txt");
-    runExperiment(data, Utils::findBestAUC, 4000, 0.3, LOOL2.class, 0.0, path + "/loo.txt");
-    runExperiment(data, Utils::findBestAUC, 4000, 0.3, CARTSteinEasy.class, 0.0, path + "/bayes.txt");
-    runExperiment(data, Utils::findBestAUC, 4000, 0.3, L2.class, 0.4, path + "/reg.txt");
-    runExperiment(data, Utils::findBestAUC, 4000, 0.3, CARTSteinEasy.class, 0.4, path + "/combo.txt");
-    runXGBoost(data, path);
+//    String path = PATH_TO_DATA + "/ct_slice/";
+//    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, L2.class, 0.0, path + "/without.txt");
+//    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, LOOL2.class, 0.0, path + "/loo.txt");
+//    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, CARTSteinEasy.class, 0.0, path + "/bayes.txt");
+//    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, L2.class, 0.4, path + "/reg.txt");
+//    runExperiment(data, Utils::findBestRMSE, 3300, 0.03, CARTSteinEasy.class, 0.4, path + "/combo.txt");
+//    runXGBoost(data, path);
+//
+//    System.out.println("CT SLICE ENDED!");
+//
+//    path = PATH_TO_DATA + "/kc_house/";
+//    processor = new DataLoader.KSHouseReadProcessor();
+//    data = readData(processor, PATH_TO_DATA, "learn_ks_house.csv",
+//            "test_ks_house.csv");
+//    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, L2.class, 0.0, path + "/without.txt");
+//    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, LOOL2.class, 0.0, path + "/loo.txt");
+//    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, CARTSteinEasy.class, 0.0, path + "/bayes.txt");
+//    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, L2.class, 0.4, path + "/reg.txt");
+//    runExperiment(data, Utils::findBestRMSE, 2600, 0.008, CARTSteinEasy.class, 0.4, path + "/combo.txt");
+//    runXGBoost(data, path);
+//
+//    System.out.println("KC HOUSE ENDED!");
+//
+//    path = PATH_TO_DATA + "/higgs/";
+//    processor = new DataLoader.HIGGSReadProcessor();
+//    data = readData(processor, PATH_TO_DATA, "HIGGS_learn_1M.csv",
+//            "HIGGS_test.csv");
+//    runExperiment(data, Utils::findBestAUC, 4000, 0.3, L2.class, 0.0, path + "/without.txt");
+//    runExperiment(data, Utils::findBestAUC, 4000, 0.3, LOOL2.class, 0.0, path + "/loo.txt");
+//    runExperiment(data, Utils::findBestAUC, 4000, 0.3, CARTSteinEasy.class, 0.0, path + "/bayes.txt");
+//    runExperiment(data, Utils::findBestAUC, 4000, 0.3, L2.class, 0.4, path + "/reg.txt");
+//    runExperiment(data, Utils::findBestAUC, 4000, 0.3, CARTSteinEasy.class, 0.4, path + "/combo.txt");
+//    runXGBoost(data, path);
   }
 }

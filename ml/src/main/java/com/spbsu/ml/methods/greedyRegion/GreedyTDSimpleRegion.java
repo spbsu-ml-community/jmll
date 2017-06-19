@@ -80,8 +80,10 @@ public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> exten
       current.visitAllSplits((bf, left, right) -> {
         final double leftBeta = wCurLoss.bestIncrement((WeightedLoss.Stat) left);
         final double rightBeta = wCurLoss.bestIncrement((WeightedLoss.Stat) right) ;
-        final double leftScore = getScore(left, leftBeta) + getScore(right, 0);
-        final double rightScore = getScore(left, 0) + getScore(right, rightBeta);
+//        final double leftScore = getScore(left, leftBeta) + getScore(right, 0);
+//        final double rightScore = getScore(left, 0) + getScore(right, rightBeta);
+        final double leftScore = getScore1(left, leftBeta);
+        final double rightScore = getScore1(right, rightBeta);
         scores[bf.bfIndex] = Math.min(leftScore, rightScore);
         isRight[bf.bfIndex] = scores[bf.bfIndex] == rightScore;
         solution[bf.bfIndex] = isRight[bf.bfIndex] ? rightBeta : leftBeta;
@@ -223,7 +225,7 @@ public class GreedyTDSimpleRegion<Loss extends WeightedLoss<? extends L2>> exten
       throw new RuntimeException("Unsupported loss");
     }
     double weight = statL2.weight;
-    return statL2.weight > 2 ? -v * statL2.sum * statL2.weight * (statL2.weight - 2) / (weight * weight - 3 * weight + 1) : 0;// * (1. + 2 * Math.log(1 + weight)) : 0;/
+    return statL2.weight > 2 ? -v * statL2.sum * statL2.weight * (statL2.weight - 2) / (weight * weight - 3 * weight + 1) * (1. + 2 * Math.log(1 + weight)) : 0;
   }
 
 

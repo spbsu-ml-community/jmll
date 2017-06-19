@@ -23,6 +23,7 @@ import com.spbsu.ml.methods.greedyRegion.GreedyTDProbRegion;
 import com.spbsu.ml.methods.greedyRegion.GreedyTDSimpleRegion;
 
 import javax.xml.crypto.Data;
+import java.io.*;
 
 public class Utils {
   private static final FastRandom RND = new FastRandom(System.currentTimeMillis());
@@ -35,12 +36,14 @@ public class Utils {
     private int allNegative = 0;
     private int allPositive = 0;
     private boolean isWrite = true;
+    private PrintWriter writer;
 
-    AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns) {
-      this(message, ds, rightAns, true);
+    AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns, PrintWriter writer) {
+      this(message, ds, rightAns, true, writer);
     }
 
-    AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns, boolean isWrite) {
+    AUCCalcer(final String message, final VecDataSet ds, final Vec rightAns, boolean isWrite, PrintWriter writer) {
+      this.writer = writer;
       this.message = message;
       this.ds = ds;
       this.isWrite = isWrite;
@@ -127,16 +130,31 @@ public class Utils {
             new org.knowm.xchart.SwingWrapper<>(ex).displayChart(); */
 
       final double value = sum;
-      if (isWrite) System.out.print(message + value);
+      if (isWrite) {
+        writer.write(message + Double.toString(value));
+        writer.flush();
+      }
       max = Math.max(value, max);
-      if (isWrite) System.out.print(" best = " + max);
+      if (isWrite) {
+        writer.write(" best = " + max);
+        writer.flush();
+      }
 
-      System.out.printf(" rate = %.5f", max_accuracy);
+      writer.write(String.format(" rate = %.5f", max_accuracy));
     }
   }
 
   static double findBestAUC(final DataLoader.DataFrame data, final int iterations, final double step,
-                                    final Class func, final double regCoeff) {
+                                    final Class func, final double regCoeff, String logFile) {
+    File file = new File(logFile);
+    PrintWriter writer;
+    try {
+      writer = new PrintWriter(new FileWriter(file));
+    } catch (IOException e) {
+      System.out.println("Could not create logFile: " + file);
+      return 0;
+    }
+
     final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
             new BootstrapOptimization<>(
                     new com.spbsu.ml.methods.cart.CARTTreeOptimization<>(
@@ -153,9 +171,9 @@ public class Utils {
     final LLLogit testTarget = new LLLogit(data.getTestTarget(), data.getTestFeatures());
 
     final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
-            data.getLearnTarget());
+            data.getLearnTarget(), writer);
     final AUCCalcer aucCalcerTest = new AUCCalcer("\tAUC test:\t", data.getTestFeatures(),
-            data.getTestTarget());
+            data.getTestTarget(), writer);
 
     boosting.addListener(counter);
     boosting.addListener(aucCalcerLearn);
@@ -165,7 +183,17 @@ public class Utils {
   }
 
   static double findBestRMSE(final DataLoader.DataFrame data, final int iterations, final double step,
-                                     final Class funcClass, final double regCoeff) {
+                                     final Class funcClass, final double regCoeff, String logFile) {
+
+    File file = new File(logFile);
+    PrintWriter writer;
+    try {
+      writer = new PrintWriter(new FileWriter(file));
+    } catch (IOException e) {
+      System.out.println("Could not create logFile: " + file);
+      return 0;
+    }
+
     final GradientBoosting<L2> boosting = new GradientBoosting<>(
             new BootstrapOptimization<>(
                     new com.spbsu.ml.methods.cart.CARTTreeOptimization(
@@ -175,15 +203,17 @@ public class Utils {
 
       @Override
       public void invoke(final Trans partial) {
-        System.out.print("\n" + index++);
+        writer.write("\n" + index);
+        index++;
+        writer.flush();
       }
     };
     final L2 learnTarget = new L2(data.getLearnTarget(), data.getLearnFeatures());
     final L2 testTarget = new L2(data.getTestTarget(), data.getTestFeatures());
-    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(), learnTarget);
-    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(), testTarget);
+    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(), learnTarget, writer);
+    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(), testTarget, writer);
 
-//    boosting.addListener(counter);
+    boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
     boosting.fit(data.getLearnFeatures(), learnTarget);
@@ -192,7 +222,17 @@ public class Utils {
 
   static double findBestAUCRegions(final VecOptimization.Stub<WeightedLoss<? extends L2>> weak,
                                    final DataLoader.DataFrame data, final int iterations, final double step,
-                                   final Class funcClass) {
+                                   final Class funcClass, String logFile) {
+
+    File file = new File(logFile);
+    PrintWriter writer;
+    try {
+      writer = new PrintWriter(new FileWriter(file));
+    } catch (IOException e) {
+      System.out.println("Could not create logFile: " + file);
+      return 0;
+    }
+
 
     final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
             new BootstrapOptimization<L2>(weak, RND), funcClass, iterations, step);
@@ -202,27 +242,40 @@ public class Utils {
 
       @Override
       public void invoke(final Trans partial) {
-        System.out.print("\n" + index++);
+        writer.write("\n" + Integer.toString(index) + "\n");
+        writer.flush();
+        index++;
       }
     };
     final LLLogit learnTarget = new LLLogit(data.getLearnTarget(), data.getLearnFeatures());
     final LLLogit testTarget = new LLLogit(data.getTestTarget(), data.getTestFeatures());
 
     final AUCCalcer aucCalcerLearn = new AUCCalcer("\tAUC learn:\t", data.getLearnFeatures(),
-            data.getLearnTarget());
+            data.getLearnTarget(), writer);
     final AUCCalcer aucCalcerTest = new AUCCalcer("\tAUC test:\t", data.getTestFeatures(),
-            data.getTestTarget());
+            data.getTestTarget(), writer);
 
     boosting.addListener(counter);
     boosting.addListener(aucCalcerLearn);
     boosting.addListener(aucCalcerTest);
     boosting.fit(data.getLearnFeatures(), learnTarget);
+    writer.close();
     return aucCalcerTest.getMax();
   }
 
   static double findBestRMSERegions(final VecOptimization.Stub<WeightedLoss<? extends L2>> weak,
                                     final DataLoader.DataFrame data, final int iterations, final double step,
-                                    final Class funcClass) {
+                                    final Class funcClass, String logFile) {
+    File file = new File(logFile);
+    PrintWriter writer;
+    try {
+      writer = new PrintWriter(new FileWriter(file));
+    } catch (IOException e) {
+      System.out.println("Could not create logFile: " + file);
+      return 0;
+    }
+
+
     final GradientBoosting<L2> boosting = new GradientBoosting<>(
             new BootstrapOptimization<L2>(weak, RND), funcClass, iterations, step);
     final Action counter = new ProgressHandler() {
@@ -235,8 +288,8 @@ public class Utils {
     };
     final L2 learnTarget = new L2(data.getLearnTarget(), data.getLearnFeatures());
     final L2 testTarget = new L2(data.getTestTarget(), data.getTestFeatures());
-    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(), learnTarget);
-    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(), testTarget);
+    final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", data.getLearnFeatures(), learnTarget, writer);
+    final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", data.getTestFeatures(), testTarget, writer);
 
     boosting.addListener(counter);
     boosting.addListener(learnListener);
@@ -246,30 +299,37 @@ public class Utils {
   }
 
   public static double findBestRMSEGreedyProbRegion(final DataLoader.DataFrame data, final int iterations, final double step,
-                                              final Class funcClass, final double regCoeff, double beta, double alpha) {
+                                              final Class funcClass, final double regCoeff, double beta, double alpha, String logFile) {
     return findBestRMSERegions(new GreedyTDProbRegion<>(
                     GridTools.medianGrid(data.getLearnFeatures(), 32), 7, regCoeff, beta, alpha), data,
-    iterations, step, funcClass);
+    iterations, step, funcClass,logFile);
   }
 
   public static double findBestRMSEGreedyLinearRegion(final DataLoader.DataFrame data, final int iterations, final double step,
-                                                      final Class funcClass, double regGoeff) {
+                                                      final Class funcClass, double regGoeff, String logFile) {
     return findBestRMSERegions(new GreedyTDLinearRegion<>(
-                    GridTools.medianGrid(data.getLearnFeatures(), 32), 10, regGoeff), data,
-            iterations, step, funcClass);
+                    GridTools.medianGrid(data.getLearnFeatures(), 32), 6, regGoeff), data,
+            iterations, step, funcClass, logFile);
+  }
+
+  public static double findBestAUCGreedyLinearRegion(final DataLoader.DataFrame data, final int iterations, final double step,
+                                                     final Class funcClass, double regGoeff, String logFile) {
+    return findBestAUCRegions(new GreedyTDLinearRegion<>(
+                    GridTools.medianGrid(data.getLearnFeatures(), 32), 15, regGoeff), data,
+            iterations, step, funcClass, logFile);
   }
 
   public static double findBestRMSEGreedySimpleRegion(final DataLoader.DataFrame data, final int iterations, final double step,
-                                                      final Class funcClass, final double regCoeff) {
+                                                      final Class funcClass, final double regCoeff, String logFile) {
     return findBestRMSERegions(new GreedyTDSimpleRegion<>(
                     GridTools.medianGrid(data.getLearnFeatures(), 32), 7, regCoeff), data,
-            iterations, step, funcClass);
+            iterations, step, funcClass, logFile);
   }
 
   public static double findBestAUCGreedySimpleRegion(final DataLoader.DataFrame data, final int iterations, final double step,
-                                                     final Class funcClass, final double regCoeff) {
+                                                     final Class funcClass, final double regCoeff, String logFile) {
     return findBestAUCRegions(new GreedyTDSimpleRegion<>(GridTools.medianGrid(data.getLearnFeatures(), 32), 7, regCoeff), data,
-            iterations, step, funcClass);
+            iterations, step, funcClass, logFile);
   }
 
   protected static class ScoreCalcer implements ProgressHandler {
@@ -278,12 +338,14 @@ public class Utils {
     private final VecDataSet ds;
     private final TargetFunc target;
     private boolean isWrite = true;
+    private PrintWriter writer;
 
-    ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target) {
-      this(message, ds, target, true);
+    ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target, PrintWriter writer) {
+      this(message, ds, target, true, writer);
     }
 
-    ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target, boolean isWrite) {
+    ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target, boolean isWrite, PrintWriter writer) {
+      this.writer = writer;
       this.message = message;
       this.isWrite = isWrite;
       this.ds = ds;
@@ -317,11 +379,18 @@ public class Utils {
 
       final double value = target.value(current);
 
-      if (isWrite) System.out.print(message + " " + value);
+      if (isWrite) {
+        writer.write(message + " " + value);
+        writer.flush();
+      }
       mmin = Math.min(value, mmin);
-      if (isWrite) System.out.print(" best = " + mmin);
+      if (isWrite) {
+        writer.write(" best = " + mmin);
+        writer.flush();
+      }
       if (message.equals("\ttest:\t"))
-        System.out.print("\n");
+        writer.write("\n");
+        writer.flush();
     }
   }
 }
