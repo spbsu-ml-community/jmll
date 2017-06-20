@@ -6,19 +6,16 @@ import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqTools;
 import com.spbsu.commons.seq.IntSeq;
+import com.spbsu.direct.gen.NaiveModel;
 import com.spbsu.direct.gen.SimpleGenerativeModel;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 import static com.spbsu.direct.Utils.convertToSeq;
 import static com.spbsu.direct.Utils.dropUnknown;
 import static com.spbsu.direct.Utils.normalizeQuery;
 
-
-public class DependsProcessor implements Action<CharSequence> {
+public class QueryProcessor implements Action<CharSequence> {
   private final static int DUMP_FREQ = 100_000;
   private final static double ALPHA = 0.001;
 
@@ -26,6 +23,8 @@ public class DependsProcessor implements Action<CharSequence> {
 
   private final ListDictionary<CharSeq> dictionary;
   private final SimpleGenerativeModel model;
+  private final NaiveModel naiveModel;
+
   private final String inputFile;
 
   private final FastRandom rand = new FastRandom();
@@ -44,16 +43,21 @@ public class DependsProcessor implements Action<CharSequence> {
 
   private Writer debugOutput;
 
-  public DependsProcessor(final String inputFile,
-                          final ListDictionary<CharSeq> dictionary,
-                          final SimpleGenerativeModel model) {
+  private double modelLogP = 0;
+  private double naiveModelLogP = 0;
+
+  public QueryProcessor(final String inputFile,
+                        final ListDictionary<CharSeq> dictionary,
+                        final SimpleGenerativeModel model,
+                        final NaiveModel naiveModel) {
     this.inputFile = inputFile;
 
     this.dictionary = dictionary;
     this.model = model;
+    this.naiveModel = naiveModel;
 
     try {
-      this.debugOutput = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("queries.txt"), "utf-8"));
+      this.debugOutput = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("test_queries.txt"), "utf-8"));
     } catch (IOException e) {
       System.err.println(e.toString());
     }
@@ -63,10 +67,6 @@ public class DependsProcessor implements Action<CharSequence> {
   // TODO: process the last user
   @Override
   public void invoke(CharSequence line) {
-    if (line.length() == 0) {
-      return;
-    }
-
     final CharSequence[] parts = new CharSequence[2];
 
     if (CharSeqTools.split(line, '\t', parts).length != 2) {
@@ -78,7 +78,7 @@ public class DependsProcessor implements Action<CharSequence> {
     }
 
     // TODO: process timestamp
-    //final long ts = CharSeqTools.parseLong(parts[1]);
+    // final long ts = CharSeqTools.parseLong(parts[1]);
 
     final String user = parts[0].toString();
     final String query = normalizeQuery(parts[1].toString());
@@ -89,53 +89,67 @@ public class DependsProcessor implements Action<CharSequence> {
 
     if (this.user == null || !this.user.equals(user)) {
       if (this.user != null) {
-        // TODO: debug output
-        if (index % DUMP_FREQ == 0) {
-          Utils.Timer.clearStatistics();
-          Utils.Timer.start("new block", true);
-        }
-
-        if (index % 1_000 == 0) {
-          Utils.Timer.start("new small block", true);
-        }
 
         final IntSeq currQSeq = dropUnknown(dictionary.parse(convertToSeq(selectedCurrQuery), model.freqs, model.totalFreq));
 
         if (selectedPrevQuery == null) {
-          if (currQSeq != null) {
-            model.processSeq(currQSeq);
-            model.processGeneration(IntSeq.EMPTY, currQSeq, ALPHA);
+          /*if (currQSeq != null) {
+            double logP = model.maxLogP(IntSeq.EMPTY, currQSeq);
+            double naiveLogP = naiveModel.maxLogP(IntSeq.EMPTY, currQSeq);
 
-            ++succeeded;
-          }
+            if (logP != Double.NEGATIVE_INFINITY && naiveLogP != Double.NEGATIVE_INFINITY) {
+              modelLogP += logP;
+              naiveModelLogP += naiveLogP;
+              ++succeeded;
+            }
+          }*/
         } else {
           final IntSeq prevQSeq = dropUnknown(dictionary.parse(convertToSeq(selectedPrevQuery), model.freqs, model.totalFreq));
 
           if (currQSeq != null && prevQSeq != null) {
-            model.processSeq(prevQSeq);
-            model.processSeq(currQSeq);
-            model.processGeneration(prevQSeq, currQSeq, ALPHA);
+            // TODO: debug output
+            if (index % DUMP_FREQ == 0) {
+              Utils.Timer.clearStatistics();
+              Utils.Timer.start("new block", true);
+            }
+
+            if (index % 1_000 == 0) {
+              Utils.Timer.start("new small block", true);
+            }
+
+            double logP = model.maxLogP(prevQSeq, currQSeq);
+            double naiveLogP = naiveModel.maxLogP(prevQSeq, currQSeq);
 
             try {
               debugOutput.write(String.format("\n%s\n%s\n", selectedPrevLine.toString(), selectedCurrLine.toString()));
+              debugOutput.write(String.format("%f\n%f\n", logP, naiveLogP));
+
             } catch (IOException e) {
               System.err.println(e.toString());
             }
 
-            ++succeeded;
+            if (logP != Double.NEGATIVE_INFINITY && naiveLogP != Double.NEGATIVE_INFINITY) {
+              modelLogP += logP;
+              naiveModelLogP += naiveLogP;
+              ++succeeded;
+
+              // TODO: debug output
+              if (++index % 1000 == 0) {
+                System.out.println(String.format("processed %d (succeeded %d)", index, succeeded));
+                Utils.Timer.stop("processing", true);
+              }
+
+              if (index % DUMP_FREQ == 0) {
+                Utils.Timer.stop("total", true);
+                Utils.Timer.showStatistics("total");
+                dump(model);
+
+                succeeded = 0;
+                modelLogP = 0;
+                naiveModelLogP = 0;
+              }
+            }
           }
-        }
-
-        // TODO: debug output
-        if (++index % 1000 == 0) {
-          System.out.println(String.format("processed %d (succeeded %d)", index, succeeded));
-          Utils.Timer.stop("processing", true);
-        }
-
-        if (index % DUMP_FREQ == 0) {
-          Utils.Timer.stop("total", true);
-          Utils.Timer.showStatistics("total");
-          dump(model);
         }
       }
 
@@ -158,7 +172,6 @@ public class DependsProcessor implements Action<CharSequence> {
         selectedCurrLine = line;
       }
 
-
       prevQuery = query;
 
       prevLine = line;
@@ -167,9 +180,9 @@ public class DependsProcessor implements Action<CharSequence> {
     // TODO: else { update timestamp }
   }
 
-  public static void dump(final SimpleGenerativeModel model) {
-    try (final Writer out = new OutputStreamWriter(new FileOutputStream("output-" + (index / DUMP_FREQ) + ".txt"))) {
-      model.printProviders(out, true);
+  public void dump(final SimpleGenerativeModel model) {
+    try (final Writer out = new OutputStreamWriter(new FileOutputStream("results-" + (index / DUMP_FREQ) + ".txt"))) {
+      out.write(String.format("Count:\t%d\nModel:\t%f\nNaive:\t%f\n\n", succeeded, Math.exp(-modelLogP / succeeded), Math.exp(-naiveModelLogP / succeeded)));
     } catch (IOException e) {
       e.printStackTrace();
     }

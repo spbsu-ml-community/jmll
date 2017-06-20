@@ -116,9 +116,9 @@ class ScoresCalcer {
         }
       }
       double curLoss = VecTools.distance(current, target.target) / Math.sqrt(ds.length());
-//      System.out.print(message + curLoss);
+//      System.out.printProviders(message + curLoss);
       min = Math.min(curLoss, min);
-//      System.out.print(" minimum = " + min);
+//      System.out.printProviders(" minimum = " + min);
     }
   }
 

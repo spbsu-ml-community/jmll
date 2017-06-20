@@ -166,6 +166,54 @@ public class SimpleGenerativeModel {
     });
   }
 
+  public double maxLogP(final IntSeq prevQSeq,
+                        final IntSeq currentQSeq) {
+    if (prevQSeq.length() * currentQSeq.length() > 10) {
+      // too many variants of bipartite graph
+      return Double.NEGATIVE_INFINITY;
+    }
+
+    final int variantsCount = 1 << (prevQSeq.length() * currentQSeq.length());
+    final int mask = (1 << currentQSeq.length()) - 1;
+
+    double totalProbability = 0;
+    double totalDenominator = 0;
+
+    for (int currVariant = 0; currVariant < variantsCount; ++currVariant) {
+      try {
+        int variant = currVariant;
+        int generated = 0;
+
+        double logProbability = 0;
+        double logDenominator = 0;
+
+        for (int i = 0; i < prevQSeq.length(); ++i, variant >>= currentQSeq.length()) {
+          final int fragment = variant & mask;
+          generated |= fragment;
+
+          // TODO: check useless and remove
+          final int index = prevQSeq.intAt(i);
+          if (index < 0) {
+            continue;
+          }
+
+          logProbability += providers[index].logP(fragment, currentQSeq);
+          logDenominator += providers[index].logPoissonProbability(fragment, currentQSeq);
+        }
+
+        logProbability += providers[dict.size()].logP((~generated) & mask, currentQSeq);
+        logDenominator += providers[dict.size()].logPoissonProbability((~generated) & mask, currentQSeq);
+
+        totalProbability += Math.exp(logProbability);
+        totalDenominator += Math.exp(logDenominator);
+      } catch (Exception e) {
+        System.out.println(e.toString());
+      }
+    }
+
+    return Math.log(totalProbability / totalDenominator);
+  }
+
   public String findTheBestExpansion(ArraySeq<CharSeq> arg) {
     final StringBuilder builder = new StringBuilder();
     final TObjectDoubleHashMap<Seq<CharSeq>> expansionScores = new TObjectDoubleHashMap<>();
@@ -176,11 +224,7 @@ public class SimpleGenerativeModel {
         return true;
       }
 
-      for (int i = 0; i <= seq.length(); i++) {
-        if (i > 0) {
-          builder.append(" ");
-        }
-
+      for (int i = 0; i < seq.length(); i++) {
         final int symIndex = i < seq.length() ? seq.intAt(i) : dict.size();
 
         visitExpVariants(symIndex, (a, b) -> {
@@ -202,6 +246,7 @@ public class SimpleGenerativeModel {
 
     for (int i = order.length - 1, cnt = 0; i >= 0 && cnt < MAX_TERMS_COUNT_TO_PRINT; --i, ++cnt) {
       final double prob = scores[i] / normalize[0];
+
       if (prob < 1e-4)
         break;
 

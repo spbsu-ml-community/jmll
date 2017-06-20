@@ -144,6 +144,12 @@ public class WordGenProbabilityProvider {
     return result;
   }
 
+
+  public double logPoissonProbability(final int variant,
+                     final IntSeq fragment) {
+    return MathTools.logPoissonProbability(poissonLambdaSum / poissonLambdaCount, Integer.bitCount(variant));
+  }
+
   /**
    * Returns the log-probability of term generation by the current term
    *
@@ -436,6 +442,8 @@ public class WordGenProbabilityProvider {
 
   public WordGenProbabilityProvider(final CharSequence presentation,
                                     final Dictionary<CharSeq> dictionary) {
+    this.dict = dictionary;
+
     final String json;
     {
       final SeqBuilder<CharSeq> phraseBuilder = new ArraySeqBuilder<>(CharSeq.class);

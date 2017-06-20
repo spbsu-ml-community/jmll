@@ -91,6 +91,7 @@ public class BroadMatch {
         }
         break;
       }
+
       case "-depends": {
         final TIntList freqsLA = new TIntArrayList();
 
