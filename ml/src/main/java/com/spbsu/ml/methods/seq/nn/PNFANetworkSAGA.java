@@ -10,9 +10,11 @@ import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.SeqOptimization;
+import com.spbsu.ml.methods.seq.automaton.DFA;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,20 +49,20 @@ public class PNFANetworkSAGA<T, Loss extends L2> implements SeqOptimization<T, L
     }
 
     final Vec[] lastValuesGrad = new Vec[learn.length()];
-    final Mx[][] lastWeightsGrad = new Mx[learn.length()][];
+    final Mx[][] lastBetaGrad = new Mx[learn.length()][];
     final int[] lastAlphaGradChanged = new int[alphabet.size()];
     final int[][] seqAlphabet = new int[learn.length()][];
 
-    final Mx[] totalWGrad = new Mx[alphabet.size()];
+    final Mx[] totalBetaGrad = new Mx[alphabet.size()];
     for (int i = 0; i < alphabet.size(); i++) {
-      totalWGrad[i] = new VecBasedMx(stateCount, stateCount);
+      totalBetaGrad[i] = new VecBasedMx(stateCount, stateCount - 1);
     }
     final Vec totalValuesGrad = new ArrayVec(stateCount);
 
     final Vec valuesGrad = new ArrayVec(stateCount);
-    final Mx[] wGrad = new Mx[alphabet.size()];
+    final Mx[] betaGrad = new Mx[alphabet.size()];
     for (int i = 0; i < alphabet.size(); i++) {
-      wGrad[i] = new VecBasedMx(stateCount, stateCount);
+      betaGrad[i] = new VecBasedMx(stateCount, stateCount - 1);
     }
 
     for (int i = 0; i < learn.length(); i++) {
@@ -70,20 +72,20 @@ public class PNFANetworkSAGA<T, Loss extends L2> implements SeqOptimization<T, L
         charsList.add(alphabet.index(seq.at(j)));
       }
       seqAlphabet[i] = charsList.stream().sorted().distinct().mapToInt(x -> x).toArray();
-      lastWeightsGrad[i] = new Mx[seqAlphabet[i].length];
+      lastBetaGrad[i] = new Mx[seqAlphabet[i].length];
       final PNFAParams.PNFAParamsGrad grad = params.calcSeqGrad(seq, seqAlphabet[i], loss.target().at(i));
-      lastWeightsGrad[i] = grad.getWGrad();
+      lastBetaGrad[i] = grad.getBetaGrad();
       lastValuesGrad[i] = grad.getValuesGrad();
 
       VecTools.append(totalValuesGrad, grad.getValuesGrad());
       for (int j = 0; j < seqAlphabet[i].length; j++) {
         final int c = seqAlphabet[i][j];
-        VecTools.append(totalWGrad[c], grad.getWGrad()[j]);
+        VecTools.append(totalBetaGrad[c], grad.getBetaGrad()[j]);
       }
     }
 
     for (int c = 0; c < alphabet.size(); c++) {
-      VecTools.incscale(wGrad[c], totalWGrad[c], 1.0 / learn.length());
+      VecTools.incscale(betaGrad[c], totalBetaGrad[c], 1.0 / learn.length());
     }
 
     VecTools.incscale(valuesGrad, totalValuesGrad, 1.0 / learn.length());
@@ -91,10 +93,10 @@ public class PNFANetworkSAGA<T, Loss extends L2> implements SeqOptimization<T, L
     double curCost = getCost(learn, loss, params);
     long start = System.nanoTime();
 
-    final Mx[] seqWGrad = new Mx[maxLen];
+    final Mx[] seqBetaGrad = new Mx[maxLen];
     Vec seqValuesGrad = new ArrayVec(stateCount);
 
-    for (int iter = 0; iter < iterationsCount * learn.length(); iter++) {
+    for (int iter = 1; iter < iterationsCount; iter++) {
       final int seqId = random.nextInt(learn.length());
       final Seq<T> seq = learn.at(seqId);
 
@@ -102,28 +104,21 @@ public class PNFANetworkSAGA<T, Loss extends L2> implements SeqOptimization<T, L
 
       for (int i = 0; i < seqAlphabet[seqId].length; i++) {
         final int a = seqAlphabet[seqId][i];
-        seqWGrad[i] = wGrad[a];
-        VecTools.fill(seqWGrad[i], 0);
+        seqBetaGrad[i] = betaGrad[a];
+        VecTools.fill(seqBetaGrad[i], 0);
         // character a was not counted during last (iter - lastAlphaGradChanged[a] - 1) iterations as part of
         // the average sum of derivatives
-        VecTools.incscale(seqWGrad[i], totalWGrad[a], (iter - lastAlphaGradChanged[a] - 1) / learn.length());
-        lastAlphaGradChanged[a] = iter;
-      }
-      VecTools.fill(valuesGrad, 0);
-      params.updateParams(seqWGrad, valuesGrad, -step, seqAlphabet[seqId]);
-
-      for (int i = 0; i < seqAlphabet[seqId].length; i++) {
-        final int a = seqAlphabet[seqId][i];
-        VecTools.fill(wGrad[a], 0);
-        seqWGrad[i] = wGrad[a];
-        VecTools.append(wGrad[a], grad.getWGrad()[i]);
-        VecTools.incscale(wGrad[a], lastWeightsGrad[seqId][i], -1);
+        VecTools.incscale(betaGrad[a], totalBetaGrad[a], (double) (iter - lastAlphaGradChanged[a]) / learn.length());
         lastAlphaGradChanged[a] = iter;
 
-        VecTools.incscale(totalWGrad[a], lastWeightsGrad[seqId][i], -1);
-        VecTools.append(totalWGrad[a], grad.getWGrad()[i]);
-        lastWeightsGrad[seqId][i] = grad.getWGrad()[i];
+        VecTools.append(betaGrad[a], grad.getBetaGrad()[i]);
+        VecTools.incscale(betaGrad[a], lastBetaGrad[seqId][i], -1);
+
+        VecTools.incscale(totalBetaGrad[a], lastBetaGrad[seqId][i], -1);
+        VecTools.append(totalBetaGrad[a], grad.getBetaGrad()[i]);
+        lastBetaGrad[seqId][i] = grad.getBetaGrad()[i];
       }
+
       VecTools.fill(valuesGrad, 0);
       VecTools.append(valuesGrad, grad.getValuesGrad());
       VecTools.incscale(valuesGrad, lastValuesGrad[seqId], -1);
@@ -134,35 +129,48 @@ public class PNFANetworkSAGA<T, Loss extends L2> implements SeqOptimization<T, L
       lastValuesGrad[seqId] = grad.getValuesGrad();
 
       // do not apply update to all the characters
-      params.updateParams(seqWGrad, valuesGrad, -step, seqAlphabet[seqId]);
+      params.updateParams(seqBetaGrad, valuesGrad, -step, seqAlphabet[seqId]);
 
-      if (iter % (learn.length()) == 0) {
+      if (iter % (5 * learn.length()) == 0) {
         long cur = System.nanoTime();
+
         for (int seqId1 = 0; seqId1 < learn.length(); seqId1++) {
           for (int i = 0; i < seqAlphabet[seqId1].length; i++) {
             final int a = seqAlphabet[seqId1][i];
-            seqWGrad[i] = wGrad[a];
-            VecTools.fill(seqWGrad[i], 0);
+            seqBetaGrad[i] = betaGrad[a];
+            VecTools.fill(seqBetaGrad[i], 0);
             // character a was not counted during last (iter - lastAlphaGradChanged[a] - 1) iterations as part of
             // the average sum of derivatives
-            VecTools.incscale(seqWGrad[i], totalWGrad[a], (iter - lastAlphaGradChanged[a] - 1) / learn.length());
+            VecTools.incscale(seqBetaGrad[i], totalBetaGrad[a], (double) (iter - lastAlphaGradChanged[a]) / learn.length());
             lastAlphaGradChanged[a] = iter;
           }
+          VecTools.fill(valuesGrad, 0);
+          params.updateParams(seqBetaGrad, valuesGrad, -step, seqAlphabet[seqId1]);
         }
         final double newCost = getCost(learn, loss, params);
-  //        System.out.printf("Iteration %d, cost=%.6f\n", iter, newCost);
+            System.out.printf("Iteration %d, cost=%.6f\n", iter, newCost);
         //  System.out.printf("Iterations elapsed  %d, cost=%.6f, 100 iterations passed in %.2f minutes\n", iter, curCost, (cur - start) / 60e9);
         start = cur;
         if (newCost > curCost && iter != 0) {
-//          System.out.printf("Iterations elapsed %d, cost=%.6f\n", iter, curCost);
+          System.out.printf("Iterations elapsed %d, cost=%.6f\n", iter, curCost);
           break;
         }
         System.out.flush();
         curCost= newCost;
       }
     }
+    DFA<T> result = new DFA<>(alphabet);
+    for (int i = 1; i < stateCount; i++) result.createNewState();
 
-    return (seq) -> new SingleValueVec(params.getSeqValue(seq));
+    for (int i = 0; i < alphabet.size(); i++) {
+      for (int j = 0; j < stateCount; j++) {
+        int id = ArrayTools.max(params.getW()[i].row(j).toArray());
+        result.addTransition(j, id, alphabet.getT(alphabet.get(i)));
+      }
+    }
+    return (seq) -> new SingleValueVec(params.getValues().get(result.run(seq))); //new SingleValueVec(params.getSeqValue(seq));
+
+//    return (seq) -> new SingleValueVec(params.getSeqValue(seq));
   }
 
   private double getCost(final DataSet<Seq<T>> learn, final Loss loss, final PNFAParams<T> params) {
