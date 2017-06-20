@@ -4,21 +4,31 @@ import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.codec.seq.DictExpansion;
 import com.spbsu.commons.io.codec.seq.Dictionary;
+import com.spbsu.commons.math.Func;
+import com.spbsu.commons.math.FuncC1;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqArray;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.func.FuncEnsemble;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.methods.SeqOptimization;
-import com.spbsu.ml.methods.seq.nn.PNFANetworkGD;
-import com.spbsu.ml.methods.seq.nn.PNFANetworkSAGA;
-import com.spbsu.ml.methods.seq.nn.PNFANetworkSGD;
+import com.spbsu.ml.methods.seq.automaton.AutomatonBruteforce;
+import com.spbsu.ml.methods.seq.automaton.IncrementalAutomatonBuilder;
+import com.spbsu.ml.methods.seq.automaton.evaluation.OptimizedStateEvaluation;
+import com.spbsu.ml.methods.seq.nn.*;
+import com.spbsu.ml.optimization.StochasticGradientDescent;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -35,17 +45,19 @@ import java.util.zip.GZIPInputStream;
 public class RunSpliceData {
   private static final List<String> CLASSES = Arrays.asList("EI", "IE", "N");
   private static final int ALPHABET_SIZE = 10;
-  private static final int BOOST_ITERS = 30000;
-  private static final double BOOST_STEP = 0.7;
-  private static final int MAX_STATE_COUNT = 8;
-  private static final int DESCENT_STEP_COUNT = 100000;
-  private static final double GRAD_STEP = 0.75;
+  private static final int BOOST_ITERS = 400;
+  private static final double BOOST_STEP = 0.04;
+  private static final int MAX_STATE_COUNT = 6;
+  private static final int DESCENT_STEP_COUNT = 200000;
+  private static final double GRAD_STEP = 0.01;
   private static final FastRandom random = new FastRandom(239);
 
   final List<Seq<Integer>> trainData = new ArrayList<>();
+  final List<Mx> trainDataAsMx = new ArrayList<>();
   Vec trainTarget;
 
   final List<Seq<Integer>> testData = new ArrayList<>();
+  final List<Mx> testDataAsMx = new ArrayList<>();
   Vec testTarget;
 
   final Alphabet<Integer> alphabet = new IntAlphabet(ALPHABET_SIZE);
@@ -78,7 +90,7 @@ public class RunSpliceData {
 
     List<Character> alpha = Arrays.asList('A', 'C', 'G', 'T');
     DictExpansion<Character> de = new DictExpansion<>(alpha, ALPHABET_SIZE);
-    for (int i = 0; i < 500; i++) {
+    for (int i = 0; i < 50; i++) {
       data.forEach(de::accept);
     }
 
@@ -113,12 +125,20 @@ public class RunSpliceData {
         if (classes.get(i) != clazz) {
           continue;
         }
+
+        final Seq<Integer> seq = result.parse(data.get(i));
+        final Mx mx = new VecBasedMx(seq.length(), result.size());
+        for (int j = 0; j < seq.length(); j++) {
+          mx.set(j, seq.at(j), 1);
+        }
         if (cnt < trainCount) {
           trainClasses[trainData.size()] = classes.get(i);
-          trainData.add(result.parse(data.get(i)));
+          trainData.add(seq);
+          trainDataAsMx.add(mx);
         } else if (cnt < sampleCount){
           testClasses[testData.size()] = classes.get(i);
-          testData.add(result.parse(data.get(i)));
+          testData.add(seq);
+          testDataAsMx.add(mx);
         }
         cnt++;
       }
@@ -151,12 +171,70 @@ public class RunSpliceData {
     for (int i = 0; i < trainTarget.length(); i++) {
       labels.add((int) Math.round(trainTarget.get(i)));
     }
-    long start = System.nanoTime();
-    final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
-            //new IncrementalAutomatonBuilder<>(alphabet, new OptimizedStateEvaluation<>(), i),
-            new PNFANetworkGD<>(alphabet, MAX_STATE_COUNT, random, GRAD_STEP, DESCENT_STEP_COUNT, 4),
-            BOOST_ITERS, BOOST_STEP);
 
+    List<Integer> testLabels = new ArrayList<>();
+    for (int i = 0; i < testTarget.length(); i++) {
+      testLabels.add((int) Math.round(testTarget.get(i)));
+    }
+    long start = System.nanoTime();
+    /*
+    final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
+/*            new BootstrapSeqOptimization<>(
+                    new IncrementalAutomatonBuilder<>(alphabet, new OptimizedStateEvaluation<>(), MAX_STATE_COUNT, 1000000),
+                    random
+            ),
+            //new AutomatonBruteforce<>(alphabet, new OptimizedStateEvaluation<>(), MAX_STATE_COUNT),
+            //new PNFANetworkSAGA<>(alphabet, MAX_STATE_COUNT, random, GRAD_STEP, DESCENT_STEP_COUNT),
+            new PNFANetworkGD<>(alphabet, MAX_STATE_COUNT, random, GRAD_STEP, DESCENT_STEP_COUNT, 4),
+
+            BOOST_ITERS, BOOST_STEP
+    );
+    */
+    final int signalDim = ALPHABET_SIZE;
+    final int lstmNodeCount = 100;
+    final int logisticNodeCount = 3;
+
+    final NeuralNetwork network = new NeuralNetwork(
+            new LSTMLayer(lstmNodeCount, signalDim, random),
+            new MeanPoolLayer(),
+            new LogisticLayer(logisticNodeCount, lstmNodeCount, random)
+    );
+
+    final FuncC1[] targetFuncs = new FuncC1[trainTarget.dim()];
+    for (int i = 0;i  < trainTarget.dim(); i++) {
+      final int i1 = i;
+      final Vec v = new ArrayVec(3);
+      final L2 llLogit = new L2(v, data);
+      v.set(labels.get(i), 1);
+      targetFuncs[i] = new FuncC1.Stub() {
+        @Override
+        public Vec gradient(Vec x) {
+          network.setParams(x);
+          final Vec outputGrad = llLogit.gradient(network.value(trainDataAsMx.get(i1)));
+          final Mx outputGradMx = new VecBasedMx(1, outputGrad.dim());
+          for (int i = 0; i < outputGrad.dim(); i++) {
+            outputGradMx.set(i, outputGrad.get(i));
+          }
+          return network.gradByParams(trainDataAsMx.get(i1), outputGradMx, true);
+        }
+
+        @Override
+        public double value(Vec x) {
+          network.setParams(x);
+          return llLogit.value(network.value(trainDataAsMx.get(i1)));
+        }
+
+        @Override
+        public int dim() {
+          return network.paramCount();
+        }
+      };
+    }
+
+    final FuncEnsemble networkTarget = new FuncEnsemble<>(Arrays.asList(targetFuncs), GRAD_STEP);
+    final Vec optW = new SAGA(20, GRAD_STEP, random).optimizeWithStartX(networkTarget, network.paramsView());
+    network.setParams(optW);
+   /*
     Action<Computable<Seq<Integer>, Vec>> listener = classifier -> {
       System.out.println("Current time: " + new SimpleDateFormat("yyyyMMdd_HH:mm:ss").format(Calendar.getInstance().getTime()));
       // System.out.println("Current accuracy:");
@@ -170,11 +248,14 @@ public class RunSpliceData {
     final Computable<Seq<Integer>, Vec> classifier =
             new OneVsRest(boosting, CLASSES.size(), labels).fit(data, new LLLogit(trainTarget, null));
     long end = System.nanoTime();
+
     //.fit(data, new L2(trainTarget, null));
     //System.out.println(automaton.toString());
     System.out.println(String.format("Elapsed %.2f minutes", (end - start) / 60e9));
-    System.out.println("Train accuracy of " + getAccuracy(trainData, trainTarget, classifier));
-    System.out.println("Test accuracy of  " + getAccuracy(testData, testTarget, classifier));
+    */
+    final Computable<Mx, Vec> classifier = network::value;
+    System.out.println("Train accuracy of " + getAccuracy(trainDataAsMx, labels, classifier));
+    System.out.println("Test accuracy of  " + getAccuracy(testDataAsMx, testLabels, classifier));
   }
 
   private class OneVsRest implements SeqOptimization<Integer, LLLogit> {
@@ -233,6 +314,23 @@ public class RunSpliceData {
       if (Math.round(classifier.compute(data.get(i)).get(0)) == target.get(i)) {
         passedCnt++;
       }
+    }
+    return 1.0 * passedCnt / data.size();
+  }
+
+  private double getAccuracy(List<Mx> data, List<Integer> labels, Computable<Mx, Vec> classifier) {
+    int passedCnt = 0;
+    int classAccuracy[] = new int[3];
+    int classSize[] = new int[3];
+    for (int i = 0; i < data.size(); i++) {
+      if (VecTools.argmax(classifier.compute(data.get(i))) == labels.get(i)) {
+        passedCnt++;
+        classAccuracy[labels.get(i)]++;
+      }
+      classSize[labels.get(i)]++;
+    }
+    for (int i = 0; i < 3; i++) {
+      System.out.println("Class " + i + " accuracy:" + classAccuracy[i] * 1.0 / classSize[i]);
     }
     return 1.0 * passedCnt / data.size();
   }
