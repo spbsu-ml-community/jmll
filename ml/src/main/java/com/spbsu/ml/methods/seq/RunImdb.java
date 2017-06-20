@@ -1,37 +1,41 @@
 package com.spbsu.ml.methods.seq;
 
-import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.codec.seq.DictExpansion;
 import com.spbsu.commons.io.codec.seq.Dictionary;
+import com.spbsu.commons.math.FuncC1;
+import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqArray;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.func.FuncEnsemble;
+import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.methods.seq.nn.PNFANetworkGD;
-import com.spbsu.ml.methods.seq.nn.PNFANetworkSAGA;
+import com.spbsu.ml.methods.seq.nn.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class RunImdb {
-  private static final int ALPHABET_SIZE = 10000;
-  private static final int TRAIN_SIZE = 10000;
-  private static final Random random = new Random(239);
+  private static final int ALPHABET_SIZE = 500;
+  private static final int TRAIN_SIZE = 5000;
+  private static final FastRandom random = new FastRandom(239);
 
   private static final int BOOST_ITERS = 1000;
   private static final double BOOST_STEP = 0.02;
   private static final int MAX_STATE_COUNT = 4;
-  private static final int DESCENT_STEP_COUNT = 20000;
-  private static final double GRAD_STEP = 0.15;
+  private static final int DESCENT_STEP_COUNT = TRAIN_SIZE * 30;
+  private static final double GRAD_STEP = 0.01;
 
   private List<Seq<Integer>> train;
   private Vec trainTarget;
@@ -39,6 +43,7 @@ public class RunImdb {
   private List<Seq<Integer>> test;
   private Vec testTarget;
   private final List<Character> alphabet = new ArrayList<>();
+  private int maxLen;
 
   public void loadData() throws IOException {
     System.out.println("Number of cores: " + Runtime.getRuntime().availableProcessors());
@@ -61,17 +66,17 @@ public class RunImdb {
             .distinct()
             .mapToObj(i -> (char) i)
             .collect(Collectors.toList()), ALPHABET_SIZE);
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 10; i++) {
       positiveRaw.forEach(de::accept);
       negativeRaw.forEach(de::accept);
     }
-    Dictionary<Character> result = de.result();
+    Dictionary<Character> dictionary = de.result();
     //System.out.println("New dictionary: " + result.alphabet().toString());
-    System.out.println("New dictionary size: " + result.alphabet().size());
+    System.out.println("New dictionary size: " + dictionary.alphabet().size());
 
     int size = 0;
     for (CharSeq seq: positiveRaw) {
-      size += result.parse(seq).length();
+      size += dictionary.parse(seq).length();
     }
     System.out.println(size + " " + size / positiveRaw.size());
 
@@ -80,8 +85,12 @@ public class RunImdb {
     positiveRaw = positiveRaw.stream().limit(TRAIN_SIZE).collect(Collectors.toList());
     negativeRaw = negativeRaw.stream().limit(TRAIN_SIZE).collect(Collectors.toList());
 
-    train = positiveRaw.stream().map(result::parse).collect(Collectors.toList());
-    train.addAll(negativeRaw.stream().map(result::parse).collect(Collectors.toList()));
+    train = positiveRaw.stream().map(dictionary::parse).collect(Collectors.toList());
+    train.addAll(negativeRaw.stream().map(dictionary::parse).collect(Collectors.toList()));
+    maxLen = 0;
+    for (int i = 0; i < train.size(); i++) {
+      maxLen = Math.max(maxLen, train.get(i).length());
+    }
 
     int[] targetArray = new int[train.size()];
     for (int i = 0; i < train.size() / 2; i++) {
@@ -92,9 +101,11 @@ public class RunImdb {
     }
     trainTarget = VecTools.fromIntSeq(new IntSeq(targetArray));
 
-    test = readData("src/aclImdb/test/pos").stream().map(result::parse).collect(Collectors.toList());
-    test.addAll(readData("src/aclImdb/test/neg").stream().map(result::parse).collect(Collectors.toList()));
-
+    test = readData("src/aclImdb/test/pos").stream().map(dictionary::parse).collect(Collectors.toList());
+    test.addAll(readData("src/aclImdb/test/neg").stream().map(dictionary::parse).collect(Collectors.toList()));
+    for (int i = 0; i < train.size(); i++) {
+      maxLen = Math.max(maxLen, train.get(i).length());
+    }
     targetArray = new int[test.size()];
     for (int i = 0; i < test.size() / 2; i++) {
       targetArray[i] = 1;
@@ -104,6 +115,20 @@ public class RunImdb {
     }
     testTarget = VecTools.fromIntSeq(new IntSeq(targetArray));
     System.out.println("Data loaded");
+    /*
+    Writer writer = new FileWriter("data.txt");
+    writer.write(train.size() + "\n");
+    for (int i = 0; i < train.size(); i++) {
+      writer.write(train.get(i) + "\n");
+    }
+    writer.write(trainTarget.toString());
+
+    writer.write(test.size() + "\n");
+    for (int i = 0; i < test.size(); i++) {
+      writer.write(test.get(i) + "\n");
+    }
+    writer.write(test.toString());
+    */
   }
 
   public void test() {
@@ -125,24 +150,26 @@ public class RunImdb {
       }
     };
 
-
+/*
     long start = System.nanoTime();
     GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
             new PNFANetworkSAGA<>(
                     new IntAlphabet(ALPHABET_SIZE),
                     MAX_STATE_COUNT,
-                    new Random(239),
+                    random,
                     GRAD_STEP,
                     DESCENT_STEP_COUNT
+                    //4
             ),
+            //new IncrementalAutomatonBuilder<>(new IntAlphabet(ALPHABET_SIZE), new OptimizedStateEvaluation<>(), MAX_STATE_COUNT, 1000000),
             BOOST_ITERS,
             BOOST_STEP
     );
     Action<Computable<Seq<Integer>, Vec>> listener = classifier -> {
       System.out.println("Current time: " + new SimpleDateFormat("yyyy/MM/dd_HH:mm:ss").format(Calendar.getInstance().getTime()));
       System.out.println("Current accuracy:");
-      System.out.println("Train accuracy: " + getAccuracy(train, trainTarget, classifier));
-      System.out.println("Test accuracy: " + getAccuracy(test, testTarget, classifier));
+      System.out.println("Train accuracy: " + getAccuracyMx(train, trainTarget, classifier));
+      System.out.println("Test accuracy: " + getAccuracyMx(test, testTarget, classifier));
       System.out.println("Train evaluation: " + getLoss(train, trainTarget, classifier));
       System.out.println("Test evaluation: " + getLoss(test, testTarget, classifier));
     };
@@ -150,10 +177,59 @@ public class RunImdb {
     boosting.addListener(listener);
 
     final Computable<Seq<Integer>, Vec> classifier = boosting.fit(data, new LLLogit(trainTarget, null));
+*/
+    final int signalDim = ALPHABET_SIZE;
+    final int lstmNodeCount = 60;
+    final int logisticNodeCount = 1;
 
-    System.out.printf("grad step=%.4f, boost step=%.4f, boost iters=%d, elapsed %.2f minutes\n", GRAD_STEP, BOOST_STEP, BOOST_ITERS, (System.nanoTime() - start) / 60e9);
-    System.out.println("Train accuracy: " + getAccuracy(train, trainTarget, classifier));
-    System.out.println("Test accuracy: " + getAccuracy(test, testTarget, classifier));
+    final NeuralNetwork network = new NeuralNetwork(
+            new LSTMLayer(lstmNodeCount, signalDim, random),
+            new MeanPoolLayer(),
+            new LogisticLayer(logisticNodeCount, lstmNodeCount, random)
+    );
+
+    final FuncC1[] targetFuncs = new FuncC1[trainTarget.dim()];
+    for (int i = 0;i  < trainTarget.dim(); i++) {
+      final int i1 = i;
+      final Vec v = new ArrayVec(1);
+      final L2 llLogit = new L2(v, data);
+      v.set(0, trainTarget.get(i));
+      targetFuncs[i] = new FuncC1.Stub() {
+        @Override
+        public Vec gradient(Vec x) {
+          network.setParams(x);
+          final Mx mx = seqToMx(train.get(i1));
+          final Vec outputGrad = llLogit.gradient(network.value(mx));
+          final Mx outputGradMx = new VecBasedMx(1, outputGrad.dim());
+          for (int i = 0; i < outputGrad.dim(); i++) {
+            outputGradMx.set(i, outputGrad.get(i));
+          }
+          return network.gradByParams(mx, outputGradMx, true);
+        }
+
+        @Override
+        public double value(Vec x) {
+          network.setParams(x);
+          final Mx mx = seqToMx(train.get(i1));
+          return llLogit.value(network.value(mx));
+        }
+
+        @Override
+        public int dim() {
+          return network.paramCount();
+        }
+      };
+    }
+
+    final FuncEnsemble networkTarget = new FuncEnsemble<>(Arrays.asList(targetFuncs), GRAD_STEP);
+    final Vec optW = new SAGA(10, GRAD_STEP, random).optimize(networkTarget);
+    network.setParams(optW);
+
+    //System.out.printf("grad step=%.4f, boost step=%.4f, boost iters=%d, elapsed %.2f minutes\n", GRAD_STEP, BOOST_STEP, BOOST_ITERS, (System.nanoTime() - start) / 60e9);
+    final Computable<Mx, Vec> classifier = network::value;
+
+    System.out.println("Train accuracy: " + getAccuracyMx(train, trainTarget, classifier));
+    System.out.println("Test accuracy: " + getAccuracyMx(test, testTarget, classifier));
   }
 
   private List<CharSeq> readData(final String filePath) throws IOException {
@@ -188,6 +264,16 @@ public class RunImdb {
     return 1.0 * passedCnt / data.size();
   }
 
+  private double getAccuracyMx(List<Seq<Integer>> data, Vec labels, Computable<Mx, Vec> classifier) {
+    int passedCnt = 0;
+    for (int i = 0; i < data.size(); i++) {
+      if (Math.round(classifier.compute(seqToMx(data.get(i))).get(0)) == Math.round(labels.get(i))) {
+        passedCnt++;
+      }
+    }
+    return 1.0 * passedCnt / data.size();
+  }
+
   private double getLoss(List<Seq<Integer>> data, Vec target, Computable<Seq<Integer>, Vec> classifier) {
     final LLLogit lllogit = new LLLogit(target, null);
     double result = 0;
@@ -197,9 +283,21 @@ public class RunImdb {
     return result / data.size();
   }
 
+  private Mx seqToMx(Seq<Integer> seq) {
+    final Mx mx = new VecBasedMx(maxLen, ALPHABET_SIZE);
+    for (int j = 0; j < Math.min(maxLen, seq.length()); j++) {
+      mx.set(j, seq.at(j), 1);
+    }
+    for (int j = Math.min(maxLen, seq.length()); j < maxLen; j++) {
+      mx.set(j, 0, 1);
+    }
+    return mx;
+  }
+
   public static void main(String[] args) throws IOException {
     RunImdb test = new RunImdb();
     test.loadData();
     test.test();
   }
+
 }
