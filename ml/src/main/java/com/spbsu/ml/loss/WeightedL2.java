@@ -32,7 +32,11 @@ public class WeightedL2 extends L2 {
     this.sumWeights = VecTools.sum(weights);
   }
 
-  @NotNull
+  public Vec getWeights() {
+    return weights;
+  }
+
+    @NotNull
   @Override
   public Vec gradient(final Vec x) {
     // 2 * (x[i] - target[i]) * weight[i]
