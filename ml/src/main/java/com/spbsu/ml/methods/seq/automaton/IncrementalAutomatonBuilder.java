@@ -1,6 +1,7 @@
 package com.spbsu.ml.methods.seq.automaton;
 
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.seq.Seq;
@@ -8,21 +9,20 @@ import com.spbsu.commons.seq.regexp.Alphabet;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.SeqOptimization;
-import com.spbsu.ml.methods.seq.automaton.transform.AddNewStateTransform;
-import com.spbsu.ml.methods.seq.automaton.transform.AddTransitionTransform;
-import com.spbsu.ml.methods.seq.automaton.transform.SplitStateTransform;
-import com.spbsu.ml.methods.seq.automaton.transform.Transform;
+import com.spbsu.ml.methods.seq.automaton.transform.*;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptimization<T, Loss> {
   private final int maxStateCount;
   private final Alphabet<T> alphabet;
   private final Computable<AutomatonStats<T>, Double> stateEvaluation;
   private final int maxIterations;
+  private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
 
   public IncrementalAutomatonBuilder(final Alphabet<T> alphabet,
                                      final Computable<AutomatonStats<T>, Double> stateEvaluation,
@@ -36,38 +36,63 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
 
   @Override
   public Computable<Seq<T>, Vec> fit(final DataSet<Seq<T>> learn, final Loss loss) {
-    AutomatonStats<T> automatonStats = new AutomatonStats<>(alphabet, learn, loss.target());
+    AutomatonStats<T> automatonStats = new AutomatonStats<>(alphabet, learn, loss);
 
     double oldCost = stateEvaluation.compute(automatonStats);
 
     for (int iter = 0; iter < maxIterations; iter++) {
 
-      double optCost = Double.MAX_VALUE;
-      Transform<T> optTransform = null;
+      final AutomatonStats<T> automatonStats1 = automatonStats;
+      final List<Future<AutomatonStats<T>>> futures = new ArrayList<>();
       for (Transform<T> transform: getTransforms(automatonStats)) {
+        futures.add(executorService.submit(() -> transform.applyTransform(automatonStats1)));
+
+        /*
         final AutomatonStats<T> newAutomatonStats = transform.applyTransform(automatonStats);
         final double newCost = stateEvaluation.compute(newAutomatonStats);
         if (newCost < optCost) {
           optCost = newCost;
           optTransform = transform;
-        }
+        }*/
       }
-      if (optTransform == null || optCost >= oldCost - 1e-9) {
+
+      final AutomatonStats<T> optNewStats = futures.stream().map(future -> {
+        try {
+          return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+          e.printStackTrace();
+          return null;
+        }
+      }).min(Comparator.comparingDouble(stateEvaluation::compute)).orElse(null);
+      final double optCost = stateEvaluation.compute(optNewStats);
+
+      if (optNewStats == null || (optCost >= oldCost - 1e-9)) {
+        System.out.println("Elapsed " + iter + " iterations");
         break;
       }
-      automatonStats = optTransform.applyTransform(automatonStats);
+
+      automatonStats = optNewStats ;
       removeUnreachableStates(automatonStats);
-      //System.out.printf("Iter=%d, transform=%s, newCost=%f, state count=%d\n",
-      //      iter, optTransform.getDescription(), optCost, automatonStats.getAutomaton().getStateCount());
+      if (iter % 100 == 0 && iter != 0) {
+        System.out.printf("Iter=%d, newCost=%f, state count=%d\n",
+                iter, optCost, automatonStats.getAutomaton().getStateCount());
+/*
+        System.out.printf("Iter=%d, transform=%s, newCost=%f, state count=%d\n",
+                iter, optTransform.getDescription(), optCost, automatonStats.getAutomaton().getStateCount());
+                */
+        System.out.flush();
+      }
       oldCost = optCost;
     }
 
     final DFA<T> automaton = automatonStats.getAutomaton();
     final double[] stateValue = new double[automaton.getStateCount()];
     for (int i = 0; i < automaton.getStateCount(); i++) {
-      stateValue[i] = automatonStats.getStateSum().get(i) / automatonStats.getStateSize().get(i);
+      if (automatonStats.getStateWeight().get(i) > MathTools.EPSILON) {
+        stateValue[i] = automatonStats.getStateSum().get(i) / automatonStats.getStateWeight().get(i);
+      }
     }
-
+    System.out.println("Cur cost = " + stateEvaluation.compute(automatonStats));
     return argument -> new SingleValueVec(stateValue[automaton.run(argument)]);
   }
 
@@ -82,11 +107,11 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
       for (int c = 0; c < alphabet.size(); c++) {
         if (automaton.hasTransition(from, alphabet.getT(alphabet.get(c)))) {
           // todo commented out to improve performance
-          // transforms.add(new RemoveTransitionTransform<>(from, alphabet.getT(alphabet.get(c))));
+          transforms.add(new RemoveTransitionTransform<>(from, alphabet.getT(alphabet.get(c))));
           for (int to = 0; to < stateCount; to++) {
             if (to != from) {
               // todo commented out to improve performance
-              // transforms.add(new ReplaceTransitionTransform<>(from, to, alphabet.getT(alphabet.get(c))));
+                transforms.add(new ReplaceTransitionTransform<>(from, to, alphabet.getT(alphabet.get(c))));
             }
           }
         } else {
@@ -103,8 +128,7 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
         for (int to = 0; to < stateCount; to++) {
           for (int c = 0; c < alphabet.size(); c++) {
             final T cT = alphabet.getT(alphabet.get(c));
-            if (!automaton.hasTransition(from, alphabet.getT(alphabet.get(c)))) {
-              if (!automaton.hasTransition(from, alphabet.getT(alphabet.get(c))))
+            if (!automaton.hasTransition(from, cT)) {
               for (int c1 = 0; c1 < alphabet.size(); c1++) {
                 transforms.add(new AddNewStateTransform<>(from, to, cT, alphabet.getT(alphabet.get(c1))));
               }
@@ -139,7 +163,7 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
       if (!reached[i] && i != automaton.getStartState()) {
         automaton.removeState(i);
         automatonStats.getSamplesEndState().remove(i);
-        automatonStats.getStateSize().remove(i);
+        automatonStats.getStateWeight().remove(i);
         automatonStats.getStateSum().remove(i);
         automatonStats.getStateSum2().remove(i);
         automatonStats.getSamplesViaState().remove(i);

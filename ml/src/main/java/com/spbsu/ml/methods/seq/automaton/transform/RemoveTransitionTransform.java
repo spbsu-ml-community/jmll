@@ -33,6 +33,7 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
     final DFA<T> automaton = result.getAutomaton();
     final DataSet<Seq<T>> data = automatonStats.getDataSet();
     final Vec target = automatonStats.getTarget();
+    final Vec weights = automatonStats.getWeights();
     final List<TIntIntMap> samplesEndState = automatonStats.getSamplesEndState();
     final List<TIntSet> samplesViaState = automatonStats.getSamplesViaState();
     final int stateCount = automaton.getStateCount();
@@ -40,7 +41,7 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
     final List<TIntSet> newVia = new ArrayList<>(stateCount);
     final List<TIntIntMap> newSamplesEndState = new ArrayList<>(stateCount);
 
-    final TIntList newStateSize = new TIntArrayList(automatonStats.getStateSize());
+    final TDoubleList newStateWeights = new TDoubleArrayList(automatonStats.getStateWeight());
     final TDoubleList newStateSum = new TDoubleArrayList(automatonStats.getStateSum());
     final TDoubleList newStateSum2 = new TDoubleArrayList(automatonStats.getStateSum2());
 
@@ -85,7 +86,7 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
           newSamplesEndState.get(i).remove(index);
           newStateSum.set(i, newStateSum.get(i) - w);
           newStateSum2.set(i, newStateSum2.get(i) - w * w);
-          newStateSize.set(i, newStateSize.get(i) - 1);
+          newStateWeights.set(i, newStateWeights.get(i) - weights.get(index));
         }
       }
 
@@ -95,7 +96,7 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
       newSamplesEndState.get(curState).put(index, endI);
       newStateSum.set(curState, newStateSum.get(curState) + w);
       newStateSum2.set(curState, newStateSum2.get(curState) + w * w);
-      newStateSize.set(curState, newStateSize.get(curState) + 1);
+      newStateWeights.set(curState, newStateWeights.get(curState) + weights.get(index));
 
       return true;
     });
@@ -108,7 +109,7 @@ public class RemoveTransitionTransform<T> implements Transform<T> {
         result.getSamplesEndState().set(i, newSamplesEndState.get(i));
       }
     }
-    result.setStateSize(newStateSize);
+    result.setStateWeight(newStateWeights);
     result.setStateSum(newStateSum);
     result.setStateSum2(newStateSum2);
 

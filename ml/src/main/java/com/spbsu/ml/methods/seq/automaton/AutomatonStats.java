@@ -2,9 +2,12 @@ package com.spbsu.ml.methods.seq.automaton;
 
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
+import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
 import com.spbsu.ml.data.set.DataSet;
+import com.spbsu.ml.loss.L2;
+import com.spbsu.ml.loss.WeightedL2;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -23,9 +26,10 @@ public class AutomatonStats<T> {
   private final Alphabet<T> alphabet;
   private final DataSet<Seq<T>> dataSet;
   private final Vec target;
+  private final Vec weights;
   private TDoubleList stateSum = new TDoubleArrayList();
   private TDoubleList stateSum2 = new TDoubleArrayList();
-  private TIntList stateSize = new TIntArrayList();
+  private TDoubleList stateWeight = new TDoubleArrayList();
   private List<TIntSet> samplesViaState = new ArrayList<>();
   private List<TIntIntMap> samplesEndState = new ArrayList<>();
 
@@ -34,17 +38,28 @@ public class AutomatonStats<T> {
     alphabet = other.alphabet;
     dataSet = other.dataSet;
     target = other.target;
+    weights = other.weights;
     samplesEndState = new ArrayList<>(other.samplesEndState);
     samplesViaState = new ArrayList<>(other.samplesViaState);
     stateSum = new TDoubleArrayList(other.stateSum);
     stateSum2 = new TDoubleArrayList(other.stateSum2);
-    stateSize = new TIntArrayList(other.stateSize);
+    stateWeight = new TDoubleArrayList(other.stateWeight);
   }
 
-  public AutomatonStats(Alphabet<T> alphabet, DataSet<Seq<T>> dataSet, Vec target) {
+  public AutomatonStats(Alphabet<T> alphabet, DataSet<Seq<T>> dataSet, L2 loss) {
     automaton = new DFA<T>(alphabet);
     this.dataSet = dataSet;
-    this.target = target;
+    if (loss instanceof WeightedL2) {
+      final WeightedL2 weightedLoss = (WeightedL2) loss;
+      this.weights = weightedLoss.getWeights();
+      this.target = weightedLoss.target();
+    } else {
+      this.target = VecTools.copy(loss.target());
+      this.weights = new ArrayVec(target.length());
+      VecTools.fill(this.weights, 1);
+      VecTools.scale(this.target, this.weights);
+    }
+
     this.alphabet = alphabet;
     final TIntSet allIndicesSet = new TIntHashSet();
     final TIntIntMap allIndicesMap = new TIntIntHashMap();
@@ -54,7 +69,7 @@ public class AutomatonStats<T> {
       allIndicesMap.put(i, 0);
     }
 
-    stateSize.add(dataSet.length());
+    stateWeight.add(dataSet.length());
     stateSum.add(VecTools.sum(target));
     stateSum2.add(VecTools.sum2(target));
 
@@ -101,8 +116,8 @@ public class AutomatonStats<T> {
     this.samplesEndState = samplesEndState;
   }
 
-  public TIntList getStateSize() {
-    return stateSize;
+  public TDoubleList getStateWeight() {
+    return stateWeight;
   }
 
   public Vec getTarget() {
@@ -117,11 +132,27 @@ public class AutomatonStats<T> {
     this.stateSum2 = stateSum2;
   }
 
-  public void setStateSize(TIntList stateSize) {
-    this.stateSize = stateSize;
+  public void setStateWeight(TDoubleList stateWeight) {
+    this.stateWeight = stateWeight;
   }
 
   public void setAutomaton(DFA<T> automaton) {
     this.automaton = automaton;
   }
+
+  public Vec getWeights() {
+    return weights;
+  }
+
+  public int addNewState() {
+    final int newState = automaton.createNewState();
+    samplesViaState.add(new TIntHashSet());
+    samplesEndState.add(new TIntIntHashMap());
+    stateWeight.add(0);
+    stateSum.add(0);
+    stateSum2.add(0);
+
+    return newState;
+  }
+
 }

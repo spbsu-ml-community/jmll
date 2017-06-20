@@ -23,25 +23,8 @@ public class AddNewStateTransform<T> implements Transform<T> {
   public AutomatonStats<T> applyTransform(AutomatonStats<T> automatonStats) {
     AutomatonStats<T> newAutomatonStats = new AutomatonStats<>(automatonStats);
 
-    newState = newAutomatonStats.getAutomaton().createNewState();
-
-    newAutomatonStats.getSamplesViaState().add(new TIntHashSet());
-    newAutomatonStats.getSamplesEndState().add(new TIntIntHashMap());
-    newAutomatonStats.getStateSize().add(0);
-    newAutomatonStats.getStateSum().add(0);
-    newAutomatonStats.getStateSum2().add(0);
-
-    Alphabet<T> alphabet = newAutomatonStats.getAlphabet();
-    for (int i = 0; i < alphabet.size(); i++) {
-      if (alphabet.index(c2) != i) {
-        newAutomatonStats = new AddTransitionTransform<>(newState, newState, alphabet.getT(alphabet.get(i))).applyTransform(newAutomatonStats);
-      }
-    }
-
-    AutomatonStats<T> state1 = new AddTransitionTransform<>(newState, to, c2).applyTransform(newAutomatonStats);
-    if (state1.getAutomaton().hasTransition(from, c1)) {
-      state1 = new RemoveTransitionTransform<>(from, c1).applyTransform(state1);
-    }
+    newState = newAutomatonStats.addNewState();
+    final AutomatonStats<T> state1 = new AddTransitionTransform<>(newState, to, c2).applyTransform(newAutomatonStats);
     return new AddTransitionTransform<>(from, newState, c1).applyTransform(state1);
   }
 

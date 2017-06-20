@@ -1,6 +1,7 @@
 package com.spbsu.ml.methods.seq.automaton.evaluation;
 
 import com.spbsu.commons.func.Computable;
+import com.spbsu.commons.math.MathTools;
 import com.spbsu.ml.methods.seq.automaton.AutomatonStats;
 
 public class OptimizedStateEvaluation<T> implements Computable<AutomatonStats<T>, Double> {
@@ -11,8 +12,8 @@ public class OptimizedStateEvaluation<T> implements Computable<AutomatonStats<T>
     for (int i = 0; i < stateCount; i++) {
       final double sum = automatonStats.getStateSum().get(i);
       final double sum2 = automatonStats.getStateSum2().get(i);
-      final int size = automatonStats.getStateSize().get(i);
-      if (size > 0) {
+      final double size = automatonStats.getStateWeight().get(i);
+      if (size > MathTools.EPSILON) {
         score += sum2 - sum * sum / size;
       }
     }

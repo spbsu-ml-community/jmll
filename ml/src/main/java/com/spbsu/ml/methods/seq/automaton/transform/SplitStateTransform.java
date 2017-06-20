@@ -17,13 +17,7 @@ public class SplitStateTransform<T> implements Transform<T> {
   public AutomatonStats<T> applyTransform(AutomatonStats<T> automatonStats) {
     AutomatonStats<T> newAutomatonStats = new AutomatonStats<>(automatonStats);
 
-    final int newState = newAutomatonStats.getAutomaton().createNewState();
-
-    newAutomatonStats.getSamplesViaState().add(new TIntHashSet());
-    newAutomatonStats.getSamplesEndState().add(new TIntIntHashMap());
-    newAutomatonStats.getStateSize().add(0);
-    newAutomatonStats.getStateSum().add(0);
-    newAutomatonStats.getStateSum2().add(0);
+    final int newState = newAutomatonStats.addNewState();
     return new AddTransitionTransform<>(state, newState, c).applyTransform(newAutomatonStats);
   }
 
