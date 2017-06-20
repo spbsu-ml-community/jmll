@@ -9,6 +9,7 @@ import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
+import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.methods.SeqOptimization;
@@ -61,26 +62,27 @@ public class PNFANetworkGD<T, Loss extends L2> implements SeqOptimization<T, Los
     params.updateParams(bGradients, vGradients, learn, loss.target(), distribs, 0);
     double curCost = getCost(learn, loss, params);
 
+    final int[] path = new int[4000];
+    final double[] transitions = new double[4000];
+
     for (int iter = 0; iter < iterationsCount; iter++) {
       fill(vGradients, 0);
       for (final Mx bGradient : bGradients) {
         fill(bGradient, 0);
       }
 
-      final TIntArrayList path = new TIntArrayList(1000);
-      final TDoubleArrayList transitions = new TDoubleArrayList(1000);
       final int samplesCount = learn.length();
       for (int i = 0; i < samplesCount; i++) {
         final int sampleIdx = random.nextInt(learn.length());
         final Seq<T> sample = learn.at(sampleIdx);
         int currentState = 0;
-        path.clear();
-        transitions.clear();
+        //path.clear();
+        //transitions.clear();
         for (int t = 0; t < sample.length(); t++) {
           final Vec weights = params.getW()[alphabet.index(sample.at(t))].row(currentState);
           currentState = random.nextSimple(weights);
-          path.add(currentState);
-          transitions.add(weights.get(currentState));
+          path[t] = currentState;
+          transitions[t] = weights.get(currentState);
         }
         final double finalStateValue = params.getValues().get(currentState);
         final double pLastState = distribs[sampleIdx].get(currentState);
@@ -90,12 +92,12 @@ public class PNFANetworkGD<T, Loss extends L2> implements SeqOptimization<T, Los
         }
         residual *= finalStateValue;
         for (int t = sample.length() - 1; t >= 0; t--) {
-          currentState = path.get(t);
-          final int prevState = t > 0 ? path.get(t - 1) : 0;
-          final double prevProb = t > 0 ? transitions.get(t - 1) : 1;
+          currentState = path[t];
+          final int prevState = t > 0 ? path[t - 1] : 0;
+          final double prevProb = t > 0 ? transitions[t - 1] : 1;
           final Vec weights = params.getW()[alphabet.index(sample.at(t))].row(prevState);
           final Vec vec = bGradients[alphabet.index(sample.at(t))].row(prevState);
-          final double rresidual = residual*prevProb/weights.get(currentState);
+          final double rresidual = residual / weights.get(currentState);
 
           for (int j = 0; j < stateCount - 1; j++) {
             final double w = weights.get(j);
@@ -103,11 +105,12 @@ public class PNFANetworkGD<T, Loss extends L2> implements SeqOptimization<T, Los
               vec.adjust(j, rresidual * w * (1 - w));
             }
             else {
-              vec.adjust(j, -rresidual * w);
+              vec.adjust(j, -rresidual * w * weights.get(currentState));
             }
           }
         }
       }
+
       if (iter % 500 < 10 || iter % 500 > 460) {
         for (final Mx bGradient : bGradients) {
           fill(bGradient, 0);
@@ -116,7 +119,7 @@ public class PNFANetworkGD<T, Loss extends L2> implements SeqOptimization<T, Los
       else fill(vGradients, 0);
 
       // step
-      params.updateParams(bGradients, vGradients, learn, loss.target(), distribs, 0.7/samplesCount);
+      params.updateParams(bGradients, vGradients, learn, loss.target(), distribs, step/samplesCount);
       double totalGrad = 0;
       for (int i = 0; i < bGradients.length; i++) {
         totalGrad += VecTools.norm(bGradients[i]);
@@ -147,7 +150,6 @@ public class PNFANetworkGD<T, Loss extends L2> implements SeqOptimization<T, Los
         curCost= newCost;
       }
     }
-
     return (seq) -> new SingleValueVec(params.getSeqValue(seq));
   }
 

@@ -3,8 +3,6 @@ package com.spbsu.ml.methods.seq.nn;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.*;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
 import com.spbsu.ml.data.set.DataSet;
@@ -62,7 +60,7 @@ public class PNFANetworkSGD<T, Loss extends L2> implements SeqOptimization<T, Lo
       final Seq<T> seq = learn.at(seqId);
 
       final PNFAParams.PNFAParamsGrad grad = params.calcSeqGrad(seq, seqAlphabet[seqId], loss.target().at(seqId));
-      params.updateParams(grad.getWGrad(), grad.getValuesGrad(), -step, seqAlphabet[seqId]);
+      params.updateParams(grad.getBetaGrad(), grad.getValuesGrad(), -step, seqAlphabet[seqId]);
 
       if (iter % (learn.length() * 10) == 0) {
         long cur = System.nanoTime();
