@@ -168,9 +168,9 @@ public class PNFANetworkSAGA<T, Loss extends L2> implements SeqOptimization<T, L
         result.addTransition(j, id, alphabet.getT(alphabet.get(i)));
       }
     }
-    return (seq) -> new SingleValueVec(params.getValues().get(result.run(seq))); //new SingleValueVec(params.getSeqValue(seq));
+//    return (seq) -> new SingleValueVec(params.getValues().get(result.run(seq))); //new SingleValueVec(params.getSeqValue(seq));
 
-//    return (seq) -> new SingleValueVec(params.getSeqValue(seq));
+    return (seq) -> new SingleValueVec(params.getSeqValue(seq));
   }
 
   private double getCost(final DataSet<Seq<T>> learn, final Loss loss, final PNFAParams<T> params) {
