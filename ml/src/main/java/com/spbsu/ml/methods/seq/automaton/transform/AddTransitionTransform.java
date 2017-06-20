@@ -35,12 +35,13 @@ public class AddTransitionTransform<T> implements Transform<T> {
     final int stateCount = automaton.getStateCount();
     final DataSet<Seq<T>> data = automatonStats.getDataSet();
     final Vec target = automatonStats.getTarget();
+    final Vec weights = automatonStats.getWeights();
     final List<TIntIntMap> samplesEndState = automatonStats.getSamplesEndState();
 
     final List<TIntSet> newVia = new ArrayList<>(stateCount);
     final List<TIntIntMap> newSamplesEndState = new ArrayList<>(stateCount);
 
-    final TIntList newStateSize = new TIntArrayList(automatonStats.getStateSize());
+    final TDoubleList newStateWeight = new TDoubleArrayList(automatonStats.getStateWeight());
     final TDoubleList newStateSum = new TDoubleArrayList(automatonStats.getStateSum());
     final TDoubleList newStateSum2 = new TDoubleArrayList(automatonStats.getStateSum2());
 
@@ -71,11 +72,11 @@ public class AddTransitionTransform<T> implements Transform<T> {
       final double w = target.get(index);
       newStateSum.set(from, newStateSum.get(from) - w);
       newStateSum2.set(from, newStateSum2.get(from) - w * w);
-      newStateSize.set(from, newStateSize.get(from) - 1);
+      newStateWeight.set(from, newStateWeight.get(from) - weights.get(index));
 
       newStateSum.set(curState, newStateSum.get(curState) + w);
       newStateSum2.set(curState, newStateSum2.get(curState) + w * w);
-      newStateSize.set(curState, newStateSize.get(curState) + 1);
+      newStateWeight.set(curState, newStateWeight.get(curState) + weights.get(index));
 
       if (newSamplesEndState.get(curState) == null) {
         newSamplesEndState.set(curState, new TIntIntHashMap(samplesEndState.get(curState)));
@@ -94,7 +95,7 @@ public class AddTransitionTransform<T> implements Transform<T> {
       }
     }
 
-    result.setStateSize(newStateSize);
+    result.setStateWeight(newStateWeight);
     result.setStateSum(newStateSum);
     result.setStateSum2(newStateSum2);
 
