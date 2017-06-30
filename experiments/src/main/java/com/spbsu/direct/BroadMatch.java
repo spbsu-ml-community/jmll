@@ -101,18 +101,17 @@ public class BroadMatch {
 
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqsLA);
 
-        Arrays.asList(args)
-                .subList(3, args.length)
-                .forEach(inputFile -> {
-                  try {
-                    CharSeqTools.processLines(StreamTools.openTextFile(inputFile), new DependsProcessor(inputFile, dict, model));
-                  } catch (Exception e) {
-                    System.err.println(String.format("Failed to process %s: %s", inputFile, e.toString()));
-                  }
-                });
-
-        DependsProcessor.dump(model);
-        break;
+        while (true) {
+          Arrays.asList(args)
+                  .subList(3, args.length)
+                  .forEach(inputFile -> {
+                    try {
+                      CharSeqTools.processLines(StreamTools.openTextFile(inputFile), new DependsProcessor(inputFile, dict, model));
+                    } catch (Exception e) {
+                      System.err.println(String.format("Failed to process %s: %s", inputFile, e.toString()));
+                    }
+                  });
+        }
       }
       case "-stats": {
         final Vec2CharSequenceConverter converter = new Vec2CharSequenceConverter();
