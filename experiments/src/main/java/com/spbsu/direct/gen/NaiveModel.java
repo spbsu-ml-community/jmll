@@ -1,10 +1,17 @@
 package com.spbsu.direct.gen;
 
 import com.spbsu.commons.io.codec.seq.Dictionary;
+import com.spbsu.commons.math.vectors.VecIterator;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.IntSeq;
+import com.spbsu.commons.util.Pair;
 import gnu.trove.list.TIntList;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import static java.lang.Math.log;
 
@@ -27,6 +34,15 @@ public class NaiveModel {
 
     this.freqs = freqsLA;
     this.totalFreq = freqsLA.sum();
+  }
+
+  public void printTop(final String term, final int top) {
+    for (int i = 0; i < dict.size(); ++i) {
+      if (dict.get(i).toString().equals(term)) {
+        providers[i].printTop(top);
+        return;
+      }
+    }
   }
 
   public void processSeq(final IntSeq prevQSeq) {
@@ -137,6 +153,35 @@ public class NaiveModel {
       }
 
       return probability;
+    }
+
+    public void printTop(final int top) {
+      ArrayList <Pair<Double, Integer>> array = new ArrayList<>();
+      VecIterator it = freqs.nonZeroes();
+
+      while (it.advance()) {
+        array.add(Pair.create(it.value(), it.index()));
+      }
+
+      array.sort(new Comparator<Pair<Double, Integer>>() {
+        @Override
+        public int compare(Pair<Double, Integer> o1, Pair<Double, Integer> o2) {
+          if (o1.getFirst().equals(o2.getFirst())) {
+            return o1.getSecond().compareTo(o2.getSecond());
+          }
+
+          return -o1.getFirst().compareTo(o2.getFirst());
+        }
+      });
+
+      for (int i = 0, k = 0; k < top; ++i) {
+        if (array.get(i).getSecond() < dict.size()) {
+          ++k;
+          System.out.println(String.format("%s\t%f",
+                  dict.get(array.get(i).getSecond()).toString(),
+                  (1.0 * (array.get(i).getFirst() + 1)) / (totalFreq + dict.size() + 1)));
+        }
+      }
     }
   }
 }

@@ -28,7 +28,7 @@ public class Test {
 
     final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqs);
     Utils.Timer.start("loading model... ", true);
-    model.load(args[1]);
+    //model.load(args[1]);
     Utils.Timer.stop("loading", true);
 
     final NaiveModel naiveModel = new NaiveModel(dict, freqs);
@@ -36,10 +36,15 @@ public class Test {
     CharSeqTools.processLines(StreamTools.openTextFile(args[2]), new NaiveProcessor(naiveModel, dict));
     Utils.Timer.stop("learning", true);
 
+    CharSeqTools.processLines(new InputStreamReader(System.in, StreamTools.UTF), (Action<CharSequence>) arg -> {
+      naiveModel.printTop(arg.toString(), 5);
+    });
+
+    /*
     try {
       CharSeqTools.processLines(StreamTools.openTextFile(args[3]), new QueryProcessor(args[3], dict, model, naiveModel));
     } catch (Exception e) {
       System.err.println(String.format("Failed to process %s: %s", args[3], e.toString()));
-    }
+    }*/
   }
 }

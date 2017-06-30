@@ -92,10 +92,12 @@ public class SimpleGenerativeModel {
           continue;
         }
 
-        variantLogProBab += providers[index].logP(fragment, currentQSeq);
+        // variantLogProBab += providers[index].logP(fragment, currentQSeq);
+        variantLogProBab += providers[index].logPoissonProbability(fragment, currentQSeq);
       }
 
-      variantLogProBab += providers[dict.size()].logP((~generated) & mask, currentQSeq);
+      // variantLogProBab += providers[dict.size()].logP((~generated) & mask, currentQSeq);
+      variantLogProBab += providers[dict.size()].logPoissonProbability((~generated) & mask, currentQSeq);
 
       weights.set(currVariant, Math.max(variantLogProBab, -50));
     }
