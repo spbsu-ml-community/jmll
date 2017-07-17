@@ -74,7 +74,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("model").withDescription("model file").hasArg().create(MODEL_OPTION));
 
     options.addOption(OptionBuilder.withLongOpt("ranges").withDescription("parameters ranges").hasArg().create(RANGES_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("seed").withDescription("random seed").hasArg().create(RANGES_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("seed").withDescription("random seed").hasArg().create(RANDOM_SEED_OPTION));
     options.addOption(OptionBuilder.withLongOpt("view").withDescription("Comma separated interpret views. Possible values are: histogram for by feature histograms, linear for list of linear components of the ensemble, splits(k) for top k influencing splits").hasArg().create(INTERPRET_MODE_OPTION));
   }
 
