@@ -168,7 +168,7 @@ public class InterpretModel extends AbstractMode {
       if (histogram)
         histograms(pool, grid, entries, histogramPath);
       if (mhistogram)
-        mhistograms(pool, grid, entries, histogramPath);
+        mhistograms(pool, grid, entries, mhistogramPath);
       if (linear || !(splits || histogram || mhistogram))
         linearComponents(pool, grid, entries, entryCount);
     }
