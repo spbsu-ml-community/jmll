@@ -47,17 +47,21 @@ public class InterpretModel extends AbstractMode {
       throw new MissingArgumentException("Please provide 'GRID_OPTION'");
     if (!command.hasOption(LEARN_OPTION))
       throw new MissingArgumentException("Please provide 'LEARN_OPTION'");
-    if (!command.hasOption(JSON_FORMAT))
-      throw new IllegalArgumentException("Only json pools are supported");
+    final Pool<?> pool;
+    if (command.hasOption(JSON_FORMAT))
+      pool = DataTools.loadFromFile(command.getOptionValue(LEARN_OPTION));
+    else
+      pool = DataTools.loadFromFeaturesTxt(command.getOptionValue(LEARN_OPTION));
 
     final BFGrid grid = BFGrid.CONVERTER.convertFrom(StreamTools.readFile(new File(command.getOptionValue(GRID_OPTION))));
-    final Pool<?> pool = DataTools.loadFromFile(command.getOptionValue(LEARN_OPTION));
 
     boolean splits = false;
     int topSplits = 100;
     boolean histogram = false;
+    boolean mhistogram = false;
     boolean linear = false;
     final TIntArrayList histogramPath = new TIntArrayList();
+    final TIntArrayList mhistogramPath = new TIntArrayList();
     if (command.hasOption(INTERPRET_MODE_OPTION)) {
       final String value = command.getOptionValue(INTERPRET_MODE_OPTION);
       final String[] split = value.split("/,/");
@@ -78,6 +82,24 @@ public class InterpretModel extends AbstractMode {
                 if (feature.startsWith(fname)) {
                   final int bin = Integer.parseInt(feature.substring(fname.length() + 1, feature.length() - 1));
                   histogramPath.add(row.bf(bin).bfIndex);
+                  break;
+                }
+              }
+            }
+
+          }
+        }
+        else if (opt.startsWith("mhistogram")) {
+          mhistogram = true;
+          if (opt.length() > "mhistogram()".length()) {
+            final String features  = opt.substring("histogram(".length(), opt.length() - 1);
+            for (final String feature : features.split("/,/")) {
+              for (int f = 0; f < grid.rows(); f++) {
+                final BFGrid.BFRow row = grid.row(f);
+                final String fname = pool.features()[row.origFIndex].id();
+                if (feature.startsWith(fname)) {
+                  final int bin = Integer.parseInt(feature.substring(fname.length() + 1, feature.length() - 1));
+                  mhistogramPath.add(row.bf(bin).bfIndex);
                   break;
                 }
               }
@@ -145,7 +167,9 @@ public class InterpretModel extends AbstractMode {
         topSplits(pool, grid, entries, vfeatures, topSplits);
       if (histogram)
         histograms(pool, grid, entries, histogramPath);
-      if (linear || !splits && !histogram)
+      if (mhistogram)
+        mhistograms(pool, grid, entries, histogramPath);
+      if (linear || !(splits || histogram || mhistogram))
         linearComponents(pool, grid, entries, entryCount);
     }
     catch (ClassNotFoundException e) {
@@ -192,6 +216,29 @@ public class InterpretModel extends AbstractMode {
         total += weight;
         if (Math.abs(weight) > MathTools.EPSILON)
           System.out.print(String.format("\t%d:%.3g:%.4g", bin, row.condition(bin), total));
+      }
+      System.out.println();
+    }
+  }
+
+  private void mhistograms(Pool<?> pool, BFGrid grid, List<ModelTools.CompiledOTEnsemble.Entry> entries, TIntArrayList histogramPath) {
+    final VecDataSet vds = pool.vecData();
+    final BinarizedDataSet bds = vds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+    for (int i = 0; i < grid.rows(); i++) {
+      final BFGrid.BFRow row = grid.row(i);
+      final PoolFeatureMeta meta = pool.features()[row.origFIndex];
+      System.out.print(meta.id());
+      final int[] path = histogramPath.toArray();
+      for (int bin = 0; bin < row.size(); bin++) {
+        final BFGrid.BinaryFeature binaryFeature = row.bf(bin);
+        final List<ModelTools.CompiledOTEnsemble.Entry> vfEntries =
+            entries.parallelStream()
+                .filter(e -> ArrayTools.supset(e.getBfIndices(), path))
+                .filter(e -> ArrayTools.indexOf(binaryFeature.bfIndex, e.getBfIndices()) >= 0)
+                .collect(Collectors.toList());
+        final double weight = maxWeight(grid, pool.vecData(), bds, vfEntries);
+        if (Math.abs(weight) > MathTools.EPSILON)
+          System.out.print(String.format("\t%d:%.3g:%.4g", bin, row.condition(bin), weight));
       }
       System.out.println();
     }
@@ -281,6 +328,28 @@ public class InterpretModel extends AbstractMode {
       total += value;
     }
     total /= power;
+    return total;
+  }
+
+  private double maxWeight(BFGrid grid, VecDataSet vds, BinarizedDataSet bds, List<ModelTools.CompiledOTEnsemble.Entry> vfEntries) {
+    double total = 0;
+    final int power = vds.length();
+    for (int j = 0; j < power; j++) {
+      final int finalJ = j;
+      final double value = vfEntries.stream()
+          .filter(entry -> {
+            final int[] bfIndices = entry.getBfIndices();
+            final int length = bfIndices.length;
+            for (int i = 0; i < length; i++) {
+              if (!grid.bf(bfIndices[i]).value(finalJ, bds))
+                return false;
+            }
+            return true;
+          })
+          .mapToDouble(ModelTools.CompiledOTEnsemble.Entry::getValue)
+          .sum();
+      total = Math.max(value, total);
+    }
     return total;
   }
 }
