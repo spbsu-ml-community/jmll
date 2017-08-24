@@ -8,5 +8,6 @@ import com.spbsu.commons.math.Func;
  * Date: 17.03.14
  */
 public interface Optimize<F extends Func> {
-  public Vec optimize(F func);
+  Vec optimize(F func);
+  Vec optimize(F func, Vec x0);
 }
