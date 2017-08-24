@@ -26,7 +26,7 @@ public class GradientDescent implements Optimize<FuncConvex> {
   }
 
     @Override
-    public Vec optimize(final FuncConvex func) {
+    public Vec optimize(final FuncConvex func, Vec x0) {
         final boolean isQuadraticFunc = func instanceof PDQuadraticFunction;
 
         final double constStep = 1.0 / func.getGradLipParam();
@@ -54,7 +54,12 @@ public class GradientDescent implements Optimize<FuncConvex> {
         return x2;
     }
 
-    private double getStepSizeForQuadraticFunc(final FuncConvex func, final Vec grad) {
+  @Override
+  public Vec optimize(FuncConvex func) {
+    return optimize(func, x0);
+  }
+
+  private double getStepSizeForQuadraticFunc(final FuncConvex func, final Vec grad) {
             return VecTools.multiply(grad, grad) / ((PDQuadraticFunction) func).getQuadrPartValue(grad);
     }
 }

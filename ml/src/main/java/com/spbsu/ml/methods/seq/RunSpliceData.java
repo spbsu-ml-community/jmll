@@ -4,31 +4,22 @@ import com.spbsu.commons.func.Action;
 import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.codec.seq.DictExpansion;
 import com.spbsu.commons.io.codec.seq.Dictionary;
-import com.spbsu.commons.math.Func;
-import com.spbsu.commons.math.FuncC1;
 import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.SingleValueVec;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.CharSeq;
 import com.spbsu.commons.seq.CharSeqArray;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.commons.seq.regexp.Alphabet;
-import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.ml.data.set.DataSet;
-import com.spbsu.ml.func.FuncEnsemble;
-import com.spbsu.ml.loss.L2;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.methods.SeqOptimization;
-import com.spbsu.ml.methods.seq.automaton.AutomatonBruteforce;
-import com.spbsu.ml.methods.seq.automaton.IncrementalAutomatonBuilder;
-import com.spbsu.ml.methods.seq.automaton.evaluation.OptimizedStateEvaluation;
-import com.spbsu.ml.methods.seq.nn.*;
-import com.spbsu.ml.optimization.StochasticGradientDescent;
+import com.spbsu.ml.methods.seq.nn.PNFANetworkSAGA;
+import com.spbsu.ml.optimization.impl.SAGADescent;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -44,13 +35,14 @@ import java.util.zip.GZIPInputStream;
 
 public class RunSpliceData {
   private static final List<String> CLASSES = Arrays.asList("EI", "IE", "N");
-  private static final int ALPHABET_SIZE = 10;
-  private static final int BOOST_ITERS = 400;
-  private static final double BOOST_STEP = 0.1;
+  private static final int ALPHABET_SIZE = 15;
+  private static final int BOOST_ITERS = 450;
+  private static final double BOOST_STEP = 1;
   private static final int MAX_STATE_COUNT = 6;
-  private static final int DESCENT_STEP_COUNT = 200000;
-  private static final double GRAD_STEP = 0.01;
+  private static final double GRAD_STEP = 0.1;
   private static final FastRandom random = new FastRandom(239);
+  private static final int THREAD_COUNT = 1;
+  private static final int DESCENT_STEP_COUNT = 300000 * THREAD_COUNT;
 
   final List<Seq<Integer>> trainData = new ArrayList<>();
   final List<Mx> trainDataAsMx = new ArrayList<>();
@@ -61,6 +53,7 @@ public class RunSpliceData {
   Vec testTarget;
 
   final Alphabet<Integer> alphabet = new IntAlphabet(ALPHABET_SIZE);
+  private Dictionary<Character> dictionary;
 
   public void loadData() throws IOException {
     System.out.println("Number of cores: " + Runtime.getRuntime().availableProcessors());
@@ -76,7 +69,7 @@ public class RunSpliceData {
     final int[] classCount = new int[CLASSES.size()];
 
     new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(
-            Paths.get("ml/src/splice.data.txt.gz").toFile())), StandardCharsets.UTF_8)
+        Paths.get("ml/src/splice.data.txt.gz").toFile())), StandardCharsets.UTF_8)
     ).lines().forEach(line -> {
       final String[] tokens = line.split(",");
       final int clazz = CLASSES.indexOf(tokens[0]);
@@ -94,14 +87,14 @@ public class RunSpliceData {
       data.forEach(de::accept);
     }
 
-    Dictionary<Character> result = de.result();
+    dictionary = de.result();
 
-    System.out.println("New dictionary: " + result.alphabet().toString());
+    System.out.println("New dictionary: " + dictionary.alphabet().toString());
 
     int[] freqs = new int[ALPHABET_SIZE];
     int[] sum = new int[1];
     data.forEach(word -> {
-      Seq<Integer> seq = result.parse(word);
+      Seq<Integer> seq = dictionary.parse(word);
       for (int i =0; i < seq.length(); i++) {
         freqs[seq.at(i)]++;
         sum[0]++;
@@ -109,7 +102,7 @@ public class RunSpliceData {
     });
     Map<String, Double> map = new TreeMap<>();
     for (int i = 0; i < ALPHABET_SIZE; i++) {
-      map.put(result.get(i).toString(), 1.0 * freqs[i] / sum[0]);
+      map.put(dictionary.get(i).toString(), 1.0 * freqs[i] / sum[0]);
     }
 
     map.entrySet().stream().sorted(Map.Entry.comparingByValue(Collections.reverseOrder())).forEach(it -> System.out.printf("%s: %.5f, ", it.getKey(), it.getValue()));
@@ -126,8 +119,8 @@ public class RunSpliceData {
           continue;
         }
 
-        final Seq<Integer> seq = result.parse(data.get(i));
-        final Mx mx = new VecBasedMx(seq.length(), result.size());
+        final Seq<Integer> seq = dictionary.parse(data.get(i));
+        final Mx mx = new VecBasedMx(seq.length(), dictionary.size());
         for (int j = 0; j < seq.length(); j++) {
           mx.set(j, seq.at(j), 1);
         }
@@ -178,15 +171,20 @@ public class RunSpliceData {
     }
     long start = System.nanoTime();
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
-//            new BootstrapSeqOptimization<>(
-//                    new IncrementalAutomatonBuilder<>(alphabet, new OptimizedStateEvaluation<>(), MAX_STATE_COUNT, 1000000),
-//                    random
-//            ),
-            //new AutomatonBruteforce<>(alphabet, new OptimizedStateEvaluation<>(), MAX_STATE_COUNT),
-            new PNFANetworkSAGA<>(alphabet, MAX_STATE_COUNT, random, GRAD_STEP * 10, DESCENT_STEP_COUNT),
-//            new PNFANetworkGD<>(alphabet, MAX_STATE_COUNT, random, GRAD_STEP, DESCENT_STEP_COUNT, 4),
-            BOOST_ITERS, BOOST_STEP
+        new BootstrapSeqOptimization<>(
+            new PNFA<>(MAX_STATE_COUNT, alphabet.size(), random, new SAGADescent(
+                GRAD_STEP, DESCENT_STEP_COUNT, random, THREAD_COUNT
+            )), random
+        ), BOOST_ITERS, BOOST_STEP
     );
+
+//    final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
+//        new BootstrapSeqOptimization<>(
+//            new PNFANetworkSAGA<>(alphabet, MAX_STATE_COUNT, random, GRAD_STEP, DESCENT_STEP_COUNT, dictionary.alphabet(), false ),
+//            random),
+//        BOOST_ITERS, BOOST_STEP
+//    );
+
     final int signalDim = ALPHABET_SIZE;
     final int lstmNodeCount = 100;
     final int logisticNodeCount = 3;
@@ -237,12 +235,12 @@ public class RunSpliceData {
       //     System.out.println("Train accuracy: " + getAccuracy(trainData, trainTarget, classifier));
       //   System.out.println("Test accuracy: " + getAccuracy(testData, testTarget, classifier));
 //      System.out.println("Train evaluation: " + getLoss(trainData, trainTarget, classifier));
-  //    System.out.println("Test evaluation: " + getLoss(testData, testTarget, classifier));
+      //    System.out.println("Test evaluation: " + getLoss(testData, testTarget, classifier));
     };
     boosting.addListener(listener);
 
     final Computable<Seq<Integer>, Vec> classifier =
-            new OneVsRest(boosting, CLASSES.size(), labels).fit(data, new LLLogit(trainTarget, null));
+        new OneVsRest(boosting, CLASSES.size(), labels).fit(data, new LLLogit(trainTarget, null));
     long end = System.nanoTime();
 
     //.fit(data, new L2(trainTarget, null));
@@ -307,10 +305,17 @@ public class RunSpliceData {
 
   private double getAccuracy(List<Seq<Integer>> data, Vec target, Computable<Seq<Integer>, Vec> classifier) {
     int passedCnt = 0;
+    int classAccuracy[] = new int[3];
+    int classSize[] = new int[3];
     for (int i = 0; i < data.size(); i++) {
       if (Math.round(classifier.compute(data.get(i)).get(0)) == target.get(i)) {
         passedCnt++;
+        classAccuracy[(int) Math.round(target.get(i))]++;
       }
+      classSize[(int) Math.round(target.get(i))]++;
+    }
+    for (int i = 0; i < 3; i++) {
+      System.out.println("Class " + i + " accuracy:" + classAccuracy[i] * 1.0 / classSize[i]);
     }
     return 1.0 * passedCnt / data.size();
   }

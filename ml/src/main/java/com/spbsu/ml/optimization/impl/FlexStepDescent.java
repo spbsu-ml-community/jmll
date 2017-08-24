@@ -33,7 +33,7 @@ public class FlexStepDescent implements Optimize<FuncConvex> {
     }
 
     @Override
-    public Vec optimize(final FuncConvex func) {
+    public Vec optimize(final FuncConvex func, final Vec x0) {
         Vec x1 = copy(x0);
         Vec grad = func.gradient().trans(x0);
         double distance = 1;
@@ -54,6 +54,11 @@ public class FlexStepDescent implements Optimize<FuncConvex> {
             //LOG.message(String.valueOf(distance));
         }
         return x1;
+    }
+
+    @Override
+    public Vec optimize(FuncConvex func) {
+        return optimize(func, x0);
     }
 }
 

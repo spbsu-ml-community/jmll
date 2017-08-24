@@ -19,12 +19,14 @@ public class StochasticGradientDescent implements Optimize<FuncEnsemble> {
   private final int iterations;
   private final double step;
   private final Random rand;
+  private Vec x;
 
   public StochasticGradientDescent(final int iterations, final double step, final Random rand) {
     this.iterations = iterations;
     this.step = step;
     this.rand = rand;
   }
+
 
   @Override
   public Vec optimize(final FuncEnsemble sumFuncs) {
@@ -37,13 +39,24 @@ public class StochasticGradientDescent implements Optimize<FuncEnsemble> {
       x.set(i, rand.nextGaussian());
     }
 
+    return optimize(sumFuncs, x);
+  }
+
+  @Override
+  public Vec optimize(FuncEnsemble sumFuncs, Vec x0) {
+    if (sumFuncs.last().gradient() == null) {
+      throw new IllegalArgumentException("Internal functions must implement not-null gradient()");
+    }
+
     int iter = 0;
     final TIntList indices = new TIntArrayList(ArrayTools.sequence(0, sumFuncs.size()));
     while (iter++ < iterations) {
       indices.shuffle(rand);
       for (int i = 0; i < indices.size(); i++) {
-        VecTools.incscale(x, sumFuncs.models[i].gradient().trans(x), -step);
+        VecTools.incscale(x, sumFuncs.models[indices.get(i)].gradient().trans(x), -step);
       }
+      System.out.println(x);
+      System.out.println(sumFuncs.value(x) / step / sumFuncs.dim());
     }
     return x;
   }

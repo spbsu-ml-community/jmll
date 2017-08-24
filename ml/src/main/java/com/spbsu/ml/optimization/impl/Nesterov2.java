@@ -25,7 +25,7 @@ public class Nesterov2 implements Optimize<FuncConvex> {
   }
 
   @Override
-  public Vec optimize(final FuncConvex func) {
+  public Vec optimize(final FuncConvex func, final Vec x0) {
     final double m = func.getGlobalConvexParam();
     final double lk = func.getGradLipParam();
 
@@ -77,5 +77,10 @@ public class Nesterov2 implements Optimize<FuncConvex> {
 
     LOG.message("N2 iterations = " + iter);
     return x2;
+  }
+
+  @Override
+  public Vec optimize(FuncConvex func) {
+    return optimize(func, x0);
   }
 }

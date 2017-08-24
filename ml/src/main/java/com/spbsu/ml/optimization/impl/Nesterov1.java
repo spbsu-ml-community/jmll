@@ -24,7 +24,7 @@ public class Nesterov1 implements Optimize<FuncConvex> {
   }
 
   @Override
-  public Vec optimize(final FuncConvex func) {
+  public Vec optimize(final FuncConvex func, final Vec x0) {
     final int n = func.xdim();
     double alpha;
     final double L = func.getGradLipParam();
@@ -79,5 +79,10 @@ public class Nesterov1 implements Optimize<FuncConvex> {
 
     //LOG.message("N1 iterations = " + iter);
     return x2;
+  }
+
+  @Override
+  public Vec optimize(FuncConvex func) {
+    return optimize(func, x0);
   }
 }
