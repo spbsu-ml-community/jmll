@@ -33,7 +33,9 @@ import com.spbsu.commons.util.ArrayTools;
 import com.spbsu.commons.util.JSONTools;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.commons.util.logging.Logger;
-import com.spbsu.ml.*;
+import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.CompositeTrans;
+import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.set.impl.VecDataSetImpl;
@@ -66,7 +68,6 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.time.DateParser;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.text.DecimalFormat;
@@ -78,10 +79,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
-
-import static com.spbsu.commons.seq.CharSeqTools.lines;
-import static com.spbsu.commons.seq.CharSeqTools.parseDouble;
-import static com.spbsu.commons.seq.CharSeqTools.split;
 
 /**
  * User: solar
@@ -135,20 +132,21 @@ public class DataTools {
         SERIALIZATION.write(result)), to);
   }
 
-  public static Trans readModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+  public static <T extends Computable> T readModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(inputStream));
     final String line = modelReader.readLine();
     final CharSequence[] parts = CharSeqTools.split(line, '\t');
     //noinspection unchecked
-    final Class<? extends Trans> modelClazz = (Class<? extends Trans>) Class.forName(parts[0].toString());
-    return serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
+    final Class<? extends Computable> modelClazz = (Class<? extends Computable>) Class.forName(parts[0].toString());
+    //noinspection unchecked
+    return (T)serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }
 
-  public static Trans readModel(final String fileName, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+  public static <T extends Computable> T readModel(final String fileName, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     return readModel(new FileInputStream(fileName), serializationRepository);
   }
 
-  public static Trans readModel(final InputStream modelInputStream, final InputStream gridInputStream) throws IOException, ClassNotFoundException {
+  public static <T extends Computable> T readModel(final InputStream modelInputStream, final InputStream gridInputStream) throws IOException, ClassNotFoundException {
     final ModelsSerializationRepository repository = new ModelsSerializationRepository();
     final BFGrid grid = repository.read(StreamTools.readStream(gridInputStream), BFGrid.class);
     final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
@@ -584,7 +582,8 @@ public class DataTools {
   }
 
   @SuppressWarnings("OptionalGetWithoutIsPresent")
-  public interface RowHandler extends Function<String, Optional<CharSequence>> {
+  public interface RowHandler extends Function<String, Optional<CharSeq>> {
+    CharSeq at(int i);
     default double asDouble(String header) {
       return CharSeqTools.parseDouble(apply(header).get());
     }
@@ -625,37 +624,148 @@ public class DataTools {
     default String asString(String name) {
       return apply(name).get().toString();
     }
+
+    default long asLong(String name) {
+      return CharSeqTools.parseLong(apply(name).get());
+    };
+
+    default long asLong(String name, long defaultV) {
+      return apply(name).map(CharSeqTools::parseLong).orElse(defaultV);
+    };
+
+    default CharSeq at(String type) {
+      return apply(type).get();
+    }
+  }
+
+  public static Stream<CharSeq[]> readCSV(Reader reader, boolean parallel) {
+    final ReaderChopper chopper = new ReaderChopper(reader);
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CVSLinesIterator(chopper), Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.SORTED), parallel);
   }
 
   public static void readCSVWithHeader(String file, Consumer<RowHandler> processor) {
+    readCSVWithHeader(file, -1, processor);
+  }
+
+  public static void readCSVWithHeader(String file, long limit, Consumer<RowHandler> processor) {
     final TObjectIntMap<String> names = new TObjectIntHashMap<>();
     try {
-      final Stream<CharSeq> lines = lines(StreamTools.openTextFile(file), false);
-      final Spliterator<CharSeq> spliterator = lines.spliterator();
+      final Stream<CharSeq[]> lines = readCSV(StreamTools.openTextFile(file), false);
+      final Spliterator<CharSeq[]> spliterator = lines.spliterator();
       spliterator.tryAdvance(header -> {
-        final CharSequence[] headerSplit = CharSeqTools.split(header, ',');
-        for (int i = 0; i < headerSplit.length; i++) {
-          names.put(headerSplit[i].toString(), i + 1);
+        for (int i = 0; i < header.length; i++) {
+          names.put(header[i].toString(), i + 1);
         }
       });
-      StreamSupport.stream(spliterator, false).forEach(line -> {
-        final CharSequence[] split = split(line, ",");
+      final Stream<CharSeq[]> slice = limit > 0 ? StreamSupport.stream(spliterator, false).limit(limit) : StreamSupport.stream(spliterator, false);
+
+      slice.forEach(split -> {
         try {
-          processor.accept(name -> {
-            final int index = names.get(name);
-            if (index == 0)
-              throw new RuntimeException("File " + file + " does not contain required column " + name + "!");
-            final CharSequence part = split[index - 1];
-            return part.length() > 0 ? Optional.of(part) : Optional.empty();
+          processor.accept(new RowHandler() {
+            @Override
+            public CharSeq at(int i) {
+              return split[i];
+            }
+
+            @Override
+            public Optional<CharSeq> apply(String name) {
+              final int index = names.get(name);
+              if (index == 0)
+                throw new RuntimeException("File " + file + " does not contain required column " + name + "!");
+              final CharSeq part = split[index - 1];
+              return part.length() > 0 ? Optional.of(part) : Optional.empty();
+            }
           });
         }
         catch (Exception e) {
-          log.error("Unable to parse line: " + line, e);
+          log.error("Unable to parse line: " + Arrays.toString(split), e);
         }
       });
     }
     catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private static class CVSLinesIterator implements Iterator<CharSeq[]> {
+    private final ReaderChopper chopper;
+    CharSeq[] next;
+    CharSeq[] prev;
+    CharSeqBuilder builder;
+
+    public CVSLinesIterator(ReaderChopper chopper) {
+      this.chopper = chopper;
+      builder = new CharSeqBuilder();
+    }
+
+    @Override
+    public boolean hasNext() {
+      if (next != null)
+        return true;
+      try {
+        next = prev != null ? prev : new CharSeq[0];
+        int index = 0;
+        lineRead: while (true) {
+          final int result = chopper.chop(builder, '\n', ',', '"', '\'');
+          switch (result) {
+            case 1:
+              appendAt(index++);
+              break;
+            case 2:
+              while(true) {
+                chopper.chop(builder, '"');
+                if (chopper.eat('"'))
+                  builder.add('"');
+                else
+                  break;
+              }
+              break;
+            case 3:
+              while(true) {
+                chopper.chop(builder, '\'');
+                if (chopper.eat('\''))
+                  builder.add('\'');
+                else
+                  break;
+              }
+              break;
+            case 0: // EOL
+              appendAt(index++);
+              if (index < next.length) { // not enough records in this line
+                index = 0;
+                continue;
+              }
+              break lineRead;
+            default: // or EOF
+              if (!appendAt(index++) || index < next.length) { // maximum line is bigger then this one, skip the record
+                next = null;
+              }
+              break lineRead;
+          }
+        }
+        return next != null;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private boolean appendAt(int index) {
+      CharSeq build = builder.build().trim();
+      builder.clear();
+      if (index >= next.length) { // expanding the line
+        final CharSeq[] expand = new CharSeq[index + 1];
+        System.arraycopy(next, 0, expand, 0, next.length);
+        next = expand;
+      }
+      next[index] = build;
+      return build.length() > 0;
+    }
+
+    @Override
+    public CharSeq[] next() {
+      this.prev = this.next;
+      this.next = null;
+      return this.prev;
     }
   }
 }

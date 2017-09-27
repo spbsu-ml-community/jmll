@@ -6,13 +6,19 @@ import com.spbsu.commons.math.Trans;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.BFGrid;
+import com.spbsu.ml.Vectorization;
 import com.spbsu.ml.func.Ensemble;
+import com.spbsu.ml.meta.DSItem;
+import com.spbsu.ml.meta.FeatureMeta;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * User: solar
@@ -196,5 +202,13 @@ public final class ModelTools {
       trees[i] = (ObliviousTree) model.models[i];
     }
     return new Ensemble<>(trees, model.weights);
+  }
+
+  public static <T extends DSItem> List<T> argmax(
+      CompiledOTEnsemble ensamble,
+      TObjectDoubleHashMap<FeatureMeta> context,
+      Vectorization<T> vec,
+      Function<BFGrid.BinaryFeature, Stream<T>> binProvider) {
+    return null;
   }
 }

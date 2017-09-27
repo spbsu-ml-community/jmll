@@ -41,6 +41,7 @@ public class JMLLCLI {
   public static final String WRITE_BIN_FORMULA = "mxbin";
 
   public static final String MODEL_OPTION = "m";
+  public static final String COUNTER_OPTION = "n";
 
   public static final String RANGES_OPTION = "r";
   public static final String RANDOM_SEED_OPTION = "seed";
@@ -76,6 +77,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("ranges").withDescription("parameters ranges").hasArg().create(RANGES_OPTION));
     options.addOption(OptionBuilder.withLongOpt("seed").withDescription("random seed").hasArg().create(RANDOM_SEED_OPTION));
     options.addOption(OptionBuilder.withLongOpt("view").withDescription("Comma separated interpret views. Possible values are: histogram for by feature histograms, linear for list of linear components of the ensemble, splits(k) for top k influencing splits").hasArg().create(INTERPRET_MODE_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("count").withDescription("Counter option for number of iterations or something like this").hasArg().create(COUNTER_OPTION));
   }
 
   public static void main(final String[] args) throws IOException {
@@ -117,6 +119,7 @@ public class JMLLCLI {
       case "cross-validation":          return new CrossValidation();
       case "interpret":                 return new InterpretModel();
       case "eval-model":                return new EvaluateModel();
+      case "dict":                      return new CreateDictionary();
 
       default:
         throw new RuntimeException("Mode " + mode + " is not recognized");

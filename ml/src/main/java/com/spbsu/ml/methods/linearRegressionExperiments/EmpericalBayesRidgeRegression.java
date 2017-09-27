@@ -227,7 +227,7 @@ class EmpericalBayesRidgeRegressionCache {
     A = new VecBasedMx(sigma.columns(), sigma.columns());
     Mx eigenValuesMx = new VecBasedMx(sigma.columns(), sigma.columns());
     Mx Q = new VecBasedMx(sigma.columns(), sigma.columns());
-    MxTools.eigenDecomposition(sigma, Q, eigenValuesMx);
+    MxTools.eigenDecomposition(sigma, eigenValuesMx, Q);
     this.eigenValues = new ArrayVec(sigma.columns());
     for (int i = 0; i < sigma.columns(); ++i) {
       this.eigenValues.set(i, eigenValuesMx.get(i, i));

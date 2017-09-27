@@ -87,7 +87,7 @@ public class Pool<I extends DSItem> {
         }
 
         @Override
-        public Class<I> elementType() {
+        public Class<? extends I> elementType() {
           return items.elementType();
         }
       };

@@ -39,7 +39,7 @@ public class PDQuadraticFunction extends FuncConvex.Stub {
   private static double[] getConvAndLipConstants(final Mx mxA, final Vec w) {
     final Mx q = new VecBasedMx(mxA.rows(), mxA.columns());
     final Mx sigma = new VecBasedMx(mxA.rows(), mxA.columns());
-    MxTools.eigenDecomposition(mxA, q, sigma);
+    MxTools.eigenDecomposition(mxA, sigma, q);
 
     double minEigenValue = sigma.get(0, 0);
     double maxEigenValue = sigma.get(0, 0);
