@@ -397,7 +397,7 @@ public class DataTools {
   }
 
 
-  public static Pool<? extends DSItem> readPoolFrom(final Reader input) throws IOException {
+  public static <T extends DSItem> Pool<T> readPoolFrom(final Reader input) throws IOException {
     try {
       final PoolBuilder builder = new PoolBuilder();
       final ReaderChopper chopper = new ReaderChopper(input);
@@ -440,7 +440,8 @@ public class DataTools {
           }
         }
       }
-      return builder.create();
+      //noinspection unchecked
+      return (Pool<T>) builder.create();
     } catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
         throw (IOException) e.getCause();
