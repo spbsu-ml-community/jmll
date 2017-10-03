@@ -22,27 +22,50 @@ public class PNFATest {
   @Test
   public void testGradient() {
     final int stateCount = 4;
-    PNFA<WeightedL2> pnfa = new PNFA<>(stateCount, 10, random, new Optimize<FuncEnsemble<? extends FuncC1>>() {
-      @Override
-      public Vec optimize(FuncEnsemble func) {
-        assertTrue(false);
-        return null;
-      }
+    PNFA<WeightedL2> pnfa = new PNFA<>(stateCount, 10, random,
+        new Optimize<FuncEnsemble<? extends FuncC1>>() {
+          @Override
+          public Vec optimize(FuncEnsemble func) {
+            assertTrue(false);
+            return null;
+          }
 
-      @Override
-      public Vec optimize(FuncEnsemble<? extends FuncC1> func, Vec x0) {
-        final double value = func.models[0].trans(x0).get(0);
-        final Vec grad = func.models[0].gradient(x0);
+          @Override
+          public Vec optimize(FuncEnsemble<? extends FuncC1> func, Vec x0) {
+            final double value = func.models[0].trans(x0).get(0);
+            final Vec grad = func.models[0].gradient(x0);
 
-        for (int i = 0; i < x0.dim() - stateCount; i++) {
-          x0.adjust(i, EPS);
-          final double newValue = func.models[0].trans(x0).get(0);
-          assertEquals(grad.get(i), (newValue - value) / EPS, 1e-3);
-          x0.adjust(i, -EPS);
-        }
-        return null;
-      }
-    });
+            for (int i = 0; i < x0.dim() - stateCount; i++) {
+              x0.adjust(i, EPS);
+              final double newValue = func.models[0].trans(x0).get(0);
+              assertEquals(grad.get(i), (newValue - value) / EPS, 1e-3);
+              x0.adjust(i, -EPS);
+            }
+            return x0;
+          }},
+
+        new Optimize<FuncEnsemble<? extends FuncC1>>() {
+          @Override
+          public Vec optimize(FuncEnsemble func) {
+            assertTrue(false);
+            return null;
+          }
+
+          @Override
+          public Vec optimize(FuncEnsemble<? extends FuncC1> func, Vec x0) {
+            final double value = func.models[0].trans(x0).get(0);
+            final Vec grad = func.models[0].gradient(x0);
+
+            for (int i = x0.dim() - stateCount; i < x0.dim(); i++) {
+              x0.adjust(i, EPS);
+              final double newValue = func.models[0].trans(x0).get(0);
+              assertEquals(grad.get(i), (newValue - value) / EPS, 1e-3);
+              x0.adjust(i, -EPS);
+            }
+            return x0;
+          }
+
+        }, 1);
     pnfa.fit(new DataSet.Stub<Seq<Integer>>(null) {
       @Override
       public Seq<Integer> at(int i) {

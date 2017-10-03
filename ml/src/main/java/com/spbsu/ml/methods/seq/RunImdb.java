@@ -14,28 +14,25 @@ import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.optimization.impl.SAGADescent;
+import com.spbsu.ml.optimization.impl.AdamDescent;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RunImdb {
-  private static final int ALPHABET_SIZE = 7500;
+  private static final int ALPHABET_SIZE = 10000;
   private static final int TRAIN_SIZE = 25000;
   private static final FastRandom random = new FastRandom(239);
 
   private static final int BOOST_ITERS = 1000;
-  private static final double BOOST_STEP = 0.3;
+  private static final double BOOST_STEP = 0.2;
   private static final int MAX_STATE_COUNT = 4;
-  private static final int DESCENT_STEP_COUNT = TRAIN_SIZE * 160 + 100;
-  private static final double GRAD_STEP = 0.5;
+  private static final int EPOCH_COUNT = 1;
+  private static final double GRAD_STEP = 0.3;
   private static final int THREAD_COUNT = 1;
 
   private List<Seq<Integer>> train;
@@ -48,6 +45,16 @@ public class RunImdb {
 
   private Dictionary<Character> dictionary;
 
+  public void loadWordData() throws IOException {
+    train = new ArrayList<>(TRAIN_SIZE);
+    test = new ArrayList<>(TRAIN_SIZE);
+    trainTarget = new ArrayVec(TRAIN_SIZE);
+    testTarget = new ArrayVec(TRAIN_SIZE);
+
+    readWordData("src/train.txt", train, trainTarget);
+    readWordData("src/test.txt", test, testTarget);
+  }
+
   public void loadData() throws IOException {
     System.out.println("Number of cores: " + Runtime.getRuntime().availableProcessors());
     System.out.println("Alphabet size: " + ALPHABET_SIZE);
@@ -55,7 +62,7 @@ public class RunImdb {
     System.out.println("GradBoost step: " + BOOST_STEP);
     System.out.println("GradBoost iters: " + BOOST_ITERS);
     System.out.println("GradDesc step: " + GRAD_STEP);
-    System.out.println("Grad iters: " + DESCENT_STEP_COUNT);
+    System.out.println("Grad iters: " + EPOCH_COUNT);
     System.out.println("Train size: " + TRAIN_SIZE);
 
 
@@ -142,10 +149,12 @@ public class RunImdb {
 
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFA<>(MAX_STATE_COUNT, ALPHABET_SIZE, random, new SAGADescent(
-                GRAD_STEP, DESCENT_STEP_COUNT, random, THREAD_COUNT
-            )), random
-        ), BOOST_ITERS, BOOST_STEP
+            new PNFA<>(MAX_STATE_COUNT, ALPHABET_SIZE, random,
+                //new SAGADescent(GRAD_STEP, EPOCH_COUNT, random, THREAD_COUNT)
+                  new AdamDescent(random, EPOCH_COUNT, 4), 2
+            ), random
+        ),
+        BOOST_ITERS, BOOST_STEP
     );
 
 
@@ -165,11 +174,22 @@ public class RunImdb {
     System.out.println("Test accuracy: " + getAccuracy(test, testTarget, classifier));
   }
 
+  private void readWordData(String path, List<Seq<Integer>> data, Vec target) throws IOException {
+    List<String> list = Files.readAllLines(Paths.get(path));
+    Collections.shuffle(list, random);
+
+    for (int i = 0; i < TRAIN_SIZE; i++) {
+      String[] tokens = list.get(i).split(" ");
+      target.set(i, Integer.parseInt(tokens[0]));
+      data.add(new IntSeq(Arrays.stream(tokens, 1, tokens.length).mapToInt(Integer::parseInt).toArray()));
+    }
+  }
+
   private List<CharSeq> readData(final String filePath) throws IOException {
     long start = System.nanoTime();
-    final List<CharSeq> data = Files.list(Paths.get(filePath)).map(path -> {
+      final List<CharSeq> data = Files.list(Paths.get(filePath)).map(path -> {
       try {
-        return new CharSeqArray(Files.readAllLines(path)
+        return  new CharSeqArray(Files.readAllLines(path)
             .stream()
             .map(String::toLowerCase)
             .map(str -> str.replaceAll("[^\\x00-\\x7F]", "").replaceAll("\\s{2,}", " ").trim())
@@ -206,7 +226,7 @@ public class RunImdb {
 
   public static void main(String[] args) throws IOException {
     RunImdb test = new RunImdb();
-    test.loadData();
+    test.loadWordData();
     test.test();
   }
 

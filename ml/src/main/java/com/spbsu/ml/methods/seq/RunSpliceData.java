@@ -19,7 +19,7 @@ import com.spbsu.commons.seq.regexp.Alphabet;
 import com.spbsu.ml.data.set.DataSet;
 import com.spbsu.ml.loss.LLLogit;
 import com.spbsu.ml.methods.SeqOptimization;
-import com.spbsu.ml.optimization.impl.SAGADescent;
+import com.spbsu.ml.optimization.impl.AdamDescent;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -42,7 +42,7 @@ public class RunSpliceData {
   private static final double GRAD_STEP = 0.1;
   private static final FastRandom random = new FastRandom(239);
   private static final int THREAD_COUNT = 1;
-  private static final int DESCENT_STEP_COUNT = 300000 * THREAD_COUNT;
+  private static final int EPOCH_COUNT = 100;
 
   final List<Seq<Integer>> trainData = new ArrayList<>();
   final List<Mx> trainDataAsMx = new ArrayList<>();
@@ -62,7 +62,7 @@ public class RunSpliceData {
     System.out.println("GradBoost step: " + BOOST_STEP);
     System.out.println("GradBoost iters: " + BOOST_ITERS);
     System.out.println("GradDesc step: " + GRAD_STEP);
-    System.out.println("Grad iters: " + DESCENT_STEP_COUNT);
+    System.out.println("Grad epoch: " + EPOCH_COUNT);
 
     final List<CharSeq> data = new ArrayList<>();
     final TIntList classes = new TIntArrayList();
@@ -108,7 +108,6 @@ public class RunSpliceData {
     map.entrySet().stream().sorted(Map.Entry.comparingByValue(Collections.reverseOrder())).forEach(it -> System.out.printf("%s: %.5f, ", it.getKey(), it.getValue()));
     System.out.println();
     final int sampleCount = Arrays.stream(classCount).min().orElse(0);
-
     final int trainCount = sampleCount * 8 / 10;
     int[] trainClasses = new int[trainCount * CLASSES.size()];
     int[] testClasses = new int[(sampleCount - trainCount) * CLASSES.size()];
@@ -168,9 +167,11 @@ public class RunSpliceData {
     long start = System.nanoTime();
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFA<>(MAX_STATE_COUNT, alphabet.size(), random, new SAGADescent(
-                GRAD_STEP, DESCENT_STEP_COUNT, random, THREAD_COUNT
-            )), random
+            new PNFA<>(MAX_STATE_COUNT, alphabet.size(), random,
+                //new SAGADescent(GRAD_STEP, EPOCH_COUNT, random, THREAD_COUNT)
+              new AdamDescent(random, 100, 4), 1
+            )
+            , random
         ), BOOST_ITERS, BOOST_STEP
     );
 

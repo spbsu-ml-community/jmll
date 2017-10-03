@@ -7,7 +7,6 @@ import com.spbsu.commons.math.vectors.*;
 import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.commons.random.FastRandom;
 import com.spbsu.commons.seq.IntSeq;
 import com.spbsu.commons.seq.Seq;
 import com.spbsu.ml.data.set.DataSet;
@@ -26,26 +25,49 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
   private final int stateCount;
   private final int alphabetSize;
   private final Random random;
-  private final Optimize<FuncEnsemble<? extends FuncC1>> optimize;
-  private static final double lambda = -0.001;
+  private final Optimize<FuncEnsemble<? extends FuncC1>> weightsOptimize, valuesOptimize;
+  private static final double lambda = -0.005;
+  private final int weightValueIterCount;
 
-  public PNFA(final int stateCount, final int alphabetSize, final Random random, final Optimize<FuncEnsemble<? extends FuncC1>> optimize) {
+  public PNFA(final int stateCount, final int alphabetSize, final Random random,
+              final Optimize<FuncEnsemble<? extends FuncC1>> optimize, final int weightValueIterCount) {
+    this(stateCount, alphabetSize, random, optimize, optimize, weightValueIterCount);
+  }
+
+  public PNFA(final int stateCount, final int alphabetSize, final Random random,
+              final Optimize<FuncEnsemble<? extends FuncC1>> weightsOptimize,
+              final Optimize<FuncEnsemble<? extends FuncC1>> valuesOptimize, final int weightValueIterCount) {
     this.stateCount = stateCount;
     this.alphabetSize = alphabetSize;
     this.random = random;
-    this.optimize = optimize;
+    this.weightsOptimize= weightsOptimize;
+    this.valuesOptimize = valuesOptimize;
+    this.weightValueIterCount = weightValueIterCount;
   }
 
   @Override
   public Computable<Seq<Integer>, Vec> fit(final DataSet<Seq<Integer>> learn, final Loss loss) {
-    final Vec params = init(loss.target);
+    Vec params = init(loss.target());
     FuncC1[] funcs = new FuncC1[learn.length()];
-    for (int i = 0; i < learn.length(); i++) {
-      final IntSeq seq = (IntSeq) learn.at(i);
-      funcs[i] = new PNFAPointLossFunc(seq, loss.target.get(i), loss.getWeights().get(i));
+    for (int iter = 0; iter < weightValueIterCount; iter++) {
+      for (int i = 0; i < learn.length(); i++) {
+        final IntSeq seq = (IntSeq) learn.at(i);
+        funcs[i] = new PNFAPointLossFunc(seq, loss.target().get(i), loss.getWeights().get(i));
+      }
+
+      params = weightsOptimize.optimize(new FuncEnsemble<>(Arrays.asList(funcs), 1), params);
+
+      for (int i = 0; i < learn.length(); i++) {
+        final IntSeq seq = (IntSeq) learn.at(i);
+        funcs[i] = new PNFAPointValueLossFunc(seq, loss.target().get(i), loss.getWeights().get(i));
+      }
+
+      System.out.println("Values before: " + getValues(params));
+      params = valuesOptimize.optimize(new FuncEnsemble<>(Arrays.asList(funcs), 1), params);
+      System.out.println("Values after: " + getValues(params));
     }
 
-    final Vec optParams = optimize.optimize(new FuncEnsemble<>(Arrays.asList(funcs), 1), params);
+    final Vec optParams = params;
     return (seq) -> new SingleValueVec(getSeqValue(optParams, (IntSeq) seq));
   }
 
@@ -61,6 +83,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
           beta.adjust(i, i, stateCount / 2.0 + 3); // TODO change it
         }
       }
+
       for (int i = 0; i < stateCount - 1; i++) {
         beta.adjust(stateCount - 1, i, -stateCount / 2.0 - 3); // TODO change it
       }
@@ -105,13 +128,17 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     return params.sub(params.dim() - stateCount, stateCount);
   }
 
-  private double getSeqValue(final Vec params, final IntSeq seq) {
+  private Vec getSeqDistribution(final Vec params, final IntSeq seq) {
     Vec distribution = new ArrayVec(stateCount);
     VecTools.fill(distribution, 1.0 / stateCount);
     for (int i = 0; i < seq.length(); i++) {
       distribution = multiplyLeft(distribution, getWeightMx(params, seq.intAt(i)));
     }
-    return VecTools.multiply(distribution, getValues(params));
+    return distribution;
+  }
+
+  private double getSeqValue(final Vec params, final IntSeq seq) {
+    return VecTools.multiply(getSeqDistribution(params, seq), getValues(params));
   }
 
   private class PNFAPointLossFunc extends FuncC1.Stub {
@@ -232,4 +259,37 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     return result;
   }
 
+  private class PNFAPointValueLossFunc extends FuncC1.Stub {
+    private final IntSeq seq;
+    private final double y;
+    private final double weight;
+
+    public PNFAPointValueLossFunc(IntSeq seq, double y, double weight) {
+      this.seq = seq;
+      this.y = y;
+      this.weight = weight;
+    }
+
+    @Override
+    public Vec gradient(Vec params) {
+      Vec seqDistribution = getSeqDistribution(params, seq);
+      final double grad = VecTools.multiply(seqDistribution, getValues(params)) - y;
+      final double[] result = new double[stateCount];
+      final int[] indices = new int[stateCount];
+      for (int i = 0; i < stateCount; i++) {
+        result[i] = 2 * grad * seqDistribution.get(i);
+        indices[i] = stateCount * (stateCount - 1) * alphabetSize + i;
+      }
+      return new SparseVec(dim(), indices, result);
+    }
+
+    @Override
+    public double value(Vec params) {
+      return MathTools.sqr(VecTools.multiply(getSeqDistribution(params, seq), getValues(params)) - y);
+    }
+
+    @Override
+    public int dim() {
+      return stateCount * (stateCount - 1) * alphabetSize + stateCount;    }
+  }
 }
