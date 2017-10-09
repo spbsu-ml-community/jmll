@@ -3,6 +3,7 @@ package com.spbsu.ml.models.nn;
 import com.spbsu.commons.math.FuncC1;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Vec;
+import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
 import com.spbsu.ml.func.generic.Const;
 
@@ -16,8 +17,6 @@ public class ConvNet {
   private final boolean[] isDroppable;
   private final int[] layersNodeSize;
   private final int outputCount;
-  private final Random rng;
-  private final float dropout;
   private final NeuralSpider<Double, Vec> spider;
   private final Vec weights;
   private final int numLayers;
@@ -31,8 +30,6 @@ public class ConvNet {
     numLayers = layerHashMap.size();
     isDroppable = new boolean[numLayers];
     this.layersNodeSize = new int[numLayers];
-    this.rng = rng;
-    this.dropout = dropout;
     this.nodes = new NeuralSpider.Node[nodes.size()];
     nodes.toArray(this.nodes);
 
@@ -128,5 +125,17 @@ public class ConvNet {
       Vec subWeights = weights.sub(layer.getView().weightStart, layer.getView().weightLength);
       initializer.apply(subWeights);
     }
+  }
+
+  public Vec gradient(Vec x, FuncC1 target) {
+    return spider.parametersGradient(x, target, weights);
+  }
+
+  public Vec gradientTo(Vec x, Vec to, FuncC1 target) {
+    return spider.parametersGradient(x, target, weights, to);
+  }
+
+  public void adjustWeights(Vec adjust) {
+    VecTools.append(weights, adjust);
   }
 }

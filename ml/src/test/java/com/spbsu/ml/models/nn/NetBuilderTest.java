@@ -1,6 +1,7 @@
 package com.spbsu.ml.models.nn;
 
 import com.spbsu.commons.math.AnalyticFunc;
+import com.spbsu.commons.math.FuncC1;
 import com.spbsu.commons.math.vectors.Vec;
 import com.spbsu.commons.math.vectors.VecTools;
 import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
@@ -369,5 +370,127 @@ public class NetBuilderTest {
     });
 
     assertEquals(new ArrayVec(out10), net.forward(input));
+  }
+
+  @Test
+  public void testDenseGradient() {
+    ConvNet net = new NetBuilder(10)
+        .dense(1, new Identity(), "fc1", NetBuilder.DATA_LAYER_NAME)
+        .build();
+
+    double[] data = { 0, 9, 2, 4, 7, 3, 8, 5, 1, 6 };
+    ArrayVec input = new ArrayVec(data);
+    net.initialize(weights -> VecTools.fill(weights, 1.));
+
+    Vec grad = net.gradient(input, new Identity());
+    assertEquals(input, grad);
+  }
+
+  @Test
+  public void testDenseGradientDescentConvergence() {
+    ConvNet net = new NetBuilder(1)
+        .dense(1, new Identity(), "fc1", NetBuilder.DATA_LAYER_NAME)
+        .build();
+
+    double[] data = { 5 };
+    ArrayVec input = new ArrayVec(data);
+    net.initialize(weights -> VecTools.fill(weights, 1.));
+
+    FuncC1 target = new AnalyticFunc.Stub() {
+      @Override
+      public double value(double x) {
+        return x * x;
+      }
+
+      @Override
+      public double gradient(double x) {
+        return 2 * x;
+      }
+    };
+
+    double learningRate = 0.03;
+    Vec grad = net.gradient(input, target);
+    net.adjustWeights(VecTools.scale(grad, -learningRate));
+    for (int i = 0; i < 100; i++) {
+      net.gradientTo(input, grad, target);
+      net.adjustWeights(VecTools.scale(grad, -learningRate));
+    }
+
+    assertEquals(0., net.forward(input).get(0), 1e-6);
+  }
+
+  @Test
+  public void testConvolutionGradient() {
+    ConvNet net = new NetBuilder(1, 5, 5)
+        .conv2D(3, 3, 1, 1, 1, new Identity(), "conv1", NetBuilder.DATA_LAYER_NAME)
+        .build();
+
+    final double[] data = {
+        9, 2, 3, 4, 5,
+        0, 2, 4, 6, 8,
+        1, 6, 3, 1, 2,
+        4, 8, 1, 5, 1,
+        6, 2, 3, 4, 2
+    };
+
+    net.initialize(weights -> VecTools.fill(weights, 1.));
+    Vec input = new ArrayVec(data);
+
+    FuncC1 targetSum = new FuncC1.Stub() {
+      @Override
+      public double value(Vec x) {
+        return VecTools.sum(x);
+      }
+
+      @Override
+      public Vec gradientTo(Vec x, Vec to) {
+        VecTools.fill(to, 1.);
+        return to;
+      }
+
+      @Override
+      public int dim() {
+        return 9;
+      }
+    };
+
+    Vec expectedGrad = new ArrayVec(9);
+    VecTools.fill(expectedGrad, 0);
+
+    for (int i = 1; i < 4; i++) {
+      for (int j = 1; j < 4; j++) {
+        for (int dx = -1; dx < 2; dx++) {
+          for (int dy = -1; dy < 2; dy++) {
+            double value = data[(i + dx) * 5 + (j + dy)];
+            expectedGrad.adjust((dx + 1) * 3 + dy + 1, value);
+          }
+        }
+      }
+    }
+
+    Vec grad = net.gradient(input, targetSum);
+    assertEquals(expectedGrad, grad);
+  }
+
+  @Test
+  public void testMultiLayer() {
+    ConvNet net = new NetBuilder(1, 5, 5)
+        .conv2D(3, 3, 1, 1, 1, new Identity(), "conv1", NetBuilder.DATA_LAYER_NAME)
+        .dense(1, new Identity(), "fc1", "conv1")
+        .build();
+
+    final double[] data = {
+        9, 2, 3, 4, 5,
+        0, 2, 4, 6, 8,
+        1, 6, 3, 1, 2,
+        4, 8, 1, 5, 1,
+        6, 2, 3, 4, 2
+    };
+
+    Vec input = new ArrayVec(data);
+
+    net.initialize(weights -> VecTools.fill(weights, 1.));
+
+    assertEquals(282, net.forward(input).get(0), 1e-15);
   }
 }
