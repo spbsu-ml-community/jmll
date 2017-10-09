@@ -112,30 +112,27 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
     final double[] scores = new double[grid.size()];
 
     while (true) {
-      current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
-        @Override
-        public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
-          if (usedBF[bf.bfIndex]) {
-            scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
-          } else {
-            final double leftScore;
-            {
-              final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
-              in.append(current.nonCriticalTotal);
-              in.append(left);
-              leftScore = loss.score(in);
-            }
-
-            final double rightScore;
-            {
-              final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
-              in.append(current.nonCriticalTotal);
-              in.append(right);
-              rightScore = loss.score(in);
-            }
-            scores[bf.bfIndex] = leftScore > rightScore ? rightScore : leftScore;
-            isRight[bf.bfIndex] = leftScore > rightScore;
+      current.visitAllSplits((bf, left, right) -> {
+        if (usedBF[bf.bfIndex]) {
+          scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
+        } else {
+          final double leftScore;
+          {
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            in.append(current.nonCriticalTotal);
+            in.append(left);
+            leftScore = loss.score(in);
           }
+
+          final double rightScore;
+          {
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            in.append(current.nonCriticalTotal);
+            in.append(right);
+            rightScore = loss.score(in);
+          }
+          scores[bf.bfIndex] = leftScore > rightScore ? rightScore : leftScore;
+          isRight[bf.bfIndex] = leftScore > rightScore;
         }
       });
 

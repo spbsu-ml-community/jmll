@@ -141,6 +141,10 @@ public class DataToolsTest extends GridTest {
     assertTrue(VecTools.equals(learn.vecData().data(), pool.vecData().data()));
   }
 
+  public void testEmptyCSV() throws Exception {
+    DataTools.csvLines(new StringReader("")).forEach(System.out::println);
+  }
+
   @Override
   protected boolean isJDK8DependResult() {
     return true;

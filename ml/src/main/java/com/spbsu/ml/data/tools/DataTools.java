@@ -66,16 +66,13 @@ import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.time.DateParser;
-import org.apache.commons.lang3.time.FastDateFormat;
 
 import java.io.*;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.ParseException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
@@ -582,110 +579,60 @@ public class DataTools {
     out.flush();
   }
 
-  @SuppressWarnings("OptionalGetWithoutIsPresent")
-  public interface RowHandler extends Function<String, Optional<CharSeq>> {
-    CharSeq at(int i);
-    default double asDouble(String header) {
-      return CharSeqTools.parseDouble(apply(header).get());
-    }
-
-    default double asDouble(String name, double defaultV) {
-      try {
-        return apply(name).map(CharSeqTools::parseDouble).orElse(defaultV);
-      }
-      catch (IllegalArgumentException iae) {
-        return defaultV;
-      }
-    }
-
-    default int asInt(String header) {
-      return CharSeqTools.parseInt(apply(header).get());
-    }
-
-    default int asInt(String name, int defaultV) {
-      try {
-        return apply(name).map(CharSeqTools::parseInt).orElse(defaultV);
-      }
-      catch (IllegalArgumentException iae) {
-        return defaultV;
-      }
-    }
-
-    Map<String, DateParser> dateParsers = new HashMap<>();
-    default Date asDate(String name, String pattern) {
-      final DateParser parser = dateParsers.compute(pattern, (p, v) -> v != null ? v : FastDateFormat.getInstance(p));
-      try {
-        return parser.parse(apply(name).get().toString());
-      }
-      catch (ParseException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    default String asString(String name) {
-      return apply(name).get().toString();
-    }
-
-    default long asLong(String name) {
-      return CharSeqTools.parseLong(apply(name).get());
-    };
-
-    default long asLong(String name, long defaultV) {
-      return apply(name).map(CharSeqTools::parseLong).orElse(defaultV);
-    };
-
-    default CharSeq at(String type) {
-      return apply(type).get();
-    }
-  }
-
   public static Stream<CharSeq[]> readCSV(Reader reader, boolean parallel) {
     final ReaderChopper chopper = new ReaderChopper(reader);
-    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CVSLinesIterator(chopper), Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.SORTED), parallel);
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CVSLinesIterator(chopper), Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.SORTED), parallel).onClose(() -> StreamTools.close(reader));
   }
 
-  public static void readCSVWithHeader(String file, Consumer<RowHandler> processor) {
+  public static void readCSVWithHeader(String file, Consumer<CsvRow> processor) {
     readCSVWithHeader(file, -1, processor);
   }
 
-  public static void readCSVWithHeader(String file, long limit, Consumer<RowHandler> processor) {
-    final TObjectIntMap<String> names = new TObjectIntHashMap<>();
+  public static void readCSVWithHeader(String file, long limit, Consumer<CsvRow> processor) {
     try {
-      final Stream<CharSeq[]> lines = readCSV(StreamTools.openTextFile(file), false);
-      final Spliterator<CharSeq[]> spliterator = lines.spliterator();
-      spliterator.tryAdvance(header -> {
-        for (int i = 0; i < header.length; i++) {
-          names.put(header[i].toString(), i + 1);
-        }
-      });
-      final Stream<CharSeq[]> slice = limit > 0 ? StreamSupport.stream(spliterator, false).limit(limit) : StreamSupport.stream(spliterator, false);
-
-      slice.forEach(split -> {
-        try {
-          processor.accept(new RowHandler() {
-            @Override
-            public CharSeq at(int i) {
-              return split[i];
-            }
-
-            @Override
-            public Optional<CharSeq> apply(String name) {
-              final int index = names.get(name);
-              if (index == 0)
-                throw new RuntimeException("File " + file + " does not contain required column " + name + "!");
-              final CharSeq part = split[index - 1];
-              return part.length() > 0 ? Optional.of(part) : Optional.empty();
-            }
-          });
-        }
-        catch (Exception e) {
-          log.error("Unable to parse line: " + Arrays.toString(split), e);
-        }
-      });
+      readCSVWithHeader(StreamTools.openTextFile(file), limit, processor);
     }
     catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static void readCSVWithHeader(Reader reader, Consumer<CsvRow> processor) {
+    readCSVWithHeader(reader, -1, processor);
+  }
+
+  public static void readCSVWithHeader(Reader reader, long limit, Consumer<CsvRow> processor) {
+    final TObjectIntMap<String> names = new TObjectIntHashMap<>();
+    final Stream<CharSeq[]> lines = readCSV(reader, false);
+    final Spliterator<CharSeq[]> spliterator = lines.spliterator();
+    spliterator.tryAdvance(header -> {
+      for (int i = 0; i < header.length; i++) {
+        names.put(header[i].toString(), i + 1);
+      }
+    });
+    final Stream<CharSeq[]> slice = limit > 0 ? StreamSupport.stream(spliterator, false).limit(limit) : StreamSupport.stream(spliterator, false);
+
+    slice.forEach(split -> {
+      try {
+        processor.accept(new CsvRowImpl(split, names));
+      }
+      catch (Exception e) {
+        log.error("Unable to parse line: " + Arrays.toString(split), e);
+      }
+    });
+  }
+
+  public static Stream<CsvRow> csvLines(Reader reader) {
+    final TObjectIntMap<String> names = new TObjectIntHashMap<>();
+    final Stream<CharSeq[]> lines = readCSV(reader, false);
+    final Spliterator<CharSeq[]> spliterator = lines.spliterator();
+    spliterator.tryAdvance(header -> {
+      for (int i = 0; i < header.length; i++) {
+        names.put(header[i].toString(), i + 1);
+      }
+    });
+
+    return StreamSupport.stream(spliterator, false).onClose(() -> StreamTools.close(reader)).map(line -> new CsvRowImpl(line, names));
   }
 
   private static class CVSLinesIterator implements Iterator<CharSeq[]> {
@@ -767,6 +714,52 @@ public class DataTools {
       this.prev = this.next;
       this.next = null;
       return this.prev;
+    }
+  }
+
+  private static class CsvRowImpl implements CsvRow {
+    private final CharSeq[] split;
+    private final TObjectIntMap<String> names;
+
+    public CsvRowImpl(CharSeq[] split, TObjectIntMap<String> names) {
+      this.split = split;
+      this.names = names;
+    }
+
+    @Override
+    public CharSeq at(int i) {
+      return split[i];
+    }
+
+    @Override
+    public CsvRow names() {
+      final CharSeq[] names = Stream.of(this.names.keys())
+              .map(name -> CharSeq.create((String) name))
+              .collect(Collectors.toList())
+              .toArray(new CharSeq[0]);
+      Arrays.sort(names, Comparator.comparingInt(CsvRowImpl.this.names::get));
+      return new CsvRowImpl(names, this.names);
+    }
+
+
+    @Override
+    public Optional<CharSeq> apply(String name) {
+      final int index = names.get(name);
+      if (index == 0)
+        throw new RuntimeException("Stream does not contain required column '" + name + "'!");
+      final CharSeq part = split[index - 1];
+      return part.length() > 0 ? Optional.of(part) : Optional.empty();
+    }
+
+    @Override
+    public String toString() {
+      final CharSeqBuilder builder = new CharSeqBuilder();
+      for (int i = 0; i < split.length; i++) {
+        builder.append('"').append(CharSeqTools.replace(split[i], "\"", "\"\"")).append('"');
+        if (i < split.length - 1)
+          builder.append(',');
+      }
+      return builder.toString();
     }
   }
 }
