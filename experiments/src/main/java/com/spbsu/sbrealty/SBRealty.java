@@ -1,30 +1,21 @@
 package com.spbsu.sbrealty;
 
-import com.spbsu.commons.math.vectors.Mx;
 import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
 import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
-import com.spbsu.commons.util.Pair;
+import com.spbsu.ml.data.tools.CsvRow;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.PoolBuilder;
-import com.spbsu.ml.meta.DSItem;
 import com.spbsu.ml.meta.FeatureMeta;
 import com.spbsu.ml.meta.impl.JsonDataSetMeta;
 import com.spbsu.ml.meta.impl.JsonTargetMeta;
 import com.spbsu.sbrealty.features.BuildingTypeFeature;
 import com.spbsu.sbrealty.features.DistrictFeature;
-import com.spbsu.sbrealty.features.MarketCatFeature;
-import gnu.trove.list.array.TDoubleArrayList;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-import static com.spbsu.commons.math.vectors.MxTools.*;
 import static java.lang.Math.log;
 
 /**
@@ -47,7 +38,7 @@ public class SBRealty {
       final PoolBuilder learnBuilder = new PoolBuilder();
       final VecBuilder validatePrice = new VecBuilder();
       final PoolBuilder validateBuilder = new PoolBuilder();
-      DataTools.readCSVWithHeader("./experiments/data/sbrealty/train.csv.gz", (DataTools.RowHandler resolve) -> {
+      DataTools.readCSVWithHeader("./experiments/data/sbrealty/train.csv.gz", (CsvRow resolve) -> {
         final Deal.Builder builder = new Deal.Builder();
         double price_doc = resolve.asDouble("price_doc");
 

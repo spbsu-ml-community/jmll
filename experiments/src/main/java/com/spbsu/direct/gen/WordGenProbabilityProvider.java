@@ -335,11 +335,17 @@ public class WordGenProbabilityProvider {
    * where n -- draws count, m -- classes found
    */
   private double optimalExpansionDP(double statPower, int classes) {
-    return MathTools.bisection(0, classes, new AnalyticFunc.Stub() {
+    return MathTools.bisection(new AnalyticFunc.Stub() {
       @Override
       public double value(double x) {
         return x * log(1 + statPower / x) - classes;
       }
-    });
+
+      @Override
+      public double gradient(double x) {
+        double v = statPower + x;
+        return (v * log(v / x) - statPower) / v;
+      }
+    }, 0, classes);
   }
 }
