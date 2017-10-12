@@ -72,7 +72,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
@@ -581,7 +580,7 @@ public class DataTools {
 
   public static Stream<CharSeq[]> readCSV(Reader reader, boolean parallel) {
     final ReaderChopper chopper = new ReaderChopper(reader);
-    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CVSLinesIterator(chopper), Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.SORTED), parallel).onClose(() -> StreamTools.close(reader));
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CVSLinesIterator(chopper), Spliterator.IMMUTABLE), parallel).onClose(() -> StreamTools.close(reader));
   }
 
   public static void readCSVWithHeader(String file, Consumer<CsvRow> processor) {
@@ -733,14 +732,14 @@ public class DataTools {
 
     @Override
     public CsvRow names() {
-      final CharSeq[] names = Stream.of(this.names.keys())
-              .map(name -> CharSeq.create((String) name))
-              .collect(Collectors.toList())
-              .toArray(new CharSeq[0]);
-      Arrays.sort(names, Comparator.comparingInt(CsvRowImpl.this.names::get));
+      final CharSeq[] names = new CharSeq[Arrays.stream(this.names.values()).max().orElse(0)];
+      Arrays.fill(names, CharSeq.create("duplicate"));
+      this.names.forEachEntry((name, index) -> {
+        names[index - 1] = CharSeq.create(name);
+        return true;
+      });
       return new CsvRowImpl(names, this.names);
     }
-
 
     @Override
     public Optional<CharSeq> apply(String name) {

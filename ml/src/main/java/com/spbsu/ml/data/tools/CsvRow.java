@@ -57,6 +57,9 @@ public interface CsvRow extends Function<String, Optional<CharSeq>> {
   default String asString(String name) {
     return apply(name).get().toString();
   }
+  default String asString(String name, String defaultValue) {
+    return apply(name).orElseGet(() -> CharSeq.create(defaultValue)).toString();
+  }
 
   default long asLong(String name) {
     return CharSeqTools.parseLong(apply(name).get());

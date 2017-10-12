@@ -2,23 +2,61 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.spbsu</groupId>
-  <artifactId>ml</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <groupId>com.expleague</groupId>
+  <artifactId>jmll</artifactId>
+  <version>1.0</version>
   <packaging>jar</packaging>
 
   <name>SpbSU JMLL</name>
+  <description>Various ML methods implemented by myself and my students</description>
+  <url>https://github.com/spbsu-ml-community/jmll</url>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:git://github.com/spbsu-ml-community/jmll.git</connection>
+    <developerConnection>scm:git:ssh://github.com:spbsu-ml-community/jmll.git</developerConnection>
+    <url>https://github.com/spbsu-ml-community/jmll</url>
+  </scm>
+
+  <developers>
+    <developer>
+      <name>Igor E. Kuralenok</name>
+      <email>ikuralenok@gmail.com</email>
+    </developer>
+  </developers>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
+    <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
+    <java.version>1.8</java.version>
+    <cuda.version>6.5</cuda.version>
+  </properties>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
 
   <dependencies>
     <dependency>
-      <groupId>com.spbsu</groupId>
+      <groupId>com.expleague</groupId>
       <artifactId>commons</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0</version>
     </dependency>
     <dependency>
-      <groupId>com.spbsu</groupId>
+      <groupId>com.expleague</groupId>
       <artifactId>commons</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
@@ -87,16 +125,9 @@
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-jaxb-annotations</artifactId>
-      <version>LATEST</version>
+      <version>2.9.1</version>
     </dependency>
   </dependencies>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
-    <java.version>1.8</java.version>
-    <cuda.version>6.5</cuda.version>
-  </properties>
 
   <build>
     <plugins>
@@ -176,6 +207,67 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>publish</id>
+      <properties>
+        <gpg.executable>gpg</gpg.executable>
+        <gpg.defaultKeyring>true</gpg.defaultKeyring>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.4</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.5</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
-
 </project>
