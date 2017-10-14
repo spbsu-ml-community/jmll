@@ -3,11 +3,11 @@ Java Machine Learning Library
 
 [![Build Status](https://travis-ci.org/spbsu-ml-community/jmll.svg?branch=master)](https://travis-ci.org/spbsu-ml-community/jmll)
 
-###About
+### About
 
 This is machine learning library, written in Java and providing various machine learning algorithms. Mostly contributed by people form Applied Mathematics faculty of SPBSU.
 
-###How to check this out correctly
+### How to check this out correctly
 
 1. Use command line instead IDEA to checkout it in order to avoid problems with git submodule downloading.
 To clone project run `git clone --recurse-submodules git@github.com:spbsu-ml-community/jmll.git`
@@ -16,7 +16,7 @@ To clone project run `git clone --recurse-submodules git@github.com:spbsu-ml-com
 
 Remember that git submodule is just a pointer to particular commit of the another repository. And if you update 'commons' please update this pointer by committing 'commons' dir in JMLL directory.
 
-###How to import the project
+### How to import the project
 
 We use [Apache Maven](http://maven.apache.org/) for managing our project. You need Maven 3 to be installed on your computer. If you don't already have it (check with `mvn -version` command), [install](http://maven.apache.org/download.cgi) it. On Mac OS it can also be done with [Homebrew](http://brew.sh/) (`brew install maven`) or [MacPorts](http://www.macports.org/) (`sudo port install maven3`), on Linux -- with standard "apt-get" instllation tool (`sudo apt-get install maven`). Check Maven version after installation with `mvn -version` command.
 
