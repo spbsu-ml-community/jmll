@@ -127,6 +127,10 @@ public class DataTools {
     return CharSeqTools.lines(input, false).limit(1).map(line -> CharSeqTools.split(line, sep).length).findFirst().orElse(0);
   }
 
+  public static double stringToDoubleHash(final CharSequence in) {
+    final long hashCode = in.toString().hashCode();
+    return Double.longBitsToDouble(hashCode);
+  }
 
   public static CatboostPool loadFromCatBoostPool(final CatBoostPoolDescription poolDescription,
                                                   final Reader in) throws IOException {
@@ -162,7 +166,7 @@ public class DataTools {
               break;
             }
             case Cat: {
-              data.append(CharSeqTools.stringToDoubleHash(columnSeq));
+              data.append(stringToDoubleHash(columnSeq));
               break;
             }
             case Weight: {
