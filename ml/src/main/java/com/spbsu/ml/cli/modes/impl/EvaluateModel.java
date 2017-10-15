@@ -8,6 +8,7 @@ import com.spbsu.ml.TargetFunc;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.spbsu.ml.cli.builders.methods.grid.GridBuilder;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import com.spbsu.ml.io.ModelsSerializationRepository;
@@ -56,7 +57,7 @@ public class EvaluateModel extends AbstractMode {
     { // loading data
       final DataBuilderClassic dataBuilder = new DataBuilderClassic();
       dataBuilder.setLearnPath(command.getOptionValue(TEST_OPTION));
-      dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+      CliPoolReaderHelper.setPoolReader(command, dataBuilder);
       //noinspection unchecked
       pool = dataBuilder.create().getFirst();
     }

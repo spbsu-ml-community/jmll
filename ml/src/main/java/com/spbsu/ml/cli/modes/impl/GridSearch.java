@@ -15,6 +15,7 @@ import com.spbsu.ml.cli.builders.methods.grid.GridBuilder;
 import com.spbsu.ml.cli.gridsearch.OptimumHolder;
 import com.spbsu.ml.cli.gridsearch.ParametersExtractor;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
@@ -55,7 +56,8 @@ public class GridSearch extends AbstractMode {
       ((DataBuilderClassic) dataBuilder).setTestPath(command.getOptionValue(TEST_OPTION));
     }
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
-    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    CliPoolReaderHelper.setPoolReader(command, dataBuilder);
+
 
     final Pair<? extends Pool, ? extends Pool> pools = dataBuilder.create();
     final Pool learn = pools.getFirst();

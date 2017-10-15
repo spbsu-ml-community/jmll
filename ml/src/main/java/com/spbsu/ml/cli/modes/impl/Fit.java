@@ -16,6 +16,7 @@ import com.spbsu.ml.cli.builders.methods.MethodsBuilder;
 import com.spbsu.ml.cli.builders.methods.grid.DynamicGridBuilder;
 import com.spbsu.ml.cli.builders.methods.grid.GridBuilder;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.cli.output.ModelWriter;
 import com.spbsu.ml.cli.output.printers.*;
 import com.spbsu.ml.data.tools.DataTools;
@@ -60,7 +61,7 @@ public class Fit extends AbstractMode {
       ((DataBuilderClassic) dataBuilder).setTestPath(command.getOptionValue(TEST_OPTION));
     }
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
-    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    CliPoolReaderHelper.setPoolReader(command, dataBuilder);
 
     final Pair<? extends Pool, ? extends Pool> pools = dataBuilder.create();
     final Pool learn = pools.getFirst();

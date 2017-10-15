@@ -9,9 +9,9 @@ import com.spbsu.ml.data.tools.Pool;
  * Date: 03.09.14
  */
 public interface DataBuilder extends Factory<Pair<? extends Pool, ? extends Pool>> {
-  void setLearnPath(String learnPath);
 
-  void setJsonFormat(boolean isJsonFormat);
+  void setLearnPath(final String learnPath);
+  void setReader(final PoolReader reader);
 
   @Override
   Pair<? extends Pool, ? extends Pool> create();

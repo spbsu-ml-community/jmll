@@ -4,6 +4,7 @@ import com.spbsu.commons.text.StringUtils;
 import com.spbsu.commons.util.Pair;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderCrossValidation;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
@@ -26,7 +27,7 @@ public class SplitJsonPool extends AbstractMode {
     }
 
     final DataBuilderCrossValidation builder = new DataBuilderCrossValidation();
-    builder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    CliPoolReaderHelper.setPoolReader(command, builder);
     builder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     final String[] cvOptions = StringUtils.split(command.getOptionValue(CROSS_VALIDATION_OPTION), "/", 2);
     builder.setRandomSeed(Integer.valueOf(cvOptions[0]));

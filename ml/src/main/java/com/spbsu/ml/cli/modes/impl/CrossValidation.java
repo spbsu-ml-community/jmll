@@ -13,6 +13,7 @@ import com.spbsu.ml.cli.builders.methods.grid.GridBuilder;
 import com.spbsu.ml.cli.cv.KFoldCrossValidation;
 import com.spbsu.ml.cli.gridsearch.ParametersExtractor;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
@@ -59,7 +60,7 @@ public class CrossValidation extends AbstractMode {
     final DataBuilderClassic dataBuilder;
     dataBuilder = new DataBuilderClassic();
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
-    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    CliPoolReaderHelper.setPoolReader(command, dataBuilder);
     final Pool sourcePool = dataBuilder.create().getFirst();
 
     final GridBuilder gridBuilder = new GridBuilder();

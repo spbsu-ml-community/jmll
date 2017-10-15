@@ -3,6 +3,7 @@ package com.spbsu.ml.cli.modes.impl;
 import com.spbsu.ml.cli.builders.data.DataBuilder;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
@@ -25,8 +26,8 @@ public class ConvertPool extends AbstractMode {
     }
 
     final DataBuilder dataBuilder = new DataBuilderClassic();
-    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
+    CliPoolReaderHelper.setPoolReader(command, dataBuilder);
     final Pool pool = dataBuilder.create().getFirst();
     final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".pool";
     DataTools.writePoolTo(pool, new FileWriter(outputName));

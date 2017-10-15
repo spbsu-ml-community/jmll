@@ -34,6 +34,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import static com.spbsu.ml.cli.builders.data.ReaderFactory.createFeatureTxtReader;
+import static com.spbsu.ml.cli.builders.data.ReaderFactory.createJsonReader;
+
 /**
  * User: qdeee
  * Date: 24.11.14
@@ -68,7 +71,7 @@ public class RunnerECOC {
     final Mx S = MathTools.CONVERSION.convert(mxStr, Mx.class);
 
     final DataBuilderClassic dataBuilder = new DataBuilderClassic();
-    dataBuilder.setJsonFormat(isJsonFormat);
+    dataBuilder.setReader(isJsonFormat ? createJsonReader() : createFeatureTxtReader());
     dataBuilder.setLearnPath(learnPath);
     dataBuilder.setTestPath(testPath);
     final Pair<Pool, Pool> poolsPair = dataBuilder.create();

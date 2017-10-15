@@ -47,6 +47,7 @@ import java.util.Random;
 
 import static com.spbsu.commons.math.MathTools.sqr;
 import static com.spbsu.commons.math.vectors.VecTools.copy;
+import static com.spbsu.ml.cli.builders.data.ReaderFactory.createFeatureTxtReader;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 
@@ -731,7 +732,7 @@ public void testElasticNetBenchmark() {
   public void testOTBoost1() throws IOException {
     final FastRandom rnd = new FastRandom(0);
     final DataBuilderCrossValidation cvBuilder = new DataBuilderCrossValidation();
-    cvBuilder.setJsonFormat(false);
+    cvBuilder.setReader(createFeatureTxtReader());
     cvBuilder.setLearnPath(System.getenv("HOME") + "/data/pools/green/stylist-20140702.txt");
     final Pool pool = DataTools.loadFromFeaturesTxt(System.getenv("HOME") + "/data/pools/green/stylist-20140702.txt");
     final IntSeqBuilder classifyTarget = new IntSeqBuilder();

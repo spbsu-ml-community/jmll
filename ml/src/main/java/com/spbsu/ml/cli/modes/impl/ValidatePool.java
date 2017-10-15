@@ -3,11 +3,11 @@ package com.spbsu.ml.cli.modes.impl;
 import com.spbsu.ml.cli.builders.data.DataBuilder;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
 
-import static com.spbsu.ml.cli.JMLLCLI.JSON_FORMAT;
 import static com.spbsu.ml.cli.JMLLCLI.LEARN_OPTION;
 
 /**
@@ -23,8 +23,8 @@ public class ValidatePool extends AbstractMode {
 
     final DataBuilder dataBuilder = new DataBuilderClassic();
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
-    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
     try {
+      CliPoolReaderHelper.setPoolReader(command, dataBuilder);
       final Pool pool = dataBuilder.create().getFirst();
       System.out.println("Valid pool");
     } catch (Exception e) {

@@ -100,7 +100,7 @@ public class DataTools {
     final int[] featuresCount = new int[]{-1};
     CharSeqTools.processLines(in, new Processor<CharSequence>() {
       int lindex = 0;
-      
+
       @Override
       public void process(final CharSequence arg) {
         lindex++;
@@ -122,6 +122,79 @@ public class DataTools {
         target.build());
   }
 
+
+  public static int getLineCount(final Reader input, final char sep) {
+    return CharSeqTools.lines(input, false).limit(1).map(line -> CharSeqTools.split(line, sep).length).findFirst().orElse(0);
+  }
+
+
+  public static CatboostPool loadFromCatBoostPool(final CatBoostPoolDescription poolDescription,
+                                                  final Reader in) throws IOException {
+    final VecBuilder target = new VecBuilder();
+    final VecBuilder data = new VecBuilder();
+
+    CharSeqTools.processLines(in, new Processor<CharSequence>() {
+      int lindex = -1;
+
+      @Override
+      public void process(final CharSequence arg) {
+        lindex++;
+        if (lindex == 0 && poolDescription.hasHeaderColumn()) {
+          return;
+        }
+
+        final CharSequence[] parts = CharSeqTools.split(arg, poolDescription.getDelimiter());
+        if (parts.length != poolDescription.columnCount()) {
+          throw new RuntimeException("\"Failed to parse line \" + lindex + \":\"");
+        }
+
+        int id = lindex;
+
+        for (int column = 0; column < poolDescription.columnCount(); ++column) {
+          final CharSequence columnSeq = parts[column];
+          switch (poolDescription.columnType(column)) {
+            case Target: {
+              target.append(CharSeqTools.parseDouble(columnSeq));
+              break;
+            }
+            case Num: {
+              data.append(CharSeqTools.parseDouble(columnSeq));
+              break;
+            }
+            case Cat: {
+              data.append(CharSeqTools.stringToDoubleHash(columnSeq));
+              break;
+            }
+            case Weight: {
+              throw new RuntimeException("Unimplemented yet");
+            }
+            case DocId:
+            case Auxiliary:
+            case QueryId:
+            default: {
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    final Set<Integer> catFeatureIds = new TreeSet<>();
+    int factorId = 0;
+    for (int column = 0; column < poolDescription.columnCount(); ++column) {
+      final CatBoostPoolDescription.ColumnType columnType = poolDescription.columnType(column);
+      if (columnType == CatBoostPoolDescription.ColumnType.Cat) {
+        catFeatureIds.add(factorId);
+      }
+      if (CatBoostPoolDescription.ColumnType.isFactorColumn(columnType)) {
+        ++factorId;
+      }
+    }
+    final Mx vecData = new VecBasedMx(poolDescription.factorCount(), data.build());
+    final Vec targetVec = target.build();
+    return new CatboostPool(vecData, targetVec, catFeatureIds);
+  }
+
   public static void writeModel(final Computable result, final File to) throws IOException {
     final BFGrid grid = grid(result);
     StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
@@ -135,7 +208,7 @@ public class DataTools {
     //noinspection unchecked
     final Class<? extends Computable> modelClazz = (Class<? extends Computable>) Class.forName(parts[0].toString());
     //noinspection unchecked
-    return (T)serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
+    return (T) serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }
 
   public static <T extends Computable> T readModel(final String fileName, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
@@ -176,7 +249,8 @@ public class DataTools {
     try {
       final Trans trans = readModel(modelInputStream, repository);
       return Pair.create(true, "Valid model : " + trans.getClass().getSimpleName());
-    } catch (ClassNotFoundException e) {
+    }
+    catch (ClassNotFoundException e) {
       return Pair.create(false, "Invalid model : " + e.getCause());
     }
   }
@@ -189,45 +263,54 @@ public class DataTools {
     if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
       return dynamicGrid(ensemble.last());
-    } else if (result instanceof ObliviousTreeDynamicBin) {
+    }
+    else if (result instanceof ObliviousTreeDynamicBin) {
       return ((ObliviousTreeDynamicBin) result).grid();
     }
     return null;
   }
+
   public static BFGrid grid(final Computable<?, Vec> result) {
     if (result instanceof CompositeTrans) {
       final CompositeTrans composite = (CompositeTrans) result;
       BFGrid grid = grid(composite.f);
       grid = grid == null ? grid(composite.g) : grid;
       return grid;
-    } else if (result instanceof FuncJoin) {
+    }
+    else if (result instanceof FuncJoin) {
       final FuncJoin join = (FuncJoin) result;
       for (final Func dir : join.dirs()) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    } else if (result instanceof TransJoin) {
+    }
+    else if (result instanceof TransJoin) {
       final TransJoin join = (TransJoin) result;
       for (final Trans dir : join.dirs) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    } else if (result instanceof Ensemble) {
+    }
+    else if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
       for (final Trans dir : ensemble.models) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    } else if (result instanceof MultiClassModel) {
+    }
+    else if (result instanceof MultiClassModel) {
       return grid(((MultiClassModel) result).getInternModel());
-    } else if (result instanceof MultiLabelBinarizedModel) {
+    }
+    else if (result instanceof MultiLabelBinarizedModel) {
       return grid(((MultiLabelBinarizedModel) result).getInternModel());
-    } else if (result instanceof ObliviousTree) {
-      return ((ObliviousTree)result).grid();
-    } else if (result instanceof ObliviousMultiClassTree) {
+    }
+    else if (result instanceof ObliviousTree) {
+      return ((ObliviousTree) result).grid();
+    }
+    else if (result instanceof ObliviousMultiClassTree) {
       return ((ObliviousMultiClassTree) result).binaryClassifier().grid();
     }
     return null;
@@ -277,7 +360,8 @@ public class DataTools {
   public static Class<? extends TargetFunc> targetByName(final String name) {
     try {
       return (Class<? extends TargetFunc>) Class.forName("com.spbsu.ml.loss." + name);
-    } catch (Exception e) {
+    }
+    catch (Exception e) {
       throw new RuntimeException("Unable to create requested target: " + name, e);
     }
   }
@@ -422,23 +506,24 @@ public class DataTools {
             final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
             final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
             builder.newFeature(fmeta, SERIALIZATION.read(
-                    chopper.chop('\n'),
-                    vecClass));
+                chopper.chop('\n'),
+                vecClass));
             break;
           }
           case "target": {
             final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
             final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
             builder.newTarget(fmeta, SERIALIZATION.read(
-                    chopper.chop('\n'),
-                    vecClass));
+                chopper.chop('\n'),
+                vecClass));
             break;
           }
         }
       }
       //noinspection unchecked
       return (Pool<T>) builder.create();
-    } catch (RuntimeException e) {
+    }
+    catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
         throw (IOException) e.getCause();
       }
@@ -450,10 +535,14 @@ public class DataTools {
     return loadFromFile(new File(fileName));
   }
 
-  public static Pool<? extends DSItem> loadFromFile(final File file) throws IOException {
-    try (final InputStreamReader input = file.getName().endsWith(".gz") ?
+  public static Reader gzipOrFileReader(final File file) throws IOException {
+    return file.getName().endsWith(".gz") ?
         new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) :
-        new FileReader(file)) {
+        new FileReader(file);
+  }
+
+  public static Pool<? extends DSItem> loadFromFile(final File file) throws IOException {
+    try (final Reader input = gzipOrFileReader(file)) {
       return readPoolFrom(input);
     }
   }
@@ -549,9 +638,9 @@ public class DataTools {
       final VecIterator vecIterator = data.row(i).nonZeroes();
       while (vecIterator.advance()) {
         out.append("\t")
-           .append(String.valueOf(vecIterator.index()))
-           .append(":")
-           .append(String.valueOf(vecIterator.value()));
+            .append(String.valueOf(vecIterator.index()))
+            .append(":")
+            .append(String.valueOf(vecIterator.value()));
       }
       out.append("\n");
     }
@@ -652,14 +741,15 @@ public class DataTools {
       try {
         next = prev != null ? prev : new CharSeq[0];
         int index = 0;
-        lineRead: while (true) {
+        lineRead:
+        while (true) {
           final int result = chopper.chop(builder, '\n', ',', '"', '\'');
           switch (result) {
             case 1:
               appendAt(index++);
               break;
             case 2:
-              while(true) {
+              while (true) {
                 chopper.chop(builder, '"');
                 if (chopper.eat('"'))
                   builder.add('"');
@@ -668,7 +758,7 @@ public class DataTools {
               }
               break;
             case 3:
-              while(true) {
+              while (true) {
                 chopper.chop(builder, '\'');
                 if (chopper.eat('\''))
                   builder.add('\'');
@@ -691,7 +781,8 @@ public class DataTools {
           }
         }
         return next != null;
-      } catch (IOException e) {
+      }
+      catch (IOException e) {
         throw new RuntimeException(e);
       }
     }

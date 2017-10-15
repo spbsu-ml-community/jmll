@@ -9,6 +9,7 @@ import com.spbsu.ml.BFGrid;
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.spbsu.ml.cli.builders.methods.grid.GridBuilder;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.data.set.VecDataSet;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
@@ -38,7 +39,7 @@ public class Apply extends AbstractMode {
 
     final DataBuilderClassic dataBuilder = new DataBuilderClassic();
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
-    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    CliPoolReaderHelper.setPoolReader(command, dataBuilder);
     final Pool<? extends DSItem> pool = dataBuilder.create().getFirst();
     final VecDataSet vecDataSet = pool.vecData();
 

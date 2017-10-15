@@ -19,6 +19,9 @@ public class JMLLCLI {
 
   public static final String LEARN_OPTION = "f";
   public static final String JSON_FORMAT = "j";
+  public static final String CD_FILE = "cd";
+  public static final String DELIMITER = "delimiter";
+  public static final String HAS_HEADER = "hasHeader";
   public static final String TEST_OPTION = "t";
   public static final String CROSS_VALIDATION_OPTION = "X";
   public static final String INTERPRET_MODE_OPTION = "I";
@@ -50,9 +53,15 @@ public class JMLLCLI {
 
   static {
     options.addOption(OptionBuilder.withLongOpt("learn").withDescription("features.txt format file used as learn").hasArg().create(LEARN_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("cd").withDescription("features.cd file (catboost pool format)").hasArg().create(CD_FILE));
     options.addOption(OptionBuilder.withLongOpt("json-format").withDescription("alternative format for features.txt").hasArg(false).create(JSON_FORMAT));
     options.addOption(OptionBuilder.withLongOpt("test").withDescription("test part in features.txt format").hasArg().create(TEST_OPTION));
     options.addOption(OptionBuilder.withLongOpt("cross-validation").withDescription("k folds CV").hasArg().create(CROSS_VALIDATION_OPTION));
+
+    //support in catboost pools only
+    options.addOption(OptionBuilder.withLongOpt("delimiter").withDescription("Delimiter on file, default \t").hasArg().create(DELIMITER));
+    options.addOption(OptionBuilder.withLongOpt("has-header").withDescription("Pool with header flag").hasArg(false).create(HAS_HEADER));
+
 
     options.addOption(OptionBuilder.withLongOpt("target").withDescription("target function to optimize format Global/Weak/Cursor (" + DEFAULT_TARGET + ")").hasArg().create(TARGET_OPTION));
     options.addOption(OptionBuilder.withLongOpt("metrics").withDescription("metrics to test, by default contains global optimization target").hasArgs().create(METRICS_OPTION));

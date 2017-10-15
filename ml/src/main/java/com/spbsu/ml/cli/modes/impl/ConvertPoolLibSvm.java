@@ -2,6 +2,7 @@ package com.spbsu.ml.cli.modes.impl;
 
 import com.spbsu.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.spbsu.ml.cli.modes.AbstractMode;
+import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
 import com.spbsu.ml.data.tools.DataTools;
 import com.spbsu.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
@@ -25,7 +26,7 @@ public class ConvertPoolLibSvm extends AbstractMode {
     }
 
     final DataBuilderClassic dataBuilder = new DataBuilderClassic();
-    dataBuilder.setJsonFormat(command.hasOption(JSON_FORMAT));
+    CliPoolReaderHelper.setPoolReader(command, dataBuilder);
     dataBuilder.setLearnPath(command.getOptionValue(LEARN_OPTION));
     final Pool<?> pool = dataBuilder.create().getFirst();
     final String outputName = command.hasOption(OUTPUT_OPTION) ? getOutputName(command) : getOutputName(command) + ".libfm";
