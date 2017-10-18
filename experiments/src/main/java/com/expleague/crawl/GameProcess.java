@@ -10,8 +10,6 @@ import com.expleague.crawl.data.impl.system.*;
 import com.expleague.crawl.learning.LearnDataBuilder;
 import com.spbsu.commons.random.FastRandom;
 import com.expleague.crawl.bl.GameSession;
-import com.spbsu.crawl.data.impl.*;
-import com.spbsu.crawl.data.impl.system.*;
 
 import java.io.IOException;
 import java.util.logging.Level;

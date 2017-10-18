@@ -1,7 +1,6 @@
 package com.expleague.exp.multiclass.spoc;
 
 import com.spbsu.commons.func.Action;
-import com.spbsu.commons.func.Computable;
 import com.spbsu.commons.io.StreamTools;
 import com.spbsu.commons.math.MathTools;
 import com.spbsu.commons.math.vectors.Mx;
@@ -33,9 +32,6 @@ import com.spbsu.ml.models.multiclass.MulticlassCodingMatrixModel;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
-
-import static com.spbsu.ml.cli.builders.data.ReaderFactory.createFeatureTxtReader;
-import static com.spbsu.ml.cli.builders.data.ReaderFactory.createJsonReader;
 
 /**
  * User: qdeee
@@ -71,7 +67,7 @@ public class RunnerECOC {
     final Mx S = MathTools.CONVERSION.convert(mxStr, Mx.class);
 
     final DataBuilderClassic dataBuilder = new DataBuilderClassic();
-    dataBuilder.setReader(isJsonFormat ? createJsonReader() : createFeatureTxtReader());
+    dataBuilder.setJsonFormat(isJsonFormat);
     dataBuilder.setLearnPath(learnPath);
     dataBuilder.setTestPath(testPath);
     final Pair<Pool, Pool> poolsPair = dataBuilder.create();
@@ -84,21 +80,18 @@ public class RunnerECOC {
     final int k = MCTools.countClasses(mllLogit.labels());
 
     final ECOCCombo ecocComboMethod = new ECOCCombo(k, l, lambdaC, lambdaR, lambda1, S, createWeak(grid, iters, step));
-    final Action<MulticlassCodingMatrixModel> listener = new Action<MulticlassCodingMatrixModel>() {
-      @Override
-      public void invoke(final MulticlassCodingMatrixModel model) {
-        if (updatePrior && model.getCodingMatrix().columns() >= firstColumnForUpdate) {
-          final Mx mx = getPairwiseInteractions(model, learn, targetBasedUpdate);
-          VecTools.scale(S, lambdaPrior);
-          VecTools.scale(mx, 1 - lambdaPrior);
-          VecTools.append(S, mx);
-        }
-
-        System.out.println("L == " + model.getInternalModel().ydim());
-        System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", true));
-        System.out.println(MCTools.evalModel(model, test, "[TEST] ", true));
-        System.out.println();
+    final Action<MulticlassCodingMatrixModel> listener = model -> {
+      if (updatePrior && model.getCodingMatrix().columns() >= firstColumnForUpdate) {
+        final Mx mx = getPairwiseInteractions(model, learn, targetBasedUpdate);
+        VecTools.scale(S, lambdaPrior);
+        VecTools.scale(mx, 1 - lambdaPrior);
+        VecTools.append(S, mx);
       }
+
+      System.out.println("L == " + model.getInternalModel().ydim());
+      System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", true));
+      System.out.println(MCTools.evalModel(model, test, "[TEST] ", true));
+      System.out.println();
     };
     ecocComboMethod.addListener(listener);
     final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) ecocComboMethod.fit(vecDataSet, mllLogit);
@@ -114,12 +107,7 @@ public class RunnerECOC {
         final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(grid, 5), iters, step);
         final Ensemble ensemble = boosting.fit(learn, llLogit);
         return new FuncEnsemble(
-            ArrayTools.map(ensemble.models, Func.class, new Computable<Trans, Func>() {
-              @Override
-              public Func compute(final Trans argument) {
-                return (Func) argument;
-              }
-            }),
+            ArrayTools.map(ensemble.models, Func.class, argument -> (Func) argument),
             ensemble.weights
         );
       }

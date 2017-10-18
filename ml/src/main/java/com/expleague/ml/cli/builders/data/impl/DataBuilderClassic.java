@@ -2,11 +2,8 @@ package com.expleague.ml.cli.builders.data.impl;
 
 import com.expleague.commons.util.Pair;
 import com.expleague.ml.cli.builders.data.DataBuilder;
-import com.spbsu.ml.cli.builders.data.PoolReader;
-import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.cli.builders.data.PoolReader;
 import com.expleague.ml.data.tools.Pool;
-
-import java.io.IOException;
 
 /**
  * User: qdeee

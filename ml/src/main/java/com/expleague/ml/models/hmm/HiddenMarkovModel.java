@@ -3,7 +3,6 @@ package com.expleague.ml.models.hmm;
 import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.regexp.Alphabet;

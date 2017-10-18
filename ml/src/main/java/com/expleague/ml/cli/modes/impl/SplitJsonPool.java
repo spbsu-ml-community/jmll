@@ -4,7 +4,7 @@ import com.expleague.commons.text.StringUtils;
 import com.expleague.commons.util.Pair;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderCrossValidation;
 import com.expleague.ml.cli.modes.AbstractMode;
-import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
+import com.expleague.ml.cli.modes.CliPoolReaderHelper;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
@@ -33,7 +33,7 @@ public class SplitJsonPool extends AbstractMode {
     builder.setRandomSeed(Integer.valueOf(cvOptions[0]));
     builder.setPartition(cvOptions[1]);
 
-    final Pair<? extends Pool, ? extends Pool> pools = builder.create();
+    final Pair<Pool, Pool> pools = builder.create();
 
     final String outputName = getOutputName(command);
     DataTools.writePoolTo(pools.getFirst(), new FileWriter(outputName + ".learn"));

@@ -18,7 +18,6 @@ import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.ml.*;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.func.Ensemble;

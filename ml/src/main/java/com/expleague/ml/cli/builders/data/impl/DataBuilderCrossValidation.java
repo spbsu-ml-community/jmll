@@ -2,14 +2,11 @@ package com.expleague.ml.cli.builders.data.impl;
 
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.cli.builders.data.DataBuilder;
-import com.spbsu.ml.cli.builders.data.PoolReader;
+import com.expleague.ml.cli.builders.data.PoolReader;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.data.tools.SubPool;
 import com.expleague.commons.util.Pair;
 import com.expleague.ml.data.tools.DataTools;
-
-import java.io.IOException;
-import java.io.Reader;
 
 /**
  * User: qdeee
@@ -45,7 +42,7 @@ public class DataBuilderCrossValidation implements DataBuilder {
   }
 
   @Override
-  public Pair<? extends Pool, ? extends Pool> create() {
+  public Pair<Pool, Pool> create() {
     final Pool pool = reader.read(learnPath);
     final FastRandom rnd = new FastRandom(randomSeed);
 

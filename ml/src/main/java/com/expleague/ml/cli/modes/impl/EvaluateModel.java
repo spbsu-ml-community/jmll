@@ -8,7 +8,7 @@ import com.expleague.ml.BFGrid;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import com.expleague.ml.cli.modes.AbstractMode;
-import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
+import com.expleague.ml.cli.modes.CliPoolReaderHelper;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.io.ModelsSerializationRepository;

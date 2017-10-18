@@ -8,7 +8,6 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxIterator;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.random.FastRandom;

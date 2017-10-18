@@ -3,7 +3,6 @@ package com.expleague.crawl.bl.crawlSystemView;
 import com.expleague.crawl.bl.events.*;
 import com.expleague.crawl.data.impl.UpdateMapMessage;
 import com.expleague.crawl.data.impl.system.EmptyFieldsDefault;
-import com.spbsu.crawl.bl.events.*;
 import com.expleague.crawl.bl.map.PositionManager;
 import com.expleague.crawl.data.impl.PlayerInfoMessage;
 import com.expleague.crawl.data.impl.UpdateMapCellMessage;

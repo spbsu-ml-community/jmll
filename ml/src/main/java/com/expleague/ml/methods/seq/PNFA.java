@@ -5,7 +5,6 @@ import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.FuncC1;
-import com.spbsu.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.seq.IntSeq;

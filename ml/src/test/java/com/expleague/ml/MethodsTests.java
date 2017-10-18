@@ -11,7 +11,6 @@ import com.expleague.ml.methods.greedyRegion.*;
 import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
-import com.spbsu.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
@@ -31,11 +30,8 @@ import com.expleague.ml.data.tools.FeaturesTxtPool;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.NormalizedLinear;
-import com.spbsu.ml.loss.*;
 import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.items.QURLItem;
-import com.spbsu.ml.methods.*;
-import com.spbsu.ml.methods.greedyRegion.*;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.ModelTools;
 import com.expleague.ml.models.ObliviousTree;
@@ -51,7 +47,7 @@ import java.util.Random;
 
 import static com.expleague.commons.math.MathTools.sqr;
 import static com.expleague.commons.math.vectors.VecTools.copy;
-import static com.spbsu.ml.cli.builders.data.ReaderFactory.createFeatureTxtReader;
+import static com.expleague.ml.cli.builders.data.ReaderFactory.createFeatureTxtReader;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 

@@ -2,7 +2,6 @@ package com.expleague.ml.models.gpf;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.math.vectors.*;
 
 /**
  * Created with IntelliJ IDEA.

@@ -3,7 +3,7 @@ package com.expleague.ml.cli.modes.impl;
 import com.expleague.ml.cli.JMLLCLI;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.expleague.ml.cli.modes.AbstractMode;
-import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
+import com.expleague.ml.cli.modes.CliPoolReaderHelper;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;

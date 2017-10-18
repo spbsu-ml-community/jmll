@@ -4,7 +4,6 @@ import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.methods.multiclass.spoc.CMLHelper;
-import com.spbsu.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
 

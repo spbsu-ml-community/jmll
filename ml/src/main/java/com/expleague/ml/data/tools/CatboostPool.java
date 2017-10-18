@@ -1,7 +1,8 @@
-package com.spbsu.ml.data.tools;
+package com.expleague.ml.data.tools;
 
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.seq.Seq;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.seq.Seq;
+import com.expleague.ml.data.tools.FakePool;
 
 import java.util.Set;
 

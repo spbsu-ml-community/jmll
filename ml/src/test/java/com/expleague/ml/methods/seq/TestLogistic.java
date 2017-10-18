@@ -10,7 +10,6 @@ import com.expleague.ml.methods.seq.nn.NetworkNode;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.random.FastRandom;
-import com.spbsu.ml.methods.seq.nn.*;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

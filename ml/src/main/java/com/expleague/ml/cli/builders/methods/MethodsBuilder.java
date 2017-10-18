@@ -6,7 +6,6 @@ import com.expleague.ml.cli.builders.methods.impl.*;
 import com.expleague.ml.methods.Optimization;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.BFGrid;
-import com.spbsu.ml.cli.builders.methods.impl.*;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
 
 import java.lang.reflect.Method;

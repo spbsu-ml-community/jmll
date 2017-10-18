@@ -16,7 +16,6 @@ import com.expleague.commons.seq.CharSeqReader;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.func.Ensemble;
-import com.spbsu.ml.loss.*;
 import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.PoolFeatureMeta;

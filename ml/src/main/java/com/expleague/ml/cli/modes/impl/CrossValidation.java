@@ -13,7 +13,7 @@ import com.expleague.ml.BFGrid;
 import com.expleague.ml.cli.builders.methods.MethodsBuilder;
 import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import com.expleague.ml.cli.modes.AbstractMode;
-import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
+import com.expleague.ml.cli.modes.CliPoolReaderHelper;
 import com.expleague.ml.data.tools.Pool;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;

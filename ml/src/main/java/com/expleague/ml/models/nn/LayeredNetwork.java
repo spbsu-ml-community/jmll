@@ -6,7 +6,6 @@ import com.expleague.commons.math.FuncC1;
 import com.expleague.ml.func.generic.Const;
 import com.expleague.ml.func.generic.SubVecFuncC1;
 import com.expleague.ml.func.generic.WSumSigmoid;
-import com.spbsu.ml.func.generic.*;
 
 import java.util.ArrayList;
 import java.util.List;

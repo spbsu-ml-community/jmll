@@ -9,7 +9,7 @@ import com.expleague.ml.cli.JMLLCLI;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import com.expleague.ml.cli.modes.AbstractMode;
-import com.spbsu.ml.cli.modes.CliPoolReaderHelper;
+import com.expleague.ml.cli.modes.CliPoolReaderHelper;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;

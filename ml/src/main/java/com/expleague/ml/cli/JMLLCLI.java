@@ -2,7 +2,6 @@ package com.expleague.ml.cli;
 
 import com.expleague.ml.cli.modes.impl.*;
 import com.expleague.ml.cli.modes.AbstractMode;
-import com.spbsu.ml.cli.modes.impl.*;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;

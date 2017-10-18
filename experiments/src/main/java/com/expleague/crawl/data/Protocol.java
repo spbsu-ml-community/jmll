@@ -2,8 +2,6 @@ package com.expleague.crawl.data;
 
 import com.expleague.crawl.data.impl.*;
 import com.expleague.crawl.data.impl.system.*;
-import com.spbsu.crawl.data.impl.*;
-import com.spbsu.crawl.data.impl.system.*;
 
 /**
  * User: qdeee

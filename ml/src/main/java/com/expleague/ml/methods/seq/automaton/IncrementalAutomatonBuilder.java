@@ -10,7 +10,6 @@ import com.expleague.commons.seq.regexp.Alphabet;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.SeqOptimization;
-import com.spbsu.ml.methods.seq.automaton.transform.*;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;

@@ -1,7 +1,7 @@
-package com.spbsu.ml.data.tools;
+package com.expleague.ml.data.tools;
 
-import com.spbsu.commons.func.Processor;
-import com.spbsu.commons.seq.CharSeqTools;
+import com.expleague.commons.func.Processor;
+import com.expleague.commons.seq.CharSeqTools;
 
 import java.io.IOException;
 import java.io.Reader;

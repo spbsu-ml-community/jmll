@@ -1,14 +1,14 @@
-package com.spbsu.ml.cli.modes;
+package com.expleague.ml.cli.modes;
 
-import com.spbsu.ml.cli.builders.data.DataBuilder;
+import com.expleague.ml.cli.builders.data.DataBuilder;
 import org.apache.commons.cli.CommandLine;
 
 import java.io.IOException;
 
-import static com.spbsu.ml.cli.JMLLCLI.*;
-import static com.spbsu.ml.cli.builders.data.ReaderFactory.createCatBoostPoolReader;
-import static com.spbsu.ml.cli.builders.data.ReaderFactory.createFeatureTxtReader;
-import static com.spbsu.ml.cli.builders.data.ReaderFactory.createJsonReader;
+import static com.expleague.ml.cli.JMLLCLI.*;
+import static com.expleague.ml.cli.builders.data.ReaderFactory.createCatBoostPoolReader;
+import static com.expleague.ml.cli.builders.data.ReaderFactory.createFeatureTxtReader;
+import static com.expleague.ml.cli.builders.data.ReaderFactory.createJsonReader;
 
 /**
  * Created by noxoomo on 15/10/2017.

@@ -4,7 +4,6 @@ import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.PoolFeatureMeta;
 import com.expleague.ml.data.set.DataSet;
-import com.spbsu.ml.meta.*;
 
 /**
  * User: solar
