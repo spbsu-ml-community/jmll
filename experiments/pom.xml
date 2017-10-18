@@ -179,7 +179,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.spbsu.exp.tools.Runner</mainClass>
+                                    <mainClass>com.expleague.exp.tools.Runner</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -215,7 +215,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.spbsu.direct.BroadMatch</mainClass>
+                                    <mainClass>com.expleague.direct.BroadMatch</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
