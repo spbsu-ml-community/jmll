@@ -86,7 +86,7 @@ public class DataTools {
   public static Logger log = Logger.create(DataTools.class);
 
   public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
-      new TypeConvertersCollection(MathTools.CONVERSION, "com.spbsu.ml.io"), CharSequence.class);
+      new TypeConvertersCollection(MathTools.CONVERSION, "com.expleague.ml.io"), CharSequence.class);
 
 
   public static Pool<QURLItem> loadFromFeaturesTxt(final String file) throws IOException {
