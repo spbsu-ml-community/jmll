@@ -14,6 +14,8 @@ import com.expleague.commons.math.Func;
 import com.expleague.ml.GridTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderClassic;
+import com.expleague.ml.cli.builders.data.impl.PoolReaderFeatureTxt;
+import com.expleague.ml.cli.builders.data.impl.PoolReaderJson;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
@@ -67,7 +69,7 @@ public class RunnerECOC {
     final Mx S = MathTools.CONVERSION.convert(mxStr, Mx.class);
 
     final DataBuilderClassic dataBuilder = new DataBuilderClassic();
-    // dataBuilder.setJsonFormat(isJsonFormat);
+    dataBuilder.setReader(isJsonFormat ? new PoolReaderJson() : new PoolReaderFeatureTxt());
     dataBuilder.setLearnPath(learnPath);
     dataBuilder.setTestPath(testPath);
     final Pair<Pool, Pool> poolsPair = dataBuilder.create();
