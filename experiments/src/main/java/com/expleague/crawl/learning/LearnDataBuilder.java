@@ -1,7 +1,7 @@
 package com.expleague.crawl.learning;
 
 import com.expleague.crawl.bl.Mob;
-import com.spbsu.commons.util.Pair;
+import com.expleague.commons.util.Pair;
 import com.expleague.crawl.bl.crawlSystemView.SystemView;
 import com.expleague.crawl.bl.events.PlayerActionListener;
 import com.expleague.crawl.bl.helpers.CategoricalFeaturesMap;

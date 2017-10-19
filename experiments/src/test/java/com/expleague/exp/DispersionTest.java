@@ -1,18 +1,18 @@
 package com.expleague.exp;
 
-import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.random.FastRandom;
-import com.spbsu.ml.methods.MTA;
+import com.expleague.commons.math.MathTools;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.ml.methods.MTA;
 import junit.framework.TestCase;
 
 import java.util.Random;
 
-import static com.spbsu.commons.math.MathTools.sqr;
-import static com.spbsu.commons.math.vectors.VecTools.*;
+import static com.expleague.commons.math.MathTools.sqr;
+import static com.expleague.commons.math.vectors.VecTools.*;
 
 /**
  * Stein paradox experiments.

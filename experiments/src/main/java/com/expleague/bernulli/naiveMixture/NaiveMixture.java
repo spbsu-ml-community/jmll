@@ -3,7 +3,7 @@ package com.expleague.bernulli.naiveMixture;
 import com.expleague.bernulli.Mixture;
 import com.expleague.bernulli.MixtureObservations;
 import com.expleague.bernulli.Multinomial;
-import com.spbsu.commons.random.FastRandom;
+import com.expleague.commons.random.FastRandom;
 import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;

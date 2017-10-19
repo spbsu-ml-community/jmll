@@ -1,16 +1,16 @@
 package com.expleague.exp.multiclass.weak;
 
-import com.spbsu.commons.math.Func;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.commons.math.Trans;
-import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.loss.LLLogit;
-import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
-import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.models.MultiClassModel;
+import com.expleague.commons.math.Func;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.seq.IntSeq;
+import com.expleague.commons.math.Trans;
+import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.data.tools.MCTools;
+import com.expleague.ml.loss.LLLogit;
+import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.expleague.ml.methods.VecOptimization;
+import com.expleague.ml.models.MultiClassModel;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 /**

@@ -1,7 +1,7 @@
 package com.expleague.crawl.learning;
 
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.crawl.learning.features.Feature;
 
 import java.util.List;

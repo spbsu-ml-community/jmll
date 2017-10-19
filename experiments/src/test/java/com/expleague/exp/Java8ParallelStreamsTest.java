@@ -1,13 +1,13 @@
 package com.expleague.exp;
 
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.random.FastRandom;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.random.FastRandom;
 import junit.framework.TestCase;
 
 //import java.util.stream.IntStream;
 
-import static com.spbsu.commons.math.vectors.VecTools.*;
+import static com.expleague.commons.math.vectors.VecTools.*;
 import static java.lang.Math.exp;
 
 /**

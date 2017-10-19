@@ -1,8 +1,8 @@
 package com.expleague.bernulli;
 
-import com.spbsu.commons.func.Factory;
-import com.spbsu.commons.util.BestHolder;
-import com.spbsu.commons.util.ThreadTools;
+import com.expleague.commons.func.Factory;
+import com.expleague.commons.util.BestHolder;
+import com.expleague.commons.util.ThreadTools;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;

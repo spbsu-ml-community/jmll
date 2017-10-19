@@ -8,7 +8,7 @@ import com.expleague.crawl.data.Message;
 import com.expleague.crawl.data.impl.*;
 import com.expleague.crawl.data.impl.system.*;
 import com.expleague.crawl.learning.LearnDataBuilder;
-import com.spbsu.commons.random.FastRandom;
+import com.expleague.commons.random.FastRandom;
 import com.expleague.crawl.bl.GameSession;
 
 import java.io.IOException;

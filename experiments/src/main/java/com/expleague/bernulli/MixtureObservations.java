@@ -1,6 +1,6 @@
 package com.expleague.bernulli;
 
-import static com.spbsu.commons.math.MathTools.sqr;
+import static com.expleague.commons.math.MathTools.sqr;
 
 public class MixtureObservations<MixtureDistribution> {
   public final MixtureDistribution owner;

@@ -1,12 +1,12 @@
 package com.expleague.bernulli.MCMCBernoulliMixture;
 
-import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.ArrayTools;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.util.ArrayTools;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.Arrays;
 
-import static com.spbsu.commons.math.MathTools.sqr;
+import static com.expleague.commons.math.MathTools.sqr;
 
 
 //estimates some vector parameter of distibution by sampling with metropolis-hastings

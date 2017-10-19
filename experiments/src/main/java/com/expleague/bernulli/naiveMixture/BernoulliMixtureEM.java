@@ -1,9 +1,9 @@
 package com.expleague.bernulli.naiveMixture;
 
 import com.expleague.bernulli.EM;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.random.FastRandom;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.random.FastRandom;
 
 import java.util.Arrays;
 

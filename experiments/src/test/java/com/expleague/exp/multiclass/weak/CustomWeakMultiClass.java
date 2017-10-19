@@ -1,23 +1,23 @@
 package com.expleague.exp.multiclass.weak;
 
-import com.spbsu.commons.math.Trans;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.ml.*;
-import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.tools.FakePool;
-import com.spbsu.ml.data.tools.MCTools;
-import com.spbsu.ml.func.Ensemble;
-import com.spbsu.ml.func.FuncJoin;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.loss.SatL2;
-import com.spbsu.ml.loss.blockwise.BlockwiseMLLLogit;
-import com.spbsu.ml.methods.GradientBoosting;
-import com.spbsu.ml.methods.MultiClass;
-import com.spbsu.ml.methods.VecOptimization;
-import com.spbsu.ml.methods.trees.GreedyObliviousTree;
-import com.spbsu.ml.models.MultiClassModel;
-import com.spbsu.ml.models.multiclass.MCModel;
+import com.expleague.commons.math.Trans;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.seq.IntSeq;
+import com.expleague.ml.*;
+import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.data.tools.FakePool;
+import com.expleague.ml.data.tools.MCTools;
+import com.expleague.ml.func.Ensemble;
+import com.expleague.ml.func.FuncJoin;
+import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.SatL2;
+import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.expleague.ml.methods.GradientBoosting;
+import com.expleague.ml.methods.MultiClass;
+import com.expleague.ml.methods.VecOptimization;
+import com.expleague.ml.methods.trees.GreedyObliviousTree;
+import com.expleague.ml.models.MultiClassModel;
+import com.expleague.ml.models.multiclass.MCModel;
 
 /**
 * User: qdeee

@@ -1,7 +1,7 @@
 package com.expleague.crawl;
 
 import com.expleague.crawl.sessions.WeightedRandomWalkGameSession;
-import com.spbsu.commons.system.RuntimeUtils;
+import com.expleague.commons.system.RuntimeUtils;
 
 import javax.websocket.DeploymentException;
 import java.io.File;

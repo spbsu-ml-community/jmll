@@ -2,11 +2,11 @@ package com.expleague.crawl.sessions;
 
 import com.expleague.crawl.bl.Hero;
 import com.expleague.crawl.bl.Mob;
-import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
-import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.Pair;
+import com.expleague.commons.func.types.impl.TypeConvertersCollection;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.util.Pair;
 import com.expleague.crawl.bl.GameSession;
 import com.expleague.crawl.bl.crawlSystemView.MobsListener;
 import com.expleague.crawl.bl.events.HeroListener;

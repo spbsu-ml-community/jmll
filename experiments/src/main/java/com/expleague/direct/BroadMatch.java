@@ -1,13 +1,13 @@
 package com.expleague.direct;
 
-import com.spbsu.commons.func.Action;
-import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.io.codec.seq.DictExpansion;
-import com.spbsu.commons.io.codec.seq.ListDictionary;
-import com.spbsu.commons.math.io.Vec2CharSequenceConverter;
-import com.spbsu.commons.math.vectors.impl.vectors.SparseVec;
-import com.spbsu.commons.seq.*;
-import com.spbsu.commons.util.ThreadTools;
+import com.expleague.commons.func.Action;
+import com.expleague.commons.io.StreamTools;
+import com.expleague.commons.io.codec.seq.DictExpansion;
+import com.expleague.commons.io.codec.seq.ListDictionary;
+import com.expleague.commons.math.io.Vec2CharSequenceConverter;
+import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
+import com.expleague.commons.seq.*;
+import com.expleague.commons.util.ThreadTools;
 import com.expleague.direct.gen.SimpleGenerativeModel;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;

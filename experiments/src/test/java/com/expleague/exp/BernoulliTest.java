@@ -12,11 +12,11 @@ import com.expleague.bernulli.betaBinomialMixture.BetaBinomialMixtureEM;
 import com.expleague.bernulli.betaBinomialMixture.RegularizedBetaBinomialMixtureEM;
 import com.expleague.bernulli.naiveMixture.BernoulliMixtureEM;
 import com.expleague.bernulli.naiveMixture.NaiveMixture;
-import com.spbsu.commons.func.Factory;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.ThreadTools;
+import com.expleague.commons.func.Factory;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.util.ThreadTools;
 import junit.framework.TestCase;
 import org.apache.commons.math3.special.Gamma;
 
@@ -25,8 +25,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.expleague.bernulli.betaBinomialMixture.BetaBinomialMixtureEM.Type;
-import static com.spbsu.commons.math.MathTools.sqr;
-import static com.spbsu.commons.math.vectors.VecTools.*;
+import static com.expleague.commons.math.MathTools.sqr;
+import static com.expleague.commons.math.vectors.VecTools.*;
 
 /**
  * bernoulli models experiments

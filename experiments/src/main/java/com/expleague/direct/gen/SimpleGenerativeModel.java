@@ -1,16 +1,16 @@
 package com.expleague.direct.gen;
 
 import com.expleague.direct.BroadMatch;
-import com.spbsu.commons.func.Action;
-import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.io.codec.seq.Dictionary;
-import com.spbsu.commons.math.io.Vec2CharSequenceConverter;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.seq.*;
-import com.spbsu.commons.util.ArrayTools;
+import com.expleague.commons.func.Action;
+import com.expleague.commons.io.StreamTools;
+import com.expleague.commons.io.codec.seq.Dictionary;
+import com.expleague.commons.math.io.Vec2CharSequenceConverter;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.seq.*;
+import com.expleague.commons.util.ArrayTools;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
@@ -19,7 +19,7 @@ import gnu.trove.procedure.TIntDoubleProcedure;
 import java.io.IOException;
 import java.io.Writer;
 
-import static com.spbsu.commons.math.vectors.VecTools.l1;
+import static com.expleague.commons.math.vectors.VecTools.l1;
 import static java.lang.Double.max;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;

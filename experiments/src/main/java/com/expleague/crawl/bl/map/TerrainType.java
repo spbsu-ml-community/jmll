@@ -1,7 +1,7 @@
 package com.expleague.crawl.bl.map;
 
 
-import com.spbsu.commons.util.ArrayTools;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.crawl.bl.helpers.CodeSet;
 import com.expleague.crawl.data.impl.UpdateMapCellMessage;
 

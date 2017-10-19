@@ -1,6 +1,6 @@
 package com.expleague.bernulli;
 
-import com.spbsu.commons.random.FastRandom;
+import com.expleague.commons.random.FastRandom;
 
 import java.util.Arrays;
 

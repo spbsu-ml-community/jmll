@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.seq.CharSequenceReader;
+import com.expleague.commons.io.StreamTools;
+import com.expleague.commons.seq.CharSequenceReader;
 import com.expleague.crawl.data.Message;
 import com.expleague.crawl.data.Protocol;
 
