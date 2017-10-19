@@ -1,10 +1,10 @@
 package com.expleague.exp.multiclass.spoc;
 
-import com.spbsu.commons.func.types.TypeConverter;
-import com.spbsu.commons.math.io.Mx2CharSequenceConversionPack;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
-import com.spbsu.ml.methods.multiclass.spoc.impl.CodingMatrixLearningGreedyParallels;
+import com.expleague.commons.func.types.TypeConverter;
+import com.expleague.commons.math.io.Mx2CharSequenceConversionPack;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
+import com.expleague.ml.methods.multiclass.spoc.impl.CodingMatrixLearningGreedyParallels;
 import org.apache.commons.cli.MissingArgumentException;
 
 import java.io.*;

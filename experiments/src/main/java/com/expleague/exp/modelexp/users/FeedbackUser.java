@@ -1,6 +1,6 @@
 package com.expleague.exp.modelexp.users;
 
-import com.spbsu.commons.random.FastRandom;
+import com.expleague.commons.random.FastRandom;
 
 /**
 * User: solar

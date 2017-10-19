@@ -1,16 +1,16 @@
 package com.expleague.expedia;
 
 import com.expleague.sbrealty.Deal;
-import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
-import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.logging.Interval;
-import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.data.tools.PoolBuilder;
-import com.spbsu.ml.meta.DSItem;
-import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.impl.JsonDataSetMeta;
-import com.spbsu.ml.meta.impl.JsonFeatureMeta;
-import com.spbsu.ml.meta.impl.JsonTargetMeta;
+import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.util.logging.Interval;
+import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.data.tools.PoolBuilder;
+import com.expleague.ml.meta.DSItem;
+import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.impl.JsonDataSetMeta;
+import com.expleague.ml.meta.impl.JsonFeatureMeta;
+import com.expleague.ml.meta.impl.JsonTargetMeta;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
 import javax.xml.bind.annotation.XmlAttribute;

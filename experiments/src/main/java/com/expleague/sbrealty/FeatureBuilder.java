@@ -1,11 +1,11 @@
 package com.expleague.sbrealty;
 
-import com.spbsu.commons.func.Evaluator;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
-import com.spbsu.ml.meta.DSItem;
-import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.impl.JsonFeatureMeta;
+import com.expleague.commons.func.Evaluator;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
+import com.expleague.ml.meta.DSItem;
+import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.impl.JsonFeatureMeta;
 
 import java.util.Date;
 import java.util.List;

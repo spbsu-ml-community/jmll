@@ -1,6 +1,6 @@
 package com.expleague.sbrealty.features;
 
-import com.spbsu.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.Vec;
 import com.expleague.sbrealty.Deal;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;

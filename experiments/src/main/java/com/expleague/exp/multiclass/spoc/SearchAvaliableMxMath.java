@@ -1,14 +1,14 @@
 package com.expleague.exp.multiclass.spoc;
 
-import com.spbsu.commons.func.Computable;
-import com.spbsu.commons.func.types.TypeConverter;
-import com.spbsu.commons.math.io.Mx2CharSequenceConversionPack;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.commons.util.logging.Logger;
-import com.spbsu.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
-import com.spbsu.ml.methods.multiclass.spoc.CMLHelper;
-import com.spbsu.ml.methods.multiclass.spoc.impl.CodingMatrixLearning;
+import com.expleague.commons.func.Computable;
+import com.expleague.commons.func.types.TypeConverter;
+import com.expleague.commons.math.io.Mx2CharSequenceConversionPack;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.util.ArrayTools;
+import com.expleague.commons.util.logging.Logger;
+import com.expleague.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
+import com.expleague.ml.methods.multiclass.spoc.CMLHelper;
+import com.expleague.ml.methods.multiclass.spoc.impl.CodingMatrixLearning;
 import org.apache.commons.cli.MissingArgumentException;
 
 import java.io.BufferedReader;

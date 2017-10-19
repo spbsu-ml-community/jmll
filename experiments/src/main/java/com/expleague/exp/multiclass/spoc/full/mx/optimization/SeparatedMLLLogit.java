@@ -1,15 +1,15 @@
 package com.expleague.exp.multiclass.spoc.full.mx.optimization;
 
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecIterator;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.seq.IntSeq;
-import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.commons.math.FuncC1;
-import com.spbsu.ml.TargetFunc;
-import com.spbsu.ml.data.set.DataSet;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecIterator;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.seq.IntSeq;
+import com.expleague.commons.util.ArrayTools;
+import com.expleague.commons.math.FuncC1;
+import com.expleague.ml.TargetFunc;
+import com.expleague.ml.data.set.DataSet;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;

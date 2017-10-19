@@ -1,13 +1,13 @@
 package com.expleague.sbrealty.features;
 
 import com.expleague.sbrealty.Deal;
-import com.spbsu.commons.func.Evaluator;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
-import com.spbsu.ml.data.tools.DataTools;
+import com.expleague.commons.func.Evaluator;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
+import com.expleague.ml.data.tools.DataTools;
 import com.expleague.sbrealty.FeatureBuilder;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -15,7 +15,7 @@ import gnu.trove.map.hash.TObjectDoubleHashMap;
 
 import java.util.*;
 
-import static com.spbsu.commons.math.vectors.MxTools.*;
+import static com.expleague.commons.math.vectors.MxTools.*;
 import static java.lang.Math.log;
 
 /**

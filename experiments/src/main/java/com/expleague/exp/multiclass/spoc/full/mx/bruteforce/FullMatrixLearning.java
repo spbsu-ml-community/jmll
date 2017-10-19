@@ -1,9 +1,9 @@
 package com.expleague.exp.multiclass.spoc.full.mx.bruteforce;
 
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
 
 /**
  * User: qdeee

@@ -1,15 +1,15 @@
 package com.expleague.mcg;
 
 
-import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.math.MathTools;
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.MxTools;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.vectors.impl.vectors.ArrayVec;
-import com.spbsu.commons.util.ArrayTools;
-import com.spbsu.ml.data.tools.DataTools;
+import com.expleague.commons.io.StreamTools;
+import com.expleague.commons.math.MathTools;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.MxTools;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.util.ArrayTools;
+import com.expleague.ml.data.tools.DataTools;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import org.bytedeco.javacpp.opencv_core;

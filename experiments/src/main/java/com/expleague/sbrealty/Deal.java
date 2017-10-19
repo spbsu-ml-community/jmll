@@ -1,6 +1,6 @@
 package com.expleague.sbrealty;
 
-import com.spbsu.ml.meta.DSItem;
+import com.expleague.ml.meta.DSItem;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;

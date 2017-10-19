@@ -1,12 +1,13 @@
 package com.expleague.crawl;
 
-import com.spbsu.commons.func.Processor;
-import com.spbsu.commons.func.types.impl.TypeConvertersCollection;
-import com.spbsu.commons.io.StreamTools;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
-import com.spbsu.commons.seq.CharSeqTools;
-import com.spbsu.ml.meta.DSItem;
+import com.expleague.commons.func.Processor;
+import com.expleague.commons.func.types.impl.TypeConvertersCollection;
+import com.expleague.commons.io.StreamTools;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
+import com.expleague.commons.seq.CharSeqTools;
+import com.expleague.ml.meta.DSItem;
+
 
 import java.io.File;
 import java.io.FileInputStream;

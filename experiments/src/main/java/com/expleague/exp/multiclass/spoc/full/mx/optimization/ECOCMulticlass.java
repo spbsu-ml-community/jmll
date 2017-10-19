@@ -1,15 +1,15 @@
 package com.expleague.exp.multiclass.spoc.full.mx.optimization;
 
-import com.spbsu.commons.math.vectors.Mx;
-import com.spbsu.commons.math.vectors.VecTools;
-import com.spbsu.commons.math.vectors.impl.mx.VecBasedMx;
-import com.spbsu.commons.math.Func;
-import com.spbsu.commons.math.Trans;
-import com.spbsu.ml.data.set.VecDataSet;
-import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.func.FuncJoin;
-import com.spbsu.ml.loss.L2;
-import com.spbsu.ml.methods.VecOptimization;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.Func;
+import com.expleague.commons.math.Trans;
+import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.func.FuncJoin;
+import com.expleague.ml.loss.L2;
+import com.expleague.ml.methods.VecOptimization;
 
 /**
  * User: qdeee

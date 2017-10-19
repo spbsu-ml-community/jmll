@@ -1,10 +1,10 @@
 package com.expleague.exp.modelexp;
 
 import com.expleague.exp.modelexp.users.UserFactory;
-import com.spbsu.commons.func.Evaluator;
-import com.spbsu.commons.func.Factory;
-import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.Pair;
+import com.expleague.commons.func.Evaluator;
+import com.expleague.commons.func.Factory;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.util.Pair;
 import com.expleague.exp.modelexp.managers.SerpManager;
 import com.expleague.exp.modelexp.setup.SimpleExclusive;
 import gnu.trove.map.TObjectDoubleMap;

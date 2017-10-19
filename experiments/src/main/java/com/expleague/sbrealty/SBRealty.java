@@ -2,14 +2,14 @@ package com.expleague.sbrealty;
 
 import com.expleague.sbrealty.features.BuildingTypeFeature;
 import com.expleague.sbrealty.features.DistrictFeature;
-import com.spbsu.commons.math.vectors.Vec;
-import com.spbsu.commons.math.vectors.impl.vectors.VecBuilder;
-import com.spbsu.ml.data.tools.CsvRow;
-import com.spbsu.ml.data.tools.DataTools;
-import com.spbsu.ml.data.tools.PoolBuilder;
-import com.spbsu.ml.meta.FeatureMeta;
-import com.spbsu.ml.meta.impl.JsonDataSetMeta;
-import com.spbsu.ml.meta.impl.JsonTargetMeta;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
+import com.expleague.ml.data.tools.CsvRow;
+import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.data.tools.PoolBuilder;
+import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.impl.JsonDataSetMeta;
+import com.expleague.ml.meta.impl.JsonTargetMeta;
 
 import java.io.FileWriter;
 import java.io.IOException;

@@ -1,8 +1,8 @@
 package com.expleague.exp.modelexp.managers;
 
 import com.expleague.exp.modelexp.Experiment;
-import com.spbsu.commons.func.Factory;
-import com.spbsu.commons.random.FastRandom;
+import com.expleague.commons.func.Factory;
+import com.expleague.commons.random.FastRandom;
 import com.expleague.exp.modelexp.Query;
 
 /**

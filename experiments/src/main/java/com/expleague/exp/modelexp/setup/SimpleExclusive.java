@@ -1,8 +1,8 @@
 package com.expleague.exp.modelexp.setup;
 
 import com.expleague.exp.modelexp.*;
-import com.spbsu.commons.random.FastRandom;
-import com.spbsu.commons.util.MultiMap;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.util.MultiMap;
 
 import java.util.*;
 
