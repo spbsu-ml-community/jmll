@@ -78,8 +78,7 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
 
   public List<BFGrid.BinaryFeature> features() {
     final List<BFGrid.BinaryFeature> ret = new ArrayList<BFGrid.BinaryFeature>();
-    for (int i = 0; i < features.length; i++)
-      ret.add(features[i]);
+    ret.addAll(Arrays.asList(features));
     return ret;
   }
 
@@ -121,7 +120,7 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;
-      if (bds.bins(features[i].findex)[pindex] > features[i].binNo)
+      if (features[i].value(bds.bins(features[i].findex)[pindex]))
         index++;
     }
     return values[index];

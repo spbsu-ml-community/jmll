@@ -32,10 +32,10 @@ public class BFOptimizationSubset {
     final TIntArrayList right = new TIntArrayList(points.length);
     final byte[] bins = bds.bins(feature.findex);
     for (final int i : points) {
-      if (bins[i] <= feature.binNo) {
-        left.add(i);
-      } else {
+      if (feature.value(bins[i])) {
         right.add(i);
+      } else {
+        left.add(i);
       }
     }
     final BFOptimizationSubset rightBro = new BFOptimizationSubset(bds, oracle, right.toArray());

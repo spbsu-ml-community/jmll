@@ -99,19 +99,26 @@ public class Aggregate {
     void accept(BFGrid.BFRow row, int startBin, int endBin, T inside, T outside);
   }
 
-
   public <T extends AdditiveStatistics> void visit(final SplitVisitor<T> visitor) {
     final T total = (T) total();
     IntStream.range(0, grid.rows()).parallel().forEach(f -> {
-//    for (int f = 0; f < grid.rows(); f++) {
       final T left = (T) factory.create();
       final T right = (T) factory.create().append(total);
       final BFGrid.BFRow row = grid.row(f);
       final int offset = starts[row.origFIndex];
-      for (int b = 0; b < row.size(); b++) {
-        left.append(bins[offset + b]);
-        right.remove(bins[offset + b]);
-        visitor.accept(row.bf(b), left, right);
+
+      if (row.isOneHot) {
+        for (int b = 0; b < row.size(); b++) {
+          final T inside = (T) factory.create().append(bins[offset + b]);
+          final T outside = (T) factory.create().append(total).remove(inside);
+          visitor.accept(row.bf(b), inside, outside);
+        }
+      } else {
+        for (int b = 0; b < row.size(); b++) {
+          left.append(bins[offset + b]);
+          right.remove(bins[offset + b]);
+          visitor.accept(row.bf(b), left, right);
+        }
       }
     });
   }

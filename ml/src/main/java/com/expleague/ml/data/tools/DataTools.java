@@ -129,7 +129,7 @@ public class DataTools {
 
   public static double stringToDoubleHash(final CharSequence in) {
     final long hashCode = in.toString().hashCode();
-    return Double.longBitsToDouble(hashCode);
+    return hashCode * 1.0 / (1L << 32);
   }
 
   public static CatboostPool loadFromCatBoostPool(final CatBoostPoolDescription poolDescription,
@@ -165,8 +165,12 @@ public class DataTools {
               data.append(CharSeqTools.parseDouble(columnSeq));
               break;
             }
-            case Cat: {
-              data.append(stringToDoubleHash(columnSeq));
+            case Categ: {
+              final double value = stringToDoubleHash(columnSeq);
+              if (Double.isNaN(value)) {
+                throw new RuntimeException("Error: catFeature hash values should not be NaN");
+              }
+              data.append(value);
               break;
             }
             case Weight: {
@@ -187,7 +191,7 @@ public class DataTools {
     int factorId = 0;
     for (int column = 0; column < poolDescription.columnCount(); ++column) {
       final CatBoostPoolDescription.ColumnType columnType = poolDescription.columnType(column);
-      if (columnType == CatBoostPoolDescription.ColumnType.Cat) {
+      if (columnType == CatBoostPoolDescription.ColumnType.Categ) {
         catFeatureIds.add(factorId);
       }
       if (CatBoostPoolDescription.ColumnType.isFactorColumn(columnType)) {
@@ -363,7 +367,7 @@ public class DataTools {
 
   public static Class<? extends TargetFunc> targetByName(final String name) {
     try {
-      return (Class<? extends TargetFunc>) Class.forName("com.spbsu.ml.loss." + name);
+      return (Class<? extends TargetFunc>) Class.forName("com.expleague.ml.loss." + name);
     }
     catch (Exception e) {
       throw new RuntimeException("Unable to create requested target: " + name, e);

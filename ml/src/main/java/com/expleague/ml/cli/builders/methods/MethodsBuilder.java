@@ -114,7 +114,7 @@ public class MethodsBuilder {
 
   private static Factory<? extends VecOptimization> methodBuilderByName(final String name) {
     try {
-      final Class<Factory<VecOptimization>> clazz = (Class<Factory<VecOptimization>>) Class.forName("com.spbsu.ml.cli.builders.methods.impl." + name + "Builder");
+      final Class<Factory<VecOptimization>> clazz = (Class<Factory<VecOptimization>>) Class.forName("com.expleague.ml.cli.builders.methods.impl." + name + "Builder");
       return clazz.newInstance();
     } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
       throw new RuntimeException("Couldn't create weak model: " + name, e);

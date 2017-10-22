@@ -80,11 +80,12 @@ public class BFGrid {
     public final int origFIndex;
     public final double[] borders;
     public final BinaryFeature[] bfs;
+    public final boolean isOneHot;
 
     public BFRow(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders) {
-      this(owner,bfStart,origFIndex,borders,new int[borders.length]);
+      this(owner,bfStart,origFIndex,borders,new int[borders.length], false);
     }
-    public BFRow(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders, final int[] sizes) {
+    public BFRow(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders, final int[] sizes, final boolean isOneHot) {
       this.owner = owner;
       this.bfStart = bfStart;
       this.bfEnd = bfStart + borders.length;
@@ -92,16 +93,19 @@ public class BFGrid {
       this.borders = borders;
       bfs = new BinaryFeature[borders.length];
       for (int i = 0; i < borders.length; i++) {
-        bfs[i] = new BinaryFeature(this, bfStart + i, origFIndex, i, borders[i],sizes[i]);
+        bfs[i] = new BinaryFeature(this, bfStart + i, origFIndex, i, borders[i], sizes[i], isOneHot);
       }
+      this.isOneHot = isOneHot;
     }
+
+
 
     public BFRow(final int bfStart, final int origFIndex, final double[] borders) {
       this(null, bfStart, origFIndex, borders);
     }
 
-    public BFRow(final int bfStart, final int origFIndex, final double[] borders,final int[] sizes) {
-      this(null, bfStart, origFIndex, borders,sizes);
+    public BFRow(final int bfStart, final int origFIndex, final double[] borders, final int[] sizes) {
+      this(null, bfStart, origFIndex, borders,sizes, false);
     }
 
     public int bin(final double val) {
@@ -165,31 +169,41 @@ public class BFGrid {
     public final int binNo;
     public final double condition;
     public final double size;
+    public final boolean oneHot;
 
     public BinaryFeature(final BFRow bfRow, final int bfIndex, final int findex, final int binNo, final double condition) {
-      this(bfRow, bfIndex, findex, binNo, condition, 0);
+      this(bfRow, bfIndex, findex, binNo, condition, 0, false);
     }
 
-    public BinaryFeature(final BFRow bfRow, final int bfIndex, final int findex, final int binNo, final double condition, int size) {
+    public BinaryFeature(final BFRow bfRow, final int bfIndex, final int findex,
+                         final int binNo, final double condition, int size, final boolean oneHot) {
       this.bfRow = bfRow;
       this.bfIndex = bfIndex;
       this.findex = findex;
       this.binNo = binNo;
       this.condition = condition;
       this.size = size;
+      this.oneHot = oneHot;
     }
 
 
     public boolean value(final byte[] folds) {
-      return folds[findex] > binNo;
+      return value(folds[findex]);
+    }
+
+    public boolean value(final byte fold) {
+      return oneHot
+          ? fold != binNo
+          : fold > binNo;
     }
 
     public boolean value(final Vec vec) {
-      return vec.get(findex) > condition;
+      return oneHot ? vec.get(findex) != condition
+                    : vec.get(findex) > condition;
     }
 
     public boolean value(int index, BinarizedDataSet bds) {
-      return bds.bins(findex)[index] > binNo;
+      return value(bds.bins(findex)[index]);
     }
 
     public BFRow row() {
@@ -216,7 +230,7 @@ public class BFGrid {
 
     @Override
     public String toString() {
-      return String.format("f[%d] > %g", findex, condition);
+      return String.format(oneHot ? "f[%d] = %g" : "f[%d] > %g", findex, condition);
     }
   }
 

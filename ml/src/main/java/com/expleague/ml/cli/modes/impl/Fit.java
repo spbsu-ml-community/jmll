@@ -19,8 +19,8 @@ import com.expleague.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderCrossValidation;
 import com.expleague.ml.cli.builders.methods.MethodsBuilder;
 import com.expleague.ml.cli.builders.methods.grid.DynamicGridBuilder;
-import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import com.expleague.ml.cli.modes.AbstractMode;
+import com.expleague.ml.data.tools.CatboostPool;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
@@ -31,6 +31,7 @@ import com.expleague.ml.loss.multilabel.ClassicMultiLabelLoss;
 import com.expleague.ml.loss.multilabel.MultiLabelOVRLogit;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.multiclass.JoinedBinClassModel;
+import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
 
@@ -77,6 +78,9 @@ public class Fit extends AbstractMode {
     } else {
       gridBuilder.setBinsCount(Integer.valueOf(command.getOptionValue(BIN_FOLDS_COUNT_OPTION, "32")));
       gridBuilder.setDataSet(learn.vecData());
+      if (learn instanceof CatboostPool) {
+        gridBuilder.addCatFeatureIds(((CatboostPool) learn).getCatFeatureIds());
+      }
     }
 
     final DynamicGridBuilder dynamicGridBuilder = new DynamicGridBuilder();

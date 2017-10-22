@@ -14,7 +14,7 @@ public class CatBoostPoolDescription {
 
   enum ColumnType {
     Num,
-    Cat,
+    Categ,
     Target,
     Auxiliary,
     DocId,
@@ -22,7 +22,7 @@ public class CatBoostPoolDescription {
     Weight;
 
     static boolean isFactorColumn(ColumnType type) {
-      return type == Num || type == Cat;
+      return type == Num || type == Categ;
     }
   }
 
@@ -74,7 +74,7 @@ public class CatBoostPoolDescription {
           break;
         }
         case Num:
-        case Cat: {
+        case Categ: {
           ++featureCount;
           break;
         }

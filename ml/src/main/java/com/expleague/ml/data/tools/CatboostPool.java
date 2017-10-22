@@ -22,4 +22,8 @@ public class CatboostPool extends FakePool {
   public boolean isCatFactor(int factorId) {
     return catColumns.contains(factorId);
   }
+
+  public Set<Integer> getCatFeatureIds() {
+    return catColumns;
+  }
 }
