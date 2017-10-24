@@ -114,6 +114,40 @@ public class FastRandom {
     return scale * nextStandardGamma(shape);
   }
 
+  public double nextBeta(double a, double b) {
+    double Ga, Gb;
+
+    if ((a <= 1.0) && (b <= 1.0)) {
+      double U, V, X, Y;
+
+      /* Use Johnk's algorithm */
+      while (true) {
+        U = nextDouble();
+        V = nextDouble();
+        X = Math.pow(U, 1.0 / a);
+        Y = Math.pow(V, 1.0 / b);
+
+        if ((X + Y) <= 1.0) {
+          if (X + Y > 0) {
+            return X / (X + Y);
+          } else {
+            double logX = Math.log(U) / a;
+            double logY = Math.log(V) / b;
+            double logM = logX > logY ? logX : logY;
+            logX -= logM;
+            logY -= logM;
+
+            return Math.exp(logX - Math.log(Math.exp(logX) + Math.exp(logY)));
+          }
+        }
+      }
+    } else {
+      Ga = nextStandardGamma(a);
+      Gb = nextStandardGamma(b);
+      return Ga / (Ga + Gb);
+    }
+  }
+
   private static class State {
     private int hasGauss = 0;
     private double gauss;
