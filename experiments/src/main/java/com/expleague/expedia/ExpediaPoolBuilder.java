@@ -9,7 +9,6 @@ import com.expleague.ml.data.tools.PoolBuilder;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.impl.JsonDataSetMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
-import com.expleague.sbrealty.Deal;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -88,7 +87,7 @@ public class ExpediaPoolBuilder {
     final JsonDataSetMeta dataSetMeta = new JsonDataSetMeta("Expedia",
             System.getProperty("user.name"),
             new Date(),
-            Deal.class,
+            EventItem.class,
             "expedia-" + DateFormat.getInstance().format(new Date())
     );
     builder.setMeta(dataSetMeta);

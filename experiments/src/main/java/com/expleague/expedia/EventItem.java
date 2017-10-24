@@ -6,13 +6,16 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
-public class EventItem extends DSItem.Stub {
+public class EventItem implements DSItem {
   @XmlAttribute
   private int day;
   @XmlAttribute
   private int user;
   @XmlAttribute
   private int hotel;
+
+  public EventItem() {
+  }
 
   public EventItem(final int day, final int user, final int hotel) {
     this.day = day;
