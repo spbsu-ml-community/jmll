@@ -31,6 +31,7 @@ public class FastRandom {
 
       /* Box-Muller transform */
       f = Math.sqrt(-2.0 * Math.log(r2) / r2);
+
       /* Keep for next call */
       state.gauss = f * x1;
       state.hasGauss = 1;

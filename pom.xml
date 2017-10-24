@@ -4,7 +4,7 @@
 
   <groupId>com.spbsu</groupId>
   <artifactId>jmll</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>SpbSU JMLL Parent</name>

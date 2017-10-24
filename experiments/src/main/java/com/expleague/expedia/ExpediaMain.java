@@ -9,24 +9,26 @@ import com.expleague.ml.data.tools.PoolBuilder;
 import com.expleague.ml.meta.impl.JsonDataSetMeta;
 import com.expleague.sbrealty.Deal;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class ExpediaMain {
   public static void main(String[] args) throws IOException {
     FastRandom rng = new FastRandom();
+
     Interval.start();
 
     switch (args[0]) {
       case "pool": {
+        // args example: pool <path to train data> <path to store pool> <path to store builders>
+
         final Set<Integer> hotels = new HashSet<>();
         final Set<Integer> users = new HashSet<>();
         final VecBuilder booked = new VecBuilder();
@@ -45,6 +47,10 @@ public class ExpediaMain {
 
           @Override
           public void accept(CsvRow row) {
+            if (rng.nextDouble() > 0.05) {
+              return;
+            }
+
             final int day = row.asInt("date_time");
             final int user = row.asInt("user_id");
             final int city = row.asInt("user_location_city");
@@ -76,7 +82,6 @@ public class ExpediaMain {
             if (++index % 1_000_000 == 0) {
               System.out.println("Processed: " + index);
             }
-            // TODO: if (rng.nextDouble() < 0.1)
           }
         });
 
@@ -98,6 +103,20 @@ public class ExpediaMain {
 
         try (final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(args[2])))) {
           DataTools.writePoolTo(builder.create(), out);
+        }
+
+        // write CTRBuilder to file
+        try {
+          dayCTR.write(args[3]);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+
+        // read CTRBuilder from file
+        try {
+          CTRBuilder<Integer> ctrBuilder = CTRBuilder.load(args[3], "day-ctr");
+        } catch (Exception e) {
+          e.printStackTrace();
         }
 
         System.out.println("Hotels: " + hotels.size() + "\nUsers: " + users.size());
