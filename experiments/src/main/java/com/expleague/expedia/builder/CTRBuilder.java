@@ -1,4 +1,4 @@
-package com.expleague.expedia;
+package com.expleague.expedia.builder;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
@@ -18,14 +18,14 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-public class CTRBuilder<T> implements Serializable {
+public class CTRBuilder<T> {
   private JsonFeatureMeta meta = new JsonFeatureMeta();
   private TObjectIntHashMap<T> alpha = new TObjectIntHashMap<>();
   private TObjectIntHashMap<T> beta = new TObjectIntHashMap<>();
 
   private final VecBuilder ctr = new VecBuilder();
 
-  public CTRBuilder() {
+  private CTRBuilder() {
   }
 
   public CTRBuilder(final String id, final String description) {
@@ -34,30 +34,16 @@ public class CTRBuilder<T> implements Serializable {
     meta.type = FeatureMeta.ValueType.VEC;
   }
 
+  public Vec build() {
+    return ctr.build();
+  }
+
   public void add(final T key, final boolean alpha) {
     if (alpha) {
       addAlpha(key);
     } else {
       addBeta(key);
     }
-  }
-
-  public void addAlpha(final T key) {
-    alpha.adjustOrPutValue(key, 1, 1);
-    ctr.append(getCTR(key));
-  }
-
-  public void addBeta(final T key) {
-    beta.adjustOrPutValue(key, 1, 1);
-    ctr.append(getCTR(key));
-  }
-
-  public double getCTR(final T key) {
-    return (alpha.get(key) + 1.0) / (alpha.get(key) + beta.get(key) + 2.0);
-  }
-
-  public Vec build() {
-    return ctr.build();
   }
 
   public JsonFeatureMeta getMeta() {
@@ -76,6 +62,20 @@ public class CTRBuilder<T> implements Serializable {
     builder.alpha = readHashMap(path + id + ".alpha.gz");
     builder.beta = readHashMap(path + id + ".beta.gz");
     return builder;
+  }
+
+  private void addAlpha(final T key) {
+    alpha.adjustOrPutValue(key, 1, 1);
+    ctr.append(getCTR(key));
+  }
+
+  private void addBeta(final T key) {
+    beta.adjustOrPutValue(key, 1, 1);
+    ctr.append(getCTR(key));
+  }
+
+  private double getCTR(final T key) {
+    return (alpha.get(key) + 1.0) / (alpha.get(key) + beta.get(key) + 2.0);
   }
 
   private static void writeMeta(final JsonFeatureMeta meta, final String fileName) throws IOException {

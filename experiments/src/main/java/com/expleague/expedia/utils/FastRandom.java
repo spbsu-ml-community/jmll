@@ -1,4 +1,4 @@
-package com.expleague.expedia;
+package com.expleague.expedia.utils;
 
 import java.util.SplittableRandom;
 
