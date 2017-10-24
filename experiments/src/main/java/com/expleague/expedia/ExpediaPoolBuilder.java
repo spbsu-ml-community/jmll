@@ -2,13 +2,13 @@ package com.expleague.expedia;
 
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.commons.util.logging.Logger;
-import com.expleague.expedia.builder.CTRBuilder;
+import com.expleague.expedia.features.CTRBuilder;
 import com.expleague.ml.data.tools.CsvRow;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.PoolBuilder;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.impl.JsonDataSetMeta;
-import com.expleague.ml.meta.impl.JsonFeatureMeta;
+import com.expleague.ml.meta.impl.JsonTargetMeta;
 import com.expleague.sbrealty.Deal;
 
 import java.io.FileOutputStream;
@@ -21,8 +21,8 @@ import java.util.Date;
 import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
-public class Pool {
-  private static final Logger LOG = Logger.create(Pool.class);
+public class ExpediaPoolBuilder {
+  private static final Logger LOG = Logger.create(ExpediaPoolBuilder.class);
 
   private static final String[] COLUMNS = new String[]{
           "date_time",
@@ -99,11 +99,11 @@ public class Pool {
     }
 
     // add booked feature
-    final JsonFeatureMeta bookedMeta = new JsonFeatureMeta();
+    final JsonTargetMeta bookedMeta = new JsonTargetMeta();
     bookedMeta.id = META[2 * BUILDERS_COUNT];
     bookedMeta.description = META[2 * BUILDERS_COUNT + 1];
     bookedMeta.type = FeatureMeta.ValueType.VEC;
-    builder.newFeature(bookedMeta, booked.build());
+    builder.newTarget(bookedMeta, booked.build());
 
     // save builders
     LOG.debug("Save builders...");

@@ -14,7 +14,7 @@ public class ExpediaMain {
     switch (args[0]) {
       case "pool": {
         // args example: pool <path to train data> <path to store pool> <path to store builders>
-        Pool.build(args[1], args[2], args[3]);
+        ExpediaPoolBuilder.build(args[1], args[2], args[3]);
         break;
       }
     }

@@ -1,4 +1,4 @@
-package com.expleague.expedia.builder;
+package com.expleague.expedia.features;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
