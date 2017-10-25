@@ -59,7 +59,7 @@ public class Factor {
     return factor;
   }
 
-  public double get(final int user, final int hotel, final int hasBooked) {
+  public void addFactor(final int user, final int hotel, final int hasBooked) {
     final int key = 2 * hotel + hasBooked;
 
     final int[] values = getUser(user);
@@ -75,11 +75,11 @@ public class Factor {
       }
     }
 
-    return getUCB(results);
+    value.append(getUCB(results));
   }
 
   public void add(final int user, final int hotel, final int hasBooked) {
-    value.append(get(user, hotel, hasBooked));
+    addFactor(user, hotel, hasBooked);
     update(user, hotel, hasBooked);
   }
 

@@ -24,6 +24,8 @@ import java.util.Date;
 import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
+import static com.expleague.expedia.features.CTRBuilder.load;
+
 public class ExpediaPoolBuilder {
   private static final int DUMP = 100_000;
   private static final Logger LOG = Logger.create(ExpediaPoolBuilder.class);
@@ -52,7 +54,7 @@ public class ExpediaPoolBuilder {
 
   private static final int BUILDERS_COUNT = 7;
 
-  public static void build(final String trainPath, final String poolPath, final String builderPath) throws IOException {
+  public static Pool<EventItem> buildTrain(final String trainPath, final String builderPath) throws IOException {
     final ArrayList<CTRBuilder<Integer>> builders = new ArrayList<>();
     final VecBuilder booked = new VecBuilder();
 
@@ -89,13 +91,7 @@ public class ExpediaPoolBuilder {
       }
     });
 
-    final JsonDataSetMeta dataSetMeta = new JsonDataSetMeta("Expedia",
-            System.getProperty("user.name"),
-            new Date(),
-            EventItem.class,
-            "expedia-" + DateFormat.getInstance().format(new Date())
-    );
-    builder.setMeta(dataSetMeta);
+    builder.setMeta(getDataSetMeta());
 
     // add new features
     for (final CTRBuilder<Integer> ctr : builders) {
@@ -103,10 +99,7 @@ public class ExpediaPoolBuilder {
     }
 
     // add booked feature
-    final JsonTargetMeta bookedMeta = new JsonTargetMeta();
-    bookedMeta.id = META[2 * BUILDERS_COUNT];
-    bookedMeta.description = META[2 * BUILDERS_COUNT + 1];
-    bookedMeta.type = FeatureMeta.ValueType.VEC;
+    final JsonTargetMeta bookedMeta = getTargetMeta(META[2 * BUILDERS_COUNT], META[2 * BUILDERS_COUNT + 1]);
     builder.newTarget(bookedMeta, booked.build());
 
     // save builders
@@ -115,11 +108,58 @@ public class ExpediaPoolBuilder {
       ctr.write(builderPath);
     }
 
-    // save data pool
-    LOG.debug("Save pool...");
-    try (final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(poolPath)))) {
-      DataTools.writePoolTo(builder.create(), out);
+    return (Pool<EventItem>) builder.create();
+  }
+
+  public static Pool<EventItem> buildValidate(final String validatePath, final String builderPath) throws IOException, ClassNotFoundException {
+    final ArrayList<CTRBuilder<Integer>> builders = new ArrayList<>();
+
+    LOG.debug("Load builders...");
+    for (int i = 0; i < BUILDERS_COUNT; ++i) {
+      final CTRBuilder<Integer> builder = CTRBuilder.<Integer>load(builderPath, META[2 * i]);
+      builders.add(builder);
     }
+
+    final VecBuilder booked = new VecBuilder();
+
+    LOG.debug("Process data...");
+    final PoolBuilder builder = new PoolBuilder();
+    DataTools.readCSVWithHeader(validatePath, new Consumer<CsvRow>() {
+      private int index = 0;
+      private int[] values = new int[COLUMNS.length];
+
+      @Override
+      public void accept(final CsvRow row) {
+        for (int i = 0; i < COLUMNS.length; ++i) {
+          values[i] = row.asInt(COLUMNS[i]);
+        }
+
+        for (int i = 0; i < BUILDERS_COUNT; ++i) {
+          builders.get(i).addCTR(values[i]);
+        }
+
+        // add (day, user, hotel)
+        builder.addItem(new EventItem(values[0], values[1], values[6]));
+        booked.append(values[COLUMNS.length - 1]);
+
+        if (++index % DUMP == 0) {
+          System.out.println("Processed: " + index);
+        }
+      }
+    });
+
+    builder.setMeta(getDataSetMeta());
+
+    // add new features
+    for (final CTRBuilder<Integer> ctr : builders) {
+      builder.newFeature(ctr.getMeta(), ctr.build());
+    }
+
+    // add booked feature
+    final JsonTargetMeta bookedMeta = getTargetMeta(META[2 * BUILDERS_COUNT], META[2 * BUILDERS_COUNT + 1]);
+    builder.newTarget(bookedMeta, booked.build());
+
+    return (Pool<EventItem>) builder.create();
   }
 
   // TODO: replace bad stuff...
@@ -127,13 +167,7 @@ public class ExpediaPoolBuilder {
     final PoolBuilder builder = new PoolBuilder();
 
     // set new meta
-    final JsonDataSetMeta dataSetMeta = new JsonDataSetMeta("Expedia",
-            System.getProperty("user.name"),
-            new Date(),
-            EventItem.class,
-            "expedia-" + DateFormat.getInstance().format(new Date())
-    );
-    builder.setMeta(dataSetMeta);
+    builder.setMeta(getDataSetMeta());
 
     // add items
     for (int i = 0; i < pool.size(); ++i) {
@@ -148,22 +182,41 @@ public class ExpediaPoolBuilder {
     }
 
     // add new feature
-    final JsonFeatureMeta factorMeta = new JsonFeatureMeta();
-    factorMeta.id = "factor";
-    factorMeta.description = "Our factor";
-    factorMeta.type = FeatureMeta.ValueType.VEC;
+    final JsonFeatureMeta factorMeta = getFeatureMeta("factor", "Our factor");
     builder.newFeature(factorMeta, factor);
 
     // add target
-    final JsonTargetMeta targetMeta = new JsonTargetMeta();
-    targetMeta.id = "booked";
-    targetMeta.description = "If the user booked the hotel";
-    targetMeta.type = FeatureMeta.ValueType.VEC;
+    final JsonTargetMeta targetMeta = getTargetMeta("booked", "If the user booked the hotel");
     builder.newTarget(targetMeta, pool.target(0));
 
     // save data pool
     try (final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(poolPath)))) {
       DataTools.writePoolTo(builder.create(), out);
     }
+  }
+
+  private static JsonDataSetMeta getDataSetMeta() {
+    return new JsonDataSetMeta("Expedia",
+            System.getProperty("user.name"),
+            new Date(),
+            EventItem.class,
+            "expedia-" + DateFormat.getInstance().format(new Date())
+    );
+  }
+
+  private static JsonFeatureMeta getFeatureMeta(final String id, final String description) {
+    final JsonFeatureMeta meta = new JsonFeatureMeta();
+    meta.id = id;
+    meta.description = description;
+    meta.type = FeatureMeta.ValueType.VEC;
+    return meta;
+  }
+
+  private static JsonTargetMeta getTargetMeta(final String id, final String description) {
+    final JsonTargetMeta meta = new JsonTargetMeta();
+    meta.id = id;
+    meta.description = description;
+    meta.type = FeatureMeta.ValueType.VEC;
+    return meta;
   }
 }
