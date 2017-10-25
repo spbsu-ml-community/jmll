@@ -14,17 +14,11 @@ import com.expleague.ml.meta.impl.JsonDataSetMeta;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.function.Consumer;
-import java.util.zip.GZIPOutputStream;
-
-import static com.expleague.expedia.features.CTRBuilder.load;
 
 public class ExpediaPoolBuilder {
   private static final int DUMP = 100_000;
@@ -162,8 +156,7 @@ public class ExpediaPoolBuilder {
     return (Pool<EventItem>) builder.create();
   }
 
-  // TODO: replace bad stuff...
-  public static void buildWithFactor(final Pool<EventItem> pool, final Vec factor, final String poolPath) throws IOException {
+  public static Pool<EventItem> addFeature(final Pool<EventItem> pool, final JsonFeatureMeta meta, final Vec values) throws IOException {
     final PoolBuilder builder = new PoolBuilder();
 
     // set new meta
@@ -176,23 +169,19 @@ public class ExpediaPoolBuilder {
 
     // add features
     for (int i = 0; i < pool.features().length; ++i) {
-      final JsonFeatureMeta meta = (JsonFeatureMeta) pool.features()[i];
-      final double[] values = pool.vecData().data().col(i).toArray();
-      builder.newFeature(meta, new ArrayVec(values, 0, values.length));
+      final JsonFeatureMeta featureMeta = (JsonFeatureMeta) pool.features()[i];
+      final double[] featureValues = pool.vecData().data().col(i).toArray();
+      builder.newFeature(featureMeta, new ArrayVec(featureValues, 0, featureValues.length));
     }
 
     // add new feature
-    final JsonFeatureMeta factorMeta = getFeatureMeta("factor", "Our factor");
-    builder.newFeature(factorMeta, factor);
+    builder.newFeature(meta, values);
 
     // add target
     final JsonTargetMeta targetMeta = getTargetMeta("booked", "If the user booked the hotel");
     builder.newTarget(targetMeta, pool.target(0));
 
-    // save data pool
-    try (final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(poolPath)))) {
-      DataTools.writePoolTo(builder.create(), out);
-    }
+    return (Pool<EventItem>) builder.create();
   }
 
   private static JsonDataSetMeta getDataSetMeta() {
@@ -202,14 +191,6 @@ public class ExpediaPoolBuilder {
             EventItem.class,
             "expedia-" + DateFormat.getInstance().format(new Date())
     );
-  }
-
-  private static JsonFeatureMeta getFeatureMeta(final String id, final String description) {
-    final JsonFeatureMeta meta = new JsonFeatureMeta();
-    meta.id = id;
-    meta.description = description;
-    meta.type = FeatureMeta.ValueType.VEC;
-    return meta;
   }
 
   private static JsonTargetMeta getTargetMeta(final String id, final String description) {

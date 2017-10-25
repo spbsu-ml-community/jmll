@@ -11,6 +11,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class Factor {
+  public static final String FILE_NAME = "factor.gz";
+
   private static final int EXP_COUNT = 100;
   private static final int HOTELS_COUNT = 2 * 100;
 
@@ -40,7 +42,7 @@ public class Factor {
   }
 
   public void write(final String path) throws IOException {
-    final ObjectOutputStream out = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(path)));
+    final ObjectOutputStream out = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(path + FILE_NAME)));
     out.writeObject(users);
     out.writeObject(hotelsTotal);
     out.writeObject(hotels);
@@ -50,7 +52,7 @@ public class Factor {
   public static Factor load(final String path) throws IOException, ClassNotFoundException {
     final Factor factor = new Factor();
 
-    final ObjectInputStream in = new ObjectInputStream(new GZIPInputStream(new FileInputStream(path)));
+    final ObjectInputStream in = new ObjectInputStream(new GZIPInputStream(new FileInputStream(path + FILE_NAME)));
     factor.users = (HashMap<Integer, int[]>) in.readObject();
     factor.hotelsTotal = (int[]) in.readObject();
     factor.hotels = (int[][]) in.readObject();
