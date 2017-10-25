@@ -1,13 +1,17 @@
 package com.expleague.expedia;
 
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.commons.util.logging.Logger;
 import com.expleague.expedia.features.CTRBuilder;
 import com.expleague.ml.data.tools.CsvRow;
 import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.data.tools.PoolBuilder;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.impl.JsonDataSetMeta;
+import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
 
 import java.io.FileOutputStream;
@@ -21,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
 public class ExpediaPoolBuilder {
+  private static final int DUMP = 100_000;
   private static final Logger LOG = Logger.create(ExpediaPoolBuilder.class);
 
   private static final String[] COLUMNS = new String[]{
@@ -78,7 +83,7 @@ public class ExpediaPoolBuilder {
         builder.addItem(new EventItem(values[0], values[1], values[6]));
         booked.append(hasBooked);
 
-        if (++index % 1_000_000 == 0) {
+        if (++index % DUMP == 0) {
           System.out.println("Processed: " + index);
         }
       }
@@ -112,6 +117,51 @@ public class ExpediaPoolBuilder {
 
     // save data pool
     LOG.debug("Save pool...");
+    try (final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(poolPath)))) {
+      DataTools.writePoolTo(builder.create(), out);
+    }
+  }
+
+  // TODO: replace bad stuff...
+  public static void buildWithFactor(final Pool<EventItem> pool, final Vec factor, final String poolPath) throws IOException {
+    final PoolBuilder builder = new PoolBuilder();
+
+    // set new meta
+    final JsonDataSetMeta dataSetMeta = new JsonDataSetMeta("Expedia",
+            System.getProperty("user.name"),
+            new Date(),
+            EventItem.class,
+            "expedia-" + DateFormat.getInstance().format(new Date())
+    );
+    builder.setMeta(dataSetMeta);
+
+    // add items
+    for (int i = 0; i < pool.size(); ++i) {
+      builder.addItem(pool.data().at(i));
+    }
+
+    // add features
+    for (int i = 0; i < pool.features().length; ++i) {
+      final JsonFeatureMeta meta = (JsonFeatureMeta) pool.features()[i];
+      final double[] values = pool.vecData().data().col(i).toArray();
+      builder.newFeature(meta, new ArrayVec(values, 0, values.length));
+    }
+
+    // add new feature
+    final JsonFeatureMeta factorMeta = new JsonFeatureMeta();
+    factorMeta.id = "factor";
+    factorMeta.description = "Our factor";
+    factorMeta.type = FeatureMeta.ValueType.VEC;
+    builder.newFeature(factorMeta, factor);
+
+    // add target
+    final JsonTargetMeta targetMeta = new JsonTargetMeta();
+    targetMeta.id = "booked";
+    targetMeta.description = "If the user booked the hotel";
+    targetMeta.type = FeatureMeta.ValueType.VEC;
+    builder.newTarget(targetMeta, pool.target(0));
+
+    // save data pool
     try (final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(poolPath)))) {
       DataTools.writePoolTo(builder.create(), out);
     }

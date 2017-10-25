@@ -64,6 +64,10 @@ public class CTRBuilder<T> {
     return builder;
   }
 
+  public double getCTR(final T key) {
+    return (alpha.get(key) + 1.0) / (alpha.get(key) + beta.get(key) + 2.0);
+  }
+
   private void addAlpha(final T key) {
     alpha.adjustOrPutValue(key, 1, 1);
     ctr.append(getCTR(key));
@@ -72,10 +76,6 @@ public class CTRBuilder<T> {
   private void addBeta(final T key) {
     beta.adjustOrPutValue(key, 1, 1);
     ctr.append(getCTR(key));
-  }
-
-  private double getCTR(final T key) {
-    return (alpha.get(key) + 1.0) / (alpha.get(key) + beta.get(key) + 2.0);
   }
 
   private static void writeMeta(final JsonFeatureMeta meta, final String fileName) throws IOException {

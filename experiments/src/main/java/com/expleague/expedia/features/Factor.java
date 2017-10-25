@@ -4,8 +4,11 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.expedia.utils.FastRandom;
 
+import java.io.*;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class Factor {
   private static final int EXP_COUNT = 100;
@@ -36,6 +39,45 @@ public class Factor {
     return value.build();
   }
 
+  public void write(final String path) throws IOException {
+    final ObjectOutputStream out = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(path)));
+    out.writeObject(users);
+    out.writeObject(hotelsTotal);
+    out.writeObject(hotels);
+    out.close();
+  }
+
+  public static Factor load(final String path) throws IOException, ClassNotFoundException {
+    final Factor factor = new Factor();
+
+    final ObjectInputStream in = new ObjectInputStream(new GZIPInputStream(new FileInputStream(path)));
+    factor.users = (HashMap<Integer, int[]>) in.readObject();
+    factor.hotelsTotal = (int[]) in.readObject();
+    factor.hotels = (int[][]) in.readObject();
+    in.close();
+
+    return factor;
+  }
+
+  public double get(final int user, final int hotel, final int hasBooked) {
+    final int key = 2 * hotel + hasBooked;
+
+    final int[] values = getUser(user);
+
+    // clear results
+    Arrays.fill(results, 0);
+
+    for (int expIndex = 0; expIndex < EXP_COUNT; ++expIndex) {
+      random.nextDirichlet(values, dirichlet);
+
+      for (int i = 0; i < HOTELS_COUNT; ++i) {
+        results[expIndex] += dirichlet[i] * random.nextBeta(hotels[i][key], hotelsTotal[i] - hotels[i][key]);
+      }
+    }
+
+    return getUCB(results);
+  }
+
   public void add(final int user, final int hotel, final int hasBooked) {
     value.append(get(user, hotel, hasBooked));
     update(user, hotel, hasBooked);
@@ -56,25 +98,6 @@ public class Factor {
     ++values[key];
   }
 
-  private double get(final int user, final int hotel, final int hasBooked) {
-    final int key = 2 * hotel + hasBooked;
-
-    final int[] values = getUser(user);
-
-    // clear results
-    Arrays.fill(results, 0);
-
-    for (int expIndex = 0; expIndex < EXP_COUNT; ++expIndex) {
-      random.nextDirichlet(values, dirichlet);
-
-      for (int i = 0; i < HOTELS_COUNT; ++i) {
-        results[expIndex] += dirichlet[i] * random.nextBeta(hotels[i][key], hotelsTotal[i] - hotels[i][key]);
-      }
-    }
-
-    return getUCB(results);
-  }
-
   private double getUCB(final double[] values) {
     final double average = Arrays.stream(values).average().orElse(0);
     return Math.sqrt(Arrays.stream(values).map((x) -> Math.pow(x - average, 2)).average().orElse(0));
@@ -91,6 +114,4 @@ public class Factor {
 
     return values;
   }
-
-  // TODO: save/load factor
 }
