@@ -13,7 +13,7 @@ import java.util.zip.GZIPOutputStream;
 public class Factor {
   public static final String FILE_NAME = "factor.gz";
 
-  private static final int EXP_COUNT = 100;
+  private static final int EXP_COUNT = 10;
   private static final int HOTELS_COUNT = 2 * 100;
 
   private final VecBuilder value = new VecBuilder();
@@ -61,7 +61,7 @@ public class Factor {
     return factor;
   }
 
-  public void addFactor(final int user, final int hotel, final int hasBooked) {
+  public double getFactor(final int user, final int hotel, final int hasBooked) {
     final int key = 2 * hotel + hasBooked;
 
     final int[] values = getUser(user);
@@ -77,7 +77,11 @@ public class Factor {
       }
     }
 
-    value.append(getUCB(results));
+    return getUCB(results);
+  }
+
+  public void addFactor(final int user, final int hotel, final int hasBooked) {
+    value.append(getFactor(user, hotel, hasBooked));
   }
 
   public void add(final int user, final int hotel, final int hasBooked) {

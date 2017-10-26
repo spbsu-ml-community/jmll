@@ -105,11 +105,11 @@ public class ExpediaPoolBuilder {
     return (Pool<EventItem>) builder.create();
   }
 
-  public static Pool<EventItem> buildValidate(final String validatePath, final String builderPath) throws IOException, ClassNotFoundException {
+  public static Pool<EventItem> buildValidate(final String validatePath, final String builderPath, final int isTest) throws IOException, ClassNotFoundException {
     final ArrayList<CTRBuilder<Integer>> builders = new ArrayList<>();
 
     LOG.debug("Load builders...");
-    for (int i = 0; i < BUILDERS_COUNT; ++i) {
+    for (int i = 0; i < BUILDERS_COUNT - isTest; ++i) {
       final CTRBuilder<Integer> builder = CTRBuilder.<Integer>load(builderPath, META[2 * i]);
       builders.add(builder);
     }
@@ -120,21 +120,26 @@ public class ExpediaPoolBuilder {
     final PoolBuilder builder = new PoolBuilder();
     DataTools.readCSVWithHeader(validatePath, new Consumer<CsvRow>() {
       private int index = 0;
-      private int[] values = new int[COLUMNS.length];
+      private int[] values = new int[COLUMNS.length - 2 * isTest];
 
       @Override
       public void accept(final CsvRow row) {
-        for (int i = 0; i < COLUMNS.length; ++i) {
+        for (int i = 0; i < COLUMNS.length - 2 * isTest; ++i) {
           values[i] = row.asInt(COLUMNS[i]);
         }
 
-        for (int i = 0; i < BUILDERS_COUNT; ++i) {
+        for (int i = 0; i < BUILDERS_COUNT - isTest; ++i) {
           builders.get(i).addCTR(values[i]);
         }
 
-        // add (day, user, hotel)
-        builder.addItem(new EventItem(values[0], values[1], values[6]));
-        booked.append(values[COLUMNS.length - 1]);
+        if (isTest == 0) {
+          // add (day, user, hotel)
+          builder.addItem(new EventItem(values[0], values[1], values[6]));
+          booked.append(values[COLUMNS.length - 1]);
+        } else {
+          // add (day, user, srchDestinationId)
+          builder.addItem(new EventItem(values[0], values[1], values[5]));
+        }
 
         if (++index % DUMP == 0) {
           System.out.println("Processed: " + index);
@@ -149,9 +154,11 @@ public class ExpediaPoolBuilder {
       builder.newFeature(ctr.getMeta(), ctr.build());
     }
 
-    // add booked feature
-    final JsonTargetMeta bookedMeta = getTargetMeta(META[2 * BUILDERS_COUNT], META[2 * BUILDERS_COUNT + 1]);
-    builder.newTarget(bookedMeta, booked.build());
+    if (isTest == 0) {
+      // add booked feature
+      final JsonTargetMeta bookedMeta = getTargetMeta(META[2 * BUILDERS_COUNT], META[2 * BUILDERS_COUNT + 1]);
+      builder.newTarget(bookedMeta, booked.build());
+    }
 
     return (Pool<EventItem>) builder.create();
   }

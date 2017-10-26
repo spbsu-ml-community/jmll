@@ -1,26 +1,41 @@
 package com.expleague.expedia;
 
+import com.expleague.commons.func.Computable;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.seq.CharSeqBuilder;
 import com.expleague.commons.seq.Seq;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.logging.Interval;
+import com.expleague.expedia.features.CTRBuilder;
 import com.expleague.expedia.features.Factor;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
+import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import org.apache.commons.cli.*;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class ExpediaMain {
-  private static final int DUMP = 100_000;
+  private static final int DUMP = 10_000;
 
   private static final String DATA_OPTION = "d";
   private static final String OUTPUT_OPTION = "o";
   private static final String BUILDER_OPTION = "b";
   private static final String TRAIN_OPTION = "t";
+  private static final String TEST_OPTION = "test";
   private static final String POOL_OPTION = "p";
+
+  private static final String MODEL_OPTION = "m";
+  private static final String GRID_OPTION = "g";
+  private static final String HOTELS_OPTION = "h";
 
   private static Options options = new Options();
 
@@ -29,7 +44,12 @@ public class ExpediaMain {
     options.addOption(OptionBuilder.withLongOpt("output").withDescription("output file name").hasArg().create(OUTPUT_OPTION));
     options.addOption(OptionBuilder.withLongOpt("builder").withDescription("path to directory with builders").hasArg().create(BUILDER_OPTION));
     options.addOption(OptionBuilder.withLongOpt("train").withDescription("create new builders").hasArg(false).create(TRAIN_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("test").withDescription("build test pool").hasArg(false).create(TEST_OPTION));
     options.addOption(OptionBuilder.withLongOpt("pool").withDescription("path to pool").hasArg().create(POOL_OPTION));
+
+    options.addOption(OptionBuilder.withLongOpt("model").withDescription("path to model").hasArg().create(MODEL_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("grid").withDescription("path to grid").hasArg().create(GRID_OPTION));
+    options.addOption(OptionBuilder.withLongOpt("hotel").withDescription("path to file with hotels").hasArg().create(HOTELS_OPTION));
   }
 
   public static void main(String[] args) throws IOException {
@@ -55,7 +75,10 @@ public class ExpediaMain {
           factor(command);
           break;
         }
-
+        case "apply": {
+          apply(command);
+          break;
+        }
         default:
           throw new RuntimeException("Mode " + mode + " is not recognized");
       }
@@ -89,7 +112,8 @@ public class ExpediaMain {
     if (command.hasOption(TRAIN_OPTION)) {
       pool = ExpediaPoolBuilder.buildTrain(command.getOptionValue(DATA_OPTION), command.getOptionValue(BUILDER_OPTION));
     } else {
-      pool = ExpediaPoolBuilder.buildValidate(command.getOptionValue(DATA_OPTION), command.getOptionValue(BUILDER_OPTION));
+      final int isTest = command.hasOption(TEST_OPTION) ? 1 : 0;
+      pool = ExpediaPoolBuilder.buildValidate(command.getOptionValue(DATA_OPTION), command.getOptionValue(BUILDER_OPTION), isTest);
     }
 
     writePool(pool, command.getOptionValue(OUTPUT_OPTION));
@@ -128,8 +152,11 @@ public class ExpediaMain {
           }
         }
 
+        System.out.println("Processed all samples!");
+
         // save factor
         factor.write(command.getOptionValue(BUILDER_OPTION));
+        System.out.println("Saved factor!");
       } else {
         factor = Factor.load(command.getOptionValue(BUILDER_OPTION));
 
@@ -141,12 +168,99 @@ public class ExpediaMain {
             System.out.println("Processed: " + eventIndex);
           }
         }
+
+        System.out.println("Processed all samples!");
       }
 
       final JsonFeatureMeta meta = getFeatureMeta("factor", "Our factor");
       final Pool<EventItem> newPool = ExpediaPoolBuilder.addFeature(pool, meta, factor.build());
+
+      System.out.println("Save new pool...");
       writePool(newPool, command.getOptionValue(OUTPUT_OPTION));
     }
+  }
+
+  private static void apply(final CommandLine command) throws MissingArgumentException, IOException, ClassNotFoundException {
+    if (!command.hasOption(MODEL_OPTION)) {
+      throw new MissingArgumentException("Please provide 'MODEL_OPTION'");
+    }
+
+    if (!command.hasOption(GRID_OPTION)) {
+      throw new MissingArgumentException("Please provide 'GRID_OPTION'");
+    }
+
+    if (!command.hasOption(POOL_OPTION)) {
+      throw new MissingArgumentException("Please provide 'POOL_OPTION'");
+    }
+
+    if (!command.hasOption(BUILDER_OPTION)) {
+      throw new MissingArgumentException("Please provide 'BUILDER_OPTION'");
+    }
+
+    if (!command.hasOption(OUTPUT_OPTION)) {
+      throw new MissingArgumentException("Please provide 'OUTPUT_OPTION'");
+    }
+
+    if (!command.hasOption(HOTELS_OPTION)) {
+      throw new MissingArgumentException("Please provide 'HOTELS_OPTION'");
+    }
+
+    final Reader in = new InputStreamReader(new GZIPInputStream(new FileInputStream(command.getOptionValue(POOL_OPTION))));
+    final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(command.getOptionValue(OUTPUT_OPTION))));
+
+    final Pool<EventItem> pool = DataTools.readPoolFrom(in);
+    final Computable model = DataTools.readModel(new FileInputStream(command.getOptionValue(MODEL_OPTION)), new FileInputStream(command.getOptionValue(GRID_OPTION)));
+    final Factor factor = Factor.load(command.getOptionValue(BUILDER_OPTION));
+    final CTRBuilder<Integer> hotelCTR = CTRBuilder.load(command.getOptionValue(BUILDER_OPTION), "hotel-ctr");
+
+    // read hotels
+    final Map<Integer, int[]> hotels = readHotels(command.getOptionValue(HOTELS_OPTION));
+
+    // the most popular hotels
+    final int[] DEFAULT_HOTELS = new int[]{91, 41, 48, 64, 65};
+
+    CharSeqBuilder output = new CharSeqBuilder();
+
+    for (int eventIndex = 0; eventIndex < pool.size(); ++eventIndex) {
+      final EventItem event = pool.data().at(eventIndex);
+      final Vec features = pool.vecData().at(eventIndex);
+
+      final Vec current = new ArrayVec(features.dim() + 2);
+
+      for (int i = 0; i < features.dim(); ++i) {
+        current.set(i, features.get(i));
+      }
+
+      int[] srchHotels = hotels.getOrDefault(event.hotel, DEFAULT_HOTELS);
+      final double[] value = new double[srchHotels.length];
+      final int[] index = new int[srchHotels.length];
+
+      for (int i = 0; i < srchHotels.length; ++i) {
+        current.set(features.dim(), hotelCTR.getCTR(srchHotels[i]));
+        current.set(features.dim() + 1, factor.getFactor(event.user, srchHotels[i], 1));
+        value[i] = -((Ensemble) model).compute(current).get(0);
+        index[i] = i;
+      }
+
+      ArrayTools.parallelSort(value, index);
+
+      output.append(eventIndex).append(",");
+      for (int i = 0; i < Math.min(5, srchHotels.length); ++i) {
+        output.append(" ").append(srchHotels[index[i]]);
+      }
+      output.append("\n");
+
+      if (eventIndex % 100_000 == 0 || eventIndex == pool.size() - 1) {
+        out.append(output);
+        output.clear();
+      }
+
+      if (eventIndex % DUMP == 0 || eventIndex == pool.size() - 1) {
+        System.out.println("Processed: " + eventIndex);
+      }
+    }
+
+    out.close();
   }
 
   private static void writePool(final Pool<EventItem> pool, final String poolPath) throws IOException {
@@ -161,5 +275,24 @@ public class ExpediaMain {
     meta.description = description;
     meta.type = FeatureMeta.ValueType.VEC;
     return meta;
+  }
+
+  private static Map<Integer, int[]> readHotels(final String file) throws IOException {
+    final Map<Integer, int[]> data = new HashMap<>();
+    final Scanner scanner = new Scanner(new File(file));
+
+    while (scanner.hasNextInt()) {
+      final int srchDestinationId = scanner.nextInt();
+      final int hotelsCount = scanner.nextInt();
+      final int[] hotels = new int[hotelsCount];
+
+      for (int i = 0; i < hotelsCount; ++i) {
+        hotels[i] = scanner.nextInt();
+      }
+
+      data.put(srchDestinationId, hotels);
+    }
+
+    return data;
   }
 }

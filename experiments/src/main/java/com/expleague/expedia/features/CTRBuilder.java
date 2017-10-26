@@ -64,8 +64,12 @@ public class CTRBuilder<T> {
     return builder;
   }
 
+  public double getCTR(final T key) {
+    return (alpha.get(key) + 1.0) / (alpha.get(key) + beta.get(key) + 2.0);
+  }
+
   public void addCTR(final T key) {
-    ctr.append((alpha.get(key) + 1.0) / (alpha.get(key) + beta.get(key) + 2.0));
+    ctr.append(getCTR(key));
   }
 
   private void addAlpha(final T key) {
