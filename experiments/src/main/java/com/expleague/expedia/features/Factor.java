@@ -5,36 +5,73 @@ import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.expedia.utils.FastRandom;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class Factor {
-  public static final String FILE_NAME = "factor.gz";
-
-  private static final int EXP_COUNT = 10;
-  private static final int HOTELS_COUNT = 2 * 100;
+  private static final String FILE_NAME = "factor.gz";
+  private static final int WORKERS_COUNT;
+  private static final int EXP_COUNT = 100;
+  private static final int HOTELS_COUNT = 100;
+  private static final int KEYS_COUNT = 2 * HOTELS_COUNT;
+  private static final double EPS = 1e-8;
 
   private final VecBuilder value = new VecBuilder();
+  private final ExecutorService executor = Executors.newFixedThreadPool(WORKERS_COUNT);
 
-  private final FastRandom random = new FastRandom();
-
+  // TODO: check & improve multithreading
   // TODO: replace HashMap with fast HashMap
   // TODO: replace int[] with SparseVec
-  private HashMap<Integer, int[]> users = new HashMap<>();
-  private int[] hotelsTotal = new int[HOTELS_COUNT];
-  private int[][] hotels = new int[HOTELS_COUNT][HOTELS_COUNT];
+  private final Map<Integer, AtomicIntegerArray> users;
+  private final AtomicIntegerArray hotelsTotal;
+  private final AtomicIntegerArray[] hotels;
 
-  // buffers
-  private double[] results = new double[EXP_COUNT];
-  private double[] dirichlet = new double[HOTELS_COUNT];
+  private final AtomicInteger currentKey = new AtomicInteger();
+  private final AtomicReference<AtomicIntegerArray> currentValues = new AtomicReference<>();
+
+  // cache
+  private double[] default_factor;
+  private final Map<Integer, double[]> cache = new HashMap<>();
+
+  // buffer
+  private final double[] results = new double[EXP_COUNT];
+
+  private final SampleTask[] tasks = new SampleTask[EXP_COUNT];
+  private final List<Future<Double>> futures = new ArrayList<>(EXP_COUNT);
+
+  static {
+    WORKERS_COUNT = Runtime.getRuntime().availableProcessors();
+  }
+
+  public Factor(final Map<Integer, AtomicIntegerArray> users, final AtomicIntegerArray hotelsTotal, final AtomicIntegerArray[] hotels) {
+    this.users = users;
+    this.hotelsTotal = hotelsTotal;
+    this.hotels = hotels;
+
+    for (int i = 0; i < KEYS_COUNT; ++i) {
+      final int[] buffer = new int[KEYS_COUNT];
+      Arrays.fill(buffer, 1);
+
+      hotels[i] = new AtomicIntegerArray(buffer);
+      hotelsTotal.set(i, KEYS_COUNT);
+    }
+
+    for (int i = 0; i < EXP_COUNT; ++i) {
+      tasks[i] = new SampleTask();
+      futures.add(null);
+    }
+  }
 
   public Factor() {
-    Arrays.fill(hotelsTotal, HOTELS_COUNT);
-    for (int[] values : hotels) {
-      Arrays.fill(values, 1);
-    }
+    this(new HashMap<>(), new AtomicIntegerArray(KEYS_COUNT), new AtomicIntegerArray[KEYS_COUNT]);
   }
 
   public Vec build() {
@@ -50,74 +87,139 @@ public class Factor {
   }
 
   public static Factor load(final String path) throws IOException, ClassNotFoundException {
-    final Factor factor = new Factor();
-
     final ObjectInputStream in = new ObjectInputStream(new GZIPInputStream(new FileInputStream(path + FILE_NAME)));
-    factor.users = (HashMap<Integer, int[]>) in.readObject();
-    factor.hotelsTotal = (int[]) in.readObject();
-    factor.hotels = (int[][]) in.readObject();
+    final HashMap<Integer, AtomicIntegerArray> users = (HashMap<Integer, AtomicIntegerArray>) in.readObject();
+    final AtomicIntegerArray hotelsTotal = (AtomicIntegerArray) in.readObject();
+    final AtomicIntegerArray[] hotels = (AtomicIntegerArray[]) in.readObject();
     in.close();
 
-    return factor;
+    return new Factor(users, hotelsTotal, hotels);
   }
 
-  public double getFactor(final int user, final int hotel, final int hasBooked) {
-    final int key = 2 * hotel + hasBooked;
+  public double getFactor(final int user, final int hotel) {
+    if (!users.containsKey(user)) {
+      return getDefaultFactor()[hotel];
+    }
 
-    final int[] values = getUser(user);
+    final double[] values = getCache(user);
 
-    // clear results
-    Arrays.fill(results, 0);
+    if (values[hotel] < EPS) {
+      values[hotel] = compute(user, hotel, 1);
+    }
 
-    for (int expIndex = 0; expIndex < EXP_COUNT; ++expIndex) {
-      random.nextDirichlet(values, dirichlet);
+    return values[hotel];
+  }
 
-      for (int i = 0; i < HOTELS_COUNT; ++i) {
-        results[expIndex] += dirichlet[i] * random.nextBeta(hotels[i][key], hotelsTotal[i] - hotels[i][key]);
+  public void addFactor(final int user, final int hotel) {
+    value.append(getFactor(user, hotel));
+  }
+
+  public void addEvent(final int user, final int hotel, final int hasBooked) {
+    value.append(compute(user, hotel, hasBooked));
+    update(user, hotel, hasBooked);
+  }
+
+  public void stop() {
+    executor.shutdown();
+  }
+
+  private double compute(final int user, final int hotel, final int hasBooked) {
+    currentKey.set(2 * hotel + hasBooked);
+    currentValues.set(getUser(user));
+
+    for (int taskIndex = 0; taskIndex < EXP_COUNT; ++taskIndex) {
+      futures.set(taskIndex, executor.submit(tasks[taskIndex]));
+    }
+
+    try {
+      for (int taskIndex = 0; taskIndex < EXP_COUNT; ++taskIndex) {
+        results[taskIndex] = futures.get(taskIndex).get();
       }
+    } catch (Exception e) {
+      e.printStackTrace();
     }
 
     return getUCB(results);
   }
 
-  public void addFactor(final int user, final int hotel, final int hasBooked) {
-    value.append(getFactor(user, hotel, hasBooked));
-  }
+  private double[] getDefaultFactor() {
+    if (default_factor == null) {
+      default_factor = new double[HOTELS_COUNT];
 
-  public void add(final int user, final int hotel, final int hasBooked) {
-    addFactor(user, hotel, hasBooked);
-    update(user, hotel, hasBooked);
+      for (int hotel = 0; hotel < HOTELS_COUNT; ++hotel) {
+        default_factor[hotel] = compute(-1, hotel, 1);
+      }
+    }
+
+    return default_factor;
   }
 
   private void update(final int user, final int hotel, final int hasBooked) {
     final int key = 2 * hotel + hasBooked;
+    final AtomicIntegerArray values = getUser(user);
 
-    int[] values = getUser(user);
-
-    for (int i = 0; i < HOTELS_COUNT; ++i) {
-      if (values[i] > 1) {
-        ++hotels[i][key];
-        ++hotelsTotal[i];
+    for (int i = 0; i < KEYS_COUNT; ++i) {
+      if (values.get(i) > 1) {
+        hotels[i].getAndIncrement(key);
+        hotelsTotal.getAndIncrement(i);
       }
     }
 
-    ++values[key];
+    values.getAndIncrement(key);
   }
 
-  private double getUCB(final double[] values) {
-    final double average = Arrays.stream(values).average().orElse(0);
-    return Math.sqrt(Arrays.stream(values).map((x) -> Math.pow(x - average, 2)).average().orElse(0));
-  }
-
-  private int[] getUser(final int user) {
-    int[] values = users.get(user);
+  private AtomicIntegerArray getUser(final int user) {
+    AtomicIntegerArray values = users.get(user);
 
     if (values == null) {
-      values = new int[HOTELS_COUNT];
-      Arrays.fill(values, 1);
+      final int[] buffer = new int[KEYS_COUNT];
+      Arrays.fill(buffer, 1);
+      values = new AtomicIntegerArray(buffer);
       users.put(user, values);
     }
 
     return values;
+  }
+
+  private double[] getCache(final int user) {
+    double[] values = cache.get(user);
+
+    if (values == null) {
+      values = new double[HOTELS_COUNT];
+      cache.put(user, values);
+    }
+
+    return values;
+  }
+
+  private double getUCB(final double[] values) {
+    final double average = Arrays.stream(values).average().orElse(0);
+    final double std = Math.sqrt(Arrays.stream(values).map((x) -> Math.pow(x - average, 2)).average().orElse(0));
+    return average + std;
+  }
+
+  private class SampleTask implements Callable<Double> {
+    private final FastRandom random = new FastRandom();
+    private final double[] dirichlet = new double[KEYS_COUNT];
+    private final int[] params = new int[KEYS_COUNT];
+
+    @Override
+    public Double call() {
+      final int key = currentKey.get();
+      final AtomicIntegerArray values = currentValues.get();
+
+      for (int i = 0; i < KEYS_COUNT; ++i) {
+        params[i] = values.get(i);
+      }
+
+      random.nextDirichlet(params, dirichlet);
+
+      double result = 0;
+      for (int i = 0; i < KEYS_COUNT; ++i) {
+        result += dirichlet[i] * random.nextBeta(hotels[i].get(key), hotelsTotal.get(i) - hotels[i].get(key));
+      }
+
+      return result;
+    }
   }
 }
