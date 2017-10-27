@@ -4,7 +4,15 @@ import java.util.SplittableRandom;
 
 public class FastRandom {
   private final State state = new State();
-  private final SplittableRandom random = new SplittableRandom();
+  private final SplittableRandom random;
+
+  public FastRandom() {
+    random = new SplittableRandom();
+  }
+
+  public FastRandom(final long seed) {
+    random = new SplittableRandom(seed);
+  }
 
   public double nextStandardExponential() {
     return -Math.log(1.0 - nextDouble());

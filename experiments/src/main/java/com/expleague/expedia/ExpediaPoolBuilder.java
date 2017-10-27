@@ -5,6 +5,7 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.commons.util.logging.Logger;
 import com.expleague.expedia.features.CTRBuilder;
+import com.expleague.expedia.utils.CheckPoint;
 import com.expleague.ml.data.tools.CsvRow;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
@@ -21,7 +22,7 @@ import java.util.Date;
 import java.util.function.Consumer;
 
 public class ExpediaPoolBuilder {
-  private static final int DUMP = 100_000;
+  private static final int DUMP_STEP = 100_000;
   private static final Logger LOG = Logger.create(ExpediaPoolBuilder.class);
 
   private static final String[] COLUMNS = new String[]{
@@ -60,7 +61,7 @@ public class ExpediaPoolBuilder {
     LOG.debug("Process data...");
     final PoolBuilder builder = new PoolBuilder();
     DataTools.readCSVWithHeader(trainPath, new Consumer<CsvRow>() {
-      private int index = 0;
+      private CheckPoint checkPoint = new CheckPoint(DUMP_STEP);
       private int[] values = new int[COLUMNS.length];
 
       @Override
@@ -79,9 +80,7 @@ public class ExpediaPoolBuilder {
         builder.addItem(new EventItem(values[0], values[1], values[6]));
         booked.append(hasBooked);
 
-        if (++index % DUMP == 0) {
-          System.out.println("Processed: " + index);
-        }
+        checkPoint.check();
       }
     });
 
@@ -119,7 +118,7 @@ public class ExpediaPoolBuilder {
     LOG.debug("Process data...");
     final PoolBuilder builder = new PoolBuilder();
     DataTools.readCSVWithHeader(validatePath, new Consumer<CsvRow>() {
-      private int index = 0;
+      private CheckPoint checkPoint = new CheckPoint(DUMP_STEP);
       private int[] values = new int[COLUMNS.length - 2 * isTest];
 
       @Override
@@ -141,9 +140,7 @@ public class ExpediaPoolBuilder {
           builder.addItem(new EventItem(values[0], values[1], values[5]));
         }
 
-        if (++index % DUMP == 0) {
-          System.out.println("Processed: " + index);
-        }
+        checkPoint.check();
       }
     });
 

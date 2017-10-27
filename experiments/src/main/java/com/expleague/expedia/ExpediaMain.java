@@ -9,6 +9,7 @@ import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.expedia.features.CTRBuilder;
 import com.expleague.expedia.features.Factor;
+import com.expleague.expedia.utils.CheckPoint;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.func.Ensemble;
@@ -24,7 +25,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class ExpediaMain {
-  private static final int DUMP = 10_000;
+  private static final int DUMP_STEP = 100_000;
+  private static final int HOTELS_COUNT = 100;
 
   private static final String DATA_OPTION = "d";
   private static final String OUTPUT_OPTION = "o";
@@ -88,7 +90,7 @@ public class ExpediaMain {
       final HelpFormatter formatter = new HelpFormatter();
       formatter.printHelp("Expedia", options);
     } catch (Exception e) {
-      System.err.println(e.getLocalizedMessage());
+      e.printStackTrace();
     }
 
     Interval.stopAndPrint();
@@ -138,6 +140,8 @@ public class ExpediaMain {
       final Pool<EventItem> pool = DataTools.readPoolFrom(in);
       final Factor factor;
 
+      final CheckPoint checkPoint = new CheckPoint(pool.size(), DUMP_STEP);
+
       if (trainMode) {
         factor = new Factor();
         final Seq<Double> target = (Seq<Double>) pool.target("booked");
@@ -145,11 +149,9 @@ public class ExpediaMain {
         for (int eventIndex = 0; eventIndex < pool.size(); ++eventIndex) {
           final EventItem event = pool.data().at(eventIndex);
           final int hasBooked = target.at(eventIndex).intValue();
-          factor.add(event.user, event.hotel, hasBooked);
+          factor.addEvent(event.user, event.hotel, hasBooked);
 
-          if (eventIndex % DUMP == 0) {
-            System.out.println("Processed: " + eventIndex);
-          }
+          checkPoint.check();
         }
 
         System.out.println("Processed all samples!");
@@ -162,11 +164,9 @@ public class ExpediaMain {
 
         for (int eventIndex = 0; eventIndex < pool.size(); ++eventIndex) {
           final EventItem event = pool.data().at(eventIndex);
-          factor.addFactor(event.user, event.hotel, 1);
+          factor.addFactor(event.user, event.hotel);
 
-          if (eventIndex % DUMP == 0) {
-            System.out.println("Processed: " + eventIndex);
-          }
+          checkPoint.check();
         }
 
         System.out.println("Processed all samples!");
@@ -174,6 +174,8 @@ public class ExpediaMain {
 
       final JsonFeatureMeta meta = getFeatureMeta("factor", "Our factor");
       final Pool<EventItem> newPool = ExpediaPoolBuilder.addFeature(pool, meta, factor.build());
+
+      factor.stop();
 
       System.out.println("Save new pool...");
       writePool(newPool, command.getOptionValue(OUTPUT_OPTION));
@@ -219,7 +221,11 @@ public class ExpediaMain {
     // the most popular hotels
     final int[] DEFAULT_HOTELS = new int[]{91, 41, 48, 64, 65};
 
+    final double[] value = new double[HOTELS_COUNT];
+    final int[] index = new int[HOTELS_COUNT];
     CharSeqBuilder output = new CharSeqBuilder();
+
+    final CheckPoint checkPoint = new CheckPoint(pool.size(), DUMP_STEP);
 
     for (int eventIndex = 0; eventIndex < pool.size(); ++eventIndex) {
       final EventItem event = pool.data().at(eventIndex);
@@ -232,17 +238,16 @@ public class ExpediaMain {
       }
 
       int[] srchHotels = hotels.getOrDefault(event.hotel, DEFAULT_HOTELS);
-      final double[] value = new double[srchHotels.length];
-      final int[] index = new int[srchHotels.length];
 
       for (int i = 0; i < srchHotels.length; ++i) {
-        current.set(features.dim(), hotelCTR.getCTR(srchHotels[i]));
-        current.set(features.dim() + 1, factor.getFactor(event.user, srchHotels[i], 1));
+        final int hotel = srchHotels[i];
+        current.set(features.dim(), hotelCTR.getCTR(hotel));
+        current.set(features.dim() + 1, factor.getFactor(event.user, hotel));
         value[i] = -((Ensemble) model).compute(current).get(0);
         index[i] = i;
       }
 
-      ArrayTools.parallelSort(value, index);
+      ArrayTools.parallelSort(value, index, 0, srchHotels.length);
 
       output.append(eventIndex).append(",");
       for (int i = 0; i < Math.min(5, srchHotels.length); ++i) {
@@ -250,17 +255,15 @@ public class ExpediaMain {
       }
       output.append("\n");
 
-      if (eventIndex % 100_000 == 0 || eventIndex == pool.size() - 1) {
+      if (checkPoint.check()) {
         out.append(output);
         output.clear();
-      }
-
-      if (eventIndex % DUMP == 0 || eventIndex == pool.size() - 1) {
-        System.out.println("Processed: " + eventIndex);
       }
     }
 
     out.close();
+
+    factor.stop();
   }
 
   private static void writePool(final Pool<EventItem> pool, final String poolPath) throws IOException {
