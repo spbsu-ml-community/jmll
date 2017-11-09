@@ -58,11 +58,16 @@ public class GradientSeqBoosting<T, GlobalLoss extends TargetFunc> extends WeakL
 
   private Computable<Seq<T>, Vec> getResult(final List<Computable<Seq<T>, Vec>> weakModels) {
     return argument -> {
-      double result = 0;
+      Vec result = null;
       for (Computable<Seq<T>, Vec> model: weakModels) {
-        result += model.compute(argument).get(0) * -step;
+        if (result == null) {
+          result = model.compute(argument);
+        } else {
+          VecTools.append(result, model.compute(argument));
+        }
       }
-      return new SingleValueVec(result);
+      VecTools.scale(result, -step);
+      return result;
     };
   }
 }
