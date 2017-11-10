@@ -45,7 +45,7 @@ public class CustomWeakMultiClass extends VecOptimization.Stub<BlockwiseMLLLogit
       int iter = 0;
 
       @Override
-      public void invoke(Trans partial) {
+      public void accept(Trans partial) {
         if ((iter + 1) % 20 == 0) {
           final FuncJoin internModel = MCTools.joinBoostingResult((Ensemble) partial);
           final MultiClassModel multiClassModel = new MultiClassModel(internModel);

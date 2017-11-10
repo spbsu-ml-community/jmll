@@ -1,6 +1,5 @@
 package com.expleague.ml.io;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.func.types.ConversionPack;
 import com.expleague.commons.func.types.ConversionRepository;
 import com.expleague.commons.math.Func;
@@ -37,12 +36,7 @@ public class MultiClassModelConversionPack implements ConversionPack<MultiClassM
     @Override
     public MultiClassModel convert(final CharSequence from) {
       final TransJoin internModel = repository.convert(from, TransJoin.class);
-      final Func[] dirs = ArrayTools.map(internModel.dirs, Func.class, new Computable<Trans, Func>() {
-        @Override
-        public Func compute(final Trans argument) {
-          return (Func) argument;
-        }
-      });
+      final Func[] dirs = ArrayTools.map(internModel.dirs, Func.class, argument -> (Func) argument);
       return new MultiClassModel(dirs);
     }
 

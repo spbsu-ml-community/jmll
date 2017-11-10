@@ -1,9 +1,10 @@
 package com.expleague.ml.methods;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.data.set.DataSet;
+
+import java.util.function.Function;
 
 /**
  * User: solar
@@ -16,5 +17,5 @@ public interface Optimization<Loss extends TargetFunc, DSType extends DataSet<DS
    * @param loss is function of solution function results on each point of data set, loss.xdim() == solution.value(learn).dim() * f.dim()
    * @return function f = \arg \min_f Loss((f(learn_i))_1^m)
    */
-  Computable<DSItem,Vec> fit(DSType learn, Loss loss);
+  Function<DSItem,Vec> fit(DSType learn, Loss loss);
 }

@@ -1,6 +1,5 @@
 package com.expleague.ml.cli.modes.impl;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.MathTools;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
@@ -29,6 +28,7 @@ import org.apache.commons.cli.MissingArgumentException;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
@@ -117,7 +117,7 @@ public class InterpretModel extends AbstractMode {
     gridBuilder.setGrid(grid);
     serializationRepository = new ModelsSerializationRepository(gridBuilder.create());
     try {
-      final Computable model = DataTools.readModel(command.getOptionValue(MODEL_OPTION), serializationRepository);
+      final Function model = DataTools.readModel(command.getOptionValue(MODEL_OPTION), serializationRepository);
       if (!(model instanceof Ensemble))
         throw new IllegalArgumentException("Provided model is not ensemble");
       final Ensemble ensemble = (Ensemble) model;

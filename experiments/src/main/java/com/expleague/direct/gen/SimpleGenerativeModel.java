@@ -1,7 +1,6 @@
 package com.expleague.direct.gen;
 
 import com.expleague.direct.BroadMatch;
-import com.expleague.commons.func.Action;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.io.codec.seq.Dictionary;
 import com.expleague.commons.math.io.Vec2CharSequenceConverter;
@@ -18,6 +17,7 @@ import gnu.trove.procedure.TIntDoubleProcedure;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.function.Consumer;
 
 import static com.expleague.commons.math.vectors.VecTools.l1;
 import static java.lang.Double.max;
@@ -50,7 +50,7 @@ public class SimpleGenerativeModel {
       providers[i] = new WordGenProbabilityProvider(dict.size(), i);
     }
     final Vec2CharSequenceConverter converter = new Vec2CharSequenceConverter();
-    CharSeqTools.processLines(StreamTools.openTextFile(fileName), (Action<CharSequence>) sequence -> {
+    CharSeqTools.processLines(StreamTools.openTextFile(fileName), sequence -> {
       final CharSequence[] split = CharSeqTools.split(sequence, '\t');
 
       final WordGenProbabilityProvider provider;
@@ -208,10 +208,10 @@ public class SimpleGenerativeModel {
   }
 
   public void load(String inputFile) throws IOException {
-    CharSeqTools.processLines(StreamTools.openTextFile(inputFile), new Action<CharSequence>() {
+    CharSeqTools.processLines(StreamTools.openTextFile(inputFile), new Consumer<CharSequence>() {
       int index = 0;
       final StringBuilder builder = new StringBuilder();
-      public void invoke(CharSequence line) {
+      public void accept(CharSequence line) {
         if (line.equals("}")) {
           WordGenProbabilityProvider provider = new WordGenProbabilityProvider(builder.toString(), dict);
           providers[provider.aindex] = provider;

@@ -3,7 +3,6 @@ package com.expleague.ml.methods.seq;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
@@ -20,6 +19,7 @@ import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.function.Function;
 
 public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, Loss> {
   private final int stateCount;
@@ -46,7 +46,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
   }
 
   @Override
-  public Computable<Seq<Integer>, Vec> fit(final DataSet<Seq<Integer>> learn, final Loss loss) {
+  public Function<Seq<Integer>, Vec> fit(final DataSet<Seq<Integer>> learn, final Loss loss) {
     Vec params = init(loss.target());
     FuncC1[] funcs = new FuncC1[learn.length()];
     for (int iter = 0; iter < weightValueIterCount; iter++) {

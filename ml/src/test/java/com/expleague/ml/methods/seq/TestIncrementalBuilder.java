@@ -1,6 +1,5 @@
 package com.expleague.ml.methods.seq;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.seq.IntSeq;
@@ -138,10 +137,10 @@ public class TestIncrementalBuilder {
     assertEquals(optimized, nonOptimized);
   }
 */
-private double getAccuracy(DataSet<Seq<Integer>> data, Vec target, Computable<Seq<Integer>, Vec> computable) {
+private double getAccuracy(DataSet<Seq<Integer>> data, Vec target, Function<Seq<Integer>, Vec> computable) {
   int matchCnt = 0;
   for (int i = 0; i < data.length(); i++) {
-    if (Math.round(computable.compute(data.at(i)).at(0)) == target.at(i)) {
+    if (Math.round(computable.apply(data.at(i)).at(0)) == target.at(i)) {
       matchCnt++;
     }
   }

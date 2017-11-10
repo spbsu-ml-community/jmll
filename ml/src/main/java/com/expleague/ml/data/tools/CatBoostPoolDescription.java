@@ -1,6 +1,5 @@
 package com.expleague.ml.data.tools;
 
-import com.expleague.commons.func.Processor;
 import com.expleague.commons.seq.CharSeqTools;
 
 import java.io.IOException;
@@ -108,7 +107,7 @@ public class CatBoostPoolDescription {
     public DescriptionBuilder loadColumnDescription(final Reader input) throws IOException {
       description.columnTypes = new ColumnType[columnCount];
       Arrays.fill(description.columnTypes, ColumnType.Num);
-      CharSeqTools.processLines(input, (Processor<CharSequence>) arg -> {
+      CharSeqTools.processLines(input, arg -> {
         final CharSequence[] parts = CharSeqTools.split(arg, '\t');
 
         final int index = CharSeqTools.parseInt(parts[0]);

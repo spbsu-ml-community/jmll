@@ -1,10 +1,8 @@
 package com.expleague.ml.io;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.func.types.ConversionPack;
-import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.math.Func;
-import com.expleague.commons.math.Trans;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.models.multiclass.JoinedProbsModel;
 
 /**
@@ -22,12 +20,7 @@ public class JoinedProbsModelConversionPack implements ConversionPack<JoinedProb
   public static class From extends TransJoinConversionPack.BaseFrom<JoinedProbsModel> {
     @Override
     public JoinedProbsModel convert(final CharSequence from) {
-      final Func[] dirs = ArrayTools.map(convertModels(from), Func.class, new Computable<Trans, Func>() {
-        @Override
-        public Func compute(final Trans argument) {
-          return (Func) argument;
-        }
-      });
+      final Func[] dirs = ArrayTools.map(convertModels(from), Func.class, argument -> (Func) argument);
       return new JoinedProbsModel(dirs);
     }
   }

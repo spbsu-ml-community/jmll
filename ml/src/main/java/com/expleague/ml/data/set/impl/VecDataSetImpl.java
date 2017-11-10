@@ -1,10 +1,16 @@
 package com.expleague.ml.data.set.impl;
 
 import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.Vectorization;
 import com.expleague.ml.meta.DSItem;
+
+import java.util.stream.BaseStream;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * User: solar
@@ -27,5 +33,15 @@ public class VecDataSetImpl extends VecDataSet.Stub {
   @Override
   public Mx data() {
     return data;
+  }
+
+  @Override
+  public Seq<Vec> sub(int start, int end) {
+    return new VecDataSetImpl(data.sub(start, 0, end - start, data.columns()), (VecDataSet)parent());
+  }
+
+  @Override
+  public Stream<Vec> stream() {
+    return IntStream.range(0, length()).mapToObj(i -> data().row(i));
   }
 }

@@ -50,7 +50,7 @@ public class MulticlassProgressPrinter implements ProgressHandler {
   }
 
   @Override
-  public void invoke(final Trans partial) {
+  public void accept(final Trans partial) {
     if (partial instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) partial;
       final double step = ensemble.wlast();

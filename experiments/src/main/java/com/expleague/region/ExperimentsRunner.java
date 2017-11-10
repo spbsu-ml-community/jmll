@@ -99,7 +99,7 @@ class ScoresCalcer {
     double min = 1e10;
 
     @Override
-    public void invoke(Trans partial) {
+    public void accept(Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble linear = (Ensemble) partial;
         final Trans increment = linear.last();

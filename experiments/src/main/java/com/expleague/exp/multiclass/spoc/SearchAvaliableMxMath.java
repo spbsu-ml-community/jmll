@@ -1,6 +1,5 @@
 package com.expleague.exp.multiclass.spoc;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.func.types.TypeConverter;
 import com.expleague.commons.math.io.Mx2CharSequenceConversionPack;
 import com.expleague.commons.math.vectors.Mx;
@@ -33,12 +32,7 @@ public class SearchAvaliableMxMath {
     final String path = args[0];
     final int l = Integer.parseInt(args[1]);
     final String[] stepsStr = Arrays.copyOfRange(args, 2, args.length);
-    final Double[] steps = ArrayTools.map(stepsStr, Double.class, new Computable<String, Double>() {
-      @Override
-      public Double compute(final String argument) {
-        return Double.valueOf(argument);
-      }
-    });
+    final Double[] steps = ArrayTools.map(stepsStr, Double.class, Double::valueOf);
     final Mx S = loadMxFromFile(path);
     findParameters(S, l, steps);
   }
@@ -51,27 +45,24 @@ public class SearchAvaliableMxMath {
 
     final int units = Runtime.getRuntime().availableProcessors() - 2;
     logger.info("Units: " + units);
-    final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(units, units, 30, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>());
+    final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(units, units, 30, TimeUnit.MINUTES, new LinkedBlockingDeque<>());
     for (double step : steps) {
       final double stepCopy = step;
       for (double lambdaC = 1.0; lambdaC < 1.5 * k; lambdaC += 1.0) {
         final double lambdaCCopy = lambdaC;
-        threadPoolExecutor.execute(new Runnable() {
-          @Override
-          public void run() {
-            for (double lambdaR = 0.5; lambdaR < 3.0; lambdaR += 0.5) {
-              for (double lambda1 = 1.0; lambda1 < 1.5 * k; lambda1 += 1.0) {
-                final AbstractCodingMatrixLearning cml = new CodingMatrixLearning(k, l, 0.5, lambdaCCopy, lambdaR, lambda1);
-                final Mx matrixB = cml.trainCodingMatrix(S);
-                if (CMLHelper.checkConstraints(matrixB)) {
-                  synchronized (logger) {
-                    logger.info(stepCopy + " " + lambdaCCopy + " " + lambdaR + " " + lambda1 + "\n" + matrixB.toString() + "\n");
-                  }
+        threadPoolExecutor.execute(() -> {
+          for (double lambdaR = 0.5; lambdaR < 3.0; lambdaR += 0.5) {
+            for (double lambda1 = 1.0; lambda1 < 1.5 * k; lambda1 += 1.0) {
+              final AbstractCodingMatrixLearning cml = new CodingMatrixLearning(k, l, 0.5, lambdaCCopy, lambdaR, lambda1);
+              final Mx matrixB = cml.trainCodingMatrix(S);
+              if (CMLHelper.checkConstraints(matrixB)) {
+                synchronized (logger) {
+                  logger.info(stepCopy + " " + lambdaCCopy + " " + lambdaR + " " + lambda1 + "\n" + matrixB.toString() + "\n");
                 }
               }
             }
-            logger.info("step" + stepCopy + " is finished");
           }
+          logger.info("step" + stepCopy + " is finished");
         });
       }
     }

@@ -1,6 +1,5 @@
 package com.expleague.ml.data.tools;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.metrics.Metric;
@@ -40,6 +39,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static java.lang.Math.max;
 
@@ -324,12 +324,7 @@ public class MCTools {
     final IntSeq learnLabels = learn.target(MCMicroF1Score.class).labels();
     final IntSeq testLabels = test.target(MCMicroF1Score.class).labels();
 
-    final FuncEnsemble<?>[] perClassModels = ArrayTools.map(joinedBinClassModel.getInternModel().dirs, FuncEnsemble.class, new Computable<Trans, FuncEnsemble>() {
-      @Override
-      public FuncEnsemble compute(final Trans argument) {
-        return (FuncEnsemble<?>) argument;
-      }
-    });
+    final FuncEnsemble<?>[] perClassModels = ArrayTools.map(joinedBinClassModel.getInternModel().dirs, FuncEnsemble.class, argument -> (FuncEnsemble<?>) argument);
     final int ensembleSize = perClassModels[0].size();
     final int classesCount = perClassModels.length;
 

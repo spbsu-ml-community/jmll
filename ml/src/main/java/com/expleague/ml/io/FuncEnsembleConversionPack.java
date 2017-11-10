@@ -1,6 +1,5 @@
 package com.expleague.ml.io;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.func.types.ConversionPack;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
@@ -8,6 +7,8 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
+
+import java.util.function.Function;
 
 /**
  * User: qdeee
@@ -26,9 +27,9 @@ public class FuncEnsembleConversionPack implements ConversionPack<FuncEnsemble, 
     public FuncEnsemble convert(final CharSequence from) {
       final Pair<Trans[], Vec> pair = convertModels(from);
       final Trans[] models = pair.getFirst();
-      final Func[] funcModels = ArrayTools.map(models, Func.class, new Computable<Trans, Func>() {
+      final Func[] funcModels = ArrayTools.map(models, Func.class, new Function<Trans, Func>() {
         @Override
-        public Func compute(final Trans argument) {
+        public Func apply(final Trans argument) {
           return (Func) argument;
         }
       });

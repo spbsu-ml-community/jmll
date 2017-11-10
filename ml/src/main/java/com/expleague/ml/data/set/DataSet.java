@@ -3,8 +3,13 @@ package com.expleague.ml.data.set;
 
 import com.expleague.commons.func.CacheHolder;
 import com.expleague.commons.func.ScopedCache;
+import com.expleague.commons.seq.ArraySeq;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.meta.DataSetMeta;
+
+import java.util.stream.BaseStream;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * User: solar
@@ -51,6 +56,16 @@ public interface DataSet<Item> extends Seq<Item>, CacheHolder {
     @Override
     public final DataSet<?> parent() {
       return parent;
+    }
+
+    @Override
+    public Seq<T> sub(int start, int end) {
+      return new ArraySeq<T>(this, start, end);
+    }
+
+    @Override
+    public Stream<T> stream() {
+      return IntStream.range(0, length()).mapToObj(this::at);
     }
   }
 }

@@ -1,6 +1,5 @@
 package com.expleague.ml.models.gpf;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.GridTools;
 import com.expleague.ml.methods.BootstrapOptimization;
@@ -16,6 +15,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
 
 
@@ -60,7 +60,7 @@ public class GPFGbrtTest {
 
     System.out.println("learn dataset:\t" + learn.sfrList.size() + "\tsessions, " + "feature matrix:\t" + learn.data().rows() + " * " + learn.data().columns());
 
-    final Action iterationListener = new GPFGbrtOptimization.PrintProgressIterationListener(learn_loss, validate_loss);
+    final Consumer iterationListener = new GPFGbrtOptimization.PrintProgressIterationListener(learn_loss, validate_loss);
     boosting.addListener(iterationListener);
 
     System.out.println("" + new Date() + "\tstart learn");

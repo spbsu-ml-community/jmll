@@ -1,6 +1,5 @@
 package com.expleague.ml.io;
 
-import com.expleague.commons.filters.Filter;
 import com.expleague.commons.func.types.ConversionRepository;
 import com.expleague.commons.func.types.SerializationRepository;
 import com.expleague.commons.math.MathTools;
@@ -11,6 +10,8 @@ import com.expleague.ml.DynamicGridEnabled;
 import com.expleague.ml.GridEnabled;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Predicate;
 
 /**
  * User: solar
@@ -45,25 +46,19 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   }
 
   public ModelsSerializationRepository(final BFGrid grid) {
-    super(conversion.customize(new Filter<TypeConverter>() {
-      @Override
-      public boolean accept(final TypeConverter typeConverter) {
-        if (typeConverter instanceof GridEnabled)
-          ((GridEnabled) typeConverter).setGrid(grid);
-        return true;
-      }
+    super(conversion.customize(typeConverter -> {
+      if (typeConverter instanceof GridEnabled)
+        ((GridEnabled) typeConverter).setGrid(grid);
+      return true;
     }), CharSequence.class);
     this.grid = grid;
   }
 
   public ModelsSerializationRepository(final DynamicGrid grid) {
-    super(conversion.customize(new Filter<TypeConverter>() {
-      @Override
-      public boolean accept(final TypeConverter typeConverter) {
-        if (typeConverter instanceof DynamicGridEnabled)
-          ((DynamicGridEnabled) typeConverter).setGrid(grid);
-        return true;
-      }
+    super(conversion.customize(typeConverter -> {
+      if (typeConverter instanceof DynamicGridEnabled)
+        ((DynamicGridEnabled) typeConverter).setGrid(grid);
+      return true;
     }), CharSequence.class);
     this.dynamicGrid = dynamicGrid;
   }
@@ -84,26 +79,20 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
   }
 
   public ModelsSerializationRepository customizeGrid(final BFGrid grid) {
-    final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
-      @Override
-      public boolean accept(final TypeConverter typeConverter) {
-        if (typeConverter instanceof GridEnabled)
-          ((GridEnabled) typeConverter).setGrid(grid);
-        return true;
-      }
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(typeConverter -> {
+      if (typeConverter instanceof GridEnabled)
+        ((GridEnabled) typeConverter).setGrid(grid);
+      return true;
     }));
     repository.grid = grid;
     return repository;
   }
 
   public ModelsSerializationRepository customizeGrid(final DynamicGrid grid) {
-    final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(new Filter<TypeConverter>() {
-      @Override
-      public boolean accept(final TypeConverter typeConverter) {
-        if (typeConverter instanceof DynamicGridEnabled)
-          ((DynamicGridEnabled) typeConverter).setGrid(dynamicGrid);
-        return true;
-      }
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(typeConverter -> {
+      if (typeConverter instanceof DynamicGridEnabled)
+        ((DynamicGridEnabled) typeConverter).setGrid(dynamicGrid);
+      return true;
     }));
     repository.dynamicGrid = dynamicGrid;
     return repository;

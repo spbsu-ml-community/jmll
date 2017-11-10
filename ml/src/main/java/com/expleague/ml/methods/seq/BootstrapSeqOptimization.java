@@ -1,6 +1,5 @@
 package com.expleague.ml.methods.seq;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.func.impl.WeakListenerHolderImpl;
 import com.expleague.commons.math.Trans;
@@ -12,6 +11,8 @@ import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.methods.SeqOptimization;
 
+import java.util.function.Function;
+
 public class BootstrapSeqOptimization<T, Loss extends L2> extends WeakListenerHolderImpl<Trans> implements SeqOptimization<T, Loss> {
   protected final FastRandom rnd;
   private final SeqOptimization<T, ? super WeightedL2> weak;
@@ -22,7 +23,7 @@ public class BootstrapSeqOptimization<T, Loss extends L2> extends WeakListenerHo
   }
 
   @Override
-  public Computable<Seq<T>, Vec> fit(final DataSet<Seq<T>> learn, final Loss globalLoss) {
+  public Function<Seq<T>, Vec> fit(final DataSet<Seq<T>> learn, final Loss globalLoss) {
     return weak.fit(learn, bootstrap(globalLoss, rnd));
   }
 

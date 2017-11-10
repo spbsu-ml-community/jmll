@@ -2,7 +2,6 @@ package com.expleague.ml.models.pgm;
 
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.filters.Filter;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.random.FastRandom;
@@ -12,6 +11,7 @@ import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * User: solar
@@ -41,13 +41,8 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
 
     this.topology = topology;
     knownRoutesProBab = 0.;
-    final List<MyRoute> order = new LinkedList<MyRoute>();
-    final TreeSet<MyRoute> increment = new TreeSet<MyRoute>(new Comparator<MyRoute>() {
-      @Override
-      public int compare(final MyRoute o1, final MyRoute o2) {
-        return o2.p() >= o1.p() ? 1 : -1;
-      }
-    });
+    final List<MyRoute> order = new LinkedList<>();
+    final TreeSet<MyRoute> increment = new TreeSet<>((o1, o2) -> o2.p() >= o1.p() ? 1 : -1);
     order.add(new MyRoute(new byte[]{0}, 1.));
     double minProbab = 0.01;
     final TByteArrayList nodes = new TByteArrayList();
@@ -98,29 +93,26 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
   }
 
   /** need to change this to prefix tree which is way faster */
-  public void visit(final Filter<Route> act, final int... controlPoints) {
-    visit(new Filter<Route>() {
-      @Override
-      public boolean accept(final Route route) {
-        int index = 0;
-        int controlPoint = controlPoints[index];
-        for (int t = 0; t < route.length(); t++) {
-          if (route.dst(t) == controlPoint) {
-            index++;
-            if (index == controlPoints.length)
-              return act.accept(route);
-            controlPoint = controlPoints[index];
-          }
+  public void visit(final Predicate<com.expleague.ml.models.pgm.Route> act, final int... controlPoints) {
+    visit(route -> {
+      int index = 0;
+      int controlPoint = controlPoints[index];
+      for (int t = 0; t < route.length(); t++) {
+        if (route.dst(t) == controlPoint) {
+          index++;
+          if (index == controlPoints.length)
+            return act.test(route);
+          controlPoint = controlPoints[index];
         }
-        return false;
       }
+      return false;
     });
   }
 
   @Override
-  public void visit(final Filter<Route> act) {
+  public void visit(final Predicate<com.expleague.ml.models.pgm.Route> act) {
     for (final MyLWRoute route : routes) {
-      if (act.accept(route))
+      if (act.test(route))
         return;
     }
   }
@@ -128,12 +120,9 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
   @Override
   public double p(final int... controlPoints) {
     final double[] result = new double[]{0.};
-    visit(new Filter<Route>() {
-      @Override
-      public boolean accept(final Route route) {
-        result[0] += route.p();
-        return false;
-      }
+    visit(route -> {
+      result[0] += route.p();
+      return false;
     }, controlPoints);
     return result[0];
   }

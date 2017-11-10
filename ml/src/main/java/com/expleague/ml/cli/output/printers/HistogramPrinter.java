@@ -15,7 +15,7 @@ public class HistogramPrinter implements ProgressHandler {
   int iteration = 0;
 
   @Override
-  public void invoke(final Trans partial) {
+  public void accept(final Trans partial) {
     iteration++;
     if (iteration % 10 != 0) {
       return;

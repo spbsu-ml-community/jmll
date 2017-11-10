@@ -1,6 +1,5 @@
 package com.expleague.exp.multiclass.spoc;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
@@ -34,6 +33,7 @@ import com.expleague.ml.models.multiclass.MulticlassCodingMatrixModel;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 /**
  * User: qdeee
@@ -82,7 +82,7 @@ public class RunnerECOC {
     final int k = MCTools.countClasses(mllLogit.labels());
 
     final ECOCCombo ecocComboMethod = new ECOCCombo(k, l, lambdaC, lambdaR, lambda1, S, createWeak(grid, iters, step));
-    final Action<MulticlassCodingMatrixModel> listener = model -> {
+    final Consumer<com.expleague.ml.models.multiclass.MulticlassCodingMatrixModel> listener = model -> {
       if (updatePrior && model.getCodingMatrix().columns() >= firstColumnForUpdate) {
         final Mx mx = getPairwiseInteractions(model, learn, targetBasedUpdate);
         VecTools.scale(S, lambdaPrior);

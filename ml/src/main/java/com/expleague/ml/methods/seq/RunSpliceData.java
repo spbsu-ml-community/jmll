@@ -1,7 +1,5 @@
 package com.expleague.ml.methods.seq;
 
-import com.expleague.commons.func.Action;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.io.codec.seq.DictExpansion;
 import com.expleague.commons.io.codec.seq.Dictionary;
 import com.expleague.commons.math.vectors.Mx;
@@ -31,6 +29,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 
 public class RunSpliceData {
@@ -175,14 +175,14 @@ public class RunSpliceData {
         ), BOOST_ITERS, BOOST_STEP
     );
 
-    Action<Computable<Seq<Integer>, Vec>> listener = classifier -> {
+    Consumer<Function<Seq<Integer>,Vec>> listener = classifier -> {
       System.out.println("Current time: " + new SimpleDateFormat("yyyyMMdd_HH:mm:ss").format(Calendar.getInstance().getTime()));
       System.out.println("Train loss: " + getLoss(trainData, trainTarget, classifier));
       System.out.println("Test loss: " + getLoss(testData, testTarget, classifier));
     };
     boosting.addListener(listener);
 
-    final Computable<Seq<Integer>, Vec> classifier =
+    final Function<Seq<Integer>, Vec> classifier =
         new OneVsRest(boosting, CLASSES.size(), labels).fit(data, new LLLogit(trainTarget, null));
     long end = System.nanoTime();
 
@@ -203,8 +203,8 @@ public class RunSpliceData {
     }
 
     @Override
-    public Computable<Seq<Integer>, Vec> fit(DataSet<Seq<Integer>> learn, LLLogit llLogit) {
-      List<Computable<Seq<Integer>, Vec>> classifiers = new ArrayList<>();
+    public Function<Seq<Integer>, Vec> fit(DataSet<Seq<Integer>> learn, LLLogit llLogit) {
+      List<Function<Seq<Integer>,Vec>> classifiers = new ArrayList<>();
       for (int i = 0; i < classCount; i++) {
         Vec newTarget = VecTools.copy(llLogit.labels());
         for (int j = 0; j < llLogit.labels().length(); j++) {
@@ -221,7 +221,7 @@ public class RunSpliceData {
         double max = -Double.MAX_VALUE;
         int clazz = -1;
         for (int i = 0; i < classCount; i++) {
-          double prob = classifiers.get(i).compute(argument).get(0);
+          double prob = classifiers.get(i).apply(argument).get(0);
           if (prob > max) {
             max = prob;
             clazz = i;
@@ -232,22 +232,22 @@ public class RunSpliceData {
     }
   }
 
-  private double getLoss(List<Seq<Integer>> data, Vec target, Computable<Seq<Integer>, Vec> classifier) {
+  private double getLoss(List<Seq<Integer>> data, Vec target, Function<Seq<Integer>, Vec> classifier) {
     final LLLogit lllogit = new LLLogit(target, null);
     Vec values = new ArrayVec(target.dim());
     for (int i =0 ; i < target.dim(); i++) {
-      values.set(i, classifier.compute(data.get(i)).get(0));
+      values.set(i, classifier.apply(data.get(i)).get(0));
     }
     return lllogit.value(values);
   }
 
 
-  private double getAccuracy(List<Seq<Integer>> data, Vec target, Computable<Seq<Integer>, Vec> classifier) {
+  private double getAccuracy(List<Seq<Integer>> data, Vec target, Function<Seq<Integer>, Vec> classifier) {
     int passedCnt = 0;
     int classAccuracy[] = new int[3];
     int classSize[] = new int[3];
     for (int i = 0; i < data.size(); i++) {
-      if (Math.round(classifier.compute(data.get(i)).get(0)) == target.get(i)) {
+      if (Math.round(classifier.apply(data.get(i)).get(0)) == target.get(i)) {
         passedCnt++;
         classAccuracy[(int) Math.round(target.get(i))]++;
       }

@@ -1,6 +1,5 @@
 package com.expleague.ml.methods.multiclass;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.IntSeq;
 import com.expleague.commons.util.ArrayTools;
@@ -14,6 +13,8 @@ import com.expleague.ml.loss.LLLogit;
 import com.expleague.ml.loss.multiclass.ClassicMulticlassLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.multiclass.JoinedBinClassModel;
+
+import java.util.function.Function;
 
 /**
  * User: qdeee
@@ -48,12 +49,7 @@ public class MultiClassOneVsRest implements VecOptimization<ClassicMulticlassLos
       final Ensemble ensemble = (Ensemble) model;
       if (ensemble.last() instanceof Func) {
         return new FuncEnsemble<>(
-            ArrayTools.map(ensemble.models, Func.class, new Computable<Trans, Func>() {
-              @Override
-              public Func compute(final Trans argument) {
-                return (Func) argument;
-              }
-            }),
+            ArrayTools.map(ensemble.models, Func.class, argument -> (Func) argument),
             ensemble.weights);
       } else {
         throw new IllegalArgumentException("Ensemble doesn't contain a Func");

@@ -1,6 +1,5 @@
 package com.expleague.ml.cli.output.printers;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -24,13 +23,15 @@ import com.expleague.ml.models.multiclass.MCModel;
 import com.expleague.ml.models.multilabel.MultiLabelBinarizedModel;
 import com.expleague.ml.models.multilabel.MultiLabelModel;
 
+import java.util.function.Function;
+
 /**
  * User: qdeee
  * Date: 04.09.14
  */
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public class ResultsPrinter {
-  public static void printResults(final Computable computable, final Pool<?> learn, final Pool<?> test, final Func loss, final Func[] metrics) {
+  public static void printResults(final Function computable, final Pool<?> learn, final Pool<?> test, final Func loss, final Func[] metrics) {
     System.out.print("Learn: " + loss.value(DataTools.calcAll(computable, learn.vecData())) + " Test:");
     for (final Func metric : metrics) {
       System.out.print(" " + metric.value(DataTools.calcAll(computable, test.vecData())));
@@ -38,13 +39,13 @@ public class ResultsPrinter {
     System.out.println();
   }
 
-  public static void printMulticlassResults(final Computable computable, final Pool<?> learn, final Pool<?> test) {
+  public static void printMulticlassResults(final Function function, final Pool<?> learn, final Pool<?> test) {
     final MCModel mcModel;
-    if (computable instanceof Ensemble && ((Ensemble) computable).last() instanceof FuncJoin) {
-      final FuncJoin funcJoin = MCTools.joinBoostingResult((Ensemble) computable);
+    if (function instanceof Ensemble && ((Ensemble) function).last() instanceof FuncJoin) {
+      final FuncJoin funcJoin = MCTools.joinBoostingResult((Ensemble) function);
       mcModel = new MultiClassModel(funcJoin);
-    } else if (computable instanceof MCModel) {
-      mcModel = (MCModel) computable;
+    } else if (function instanceof MCModel) {
+      mcModel = (MCModel) function;
     } else return;
 
     final IntSeq learnTarget = learn.target(BlockwiseMLLLogit.class).labels();
@@ -63,8 +64,8 @@ public class ResultsPrinter {
     System.out.println();
   }
 
-  public static void printMultilabelResult(final Computable computable, final Pool<?> learn, final Pool<?> test) {
-    final MultiLabelModel mlModel = MultiLabelTools.extractMultiLabelModel((Trans) computable);
+  public static void printMultilabelResult(final Function function, final Pool<?> learn, final Pool<?> test) {
+    final MultiLabelModel mlModel = MultiLabelTools.extractMultiLabelModel((Trans) function);
 
     final Mx learnTargets = learn.multiTarget(MultiLabelExactMatch.class).getTargets();
     final Mx learnPredicted = mlModel.predictLabelsAll(learn.vecData().data());

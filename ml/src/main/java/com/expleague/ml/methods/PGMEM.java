@@ -1,7 +1,5 @@
 package com.expleague.ml.methods;
 
-import com.expleague.commons.filters.Filter;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.func.impl.WeakListenerHolderImpl;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
@@ -24,6 +22,8 @@ import com.expleague.ml.models.pgm.SimplePGM;
 
 import java.util.WeakHashMap;
 import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * User: solar
@@ -31,7 +31,7 @@ import java.util.concurrent.*;
  * Time: 13:29
  */
 public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptimization<LLLogit> {
-  public abstract static class Policy implements Filter<Route> {
+  public abstract static class Policy implements Predicate<Route> {
     private final Vec weights;
     private final Route[] routes;
     private Double len;
@@ -60,73 +60,55 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
     }
   }
 
-  public static final Computable<ProbabilisticGraphicalModel, Policy> MOST_PROBABLE_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
+  public static final Function<ProbabilisticGraphicalModel, Policy> MOST_PROBABLE_PATH = argument -> new Policy(argument) {
     @Override
-    public Policy compute(final ProbabilisticGraphicalModel argument) {
-      return new Policy(argument) {
-        @Override
-        public boolean accept(final Route route) {
-          addOption(route, 1.);
-          return true;
-        }
-      }.clear();
+    public boolean test(final Route route) {
+      addOption(route, 1.);
+      return true;
     }
+  }.clear();
+
+  public static final Function<ProbabilisticGraphicalModel, Policy> LAPLACE_PRIOR_PATH = argument -> new Policy(argument) {
+    @Override
+    public boolean test(final Route route) {
+      addOption(route, route.p() * prior(route.length()));
+      return false;
+    }
+    private double prior(final int length) {
+      return Math.exp(-length-1);
+    }
+  }.clear();
+
+  public static final Function<ProbabilisticGraphicalModel, Policy> GAMMA_PRIOR_PATH = argument -> new Policy(argument) {
+    @Override
+    public boolean test(final Route route) {
+      addOption(route, route.p() * prior(route.length()));
+      return false;
+    }
+    private double prior(final int length) {
+      final double meanERouteLength = ((SimplePGM) argument).meanERouteLength;
+      return meanERouteLength > 1 ? length * length * Math.exp(-length/ (meanERouteLength/ 3 * 0.7)) : 1;
+    }
+  }.clear();
+
+  public static final Function<ProbabilisticGraphicalModel, Policy> POISSON_PRIOR_PATH = argument -> {
+    final double meanLen = ((SimplePGM)argument).meanERouteLength;
+    return new Policy(argument) {
+      @Override
+      public boolean test(final Route route) {
+        addOption(route, route.p() * prior(route.length()));
+        return false;
+      }
+      private double prior(final int length) {
+        return meanLen > 1 ? MathTools.poissonProbability((meanLen - 1) * 0.5, length - 1) : Math.exp(-length);
+      }
+    }.clear();
   };
 
-  public static final Computable<ProbabilisticGraphicalModel, Policy> LAPLACE_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
+  public static final Function<ProbabilisticGraphicalModel, Policy> FREQ_DENSITY_PRIOR_PATH = new Function<ProbabilisticGraphicalModel, Policy>() {
+    final WeakHashMap<ProbabilisticGraphicalModel, Vec> cache = new WeakHashMap<>();
     @Override
-    public Policy compute(final ProbabilisticGraphicalModel argument) {
-      return new Policy(argument) {
-        @Override
-        public boolean accept(final Route route) {
-          addOption(route, route.p() * prior(route.length()));
-          return false;
-        }
-        private double prior(final int length) {
-          return Math.exp(-length-1);
-        }
-      }.clear();
-    }
-  };
-
-  public static final Computable<ProbabilisticGraphicalModel, Policy> GAMMA_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
-    @Override
-    public Policy compute(final ProbabilisticGraphicalModel argument) {
-      return new Policy(argument) {
-        @Override
-        public boolean accept(final Route route) {
-          addOption(route, route.p() * prior(route.length()));
-          return false;
-        }
-        private double prior(final int length) {
-          final double meanERouteLength = ((SimplePGM) argument).meanERouteLength;
-          return meanERouteLength > 1 ? length * length * Math.exp(-length/ (meanERouteLength/ 3 * 0.7)) : 1;
-        }
-      }.clear();
-    }
-  };
-
-  public static final Computable<ProbabilisticGraphicalModel, Policy> POISSON_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
-    @Override
-    public Policy compute(final ProbabilisticGraphicalModel argument) {
-      final double meanLen = ((SimplePGM)argument).meanERouteLength;
-      return new Policy(argument) {
-        @Override
-        public boolean accept(final Route route) {
-          addOption(route, route.p() * prior(route.length()));
-          return false;
-        }
-        private double prior(final int length) {
-          return meanLen > 1 ? MathTools.poissonProbability((meanLen - 1) * 0.5, length - 1) : Math.exp(-length);
-        }
-      }.clear();
-    }
-  };
-
-  public static final Computable<ProbabilisticGraphicalModel, Policy> FREQ_DENSITY_PRIOR_PATH = new Computable<ProbabilisticGraphicalModel, Policy>() {
-    final WeakHashMap<ProbabilisticGraphicalModel, Vec> cache = new WeakHashMap<ProbabilisticGraphicalModel, Vec>();
-    @Override
-    public Policy compute(final ProbabilisticGraphicalModel argument) {
+    public Policy apply(final ProbabilisticGraphicalModel argument) {
       Vec freqs = cache.get(argument);
       if (freqs == null) {
         freqs = new ArrayVec(10000);
@@ -145,7 +127,7 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
       final Vec finalFreqs = freqs;
       return new Policy(argument) {
         @Override
-        public boolean accept(final Route route) {
+        public boolean test(final Route route) {
           final double prior = finalFreqs.get(route.length());
           addOption(route, route.p() * (prior > 0 ? prior : 2 * unknownWeight / knownRootsCount));
           return false;
@@ -154,17 +136,18 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
     }
   };
 
-  private final Computable<ProbabilisticGraphicalModel, Policy> policyFactory;
+  private final Function<ProbabilisticGraphicalModel, Policy> policyFactory;
   private final Mx topology;
   private final int iterations;
   private final double step;
   private final FastRandom rng;
 
+  @SuppressWarnings("unused")
   public PGMEM(final Mx topology, final double smoothing, final int iterations) {
     this(topology, smoothing, iterations, new FastRandom(), MOST_PROBABLE_PATH);
   }
 
-  public PGMEM(final Mx topology, final double smoothing, final int iterations, final FastRandom rng, final Computable<ProbabilisticGraphicalModel, Policy> policy) {
+  public PGMEM(final Mx topology, final double smoothing, final int iterations, final FastRandom rng, final Function<ProbabilisticGraphicalModel, Policy> policy) {
     this.policyFactory = policy;
     this.topology = topology;
     this.iterations = iterations;
@@ -193,23 +176,17 @@ public class PGMEM extends WeakListenerHolderImpl<SimplePGM> implements VecOptim
 
         for (int j = 0; j < cpds.length; j++) {
           final int finalJ = j;
-          executor.execute(new Runnable() {
-            @Override
-            public void run() {
-              final Policy policy;
-              synchronized (cache) {
-                policy = cache.get(new IntSeq(cpds[finalJ]), new Computable<IntSeq, Policy>() {
-                  @Override
-                  public Policy compute(final IntSeq argument) {
-                    final Policy policy = policyFactory.compute(finalCurrentPGM);
-                    finalCurrentPGM.visit(policy, cpds[finalJ]);
-                    return policy;
-                  }
-                });
-              }
-              eroutes[finalJ] = policy.next(rng);
-              latch.countDown();
+          executor.execute(() -> {
+            final Policy policy;
+            synchronized (cache) {
+              policy = cache.get(new IntSeq(cpds[finalJ]), argument -> {
+                final Policy policy1 = policyFactory.apply(finalCurrentPGM);
+                finalCurrentPGM.visit(policy1, cpds[finalJ]);
+                return policy1;
+              });
             }
+            eroutes[finalJ] = policy.next(rng);
+            latch.countDown();
           });
         }
         try {

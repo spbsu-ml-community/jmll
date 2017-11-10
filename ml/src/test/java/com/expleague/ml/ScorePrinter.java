@@ -1,6 +1,5 @@
 package com.expleague.ml;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
@@ -8,12 +7,14 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.func.Ensemble;
 
+import java.util.function.Consumer;
+
 /**
  * User: solar
  * Date: 26.03.15
  * Time: 18:58
  */
-public class ScorePrinter implements Action<Trans> {
+public class ScorePrinter implements Consumer<Trans> {
     private final String message;
     private final Vec cursor;
     private final VecDataSet ds;
@@ -29,7 +30,7 @@ public class ScorePrinter implements Action<Trans> {
     }
 
     @Override
-    public void invoke(Trans partial) {
+    public void accept(Trans partial) {
         if (partial instanceof Ensemble) {
             final Ensemble linear = (Ensemble) partial;
             final Trans increment = linear.last();

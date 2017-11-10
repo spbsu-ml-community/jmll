@@ -13,24 +13,24 @@
         <dependency>
             <groupId>com.expleague</groupId>
             <artifactId>commons</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>com.expleague</groupId>
             <artifactId>commons</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>1.1</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.expleague</groupId>
             <artifactId>jmll</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>com.expleague</groupId>
             <artifactId>jmll</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>1.1</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>

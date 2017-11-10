@@ -1,6 +1,5 @@
 package com.expleague.crawl;
 
-import com.expleague.commons.func.Processor;
 import com.expleague.commons.func.types.impl.TypeConvertersCollection;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.vectors.Vec;
@@ -15,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Experts League
@@ -32,11 +32,11 @@ public class SessionProcessing {
     for (final String session : sessions) {
       final File sessionFile = new File(root, session);
       final String sessionName = sessionFile.getName().replace(".txt", "");
-      CharSeqTools.processLines(new InputStreamReader(new FileInputStream(sessionFile), StreamTools.UTF), new Processor<CharSequence>() {
+      CharSeqTools.processLines(new InputStreamReader(new FileInputStream(sessionFile), StreamTools.UTF), new Consumer<CharSequence>() {
         int lindex = 0;
 
         @Override
-        public void process(final CharSequence arg) {
+        public void accept(final CharSequence arg) {
           lindex++;
           final Vec point = TypeConvertersCollection.ROOT.convert(arg, Vec.class);
           final int validFeatures = point.dim() - 1;

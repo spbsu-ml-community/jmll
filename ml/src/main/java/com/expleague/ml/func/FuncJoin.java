@@ -1,9 +1,7 @@
 package com.expleague.ml.func;
 
-import com.expleague.commons.func.Computable;
-import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.math.Func;
-import com.expleague.commons.math.Trans;
+import com.expleague.commons.util.ArrayTools;
 
 /**
  * User: solar
@@ -16,11 +14,6 @@ public class FuncJoin extends TransJoin {
   }
 
   public Func[] dirs() {
-    return ArrayTools.map(this.dirs, Func.class, new Computable<Trans, Func>() {
-      @Override
-      public Func compute(final Trans argument) {
-        return (Func)argument;
-      }
-    });
+    return ArrayTools.map(this.dirs, Func.class, argument -> (Func)argument);
   }
 }

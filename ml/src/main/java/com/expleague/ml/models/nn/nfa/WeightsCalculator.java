@@ -1,17 +1,18 @@
 package com.expleague.ml.models.nn.nfa;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+
+import java.util.function.Function;
 
 /**
 * User: solar
 * Date: 29.06.15
 * Time: 17:12
 */
-class WeightsCalculator implements Computable<Vec,Mx> {
+class WeightsCalculator implements Function<Vec,Mx> {
   private final int statesCount;
   private final int wStart;
   private final int wLen;
@@ -49,7 +50,7 @@ class WeightsCalculator implements Computable<Vec,Mx> {
   private Vec cacheArg;
   private Mx cacheVal;
   @Override
-  public Mx compute(Vec betta) {
+  public Mx apply(Vec betta) {
     if (!betta.isImmutable())
       return computeInner(betta);
     if (betta == cacheArg)

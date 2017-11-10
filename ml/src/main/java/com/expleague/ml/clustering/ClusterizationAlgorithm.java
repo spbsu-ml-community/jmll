@@ -1,10 +1,10 @@
 package com.expleague.ml.clustering;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.function.Function;
 
 /**
  * User: terry
@@ -12,5 +12,5 @@ import java.util.Collection;
  */
 public interface ClusterizationAlgorithm<X> {
   @NotNull
-  Collection<? extends Collection<X>> cluster(Collection<X> dataSet, Computable<X, Vec> data2DVector);
+  Collection<? extends Collection<X>> cluster(Collection<X> dataSet, Function<X, Vec> data2DVector);
 }

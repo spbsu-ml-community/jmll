@@ -1,17 +1,18 @@
 package com.expleague.ml.clustering.impl;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.metrics.Metric;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.ml.clustering.ClusterizationAlgorithm;
 import com.expleague.commons.util.CollectionTools;
-import com.expleague.commons.util.Factories;
 import com.expleague.commons.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.function.Function;
 
 /**
  * User: terry
@@ -28,10 +29,10 @@ public class NearestCentroidAlgorithm<X> implements ClusterizationAlgorithm<X> {
 
   @NotNull
   @Override
-  public Collection<? extends Collection<X>> cluster(final Collection<X> dataSet, final Computable<X, Vec> data2DVector) {
-    final Collection<Pair<Collection<X>,Vec>> clusters = Factories.hashSet();
+  public Collection<? extends Collection<X>> cluster(final Collection<X> dataSet, final Function<X, Vec> data2DVector) {
+    final Collection<Pair<Collection<X>,Vec>> clusters = new HashSet<>();
     for (final X data : dataSet) {
-      final Vec dataVector = data2DVector.compute(data);
+      final Vec dataVector = data2DVector.apply(data);
       Pair<Collection<X>, Vec> nearestCluster = null;
       double minDistance = Double.MAX_VALUE;
       for (final Pair<Collection<X>, Vec> pair : clusters) {
@@ -49,7 +50,7 @@ public class NearestCentroidAlgorithm<X> implements ClusterizationAlgorithm<X> {
 //        System.out.println("");
 //      }
       if (minDistance > acceptanceDistance) {
-        clusters.add(Pair.<Collection<X>,Vec>create(Factories.hashSet(data), dataVector));
+        clusters.add(Pair.<Collection<X>,Vec>create(new HashSet<>(Collections.singleton(data)), dataVector));
       } else {
         final Collection<X> collection = nearestCluster.getFirst();
         final Vec centroid = nearestCluster.getSecond();

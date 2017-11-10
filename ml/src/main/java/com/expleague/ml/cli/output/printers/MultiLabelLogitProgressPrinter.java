@@ -70,7 +70,7 @@ public class MultiLabelLogitProgressPrinter implements ProgressHandler {
   }
 
   @Override
-  public void invoke(final Trans partial) {
+  public void accept(final Trans partial) {
     if (isBoostingProcess(partial)) {
       final Ensemble ensemble = (Ensemble) partial;
       final double step = ensemble.wlast();

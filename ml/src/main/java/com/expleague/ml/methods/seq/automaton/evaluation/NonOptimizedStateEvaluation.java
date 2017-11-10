@@ -1,16 +1,17 @@
 package com.expleague.ml.methods.seq.automaton.evaluation;
 
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.methods.seq.automaton.DFA;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.methods.seq.automaton.AutomatonStats;
 
-public class NonOptimizedStateEvaluation<T> implements Computable<AutomatonStats<T>, Double> {
+import java.util.function.Function;
+
+public class NonOptimizedStateEvaluation<T> implements Function<AutomatonStats<T>, Double> {
   @Override
-  public Double compute(AutomatonStats<T> automatonStats) {
+  public Double apply(AutomatonStats<T> automatonStats) {
     final DataSet<Seq<T>> dataSet = automatonStats.getDataSet();
     final Vec target = automatonStats.getTarget();
     final DFA<T> automaton = automatonStats.getAutomaton();
