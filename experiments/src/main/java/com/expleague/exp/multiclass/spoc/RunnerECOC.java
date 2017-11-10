@@ -11,7 +11,6 @@ import com.expleague.commons.util.Pair;
 import com.expleague.ml.BFGrid;
 import com.expleague.commons.math.Func;
 import com.expleague.ml.GridTools;
-import com.expleague.commons.math.Trans;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.expleague.ml.cli.builders.data.impl.PoolReaderFeatureTxt;
 import com.expleague.ml.cli.builders.data.impl.PoolReaderJson;
@@ -96,23 +95,21 @@ public class RunnerECOC {
       System.out.println();
     };
     ecocComboMethod.addListener(listener);
-    final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) ecocComboMethod.fit(vecDataSet, mllLogit);
+    final MulticlassCodingMatrixModel model = ecocComboMethod.fit(vecDataSet, mllLogit);
     System.out.println("\n\n\n");
     System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", false));
     System.out.println(MCTools.evalModel(model, test, "[TEST] ", false));
   }
 
   private static VecOptimization<LLLogit> createWeak(final BFGrid grid, final int iters, final double step) {
-    return new VecOptimization<LLLogit>() {
-      @Override
-      public Trans fit(final VecDataSet learn, final LLLogit llLogit) {
-        final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(grid, 5), iters, step);
-        final Ensemble ensemble = boosting.fit(learn, llLogit);
-        return new FuncEnsemble(
-            ArrayTools.map(ensemble.models, Func.class, argument -> (Func) argument),
-            ensemble.weights
-        );
-      }
+    return (learn, llLogit) -> {
+      final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<>(grid, 5), iters, step);
+      final Ensemble ensemble = boosting.fit(learn, llLogit);
+      //noinspection unchecked
+      return new FuncEnsemble(
+          ArrayTools.map(ensemble.models, Func.class, argument -> (Func) argument),
+          ensemble.weights
+      );
     };
   }
 

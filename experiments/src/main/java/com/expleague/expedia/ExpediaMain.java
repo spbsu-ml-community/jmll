@@ -243,7 +243,7 @@ public class ExpediaMain {
         final int hotel = srchHotels[i];
         current.set(features.dim(), hotelCTR.getCTR(hotel));
         current.set(features.dim() + 1, factor.getFactor(event.user, hotel));
-        value[i] = -((Ensemble) model).compute(current).get(0);
+        value[i] = -((Ensemble) model).apply(current).get(0);
         index[i] = i;
       }
 
