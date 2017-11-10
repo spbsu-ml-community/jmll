@@ -1,23 +1,18 @@
 package com.expleague.ml.methods.multiclass.gradfac;
 
-import com.expleague.commons.func.Computable;
-import com.expleague.commons.math.Func;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.util.Pair;
 import com.expleague.ml.data.set.DataSet;
-import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.factorization.Factorization;
-import com.expleague.ml.func.ScaledVectorFunc;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.SeqOptimization;
-import com.expleague.ml.methods.VecOptimization;
-import com.expleague.ml.methods.multiclass.MultiClassOneVsRest;
+
+import java.util.function.Function;
 
 public class GradFacMulticlassSeq<T> implements SeqOptimization<T, L2> {
   private final SeqOptimization<T, L2> inner;
@@ -37,7 +32,7 @@ public class GradFacMulticlassSeq<T> implements SeqOptimization<T, L2> {
   }
 
   @Override
-  public Computable<Seq<T>, Vec> fit(DataSet<Seq<T>> learn, L2 mllLogitGradient) {
+  public Function<Seq<T>, Vec> fit(DataSet<Seq<T>> learn, L2 mllLogitGradient) {
     final Mx gradient = mllLogitGradient.target instanceof Mx
         ? (Mx)mllLogitGradient.target
         : new VecBasedMx(mllLogitGradient.target.dim() / learn.length(), mllLogitGradient.target);
@@ -51,10 +46,10 @@ public class GradFacMulticlassSeq<T> implements SeqOptimization<T, L2> {
     VecTools.scale(h, normB);
 
     final L2 loss = DataTools.newTarget(local, h, learn);
-    final Computable<Seq<T>, Vec> model = inner.fit(learn, loss);
+    final Function<Seq<T>, Vec> model = inner.fit(learn, loss);
     return seq -> {
       final Vec b1 = VecTools.copy(b);
-      final double res = model.compute(seq).get(0);
+      final double res = model.apply(seq).get(0);
       VecTools.scale(b1, res);
       return b1;
     };

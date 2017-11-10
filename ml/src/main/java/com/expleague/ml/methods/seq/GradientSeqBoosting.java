@@ -50,7 +50,10 @@ public class GradientSeqBoosting<T, GlobalLoss extends TargetFunc> extends WeakL
       final Function<Seq<T>,Vec> curRes = getResult(new ArrayList<>(weakModels));
       invoke(curRes);
       for (int i = 0; i < learn.length(); i++) {
-        cursor.adjust(i, weakModel.apply(learn.at(i)).get(0) * -step);
+        final Vec val = weakModel.apply(learn.at(i));
+        for (int j = 0; j < val.dim(); j++) {
+          cursor.adjust(i * val.dim() + j, val.get(j) * -step);
+        }
       }
     }
     return getResult(weakModels);

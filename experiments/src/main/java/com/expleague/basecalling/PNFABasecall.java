@@ -1,7 +1,5 @@
 package com.expleague.basecalling;
 
-import com.expleague.commons.func.Action;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -26,6 +24,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class PNFABasecall {
   private static final int STATE_COUNT = 4;
@@ -136,13 +136,13 @@ public class PNFABasecall {
     );
 
     final GradientSeqBoosting<Integer, BlockwiseMLLLogit> boosting = new GradientSeqBoosting<>(multiClassModel, BOOST_ITERS, BOOST_STEP);
-    Action<Computable<Seq<Integer>, Vec>> listener = this::printProgress;
+    Consumer<Function<Seq<Integer>, Vec>> listener = this::printProgress;
     boosting.addListener(listener);
     boosting.fit(trainDataSet, globalLoss);
 
   }
 
-  private void printProgress(Computable<Seq<Integer>, Vec> model) {
+  private void printProgress(Function<Seq<Integer>, Vec> model) {
     final IntSeq trainPred = predict(model, trainDataSet);
     final IntSeq testPred = predict(model, testDataSet);
     System.out.println(testPred);
@@ -150,10 +150,10 @@ public class PNFABasecall {
     System.out.println("Test confusion: " + new ConfusionMatrix(testLabels, testPred).oneLineReport());
   }
 
-  private IntSeq predict(Computable<Seq<Integer>, Vec> model, DataSet<Seq<Integer>> dataSet) {
+  private IntSeq predict(Function<Seq<Integer>, Vec> model, DataSet<Seq<Integer>> dataSet) {
     int[] pred = new int[dataSet.length()];
     for (int i = 0; i < dataSet.length(); i++) {
-      final Vec res = model.compute(dataSet.at(i));
+      final Vec res = model.apply(dataSet.at(i));
       pred[i] = VecTools.argmax(res);
       if (res.get(pred[i]) <= 0) {
         pred[i] = res.dim();
