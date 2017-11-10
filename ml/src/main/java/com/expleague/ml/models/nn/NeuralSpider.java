@@ -13,6 +13,9 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.stream.BaseStream;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.expleague.commons.math.vectors.VecTools.*;
 
@@ -113,7 +116,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     int outputCount();
     boolean isDroppedOut(int nodeIndex);
 
-    public abstract class Stub extends Seq.Stub<Node> implements Topology {
+    abstract class Stub extends Seq.Stub<Node> implements Topology {
       @Override
       public final boolean isImmutable() {
         return true;
@@ -127,6 +130,11 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
       @Override
       public final Class<Node> elementType() {
         return Node.class;
+      }
+
+      @Override
+      public Stream<Node> stream() {
+        return IntStream.range(0, length()).mapToObj(this::at);
       }
     }
   }

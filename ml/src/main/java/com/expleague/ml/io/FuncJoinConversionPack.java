@@ -1,11 +1,10 @@
 package com.expleague.ml.io;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.func.types.ConversionPack;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.math.Func;
-import com.expleague.commons.math.Trans;
 import com.expleague.ml.func.FuncJoin;
+
 
 /**
  * User: qdeee
@@ -22,12 +21,7 @@ public class FuncJoinConversionPack implements ConversionPack<FuncJoin, CharSequ
   public static class From extends TransJoinConversionPack.BaseFrom<FuncJoin> {
     @Override
     public FuncJoin convert(final CharSequence from) {
-      final Func[] dirs = ArrayTools.map(convertModels(from), Func.class, new Computable<Trans, Func>() {
-        @Override
-        public Func compute(final Trans argument) {
-          return (Func) argument;
-        }
-      });
+      final Func[] dirs = ArrayTools.map(convertModels(from), Func.class, argument -> (Func) argument);
       return new FuncJoin(dirs);
     }
   }

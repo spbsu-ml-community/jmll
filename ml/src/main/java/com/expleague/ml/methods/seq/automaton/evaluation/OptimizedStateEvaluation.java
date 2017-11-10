@@ -1,12 +1,13 @@
 package com.expleague.ml.methods.seq.automaton.evaluation;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.MathTools;
 import com.expleague.ml.methods.seq.automaton.AutomatonStats;
 
-public class OptimizedStateEvaluation<T> implements Computable<AutomatonStats<T>, Double> {
+import java.util.function.Function;
+
+public class OptimizedStateEvaluation<T> implements Function<AutomatonStats<T>, Double> {
   @Override
-  public Double compute(AutomatonStats<T> automatonStats) {
+  public Double apply(AutomatonStats<T> automatonStats) {
     double score = 0;
     final int stateCount = automatonStats.getAutomaton().getStateCount();
     for (int i = 0; i < stateCount; i++) {

@@ -1,10 +1,11 @@
 package com.expleague.ml.models.pgm;
 
-import com.expleague.commons.filters.Filter;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
+
+import java.util.function.Predicate;
 
 /**
  * User: solar
@@ -12,7 +13,7 @@ import com.expleague.commons.math.Trans;
  * Time: 21:34
  */
 public interface ProbabilisticGraphicalModel extends Trans, Func {
-  void visit(Filter<Route> act);
+  void visit(Predicate<com.expleague.ml.models.pgm.Route> act);
 
   double p(int... controlPoints);
 

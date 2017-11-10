@@ -1,12 +1,12 @@
 package com.expleague.ml.clustering.impl;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.ml.clustering.ClusterizationAlgorithm;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Function;
 
 import static com.expleague.commons.math.vectors.VecTools.scale;
 
@@ -26,7 +26,7 @@ public class KMeansAlgorithm<T> implements ClusterizationAlgorithm<T> {
 
   @NotNull
   @Override
-  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Computable<T, Vec> data2DVector) {
+  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Function<T, Vec> data2DVector) {
     Vec[] centroids = new Vec[clustCount];
     final List<Set<T>> clusters = new ArrayList<Set<T>>();
     while (clusters.size() < centroids.length) {
@@ -34,7 +34,7 @@ public class KMeansAlgorithm<T> implements ClusterizationAlgorithm<T> {
     }
     int fullIndex = 0;
     for (final T point : dataSet) {
-      final Vec vec = data2DVector.compute(point);
+      final Vec vec = data2DVector.apply(point);
       final int index = fullIndex++ % centroids.length;
       if (centroids[index] == null)
         //noinspection unchecked
@@ -55,7 +55,7 @@ public class KMeansAlgorithm<T> implements ClusterizationAlgorithm<T> {
       }
 
       for (final T point : dataSet) {
-        final Vec vec = data2DVector.compute(point);
+        final Vec vec = data2DVector.apply(point);
         double minResemblance = Double.MAX_VALUE;
         int minIndex = -1;
         for (int i = 0; i < centroids.length; i++) {
@@ -84,7 +84,7 @@ public class KMeansAlgorithm<T> implements ClusterizationAlgorithm<T> {
       double meanDist = 0;
       final Vec centroid = centroids[index++];
       for (final T term : cluster) {
-        meanDist += VecTools.distanceAV(data2DVector.compute(term), centroid);
+        meanDist += VecTools.distanceAV(data2DVector.apply(term), centroid);
       }
       meanDist /= cluster.size();
       if (meanDist > maxDist) {

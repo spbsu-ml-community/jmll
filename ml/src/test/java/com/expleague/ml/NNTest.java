@@ -1,10 +1,7 @@
 package com.expleague.ml;
 
-import com.expleague.commons.func.Action;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.Trans;
-import com.expleague.commons.math.TransC1;
 import com.expleague.commons.math.io.Vec2CharSequenceConverter;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
@@ -20,7 +17,6 @@ import com.expleague.ml.meta.items.QURLItem;
 import com.expleague.ml.methods.StochasticGradientDescent;
 import com.expleague.ml.models.nn.LayeredNetwork;
 import com.expleague.ml.models.nn.NeuralSpider;
-import com.expleague.commons.func.Processor;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.CharSeq;
@@ -42,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -98,18 +95,15 @@ public abstract class NNTest {
     };
     final Mx data = pool.vecData().data();
     final LL ll = pool.target(LL.class);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final Vec row = data.row(argument.id);
-        return network.decisionByInput(row);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final Vec row = data.row(argument.id);
+      return network.decisionByInput(row);
     });
     final DSSumFuncComposite<FakeItem>.Decision decision = gradientDescent.fit(pool.data(), target);
     System.out.println(decision.x);
     final Vec vals = new ArrayVec(pool.size());
     for (int i = 0; i < vals.length(); i++) {
-      vals.set(i, decision.compute(pool.data().at(i)).get(0));
+      vals.set(i, decision.apply(pool.data().at(i)).get(0));
     }
     System.out.println(Math.exp(-ll.value(vals) / ll.dim()));
     Assert.assertTrue(1.1 > Math.exp(-ll.value(vals) / ll.dim()));
@@ -244,11 +238,11 @@ public abstract class NNTest {
 //        }
       }
     };
-    final Action<Vec> pp = new Action<Vec>() {
+    final Consumer<Vec> pp = new Consumer<Vec>() {
       int index = 0;
 
       @Override
-      public void invoke(Vec vec) {
+      public void accept(Vec vec) {
         if (++index == 1) {
           nfa.ppSolution(vec);
           {
@@ -266,12 +260,9 @@ public abstract class NNTest {
     };
     gradientDescent.addListener(pp);
     final MLL logit = pool.target(MLL.class);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), logit, new Computable<FakeItem, TransC1>() {
-      @Override
-      public TransC1 compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return nfa.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), logit, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return nfa.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
 
@@ -333,22 +324,19 @@ public abstract class NNTest {
       }
     };
     final MLL ll = pool.target(MLL.class);
-    final Action<Vec> pp = new Action<Vec>() {
+    final Consumer<Vec> pp = new Consumer<Vec>() {
       int index = 0;
       @Override
-      public void invoke(Vec vec) {
+      public void accept(Vec vec) {
         if (++index % 100 == 1) {
           network.ppSolution(vec, '/');
         }
       }
     };
     gradientDescent.addListener(pp);
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
     final Vec solution = fit.x;
@@ -404,10 +392,10 @@ public abstract class NNTest {
         }
       }
     };
-    final Action<Vec> pp = new Action<Vec>() {
+    final Consumer<Vec> pp = new Consumer<Vec>() {
       int index = 0;
       @Override
-      public void invoke(Vec vec) {
+      public void accept(Vec vec) {
         if (++index % 1000 == 1) {
           network.ppSolution(vec, 'h');
           network.ppSolution(vec, 't');
@@ -423,12 +411,9 @@ public abstract class NNTest {
     gradientDescent.init(initial);
 //    digIntoSolution(pool, network, ll, initial, "www.yandex.ru/yandsearch?text=xyu.htm", "www.yandex.ru");
 
-    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, new Computable<FakeItem, TransC1>() {
-      @Override
-      public NeuralSpider.NeuralNet compute(final FakeItem argument) {
-        final CharSeq seq = pool.feature(0, argument.id);
-        return network.decisionByInput(seq);
-      }
+    final DSSumFuncComposite<FakeItem> target = new DSSumFuncComposite<>(pool.data(), ll, argument -> {
+      final CharSeq seq = pool.feature(0, argument.id);
+      return network.decisionByInput(seq);
     });
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
     digIntoSolution(pool, network, ll, fit.x, "www.yamdex.ru/yandsearch?text=xyu.htm", "www.yamdex.ru");
@@ -441,12 +426,12 @@ public abstract class NNTest {
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     CharSeqTools.processLines(
             new InputStreamReader(new GZIPInputStream(new FileInputStream("/Users/solar/tree/java/relpred/trunk/relpred/main/tests/data/in/train.txt.gz"))),
-            new Processor<CharSequence>() {
+            new Consumer<CharSequence>() {
               CharSequence[] parts = new CharSequence[2];
               boolean next = true;
 
               @Override
-              public void process(CharSequence arg) {
+              public void accept(CharSequence arg) {
                 CharSeqTools.split(arg, '\t', parts);
                 final CharSeq next = CharSeq.create(parts[0]);
                 final int nextClass = CharSeqTools.parseInt(CharSeqTools.split(parts[1], ':')[1]);
@@ -488,10 +473,10 @@ public abstract class NNTest {
       }
     };
     final MLL ll = pool.target(MLL.class);
-    final Action<Vec> pp = new Action<Vec>() {
+    final Consumer<Vec> pp = new Consumer<Vec>() {
       int index = 0;
       @Override
-      public void invoke(Vec vec) {
+      public void accept(Vec vec) {
         if (++index % 10 == 1) {
           double sum = 0;
           int count = 0;
@@ -514,7 +499,7 @@ public abstract class NNTest {
     final DSSumFuncComposite<FakeItem>.Decision fit = gradientDescent.fit(pool.data(), target);
     final Vec vals = new ArrayVec(pool.size());
     for (int i = 0; i < vals.length(); i++) {
-      vals.set(i, fit.compute(pool.data().at(i)).get(0));
+      vals.set(i, fit.apply(pool.data().at(i)).get(0));
     }
     network.ppSolution(fit.x);
     digIntoSolution(pool, network, ll, fit.x, null, null);

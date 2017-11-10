@@ -18,6 +18,8 @@ import com.expleague.ml.loss.L2;
 import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.testUtils.TestResourceLoader;
 import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -144,6 +146,17 @@ public class DataToolsTest extends GridTest {
 
   public void testEmptyCSV() throws Exception {
     DataTools.csvLines(new StringReader("")).forEach(System.out::println);
+  }
+
+  public void testEmptyValue() throws Exception {
+    String data =
+        "\"week\",\"categoryId\",\"productOpen\",\"productToCart\",\"productToFavorites\",\"productPurchase\"\n" +
+            "\"0\",\"1482944890164121278-235-2-629-2442933182\",\"141414\",\"15308\",\"4180\",\"2184\"\n" +
+            "\"2\",\"\",\"0\",\"2\",\"7\",\"0\"\n";
+
+    DataTools.readCSVWithHeader(new StringReader(data), (row) -> {
+      Assert.assertNotNull(row.asString("categoryId", ""));
+    });
   }
 
   @Override

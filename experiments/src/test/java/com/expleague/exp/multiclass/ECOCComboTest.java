@@ -1,7 +1,6 @@
 package com.expleague.exp.multiclass;
 
 import com.expleague.exp.multiclass.spoc.full.mx.optimization.ECOCMulticlass;
-import com.expleague.commons.func.Action;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
@@ -50,6 +49,7 @@ import junit.framework.TestCase;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 public class ECOCComboTest extends TestCase {
   private static Pool<?> learn;
@@ -83,14 +83,11 @@ public class ECOCComboTest extends TestCase {
 
     final int k = MCTools.countClasses(mllLogit.labels());
     final ECOCCombo ecocComboMethod = new ECOCCombo(k, k, 5.0, 2.5, 3.0, S, new CustomWeakBinClass(100, 0.3));
-    final Action<MulticlassCodingMatrixModel> listener = new Action<MulticlassCodingMatrixModel>() {
-      @Override
-      public void invoke(final MulticlassCodingMatrixModel model) {
-        System.out.println("L == " + model.getInternalModel().ydim());
-        System.out.println(getPairwiseInteractions(model));
-        System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", true));
-        System.out.println(MCTools.evalModel(model, test, "[TEST] ", true));
-      }
+    final Consumer<com.expleague.ml.models.multiclass.MulticlassCodingMatrixModel> listener = model -> {
+      System.out.println("L == " + model.getInternalModel().ydim());
+      System.out.println(getPairwiseInteractions(model));
+      System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", true));
+      System.out.println(MCTools.evalModel(model, test, "[TEST] ", true));
     };
     ecocComboMethod.addListener(listener);
     final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) ecocComboMethod.fit(vecDataSet, mllLogit);
@@ -106,14 +103,11 @@ public class ECOCComboTest extends TestCase {
 
     final int k = MCTools.countClasses(mllLogit.labels());
     final ECOCCombo ecocComboMethod = new ECOCCombo(k, k, 5.0, 2.5, 3.0, S, new CustomWeakBinClass(100, 0.3));
-    final Action<MulticlassCodingMatrixModel> listener = new Action<MulticlassCodingMatrixModel>() {
-      @Override
-      public void invoke(final MulticlassCodingMatrixModel model) {
-        System.out.println("L == " + model.getInternalModel().ydim());
-        System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", true));
-        System.out.println(MCTools.evalModel(model, test, "[TEST] ", true));
-        System.out.println();
-      }
+    final Consumer<com.expleague.ml.models.multiclass.MulticlassCodingMatrixModel> listener = model -> {
+      System.out.println("L == " + model.getInternalModel().ydim());
+      System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", true));
+      System.out.println(MCTools.evalModel(model, test, "[TEST] ", true));
+      System.out.println();
     };
     ecocComboMethod.addListener(listener);
     final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) ecocComboMethod.fit(vecDataSet, mllLogit);
@@ -130,19 +124,16 @@ public class ECOCComboTest extends TestCase {
 
     final int k = MCTools.countClasses(mllLogit.labels());
     final ECOCCombo ecocComboMethod = new ECOCCombo(k, k, 5.0, 2.5, 3.0, S, new CustomWeakBinClass(100, 0.3));
-    final Action<MulticlassCodingMatrixModel> listener = new Action<MulticlassCodingMatrixModel>() {
-      @Override
-      public void invoke(final MulticlassCodingMatrixModel model) {
-        final Mx mx = getPairwiseInteractions(model);
-        VecTools.scale(S, lambda);
-        VecTools.scale(mx, 1 - lambda);
-        VecTools.append(S, mx);
+    final Consumer<com.expleague.ml.models.multiclass.MulticlassCodingMatrixModel> listener = model -> {
+      final Mx mx = getPairwiseInteractions(model);
+      VecTools.scale(S, lambda);
+      VecTools.scale(mx, 1 - lambda);
+      VecTools.append(S, mx);
 
-        System.out.println("L == " + model.getInternalModel().ydim());
-        System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", true));
-        System.out.println(MCTools.evalModel(model, test, "[TEST] ", true));
-        System.out.println();
-      }
+      System.out.println("L == " + model.getInternalModel().ydim());
+      System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", true));
+      System.out.println(MCTools.evalModel(model, test, "[TEST] ", true));
+      System.out.println();
     };
     ecocComboMethod.addListener(listener);
     final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) ecocComboMethod.fit(vecDataSet, mllLogit);
@@ -262,13 +253,10 @@ public class ECOCComboTest extends TestCase {
 
     final int factorIters = 25;
     final ALS als = new ALS(factorIters);
-    final Action<Pair<Vec, Vec>> action = new Action<Pair<Vec, Vec>>() {
-      @Override
-      public void invoke(final Pair<Vec, Vec> pair) {
-        final Vec h = pair.getFirst();
-        final Vec b = pair.getSecond();
-        System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", RMSE = " + rmse(gradient, VecTools.outer(h, b)));
-      }
+    final Consumer<Pair<Vec,Vec>> action = pair -> {
+      final Vec h = pair.getFirst();
+      final Vec b = pair.getSecond();
+      System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", RMSE = " + rmse(gradient, VecTools.outer(h, b)));
     };
     als.addListener(action);
     als.factorize(gradient);
@@ -281,7 +269,7 @@ public class ECOCComboTest extends TestCase {
 
   public void testGradMxApproxSVDN() throws Exception {
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
-    final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
+    final Mx gradient = globalLoss.gradient(new ArrayVec(globalLoss.dim()));
     double time = System.currentTimeMillis();
 
     for (int factorDim = gradient.columns(); factorDim >= 1; factorDim--)
@@ -325,7 +313,7 @@ public class ECOCComboTest extends TestCase {
 
   private static void applyFactorMethod(final Factorization method) {
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
-    final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
+    final Mx gradient = globalLoss.gradient(new ArrayVec(globalLoss.dim()));
     final Pair<Vec, Vec> pair = method.factorize(gradient);
     final Vec h = pair.getFirst();
     final Vec b = pair.getSecond();

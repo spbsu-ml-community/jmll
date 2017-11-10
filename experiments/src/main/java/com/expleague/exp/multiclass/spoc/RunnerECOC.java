@@ -1,6 +1,5 @@
 package com.expleague.exp.multiclass.spoc;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
@@ -12,7 +11,6 @@ import com.expleague.commons.util.Pair;
 import com.expleague.ml.BFGrid;
 import com.expleague.commons.math.Func;
 import com.expleague.ml.GridTools;
-import com.expleague.commons.math.Trans;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.expleague.ml.cli.builders.data.impl.PoolReaderFeatureTxt;
 import com.expleague.ml.cli.builders.data.impl.PoolReaderJson;
@@ -34,6 +32,7 @@ import com.expleague.ml.models.multiclass.MulticlassCodingMatrixModel;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 /**
  * User: qdeee
@@ -82,7 +81,7 @@ public class RunnerECOC {
     final int k = MCTools.countClasses(mllLogit.labels());
 
     final ECOCCombo ecocComboMethod = new ECOCCombo(k, l, lambdaC, lambdaR, lambda1, S, createWeak(grid, iters, step));
-    final Action<MulticlassCodingMatrixModel> listener = model -> {
+    final Consumer<com.expleague.ml.models.multiclass.MulticlassCodingMatrixModel> listener = model -> {
       if (updatePrior && model.getCodingMatrix().columns() >= firstColumnForUpdate) {
         final Mx mx = getPairwiseInteractions(model, learn, targetBasedUpdate);
         VecTools.scale(S, lambdaPrior);
@@ -96,23 +95,21 @@ public class RunnerECOC {
       System.out.println();
     };
     ecocComboMethod.addListener(listener);
-    final MulticlassCodingMatrixModel model = (MulticlassCodingMatrixModel) ecocComboMethod.fit(vecDataSet, mllLogit);
+    final MulticlassCodingMatrixModel model = ecocComboMethod.fit(vecDataSet, mllLogit);
     System.out.println("\n\n\n");
     System.out.println(MCTools.evalModel(model, learn, "[LEARN] ", false));
     System.out.println(MCTools.evalModel(model, test, "[TEST] ", false));
   }
 
   private static VecOptimization<LLLogit> createWeak(final BFGrid grid, final int iters, final double step) {
-    return new VecOptimization<LLLogit>() {
-      @Override
-      public Trans fit(final VecDataSet learn, final LLLogit llLogit) {
-        final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(grid, 5), iters, step);
-        final Ensemble ensemble = boosting.fit(learn, llLogit);
-        return new FuncEnsemble(
-            ArrayTools.map(ensemble.models, Func.class, argument -> (Func) argument),
-            ensemble.weights
-        );
-      }
+    return (learn, llLogit) -> {
+      final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<>(grid, 5), iters, step);
+      final Ensemble ensemble = boosting.fit(learn, llLogit);
+      //noinspection unchecked
+      return new FuncEnsemble(
+          ArrayTools.map(ensemble.models, Func.class, argument -> (Func) argument),
+          ensemble.weights
+      );
     };
   }
 

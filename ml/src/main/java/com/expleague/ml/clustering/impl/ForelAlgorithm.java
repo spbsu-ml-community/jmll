@@ -1,6 +1,5 @@
 package com.expleague.ml.clustering.impl;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
@@ -9,6 +8,7 @@ import com.expleague.ml.clustering.ClusterizationAlgorithm;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Function;
 
 import static com.expleague.commons.math.vectors.VecTools.scale;
 
@@ -27,13 +27,13 @@ public class ForelAlgorithm<T> implements ClusterizationAlgorithm<T> {
 
   @NotNull
   @Override
-  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Computable<T, Vec> data2DVector) {
+  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Function<T, Vec> data2DVector) {
     int count = 0;
     final List<Set<T>> clusters = new ArrayList<Set<T>>();
     final Set<T> unclassified = new HashSet<T>(dataSet);
     while (!unclassified.isEmpty()) {
       final T first = unclassified.iterator().next();
-      final Vec vec = data2DVector.compute(first);
+      final Vec vec = data2DVector.apply(first);
       @SuppressWarnings({"unchecked"})
       final Set<T> cluster = new HashSet<T>();
       Vec centroid = VecTools.copy(vec);
@@ -45,7 +45,7 @@ public class ForelAlgorithm<T> implements ClusterizationAlgorithm<T> {
         cluster.add(first);
         unclassified.remove(first);
         for (final T currentTerm : unclassified) {
-          final Vec currentVec = data2DVector.compute(currentTerm);
+          final Vec currentVec = data2DVector.apply(currentTerm);
           final double distance = 1 - VecTools.cosine(centroid, currentVec);
           count ++;
           if (distance < maxDist && !cluster.contains(currentTerm)) {

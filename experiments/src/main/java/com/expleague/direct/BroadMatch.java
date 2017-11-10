@@ -1,6 +1,5 @@
 package com.expleague.direct;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.io.codec.seq.DictExpansion;
 import com.expleague.commons.io.codec.seq.ListDictionary;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * User: solar
@@ -42,11 +42,11 @@ public class BroadMatch {
       case "-dict": {
         final DictExpansion<CharSeq> expansion = new DictExpansion<>(Integer.parseInt(args[1]), System.out);
         final String outputFile = args[2];
-        final Action<DictExpansion<CharSeq>> printer = new Action<DictExpansion<CharSeq>>() {
+        final Consumer<DictExpansion<CharSeq>> printer = new Consumer<DictExpansion<CharSeq>>() {
           int dictIndex = 0;
 
           @Override
-          public void invoke(DictExpansion<CharSeq> result) {
+          public void accept(DictExpansion<CharSeq> result) {
             try {
               System.out.println("Dump dictionary #" + dictIndex);
               result.print(new FileWriter(StreamTools.stripExtension(outputFile) + "-" + dictIndex + ".dict"));
@@ -60,11 +60,11 @@ public class BroadMatch {
         expansion.addListener(printer);
         final ThreadPoolExecutor executor = ThreadTools.createBGExecutor("Creating DictExpansion", 100000);
         for (int i = 3; i < args.length; i++) {
-          CharSeqTools.processLines(StreamTools.openTextFile(args[i]), new Action<CharSequence>() {
+          CharSeqTools.processLines(StreamTools.openTextFile(args[i]), new Consumer<CharSequence>() {
             String current;
 
             @Override
-            public void invoke(CharSequence line) {
+            public void accept(CharSequence line) {
               final CharSequence[] parts = new CharSequence[3];
               if (CharSeqTools.split(line, '\t', parts).length != 3)
                 throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + outputFile + ":" + index + " does not.");
@@ -107,14 +107,14 @@ public class BroadMatch {
 
         for (int i = 3; i < args.length; i++) {
           final String fileName = args[i];
-          CharSeqTools.processLines(StreamTools.openTextFile(fileName), new Action<CharSequence>() {
+          CharSeqTools.processLines(StreamTools.openTextFile(fileName), new Consumer<CharSequence>() {
             long ts;
             String query;
             String user;
             IntSeq prevQSeq;
 
             @Override
-            public void invoke(CharSequence line) {
+            public void accept(CharSequence line) {
               final CharSequence[] parts = new CharSequence[3];
               if (CharSeqTools.split(line, '\t', parts).length != 3)
                 throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + fileName + ":" + index + " does not.");
@@ -170,7 +170,7 @@ public class BroadMatch {
         final String outputFile = args[2];
         //noinspection LoopStatementThatDoesntLoop
         for (int i = 3; i < args.length; i++) {
-          CharSeqTools.processLines(StreamTools.openTextFile(args[i]), new Action<CharSequence>() {
+          CharSeqTools.processLines(StreamTools.openTextFile(args[i]), new Consumer<CharSequence>() {
             long ts;
             String query;
             String user;
@@ -178,7 +178,7 @@ public class BroadMatch {
             double totalFreq = freqs.sum();
 
             @Override
-            public void invoke(CharSequence line) {
+            public void accept(CharSequence line) {
               final CharSequence[] parts = new CharSequence[3];
               if (CharSeqTools.split(line, '\t', parts).length != 3)
                 throw new IllegalArgumentException("Each input line must contain <uid>\\t<ts>\\t<query> triplet. This one: [" + line + "]@" + args[i] + ":" + index + " does not.");
@@ -257,7 +257,7 @@ public class BroadMatch {
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqs);
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqs);
         model.load(args[2]);
-        CharSeqTools.processLines(new InputStreamReader(System.in, StreamTools.UTF), (Action<CharSequence>) arg -> {
+        CharSeqTools.processLines(new InputStreamReader(System.in, StreamTools.UTF), arg -> {
           String query = arg.toString();
           normalizeQuery(query);
           System.out.println(model.findTheBestExpansion(convertToSeq(normalizeQuery(arg.toString()))));
@@ -290,7 +290,7 @@ public class BroadMatch {
       });
       final List<Seq<CharSeq>> dictSeqs = new ArrayList<>();
 
-      CharSeqTools.processLines(StreamTools.openTextFile(arg), (Action<CharSequence>) line -> {
+      CharSeqTools.processLines(StreamTools.openTextFile(arg), line -> {
         final CharSequence[] split = CharSeqTools.split(line, '\t', new CharSequence[2]);
         final CharSequence[] parts = CharSeqTools.split(split[0].subSequence(1, split[0].length() - 1), ", ");
         final SeqBuilder<CharSeq> builder = new ArraySeqBuilder<>(CharSeq.class);

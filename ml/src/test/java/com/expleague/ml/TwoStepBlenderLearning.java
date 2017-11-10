@@ -1,6 +1,5 @@
 package com.expleague.ml;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.ml.data.set.VecDataSet;
@@ -26,6 +25,7 @@ import gnu.trove.list.array.TIntArrayList;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import static com.expleague.commons.math.vectors.VecTools.scale;
 
@@ -60,8 +60,8 @@ public class TwoStepBlenderLearning {
       final L2 phaseOneTarget = learn.target(L2.class);
       final VecDataSet queryOnlyLearn = learn.joinFeatures(queryFeatures, learn.data());
       final VecDataSet queryOnlyTest = test.joinFeatures(queryFeatures, test.data());
-      final Action<Trans> learnTracker = new ScorePrinter("Learn", queryOnlyLearn, phaseOneTarget);
-      final Action<Trans> testTracker = new ScorePrinter("Test", queryOnlyTest, test.target(L2.class));
+      final Consumer<Trans> learnTracker = new ScorePrinter("Learn", queryOnlyLearn, phaseOneTarget);
+      final Consumer<Trans> testTracker = new ScorePrinter("Test", queryOnlyTest, test.target(L2.class));
       final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(GridTools.medianGrid(queryOnlyLearn, 32), 6), LOOL2.class, 2000, 0.005);
       boosting.addListener(learnTracker);
       boosting.addListener(testTracker);
@@ -108,8 +108,8 @@ public class TwoStepBlenderLearning {
       final TargetFunc phaseTwoLearn = new L2((Vec)learn.target(PHASE_TWO_TARGET), learn.data());
       final TargetFunc phaseTwoTest = new L2((Vec)test.target(PHASE_TWO_TARGET), test.data());
 
-      final Action<Trans> learnTracker = new ScorePrinter("Learn", learn.vecData(), phaseTwoLearn);
-      final Action<Trans> testTracker = new ScorePrinter("Test", test.vecData(), phaseTwoTest);
+      final Consumer<Trans> learnTracker = new ScorePrinter("Learn", learn.vecData(), phaseTwoLearn);
+      final Consumer<Trans> testTracker = new ScorePrinter("Test", test.vecData(), phaseTwoTest);
       final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(grid, 6), LOOL2.class, 3000, 0.005);
       boosting.addListener(learnTracker);
       boosting.addListener(testTracker);

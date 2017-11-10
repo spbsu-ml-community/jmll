@@ -1,6 +1,5 @@
 package com.expleague.ml.clustering.impl;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.ml.clustering.ClusterizationAlgorithm;
@@ -11,6 +10,7 @@ import gnu.trove.procedure.TObjectProcedure;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * User: solar
@@ -65,7 +65,7 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
 
   @NotNull
   @Override
-  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Computable<T, Vec> data2DVector) {
+  public Collection<? extends Collection<T>> cluster(final Collection<T> dataSet, final Function<T, Vec> data2DVector) {
     final TreeSet<VecIterEntry> iters = new TreeSet<>();
     final TIntObjectHashMap<VecIterEntry> cache = new TIntObjectHashMap<VecIterEntry>();
     final List<IndexedVecIter<T>> entries = new ArrayList<IndexedVecIter<T>>();
@@ -73,7 +73,7 @@ public class ConnectedComponentOptimizer<T> implements ClusterizationAlgorithm<T
     {
       int index = 1;
       for (final T t : dataSet) {
-        final Vec vec = data2DVector.compute(t);
+        final Vec vec = data2DVector.apply(t);
         final VecIterator iter = vec.nonZeroes();
         while (iter.advance() && iter.value() < minToJoin);
         if (iter.isValid()) {

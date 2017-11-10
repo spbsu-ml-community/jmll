@@ -1,7 +1,6 @@
 package com.expleague.ml.data.tools;
 
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.func.types.SerializationRepository;
 import com.expleague.commons.func.types.impl.TypeConvertersCollection;
 import com.expleague.commons.io.StreamTools;
@@ -44,7 +43,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import com.expleague.commons.func.Processor;
 import com.expleague.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
@@ -72,6 +70,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
@@ -98,11 +97,11 @@ public class DataTools {
     final VecBuilder target = new VecBuilder();
     final VecBuilder data = new VecBuilder();
     final int[] featuresCount = new int[]{-1};
-    CharSeqTools.processLines(in, new Processor<CharSequence>() {
+    CharSeqTools.processLines(in, new Consumer<CharSequence>() {
       int lindex = 0;
 
       @Override
-      public void process(final CharSequence arg) {
+      public void accept(final CharSequence arg) {
         lindex++;
         final CharSequence[] parts = CharSeqTools.split(arg, '\t');
         items.add(new QURLItem(CharSeqTools.parseInt(parts[0]), parts[2].toString(), CharSeqTools.parseInt(parts[3])));
@@ -137,11 +136,11 @@ public class DataTools {
     final VecBuilder target = new VecBuilder();
     final VecBuilder data = new VecBuilder();
 
-    CharSeqTools.processLines(in, new Processor<CharSequence>() {
+    CharSeqTools.processLines(in, new Consumer<CharSequence>() {
       int lindex = -1;
 
       @Override
-      public void process(final CharSequence arg) {
+      public void accept(final CharSequence arg) {
         lindex++;
         if (lindex == 0 && poolDescription.hasHeaderColumn()) {
           return;
@@ -203,34 +202,34 @@ public class DataTools {
     return new CatboostPool(vecData, targetVec, catFeatureIds);
   }
 
-  public static void writeModel(final Computable result, final File to) throws IOException {
+  public static void writeModel(final Function result, final File to) throws IOException {
     final BFGrid grid = grid(result);
     StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
         SERIALIZATION.write(result)), to);
   }
 
-  public static <T extends Computable> T readModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+  public static <T extends Function> T readModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(inputStream));
     final String line = modelReader.readLine();
     final CharSequence[] parts = CharSeqTools.split(line, '\t');
     //noinspection unchecked
-    final Class<? extends Computable> modelClazz = (Class<? extends Computable>) Class.forName(parts[0].toString());
+    final Class<? extends Function> modelClazz = (Class<? extends Function>) Class.forName(parts[0].toString());
     //noinspection unchecked
     return (T) serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
   }
 
-  public static <T extends Computable> T readModel(final String fileName, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+  public static <T extends Function> T readModel(final String fileName, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
     return readModel(new FileInputStream(fileName), serializationRepository);
   }
 
-  public static <T extends Computable> T readModel(final InputStream modelInputStream, final InputStream gridInputStream) throws IOException, ClassNotFoundException {
+  public static <T extends Function> T readModel(final InputStream modelInputStream, final InputStream gridInputStream) throws IOException, ClassNotFoundException {
     final ModelsSerializationRepository repository = new ModelsSerializationRepository();
     final BFGrid grid = repository.read(StreamTools.readStream(gridInputStream), BFGrid.class);
     final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
     return readModel(modelInputStream, customizedRepository);
   }
 
-  public static void writeBinModel(final Computable result, final File file) throws IOException {
+  public static void writeBinModel(final Function result, final File file) throws IOException {
     if (result instanceof Ensemble) {
       final Ensemble<Trans> ensemble = (Ensemble) result;
       if (ensemble.models.length == 0)
@@ -267,7 +266,7 @@ public class DataTools {
     return validateModel(new FileInputStream(filePath), repository);
   }
 
-  public static DynamicGrid dynamicGrid(final Computable<?, Vec> result) {
+  public static DynamicGrid dynamicGrid(final Function<?,Vec> result) {
     if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
       return dynamicGrid(ensemble.last());
@@ -278,7 +277,7 @@ public class DataTools {
     return null;
   }
 
-  public static BFGrid grid(final Computable<?, Vec> result) {
+  public static BFGrid grid(final Function<?,Vec> result) {
     if (result instanceof CompositeTrans) {
       final CompositeTrans composite = (CompositeTrans) result;
       BFGrid grid = grid(composite.f);
@@ -390,11 +389,11 @@ public class DataTools {
     return result;
   }
 
-  public static <T> Vec calcAll(final Computable<T, Vec> result, final DataSet<T> data) {
+  public static <T> Vec calcAll(final Function<T, Vec> result, final DataSet<T> data) {
     final VecBuilder results = new VecBuilder(data.length());
     int dim = 0;
     for (int i = 0; i < data.length(); i++) {
-      final Vec vec = result.compute(data.at(i));
+      final Vec vec = result.apply(data.at(i));
       for (int j = 0; j < vec.length(); j++) {
         results.add(vec.at(j));
       }
@@ -415,15 +414,13 @@ public class DataTools {
     final JsonFactory jsonFactory = new JsonFactory();
     jsonFactory.disable(JsonGenerator.Feature.QUOTE_FIELD_NAMES);
     jsonFactory.configure(JsonParser.Feature.ALLOW_COMMENTS, false);
+    final JsonGenerator generator = jsonFactory.createGenerator(out);
     { // meta
       out.append("items").append('\t');
       final ObjectMapper mapper = new ObjectMapper(jsonFactory);
       final AnnotationIntrospector introspector =
           new JaxbAnnotationIntrospector(mapper.getTypeFactory());
       {
-        final StringWriter writer = new StringWriter();
-        final JsonGenerator generator = jsonFactory.createGenerator(writer);
-
         mapper.setAnnotationIntrospector(introspector);
         generator.writeStartObject();
         generator.writeStringField("id", pool.meta().id());
@@ -432,14 +429,11 @@ public class DataTools {
         generator.writeNumberField("created", pool.meta().created().getTime());
         generator.writeStringField("type", pool.meta().type().getCanonicalName());
         generator.writeEndObject();
-        generator.close();
-        out.append(writer.getBuffer());
+        generator.flush();
       }
 
       out.append('\t');
       {
-        final StringWriter writer = new StringWriter();
-        final JsonGenerator generator = jsonFactory.createGenerator(writer);
         generator.setCodec(mapper);
         generator.writeStartArray();
 
@@ -447,8 +441,7 @@ public class DataTools {
           generator.writeObject(pool.data().at(i));
         }
         generator.writeEndArray();
-        generator.close();
-        out.append(writer.getBuffer());
+        generator.flush();
       }
       out.append('\n');
     }
@@ -463,6 +456,7 @@ public class DataTools {
       writeFeature(out, jsonFactory, pool.targets.get(i));
     }
     out.flush();
+    generator.close();
   }
 
   private static void writeFeature(final Writer out, final JsonFactory jsonFactory,
@@ -595,11 +589,11 @@ public class DataTools {
     final VecBuilder targetBuilder = new VecBuilder();
     final List<Pair<TIntList, TDoubleList>> features = new ArrayList<>();
 
-    CharSeqTools.processLines(in, new Processor<CharSequence>() {
+    CharSeqTools.processLines(in, new Consumer<CharSequence>() {
       int lindex = 0;
 
       @Override
-      public void process(final CharSequence arg) {
+      public void accept(final CharSequence arg) {
         final CharSequence[] parts = CharSeqTools.split(arg, ' ');
 
         targetBuilder.add(CharSeqTools.parseDouble(parts[0]));

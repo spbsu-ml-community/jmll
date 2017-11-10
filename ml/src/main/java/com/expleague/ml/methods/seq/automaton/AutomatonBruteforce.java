@@ -1,6 +1,5 @@
 package com.expleague.ml.methods.seq.automaton;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.SingleValueVec;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.Seq;
@@ -10,13 +9,15 @@ import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.methods.seq.automaton.transform.AddTransitionTransform;
 
+import java.util.function.Function;
+
 public class AutomatonBruteforce<T, Loss extends L2> implements SeqOptimization<T, Loss> {
   private final Alphabet<T> alphabet;
-  private final Computable<AutomatonStats<T>, Double> stateEvaluation;
+  private final Function<AutomatonStats<T>, Double> stateEvaluation;
   private final int maxStateCount;
 
   public AutomatonBruteforce(final Alphabet<T> alphabet,
-                             final Computable<AutomatonStats<T>, Double> stateEvaluation,
+                             final Function<AutomatonStats<T>, Double> stateEvaluation,
                              final int maxStateCount) {
     this.alphabet = alphabet;
     this.stateEvaluation = stateEvaluation;
@@ -42,7 +43,7 @@ public class AutomatonBruteforce<T, Loss extends L2> implements SeqOptimization<
       ).applyTransform(automatonStats);
 
       final AutomatonStats<T> curAutomatonStats = bruteforce(curState, curAlpha + 1, newAutomatonStats);
-      final double curCost = stateEvaluation.compute(curAutomatonStats);
+      final double curCost = stateEvaluation.apply(curAutomatonStats);
 
       if (curCost < optCost) {
         optCost = curCost;
@@ -54,7 +55,7 @@ public class AutomatonBruteforce<T, Loss extends L2> implements SeqOptimization<
   }
 
   @Override
-  public Computable<Seq<T>, Vec> fit(DataSet<Seq<T>> learn, Loss loss) {
+  public Function<Seq<T>, Vec> fit(DataSet<Seq<T>> learn, Loss loss) {
     AutomatonStats<T> automatonStats = new AutomatonStats<T>(alphabet, learn, loss);
     for (int i = 1; i < maxStateCount; i++) {
       automatonStats.addNewState();
@@ -67,7 +68,7 @@ public class AutomatonBruteforce<T, Loss extends L2> implements SeqOptimization<
     for (int i = 0; i < automaton.getStateCount(); i++) {
       stateValue[i] = automatonStats.getStateSum().get(i) / automatonStats.getStateWeight().get(i);
     }
-    System.out.println("Cur cost = " + stateEvaluation.compute(automatonStats));
+    System.out.println("Cur cost = " + stateEvaluation.apply(automatonStats));
     return argument -> new SingleValueVec(stateValue[automaton.run(argument)]);
   }
 }

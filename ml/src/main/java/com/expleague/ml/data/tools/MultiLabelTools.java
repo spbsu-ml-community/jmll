@@ -1,10 +1,8 @@
 package com.expleague.ml.data.tools;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.math.Func;
-import com.expleague.commons.math.Trans;
 import com.expleague.ml.cli.output.printers.MultiLabelLogitProgressPrinter;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
@@ -13,13 +11,14 @@ import com.expleague.ml.models.multilabel.MultiLabelModel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * User: qdeee
  * Date: 20.03.15
  */
 public final class MultiLabelTools {
-  public static MultiLabelModel extractMultiLabelModel(final Computable model) {
+  public static MultiLabelModel extractMultiLabelModel(final Function model) {
     MultiLabelModel multiLabelModel = null;
     if (model instanceof MultiLabelModel) {
       multiLabelModel = (MultiLabelModel) model;
@@ -35,17 +34,12 @@ public final class MultiLabelTools {
     return multiLabelModel;
   }
 
-  public static void makeOVRReport(final Pool<?> learn, final Pool<?> test, final Computable model, final int period) {
+  public static void makeOVRReport(final Pool<?> learn, final Pool<?> test, final Function model, final int period) {
     if (model instanceof MultiLabelBinarizedModel) {
       final FuncJoin internModel = ((MultiLabelBinarizedModel) model).getInternModel();
 
       final MultiLabelLogitProgressPrinter progressPrinter = new MultiLabelLogitProgressPrinter(learn, test, period);
-      final FuncEnsemble<?>[] perLabelModels = ArrayTools.map(internModel.dirs, FuncEnsemble.class, new Computable<Trans, FuncEnsemble>() {
-        @Override
-        public FuncEnsemble compute(final Trans argument) {
-          return (FuncEnsemble<?>) argument;
-        }
-      });
+      final FuncEnsemble<?>[] perLabelModels = ArrayTools.map(internModel.dirs, FuncEnsemble.class, argument -> (FuncEnsemble<?>) argument);
       final int ensembleSize = perLabelModels[0].size();
       final int labelsCount = perLabelModels.length;
 
@@ -57,7 +51,7 @@ public final class MultiLabelTools {
           functions[c] = perLabelModels[c].models[t];
         }
         weakModels.add(new FuncJoin(functions));
-        progressPrinter.invoke(new Ensemble<>(weakModels, step));
+        progressPrinter.accept(new Ensemble<>(weakModels, step));
       }
     } else {
       throw new UnsupportedOperationException("Can't extract intern FuncJoin model");

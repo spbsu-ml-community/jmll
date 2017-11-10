@@ -1,6 +1,5 @@
 package com.expleague.ml.methods.wrappers;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.func.WeakListenerHolder;
 import com.expleague.commons.func.impl.WeakListenerHolderImpl;
 import com.expleague.commons.math.Trans;
@@ -13,6 +12,7 @@ import com.expleague.ml.TargetFunc;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * User: qdeee
@@ -27,17 +27,12 @@ public class MultiLabelWrapper<GlobalLoss extends TargetFunc> extends WeakListen
 
   @Override
   public MultiLabelModel fit(final VecDataSet learn, final GlobalLoss targetFunc) {
-    List<Action> internListeners = new ArrayList<>();
+    List<Consumer> internListeners = new ArrayList<>();
     if (strong instanceof WeakListenerHolder) {
-      for (WeakReference<Action<? super Trans>> externalListenerRef : listeners) {
-        final Action<? super Trans> externalListener = externalListenerRef.get();
+      for (WeakReference<Consumer<? super Trans>> externalListenerRef : listeners) {
+        final Consumer<? super Trans> externalListener = externalListenerRef.get();
         if (externalListener != null) {
-          final Action<Trans> internListener = new Action<Trans>() {
-            @Override
-            public void invoke(final Trans trans) {
-              externalListener.invoke(trans);
-            }
-          };
+          final Consumer<Trans> internListener = externalListener::accept;
           internListeners.add(internListener);
           ((WeakListenerHolder) strong).addListener(internListener);
         }

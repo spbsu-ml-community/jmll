@@ -1,6 +1,5 @@
 package com.expleague.ml.cli.output;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.tools.DataTools;
@@ -9,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Function;
 
 /**
  * User: qdeee
@@ -21,25 +21,25 @@ public class ModelWriter {
     this.outName = outName;
   }
 
-  public void tryWriteBinFormula(final Computable result) throws IOException {
+  public void tryWriteBinFormula(final Function result) throws IOException {
     DataTools.writeBinModel(result, new File(outName + ".model"));
   }
 
-  public void tryWriteGrid(final Computable result) throws IOException {
+  public void tryWriteGrid(final Function result) throws IOException {
     final @Nullable BFGrid grid = DataTools.grid(result);
     if (grid != null) {
       StreamTools.writeChars(DataTools.SERIALIZATION.write(grid), new File(outName + ".grid"));
     }
   }
 
-  public void tryWriteDynamicGrid(final Computable result) throws IOException {
+  public void tryWriteDynamicGrid(final Function result) throws IOException {
     final @Nullable DynamicGrid dynamicGrid = DataTools.dynamicGrid(result);
     if (dynamicGrid != null) {
       StreamTools.writeChars(DataTools.SERIALIZATION.write(dynamicGrid), new File(outName + ".dgrid"));
     }
   }
 
-  public void writeModel(final Computable result) throws IOException {
+  public void writeModel(final Function result) throws IOException {
     DataTools.writeModel(result, new File(outName + ".model"));
   }
 }

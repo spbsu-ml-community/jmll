@@ -144,7 +144,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
       return new FuncC1.Stub() {
         @Override
         public Vec gradientTo(Vec betta, Vec to) {
-          final Mx weights = calcer.compute(betta);
+          final Mx weights = calcer.apply(betta);
           final int bettaDim = pLen - 1;
           final int indexLocal = index;
           final int pStartLocal = pStart;
@@ -164,7 +164,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
 
         @Override
         public double value(Vec betta) {
-          final Mx weights = calcer.compute(betta);
+          final Mx weights = calcer.apply(betta);
           return VecTools.multiply(weights.row(index), betta.sub(pStart, pLen - 1));
         }
 
@@ -176,7 +176,7 @@ public class NFANetwork<T> extends NeuralSpider<T, Seq<T>> {
     }
 
     public FuncC1 transByParameters(Vec betta) {
-      final Mx weights = calcer.compute(betta);
+      final Mx weights = calcer.apply(betta);
       return new SubVecFuncC1(new WSum(weights.row(index)), pStart, pLen, nodesCount);
     }
   }

@@ -4,8 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.expleague.commons.func.Action;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
@@ -29,6 +27,8 @@ import junit.framework.TestCase;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -38,13 +38,7 @@ public class PGMEMLogDataTest extends TestCase {
   private static final int SIZE = 11;
 
   private FastRandom rng;
-  private Action<Pair<Integer, Double>> modelValidationListener = new Action<Pair<Integer, Double>>() {
-
-    @Override
-    public void invoke(Pair<Integer, Double> data) {
-      System.out.println("For top = " + data.first + " average probability: " + data.second);
-    }
-  };
+  private Consumer<Pair<Integer,Double>> modelValidationListener = data -> System.out.println("For top = " + data.first + " average probability: " + data.second);
   private LogsData learn;
   private LogsData validate;
 
@@ -87,7 +81,7 @@ public class PGMEMLogDataTest extends TestCase {
     testPartial(learn, 10, 100, PGMEM.FREQ_DENSITY_PRIOR_PATH);
   }
 
-  private void testPartial(LogsData ld, int partitionCount, int iterations, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy) throws IOException {
+  private void testPartial(LogsData ld, int partitionCount, int iterations, Function<ProbabilisticGraphicalModel, PGMEM.Policy> policy) throws IOException {
     int stepSize = ld.getRoutes().length / partitionCount;
     for (int i = 1; i <= partitionCount; i++) {
       Vec[] part = new Vec[i == partitionCount ? ld.getRoutes().length : i * stepSize];
@@ -99,16 +93,16 @@ public class PGMEMLogDataTest extends TestCase {
     }
   }
 
-  private ProbabilisticGraphicalModel getModel(VecDataSet dataSet, int iterations, Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, boolean listen)
+  private ProbabilisticGraphicalModel getModel(VecDataSet dataSet, int iterations, Function<ProbabilisticGraphicalModel, PGMEM.Policy> policy, boolean listen)
       throws IOException {
     final Mx original = new VecBasedMx(SIZE, VecTools.fill(new ArrayVec(SIZE * SIZE), 1.));
     PGMEM pgmem = new PGMEM(original, 0.2, iterations, rng, policy);
     if (listen) {
-      final Action<SimplePGM> listener = new Action<SimplePGM>() {
+      final Consumer<com.expleague.ml.models.pgm.SimplePGM> listener = new Consumer<SimplePGM>() {
         int iteration = 0;
 
         @Override
-        public void invoke(SimplePGM pgm) {
+        public void accept(SimplePGM pgm) {
           Interval.stopAndPrint("Iteration " + ++iteration);
           System.out.println();
           System.out.print(VecTools.distance(pgm.topology, original));
@@ -128,10 +122,10 @@ public class PGMEMLogDataTest extends TestCase {
     return fit;
   }
 
-  private void checkModel(ProbabilisticGraphicalModel model, int accuracyLimit, Action<Pair<Integer, Double>> listener) throws IOException {
+  private void checkModel(ProbabilisticGraphicalModel model, int accuracyLimit, Consumer<Pair<Integer,Double>> listener) throws IOException {
     VecDataSet check = new VecDataSetImpl(new RowsVecArrayMx(validate.getRoutes()), null);
     for (int i = 0; i < accuracyLimit; i++) {
-      listener.invoke(Pair.create(i, checkModel(check, (SimplePGM) model, i)));
+      listener.accept(Pair.create(i, checkModel(check, (SimplePGM) model, i)));
     }
   }
 
@@ -193,9 +187,9 @@ public class PGMEMLogDataTest extends TestCase {
 
     public LogsData(InputStream in) throws IOException {
       BufferedReader reader = null;
-      ArrayList<Vec> lrouts = new ArrayList<Vec>();
-      ArrayList<Vec> lrels = new ArrayList<Vec>();
-      ArrayList<Vec> ltypes = new ArrayList<Vec>();
+      ArrayList<Vec> lrouts = new ArrayList<>();
+      ArrayList<Vec> lrels = new ArrayList<>();
+      ArrayList<Vec> ltypes = new ArrayList<>();
       try {
         reader = new BufferedReader(new InputStreamReader(in));
         String line;

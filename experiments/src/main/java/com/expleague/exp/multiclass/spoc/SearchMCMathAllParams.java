@@ -1,10 +1,8 @@
 package com.expleague.exp.multiclass.spoc;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.MathTools;
-import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -177,24 +175,17 @@ public class SearchMCMathAllParams {
 
     @Override
     public String call() throws Exception {
-      final VecOptimization<LLLogit> weak = new VecOptimization<LLLogit>() {
-        @Override
-        public Func fit(final VecDataSet learn, final LLLogit llLogit) {
-          final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(grid, 5), SatL2.class, iters, step);
-          final Ensemble ensemble = boosting.fit(learn, llLogit);
-          return new FuncEnsemble(ArrayTools.map(ensemble.models, Func.class, new Computable<Trans, Func>() {
-            @Override
-            public Func compute(final Trans argument) {
-              return (Func)argument;
-            }
-          }), ensemble.weights);
-        }
+      final VecOptimization<LLLogit> weak = (learn, llLogit) -> {
+        final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<>(grid, 5), SatL2.class, iters, step);
+        final Ensemble ensemble = boosting.fit(learn, llLogit);
+        //noinspection unchecked
+        return new FuncEnsemble(ArrayTools.map(ensemble.models, Func.class, Func.class::cast), ensemble.weights);
       };
 
       final CodingMatrixLearning codingMatrixLearning = new CodingMatrixLearning(classCount, 5, lac, lar, la1, mls);
       final Mx mxB = codingMatrixLearning.findMatrixB(S);
       final SPOCMethodClassic spocMethodClassic = new SPOCMethodClassic(mxB, weak);
-      final MCModel model = (MCModel) spocMethodClassic.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
+      final MCModel model = spocMethodClassic.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
 
       final Vec predict = model.bestClassAll(test.vecData().data());
       final ConfusionMatrix cm = new ConfusionMatrix(

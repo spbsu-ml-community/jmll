@@ -1,6 +1,5 @@
 package com.expleague.ml.models.hmm;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
@@ -8,9 +7,11 @@ import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.regexp.Alphabet;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Function;
+
 import static java.lang.Math.exp;
 
-public class HiddenMarkovModel<T> implements Computable<Seq<T>,Vec> {
+public class HiddenMarkovModel<T> implements Function<Seq<T>,Vec> {
   private final Alphabet<T> alpha;
   private final int statesCount;
 
@@ -31,7 +32,7 @@ public class HiddenMarkovModel<T> implements Computable<Seq<T>,Vec> {
   }
 
   @Override
-  public Vec compute(Seq<T> argument) {
+  public Vec apply(Seq<T> argument) {
     return new SingleValueVec(value(argument));
   }
 

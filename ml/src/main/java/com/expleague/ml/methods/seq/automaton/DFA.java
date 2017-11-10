@@ -1,14 +1,14 @@
 package com.expleague.ml.methods.seq.automaton;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.SingleValueVec;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.regexp.Alphabet;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
-public class DFA<T> implements Computable<Seq<T>, Vec> {
+public class DFA<T> implements Function<Seq<T>, Vec> {
   private int stateCount = 0;
   private int[][] transitions = new int[0][];
   private final Alphabet<T> alphabet;
@@ -19,7 +19,7 @@ public class DFA<T> implements Computable<Seq<T>, Vec> {
   }
 
   @Override
-  public Vec compute(Seq<T> argument) {
+  public Vec apply(Seq<T> argument) {
     return new SingleValueVec(run(argument));
   }
 

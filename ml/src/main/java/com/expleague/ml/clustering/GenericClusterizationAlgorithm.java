@@ -1,9 +1,9 @@
 package com.expleague.ml.clustering;
 
-import com.expleague.commons.func.Computable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.function.Function;
 
 /**
  * User: terry
@@ -11,5 +11,5 @@ import java.util.Collection;
  */
 public interface GenericClusterizationAlgorithm<X, V> {
   @NotNull
-  Collection<? extends Collection<X>> cluster(Collection<X> dataSet, Computable<X, V> data2DVector);
+  Collection<? extends Collection<X>> cluster(Collection<X> dataSet, Function<X, V> data2DVector);
 }

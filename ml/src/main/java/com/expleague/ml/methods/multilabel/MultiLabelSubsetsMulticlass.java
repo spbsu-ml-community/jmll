@@ -1,6 +1,5 @@
 package com.expleague.ml.methods.multilabel;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.func.WeakListenerHolder;
 import com.expleague.commons.func.impl.WeakListenerHolderImpl;
@@ -31,6 +30,7 @@ import gnu.trove.procedure.TObjectIntProcedure;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * User: qdeee
@@ -90,18 +90,15 @@ public class MultiLabelSubsetsMulticlass extends WeakListenerHolderImpl<MultiLab
     final BlockwiseMLLLogit mllLogit = new BlockwiseMLLLogit(targetBuilder.build(), learn);
 
     //dirty hack for proxy listener
-    List<Action> tmp = new ArrayList<>();
+    List<Consumer> tmp = new ArrayList<>();
     final Vec[] filteredClass2VecArr = filteredClass2Vec.toArray(new Vec[filteredClass2Vec.size()]);
     if (weak instanceof WeakListenerHolder) {
-      for (final WeakReference<Action<? super MultiLabelSubsetsModel>> listener : listeners) {
-        final Action<? super MultiLabelSubsetsModel> multiLabelAction = listener.get();
+      for (final WeakReference<Consumer<? super com.expleague.ml.models.multilabel.MultiLabelSubsetsModel>> listener : listeners) {
+        final Consumer<? super com.expleague.ml.models.multilabel.MultiLabelSubsetsModel> multiLabelAction = listener.get();
         final WeakListenerHolder weakListenerHolder = (WeakListenerHolder) weak;
-        final Action<Ensemble> weakAction = new Action<Ensemble>() {
-          @Override
-          public void invoke(final Ensemble ensemble) {
-            final FuncJoin join = MCTools.joinBoostingResult(ensemble);
-            multiLabelAction.invoke(new MultiLabelSubsetsModel(new MultiClassModel(join), filteredClass2VecArr));
-          }
+        final Consumer<com.expleague.ml.func.Ensemble> weakAction = ensemble -> {
+          final FuncJoin join = MCTools.joinBoostingResult(ensemble);
+          multiLabelAction.accept(new MultiLabelSubsetsModel(new MultiClassModel(join), filteredClass2VecArr));
         };
         tmp.add(weakAction);
         weakListenerHolder.addListener(weakAction);

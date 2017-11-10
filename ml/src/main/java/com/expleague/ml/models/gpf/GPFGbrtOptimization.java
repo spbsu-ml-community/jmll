@@ -244,7 +244,7 @@ public class GPFGbrtOptimization {
     }
 
     @Override
-    public void invoke(final Trans partial) {
+    public void accept(final Trans partial) {
       final double learn_eL = Math.exp(-learn_loss.evalAverageLL(partial));
       final double valid_eL = Math.exp(-validate_loss.evalAverageLL(partial));
       learn_min = Math.min(learn_min, learn_eL);

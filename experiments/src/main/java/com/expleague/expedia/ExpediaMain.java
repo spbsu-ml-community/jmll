@@ -1,6 +1,5 @@
 package com.expleague.expedia;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.CharSeqBuilder;
@@ -21,6 +20,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -211,7 +211,7 @@ public class ExpediaMain {
     final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(command.getOptionValue(OUTPUT_OPTION))));
 
     final Pool<EventItem> pool = DataTools.readPoolFrom(in);
-    final Computable model = DataTools.readModel(new FileInputStream(command.getOptionValue(MODEL_OPTION)), new FileInputStream(command.getOptionValue(GRID_OPTION)));
+    final Function model = DataTools.readModel(new FileInputStream(command.getOptionValue(MODEL_OPTION)), new FileInputStream(command.getOptionValue(GRID_OPTION)));
     final Factor factor = Factor.load(command.getOptionValue(BUILDER_OPTION));
     final CTRBuilder<Integer> hotelCTR = CTRBuilder.load(command.getOptionValue(BUILDER_OPTION), "hotel-ctr");
 
@@ -243,7 +243,7 @@ public class ExpediaMain {
         final int hotel = srchHotels[i];
         current.set(features.dim(), hotelCTR.getCTR(hotel));
         current.set(features.dim() + 1, factor.getFactor(event.user, hotel));
-        value[i] = -((Ensemble) model).compute(current).get(0);
+        value[i] = -((Ensemble) model).apply(current).get(0);
         index[i] = i;
       }
 

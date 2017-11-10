@@ -2,7 +2,6 @@ package com.expleague.ml.methods.seq.automaton;
 
 import com.expleague.commons.math.MathTools;
 import com.expleague.ml.methods.seq.automaton.transform.*;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.SingleValueVec;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.Seq;
@@ -16,16 +15,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptimization<T, Loss> {
   private final int maxStateCount;
   private final Alphabet<T> alphabet;
-  private final Computable<AutomatonStats<T>, Double> stateEvaluation;
+  private final Function<AutomatonStats<T>, Double> stateEvaluation;
   private final int maxIterations;
   private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
 
   public IncrementalAutomatonBuilder(final Alphabet<T> alphabet,
-                                     final Computable<AutomatonStats<T>, Double> stateEvaluation,
+                                     final Function<AutomatonStats<T>, Double> stateEvaluation,
                                      final int maxStateCount,
                                      final int maxIterations) {
     this.alphabet = alphabet;
@@ -35,10 +35,10 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
   }
 
   @Override
-  public Computable<Seq<T>, Vec> fit(final DataSet<Seq<T>> learn, final Loss loss) {
+  public Function<Seq<T>, Vec> fit(final DataSet<Seq<T>> learn, final Loss loss) {
     AutomatonStats<T> automatonStats = new AutomatonStats<>(alphabet, learn, loss);
 
-    double oldCost = stateEvaluation.compute(automatonStats);
+    double oldCost = stateEvaluation.apply(automatonStats);
 
     for (int iter = 0; iter < maxIterations; iter++) {
 
@@ -63,8 +63,8 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
           e.printStackTrace();
           return null;
         }
-      }).min(Comparator.comparingDouble(stateEvaluation::compute)).orElse(null);
-      final double optCost = stateEvaluation.compute(optNewStats);
+      }).min(Comparator.comparingDouble(stateEvaluation::apply)).orElse(null);
+      final double optCost = stateEvaluation.apply(optNewStats);
 
       if (optNewStats == null || (optCost >= oldCost - 1e-9)) {
         System.out.println("Elapsed " + iter + " iterations");
@@ -92,7 +92,7 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
         stateValue[i] = automatonStats.getStateSum().get(i) / automatonStats.getStateWeight().get(i);
       }
     }
-    System.out.println("Cur cost = " + stateEvaluation.compute(automatonStats));
+    System.out.println("Cur cost = " + stateEvaluation.apply(automatonStats));
     return argument -> new SingleValueVec(stateValue[automaton.run(argument)]);
   }
 

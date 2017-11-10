@@ -1,6 +1,5 @@
 package com.expleague.ml.cli.modes.impl;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.MathTools;
@@ -24,6 +23,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.function.Function;
 
 /**
  * User: qdeee
@@ -52,7 +52,7 @@ public class Apply extends AbstractMode {
     }
 
     try (final OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(getOutputName(command) + ".values"))) {
-      final Computable model = DataTools.readModel(command.getOptionValue(JMLLCLI.MODEL_OPTION, "features.txt.model"), serializationRepository);
+      final Function model = DataTools.readModel(command.getOptionValue(JMLLCLI.MODEL_OPTION, "features.txt.model"), serializationRepository);
       final CharSeqBuilder value = new CharSeqBuilder();
 
       for (int i = 0; i < pool.size(); i++) {
@@ -66,9 +66,9 @@ public class Apply extends AbstractMode {
         if (model instanceof Func)
           value.append(MathTools.CONVERSION.convert(((Func) model).value(vecDataSet.at(i)), CharSequence.class));
         else if (model instanceof Ensemble && Func.class.isAssignableFrom(((Ensemble) model).componentType()))
-          value.append(MathTools.CONVERSION.convert(((Ensemble) model).compute(vecDataSet.at(i)).get(0), CharSequence.class));
+          value.append(MathTools.CONVERSION.convert(((Ensemble) model).apply(vecDataSet.at(i)).get(0), CharSequence.class));
         else
-          value.append(MathTools.CONVERSION.convert(model.compute(vecDataSet.at(i)), CharSequence.class));
+          value.append(MathTools.CONVERSION.convert(model.apply(vecDataSet.at(i)), CharSequence.class));
         writer.append(value).append('\n');
       }
     }

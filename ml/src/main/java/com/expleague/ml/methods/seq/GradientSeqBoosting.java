@@ -1,9 +1,7 @@
 package com.expleague.ml.methods.seq;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.func.impl.WeakListenerHolderImpl;
 import com.expleague.commons.math.Trans;
-import com.expleague.commons.math.vectors.SingleValueVec;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
@@ -16,9 +14,10 @@ import com.expleague.ml.methods.SeqOptimization;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 
-public class GradientSeqBoosting<T, GlobalLoss extends TargetFunc> extends WeakListenerHolderImpl<Computable<Seq<T>, Vec>> implements SeqOptimization<T, GlobalLoss> {
+public class GradientSeqBoosting<T, GlobalLoss extends TargetFunc> extends WeakListenerHolderImpl<Function<Seq<T>,Vec>> implements SeqOptimization<T, GlobalLoss> {
   protected final SeqOptimization<T, L2> weak;
   private final Class<? extends L2> factory;
   int iterationsCount;
@@ -37,33 +36,34 @@ public class GradientSeqBoosting<T, GlobalLoss extends TargetFunc> extends WeakL
   }
 
   @Override
-  public Computable<Seq<T>, Vec> fit(final DataSet<Seq<T>> learn, final GlobalLoss globalLoss) {
+  public Function<Seq<T>, Vec> fit(final DataSet<Seq<T>> learn, final GlobalLoss globalLoss) {
     final Vec cursor = new ArrayVec(globalLoss.xdim());
-    final List<Computable<Seq<T>, Vec>> weakModels = new ArrayList<>(iterationsCount);
+    final List<Function<Seq<T>,Vec>> weakModels = new ArrayList<>(iterationsCount);
     final Trans gradient = globalLoss.gradient();
     for (int t = 0; t < iterationsCount; t++) {
+      assert gradient != null;
       final Vec gradientValueAtCursor = gradient.trans(cursor);
       final L2 localLoss = DataTools.newTarget(factory, gradientValueAtCursor, learn);
       System.out.println("Iteration " + t + ". Gradient norm: " + VecTools.norm(localLoss.target));
-      final Computable<Seq<T>, Vec> weakModel = weak.fit(learn, localLoss);
+      final Function<Seq<T>, Vec> weakModel = weak.fit(learn, localLoss);
       weakModels.add(weakModel);
-      final Computable<Seq<T>, Vec> curRes = getResult(new ArrayList<>(weakModels));
+      final Function<Seq<T>,Vec> curRes = getResult(new ArrayList<>(weakModels));
       invoke(curRes);
       for (int i = 0; i < learn.length(); i++) {
-        cursor.adjust(i, weakModel.compute(learn.at(i)).get(0) * -step);
+        cursor.adjust(i, weakModel.apply(learn.at(i)).get(0) * -step);
       }
     }
     return getResult(weakModels);
   }
 
-  private Computable<Seq<T>, Vec> getResult(final List<Computable<Seq<T>, Vec>> weakModels) {
+  private Function<Seq<T>, Vec> getResult(final List<Function<Seq<T>,Vec>> weakModels) {
     return argument -> {
       Vec result = null;
-      for (Computable<Seq<T>, Vec> model: weakModels) {
+      for (Function<Seq<T>, Vec> model: weakModels) {
         if (result == null) {
-          result = model.compute(argument);
+          result = model.apply(argument);
         } else {
-          VecTools.append(result, model.compute(argument));
+          VecTools.append(result, model.apply(argument));
         }
       }
       VecTools.scale(result, -step);

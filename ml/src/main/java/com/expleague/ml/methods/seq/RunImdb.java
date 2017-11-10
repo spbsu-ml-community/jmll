@@ -1,7 +1,5 @@
 package com.expleague.ml.methods.seq;
 
-import com.expleague.commons.func.Action;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
@@ -21,6 +19,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class RunImdb {
@@ -158,7 +158,7 @@ public class RunImdb {
     );
 
 
-    Action<Computable<Seq<Integer>, Vec>> listener = classifier -> {
+    Consumer<Function<Seq<Integer>,Vec>> listener = classifier -> {
       System.out.println("Current time: " + new SimpleDateFormat("yyyy/MM/dd_HH:mm:ss").format(Calendar.getInstance().getTime()));
       System.out.println("Current accuracy:");
       System.out.println("Train accuracy: " + getAccuracy(train, trainTarget, classifier));
@@ -168,7 +168,7 @@ public class RunImdb {
     };
 
     boosting.addListener(listener);
-    final Computable<Seq<Integer>, Vec> classifier = boosting.fit(data, new LLLogit(trainTarget, null));
+    final Function<Seq<Integer>, Vec> classifier = boosting.fit(data, new LLLogit(trainTarget, null));
 
     System.out.println("Train accuracy: " + getAccuracy(train, trainTarget, classifier));
     System.out.println("Test accuracy: " + getAccuracy(test, testTarget, classifier));
@@ -204,10 +204,10 @@ public class RunImdb {
     return data;
   }
 
-  private double getAccuracy(List<Seq<Integer>> data, Vec target, Computable<Seq<Integer>, Vec> classifier) {
+  private double getAccuracy(List<Seq<Integer>> data, Vec target, Function<Seq<Integer>, Vec> classifier) {
     int passedCnt = 0;
     for (int i = 0; i < data.size(); i++) {
-      final double val = classifier.compute(data.get(i)).get(0);
+      final double val = classifier.apply(data.get(i)).get(0);
       if ((target.get(i) > 0 && val > 0) || (target.get(i) <= 0 && val <= 0)) {
         passedCnt++;
       }
@@ -215,11 +215,11 @@ public class RunImdb {
     return 1.0 * passedCnt / data.size();
   }
 
-  private double getLoss(List<Seq<Integer>> data, Vec target, Computable<Seq<Integer>, Vec> classifier) {
+  private double getLoss(List<Seq<Integer>> data, Vec target, Function<Seq<Integer>, Vec> classifier) {
     final LLLogit lllogit = new LLLogit(target, null);
     Vec values = new ArrayVec(target.dim());
     for (int i =0 ; i < target.dim(); i++) {
-      values.set(i, classifier.compute(data.get(i)).get(0));
+      values.set(i, classifier.apply(data.get(i)).get(0));
     }
     return lllogit.value(values);
   }

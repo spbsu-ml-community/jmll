@@ -43,7 +43,7 @@ public class DefaultProgressPrinter implements ProgressHandler {
   int iteration = 0;
 
   @Override
-  public void invoke(final Trans partial) {
+  public void accept(final Trans partial) {
     iteration++;
 
     if (partial instanceof Ensemble) {

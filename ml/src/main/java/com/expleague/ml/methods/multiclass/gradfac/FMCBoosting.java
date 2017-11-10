@@ -4,6 +4,7 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.seq.VecSeq;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.factorization.Factorization;
@@ -70,17 +71,16 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     return new Ensemble<>(ensamble, -step);
   }
 
-  private class LazyGradientCursor implements Seq<Vec> {
+  private class LazyGradientCursor extends VecSeq {
     private final VecDataSet learn;
     private final List<Func> weakModels;
-    private final Vec[] b;
     private final BlockwiseMLLLogit target;
     private BinarizedDataSet bds;
 
     public LazyGradientCursor(VecDataSet learn, List<Func> weakModels, Vec[] b, BlockwiseMLLLogit target) {
+      super(b);
       this.learn = learn;
       this.weakModels = weakModels;
-      this.b = b;
       this.target = target;
     }
 
@@ -99,13 +99,13 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         final BinarizedDataSet bds = this.bds;
         for (int j = 0; j < size; j++) {
           final ObliviousTree tree = (ObliviousTree) weakModels.get(j);
-          VecTools.incscale(H_t, b[j], tree.value(bds, i) * step);
+          VecTools.incscale(H_t, at(j), tree.value(bds, i) * step);
         }
       }
       else {
         final Vec vec = learn.at(i);
         for (int j = 0; j < size; j++) {
-          VecTools.incscale(H_t, b[j], weakModels.get(j).value(vec) * step);
+          VecTools.incscale(H_t, at(j), weakModels.get(j).value(vec) * step);
         }
       }
       final Vec result = new ArrayVec(classesCount - 1);
@@ -122,26 +122,6 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           result.adjust(c, exp(H_t.get(c))/ (1. + sum));
       }
       return result;
-    }
-
-    @Override
-    public Seq<Vec> sub(int start, int end) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int length() {
-      return learn.length();
-    }
-
-    @Override
-    public boolean isImmutable() {
-      return true;
-    }
-
-    @Override
-    public Class<Vec> elementType() {
-      return Vec.class;
     }
   }
 }

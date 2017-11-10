@@ -1,10 +1,11 @@
 package com.expleague.ml.data.stats;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import gnu.trove.map.hash.TIntObjectHashMap;
+
+import java.util.function.Function;
 
 /**
  * Created with IntelliJ IDEA.
@@ -13,12 +14,12 @@ import gnu.trove.map.hash.TIntObjectHashMap;
  * Time: 20:32
  * To change this template use File | Settings | File Templates.
  */
-public class OrderByFeature implements Computable<DataSet, OrderByFeature> {
+public class OrderByFeature implements Function<DataSet, OrderByFeature> {
   final TIntObjectHashMap<ArrayPermutation> orders = new TIntObjectHashMap<ArrayPermutation>();
   VecDataSet set;
 
   @Override
-  public OrderByFeature compute(final DataSet argument) {
+  public OrderByFeature apply(final DataSet argument) {
     set = (VecDataSet)argument;
     return this;
   }

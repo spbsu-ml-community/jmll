@@ -1,6 +1,5 @@
 package com.expleague.ml;
 
-import com.expleague.commons.func.Action;
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.data.tools.SubPool;
@@ -8,7 +7,6 @@ import com.expleague.ml.func.Linear;
 import com.expleague.ml.loss.*;
 import com.expleague.ml.methods.*;
 import com.expleague.ml.methods.greedyRegion.*;
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.impl.mx.ColsVecArrayMx;
@@ -44,6 +42,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static com.expleague.commons.math.MathTools.sqr;
 import static com.expleague.commons.math.vectors.VecTools.copy;
@@ -135,7 +135,7 @@ public class MethodsTests extends GridTest {
     return result;
   }
 
-  private void checkRestoreFixedTopology(final SimplePGM original, final Computable<ProbabilisticGraphicalModel, PGMEM.Policy> policy, final double lossProbab, final int iterations, final double accuracy) {
+  private void checkRestoreFixedTopology(final SimplePGM original, final Function<ProbabilisticGraphicalModel, PGMEM.Policy> policy, final double lossProbab, final int iterations, final double accuracy) {
     final Vec[] ds = new Vec[100000];
     for (int i = 0; i < ds.length; i++) {
       //TODO: @solar, please, fix it
@@ -152,11 +152,11 @@ public class MethodsTests extends GridTest {
     VecTools.scale(topology.row(topology.rows() - 1), 0.);
     final PGMEM pgmem = new PGMEM(topology, 0.5, iterations, rng, policy);
 
-    final Action<SimplePGM> listener = new Action<SimplePGM>() {
+    final Consumer<com.expleague.ml.models.pgm.SimplePGM> listener = new Consumer<SimplePGM>() {
       int iteration = 0;
 
       @Override
-      public void invoke(final SimplePGM pgm) {
+      public void accept(final SimplePGM pgm) {
         Interval.stopAndPrint("Iteration " + ++iteration);
         System.out.println();
         System.out.print(VecTools.distance(pgm.topology, original.topology));
@@ -500,7 +500,7 @@ public void testElasticNetBenchmark() {
   }
 
 
-  class LassoProgressPrinter implements Action<LassoGradientBoosting.LassoGBIterationResult> {
+  class LassoProgressPrinter implements Consumer<LassoGradientBoosting.LassoGBIterationResult> {
     private int iterations = 0;
     private L2 learnTarget;
     private L2 testTarget;
@@ -516,7 +516,7 @@ public void testElasticNetBenchmark() {
     double min = Double.POSITIVE_INFINITY;
     double testMin = Double.POSITIVE_INFINITY;
     @Override
-    public void invoke(LassoGradientBoosting.LassoGBIterationResult iterationResult) {
+    public void accept(LassoGradientBoosting.LassoGBIterationResult iterationResult) {
       double curLoss = VecTools.distance(iterationResult.cursor, learnTarget.target) / Math.sqrt(learnTarget.target.dim());
       System.out.print(iterations + " learn score: " + curLoss);
       min = Math.min(curLoss, min);
@@ -544,19 +544,19 @@ public void testElasticNetBenchmark() {
     final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
             new BootstrapOptimization<L2>(
                     new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn.vecData(), 32)), rng), L2.class, 10000, 0.02);
-    final Action counter = new ProgressHandler() {
+    final Consumer counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(final Trans partial) {
+      public void accept(final Trans partial) {
         System.out.print("\n" + index++);
       }
     };
     final L2 target = learn.target(L2.class);
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), target);
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
+    final Consumer modelPrinter = new ModelPrinter();
+    final Consumer qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -568,18 +568,18 @@ public void testElasticNetBenchmark() {
   public void testGTDRForestBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting
             (new RegionForest<>(GridTools.medianGrid(learn.vecData(), 32), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
-    final Action counter = new ProgressHandler() {
+    final Consumer counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(final Trans partial) {
+      public void accept(final Trans partial) {
         System.out.print("\n" + index++);
       }
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
+    final Consumer modelPrinter = new ModelPrinter();
+    final Consumer qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -595,18 +595,18 @@ public void testElasticNetBenchmark() {
     final GradientBoosting<L2> boosting = new GradientBoosting
     (new LassoRegionsForest<L2>(new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)),rng,5), L2GreedyTDRegion.class, 12000,0.01);
 //    (new LassoRegionsForest<L2>(new GreedyTDIterativeRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng,1), L2GreedyTDRegion.class, 12000,1);
-    final Action counter = new ProgressHandler() {
+    final Consumer counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(final Trans partial) {
+      public void accept(final Trans partial) {
         System.out.print("\n" + index++);
       }
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
+    final Consumer modelPrinter = new ModelPrinter();
+    final Consumer qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -621,18 +621,18 @@ public void testElasticNetBenchmark() {
 //                         new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.07);
     final GradientBoosting<L2> boosting = new GradientBoosting(
           new GreedyTDLinearRegion(GridTools.medianGrid(learn.vecData(), 32), 6, 1e-4), L2GreedyTDRegion.class, 3000, 0.015);
-    final Action counter = new ProgressHandler() {
+    final Consumer counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(Trans partial) {
+      public void accept(Trans partial) {
         System.out.print("\n" + index++);
       }
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
+    final Consumer modelPrinter = new ModelPrinter();
+    final Consumer qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -646,18 +646,18 @@ public void testElasticNetBenchmark() {
   public void testGreedyTDLinearRegionBoost() {
     final GradientBoosting<L2> boosting = new GradientBoosting(
          new BootstrapOptimization<>(new GreedyTDLinearRegion(GridTools.medianGrid(learn.vecData(), 32), 6, 1e-3), rng), L2GreedyTDRegion.class, 1000, 0.015);
-    final Action counter = new ProgressHandler() {
+    final Consumer counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(Trans partial) {
+      public void accept(Trans partial) {
         System.out.print("\n" + index++);
       }
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
+    final Consumer modelPrinter = new ModelPrinter();
+    final Consumer qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -668,18 +668,18 @@ public void testElasticNetBenchmark() {
 
   public class addBoostingListeners<GlobalLoss extends TargetFunc> {
     addBoostingListeners(final GradientBoosting<GlobalLoss> boosting, final GlobalLoss loss, final Pool<?> _learn, final Pool<?> _validate) {
-      final Action counter = new ProgressHandler() {
+      final Consumer counter = new ProgressHandler() {
         int index = 0;
 
         @Override
-        public void invoke(final Trans partial) {
+        public void accept(final Trans partial) {
           System.out.print("\n" + index++);
         }
       };
       final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", _learn.vecData(), _learn.target(L2.class));
       final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", _validate.vecData(), _validate.target(L2.class));
-      final Action modelPrinter = new ModelPrinter();
-      final Action qualityCalcer = new QualityCalcer();
+      final Consumer modelPrinter = new ModelPrinter();
+      final Consumer qualityCalcer = new QualityCalcer();
       boosting.addListener(counter);
       boosting.addListener(learnListener);
       boosting.addListener(validateListener);
@@ -703,18 +703,18 @@ public void testElasticNetBenchmark() {
     final GradientBoosting<L2> boosting = new GradientBoosting
             (new BootstrapOptimization<>(
                     new GreedyTDIterativeRegion<WeightedLoss<? extends StatBasedLoss>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.002);
-    final Action counter = new ProgressHandler() {
+    final Consumer counter = new ProgressHandler() {
       int index = 0;
 
       @Override
-      public void invoke(Trans partial) {
+      public void accept(Trans partial) {
         System.out.print("\n" + index++);
       }
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Action modelPrinter = new ModelPrinter();
-    final Action qualityCalcer = new QualityCalcer();
+    final Consumer modelPrinter = new ModelPrinter();
+    final Consumer qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -755,12 +755,7 @@ public void testElasticNetBenchmark() {
     final ScoreCalcer validateRecall = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.second.vecData(), cv.second.target("Match", RLogit.class));
     final ScoreCalcer learnPrec = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.first.vecData(), cv.first.target("Match", PLogit.class));
     final ScoreCalcer learnRecall = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.first.vecData(), cv.first.target("Match", RLogit.class));
-    final Action<Trans> newLine = new Action<Trans>() {
-      @Override
-      public void invoke(Trans trans) {
-        System.out.println();
-      }
-    };
+    final Consumer<Trans> newLine = trans -> System.out.println();
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
     boosting.addListener(validatePrec);
@@ -817,7 +812,7 @@ public void testElasticNetBenchmark() {
       }
 
       @Override
-      public void invoke(Trans partial) {
+      public void accept(Trans partial) {
         if (!(partial instanceof Ensemble))
           throw new RuntimeException("Can not work with other than ensembles");
         final Ensemble linear = (Ensemble) partial;
@@ -863,10 +858,10 @@ public void testElasticNetBenchmark() {
 
 //    Action<Trans> learnScore = new ScorePrinter("Learn", learn.vecData(), learn.target(LLLogit.class));
 //    Action<Trans> testScore = new ScorePrinter("Test", validate.vecData(), validate.target(LLLogit.class));
-    Action<Trans> iteration = new Action<Trans>() {
+    Consumer<Trans> iteration = new Consumer<Trans>() {
       int index = 0;
       @Override
-      public void invoke(Trans trans) {
+      public void accept(Trans trans) {
         System.out.println(index++);
       }
     };
@@ -895,7 +890,7 @@ public void testElasticNetBenchmark() {
     double min = 1e10;
 
     @Override
-    public void invoke(final Trans partial) {
+    public void accept(final Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble linear = (Ensemble) partial;
         final Trans increment = linear.last();
@@ -920,7 +915,7 @@ public void testElasticNetBenchmark() {
 
   private static class ModelPrinter implements ProgressHandler {
     @Override
-    public void invoke(final Trans partial) {
+    public void accept(final Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble model = (Ensemble) partial;
         final Trans increment = model.last();
@@ -935,7 +930,7 @@ public void testElasticNetBenchmark() {
     int index = 0;
 
     @Override
-    public void invoke(final Trans partial) {
+    public void accept(final Trans partial) {
       if (partial instanceof Ensemble) {
         final Ensemble model = (Ensemble) partial;
         final Trans increment = model.last();
