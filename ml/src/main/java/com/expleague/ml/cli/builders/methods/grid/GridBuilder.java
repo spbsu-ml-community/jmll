@@ -63,7 +63,7 @@ public class GridBuilder implements Factory<BFGrid> {
 
   private BFGrid build() {
     if (ds == null) {
-      throw new RuntimeException("Set dataset before build");
+      throw new RuntimeException("Set dataset before makeFlow");
     }
     final int dim = ds.xdim();
 

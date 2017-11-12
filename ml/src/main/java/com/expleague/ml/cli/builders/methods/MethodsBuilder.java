@@ -2,11 +2,14 @@ package com.expleague.ml.cli.builders.methods;
 
 import com.expleague.commons.func.Factory;
 import com.expleague.commons.random.FastRandom;
+import com.expleague.ml.FeatureExtractorsBuilder;
 import com.expleague.ml.cli.builders.methods.impl.*;
 import com.expleague.ml.methods.Optimization;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.expleague.ml.methods.trees.GreedyRandomnessAwareObliviousTree;
+import com.expleague.ml.models.RandomnessAwareObliviousTree;
 
 import java.lang.reflect.Method;
 import java.util.StringTokenizer;
@@ -31,12 +34,18 @@ public class MethodsBuilder {
     GreedyObliviousTreeDynamic2Builder.defaultDynamicGridBuilder = dynamicGridFactory;
   }
 
+
+  public void setFeaturesExtractorBuilder(final FeatureExtractorsBuilder featuresExtractorBuilder) {
+    GreedyRandomnessAwareObliviousTreeBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
+  }
+
   public void setRandom(final FastRandom random) {
     BootstrapOptimizationBuilder.defaultRandom = random;
     RandomForestBuilder.defaultRandom = random;
     MultiClassSplitGradFacBuilder.defaultRandom = random;
     FMCBoostingBuilder.defaultRandom = random;
     RidgeRegressionLeavesObliviousTreeBuilder.defaultRandom = random;
+    GreedyRandomnessAwareObliviousTreeBuilder.defaultRandom = random;
   }
 
   public VecOptimization create(final String scheme) {
@@ -120,4 +129,5 @@ public class MethodsBuilder {
       throw new RuntimeException("Couldn't create weak model: " + name, e);
     }
   }
+
 }

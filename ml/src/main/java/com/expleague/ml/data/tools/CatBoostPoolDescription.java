@@ -19,7 +19,9 @@ public class CatBoostPoolDescription {
     Auxiliary,
     DocId,
     QueryId,
-    Weight;
+    Weight,
+    BernoulliCtrTarget,
+    NormalCtrTarget;
 
     static boolean isFactorColumn(ColumnType type) {
       return type == Num || type == Categ;

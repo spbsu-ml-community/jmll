@@ -5,9 +5,7 @@ import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.set.DataSet;
 
 /**
- * User: solar
- * Date: 05.12.12
- * Time: 21:19
+ * User: noxoomo
  */
 public class BinarizedDataSet {
   private final DataSet base;

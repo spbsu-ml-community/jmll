@@ -27,7 +27,6 @@ public class L2Reg extends L2 {
   @Override
   public double score(final MSEStats stats) {
     final double weight = stats.weight;
-    final double sum = stats.sum;
-    return weight > 2 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;
+    return stats.weight > 1 ? (- stats.sum * stats.sum / stats.weight) * (1 + 2 * Math.log(weight + 1)) * MathTools.sqr(stats.weight / (stats.weight - 1.)) : 0;
   }
 }

@@ -2,6 +2,7 @@ package com.expleague.ml.data.tools;
 
 
 import com.expleague.commons.func.Computable;
+import com.expleague.commons.func.Processor;
 import com.expleague.commons.func.types.SerializationRepository;
 import com.expleague.commons.func.types.impl.TypeConvertersCollection;
 import com.expleague.commons.io.StreamTools;
@@ -9,33 +10,47 @@ import com.expleague.commons.math.Func;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.*;
+import com.expleague.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.expleague.commons.math.vectors.impl.mx.MxByRowsBuilder;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.IndexTransVec;
+import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.*;
 import com.expleague.commons.system.RuntimeUtils;
 import com.expleague.commons.text.StringUtils;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.JSONTools;
+import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Logger;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.CompositeTrans;
+import com.expleague.ml.TargetFunc;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
+import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.expleague.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
+import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
+import com.expleague.ml.func.TransJoin;
 import com.expleague.ml.io.ModelsSerializationRepository;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
+import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.PoolFeatureMeta;
+import com.expleague.ml.meta.impl.JsonDataSetMeta;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
 import com.expleague.ml.meta.items.FakeItem;
 import com.expleague.ml.meta.items.QURLItem;
 import com.expleague.ml.models.MultiClassModel;
+import com.expleague.ml.models.ObliviousMultiClassTree;
 import com.expleague.ml.models.ObliviousTree;
+import com.expleague.ml.models.multilabel.MultiLabelBinarizedModel;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -44,21 +59,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import com.expleague.commons.func.Processor;
-import com.expleague.commons.math.vectors.impl.idxtrans.RowsPermutation;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
-import com.expleague.commons.util.ArrayTools;
-import com.expleague.commons.util.Pair;
-import com.expleague.ml.BFGrid;
-import com.expleague.ml.TargetFunc;
-import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
-import com.expleague.ml.func.Ensemble;
-import com.expleague.ml.func.TransJoin;
-import com.expleague.ml.meta.DSItem;
-import com.expleague.ml.meta.impl.JsonDataSetMeta;
-import com.expleague.ml.models.ObliviousMultiClassTree;
-import com.expleague.ml.models.multilabel.MultiLabelBinarizedModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.linked.TDoubleLinkedList;
@@ -168,7 +168,7 @@ public class DataTools {
             case Categ: {
               final double value = stringToDoubleHash(columnSeq);
               if (Double.isNaN(value)) {
-                throw new RuntimeException("Error: catFeature hash values should not be NaN");
+                throw new RuntimeException("Error: catFeature key values should not be NaN");
               }
               data.append(value);
               break;
@@ -410,6 +410,9 @@ public class DataTools {
       return target;
     throw new RuntimeException("No proper constructor!");
   }
+
+
+
 
   public static <T extends DSItem> void writePoolTo(final Pool<T> pool, final Writer out) throws IOException {
     final JsonFactory jsonFactory = new JsonFactory();

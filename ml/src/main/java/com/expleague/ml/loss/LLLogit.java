@@ -65,7 +65,7 @@ public class LLLogit extends FuncC1.Stub implements BlockedTargetFunc {
         result += log(1 - pX);
     }
 
-    return exp(result/point.dim());
+    return result / point.dim();
   }
 
   public int label(final int idx) {

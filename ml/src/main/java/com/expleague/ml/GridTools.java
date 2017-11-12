@@ -1,6 +1,7 @@
 package com.expleague.ml;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -119,5 +120,13 @@ public class GridTools {
       bfCount += dborders.size();
     }
     return new BFGrid(rows);
+  }
+
+  public static double[] quantileBorders(final double[] values, final int binFactor) {
+    final double[] borders = new double[binFactor];
+    for (int i = 0; i < borders.length; ++i) {
+      borders[i] = values[(int) (1.0 * (i + 1.0) * values.length  / (borders.length + 0.1))];
+    }
+    return sortUnique(new ArrayVec(borders));
   }
 }

@@ -55,22 +55,25 @@ public class FakePool extends Pool<FakeItem> {
   @Override
   public VecDataSet vecData() {
     final DataSet<FakeItem> ds = data();
-    return new VecDataSetImpl(ds, data, new Vectorization<FakeItem>() {
-      @Override
-      public Vec value(final FakeItem subject) {
-        return data.row(ds.index(subject));
-      }
+    if (vecDataSet == null) {
+      vecDataSet = new VecDataSetImpl(ds, data, new Vectorization<FakeItem>() {
+        @Override
+        public Vec value(final FakeItem subject) {
+          return data.row(ds.index(subject));
+        }
 
-      @Override
-      public FeatureMeta meta(final int findex) {
-        return features[findex].first;
-      }
+        @Override
+        public FeatureMeta meta(final int findex) {
+          return features[findex].first;
+        }
 
-      @Override
-      public int dim() {
-        return data.columns();
-      }
-    });
+        @Override
+        public int dim() {
+          return data.columns();
+        }
+      });
+    }
+    return vecDataSet;
   }
 
   @Override

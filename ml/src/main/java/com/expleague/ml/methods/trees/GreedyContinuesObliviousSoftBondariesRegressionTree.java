@@ -166,7 +166,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
                         continue;
 */
           final int featureNum = _featureNum + 1;
-          //Equals at 0 points
+          //Equals get 0 points
           {
 
             final double[] point = new double[depth + 1];

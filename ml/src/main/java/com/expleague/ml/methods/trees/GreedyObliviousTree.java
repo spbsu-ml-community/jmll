@@ -31,7 +31,8 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
   }
 
   @Override
-  public ObliviousTree fit(final VecDataSet ds, final Loss loss) {
+  public ObliviousTree fit(final VecDataSet ds,
+                           final Loss loss) {
     Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> result = findBestSubsets(ds,loss);
     List<BFOptimizationSubset> leaves = result.getFirst();
     List<BFGrid.BinaryFeature> conditions = result.getSecond();
@@ -64,7 +65,7 @@ public class GreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimiza
       if (bestSplit < 0 || scores[bestSplit] >= currentScore)
         break;
       final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
-      final List<BFOptimizationSubset> next = new ArrayList<BFOptimizationSubset>(leaves.size() * 2);
+      final List<BFOptimizationSubset> next = new ArrayList<>(leaves.size() * 2);
       final ListIterator<BFOptimizationSubset> iter = leaves.listIterator();
       while (iter.hasNext()) {
         final BFOptimizationSubset subset = iter.next();

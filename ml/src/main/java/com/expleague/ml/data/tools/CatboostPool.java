@@ -2,8 +2,9 @@ package com.expleague.ml.data.tools;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.seq.Seq;
-import com.expleague.ml.data.tools.FakePool;
+import com.expleague.ml.data.ctrs.CtrTarget;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -23,7 +24,8 @@ public class CatboostPool extends FakePool {
     return catColumns.contains(factorId);
   }
 
-  public Set<Integer> getCatFeatureIds() {
+  public Set<Integer> catFeatureIds() {
     return catColumns;
   }
 }
+

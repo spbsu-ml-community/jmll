@@ -1,6 +1,8 @@
 package com.expleague.ml.cli.modes.impl;
 
+import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.FeatureExtractorsBuilder;
 import com.expleague.ml.ProgressHandler;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.cli.modes.CliPoolReaderHelper;
@@ -20,6 +22,8 @@ import com.expleague.ml.cli.builders.data.impl.DataBuilderCrossValidation;
 import com.expleague.ml.cli.builders.methods.MethodsBuilder;
 import com.expleague.ml.cli.builders.methods.grid.DynamicGridBuilder;
 import com.expleague.ml.cli.modes.AbstractMode;
+import com.expleague.ml.data.ctrs.CtrEstimationPolicy;
+import com.expleague.ml.data.ctrs.CtrTarget;
 import com.expleague.ml.data.tools.CatboostPool;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
@@ -71,6 +75,7 @@ public class Fit extends AbstractMode {
     final Pool test = pools.getSecond();
 
 
+    final FeatureExtractorsBuilder featureExtractorsBuilder = new FeatureExtractorsBuilder(learn);
     //loading grid (if needed)
     final GridBuilder gridBuilder = new GridBuilder();
     if (command.hasOption(GRID_OPTION)) {
@@ -79,7 +84,7 @@ public class Fit extends AbstractMode {
       gridBuilder.setBinsCount(Integer.valueOf(command.getOptionValue(BIN_FOLDS_COUNT_OPTION, "32")));
       gridBuilder.setDataSet(learn.vecData());
       if (learn instanceof CatboostPool) {
-        gridBuilder.addCatFeatureIds(((CatboostPool) learn).getCatFeatureIds());
+        gridBuilder.addCatFeatureIds(((CatboostPool) learn).catFeatureIds());
       }
     }
 
@@ -90,14 +95,29 @@ public class Fit extends AbstractMode {
 
     //choose optimization method
     final MethodsBuilder methodsBuilder = new MethodsBuilder();
-    methodsBuilder.setRandom(new FastRandom());
+    final FastRandom random = new FastRandom();
+    methodsBuilder.setRandom(random);
     methodsBuilder.setGridBuilder(gridBuilder);
     methodsBuilder.setDynamicGridBuilder(dynamicGridBuilder);
+    methodsBuilder.setFeaturesExtractorBuilder(featureExtractorsBuilder);
     final VecOptimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
 
     //set target
     final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
     final TargetFunc loss = learn.target(DataTools.targetByName(target));
+
+    final CtrEstimationPolicy ctrEstimationPolicy = CtrEstimationPolicy.valueOf(command.getOptionValue(CTRS_ESTIMATION, CtrEstimationPolicy.Greedy.name()));
+    featureExtractorsBuilder.setEstimationPolicy(ctrEstimationPolicy);
+    featureExtractorsBuilder.useRandomPermutation(random);
+    final String[] ctrs = command.getOptionValues(CTRS_OPTION);
+    if (ctrs != null) {
+      for (final String ctrName : ctrs) {
+        featureExtractorsBuilder.addCtrs(new CtrTarget((Vec) learn.target(0), CtrTarget.CtrTargetType.valueOf(ctrName)));
+      }
+    }
+    if (command.hasOption(ONE_HOT_LIMIT)) {
+      featureExtractorsBuilder.useOneHots(Integer.valueOf(command.getOptionValue(ONE_HOT_LIMIT)));
+    }
 
     //set metrics
     final String[] metricNames = command.getOptionValues(METRICS_OPTION);
@@ -110,7 +130,6 @@ public class Fit extends AbstractMode {
     } else {
       metrics = new Func[]{test.targetByName(target)};
     }
-
 
     //added progress handlers
     ProgressHandler progressPrinter = null;

@@ -33,8 +33,11 @@ import com.expleague.ml.func.NormalizedLinear;
 import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.items.QURLItem;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
+import com.expleague.ml.methods.trees.GreedyRandomnessAwareObliviousTree;
+import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
 import com.expleague.ml.models.ModelTools;
 import com.expleague.ml.models.ObliviousTree;
+import com.expleague.ml.models.RandomnessAwareObliviousTree;
 import com.expleague.ml.models.pgm.ProbabilisticGraphicalModel;
 import com.expleague.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
@@ -63,7 +66,7 @@ public class MethodsTests extends GridTest {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    rng = new FastRandom(0);
+    rng = new FastRandom();
   }
 
   public void testPGMFit3x3() {
@@ -248,7 +251,7 @@ public void testElasticNetBenchmark() {
         System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test,  classic), testTarget)) / testTarget.dim());
       }
 //      System.out.println("Fit weights " + result.weights);
-//      System.out.println("Real weights " + beta);
+//      System.out.println("Real weights " + scale);
   }
 
   public void testElasticNet() {
@@ -308,7 +311,7 @@ public void testElasticNetBenchmark() {
       System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
       System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
 //      System.out.println("Fit weights " + result.weights);
-//      System.out.println("Real weights " + beta);
+//      System.out.println("Real weights " + scale);
     }
 
 
@@ -366,15 +369,15 @@ public void testElasticNetBenchmark() {
       System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
       System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
       w = result.weights;
-//      for (int i=0; i < beta.dim();++i) {
-//        if (beta.get(i) == 0)
+//      for (int i=0; i < scale.dim();++i) {
+//        if (scale.get(i) == 0)
 //          assertTrue(Math. abs(result.weights.get(i)-0.0) < 1e-9);
 //      }
 //      System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
 //      System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
 //      System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
 //      System.out.println("Fit weights " + result.weights);
-//      System.out.println("Real weights " + beta);
+//      System.out.println("Real weights " + scale);
     }
   }
 
@@ -696,6 +699,35 @@ public void testElasticNetBenchmark() {
       System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
 
     }
+
+    addBoostingListeners(final RandomnessAwareGradientBoosting<GlobalLoss> boosting, final GlobalLoss loss, final Pool<?> _learn, final Pool<?> _validate) {
+      final Action counter = new ProgressHandler() {
+        int index = 0;
+
+        @Override
+        public void invoke(final Trans partial) {
+          System.out.print("\n" + index++);
+        }
+      };
+      final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", _learn.vecData(), _learn.target(L2.class));
+      final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", _validate.vecData(), _validate.target(L2.class));
+      final Action modelPrinter = new ModelPrinter();
+      final Action qualityCalcer = new QualityCalcer();
+      boosting.addListener(counter);
+      boosting.addListener(learnListener);
+      boosting.addListener(validateListener);
+      boosting.addListener(qualityCalcer);
+//    boosting.addListener(modelPrinter);
+      final Ensemble ans = boosting.fit(_learn.vecData(), loss);
+      Vec current = new ArrayVec(_validate.size());
+      for (int i = 0; i < _validate.size(); i++) {
+        double f = 0;
+        for (int j = 0; j < ans.models.length; j++)
+          f += ans.weights.get(j) * ((Func) ans.models[j]).value(((VecDataSet) _validate).data().row(i));
+        current.set(i, f);
+      }
+      System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
+    }
   }
 
 
@@ -725,8 +757,18 @@ public void testElasticNetBenchmark() {
 
 
   public void testOTBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), L2Reg.class, 2000, 0.005);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), L2Reg.class, 2000, 0.01);
     new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
+  }
+
+
+  public void testRandomnessAwareBoost() {
+    RandomnessAwareGradientBoosting.Config config = new RandomnessAwareGradientBoosting.Config(1000, 0.01);
+    FeatureExtractorsBuilder gridBuilder = new FeatureExtractorsBuilder(learn);
+    gridBuilder.build();
+    final GreedyRandomnessAwareObliviousTree<L2> weak = new GreedyRandomnessAwareObliviousTree<>(6, gridBuilder.build(), 32, true, rng);
+    final RandomnessAwareGradientBoosting<L2> boosting = new RandomnessAwareGradientBoosting<>(weak, L2Reg.class, BinOptimizedRandomnessPolicy.PointEstimateBin, config);
+    new addBoostingListeners<L2>(boosting, learn.target(L2.class), learn, validate);
   }
 
   public void testOTBoost1() throws IOException {

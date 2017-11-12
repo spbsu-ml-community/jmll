@@ -57,7 +57,7 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
     }
 
     final BFOptimizationSubset outRegion = new BFOptimizationSubset(bds, oracle, out.toArray());
-    aggregate.remove(outRegion.aggregate);
+    aggregate.remove(outRegion.aggregate());
     aggregate.append(newCriticalPoints.toArray());
     nonCriticalTotal.remove(newCritical);
     ArrayTools.parallelSort(failedCount, points, 0, failedBorders[maxFailed] - 1);

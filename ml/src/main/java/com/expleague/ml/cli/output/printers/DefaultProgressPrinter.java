@@ -13,6 +13,7 @@ import com.expleague.ml.BinModelWithGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.ProgressHandler;
 import com.expleague.ml.func.Ensemble;
+import com.expleague.ml.randomnessAware.RandomnessAwareTrans;
 
 /**
  * User: qdeee
@@ -54,12 +55,17 @@ public class DefaultProgressPrinter implements ProgressHandler {
       final Mx learnTrans;
       final Mx testTrans;
 
-      if (last instanceof BinModelWithGrid) {
-        BinModelWithGrid model = (BinModelWithGrid) last;
-        BinarizedDataSet learnSet =  learnDs.cache().cache(Binarize.class, VecDataSet.class).binarize(model.grid());
-        BinarizedDataSet testSet =  testDs.cache().cache(Binarize.class, VecDataSet.class).binarize(model.grid());
-        learnTrans = model.transAll(learnSet);
-        testTrans = model.transAll(testSet);
+//      if (last instanceof BinModelWithGrid) {
+//        BinModelWithGrid model = (BinModelWithGrid) last;
+//        BinarizedDataSet learnSet = learnDs.cache().cache(Binarize.class, VecDataSet.class).binarize(model.grid());
+//        BinarizedDataSet testSet = testDs.cache().cache(Binarize.class, VecDataSet.class).binarize(model.grid());
+//        learnTrans = model.transAll(learnSet);
+//        testTrans = model.transAll(testSet);
+//      }
+//      else
+      if (last instanceof RandomnessAwareTrans) {
+        learnTrans = ((RandomnessAwareTrans) last).transAll(learnDs);
+        testTrans = ((RandomnessAwareTrans) last).transAll(testDs);
       } else {
         learnTrans = last.transAll(learnDs.data());
         testTrans = last.transAll(testDs.data());
@@ -71,7 +77,10 @@ public class DefaultProgressPrinter implements ProgressHandler {
         VecTools.append(testValuesArray[t], testEvaluation);
       }
 
-    } else if (iteration % printPeriod == 0) {
+    }
+    else if (iteration % printPeriod == 0)
+
+    {
       learnValues = partial.transAll(learnDs.data());
       final Mx testEvaluate = partial.transAll(testDs.data());
       for (int i = 0; i < testValuesArray.length; i++) {
@@ -79,13 +88,19 @@ public class DefaultProgressPrinter implements ProgressHandler {
       }
     }
 
-    if (iteration % printPeriod != 0) {
+    if (iteration % printPeriod != 0)
+
+    {
       return;
     }
 
     System.out.print(iteration);
     System.out.print("\t" + loss.value(learnValues));
-    for (int i = 0; i < testMetrics.length; i++) {
+    for (
+        int i = 0;
+        i < testMetrics.length; i++)
+
+    {
       System.out.print("\t" + testMetrics[i].value(testValuesArray[i]));
     }
     System.out.println();

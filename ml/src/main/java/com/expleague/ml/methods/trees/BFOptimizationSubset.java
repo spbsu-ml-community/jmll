@@ -16,54 +16,94 @@ import gnu.trove.list.array.TIntArrayList;
 @SuppressWarnings("unchecked")
 public class BFOptimizationSubset {
   private final BinarizedDataSet bds;
-  private int[] points;
   private final StatBasedLoss<AdditiveStatistics> oracle;
-  public final Aggregate aggregate;
+  private Subset subset;
 
-  public BFOptimizationSubset(final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points) {
+
+  private BFOptimizationSubset(final BinarizedDataSet bds,
+                              final StatBasedLoss oracle,
+                              final Subset subset) {
     this.bds = bds;
-    this.points = points;
     this.oracle = oracle;
-    this.aggregate = new Aggregate(bds, oracle.statsFactory(), points);
+    this.subset = subset;
+
+  }
+
+  public BFOptimizationSubset(final BinarizedDataSet bds,
+                              final StatBasedLoss oracle,
+                              final int[] points) {
+    this.bds = bds;
+    this.oracle = oracle;
+    this.subset =  new Subset(points);
   }
 
   public BFOptimizationSubset split(final BFGrid.BinaryFeature feature) {
-    final TIntArrayList left = new TIntArrayList(points.length);
-    final TIntArrayList right = new TIntArrayList(points.length);
+    final TIntArrayList left = new TIntArrayList(subset.points.length);
+    final TIntArrayList right = new TIntArrayList(subset.points.length);
     final byte[] bins = bds.bins(feature.findex);
-    for (final int i : points) {
+    for (final int i : subset.points) {
       if (feature.value(bins[i])) {
         right.add(i);
       } else {
         left.add(i);
       }
     }
-    final BFOptimizationSubset rightBro = new BFOptimizationSubset(bds, oracle, right.toArray());
-    aggregate.remove(rightBro.aggregate);
-    points = left.toArray();
+    final BFOptimizationSubset rightBro;
+
+    if (left.size() < right.size()) {
+      final Subset leftSubset = new Subset(left.toArray());
+      final Aggregate rightAggregate = subset.aggregate;
+      rightAggregate.remove(leftSubset.aggregate);
+      final Subset rightSubset = new Subset(right.toArray(), rightAggregate);
+      subset = leftSubset;
+      rightBro = new BFOptimizationSubset(bds, oracle, rightSubset);
+    } else {
+      rightBro = new BFOptimizationSubset(bds, oracle, right.toArray());
+      final Aggregate leftAggregate = subset.aggregate;
+      leftAggregate.remove(rightBro.subset.aggregate);
+      subset = new Subset(left.toArray(), leftAggregate);
+    }
     return rightBro;
   }
 
+  public Aggregate aggregate() {
+    return subset.aggregate;
+  }
 
   public int size() {
-    return points.length;
+    return subset.points.length;
   }
 
   public void visitAllSplits(final Aggregate.SplitVisitor<? extends AdditiveStatistics> visitor) {
-    aggregate.visit(visitor);
+    subset.aggregate.visit(visitor);
   }
 
   public <T extends AdditiveStatistics> void visitSplit(final BFGrid.BinaryFeature bf, final Aggregate.SplitVisitor<T> visitor) {
-    final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
-    final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
+    final T left = (T) subset.aggregate.combinatorForFeature(bf.bfIndex);
+    final T right = (T) oracle.statsFactory().create().append(subset.aggregate.total()).remove(left);
     visitor.accept(bf, left, right);
   }
 
   public AdditiveStatistics total() {
-    return aggregate.total();
+    return subset.aggregate.total();
   }
 
   public int[] getPoints() {
-    return points.clone();
+    return subset.points.clone();
+  }
+
+  class Subset {
+    public final int[] points;
+    public final Aggregate aggregate;
+
+    Subset(final int[] points) {
+      this.points = points;
+      this.aggregate = new Aggregate(bds, oracle.statsFactory(), points);
+    }
+
+    Subset(final int[] points, final Aggregate aggregate) {
+      this.points = points;
+      this.aggregate = aggregate;
+    }
   }
 }

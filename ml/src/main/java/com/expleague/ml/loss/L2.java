@@ -85,7 +85,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
     public double sum;
     public double sum2;
     public double weight;
-    public double weight2;
 
     private final Vec targets;
 
@@ -99,7 +98,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       sum -= times * v;
       sum2 -= times * v * v;
       weight -= times;
-      weight2 -= times * times;
       return this;
     }
 
@@ -109,7 +107,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       sum -= p * times * v;
       sum2 -= p * times * v * v;
       weight -= p * times;
-      weight2 -= p * times * p * times;
       return this;
     }
 
@@ -119,7 +116,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       sum -= other.sum;
       sum2 -= other.sum2;
       weight -= other.weight;
-      weight2 -= other.weight2;
       return this;
     }
 
@@ -129,7 +125,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       sum += times * v;
       sum2 += times * v * v;
       weight += times;
-      weight2 += times * times;
       return this;
     }
 
@@ -138,7 +133,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       sum += p * times * v;
       sum2 += p * times * v * v;
       weight += p * times;
-      weight2 += p * times * times;
       return this;
     }
 
@@ -148,7 +142,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       sum += other.sum;
       sum2 += other.sum2;
       weight += other.weight;
-      weight2 += other.weight2;
       return this;
     }
 
@@ -158,7 +151,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       sum += w * v;
       sum2 += w * v * v;
       weight += w;
-      weight2 += w * w;
 
       return this;
     }
@@ -169,7 +161,6 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.MSEStats>, Targe
       sum -= w * v;
       sum2 -= w * v * v;
       weight -= w;
-      weight2 -= w * w;
 
       return this;
     }

@@ -18,12 +18,14 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   public final F[] models;
   public final Vec weights;
 
-  public Ensemble(final F[] models, final Vec weights) {
+  public Ensemble(final F[] models,
+                  final Vec weights) {
     this.models = models;
     this.weights = weights;
   }
 
-  public Ensemble(final List<F> weakModels, final double step) {
+  public Ensemble(final List<F> weakModels,
+                  final double step) {
     this(ArrayTools.toArray(weakModels), VecTools.fill(new ArrayVec(weakModels.size()), step));
   }
 

@@ -15,7 +15,7 @@ public final class TestResourceLoader {
   private TestResourceLoader() {}
 
   public static InputStream loadResourceAsStream(final String localPath) throws IOException{
-    final InputStream resource = TestResourceLoader.class.getClassLoader().getResourceAsStream("com/spbsu/ml/" + localPath);
+    final InputStream resource = TestResourceLoader.class.getClassLoader().getResourceAsStream("com/expleague/ml/" + localPath);
     if (resource == null) {
       throw new IOException("Resource \"" + localPath + "\" not found");
     }
@@ -23,7 +23,7 @@ public final class TestResourceLoader {
   }
 
   public static String getFullPath(final String localPath) throws IOException {
-    final URL resource = TestResourceLoader.class.getClassLoader().getResource("com/spbsu/ml/" + localPath);
+    final URL resource = TestResourceLoader.class.getClassLoader().getResource("com/expleague/ml/" + localPath);
     if (resource == null) {
       throw new IOException("Resource \"" + localPath + "\" not found");
     }
