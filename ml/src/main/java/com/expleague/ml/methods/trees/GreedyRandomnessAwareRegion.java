@@ -8,19 +8,16 @@ import com.expleague.ml.data.BinarizedFeatureDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.distributions.RandomVariable;
 import com.expleague.ml.distributions.parametric.DeltaFunction;
-import com.expleague.ml.distributions.parametric.NormalDistribution;
-import com.expleague.ml.distributions.parametric.StudentDistriubtion;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.methods.RandomnessAwareVecOptimization;
 import com.expleague.ml.methods.VecOptimization;
-import com.expleague.ml.models.RandomnessAwareObliviousTree;
+import com.expleague.ml.models.RandomnessAwareRegion;
 import com.expleague.ml.randomnessAware.VecRandomFeatureExtractor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ListIterator;
 
 import static com.expleague.commons.math.MathTools.sqr;
 
@@ -28,13 +25,23 @@ import static com.expleague.commons.math.MathTools.sqr;
  * User: noxoomo
  */
 public class GreedyRandomnessAwareRegion<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> implements RandomnessAwareVecOptimization<Loss> {
-  private final int depth;
+  private final int maxDepth;
   private final int binarization;
   private final FastRandom random;
   private final List<VecRandomFeatureExtractor> featureExtractors;
+  private final boolean sampledAggregate;
   private boolean rebuildStochasticAggregates = false;
   private boolean useBootstrap = false;
   private LeavesType leavesType = LeavesType.DeterministicMean;
+  private boolean forceSampledSplit = false;
+
+  public void useBootstrap(final boolean bootstrap) {
+    useBootstrap = bootstrap;
+  }
+
+  public void forceSampledSplit(final boolean forceSampledSplit) {
+    this.forceSampledSplit = forceSampledSplit;
+  }
 
   enum LeavesType {
     BayesianMean,
@@ -45,120 +52,114 @@ public class GreedyRandomnessAwareRegion<Loss extends StatBasedLoss> extends Vec
   public GreedyRandomnessAwareRegion(final int depth,
                                      final List<VecRandomFeatureExtractor> featureExtractors,
                                      final int binarization,
+                                     final boolean sampledAggregate,
                                      final FastRandom random) {
-    this.depth = depth;
+    this.maxDepth = depth;
     this.featureExtractors = featureExtractors;
     this.binarization = binarization;
+    this.sampledAggregate = sampledAggregate;
     this.random = random;
   }
 
   @Override
-  public RandomnessAwareObliviousTree fit(final VecDataSet learn,
+  public RandomnessAwareRegion fit(final VecDataSet learn,
                                           final Loss loss) {
 
-    List<RandomnessAwareOptimizationSubset> leaves = new ArrayList<>(1 << depth);
-    final List<FeatureBinarization.BinaryFeature> conditions = new ArrayList<>(depth);
+    List<RandomnessAwareOptimizationSubset> leaves = new ArrayList<>(1 << maxDepth);
+    final List<FeatureBinarization.BinaryFeature> conditions = new ArrayList<>(maxDepth);
+    final List<Boolean> masks = new ArrayList<>(maxDepth);
+
     double currentScore = Double.POSITIVE_INFINITY;
 
     final BinarizedFeatureDataSet dataSet = buildBinarizedDataSet(learn);
     final BinarizedFeatureDataSet.GridHelper gridHelper = dataSet.gridHelper();
-    final double[] scores = new double[gridHelper.binFeatureCount()];
+
+    final double[] scoresLeft = new double[gridHelper.binFeatureCount()];
+    final double[] scoresRight = new double[gridHelper.binFeatureCount()];
+
+
+
+    RandomnessAwareOptimizationSubset rightSet;
+    RandomnessAwareOptimizationSubset leftSet;
     {
       final double weights[] = useBootstrap ? new double[learn.length()] : null;
       if (useBootstrap) {
         for (int i = 0; i < weights.length; ++i) {
-          weights[i] = random.nextGamma(1, 1);
+          weights[i] = random.nextGamma(1.0);
         }
       }
-      leaves.add(new RandomnessAwareOptimizationSubset(dataSet, loss, ArrayTools.sequence(0, learn.length()), weights, random));
+      final RandomnessAwareOptimizationSubset allPoints = new RandomnessAwareOptimizationSubset(dataSet, loss, ArrayTools.sequence(0, learn.length()), weights, random);
+
+      Arrays.fill(scoresLeft, 0);
+      allPoints.visitAllSplits((bf, left, right) -> {
+        scoresLeft[gridHelper.binaryFeatureOffset(bf)] += loss.score(left) + loss.score(right);
+      });
+      final int bestSplit = ArrayTools.min(scoresLeft);
+      final FeatureBinarization.BinaryFeature bestSplitBF = gridHelper.binFeature(bestSplit);
+      currentScore = scoresLeft[bestSplit];
+
+      leftSet = allPoints;
+      rightSet = allPoints.split(bestSplitBF, rebuildStochasticAggregates, forceSampledSplit);
+      conditions.add(bestSplitBF);
     }
 
-    for (int level = 0; level < depth; level++) {
-      Arrays.fill(scores, 0.);
-      for (final RandomnessAwareOptimizationSubset leaf : leaves) {
-        leaf.visitAllSplits((bf, left, right) -> scores[gridHelper.binaryFeatureOffset(bf)] += loss.score(left) + loss.score(right));
-      }
-      final int bestSplit = ArrayTools.min(scores);
+    for (int level = 1; level < maxDepth; level++) {
+      Arrays.fill(scoresLeft, 0.);
+      Arrays.fill(scoresRight, 0.);
 
-      if (bestSplit < 0 || scores[bestSplit] + 1e-9 >= currentScore) {
+      final AdditiveStatistics leftTotal = leftSet.total();
+      final AdditiveStatistics rightTotal = rightSet.total();
+
+      rightSet.visitAllSplits((bf, left, right) -> {
+        scoresRight[gridHelper.binaryFeatureOffset(bf)] += loss.score(left) + loss.score(right) + loss.score(leftTotal);
+      });
+
+      leftSet.visitAllSplits((bf, left, right) -> {
+        scoresLeft[gridHelper.binaryFeatureOffset(bf)] += loss.score(left) + loss.score(right) + loss.score(rightTotal);
+      });
+
+
+
+      final int bestSplitLeft = ArrayTools.min(scoresLeft);
+      final int bestSplitRight = ArrayTools.min(scoresRight);
+
+      final boolean splitRight = !(scoresLeft[bestSplitLeft] < scoresRight[bestSplitRight]);
+      final double bestScore = splitRight ? scoresRight[bestSplitRight] : scoresLeft[bestSplitLeft];
+      final int bestSplit = splitRight ? bestSplitRight : bestSplitLeft;
+
+      if (bestSplit < 0 || bestScore + 1e-9 >= currentScore) {
         break;
       }
 
       final FeatureBinarization.BinaryFeature bestSplitBF = gridHelper.binFeature(bestSplit);
-      final List<RandomnessAwareOptimizationSubset> next = new ArrayList<>(leaves.size() * 2);
-      final ListIterator<RandomnessAwareOptimizationSubset> iter = leaves.listIterator();
-      while (iter.hasNext()) {
-        final RandomnessAwareOptimizationSubset subset = iter.next();
-        next.add(subset);
-        next.add(subset.split(bestSplitBF, rebuildStochasticAggregates));
-      }
       conditions.add(bestSplitBF);
-      leaves = next;
-      currentScore = scores[bestSplit];
+
+      if (splitRight) {
+        leaves.add(leftSet);
+        masks.add(true);
+        leftSet = rightSet;
+      } else {
+        leaves.add(rightSet);
+        masks.add(false);
+      }
+      rightSet = leftSet.split(bestSplitBF, rebuildStochasticAggregates, forceSampledSplit);
+      currentScore = bestScore;
     }
+
+    leaves.add(leftSet);
+    leaves.add(rightSet);
+    masks.add(true);
 
     final RandomVariable[] step = new RandomVariable[leaves.size()];
-
-    final double priorSigma2;
-    final double priorMu;
-
-    {
-      AdditiveStatistics stat = (AdditiveStatistics) loss.statsFactory().create();
-      for (int i = 0; i < learn.length(); ++i) {
-        stat.append(i, 1);
-      }
-      final double sum = ((L2.MSEStats) stat).sum;
-      final double sum2 = ((L2.MSEStats) stat).sum2;
-      final double weight = ((L2.MSEStats) stat).weight;
-      priorSigma2 = sum2 / weight - sqr(sum / weight);
-      priorMu = sum / weight;
-    }
 
     for (int i = 0; i < step.length; i++) {
       final AdditiveStatistics total = leaves.get(i).total();
       final double sum = ((L2.MSEStats) total).sum;
-      final double sum2 = ((L2.MSEStats) total).sum2;
       final double weight = ((L2.MSEStats) total).weight;
-
-
-      if (weight < 2) {
-        step[i] = (DeltaFunction) () -> 0;
-      }
-
-      else {
-        switch (leavesType) {
-          case BayesianMean: {
-            final double mu0 = priorMu;
-            final double v0 = 3.0;
-            final double alpha0 = 3;
-            final double beta0 = priorSigma2 * alpha0;
-
-
-            final double mu = (v0 * mu0 + sum) / (v0 + weight);
-            final double v = v0 + weight;
-            final double alpha = alpha0 + weight / 2;
-            final double beta = beta0 + 0.5 * (sum2 - sqr(sum) / weight) + weight * v0 * sqr(sum / weight - mu0) / (v0 + weight) / 2;
-
-            step[i] = new StudentDistriubtion.Impl(2 * alpha, mu, beta * (v + 1) / (alpha * v));
-            break;
-          }
-          case NormalVal: {
-            step[i] = new NormalDistribution.Impl(sum / weight, 1.0 / (sum2 / weight - sqr(sum / weight)));
-            break;
-
-          }
-          case DeterministicMean: {
-            final double mean = sum / (weight + 1);
-            step[i] = (DeltaFunction) () -> mean;
-            break;
-          }
-          default: {
-            throw new RuntimeException("Unknown leave type");
-          }
-        }
-      }
+      final double bestInc = sum / (weight + 1);
+      step[i] = (DeltaFunction) () -> bestInc;
     }
-    return new RandomnessAwareObliviousTree(conditions, step);
+    return new RandomnessAwareRegion(conditions, masks, step);
   }
 
   private BinarizedFeatureDataSet ds = null;
@@ -166,6 +167,7 @@ public class GreedyRandomnessAwareRegion<Loss extends StatBasedLoss> extends Vec
   private BinarizedFeatureDataSet buildBinarizedDataSet(final VecDataSet learn) {
     if (ds == null) {
       final BinarizedFeatureDataSet.Builder builder = new BinarizedFeatureDataSet.Builder(learn, binarization, random);
+      builder.setSampledFlag(sampledAggregate);
       featureExtractors.forEach(builder::addFeature);
       ds = builder.build();
     }
