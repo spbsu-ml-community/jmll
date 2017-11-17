@@ -62,7 +62,7 @@ public class BaumWelch<T> implements Optimization<LLLogit,DataSet<Seq<T>>,Seq<T>
       final CountDownLatch latch = new CountDownLatch(learn.length());
       for (int i = 0; i < learn.length(); i++) {
         final Seq<T> seq = learn.at(i);
-        if (seq.length() == 0 || llLogit.label(i) > 0) {
+        if (seq.length() == 0 || llLogit.label(i) < 0) {
           latch.countDown();
           continue;
         }
