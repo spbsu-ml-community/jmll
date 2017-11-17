@@ -8,6 +8,7 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.util.ThreadTools;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -24,13 +25,12 @@ public interface BlockwiseFuncC1 extends FuncC1 {
   int blockSize();
 
   abstract class Stub extends FuncC1.Stub implements BlockwiseFuncC1 {
-    protected static ThreadPoolExecutor pool = ThreadTools.createBGExecutor("Gradient calculator tg", ThreadTools.COMPUTE_UNITS);
     public final Mx gradient(final Mx x) {
       final Mx result = VecTools.copy(x);
       final CountDownLatch latch = new CountDownLatch(ThreadTools.COMPUTE_UNITS);
       for (int t = 0; t < ThreadTools.COMPUTE_UNITS; t++) {
         final int finalT = t;
-        pool.execute(() -> {
+        ForkJoinPool.commonPool().execute(() -> {
           for (int i = finalT; i < x.rows(); i+= ThreadTools.COMPUTE_UNITS) {
             gradient(x.row(i), result.row(i), i);
           }

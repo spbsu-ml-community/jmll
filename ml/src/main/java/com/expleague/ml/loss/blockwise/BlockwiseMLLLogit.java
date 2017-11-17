@@ -13,6 +13,7 @@ import com.expleague.ml.TargetFunc;
 import com.expleague.ml.data.set.DataSet;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -98,7 +99,7 @@ public class BlockwiseMLLLogit extends BlockwiseFuncC1.Stub implements TargetFun
     final CountDownLatch latch = new CountDownLatch(ThreadTools.COMPUTE_UNITS - 1);
     for (int t = 0; t < ThreadTools.COMPUTE_UNITS - 1; t++) {
       final int finalT = t;
-      pool.execute(() -> {
+      ForkJoinPool.commonPool().execute(() -> {
         for (int i = finalT; i < result.rows(); i += ThreadTools.COMPUTE_UNITS - 1) {
           gradient(result.row(i), i);
         }
