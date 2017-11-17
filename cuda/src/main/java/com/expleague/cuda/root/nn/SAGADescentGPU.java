@@ -1,23 +1,29 @@
-package com.expleague.ml.optimization.impl;
+package com.expleague.cuda.root.nn;
 
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.cuda.KernelOperations;
+import com.expleague.cuda.data.GPUVec;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.Random;
 
-public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
+/**
+ * Created by hrundelb on 25.09.17.
+ */
+public class SAGADescentGPU implements Optimize<FuncEnsemble<? extends FuncC1>> {
   private final double step;
   private final int maxIter;
   private final Random random;
   private final int threadCount;
   private long time;
 
-  public SAGADescent(final double step, final int maxIter, final Random random, final int threadCount) {
+  public SAGADescentGPU(final double step, final int maxIter, final Random random, final int threadCount) {
     this.step = step;
     this.maxIter = maxIter;
     this.random = random;
@@ -37,32 +43,29 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   public Vec optimize(final FuncEnsemble<? extends FuncC1> sumFuncs, final Vec x0) {
     final long startTime = System.nanoTime();
 
-    Vec x;
+    GPUVec x;
     if (threadCount == 1) {
-      x = VecTools.copy(x0);
+      x = new GPUVec(x0.toArray());
     } else {
-//      x = new AtomicArrayVec(x0.dim());
-//      for (int i = 0; i < x0.dim(); i++) {
-//        x.set(i, x0.get(i));
-//      } TODO
       throw new UnsupportedOperationException("No multithread support yet");
     }
 
-    final Vec[] lastGrad = new Vec[sumFuncs.size()];
-    final Vec totalGrad = new ArrayVec(x.dim());
-    final Vec gradCoordinateInverseFreq = new ArrayVec(x.dim());
+    final Vec[] lastGrad = new GPUVec[sumFuncs.size()];
+    final Vec totalGrad = new GPUVec(x.dim());
+    final Vec tmp = new ArrayVec(x.dim());
 
     for (int i = 0; i < sumFuncs.size(); i++) {
       lastGrad[i] = sumFuncs.models[i].gradient(x);
       VecTools.append(totalGrad, lastGrad[i]);
-      final VecIterator iterator = lastGrad[i].nonZeroes();
+      final VecIterator iterator = new ArrayVec(lastGrad[i].toArray()).nonZeroes();
       while (iterator.advance()) {
-        gradCoordinateInverseFreq.adjust(iterator.index(), 1);
+        tmp.adjust(iterator.index(), 1);
       }
     }
     for (int i = 0; i < x.dim(); i++) {
-      gradCoordinateInverseFreq.set(i, 1.0 * sumFuncs.size() / gradCoordinateInverseFreq.get(i));
+      tmp.set(i, 1.0 * sumFuncs.size() / tmp.get(i));
     }
+    final Vec gradCoordinateInverseFreq = new GPUVec(tmp.toArray());
 
     if (threadCount == 1) {
       run(sumFuncs, gradCoordinateInverseFreq, x, lastGrad, totalGrad);
@@ -95,15 +98,14 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
       final int i = random.nextInt(sumFuncs.size());
 
       Vec grad = VecTools.scale(lastGrad[i], -1);
+
       lastGrad[i] = sumFuncs.models[i].gradient(x);
       VecTools.append(grad, lastGrad[i]);
 
       VecTools.incscale(x, grad, -step);
-      final VecIterator iterator = lastGrad[i].nonZeroes();
-      while (iterator.advance()) {
-        final int index = iterator.index();
-        x.adjust(index, -step * gradCoordinateInverseFreq.get(index) * totalGrad.get(index) / sumFuncs.size());
-      }
+
+      KernelOperations.fVectorKernel1((GPUVec)lastGrad[i], (GPUVec)gradCoordinateInverseFreq,
+          (GPUVec) totalGrad, (float)step, sumFuncs.size(), (GPUVec) x);
 
       VecTools.append(totalGrad, grad); // total += new grad - old grad
 
@@ -111,8 +113,8 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
       if (iter % (5 * sumFuncs.size()) == 0) {
         final double curError = sumFuncs.value(x) / sumFuncs.size();
         final long newTime = System.currentTimeMillis();
-        System.out.printf("thread %d, iteration %d: new=%.6f old=%.6f time=%dms\n",
-            Thread.currentThread().getId(), iter, curError, error, newTime - time);
+        System.out.printf("thread %d, iteration %d: new=%.6f old=%.6f time=%dms\n", Thread
+            .currentThread().getId(), iter, curError, error, newTime - time);
         time = newTime;
         if (curError > error) {
           break;

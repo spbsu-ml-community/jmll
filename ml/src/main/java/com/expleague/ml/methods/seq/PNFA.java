@@ -131,8 +131,12 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
   private Vec getSeqDistribution(final Vec params, final IntSeq seq) {
     Vec distribution = new ArrayVec(stateCount);
     VecTools.fill(distribution, 1.0 / stateCount);
+    //System.out.println("CPU Distribution: " + Arrays.toString(distribution.toArray()));
     for (int i = 0; i < seq.length(); i++) {
-      distribution = multiplyLeft(distribution, getWeightMx(params, seq.intAt(i)));
+      Mx weightMx = getWeightMx(params, seq.intAt(i));
+      //System.out.println(String.format("-- (%s) CPU WeightMx: %s", i,
+      //    Arrays.toString(weightMx.toArray())));
+      distribution = multiplyLeft(distribution, weightMx);
     }
     return distribution;
   }
@@ -141,7 +145,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     return VecTools.multiply(getSeqDistribution(params, seq), getValues(params));
   }
 
-  private class PNFAPointLossFunc extends FuncC1.Stub {
+  public class PNFAPointLossFunc extends FuncC1.Stub {
 
     private final IntSeq seq;
     private final double y;
@@ -189,11 +193,11 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
         distributions[i + 1] = multiplyLeft(distributions[i], w[alphabetToOrderMap.get(seq.intAt(i))]);
       }
 
-      Vec expectedValue = new ArrayVec(stateCount);
+      Vec expectedValue = getValues(x);
 
-      for (int i = 0; i < stateCount; i++) {
-        expectedValue.set(i, getValues(x).get(i));
-      }
+      //for (int i = 0; i < stateCount; i++) {
+      //  expectedValue.set(i, getValues(x).get(i));
+      //}
 
       final double diff = VecTools.multiply(distributions[seq.length()], getValues(x)) - y;
 

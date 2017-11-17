@@ -191,6 +191,29 @@ public class RunSpliceData {
     System.out.println("Test accuracy of  " + getAccuracy(testData, testTarget, classifier));
   }
 
+  /*
+  @NotNull
+  private GradientSeqBoosting<Integer, LLLogit> getBoosting() {
+    return new GradientSeqBoosting<>(
+          new BootstrapSeqOptimization<>(
+              new PNFA<>(MAX_STATE_COUNT, alphabet.size(), random, new SAGADescent(
+                  GRAD_STEP, DESCENT_STEP_COUNT, random, THREAD_COUNT
+              )), random
+          ), BOOST_ITERS, BOOST_STEP
+      );
+  }
+
+  @NotNull
+  private GradientSeqBoosting<Integer, LLLogit> getBoostingGPU() {
+    return new GradientSeqBoosting<>(
+        new BootstrapSeqOptimization<>(
+            new PNFAonGPU<>(MAX_STATE_COUNT, alphabet.size(), random, new SAGADescentGPU(
+                GRAD_STEP, DESCENT_STEP_COUNT, random, THREAD_COUNT
+            )), random
+        ), BOOST_ITERS, BOOST_STEP
+    );
+  }*/
+
   private class OneVsRest implements SeqOptimization<Integer, LLLogit> {
     private final int classCount;
     private final SeqOptimization<Integer, LLLogit> optimization;
