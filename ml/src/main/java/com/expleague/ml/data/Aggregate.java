@@ -78,7 +78,6 @@ public class Aggregate {
   }
 
   private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Aggregator thread", -1);
-
   public void remove(final Aggregate aggregate) {
     final AdditiveStatistics[] my = bins;
     final AdditiveStatistics[] other = aggregate.bins;

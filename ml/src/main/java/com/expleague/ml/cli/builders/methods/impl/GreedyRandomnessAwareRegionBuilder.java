@@ -7,6 +7,7 @@ import com.expleague.ml.methods.RandomnessAwareVecOptimization;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.trees.GreedyRandomnessAwareObliviousTree;
 import com.expleague.ml.methods.trees.GreedyRandomnessAwareRegion;
+import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
 
 /**
  * User: noxoomo
@@ -18,7 +19,7 @@ public class GreedyRandomnessAwareRegionBuilder implements Factory<VecOptimizati
   private FeatureExtractorsBuilder featureExtractorsBuilder = defaultFeaturesExtractorBuilder;
   private int depth = 20;
   private int binarization = 32;
-  private boolean sampled = true;
+  private BinOptimizedRandomnessPolicy policy = BinOptimizedRandomnessPolicy.PointEstimateBin;
   private boolean bootstrap = false;
   private boolean forceSampledSplit = false;
 
@@ -36,8 +37,10 @@ public class GreedyRandomnessAwareRegionBuilder implements Factory<VecOptimizati
     this.featureExtractorsBuilder = featureExtractorsBuilder;
   }
 
-  public void setSampled(final boolean sampled) {
-    this.sampled = sampled;
+
+  public GreedyRandomnessAwareRegionBuilder setPolicy(final String policy) {
+    this.policy = BinOptimizedRandomnessPolicy.valueOf(policy);
+    return this;
   }
 
   public void setBootstrapped(final boolean bootstrap) {
@@ -53,7 +56,7 @@ public class GreedyRandomnessAwareRegionBuilder implements Factory<VecOptimizati
 
   @Override
   public RandomnessAwareVecOptimization create() {
-    final GreedyRandomnessAwareRegion weak = new GreedyRandomnessAwareRegion(depth, featureExtractorsBuilder.build(), binarization, sampled, random);
+    final GreedyRandomnessAwareRegion weak = new GreedyRandomnessAwareRegion(depth, featureExtractorsBuilder.build(), binarization, policy, random);
     weak.useBootstrap(bootstrap);
     weak.forceSampledSplit(forceSampledSplit);
     return weak;

@@ -763,10 +763,10 @@ public void testElasticNetBenchmark() {
 
 
   public void testRandomnessAwareBoost() {
-    RandomnessAwareGradientBoosting.Config config = new RandomnessAwareGradientBoosting.Config(1000, 0.01);
+    RandomnessAwareGradientBoosting.Config config = new RandomnessAwareGradientBoosting.Config(1000, 0.01, BinOptimizedRandomnessPolicy.PointEstimateBin);
     FeatureExtractorsBuilder gridBuilder = new FeatureExtractorsBuilder(learn);
     gridBuilder.build();
-    final GreedyRandomnessAwareObliviousTree<L2> weak = new GreedyRandomnessAwareObliviousTree<>(6, gridBuilder.build(), 32, true, rng);
+    final GreedyRandomnessAwareObliviousTree<L2> weak = new GreedyRandomnessAwareObliviousTree<>(6, gridBuilder.build(), 32, BinOptimizedRandomnessPolicy.PointEstimateBin, rng);
     final RandomnessAwareGradientBoosting<L2> boosting = new RandomnessAwareGradientBoosting<>(weak, L2Reg.class, BinOptimizedRandomnessPolicy.PointEstimateBin, config);
     new addBoostingListeners<L2>(boosting, learn.target(L2.class), learn, validate);
   }

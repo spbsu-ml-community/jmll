@@ -143,7 +143,7 @@ public class GreedyTDWeakRegionMTA<Loss extends StatBasedLoss> extends VecOptimi
           } else {
             double leftScore = Double.POSITIVE_INFINITY;
 //            if (used[bf.findex] != 1) {
-//              final double prob = probs[bf.bfIndex * 2];//estimate(csum, ctotal);
+//              final double cdf = probs[bf.bfIndex * 2];//estimate(csum, ctotal);
 //              final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
             {
               final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
@@ -151,8 +151,8 @@ public class GreedyTDWeakRegionMTA<Loss extends StatBasedLoss> extends VecOptimi
 //              out.append(current.excluded);
               in.append(current.nonCriticalTotal);
               in.append(left);
-//              leftScore = (1 - prob) * outScore(out) + prob * inScore(in);// + 2 * ((1-prob) * Math.log(1-prob) + prob * Math.log(prob));
-//              leftScore = score(out) +  score(in);// + 2 * ((1-prob) * Math.log(1-prob) + prob * Math.log(prob));
+//              leftScore = (1 - cdf) * outScore(out) + cdf * inScore(in);// + 2 * ((1-cdf) * Math.log(1-cdf) + cdf * Math.log(cdf));
+//              leftScore = score(out) +  score(in);// + 2 * ((1-cdf) * Math.log(1-cdf) + cdf * Math.log(cdf));
               leftScore = inScore(in);
             }
 //            }
@@ -160,14 +160,14 @@ public class GreedyTDWeakRegionMTA<Loss extends StatBasedLoss> extends VecOptimi
             double rightScore = Double.POSITIVE_INFINITY;
             {
 //            if (used[bf.findex] != 2) {
-//              final double prob = probs[bf.bfIndex * 2 + 1];
+//              final double cdf = probs[bf.bfIndex * 2 + 1];
 //              final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
               final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
 //              out.append(left);
 //              out.append(current.excluded);
               in.append(current.nonCriticalTotal);
               in.append(right);
-//              rightScore = (1 - prob) * outScore(out) + prob * inScore(in);// + 2 * ((1-prob) * Math.log(1-prob) + prob * Math.log(prob));
+//              rightScore = (1 - cdf) * outScore(out) + cdf * inScore(in);// + 2 * ((1-cdf) * Math.log(1-cdf) + cdf * Math.log(cdf));
 //              rightScore = score(out) +  score(in);
               rightScore = inScore(in);
             }

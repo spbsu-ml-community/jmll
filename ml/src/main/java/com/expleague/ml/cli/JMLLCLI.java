@@ -32,6 +32,7 @@ public class JMLLCLI {
   public static final String CTRS_ESTIMATION = "ctrestimation";
 
   public static final String ONE_HOT_LIMIT = "onehot";
+  public static final String PRIOR_STRENGTH = "prior_strength";
 
   public static final String BIN_FOLDS_COUNT_OPTION = "x";
   public static final String GRID_OPTION = "g";
@@ -72,6 +73,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("ctrs").withDescription("ctrs").hasArgs().create(CTRS_OPTION));
     options.addOption(OptionBuilder.withLongOpt("ctrs-estimation").withDescription("ctrs estimation").hasArgs().create(CTRS_ESTIMATION));
     options.addOption(OptionBuilder.withLongOpt("onehot").withDescription("One hot limit").hasArg().create(ONE_HOT_LIMIT));
+    options.addOption(OptionBuilder.withLongOpt("prior-strength").withDescription("One hot limit").hasArg().create(PRIOR_STRENGTH));
 
     options.addOption(OptionBuilder.withLongOpt("bin-folds-count").withDescription("binarization precision: how many binary features inferred from real one").hasArg().create(BIN_FOLDS_COUNT_OPTION));
     options.addOption(OptionBuilder.withLongOpt("grid").withDescription("file with already precomputed grid").hasArg().create(GRID_OPTION));

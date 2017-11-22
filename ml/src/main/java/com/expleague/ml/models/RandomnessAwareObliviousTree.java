@@ -113,7 +113,7 @@ public class RandomnessAwareObliviousTree extends RandomnessAwareTrans.Stub<BinO
             if (splits[depth].value(featureInstance)) {
               ++bin;
             }
-            final double instance = sampler[bin].instance(random);
+            final double instance = policy == BinOptimizedRandomnessPolicy.SampleBin ? sampler[bin].instance(random) : values[bin].mean();
             result.set(doc, instance);
           }
         });

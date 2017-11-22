@@ -8,9 +8,6 @@ import com.expleague.ml.methods.Optimization;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
-import com.expleague.ml.methods.trees.GreedyRandomnessAwareObliviousTree;
-import com.expleague.ml.methods.trees.GreedyRandomnessAwareRegion;
-import com.expleague.ml.models.RandomnessAwareObliviousTree;
 
 import java.lang.reflect.Method;
 import java.util.StringTokenizer;
@@ -39,6 +36,7 @@ public class MethodsBuilder {
   public void setFeaturesExtractorBuilder(final FeatureExtractorsBuilder featuresExtractorBuilder) {
     GreedyRandomnessAwareObliviousTreeBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
     GreedyRandomnessAwareRegionBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
+    GreedyRandomnessAwareCtrTransBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
   }
 
   public void setRandom(final FastRandom random) {
@@ -49,6 +47,7 @@ public class MethodsBuilder {
     RidgeRegressionLeavesObliviousTreeBuilder.defaultRandom = random;
     GreedyRandomnessAwareObliviousTreeBuilder.defaultRandom = random;
     GreedyRandomnessAwareRegionBuilder.defaultRandom = random;
+    GreedyRandomnessAwareCtrTransBuilder.defaultRandom = random;
   }
 
   public VecOptimization create(final String scheme) {

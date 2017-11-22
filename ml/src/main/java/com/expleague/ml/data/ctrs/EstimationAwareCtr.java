@@ -21,7 +21,7 @@ public class EstimationAwareCtr implements Computable<VecDataSet, EstimationAwar
   public <U extends RandomVariable<U>> RandomVec<U> estimateTimeAware(final Ctr<U> ctr,
                                                                       final Vec target,
                                                                       final ArrayPermutation time) {
-    if (!computedCtrs.containsKey(ctr)) {
+    if (!contains(ctr)) {
       final RandomVecBuilder<U> builder =  ctr.randomVecBuilder();
       for (int i = 0; i < dataSet.length(); ++i) {
         final Mx data = dataSet.data();
@@ -35,17 +35,30 @@ public class EstimationAwareCtr implements Computable<VecDataSet, EstimationAwar
           final int idx = time.backward(i);
           directBuilder.add(orderdCtr.randomVariable(idx));
         }
-        computedCtrs.put(ctr, directBuilder.build());
+        synchronized (this) {
+          computedCtrs.put(ctr, directBuilder.build());
+        }
       } else {
-        computedCtrs.put(ctr, orderdCtr);
+        synchronized (this) {
+          computedCtrs.put(ctr, orderdCtr);
+        }
       }
     }
+    return get(ctr);
+  }
+
+  synchronized  <U extends RandomVariable<U>> RandomVec<U> get(final Ctr<U> ctr) {
     return computedCtrs.get(ctr);
   }
 
+  synchronized  boolean contains(final Ctr<?> ctr) {
+    return computedCtrs.containsKey(ctr);
+  }
+
+
   public <U extends RandomVariable<U>> RandomVec<U> estimateGreedy(final Ctr<U> ctr,
                                                                    final Vec target) {
-    if (!computedCtrs.containsKey(ctr)) {
+    if (!contains(ctr)) {
       int[] bins = new int[dataSet.length()];
 
       final Mx data = dataSet.data();
@@ -53,14 +66,16 @@ public class EstimationAwareCtr implements Computable<VecDataSet, EstimationAwar
         bins[i] = ctr.hash(data.row(i));
         ctr.update(bins[i], target.get(i));
       }
-      computedCtrs.put(ctr, ctr.randomVecForBins(bins));
+      synchronized (this) {
+        computedCtrs.put(ctr, ctr.randomVecForBins(bins));
+      }
     }
     return computedCtrs.get(ctr);
   }
 
   //just apply without update
   public <U extends RandomVariable<U>> RandomVec<U> apply(final Ctr<U> ctr) {
-    if (!computedCtrs.containsKey(ctr)) {
+    if (!contains(ctr)) {
       //we don't want to cache it. RAM is limited resource and java already use it a lot :)
       int[] bins = new int[dataSet.length()];
       final Mx data = dataSet.data();

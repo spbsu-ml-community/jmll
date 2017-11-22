@@ -3,11 +3,11 @@ package com.expleague.ml.cli.builders.methods.impl;
 import com.expleague.commons.func.Factory;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.ml.methods.RandomnessAwareGradientBoosting;
 import com.expleague.ml.methods.RandomnessAwareVecOptimization;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
+import com.expleague.ml.models.RandomVariableRandomnessPolicy;
 import com.expleague.ml.randomnessAware.ProcessRandomnessPolicy;
 
 /**
@@ -20,8 +20,8 @@ public class RandomnessAwareGradientBoostingBuilder implements Factory<VecOptimi
   private String lossName = "L2Reg";
   private double step = 0.005;
   private int iters = 1000;
-
-  private BinOptimizedRandomnessPolicy policy=BinOptimizedRandomnessPolicy.BinsExpectation;
+  private ProcessRandomnessPolicy policy = BinOptimizedRandomnessPolicy.PointEstimateBin;
+  private ProcessRandomnessPolicy scoreApplyPolicy = BinOptimizedRandomnessPolicy.PointEstimateBin;
 
   public void setStep(final double s) {
     this.step = s;
@@ -40,16 +40,30 @@ public class RandomnessAwareGradientBoostingBuilder implements Factory<VecOptimi
   }
 
   public RandomnessAwareGradientBoostingBuilder setPolicy(final String policy) {
-    this.policy =BinOptimizedRandomnessPolicy.valueOf(policy);
+    this.policy = getPolicy(policy);
     return this;
   }
+
+  ProcessRandomnessPolicy getPolicy(final String policy) {
+    try {
+      return BinOptimizedRandomnessPolicy.valueOf(policy);
+    } catch (IllegalArgumentException e) {
+      return RandomVariableRandomnessPolicy.valueOf(policy);
+    }
+  }
+
+  public RandomnessAwareGradientBoostingBuilder setScoreApplyPolicy(final String policy) {
+    this.scoreApplyPolicy = getPolicy(policy);
+    return this;
+  }
+
 
   @Override
   public VecOptimization create() {
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
-    RandomnessAwareGradientBoosting.Config config = new RandomnessAwareGradientBoosting.Config(iters, step);
+    RandomnessAwareGradientBoosting.Config config = new RandomnessAwareGradientBoosting.Config(iters, step, scoreApplyPolicy);
     //noinspection unchecked
     return new RandomnessAwareGradientBoosting((RandomnessAwareVecOptimization<L2>) weak, DataTools.targetByName(lossName), policy, config);
   }

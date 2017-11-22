@@ -1,7 +1,10 @@
 package com.expleague.ml.data.ctrs;
 
 import com.expleague.commons.func.Action;
+import com.expleague.commons.math.Func;
+import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.bayesianEstimation.ConjugateBayesianEstimator;
 import com.expleague.ml.data.perfectHash.PerfectHash;
@@ -11,7 +14,9 @@ import com.expleague.ml.distributions.RandomVariable;
 import com.expleague.ml.distributions.RandomVec;
 import com.expleague.ml.distributions.RandomVecBuilder;
 import com.expleague.ml.distributions.samplers.RandomVecSampler;
+import com.expleague.ml.models.RandomVariableRandomnessPolicy;
 import com.expleague.ml.randomnessAware.HashedRandomFeatureExtractor;
+import com.expleague.ml.randomnessAware.RandomnessAwareTrans;
 
 import java.util.function.Consumer;
 
@@ -19,7 +24,7 @@ import java.util.function.Consumer;
 /**
  * Created by noxoomo on 27/10/2017.
  */
-public class Ctr<U extends RandomVariable<U>> implements HashedRandomFeatureExtractor<U> {
+public class Ctr<U extends RandomVariable<U>>  implements HashedRandomFeatureExtractor<U> {
   private final DynamicRandomVec<U> knownCtrsTable;
   private final PerfectHash<Vec> perfectHash;
   private final ConjugateBayesianEstimator<U> estimator;
@@ -42,6 +47,10 @@ public class Ctr<U extends RandomVariable<U>> implements HashedRandomFeatureExtr
       addCtr.invoke(prior);
     }
     perfectHash.addListener(key -> addCtr.invoke(prior));
+  }
+
+  public PerfectHash<Vec> ctrHash() {
+    return perfectHash;
   }
 
   public int hash(final Vec featuresVec) {
@@ -144,6 +153,7 @@ public class Ctr<U extends RandomVariable<U>> implements HashedRandomFeatureExtr
     return dataSet.cache().cache(EstimationAwareCtr.class, VecDataSet.class).apply(this);
   }
 
+
   @Override
   public final int dim() {
     return dim;
@@ -154,13 +164,7 @@ public class Ctr<U extends RandomVariable<U>> implements HashedRandomFeatureExtr
     return prior.vecBuilder();
   }
 
-  public final RandomVec<U> applyAll(final VecDataSet dataSet) {
-    return dataSet.cache().cache(EstimationAwareCtr.class, VecDataSet.class).apply(this);
-  }
 }
-
-
-
 
 
 

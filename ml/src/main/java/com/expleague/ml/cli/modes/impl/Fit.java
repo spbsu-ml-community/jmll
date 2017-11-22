@@ -100,7 +100,6 @@ public class Fit extends AbstractMode {
     methodsBuilder.setGridBuilder(gridBuilder);
     methodsBuilder.setDynamicGridBuilder(dynamicGridBuilder);
     methodsBuilder.setFeaturesExtractorBuilder(featureExtractorsBuilder);
-    final VecOptimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
 
     //set target
     final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
@@ -109,15 +108,21 @@ public class Fit extends AbstractMode {
     final CtrEstimationPolicy ctrEstimationPolicy = CtrEstimationPolicy.valueOf(command.getOptionValue(CTRS_ESTIMATION, CtrEstimationPolicy.Greedy.name()));
     featureExtractorsBuilder.setEstimationPolicy(ctrEstimationPolicy);
     featureExtractorsBuilder.useRandomPermutation(random);
+    if (command.hasOption(PRIOR_STRENGTH)) {
+      featureExtractorsBuilder.setPriorStrength(Double.valueOf(command.getOptionValue(PRIOR_STRENGTH)));
+    }
+    if (command.hasOption(ONE_HOT_LIMIT)) {
+      featureExtractorsBuilder.useOneHots(Integer.valueOf(command.getOptionValue(ONE_HOT_LIMIT)));
+    }
     final String[] ctrs = command.getOptionValues(CTRS_OPTION);
     if (ctrs != null) {
       for (final String ctrName : ctrs) {
         featureExtractorsBuilder.addCtrs(new CtrTarget((Vec) learn.target(0), CtrTarget.CtrTargetType.valueOf(ctrName)));
       }
     }
-    if (command.hasOption(ONE_HOT_LIMIT)) {
-      featureExtractorsBuilder.useOneHots(Integer.valueOf(command.getOptionValue(ONE_HOT_LIMIT)));
-    }
+
+
+    final VecOptimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
 
     //set metrics
     final String[] metricNames = command.getOptionValues(METRICS_OPTION);

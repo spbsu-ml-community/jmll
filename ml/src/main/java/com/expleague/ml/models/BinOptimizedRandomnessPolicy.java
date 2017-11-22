@@ -12,3 +12,4 @@ public enum BinOptimizedRandomnessPolicy implements ProcessRandomnessPolicy {
   BinsExpectation,
   PointEstimateBin
 }
+

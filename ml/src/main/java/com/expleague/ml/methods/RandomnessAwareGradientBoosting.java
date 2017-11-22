@@ -7,12 +7,12 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.TargetFunc;
+import com.expleague.ml.data.ctrs.CtrTrans;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.func.RandomnessAwareEnsemble;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.L2Reg;
-import com.expleague.ml.methods.trees.GreedyRandomnessAwareObliviousTree;
 import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
 import com.expleague.ml.randomnessAware.RandomnessAwareTrans;
 import com.expleague.ml.randomnessAware.ProcessRandomnessPolicy;
@@ -52,7 +52,7 @@ public class RandomnessAwareGradientBoosting<GlobalLoss extends TargetFunc> exte
                                      final GlobalLoss globalLoss) {
 
     final Vec cursor = new ArrayVec(globalLoss.xdim());
-    final List<RandomnessAwareTrans> weakModels = new ArrayList<>(config.iterationsCount);
+    final List<RandomnessAwareTrans<ProcessRandomnessPolicy>> weakModels = new ArrayList<>(config.iterationsCount);
     final Trans gradient = globalLoss.gradient();
     final Vec gradientValueAtCursor = new ArrayVec(globalLoss.xdim());
 
@@ -61,26 +61,32 @@ public class RandomnessAwareGradientBoosting<GlobalLoss extends TargetFunc> exte
       final L2 localLoss = DataTools.newTarget(factory, gradientValueAtCursor, learn);
       final RandomnessAwareTrans weakModel = weak.fit(learn, localLoss);
       weakModel.setRandom(random);
-      weakModel.changePolicy(transPolicy);
+      if (!(weakModel instanceof CtrTrans)) {
+        weakModel.changePolicy(transPolicy);
+      }
       weakModels.add(weakModel);
       final Vec modelValues = weakModel.transAll(learn);
       VecTools.append(cursor, VecTools.scale(modelValues, -config.step));
-//      weakModel.changePolicy(BinOptimizedRandomnessPolicy.PointEstimateBin);
+      if  (!(weakModel instanceof CtrTrans)) {
+        weakModel.changePolicy(config.scoreApplyPolicy);
+      }
 
-      invoke(new RandomnessAwareEnsemble(weakModels, -config.step, random));
+      invoke(new RandomnessAwareEnsemble<>(weakModels, -config.step, random));
     }
-    return new RandomnessAwareEnsemble(weakModels, -config.step, random);
+    return new RandomnessAwareEnsemble<>(weakModels, -config.step, random);
   }
 
 
   public static class Config {
     int iterationsCount;
     double step;
+    ProcessRandomnessPolicy scoreApplyPolicy;
 
     public Config(final int iterationsCount,
-                  final double step) {
+                  final double step, final ProcessRandomnessPolicy policy) {
       this.iterationsCount = iterationsCount;
       this.step = step;
+      this.scoreApplyPolicy = policy;
     }
   }
 }

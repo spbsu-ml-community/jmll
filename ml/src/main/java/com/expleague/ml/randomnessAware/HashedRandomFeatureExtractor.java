@@ -27,7 +27,4 @@ public interface HashedRandomFeatureExtractor<U extends RandomVariable<U>> exten
     return randomVecForBins(bins);
   }
 
-  default RandomVec<U> applyAll(final VecDataSet dataSet) {
-    return applyAll(dataSet.data());
-  }
 }

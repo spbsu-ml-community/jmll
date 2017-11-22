@@ -1,5 +1,6 @@
 package com.expleague.ml.distributions.parametric;
 
+import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.distributions.RandomVariable;
 import com.expleague.ml.distributions.RandomVecBuilder;
 import com.expleague.ml.distributions.samplers.RandomVariableSampler;
@@ -12,6 +13,50 @@ public interface NormalGammaDistribution extends RandomVariable<NormalGammaDistr
   double lambda();
   double alpha();
   double beta();
+
+  default double mean() {
+    return mu();
+  }
+  NormalGammaDistribution update(double mu, double lambda, double alpha, double beta);
+
+  default double cdf(double x) {
+    return Stub.cdf(x, mu(), lambda(), alpha(), beta());
+  }
+
+  public static class Stub {
+    public static double cdf(double x, double mu, double lambda, double alpha, double beta) {
+      throw new RuntimeException("unimplemented");
+    }
+
+    public static double expectation(double mu, double lambda, double alpha, double beta) {
+      return mu;
+    }
+
+    public static boolean equals(final NormalGammaDistribution left,
+                                 final NormalGammaDistribution right) {
+      return left.mu() == right.mu() && left.lambda() == right.lambda() && left.alpha() == right.alpha() && left.beta() == right.beta();
+    }
+
+    public static int hashCode(final NormalGammaDistribution dist) {
+      int result;
+      long temp;
+      temp = Double.doubleToLongBits(dist.mu());
+      result = (int) (temp ^ (temp >>> 32));
+      temp = Double.doubleToLongBits(dist.lambda());
+      result = 31 * result + (int) (temp ^ (temp >>> 32));
+      temp = Double.doubleToLongBits(dist.alpha());
+      result = 31 * result + (int) (temp ^ (temp >>> 32));
+      temp = Double.doubleToLongBits(dist.beta());
+      result = 31 * result + (int) (temp ^ (temp >>> 32));
+      return result;
+    }
+
+    public static double instance(final FastRandom random, double mu, double lambda, double alpha, double beta) {
+      final double tau = random.nextBayessianGamma(alpha, beta);
+      return mu + random.nextGaussian() * Math.sqrt(1.0 / lambda / tau);
+    }
+
+  }
 
   class MeanImpl implements RandomVariable<NormalGammaDistribution> {
     final double mu;

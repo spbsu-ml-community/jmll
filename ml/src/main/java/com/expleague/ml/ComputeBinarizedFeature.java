@@ -7,6 +7,7 @@ import com.expleague.ml.data.impl.PointEstimateBinarizedFeature;
 import com.expleague.ml.data.impl.SampledBinarizedFeature;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.distributions.RandomVec;
+import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
 import com.expleague.ml.randomnessAware.DeterministicFeatureExctractor;
 import com.expleague.ml.randomnessAware.VecRandomFeatureExtractor;
 
@@ -21,7 +22,7 @@ public class ComputeBinarizedFeature implements Computable<VecDataSet, ComputeBi
 
   public BinarizedFeature build(final VecRandomFeatureExtractor featureExtractor,
                                 final FeatureBinarization featureBinarization,
-                                boolean sampled
+                                BinOptimizedRandomnessPolicy policy
   ) {
     if (!binarizedFeatures.containsKey(featureExtractor)) {
       final RandomVec feature = featureExtractor.apply(dataSet);
@@ -30,11 +31,22 @@ public class ComputeBinarizedFeature implements Computable<VecDataSet, ComputeBi
         binarizedFeature = new PointEstimateBinarizedFeature(featureBinarization, feature);
       }
       else {
-        if (sampled) {
-          binarizedFeature = new SampledBinarizedFeature(featureBinarization, feature);
-        }
-        else {
-          binarizedFeature = new BinarizedFeatureExpectation(featureBinarization, feature);
+        switch (policy) {
+          case BinsExpectation: {
+            binarizedFeature = new BinarizedFeatureExpectation(featureBinarization, feature);
+            break;
+          }
+          case SampleBin: {
+            binarizedFeature = new SampledBinarizedFeature(featureBinarization, feature);
+            break;
+          }
+          case PointEstimateBin: {
+            binarizedFeature = new PointEstimateBinarizedFeature(featureBinarization, feature);
+            break;
+          }
+          default: {
+            throw new RuntimeException("unknown policy");
+          }
         }
       }
       synchronized (this) {

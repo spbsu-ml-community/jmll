@@ -2,11 +2,13 @@ package com.expleague.ml;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.bayesianEstimation.ConjugateBayesianEstimator;
 import com.expleague.ml.bayesianEstimation.impl.BetaConjugateBayesianEstimator;
+import com.expleague.ml.bayesianEstimation.impl.NormalConjugateBayesianEstimator;
 import com.expleague.ml.data.ctrs.Ctr;
 import com.expleague.ml.data.ctrs.CtrEstimationPolicy;
 import com.expleague.ml.data.ctrs.CtrTarget;
@@ -19,11 +21,13 @@ import com.expleague.ml.distributions.DynamicRandomVec;
 import com.expleague.ml.distributions.RandomVariable;
 import com.expleague.ml.distributions.parametric.impl.BetaDistributionImpl;
 import com.expleague.ml.distributions.parametric.impl.BetaVecDistributionImpl;
+import com.expleague.ml.distributions.parametric.impl.NormalGammaVecDistributionImpl;
 import com.expleague.ml.randomnessAware.DeterministicFeatureExctractor;
 import com.expleague.ml.randomnessAware.VecRandomFeatureExtractor;
 import gnu.trove.set.hash.TDoubleHashSet;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by noxoomo on 06/11/2017.
@@ -34,6 +38,15 @@ public class FeatureExtractorsBuilder {
   private List<VecRandomFeatureExtractor> extractors = new ArrayList<>();
   private ArrayPermutation ctrEstimationOrder;
   private CtrEstimationPolicy policy = CtrEstimationPolicy.Greedy;
+  private double priorStrength = 1.0;
+
+  public ArrayPermutation ctrEstimationOrder() {
+    return ctrEstimationOrder;
+  }
+
+  public CtrEstimationPolicy ctrEstimationPolicy() {
+    return policy;
+  }
 
   public FeatureExtractorsBuilder(Pool<?> pool) {
     this.dataSet = pool.vecData();
@@ -61,6 +74,11 @@ public class FeatureExtractorsBuilder {
     }
   }
 
+  public FeatureExtractorsBuilder setPriorStrength(double strength) {
+    this.priorStrength = strength;
+    return this;
+  }
+
   public FeatureExtractorsBuilder useRandomPermutation(final FastRandom random) {
     final int[] indices = ArrayTools.sequence(0, dataSet.length());
     ArrayTools.shuffle(indices, random);
@@ -74,18 +92,26 @@ public class FeatureExtractorsBuilder {
     return this;
   }
 
+  public List<PerfectHash<Vec>> hashes() {
+    final ArrayList<PerfectHash<Vec>> perfectHashes = new ArrayList<>();
+    for (Integer feature : catFeatures.keySet()) {
+      perfectHashes.add(getCatFeatureHash(feature));
+    }
+    return perfectHashes;
+  }
 
   public FeatureExtractorsBuilder addCtrs(final CtrTarget target) {
     for (final Integer catFeature : catFeatures.keySet()) {
-      final List<Ctr<?>> ctrs = createCtr(target.type(), catFeature);
+      final List<Ctr<?>> ctrs = createCtr(target, catFeature);
       for (Ctr<?> ctr : ctrs) {
         dataSet.cache().cache(EstimationAwareCtr.class, VecDataSet.class).estimate(policy, ctr, target.target(), ctrEstimationOrder);
         extractors.add(ctr);
       }
-
     }
     return this;
   }
+
+
 
   public FeatureExtractorsBuilder useOneHots(int limit) {
     final Mx data = dataSet.data();
@@ -109,51 +135,54 @@ public class FeatureExtractorsBuilder {
     return dataSet.cache().cache(ComputeCatFeaturesPerfectHash.class, VecDataSet.class).hash(featureId);
   }
 
-  private List<RandomVariable<?>> createPrior(CtrTarget.CtrTargetType targetType) {
-    switch (targetType) {
+  private List<RandomVariable<?>> createPrior(CtrTarget target) {
+    switch (target.type()) {
       case Binomial: {
+        final double mean = VecTools.sum(target.target()) / target.target().dim();
         final ArrayList<RandomVariable<?>> result = new ArrayList<>();
 //        result.add(new BetaDistributionImpl(0.0, 1.0));
 //        result.add(new BetaDistributionImpl(1.0, 0.0));
-        result.add(new BetaDistributionImpl(1.0, 1.0));
+        result.add(new BetaDistributionImpl(mean * priorStrength, (1.0 - mean) * priorStrength));
         return result;
       }
       case Normal:
       default: {
-        throw new RuntimeException("Unimplemented ctr target " + targetType);
+        throw new RuntimeException("Unimplemented ctr target " + target.type());
       }
     }
   }
 
-  private List<Ctr<?>> createCtr(CtrTarget.CtrTargetType targetType, int featureId) {
-    final List<RandomVariable<?>> priors = createPrior(targetType);
+  private List<Ctr<?>> createCtr(CtrTarget target, int featureId) {
+    final List<RandomVariable<?>> priors = createPrior(target);
     final List<Ctr<?>> ctrs = new ArrayList<>();
     for (final RandomVariable prior : priors) {
-      ctrs.add(new Ctr(createDynamicVec(targetType), getCatFeatureHash
-          (featureId), prior, createEstimator(targetType), dataSet.data().columns()));
+      ctrs.add(new Ctr(createDynamicVec(target.type()), getCatFeatureHash
+          (featureId), prior, createEstimator(target.type()), dataSet.data().columns()));
     }
     return ctrs;
   }
 
 
-  private ConjugateBayesianEstimator<?> createEstimator(CtrTarget.CtrTargetType target) {
+  public static ConjugateBayesianEstimator<?> createEstimator(CtrTarget.CtrTargetType target) {
     switch (target) {
       case Binomial: {
         return new BetaConjugateBayesianEstimator();
       }
       case Normal:
+        return new NormalConjugateBayesianEstimator();
       default: {
         throw new RuntimeException("Unimplemented ctr target " + target);
       }
     }
   }
 
-  private DynamicRandomVec<?> createDynamicVec(CtrTarget.CtrTargetType target) {
+  public static DynamicRandomVec<?> createDynamicVec(CtrTarget.CtrTargetType target) {
     switch (target) {
       case Binomial: {
         return new BetaVecDistributionImpl();
       }
       case Normal:
+        return new NormalGammaVecDistributionImpl();
       default: {
         throw new RuntimeException("Unimplemented ctr target " + target);
       }

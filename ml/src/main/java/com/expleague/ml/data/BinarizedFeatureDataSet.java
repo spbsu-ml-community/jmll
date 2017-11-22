@@ -9,6 +9,7 @@ import com.expleague.ml.ComputeRowOffsets;
 import com.expleague.ml.FeatureBinarization;
 import com.expleague.ml.data.impl.BinarizedFeature;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
 import com.expleague.ml.randomnessAware.VecRandomFeatureExtractor;
 
 import java.util.*;
@@ -61,7 +62,7 @@ public class BinarizedFeatureDataSet implements CacheHolder {
     private final int binCount;
     private final FastRandom random;
     private final List<BinarizedFeature> features = new ArrayList<>();
-    private boolean sampled = true;
+    private BinOptimizedRandomnessPolicy policy;
 
     public Builder(final VecDataSet basedOn,
                    final int binCount,
@@ -71,20 +72,19 @@ public class BinarizedFeatureDataSet implements CacheHolder {
       this.random = random;
     }
 
-    public Builder setSampledFlag(boolean flag) {
-      sampled = flag;
-      return this;
-    }
-
 
     public Builder addFeature(final VecRandomFeatureExtractor extractor) {
       final FeatureBinarization featureBinarization = basedOn.cache().cache(ComputeBinarization.class, VecDataSet.class).computeBinarization(extractor, random, binCount);
-      features.add(basedOn.cache().cache(ComputeBinarizedFeature.class, VecDataSet.class).build(extractor, featureBinarization, sampled));
+      features.add(basedOn.cache().cache(ComputeBinarizedFeature.class, VecDataSet.class).build(extractor, featureBinarization, policy));
       return this;
     }
 
     public BinarizedFeatureDataSet build() {
       return new BinarizedFeatureDataSet(basedOn, features);
+    }
+
+    public void setPolicy(final BinOptimizedRandomnessPolicy policy) {
+      this.policy = policy;
     }
   }
 

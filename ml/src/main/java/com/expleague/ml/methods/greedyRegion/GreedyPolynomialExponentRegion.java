@@ -141,7 +141,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     }
     System.out.println("\n" + countIn + " " + sum);
     //for (int i = 0; i < matrixSize; i++)
-    //mx.adjust(i, i, regulationCoeffiecent);
+    //mx.update(i, i, regulationCoeffiecent);
     for (int i = 0; i < matrixSize; i++)
       linear.set(i, -linear.get(i));
 
