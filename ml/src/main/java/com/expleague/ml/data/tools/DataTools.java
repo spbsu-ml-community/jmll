@@ -28,6 +28,7 @@ import com.expleague.ml.io.ModelsSerializationRepository;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
+import com.expleague.ml.meta.GroupedDSItem;
 import com.expleague.ml.meta.PoolFeatureMeta;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
@@ -59,9 +60,12 @@ import com.expleague.ml.models.ObliviousMultiClassTree;
 import com.expleague.ml.models.multilabel.MultiLabelBinarizedModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 
@@ -71,6 +75,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
@@ -231,6 +236,7 @@ public class DataTools {
 
   public static void writeBinModel(final Function result, final File file) throws IOException {
     if (result instanceof Ensemble) {
+      //noinspection unchecked
       final Ensemble<Trans> ensemble = (Ensemble) result;
       if (ensemble.models.length == 0)
         return;
@@ -361,11 +367,12 @@ public class DataTools {
     for (int i = 0; i < loss.xdim(); i++) {
       poissonWeights[i] = rnd.nextPoisson(1.);
     }
-    return new WeightedLoss<LocalLoss>(loss, poissonWeights);
+    return new WeightedLoss<>(loss, poissonWeights);
   }
 
   public static Class<? extends TargetFunc> targetByName(final String name) {
     try {
+      //noinspection unchecked
       return (Class<? extends TargetFunc>) Class.forName("com.expleague.ml.loss." + name);
     }
     catch (Exception e) {
@@ -389,6 +396,43 @@ public class DataTools {
     return result;
   }
 
+  public static <D extends DSItem> List<Pool<D>> splitDataSet(Pool<D> pool, final FastRandom rng, final double... v) {
+    final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rng, v);
+    final List<Pool<D>> result = new ArrayList<>();
+    for (int i = 0; i < v.length; i++) {
+      result.add(new SubPool<>(pool, cvSplit[i]));
+    }
+    return result;
+  }
+
+  public static <D extends GroupedDSItem> List<Pool<D>> splitGroupDataSet(Pool<D> pool, final FastRandom rng, final double... v) {
+    final TObjectIntMap<String> groups = new TObjectIntHashMap<>();
+    final TIntObjectMap<String> rgroups = new TIntObjectHashMap<>();
+    for (int i = 0; i < pool.size(); i++) {
+      final String group = pool.items.at(i).groupId();
+      if (!groups.containsKey(group)) {
+        rgroups.put(groups.size(), group);
+        groups.put(group, groups.size());
+      }
+    }
+
+    final int[][] cvSplit = DataTools.splitAtRandom(groups.size(), rng, v);
+    final List<Pool<D>> result = new ArrayList<>();
+    for (int i = 0; i < v.length; i++) {
+      final TIntList indices = new TIntArrayList();
+      final Set<String> currentGroups = Arrays.stream(cvSplit[i]).mapToObj(rgroups::get).collect(Collectors.toSet());
+
+      for (int j = 0; j < pool.size(); j++) {
+        final String group = pool.items.at(j).groupId();
+        if (currentGroups.contains(group))
+          indices.add(j);
+      }
+
+      result.add(new SubPool<>(pool, indices.toArray()));
+    }
+    return result;
+  }
+
   public static <T> Vec calcAll(final Function<T, Vec> result, final DataSet<T> data) {
     final VecBuilder results = new VecBuilder(data.length());
     int dim = 0;
@@ -403,7 +447,7 @@ public class DataTools {
   }
 
   public static <Target extends TargetFunc> Target newTarget(final Class<Target> targetClass, final Seq<?> values, final DataSet<?> ds) {
-    Target target = null;
+    Target target;
     target = RuntimeUtils.newInstanceByAssignable(targetClass, values, ds);
     if (target != null)
       return target;
