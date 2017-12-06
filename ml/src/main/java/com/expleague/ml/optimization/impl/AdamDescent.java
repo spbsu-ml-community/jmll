@@ -1,6 +1,7 @@
 package com.expleague.ml.optimization.impl;
 
 import com.expleague.commons.math.FuncC1;
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
@@ -24,7 +25,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   private final int batchSize;
 
   public AdamDescent(Random random, int epochCount, int batchSize) {
-    this(random, epochCount, batchSize, 0.002, 0.9, 0.999, 1e-8);
+    this(random, epochCount, batchSize, 0.001, 0.9, 0.999, 1e-8);
   }
 
   public AdamDescent(Random random, int epochCount, int batchSize, double step) {
@@ -57,7 +58,6 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     final Vec x = VecTools.copy(x0);
     final Vec v = new ArrayVec(x.dim());
     final Vec c = new ArrayVec(x.dim());
-    Vec grad = new ArrayVec(x.dim());
     double error = sumFuncs.value(x) / sumFuncs.size();
 
     final List<Integer> permutation = new ArrayList<>(sumFuncs.size());
@@ -65,34 +65,36 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
       permutation.add(i);
     }
 
+    long timeToGrad = 0;
+    long timeToSum = 0;
     for (int epoch = 0; epoch < epochCount; epoch++) {
       Collections.shuffle(permutation, random);
       for (int i = 0; i + batchSize < sumFuncs.size(); i += batchSize) {
-        VecTools.fill(grad, 0);
         IntStream stream;
         if (batchSize > 1) {
           stream = IntStream.range(i, i + batchSize).parallel();
         } else {
           stream = IntStream.range(i, i + batchSize);
         }
-        grad = stream
-            .mapToObj(j -> VecTools.scale(sumFuncs.models[permutation.get(j)].gradient(x), 1.0 / batchSize))
-            .reduce((vec1, vec2) -> VecTools.append(vec1, vec2)).get();
+        long start = System.nanoTime();
+        final double[] grad = stream
+            .mapToObj(j -> sumFuncs.models[permutation.get(j)].gradient(x))
+            .reduce(VecTools::append).get().toArray();
+        //todo is converting sparse vector to array a good idea?
+        timeToGrad += System.nanoTime() - start;
+        start = System.nanoTime();
 
-//        for (int j = i; j < i + batchSize; j++) {
-//          VecTools.append(grad, sumFuncs.models[permutation.get(j)].gradient(x));
-//        }
-//        VecTools.scale(grad, 1.0 / batchSize);
-        VecTools.scale(v, beta2);
-        VecTools.incscale(v, grad, 1 - beta2);
-
-        VecTools.scale(c, beta1);
-        VecTools.scale(grad, grad);
-        VecTools.incscale(c, grad, 1 - beta1);
-
-        for (int j = 0; j < x.dim(); j++)  {
-          x.adjust(j, -step * v.get(j) / (Math.sqrt(c.get(j) + eps)));
-        }
+        final int threadCount = Runtime.getRuntime().availableProcessors();
+        final int blockSize = (x.dim() + threadCount - 1) / threadCount;
+        IntStream.range(0, threadCount).parallel().forEach(blockNum -> {
+          for (int index = blockNum * blockSize; index < Math.min(x.dim(), (blockNum + 1) * blockSize); index++) {
+            final double gradAt = grad[index] / batchSize;
+            v.set(index, v.get(index) * beta2 + gradAt * (1 - beta2));
+            c.set(index, c.get(index) * beta1 + MathTools.sqr(gradAt * (1 - beta1)));
+            x.adjust(index, -step * v.get(index) / (Math.sqrt(c.get(index) + eps)));
+          }
+        });
+        timeToSum += System.nanoTime() - start;
       }
       if ((epoch + 1) % 5 == 0) {
         final double curError = sumFuncs.value(x) / sumFuncs.size();
@@ -107,6 +109,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         System.out.printf("ADAM descent epoch %d: new=%.6f old=%.6f\n", epoch, curError, error);
       }
     }
+    System.out.printf("Time to grad: %.3f, time to sum: %.3f\n", timeToGrad / 1e9, timeToSum / 1e9);
     System.out.printf("Adam Descent finished in %.2f seconds\n", (System.nanoTime() - startTime) / 1e9);
     return x;
   }
