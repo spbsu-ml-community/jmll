@@ -1,10 +1,13 @@
 package com.expleague.ml.methods.seq;
 
-import com.expleague.commons.math.MathTools;
-import com.expleague.commons.math.vectors.*;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.FuncC1;
+import com.expleague.commons.math.MathTools;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.MxTools;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.seq.IntSeq;
 import com.expleague.commons.seq.Seq;
@@ -26,7 +29,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
   private final int alphabetSize;
   private final Random random;
   private final Optimize<FuncEnsemble<? extends FuncC1>> weightsOptimize, valuesOptimize;
-  private static final double lambda = -0.005;
+  private static final double lambda = -0.01;
   private final int weightValueIterCount;
 
   public PNFA(final int stateCount, final int alphabetSize, final Random random,
@@ -68,7 +71,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     }
 
     final Vec optParams = params;
-    return (seq) -> new SingleValueVec(getSeqValue(optParams, (IntSeq) seq));
+    return (seq) -> new ArrayVec(getSeqValue(optParams, (IntSeq) seq));
   }
 
   private Vec init(Vec target) {
@@ -195,10 +198,6 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
       Vec expectedValue = getValues(x);
 
-      //for (int i = 0; i < stateCount; i++) {
-      //  expectedValue.set(i, getValues(x).get(i));
-      //}
-
       final double diff = VecTools.multiply(distributions[seq.length()], getValues(x)) - y;
 
       for (int i = seq.length() - 1; i >= 0; i--) {
@@ -208,7 +207,8 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
           for (int from = 0; from < stateCount; from++) {
             for (int j = 0; j < stateCount - 1; j++) {
               final double curW = w[a].get(from, to);
-              final double grad = 2 * weight * diff * distributions[i].get(from) * expectedValue.get(to);
+              double grad = 2 * weight * diff * distributions[i].get(from) * expectedValue.get(to)
+                  + lambda * curW;
               if (j == to) {
                 betaGrad[a].adjust(from, j, grad * curW * (1 - curW));
               }
@@ -220,24 +220,6 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
         }
         expectedValue = MxTools.multiply(w[a], expectedValue);
       }
-
-      for (int i = 0; i < seqAlphabet.length; i++) {
-        for (int to = 0; to < stateCount; to++) {
-          for (int from = 0; from < stateCount; from++) {
-            for (int j = 0; j < stateCount - 1; j++) {
-              final double curW = w[i].get(from, to);
-              final double grad = lambda * w[i].get(from, to);
-              if (j == to) {
-                betaGrad[i].adjust(from, j, grad * curW * (1 - curW));
-              }
-              else {
-                betaGrad[i].adjust(from, j, -grad * curW * w[i].get(from, j));
-              }
-            }
-          }
-        }
-      }
-
       final int[] indices = new int[betaGrad.length * betaGrad[0].dim()];
       final double[] values = new double[indices.length];
       for (int i = 0; i < betaGrad.length; i++) {
