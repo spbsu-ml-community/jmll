@@ -3,7 +3,6 @@ package com.expleague.ml.models.multiclass;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.SingleValueVec;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.util.ArrayTools;
@@ -38,8 +37,13 @@ public class JoinedBinClassModelSeq<T> implements Function<Seq<T>,Vec> {
 
   private Vec computeSum(final Seq<T> x) {
     Vec[] values = ArrayTools.map(internalModel, Vec.class, func -> func.apply(x));
-    final Vec sum = new ArrayVec(values[0].dim());
-    VecTools.append(sum, values);
+    if (values[0].dim() != 1) {
+      throw new IllegalArgumentException(); //todo is it right?
+    }
+    final Vec sum = new ArrayVec(internalModel.length);
+    for (int i = 0; i < internalModel.length; i++) {
+      sum.set(i, values[i].get(0));
+    }
     return sum;
   }
 }

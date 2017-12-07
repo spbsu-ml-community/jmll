@@ -22,8 +22,8 @@ import java.util.stream.Stream;
 
 public class BasecallingDataset {
   private static final int NUM_OF_LEVELS = 8192;
-  private static final int PREFIX_CONTEXT_LENGTH = 0;
-  private static final int SUFFIX_CONTEXT_LENGTH = 60;
+  private static final int PREFIX_CONTEXT_LENGTH = 40;
+  private static final int SUFFIX_CONTEXT_LENGTH = 40;
 
   public void prepareData(final Path dataSetFilePath, final Path readsPath, final int filesNum) throws IOException {
     final File dataSetFile = dataSetFilePath.toFile();
@@ -55,6 +55,8 @@ public class BasecallingDataset {
           final List<SquashedNanoporeEvent> events = getSquashedEvents(filePath, samplingRate);
 
           System.err.println("Mean length of event: " + 1.0 * events.stream().mapToInt(it -> it.length).sum() / events.size());
+          System.err.println("Median length of event: " + 1.0 * events.stream().mapToInt(it -> it
+              .length).sorted().skip(events.size() / 2).findFirst().orElse(0));
           System.err.println("Max length of event: " + events.stream().mapToInt(it -> it.length).max().orElse(0));
 
           final String baseCalledNucleotides = getNucleotides(filePath);

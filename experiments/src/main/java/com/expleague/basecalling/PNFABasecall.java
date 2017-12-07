@@ -9,10 +9,16 @@ import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.LLLogit;
 import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.expleague.ml.loss.multiclass.MCMicroPrecision;
 import com.expleague.ml.loss.multiclass.util.ConfusionMatrix;
+import com.expleague.ml.methods.SeqOptimization;
+import com.expleague.ml.methods.multiclass.MultiClassOneVsRestSeq;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlassSeq;
+import com.expleague.ml.methods.seq.BootstrapSeqOptimization;
 import com.expleague.ml.methods.seq.GradientSeqBoosting;
 import com.expleague.ml.methods.seq.PNFA;
 import com.expleague.ml.optimization.Optimize;
@@ -29,10 +35,14 @@ import java.util.function.Function;
 
 public class PNFABasecall {
   private static final int STATE_COUNT = 4;
-  private static final int EPOCH_COUNT = 50;
-  private static final int BATCH_SIZE = 16;
-  private static final int BOOST_ITERS = 1000;
+  private static final int WEIGHT_EPOCH_COUNT = 20;
+  private static final int VALUE_EPOCH_COUNT = 0;
+  private static final int BATCH_SIZE = 4;
+  private static final int BOOST_ITERS = 5;
   private static final double BOOST_STEP = 0.01;
+
+  private static final double WEIGHT_STEP = 0.003;
+  private static final double VALUE_STEP = 0.001;
   private final int alphabetSize;
 
   private final static String NUCLEOTIDES = "ACGT";
@@ -47,7 +57,8 @@ public class PNFABasecall {
   public PNFABasecall(final Path datasetPath,
                       final double trainPart,
                       final double testPart,
-                      final FastRandom random) throws IOException {
+                      final FastRandom random,
+                      final boolean useDifferences) throws IOException {
     this.random = random;
 
     final List<IntSeq> train = new ArrayList<>();
@@ -57,8 +68,14 @@ public class PNFABasecall {
 
     Files.readAllLines(datasetPath).forEach(line -> {
       final String[] tokens = line.split(" ");
-      final int clazz = NUCLEOTIDES.indexOf(tokens[1]);
-      final IntSeq seq = new IntSeq(Arrays.stream(tokens[2].split(",")).mapToInt(Integer::parseInt).toArray());
+      final int clazz = NUCLEOTIDES.indexOf(tokens[0]);
+      final int[] signal = Arrays
+          .stream(tokens[1].split(","))
+          .mapToInt(Integer::parseInt)
+          .toArray();
+      final IntSeq seq = useDifferences ? getDiffSeq(signal) : new IntSeq(signal);
+
+
       final double rnd = random.nextDouble();
       if (rnd < trainPart) {
         train.add(seq);
@@ -69,8 +86,10 @@ public class PNFABasecall {
       }
     });
 
-    final int minLevel = train.stream().flatMapToInt(seq -> ((IntSeq) seq).stream()).min().getAsInt();
-    final int maxLevel = train.stream().flatMapToInt(seq -> ((IntSeq) seq).stream()).max().getAsInt();
+//    final int minLevel = train.stream().flatMapToInt(seq -> ((IntSeq) seq).stream()).min().getAsInt();
+//    final int maxLevel = train.stream().flatMapToInt(seq -> ((IntSeq) seq).stream()).max().getAsInt();
+    final int minLevel = -4098;
+    final int maxLevel = 4097;
 
     train.forEach(seq -> {
       for (int i = 0; i < seq.length(); i++) {
@@ -124,11 +143,24 @@ public class PNFABasecall {
     System.out.println("Train size: " + train.size());
   }
 
-  void train() {
+  private IntSeq getDiffSeq(int[] signal) {
+    int[] diffSignal = new int[signal.length - 1];
+    for (int i = 0; i < signal.length - 1; i++) {
+      diffSignal[i] = signal[i + 1] - signal[0];
+    }
+    return new IntSeq(diffSignal);
+  }
+
+  void trainGradFac() {
     final BlockwiseMLLLogit globalLoss = new BlockwiseMLLLogit(trainLabels, trainDataSet);
-    final Optimize<FuncEnsemble<? extends FuncC1>> optimizer = new AdamDescent(random, EPOCH_COUNT, BATCH_SIZE);
-    //final Optimize<FuncEnsemble<? extends FuncC1>> optimizer = new SAGADescent(0.05, EPOCH_COUNT * trainDataSet.length(), random, 1);
-    final PNFA model = new PNFA(STATE_COUNT, alphabetSize, random, optimizer, 2);
+    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
+        random, WEIGHT_EPOCH_COUNT, BATCH_SIZE, WEIGHT_STEP
+    );
+    final Optimize<FuncEnsemble<? extends FuncC1>> valueOptimizer  = new AdamDescent(
+        random, VALUE_EPOCH_COUNT, BATCH_SIZE, VALUE_STEP
+    );
+    final PNFA model = new PNFA<>(STATE_COUNT, alphabetSize, random, weightOptimizer,
+        valueOptimizer, 2);
     final GradFacMulticlassSeq<Integer> multiClassModel = new GradFacMulticlassSeq<Integer>(
         model,
         new StochasticALS(random,100),
@@ -139,7 +171,27 @@ public class PNFABasecall {
     Consumer<Function<Seq<Integer>, Vec>> listener = this::printProgress;
     boosting.addListener(listener);
     boosting.fit(trainDataSet, globalLoss);
+  }
 
+  void trainOneVsRest() {
+    final MCMicroPrecision globalLoss = new MCMicroPrecision(trainLabels, trainDataSet);
+    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
+        random, WEIGHT_EPOCH_COUNT, BATCH_SIZE, WEIGHT_STEP
+    );
+    final Optimize<FuncEnsemble<? extends FuncC1>> valueOptimizer  = new AdamDescent(
+        random, VALUE_EPOCH_COUNT, BATCH_SIZE, VALUE_STEP
+    );
+    final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
+        new PNFA<>(STATE_COUNT, alphabetSize, random, weightOptimizer, valueOptimizer, 2), random
+    );
+    final SeqOptimization<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
+        model, BOOST_ITERS, BOOST_STEP
+    );
+
+    final MultiClassOneVsRestSeq<Integer> multiClassModel = new MultiClassOneVsRestSeq<>(boosting);
+
+    final Function<Seq<Integer>, Vec> classifier = multiClassModel.fit(trainDataSet, globalLoss);
+    printProgress(classifier);
   }
 
   private void printProgress(Function<Seq<Integer>, Vec> model) {
