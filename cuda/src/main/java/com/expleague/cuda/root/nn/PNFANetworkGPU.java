@@ -1,6 +1,5 @@
 package com.expleague.cuda.root.nn;
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.SingleValueVec;
@@ -20,6 +19,7 @@ import com.expleague.ml.methods.seq.automaton.DFA;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Function;
 
 /**
  * Created by hrundelb on 20.08.17.
@@ -61,7 +61,7 @@ public class PNFANetworkGPU<T, Loss extends L2> implements SeqOptimization<T, Lo
   }
 
   @Override
-  public Computable<Seq<T>, Vec> fit(DataSet<Seq<T>> learn, Loss loss) {
+  public Function<Seq<T>, Vec> fit(DataSet<Seq<T>> learn, Loss loss) {
     final PNFAParamsGPU<T> params = new PNFAParamsGPU<>(random, stateCount, alphabet);
 
     int maxLen = 0;
