@@ -69,7 +69,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     long timeToSum = 0;
     for (int epoch = 0; epoch < epochCount; epoch++) {
       Collections.shuffle(permutation, random);
-      for (int i = 0; i + batchSize < sumFuncs.size(); i += batchSize) {
+      for (int i = 0; i + batchSize <= sumFuncs.size(); i += batchSize) {
         IntStream stream;
         if (batchSize > 1) {
           stream = IntStream.range(i, i + batchSize).parallel();

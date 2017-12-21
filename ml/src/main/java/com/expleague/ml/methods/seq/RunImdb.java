@@ -1,18 +1,20 @@
 package com.expleague.ml.methods.seq;
 
+import com.expleague.commons.io.codec.seq.DictExpansion;
+import com.expleague.commons.io.codec.seq.Dictionary;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.seq.CharSeqArray;
-import com.expleague.commons.seq.IntSeq;
-import com.expleague.commons.io.codec.seq.DictExpansion;
-import com.expleague.commons.io.codec.seq.Dictionary;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.CharSeq;
+import com.expleague.commons.seq.CharSeqArray;
+import com.expleague.commons.seq.IntSeq;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
 import com.expleague.ml.optimization.impl.AdamDescent;
+import com.expleague.ml.optimization.impl.FullGradientDescent;
+import org.apache.commons.cli.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,11 +31,14 @@ public class RunImdb {
   private static final FastRandom random = new FastRandom(239);
 
   private static final int BOOST_ITERS = 1000;
-  private static final double BOOST_STEP = 0.2;
-  private static final int MAX_STATE_COUNT = 4;
-  private static final int EPOCH_COUNT = 1;
+  private static final int WEIGHTS_EPOCH_COUNT = 5;
+  private static final int VALUES_EPOCH_COUNT = 5;
+  private static final double VALUE_GRAD_STEP = 0.3;
   private static final double GRAD_STEP = 0.3;
-  private static final int THREAD_COUNT = 1;
+  private final double lambda;
+  private final double addToDiag;
+  private final int stateCount;
+  private final double boostStep;
 
   private List<Seq<Integer>> train;
   private Vec trainTarget;
@@ -44,6 +49,16 @@ public class RunImdb {
   private int maxLen;
 
   private Dictionary<Character> dictionary;
+
+  public RunImdb(final int stateCount,
+                 final double lambda,
+                 final double addToDiag,
+                 final double boostStep) {
+    this.stateCount = stateCount;
+    this.lambda = lambda;
+    this.addToDiag = addToDiag;
+    this.boostStep = boostStep;
+  }
 
   public void loadWordData() throws IOException {
     train = new ArrayList<>(TRAIN_SIZE);
@@ -58,11 +73,11 @@ public class RunImdb {
   public void loadData() throws IOException {
     System.out.println("Number of cores: " + Runtime.getRuntime().availableProcessors());
     System.out.println("Alphabet size: " + ALPHABET_SIZE);
-    System.out.println("States count: " + MAX_STATE_COUNT);
-    System.out.println("GradBoost step: " + BOOST_STEP);
+    System.out.println("States count: " + stateCount);
+    System.out.println("GradBoost step: " + boostStep);
     System.out.println("GradBoost iters: " + BOOST_ITERS);
     System.out.println("GradDesc step: " + GRAD_STEP);
-    System.out.println("Grad iters: " + EPOCH_COUNT);
+    System.out.println("Grad iters: " + WEIGHTS_EPOCH_COUNT);
     System.out.println("Train size: " + TRAIN_SIZE);
 
 
@@ -149,12 +164,13 @@ public class RunImdb {
 
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFA<>(MAX_STATE_COUNT, ALPHABET_SIZE, random,
-                //new SAGADescent(GRAD_STEP, EPOCH_COUNT, random, THREAD_COUNT)
-                  new AdamDescent(random, EPOCH_COUNT, 4), 2
+            new PNFA<>(stateCount, 1, ALPHABET_SIZE, lambda, addToDiag, random,
+                new AdamDescent(random, WEIGHTS_EPOCH_COUNT, 4),
+                new FullGradientDescent(random, VALUE_GRAD_STEP, VALUES_EPOCH_COUNT),
+                2
             ), random
         ),
-        BOOST_ITERS, BOOST_STEP
+        BOOST_ITERS, boostStep
     );
 
 
@@ -187,7 +203,7 @@ public class RunImdb {
 
   private List<CharSeq> readData(final String filePath) throws IOException {
     long start = System.nanoTime();
-      final List<CharSeq> data = Files.list(Paths.get(filePath)).map(path -> {
+    final List<CharSeq> data = Files.list(Paths.get(filePath)).map(path -> {
       try {
         return  new CharSeqArray(Files.readAllLines(path)
             .stream()
@@ -224,8 +240,23 @@ public class RunImdb {
     return lllogit.value(values);
   }
 
-  public static void main(String[] args) throws IOException {
-    RunImdb test = new RunImdb();
+  private static Options options = new Options();
+  static {
+    options.addOption("stateCount", true, "stateCount");
+    options.addOption("lambda", true, "lambda");
+    options.addOption("addToDiag", true, "addToDiag");
+    options.addOption("boostStep", true, "boostStep");
+  }
+  public static void main(String[] args) throws IOException, ParseException {
+    final CommandLineParser parser = new GnuParser();
+    final CommandLine command = parser.parse(options, args);
+
+    RunImdb test = new RunImdb(
+        Integer.parseInt(command.getOptionValue("stateCount")),
+        Double.parseDouble(command.getOptionValue("lambda")),
+        Double.parseDouble(command.getOptionValue("addToDiag")),
+        Double.parseDouble(command.getOptionValue("boostStep"))
+    );
     test.loadWordData();
     test.test();
   }

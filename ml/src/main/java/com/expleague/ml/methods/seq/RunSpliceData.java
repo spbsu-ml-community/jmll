@@ -6,6 +6,7 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.SingleValueVec;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.CharSeq;
@@ -17,7 +18,6 @@ import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
 import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.optimization.impl.AdamDescent;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -167,9 +167,12 @@ public class RunSpliceData {
     long start = System.nanoTime();
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFA<>(MAX_STATE_COUNT, alphabet.size(), random,
+            new PNFA<>(
+                MAX_STATE_COUNT, 1, alphabet.size(), -0.005, 3, random,
                 //new SAGADescent(GRAD_STEP, EPOCH_COUNT, random, THREAD_COUNT)
-              new AdamDescent(random, 100, 4), 1
+                new AdamDescent(random, 100, 4),
+                new AdamDescent(random, 100, 4),
+                1
             )
             , random
         ), BOOST_ITERS, BOOST_STEP
