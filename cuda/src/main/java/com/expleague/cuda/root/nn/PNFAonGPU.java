@@ -1,7 +1,6 @@
 package com.expleague.cuda.root.nn;
 
 
-import com.expleague.commons.func.Computable;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
@@ -28,6 +27,7 @@ import gnu.trove.map.hash.TIntIntHashMap;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.function.Function;
 
 /**
  * Created by hrundelb on 05.09.17.
@@ -62,7 +62,7 @@ public class PNFAonGPU<Loss extends WeightedL2> implements SeqOptimization<Integ
   }
 
   @Override
-  public Computable<Seq<Integer>, Vec> fit(final DataSet<Seq<Integer>> learn, final Loss loss) {
+  public Function<Seq<Integer>, Vec> fit(final DataSet<Seq<Integer>> learn, final Loss loss) {
     final Vec params = init(loss.target);
     FuncC1[] funcs = new FuncC1[learn.length()];
     for (int i = 0; i < learn.length(); i++) {
