@@ -11,6 +11,11 @@
     <name>SpbSU Experiments</name>
     <dependencies>
         <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>8.1.0</version>
+        </dependency>
+        <dependency>
             <groupId>com.expleague</groupId>
             <artifactId>commons</artifactId>
             <version>1.3-SNAPSHOT</version>
