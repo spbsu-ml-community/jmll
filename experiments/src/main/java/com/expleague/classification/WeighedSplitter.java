@@ -144,7 +144,7 @@ public class WeighedSplitter {
   }
 
   public static boolean endsWith(CharSequence sequence, int index, String phrase) {
-    if (phrase.length() <= index) {
+    if (phrase.length() - 1 <= index) {
       for (int i = phrase.length() - 1; i >= 0; i--, index--) {
         if (sequence.charAt(index) != phrase.charAt(i))
           return false;
