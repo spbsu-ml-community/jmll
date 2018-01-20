@@ -36,7 +36,7 @@ public class SimpleSplitter {
     this.dictionary = new HashSet<>();
     sequences = new HashMap<>();
     for (String i : dictionary)
-      this.dictionary.add(i.toLowerCase());
+      this.dictionary.add(i);
     createSequences(dictionary);
   }
 
