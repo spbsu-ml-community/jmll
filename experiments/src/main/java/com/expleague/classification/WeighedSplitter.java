@@ -1,5 +1,6 @@
 package com.expleague.classification;
 
+import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.seq.CharSeqAdapter;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
@@ -47,7 +48,7 @@ public class WeighedSplitter {
    */
 
   public String[] split(String str) {
-    CharSequence words = new CharSeqAdapter(str);
+    CharSequence words = CharSeq.create(str);
     double[] weights = new double[words.length() + 1]; //i-ый элемент содержит максимальный вес,
       // который можно
     //получить для str.substring(0, i)

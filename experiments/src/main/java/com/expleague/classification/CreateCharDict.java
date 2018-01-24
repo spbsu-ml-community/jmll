@@ -1,61 +1,175 @@
 package com.expleague.classification;
 
+import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.io.codec.seq.DictExpansion;
 import com.expleague.commons.io.codec.seq.Dictionary;
-import com.expleague.commons.seq.CharSeqAdapter;
+import com.expleague.commons.io.codec.seq.ListDictionary;
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.seq.*;
+import com.expleague.commons.util.ArrayTools;
+import com.expleague.commons.util.ThreadTools;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Created by Юлиан on 19.11.2015.
  */
 public class CreateCharDict {
 
-  static final String resourses = "D:\\experiments\\compression\\";
+  static final String resourses = "/Users/solar/data/text_classification/";
 
 
   public static void main(String args[]) throws Exception {
-//    for (int i : new int[]{1000, 5000, 10000, 30000, 50000, 100000}) {
-//      ng20(i);
-//      imdb(i);
-//    }
-    for (int i : new int[]{1000, 5000, 10000, 30000, 50000, 100000}) {
-      testDictionaryNG(i);
-      testDictionaryIMDB(i);
+    for (int i : new int[]{30000}) {
+      ng20(i);
+////      imdb(i);
     }
+    convertNG20();
+//    for (int i : new int[]{30000}) {
+//      testDictionaryNG(i);
+//      testDictionaryIMDB(i);
+//    }
   }
 
   private static void ng20(int size) throws Exception {
+    Path inputDir = Paths.get(resourses + "20news-bydate");
 
-    DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>) Dictionary
-        .EMPTY, size, System.out);
+    final HashSet<Character> alpha = new HashSet<>();
+    Files.find(inputDir,
+        Integer.MAX_VALUE,
+        (filePath, fileAttr) -> fileAttr.isRegularFile())
+        .map(path -> {
+          try {
+            return new String(Files.readAllBytes(path), StreamTools.UTF);
+          }
+          catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        })
+        .forEach(line -> {
+          for (int t = 0; t < line.length(); t++)
+            alpha.add(line.charAt(t));
+        });
+
+    DictExpansion<Character> expansion = new DictExpansion<>(alpha, size, System.out);
+    FastRandom rng = new FastRandom();
+    ThreadPoolExecutor bgExecutor = ThreadTools.createBGExecutor("Parsing", 50000);
     for (int i = 0; i < 200; i++) {
       System.out.println("Iteration " + i);
-      BufferedReader reader = new BufferedReader(new InputStreamReader(new
-          BZip2CompressorInputStream(new FileInputStream(resourses + "20ng-train.bz2"))));
-      String line;
-      while ((line = reader.readLine()) != null) {
-        String[] parts = line.split("\t");
-        if (parts.length > 1)
-          expansion.accept(new CharSeqAdapter(parts[1]));
+      Path[] paths = Files.find(inputDir,
+          Integer.MAX_VALUE,
+          (filePath, fileAttr) -> fileAttr.isRegularFile())
+          .toArray(Path[]::new);
+
+      double[] rand = IntStream.range(0, paths.length).mapToDouble(c -> rng.nextDouble()).toArray();
+      int[] order = ArrayTools.sequence(0, paths.length);
+
+      ArrayTools.parallelSort(rand, order);
+
+      CountDownLatch latch = new CountDownLatch(order.length);
+      for (int k = 0; k < order.length; k++) {
+        int finalK = k;
+        bgExecutor.execute(() -> {
+          Path path = paths[order[finalK]];
+          byte[] bytes;
+          try {
+            bytes = Files.readAllBytes(path);
+          }
+          catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+          expansion.accept(CharSeq.create(new String(bytes, StreamTools.UTF)));
+          latch.countDown();
+        });
       }
-      if (i % 5 == 0)
+      latch.await();
+      if (i % 5 == 0) {
+        final Path resultsDir = Paths.get("results");
+        if (!Files.exists(resultsDir)) {
+          Files.createDirectory(resultsDir);
+        }
         expansion.print(new FileWriter("results/" + size + "_" + i + "_20ng.txt"));
+      }
     }
     expansion.print(new FileWriter("results/" + size + "_20ng.txt"));
+  }
 
+  private static void convertNG20() throws Exception {
+    List<CharSeq> alpha = new ArrayList<>();
+    TIntList freqs = new TIntArrayList();
+    {
+      BufferedReader br = new BufferedReader(new FileReader(new File("results/30000_20ng.txt")));
+      String line;
+      int idx = 0;
+      StringBuilder builder = new StringBuilder();
+      for (int i = 0; i < 256; i++) {
+        alpha.add(new CharSeqChar((char)i));
+
+      }
+      while ((line = br.readLine()) != null) {
+        String[] split = line.split("\t");
+        if (split.length == 2) {
+          builder.append(split[0]);
+          alpha.add(CharSeq.create(builder.toString()));
+          freqs.add(CharSeqTools.parseInt(split[1]));
+          builder = new StringBuilder();
+        }
+        else builder.append(line + "\n");
+      }
+    }
+    ListDictionary<Character> dict = new ListDictionary<Character>(alpha.toArray(new CharSeq[alpha.size()]));
+    Path outputDir = Paths.get(resourses + "20news-bydate-v-grams");
+    Path inputDir = Paths.get(resourses + "20news-bydate");
+    Files.find(inputDir,
+        Integer.MAX_VALUE,
+        (filePath, fileAttr) -> fileAttr.isRegularFile())
+        .forEach(path -> {
+          try {
+            final CharSequence text = new String(Files.readAllBytes(path), "UTF-8");
+            final List<CharSeq> parts = new ArrayList<>();
+            final String conversion = dict.parse(CharSeq.create(text), freqs, freqs.sum()).stream()
+                .peek(idx -> parts.add((CharSeq)dict.get(idx)))
+                .mapToObj(Integer::toString).collect(Collectors.joining(" "));
+            Path parent = path.getParent();
+            String suffix = path.getName(path.getNameCount() - 1).toString();
+            while (!parent.equals(inputDir)) {
+              suffix = parent.getName(parent.getNameCount() - 1) + "/" + suffix;
+              parent = parent.getParent();
+            }
+            Path out = outputDir.resolve(suffix);
+            out.getParent().toFile().mkdirs();
+            try (Writer wri = Files.newBufferedWriter(out)) {
+                wri.append(conversion);
+            };
+          }
+          catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
   }
 
   private static void imdb(int size) throws Exception {
 
-    DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>) Dictionary
-        .EMPTY, size, System.out);
+    DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>) Dictionary.EMPTY, size, System.out);
 
     Consumer<File> processFolder = folder -> {
       try {
@@ -63,7 +177,7 @@ public class CreateCharDict {
           BufferedReader reader = new BufferedReader(new FileReader(file));
           String line;
           while ((line = reader.readLine()) != null) {
-            expansion.accept(new CharSeqAdapter(line));
+            expansion.accept(CharSeq.create(line));
           }
         }
       }

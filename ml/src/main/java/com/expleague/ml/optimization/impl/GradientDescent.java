@@ -14,7 +14,7 @@ import com.expleague.ml.optimization.PDQuadraticFunction;
  * Time: 23:41
  */
 public class GradientDescent implements Optimize<FuncConvex> {
-  private static final Logger LOG = Logger.create(GradientDescent.class);
+//  private static final Logger LOG = Logger.create(GradientDescent.class);
   private final Vec x0;
   private final double eps;
 
@@ -36,7 +36,7 @@ public class GradientDescent implements Optimize<FuncConvex> {
         int iter = 0;
 
         double distance = 1;
-        while (distance > eps && iter < 5000000) {
+        while (distance > eps && iter < 1000000) {
             final double step = isQuadraticFunc? getStepSizeForQuadraticFunc(func, grad) : constStep;
             for (int i = 0; i < x2.dim(); i++) {
                 x2.set(i, x1.get(i) - grad.get(i) * step);
@@ -48,7 +48,7 @@ public class GradientDescent implements Optimize<FuncConvex> {
             iter++;
         }
 
-        LOG.message("GDM iterations = " + iter + "\n\n");
+//        LOG.message("GDM iterations = " + iter + "\n\n");
         return x2;
     }
 
