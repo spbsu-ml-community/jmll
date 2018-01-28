@@ -32,6 +32,7 @@ import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
 import com.expleague.ml.models.RandomVariableRandomnessPolicy;
 import com.expleague.ml.models.RandomnessAwareObliviousTree;
+import com.expleague.ml.randomnessAware.DeterministicFeatureExctractor;
 import com.expleague.ml.randomnessAware.RandomnessAwareTrans;
 import com.expleague.ml.randomnessAware.VecRandomFeatureExtractor;
 import org.apache.commons.math3.special.Gamma;
@@ -63,7 +64,6 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
   private CtrEstimationPolicy ctrEstimationPolicy;
   private ArrayPermutation ctrEstimationOrder;
   private RandomVariableRandomnessPolicy randomnessPolicy = RandomVariableRandomnessPolicy.Expectation;
-  private GreedyRandomnessAwareCtrTrans ctrTrans;
 
   public void useBootstrap(final boolean bootstrap) {
     this.useBootstrap = bootstrap;
@@ -74,9 +74,6 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
     return this;
   }
 
-  public <Loss extends StatBasedLoss> void setCtrTrans(final GreedyRandomnessAwareCtrTrans<Loss> ctrTrans) {
-    this.ctrTrans = ctrTrans;
-  }
 
   enum LeavesType {
     BayesianMean,
@@ -101,9 +98,6 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
   @Override
   public RandomnessAwareTrans fit(final VecDataSet learn,
                                   final Loss loss) {
-    if (i++ % 2 == 0 && i < 100) {
-      return ctrTrans.fit(learn, loss);
-    }
     List<RandomnessAwareOptimizationSubset> leaves = new ArrayList<>(1 << depth);
     final List<FeatureBinarization.BinaryFeature> conditions = new ArrayList<>(depth);
     double currentScore = Double.POSITIVE_INFINITY;
@@ -242,10 +236,10 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
   private BinarizedFeatureDataSet ds = null;
 
   private BinarizedFeatureDataSet buildBinarizedDataSet(final VecDataSet learn, Loss loss) {
-////    if (ds == null) {
+//    if (ds == null) {
 //      final BinarizedFeatureDataSet.Builder builder = new BinarizedFeatureDataSet.Builder(learn, binarization, random);
 //      builder.setPolicy(policy);
-//      featureExtractors.forEach(builder::addFeature);
+//      featureExtractors.stream().filter(extractor -> extractor instanceof DeterministicFeatureExctractor).forEach(builder::addFeature);
 //      {
 //        {
 //          final double priorSigma2;
@@ -292,9 +286,9 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
 //          }
 //        }
 //      }
-//      return builder.build();
-////    }
-////    return ds;
+//      return builder.bu*/ild();
+//    }
+//    return ds;
 
     if (ds == null) {
       final BinarizedFeatureDataSet.Builder builder = new BinarizedFeatureDataSet.Builder(learn, binarization, random);
@@ -322,6 +316,6 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
     this.randomnessPolicy = randomnessPolicy;
   }
 
-  private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("Linear ctr thread", -1);
+  private static final ThreadPoolExecutor exec = ThreadTools.createBGExecutor("gradient ctr thread", -1);
 
 }

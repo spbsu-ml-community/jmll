@@ -65,10 +65,6 @@ public class GreedyRandomnessAwareObliviousTreeBuilder implements Factory<VecOpt
     weak.setCtrEstimationOrder(featureExtractorsBuilder.ctrEstimationOrder());
     weak.setFeatureHashes(featureExtractorsBuilder.hashes());
     weak.setRandomnessPolicy(RandomVariableRandomnessPolicy.Expectation);
-    final GreedyRandomnessAwareCtrTrans<StatBasedLoss> ctrTrans = new GreedyRandomnessAwareCtrTrans<>(featureExtractorsBuilder.hashes(), random);
-    ctrTrans.setCtrEstimationOrder(featureExtractorsBuilder.ctrEstimationOrder());
-    ctrTrans.setCtrEstimationPolicy(featureExtractorsBuilder.ctrEstimationPolicy());
-    weak.setCtrTrans(ctrTrans);
     return weak;
   }
 }

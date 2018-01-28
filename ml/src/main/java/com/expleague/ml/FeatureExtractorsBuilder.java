@@ -1,11 +1,15 @@
 package com.expleague.ml;
 
 import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.idxtrans.ArrayPermutation;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
+import com.expleague.commons.util.Pair;
 import com.expleague.ml.bayesianEstimation.ConjugateBayesianEstimator;
 import com.expleague.ml.bayesianEstimation.impl.BetaConjugateBayesianEstimator;
 import com.expleague.ml.bayesianEstimation.impl.NormalConjugateBayesianEstimator;
@@ -19,15 +23,19 @@ import com.expleague.ml.data.tools.CatboostPool;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.distributions.DynamicRandomVec;
 import com.expleague.ml.distributions.RandomVariable;
+import com.expleague.ml.distributions.parametric.BetaDistribution;
 import com.expleague.ml.distributions.parametric.impl.BetaDistributionImpl;
 import com.expleague.ml.distributions.parametric.impl.BetaVecDistributionImpl;
 import com.expleague.ml.distributions.parametric.impl.NormalGammaVecDistributionImpl;
 import com.expleague.ml.randomnessAware.DeterministicFeatureExctractor;
 import com.expleague.ml.randomnessAware.VecRandomFeatureExtractor;
 import gnu.trove.set.hash.TDoubleHashSet;
+import org.apache.commons.math3.special.Gamma;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.lang.Math.log;
 
 /**
  * Created by noxoomo on 06/11/2017.
@@ -153,13 +161,159 @@ public class FeatureExtractorsBuilder {
   }
 
   private List<Ctr<?>> createCtr(CtrTarget target, int featureId) {
-    final List<RandomVariable<?>> priors = createPrior(target);
+//    final List<RandomVariable<?>> priors = createPrior(target);
     final List<Ctr<?>> ctrs = new ArrayList<>();
-    for (final RandomVariable prior : priors) {
-      ctrs.add(new Ctr(createDynamicVec(target.type()), getCatFeatureHash
-          (featureId), prior, createEstimator(target.type()), dataSet.data().columns()));
-    }
+//    for (final RandomVariable prior : priors) {
+      final PerfectHash<Vec> catFeatureHash = getCatFeatureHash
+          (featureId);
+      ctrs.add(new Ctr(createDynamicVec(target.type()), catFeatureHash, estimatePrior(target, catFeatureHash), createEstimator(target.type()), dataSet.data().columns()));
+//    }
     return ctrs;
+  }
+
+  private RandomVariable<?> estimatePrior(final CtrTarget target, final PerfectHash<Vec> catFeatureHash) {
+    switch (target.type()) {
+      case Binomial: {
+        return estimateBetaPrior(target.target(), catFeatureHash);
+      }
+      case Normal:
+      default: {
+        throw new RuntimeException("Unimplemented ctr target " + target.type());
+      }
+    }
+  }
+
+  private BetaDistribution estimateBetaPrior(final Vec target, final PerfectHash<Vec> catFeatureHash) {
+    double[] positiveCounts = new double[catFeatureHash.size()];
+    double[] counts = new double[catFeatureHash.size()];
+
+
+
+    double alpha;
+    double beta;
+
+    {
+      double mean = 0;
+      Mx data = dataSet.data();
+      for (int i = 0; i < data.rows(); ++i) {
+        final int idx = catFeatureHash.id(data.row(i));
+        positiveCounts[idx] += target.get(i);
+        counts[idx]++;
+        mean += target.get(i);
+      }
+//      alpha =0.5;// mean / dataSet.length();
+      alpha  = mean / dataSet.length();
+      beta = 1.0 - alpha;
+//      alpha *= positiveCounts.length;
+//      beta *= positiveCounts.length;
+    }
+
+    for (int i = 0; i < 20; ++i) {
+      System.out.println("Point (" + alpha +", " + beta + "), Current likelihood: " + likelihood(positiveCounts, counts, alpha, beta));
+      final Pair<Vec, Mx> ders = derAndDer2(positiveCounts, counts, alpha, beta);
+      Vec direction = MxTools.multiply(MxTools.inverse(ders.second), ders.first);
+      double step = 1.0;
+      double newAlpha = alpha - step * direction.get(0);
+      double newBeta = beta - step * direction.get(1);
+      if (alpha < 1e-9) {
+        alpha += 1e-9;
+      }
+      if (beta < 1e-9) {
+        beta += 1e-9;
+      }
+      while (newAlpha < 1e-9 || newBeta < 1e-9) {
+        step *= 0.5;
+        newAlpha = alpha - step * direction.get(0);
+        newBeta = beta - step * direction.get(1);
+      }
+      alpha = newAlpha;
+      beta = newBeta;
+    }
+    return new BetaDistributionImpl(alpha, beta);
+//    return new BetaDistributionImpl(0.5, 0.5);
+  }
+
+  private double likelihood(double[] positiveCounts, double[] counts, double alpha, double beta) {
+    double ll = 0;
+
+    for (int i = 0; i < positiveCounts.length; ++i) {
+      final double first = positiveCounts[i];
+      final double n = counts[i];
+      final double second = n - first;
+      ll += Gamma.logGamma(n + 1)  - Gamma.logGamma(first + 1) - Gamma.logGamma(second + 1);
+      ll += Gamma.logGamma(first + alpha) + Gamma.logGamma(second + beta) - Gamma.logGamma(n + alpha + beta);
+    }
+    ll += Gamma.logGamma(alpha + beta) * positiveCounts.length;
+    ll -= (Gamma.logGamma(alpha) + Gamma.logGamma(beta)) * positiveCounts.length;
+    return ll;
+  }
+
+  private Pair<Vec, Mx> derAndDer2(double[] positiveCounts, double[] counts, double alpha, double beta) {
+    final double lambda = 0.1;
+
+    final Vec der = new ArrayVec(2);
+    final Mx der2 = new VecBasedMx(2, 2);
+
+    double der2Alpha= 0;
+    double der2Beta= 0;
+    double der2AlphaBeta= 0;
+
+    final int k = positiveCounts.length;
+    for (int i = 0; i < k; ++i) {
+      final double first = positiveCounts[i];
+      final double n = counts[i];
+      final double second = n - first;
+
+      der.adjust(0, Gamma.digamma(first + alpha));
+
+      {
+        final double tmp = Gamma.trigamma(first + alpha);
+        der2Alpha += tmp;
+      }
+
+      der.adjust(1, Gamma.digamma(second + beta));
+      {
+        final double tmp = Gamma.trigamma(second + beta);
+        der2Beta += tmp;
+      }
+
+      {
+        final double tmp = Gamma.digamma(n + alpha + beta);
+        der.adjust(0, -tmp);
+        der.adjust(1, -tmp);
+      }
+      {
+        final double tmp = Gamma.trigamma(n + alpha + beta);
+        der2Alpha -= tmp;
+        der2Beta -= tmp;
+        der2AlphaBeta -= tmp;
+      }
+    }
+    {
+      final double tmp = Gamma.digamma(alpha + beta);
+
+      der.adjust(0, (tmp - Gamma.digamma(alpha)) * k);
+      der.adjust(1, (tmp - Gamma.digamma(beta)) * k);
+    }
+    {
+      final double tmp = Gamma.trigamma(alpha + beta) * k;
+      der2AlphaBeta += tmp;
+      der2Alpha += tmp - Gamma.trigamma(alpha) * k;
+      der2Beta += tmp - Gamma.trigamma(beta) * k;
+    }
+    der2.set(0, 0, der2Alpha + lambda);
+    der2.set(1, 1, der2Beta + lambda);
+    der2.set(0, 1, der2AlphaBeta);
+    der2.set(1, 0, der2AlphaBeta);
+//
+//    der2.set(0, 0, -1.0);
+//    der2.set(1, 1, -1.0);
+//    der2.set(0, 1, 0);
+//    der2.set(1, 0, 0);
+    if ((der2Alpha  - lambda) * (der2Beta - lambda) - der2AlphaBeta * der2AlphaBeta < 0) {
+      throw new RuntimeException("error: det should be positive");
+    }
+    return new Pair<>(der, der2);
   }
 
 
