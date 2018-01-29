@@ -39,8 +39,8 @@ public class CreateCharDict {
 
 
   public static void main(String args[]) throws Exception {
-    for (int i : new int[]{30000}) {
-      ng20(i);
+    for (int i : new int[]{20000}) {
+//      ng20(i);
 ////      imdb(i);
     }
     convertNG20();
@@ -117,23 +117,32 @@ public class CreateCharDict {
     List<CharSeq> alpha = new ArrayList<>();
     TIntList freqs = new TIntArrayList();
     {
-      BufferedReader br = new BufferedReader(new FileReader(new File("results/30000_20ng.txt")));
-      String line;
-      int idx = 0;
+      BufferedReader br = new BufferedReader(new FileReader(new File("results/20000_20ng.txt")));
+//      int idx = 0;
       StringBuilder builder = new StringBuilder();
-      for (int i = 0; i < 256; i++) {
-        alpha.add(new CharSeqChar((char)i));
-
-      }
-      while ((line = br.readLine()) != null) {
-        String[] split = line.split("\t");
-        if (split.length == 2) {
-          builder.append(split[0]);
+//      for (int i = 0; i < 256; i++) {
+//        alpha.add(new CharSeqChar((char)i));
+//        freqs.add(1);
+//      }
+      final ReaderChopper chopper = new ReaderChopper(br);
+      CharSeq line;
+      while ((line = chopper.chop('\n')) != null) {
+        int idx = line.toString().lastIndexOf('\t');
+        int freq = -1;
+        if (idx >= 0) {
+          try {
+            freq = CharSeqTools.parseInt(line.sub(idx + 1, line.length()));
+          }
+          catch (Exception ignore) {
+          }
+        }
+        if (freq >= 0) {
+          builder.append(line.sub(0, idx));
           alpha.add(CharSeq.create(builder.toString()));
-          freqs.add(CharSeqTools.parseInt(split[1]));
+          freqs.add(freq);
           builder = new StringBuilder();
         }
-        else builder.append(line + "\n");
+        else builder.append(line).append("\n");
       }
     }
     ListDictionary<Character> dict = new ListDictionary<Character>(alpha.toArray(new CharSeq[alpha.size()]));
@@ -145,6 +154,7 @@ public class CreateCharDict {
         .forEach(path -> {
           try {
             final CharSequence text = new String(Files.readAllBytes(path), "UTF-8");
+
             final List<CharSeq> parts = new ArrayList<>();
             final String conversion = dict.parse(CharSeq.create(text), freqs, freqs.sum()).stream()
                 .peek(idx -> parts.add((CharSeq)dict.get(idx)))
