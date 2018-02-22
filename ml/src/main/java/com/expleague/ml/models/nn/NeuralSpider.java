@@ -1,6 +1,7 @@
 package com.expleague.ml.models.nn;
 
 import com.expleague.commons.math.MathTools;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
@@ -13,7 +14,8 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.stream.BaseStream;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -44,24 +46,31 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     target.gradientTo(output, dT.sub(dT.length() - topology.outputCount(), topology.outputCount()));
     final Vec prevLayerGrad = new SparseVec(state.dim());
     final Vec wGrad = new SparseVec(allWeights.dim());
-    for (int nodeIndex = topology.length() - 1; nodeIndex > 0; nodeIndex--) {
-      final double dTds_i = dT.get(nodeIndex);
-      if (Math.abs(dTds_i) < MathTools.EPSILON || Math.abs(state.get(nodeIndex)) < MathTools.EPSILON)
-        continue;
+    for (int topologIdx = topology.length() - 1; topologIdx > 0; topologIdx--) {
+      final NodeType nodeType = topology.at(topologIdx);
+      final Node node = nodeType.createNode();
 
-      final Node node = topology.at(nodeIndex);
-      fill(prevLayerGrad, 0.);
-      fill(wGrad, 0.);
+      for (int nodeIdx = nodeType.getStateStart(); nodeIdx < nodeType.getStateEnd(); nodeIdx++) {
+        final double dTds_i = dT.get(nodeIdx);
+        if (Math.abs(dTds_i) < MathTools.EPSILON || Math.abs(state.get(nodeIdx)) < MathTools.EPSILON)
+          continue;
 
-      node.transByParameters(allWeights).gradientTo(state, prevLayerGrad);
-      node.transByParents(state).gradientTo(allWeights, wGrad);
+        final Vec curWGrad = nodeType.getWeight(wGrad, nodeIdx);
+        final Vec stateGrad = nodeType.getState(prevLayerGrad, nodeIdx);
 
-      scale(prevLayerGrad, dTds_i);
-      scale(wGrad, dTds_i);
+        final Vec curWeights = nodeType.getWeight(allWeights, nodeIdx);
+        final Vec curState = nodeType.getState(state, nodeIdx);
 
-      append(dT, prevLayerGrad);
-      append(to, wGrad);
+        node.gradByStateTo(curState, curWeights, stateGrad);
+        node.gradByParametersTo(curState, curWeights, curWGrad);
+
+        scale(stateGrad, dTds_i);
+        scale(curWGrad, dTds_i);
+      }
     }
+
+    VecTools.assign(to, wGrad);
+
     return to;
   }
 
@@ -72,12 +81,21 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
   protected Vec produceState(Topology topology, Vec weights, Vec state) {
     state.set(0, 1.);
     final int nodesCount = topology.length();
-    for (int nodeIndex = 1; nodeIndex < nodesCount; nodeIndex++) {
-      if (topology.isDroppedOut(nodeIndex))
-        continue;
-      final Node node = topology.at(nodeIndex);
-      final double value = node.transByParameters(weights).value(state);
-      state.set(nodeIndex, value);
+    for (int topologIdx = 1; topologIdx < nodesCount; topologIdx++) {
+      final NodeType nodeType = topology.at(topologIdx);
+      final Node node = nodeType.createNode();
+
+      for (int nodeIndex = nodeType.getStateStart();
+           nodeIndex <= nodeType.getStateEnd(); nodeIndex++) {
+        if (topology.isDroppedOut(nodeIndex))
+          continue;
+
+        final Vec curState = nodeType.getState(state, nodeIndex);
+        final Vec curWeight = nodeType.getWeight(weights, nodeIndex);
+
+        final double value = node.apply(curState, curWeight);
+        state.set(nodeIndex, value);
+      }
     }
     return state.sub(state.length() - topology.outputCount(), topology.outputCount());
   }
@@ -107,33 +125,46 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     return parametersGradient(x, target, weights, new ArrayVec(weights.dim()));
   }
 
-  public interface Node {
-    FuncC1 transByParameters(Vec betta);
-    FuncC1 transByParents(Vec state);
+  public interface ParamFuncC1 {
+    double apply(Vec state, Vec betta);
+    void gradByStateTo(Vec state, Vec betta, Vec to);
+    void gradByParametersTo(Vec state, Vec betta, Vec to);
   }
 
-  public interface Topology extends Seq<Node> {
+  public interface Node extends ParamFuncC1 {}
+
+  public interface NodeType {
+    int getStateStart();
+    int getStateEnd();
+
+    Vec getState(Vec state, int nodeIdx);
+    Vec getWeight(Vec weights, int nodeIdx);
+
+    Node createNode();
+  }
+
+  public interface Topology extends Seq<NodeType> {
     int outputCount();
     boolean isDroppedOut(int nodeIndex);
 
-    abstract class Stub extends Seq.Stub<Node> implements Topology {
+    abstract class Stub extends Seq.Stub<NodeType> implements Topology {
       @Override
       public final boolean isImmutable() {
         return true;
       }
 
       @Override
-      public final Seq<Node> sub(int start, int end) {
+      public final Seq<NodeType> sub(int start, int end) {
         throw new NotImplementedException();
       }
 
       @Override
-      public final Class<Node> elementType() {
-        return Node.class;
+      public final Class<NodeType> elementType() {
+        return NodeType.class;
       }
 
       @Override
-      public Stream<Node> stream() {
+      public Stream<NodeType> stream() {
         return IntStream.range(0, length()).mapToObj(this::at);
       }
     }
