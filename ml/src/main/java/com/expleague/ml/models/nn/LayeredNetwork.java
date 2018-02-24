@@ -4,8 +4,7 @@ import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.ml.func.generic.Const;
-import com.expleague.ml.func.generic.SubVecFuncC1;
-import com.expleague.ml.func.generic.WSumSigmoid;
+import com.expleague.ml.models.nn.layers.FCLayer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,50 +16,32 @@ import java.util.Random;
 * Time: 11:46
 */
 public class LayeredNetwork extends NeuralSpider<Double, Vec> {
-  private final Node[] nodes;
+  private final NodeType[] nodeTypes;
   private final Random rng;
   private final double dropout;
   private final int[] config;
   private final int dim;
+  private final int numParameters;
 
   public LayeredNetwork(Random rng, double dropout, final int... config) {
     this.rng = rng;
     this.dropout = dropout;
     this.config = config;
-    final int nodesCount;
-    {
-      int dim = config[0];
-      int count = 1 + config[0];
-      for (int i = 1; i < config.length; i++) {
-        count += config[i];
-        dim += config[i] * config[i - 1];
-      }
-      this.dim = dim;
-      nodesCount = count;
-    }
-    int wStart = config[0];
-    final List<Node> nodes = new ArrayList<>();
-    for(int d = 1; d < config.length; d++) {
+
+    int wStart = 0;
+    int stateStart = config[0];
+    final List<NodeType> nodeTypes = new ArrayList<>();
+    for (int d = 1; d < config.length; d++) {
       final int prevLayerPower = config[d - 1];
-      final int layerStart = nodes.size() + config[0] + 1;
-
-      for (int i = 0; i < config[d]; i++) {
-        final int fwStart = wStart;
-        nodes.add(new Node() {
-          @Override
-          public FuncC1 transByParameters(Vec betta) {
-            return new SubVecFuncC1(new WSumSigmoid(betta.sub(fwStart, prevLayerPower)), layerStart - prevLayerPower, prevLayerPower, nodesCount);
-          }
-
-          @Override
-          public FuncC1 transByParents(Vec state) {
-            return new SubVecFuncC1(new WSumSigmoid(state.sub(layerStart - prevLayerPower, prevLayerPower)), fwStart, prevLayerPower, dim);
-          }
-        });
-        wStart += prevLayerPower;
-      }
+      final int wSize = config[d] * config[d - 1];
+      nodeTypes.add(new FCLayer(stateStart, config[d],
+          stateStart - prevLayerPower, prevLayerPower, wStart, wSize));
+      stateStart += config[d];
+      wStart += wSize;
     }
-    this.nodes = nodes.toArray(new Node[nodes.size()]);
+    this.dim = stateStart;
+    this.numParameters = wStart;
+    this.nodeTypes = nodeTypes.toArray(new NodeType[nodeTypes.size()]);
   }
   @Override
   public int dim() {
@@ -68,25 +49,12 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
   }
 
   @Override
-  protected Topology topology(final Vec argument, final boolean dropout) {
-    if (argument.dim() != config[0])
-      throw new IllegalArgumentException();
-    final Node[] inputLayer = new Node[config[0]];
-    for(int i = 0; i < inputLayer.length; i++) {
-      final int nindex = i;
-      inputLayer[i] = new Node() {
-        @Override
-        public FuncC1 transByParameters(Vec betta) {
-          return new Const(argument.get(nindex));
-        }
+  public int numParameters() {
+    return numParameters;
+  }
 
-        @Override
-        public FuncC1 transByParents(Vec state) {
-          return new Const(argument.get(nindex));
-        }
-      };
-    }
-
+  @Override
+  protected Topology topology(final boolean dropout) {
     return new Topology.Stub() {
       @Override
       public int outputCount() {
@@ -96,19 +64,24 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
       @Override
       public boolean isDroppedOut(int nodeIndex) {
         //noinspection SimplifiableIfStatement
-        if (!dropout || nodeIndex < inputLayer.length || nodeIndex > nodes.length - inputLayer.length)
+        if (!dropout || nodeIndex > nodeTypes.length)
           return false;
         return LayeredNetwork.this.dropout > MathTools.EPSILON && rng.nextDouble() < LayeredNetwork.this.dropout;
       }
 
       @Override
-      public Node at(int i) {
-        return i <= inputLayer.length ? inputLayer[i - 1] : nodes[i - inputLayer.length - 1];
+      public NodeType at(int i) {
+        return nodeTypes[i];
+      }
+
+      @Override
+      public int dim() {
+        return dim;
       }
 
       @Override
       public int length() {
-        return inputLayer.length + nodes.length + 1;
+        return nodeTypes.length;
       }
     };
   }

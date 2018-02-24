@@ -9,6 +9,7 @@ import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.TransC1;
+import com.expleague.commons.seq.SeqTools;
 import com.expleague.ml.func.generic.WSum;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -30,17 +31,25 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 
   private final ThreadLocalArrayVec stateCache = new ThreadLocalArrayVec();
   public Vec compute(S argument, Vec weights) {
-    final Topology topology = topology(argument, false);
-    final Vec state = this.stateCache.get(topology.length());
+    final Topology topology = topology(false);
+    final Vec state = this.stateCache.get(topology.dim());
+    final Vec arg = new ArrayVec(argument.toArray());
+    for (int i = 0; i < arg.length(); i++) {
+      state.set(i, arg.get(i));
+    }
     return produceState(topology, weights, state);
   }
 
   private final ThreadLocalArrayVec gradientSCache = new ThreadLocalArrayVec();
 
   public Vec parametersGradient(S argument, TransC1 target, Vec allWeights, Vec to) {
-    final Topology topology = topology(argument, true);
+    final Topology topology = topology(true);
     final Vec dT = gradientSCache.get(topology.length());
     final Vec state = stateCache.get(topology.length());
+    final Vec arg = new ArrayVec(argument.toArray());
+    for (int i = 0; i < arg.length(); i++) {
+      state.set(i, arg.get(i));
+    }
     final Vec output = produceState(topology, allWeights, state);
 
     target.gradientTo(output, dT.sub(dT.length() - topology.outputCount(), topology.outputCount()));
@@ -79,14 +88,13 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
   }
 
   protected Vec produceState(Topology topology, Vec weights, Vec state) {
-    state.set(0, 1.);
-    final int nodesCount = topology.length();
-    for (int topologIdx = 1; topologIdx < nodesCount; topologIdx++) {
+    final int typesCount = topology.length();
+    for (int topologIdx = 0; topologIdx < typesCount; topologIdx++) {
       final NodeType nodeType = topology.at(topologIdx);
       final Node node = nodeType.createNode();
 
       for (int nodeIndex = nodeType.getStateStart();
-           nodeIndex <= nodeType.getStateEnd(); nodeIndex++) {
+           nodeIndex < nodeType.getStateEnd(); nodeIndex++) {
         if (topology.isDroppedOut(nodeIndex))
           continue;
 
@@ -100,7 +108,9 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     return state.sub(state.length() - topology.outputCount(), topology.outputCount());
   }
 
-  protected abstract Topology topology(S seq, boolean dropout);
+  public abstract int numParameters();
+
+  protected abstract Topology topology(boolean dropout);
 
   public abstract int dim();
 
@@ -146,6 +156,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
   public interface Topology extends Seq<NodeType> {
     int outputCount();
     boolean isDroppedOut(int nodeIndex);
+    int dim();
 
     abstract class Stub extends Seq.Stub<NodeType> implements Topology {
       @Override
@@ -196,7 +207,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     }
 
     public Topology topology() {
-      return spider.topology(item, false);
+      return spider.topology(false);
     }
 
     public Vec state(Vec x) {
