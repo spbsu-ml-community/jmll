@@ -11,6 +11,7 @@ import com.expleague.cuda.data.GPUVec;
 import org.apache.commons.math3.util.FastMath;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -24,9 +25,11 @@ public class KernelOperationsTest {
 
   private static final float DELTA = 1e-4f; // (CUDA version) > 6.0 -> EPS = 1e-9
 
-  //@Test
+  @Test
   public void testMatrixReduce() {
-    final int states = 500;
+    final int states = 1024;
+    final int iterations = 10;
+
     Random random = new FastRandom();
     final double[] doubles = new double[states * (states - 1)];
     for (int i = 0; i < doubles.length; i++) {
@@ -34,22 +37,48 @@ public class KernelOperationsTest {
     }
     GPUMx input = new GPUMx(states - 1, new GPUVec(doubles));
     GPUMx output = new GPUMx(states, states);
-    System.out.println(DeviceOperationsTest.arraytoString(input.toArray(), 30));
-    System.out.println(DeviceOperationsTest.arraytoString(output.toArray(), 30));
-    KernelOperations.fMatrixReduce(input, output);
-    System.out.println(DeviceOperationsTest.arraytoString(output.toArray(), 30));
 
-    Mx weightMx = getWeightMx(new VecBasedMx(states - 1, new ArrayVec(doubles)), states);
-    System.out.println(DeviceOperationsTest.arraytoString(weightMx.toArray(), 30));
+    System.out.println("On GPU:");
+    long time = System.currentTimeMillis();
+    for (int i = 0; i < iterations; i++) {
+      KernelOperations.fMatrixReduce(input, output);
+    }
+    long diff = System.currentTimeMillis() - time;
+    System.out.println("Time on GPU: " + diff + " ms");
+
+    System.out.println("On CPU:");
+    time = System.currentTimeMillis();
+    Mx weightMx = null;
+    for (int i = 0; i < iterations; i++) {
+       weightMx = getWeightMx(new VecBasedMx(states - 1, new ArrayVec(doubles)), states);
+    }
+    diff = System.currentTimeMillis() - time;
+    System.out.println("Time on CPU: " + diff + " ms");
 
     assertArrayEquals(output.toArray(), weightMx.toArray(), DELTA);
   }
 
 
   @Test
+  public void testReduce5() {
+    int size = 128;
+    float[] input = new float[size];
+    for (int i = 0; i < size; i++) {
+      input[i] = 1f;
+    }
+    GPUVec args = new GPUVec(input);
+    GPUVec result = new GPUVec(size);
+
+    System.out.println(Arrays.toString(args.toArray()));
+    KernelOperations.reduce5(args, result);
+    System.out.println(Arrays.toString(result.toArray()));
+  }
+
+
+  @Test
   public void testMatrixExp() {
-    final int rows = 500;
-    final int iterations = 1000;
+    final int rows = 1024;
+    final int iterations = 10;
     FastRandom random = new FastRandom();
     final double[] doubles = new double[rows * (rows - 1)];
     for (int i = 0; i < doubles.length; i++) {
@@ -86,6 +115,44 @@ public class KernelOperationsTest {
   }
 
   @Test
+  public void testMatrixExpAparapi() {
+    final int rows = 1024;
+    final int iterations = 10;
+    FastRandom random = new FastRandom();
+    final double[] doubles = new double[rows * (rows - 1)];
+    final float[] floats = new float[rows * (rows - 1)];
+    for (int i = 0; i < doubles.length; i++) {
+      float v = random.nextFloat();
+      doubles[i] = v;
+      floats[i] = v;
+    }
+
+    Mx beta = new VecBasedMx(rows - 1, new ArrayVec(doubles));
+    float[] result = new float[rows * rows];
+
+    System.out.println("On CPU:");
+    long time = System.currentTimeMillis();
+    Mx weightMx = null;
+    for (int i = 0; i < iterations; i++) {
+      weightMx = getWeightMx(beta, rows);
+    }
+    long diff = System.currentTimeMillis() - time;
+    System.out.println("Time on CPU: " + diff + " ms");
+
+    System.out.println("On GPU:");
+    time = System.currentTimeMillis();
+    AparapiOperations.matrixExpReduce(floats, result, rows, iterations);
+    diff = System.currentTimeMillis() - time;
+    System.out.println("Time on GPU: " + diff + " ms");
+
+    double[] results = GPUVec.convert(result);
+    double[] dResults = weightMx.toArray();
+    System.out.println(DeviceOperationsTest.arraytoString(dResults, 30));
+    System.out.println(DeviceOperationsTest.arraytoString(results, 30));
+    assertArrayEquals(dResults, results, DELTA);
+  }
+
+  @Test
   public void testDFill() {
     final float[] expected = new float[LENGTH];
     final float[] actual = new float[LENGTH];
@@ -108,7 +175,7 @@ public class KernelOperationsTest {
   @Test
   public void testMatrixOperation1() {
     final int stateCount = 1000;
-    final int iterations = 1000;
+    final int iterations = 10;
 
     Random random = new Random();
     final double weight = random.nextDouble();
@@ -163,7 +230,7 @@ public class KernelOperationsTest {
   @Test
   public void testMatrixOperation2() {
     final int stateCount = 1000;
-    final int iterations = 1000;
+    final int iterations = 10;
 
     Random random = new Random();
     final double lambda = random.nextDouble();
