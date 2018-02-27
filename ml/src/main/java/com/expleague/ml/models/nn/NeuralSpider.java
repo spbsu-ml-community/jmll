@@ -88,28 +88,24 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     final int parallelism = ForkJoinPool.getCommonPoolParallelism();
     final int[] cursor = new int[parallelism + 1];
     cursor[0] = topology.dim();
-    final CyclicBarrier barrier = new CyclicBarrier(parallelism, () ->
-        cursor[0] = IntStream.of(cursor).max().orElse(topology.dim())
-    );
     final CountDownLatch latch = new CountDownLatch(parallelism);
+    final int steps = topology.length() / parallelism;
     for (int t = 0; t < parallelism; t++) {
       final int thread = t;
       ForkJoinPool.commonPool().execute(() -> {
-        for (int i = topology.dim(); i < topology.length() - parallelism; i += parallelism) {
-          int nodeIdx = thread + i;
+        for (int i = 0; i < steps; i++) {
+          final int nodeIdx = thread + i * parallelism;
+          if (nodeIdx > state.length())
+            break;
+
           final NodeCalcer at = topology.at(nodeIdx);
           if (at.start(nodeIdx) < cursor[0]) {
             state.set(nodeIdx, at.apply(state, weights, nodeIdx));
+            cursor[thread + 1] = i;
           }
           else {
-            cursor[thread + 1] = nodeIdx - parallelism + 1;
-            i -= parallelism;
-            try {
-              barrier.await();
-            }
-            catch (InterruptedException | BrokenBarrierException e) {
-              throw new RuntimeException(e);
-            }
+            cursor[0] = IntStream.range(1, cursor.length).map(idx -> cursor[idx] * parallelism + idx).min().orElse(0);
+            i--;
           }
         }
         latch.countDown();
