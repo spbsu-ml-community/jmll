@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -30,6 +31,8 @@ import static com.expleague.commons.math.vectors.VecTools.*;
 public abstract class NeuralSpider<T, S extends Seq<T>> {
 
   private final ThreadLocalArrayVec stateCache = new ThreadLocalArrayVec();
+  private final ExecutorService executor = Executors.newCachedThreadPool();
+
   public Vec compute(S argument, Vec weights) {
     final Topology topology = topology(false);
     final Vec state = this.stateCache.get(topology.dim());
@@ -93,18 +96,39 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
       final NodeType nodeType = topology.at(topologIdx);
       final Node node = nodeType.createNode();
 
-      for (int nodeIndex = nodeType.getStateStart();
-           nodeIndex < nodeType.getStateEnd(); nodeIndex++) {
-        if (topology.isDroppedOut(nodeIndex))
-          continue;
+      final int length = nodeType.getStateEnd() - nodeType.getStateStart();
+      final int numThreads = Thread.activeCount();
+      final int blockSize = length / numThreads;
+      Future[] futures = new Future[numThreads];
 
-        final Vec curState = nodeType.getState(state, nodeIndex);
-        final Vec curWeight = nodeType.getWeight(weights, nodeIndex);
+      for (int blockId = 0; blockId < numThreads; blockId++) {
+        final int fStartId = blockId * blockSize + nodeType.getStateStart();
+        final int fEndId = (blockId == numThreads - 1) ?
+            nodeType.getStateEnd() : fStartId + blockSize;
 
-        final double value = node.apply(curState, curWeight);
-        state.set(nodeIndex, value);
+        futures[blockId] = executor.submit(() -> {
+          for (int nodeIndex = fStartId; nodeIndex < fEndId; nodeIndex++) {
+            if (topology.isDroppedOut(nodeIndex))
+              continue;
+
+            final Vec curState = nodeType.getState(state, nodeIndex);
+            final Vec curWeight = nodeType.getWeight(weights, nodeIndex);
+
+            final double value = node.apply(curState, curWeight);
+            state.set(nodeIndex, value);
+          }
+        });
+      }
+
+      for (Future future: futures) {
+        try {
+          future.get();
+        } catch (InterruptedException | ExecutionException e) {
+          e.printStackTrace();
+        }
       }
     }
+
     return state.sub(state.length() - topology.outputCount(), topology.outputCount());
   }
 

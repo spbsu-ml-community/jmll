@@ -2,8 +2,6 @@ package com.expleague.ml.models.nn;
 
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.FuncC1;
-import com.expleague.ml.func.generic.Const;
 import com.expleague.ml.models.nn.layers.FCLayer;
 
 import java.util.ArrayList;
