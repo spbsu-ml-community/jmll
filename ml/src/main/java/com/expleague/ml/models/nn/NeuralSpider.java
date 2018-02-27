@@ -11,6 +11,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -84,28 +85,35 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     return produceState(topology, weights, stateCache.get(topology.length()));
   }
 
+  long counter;
   protected Vec produceState(Topology topology, Vec weights, Vec state) {
+    counter = 0;
     final int parallelism = ForkJoinPool.getCommonPoolParallelism();
     final int[] cursor = new int[parallelism + 1];
-    cursor[0] = topology.dim();
     final CountDownLatch latch = new CountDownLatch(parallelism);
     final int steps = topology.length() / parallelism;
     for (int t = 0; t < parallelism; t++) {
       final int thread = t;
       ForkJoinPool.commonPool().execute(() -> {
-        for (int i = 0; i < steps; i++) {
+        int i = 0;
+        while(i < steps) {
           final int nodeIdx = thread + i * parallelism;
           if (nodeIdx > state.length())
             break;
 
           final NodeCalcer at = topology.at(nodeIdx);
-          if (at.start(nodeIdx) < cursor[0]) {
+          int end = at.end(nodeIdx);
+          if (end <= cursor[0] + 1) {
             state.set(nodeIdx, at.apply(state, weights, nodeIdx));
-            cursor[thread + 1] = i;
+            cursor[thread + 1] = nodeIdx;
+            i++;
           }
           else {
-            cursor[0] = IntStream.range(1, cursor.length).map(idx -> cursor[idx] * parallelism + idx).min().orElse(0);
-            i--;
+            cursor[0] = IntStream.range(1, cursor.length).map(idx -> cursor[idx]).sorted().reduce((a, b) -> a + 1 <= b ? a + 1 : a).orElse(0);
+            counter++;
+            if (cursor[0] + 1 < end) {
+              Thread.yield();
+            }
           }
         }
         latch.countDown();
@@ -113,6 +121,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     }
     try {
       latch.await();
+//      System.out.println(counter);
     }
     catch (InterruptedException e) {
       throw new RuntimeException(e);
