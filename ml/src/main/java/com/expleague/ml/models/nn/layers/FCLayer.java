@@ -2,9 +2,9 @@ package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.models.nn.NeuralSpider;
-import com.expleague.ml.models.nn.nodes.LinearNode;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-public class FCLayer implements NeuralSpider.NodeType {
+public class FCLayer implements NeuralSpider.NodeCalcer {
   private final int stateStart;
   private final int stateEnd;
   private final int prevStateStart;
@@ -24,28 +24,32 @@ public class FCLayer implements NeuralSpider.NodeType {
   }
 
   @Override
-  public int getStateStart() {
+  public double apply(Vec state, Vec betta, int nodeIdx) {
+    final int wStart = weightStart + (nodeIdx - stateStart) * weightPerState;
+    double result = 0.;
+    for (int i = 0; i < prevStateLength; i++) {
+      result += state.get(i + prevStateStart) * betta.get(i + wStart);
+    }
+    return result;
+  }
+
+  @Override
+  public int getStartNodeIdx() {
     return stateStart;
   }
 
   @Override
-  public int getStateEnd() {
+  public int getEndNodeIdx() {
     return stateEnd;
   }
 
   @Override
-  public Vec getState(Vec state, int nodeIdx) {
-    return state.sub(prevStateStart, prevStateLength);
+  public void gradByStateTo(Vec state, Vec betta, Vec to) {
+    throw new NotImplementedException();
   }
 
   @Override
-  public Vec getWeight(Vec weights, int nodeIdx) {
-    return weights.sub(weightStart +
-        weightPerState * (nodeIdx - stateStart), prevStateLength);
-  }
-
-  @Override
-  public NeuralSpider.Node createNode() {
-    return new LinearNode();
+  public void gradByParametersTo(Vec state, Vec betta, Vec to) {
+    throw new NotImplementedException();
   }
 }

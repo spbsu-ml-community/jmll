@@ -14,7 +14,7 @@ import java.util.Random;
 * Time: 11:46
 */
 public class LayeredNetwork extends NeuralSpider<Double, Vec> {
-  private final NodeType[] nodeTypes;
+  private final NodeCalcer[] nodeCalcers;
   private final Random rng;
   private final double dropout;
   private final int[] config;
@@ -28,18 +28,18 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
 
     int wStart = 0;
     int stateStart = config[0];
-    final List<NodeType> nodeTypes = new ArrayList<>();
+    final List<NodeCalcer> nodeCalcers = new ArrayList<>();
     for (int d = 1; d < config.length; d++) {
       final int prevLayerPower = config[d - 1];
       final int wSize = config[d] * config[d - 1];
-      nodeTypes.add(new FCLayer(stateStart, config[d],
+      nodeCalcers.add(new FCLayer(stateStart, config[d],
           stateStart - prevLayerPower, prevLayerPower, wStart, wSize));
       stateStart += config[d];
       wStart += wSize;
     }
     this.dim = stateStart;
     this.numParameters = wStart;
-    this.nodeTypes = nodeTypes.toArray(new NodeType[nodeTypes.size()]);
+    this.nodeCalcers = nodeCalcers.toArray(new NodeCalcer[nodeCalcers.size()]);
   }
   @Override
   public int dim() {
@@ -62,14 +62,14 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
       @Override
       public boolean isDroppedOut(int nodeIndex) {
         //noinspection SimplifiableIfStatement
-        if (!dropout || nodeIndex > nodeTypes.length)
+        if (!dropout || nodeIndex > nodeCalcers.length)
           return false;
         return LayeredNetwork.this.dropout > MathTools.EPSILON && rng.nextDouble() < LayeredNetwork.this.dropout;
       }
 
       @Override
-      public NodeType at(int i) {
-        return nodeTypes[i];
+      public NodeCalcer at(int i) {
+        return nodeCalcers[i];
       }
 
       @Override
@@ -79,7 +79,7 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
 
       @Override
       public int length() {
-        return nodeTypes.length;
+        return nodeCalcers.length;
       }
     };
   }

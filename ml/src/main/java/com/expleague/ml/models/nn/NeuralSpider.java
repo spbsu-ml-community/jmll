@@ -9,14 +9,11 @@ import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.TransC1;
-import com.expleague.commons.seq.SeqTools;
 import com.expleague.ml.func.generic.WSum;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -31,7 +28,6 @@ import static com.expleague.commons.math.vectors.VecTools.*;
 public abstract class NeuralSpider<T, S extends Seq<T>> {
 
   private final ThreadLocalArrayVec stateCache = new ThreadLocalArrayVec();
-  private final ExecutorService executor = Executors.newCachedThreadPool();
 
   public Vec compute(S argument, Vec weights) {
     final Topology topology = topology(false);
@@ -46,44 +42,45 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
   private final ThreadLocalArrayVec gradientSCache = new ThreadLocalArrayVec();
 
   public Vec parametersGradient(S argument, TransC1 target, Vec allWeights, Vec to) {
-    final Topology topology = topology(true);
-    final Vec dT = gradientSCache.get(topology.length());
-    final Vec state = stateCache.get(topology.length());
-    final Vec arg = new ArrayVec(argument.toArray());
-    for (int i = 0; i < arg.length(); i++) {
-      state.set(i, arg.get(i));
-    }
-    final Vec output = produceState(topology, allWeights, state);
-
-    target.gradientTo(output, dT.sub(dT.length() - topology.outputCount(), topology.outputCount()));
-    final Vec prevLayerGrad = new SparseVec(state.dim());
-    final Vec wGrad = new SparseVec(allWeights.dim());
-    for (int topologIdx = topology.length() - 1; topologIdx > 0; topologIdx--) {
-      final NodeType nodeType = topology.at(topologIdx);
-      final Node node = nodeType.createNode();
-
-      for (int nodeIdx = nodeType.getStateStart(); nodeIdx < nodeType.getStateEnd(); nodeIdx++) {
-        final double dTds_i = dT.get(nodeIdx);
-        if (Math.abs(dTds_i) < MathTools.EPSILON || Math.abs(state.get(nodeIdx)) < MathTools.EPSILON)
-          continue;
-
-        final Vec curWGrad = nodeType.getWeight(wGrad, nodeIdx);
-        final Vec stateGrad = nodeType.getState(prevLayerGrad, nodeIdx);
-
-        final Vec curWeights = nodeType.getWeight(allWeights, nodeIdx);
-        final Vec curState = nodeType.getState(state, nodeIdx);
-
-        node.gradByStateTo(curState, curWeights, stateGrad);
-        node.gradByParametersTo(curState, curWeights, curWGrad);
-
-        scale(stateGrad, dTds_i);
-        scale(curWGrad, dTds_i);
-      }
-    }
-
-    VecTools.assign(to, wGrad);
-
-    return to;
+    throw new NotImplementedException();
+//    final Topology topology = topology(true);
+//    final Vec dT = gradientSCache.get(topology.length());
+//    final Vec state = stateCache.get(topology.length());
+//    final Vec arg = new ArrayVec(argument.toArray());
+//    for (int i = 0; i < arg.length(); i++) {
+//      state.set(i, arg.get(i));
+//    }
+//    final Vec output = produceState(topology, allWeights, state);
+//
+//    target.gradientTo(output, dT.sub(dT.length() - topology.outputCount(), topology.outputCount()));
+//    final Vec prevLayerGrad = new SparseVec(state.dim());
+//    final Vec wGrad = new SparseVec(allWeights.dim());
+//    for (int topologIdx = topology.length() - 1; topologIdx > 0; topologIdx--) {
+//      final NodeCalcer nodeCalcer = topology.at(topologIdx);
+//      final Node node = nodeCalcer.createNode();
+//
+//      for (int nodeIdx = nodeCalcer.getStateStart(); nodeIdx < nodeCalcer.getStateEnd(); nodeIdx++) {
+//        final double dTds_i = dT.get(nodeIdx);
+//        if (Math.abs(dTds_i) < MathTools.EPSILON || Math.abs(state.get(nodeIdx)) < MathTools.EPSILON)
+//          continue;
+//
+//        final Vec curWGrad = nodeCalcer.getWeight(wGrad, nodeIdx);
+//        final Vec stateGrad = nodeCalcer.getState(prevLayerGrad, nodeIdx);
+//
+//        final Vec curWeights = nodeCalcer.getWeight(allWeights, nodeIdx);
+//        final Vec curState = nodeCalcer.getState(state, nodeIdx);
+//
+//        node.gradByStateTo(curState, curWeights, stateGrad);
+//        node.gradByParametersTo(curState, curWeights, curWGrad);
+//
+//        scale(stateGrad, dTds_i);
+//        scale(curWGrad, dTds_i);
+//      }
+//    }
+//
+//    VecTools.assign(to, wGrad);
+//
+//    return to;
   }
 
   protected Vec produceState(Topology topology, Vec weights) {
@@ -93,39 +90,11 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
   protected Vec produceState(Topology topology, Vec weights, Vec state) {
     final int typesCount = topology.length();
     for (int topologIdx = 0; topologIdx < typesCount; topologIdx++) {
-      final NodeType nodeType = topology.at(topologIdx);
-      final Node node = nodeType.createNode();
+      final NodeCalcer nodeCalcer = topology.at(topologIdx);
 
-      final int length = nodeType.getStateEnd() - nodeType.getStateStart();
-      final int numThreads = Thread.activeCount();
-      final int blockSize = length / numThreads;
-      Future[] futures = new Future[numThreads];
-
-      for (int blockId = 0; blockId < numThreads; blockId++) {
-        final int fStartId = blockId * blockSize + nodeType.getStateStart();
-        final int fEndId = (blockId == numThreads - 1) ?
-            nodeType.getStateEnd() : fStartId + blockSize;
-
-        futures[blockId] = executor.submit(() -> {
-          for (int nodeIndex = fStartId; nodeIndex < fEndId; nodeIndex++) {
-            if (topology.isDroppedOut(nodeIndex))
-              continue;
-
-            final Vec curState = nodeType.getState(state, nodeIndex);
-            final Vec curWeight = nodeType.getWeight(weights, nodeIndex);
-
-            final double value = node.apply(curState, curWeight);
-            state.set(nodeIndex, value);
-          }
-        });
-      }
-
-      for (Future future: futures) {
-        try {
-          future.get();
-        } catch (InterruptedException | ExecutionException e) {
-          e.printStackTrace();
-        }
+      for (int nodeIdx = nodeCalcer.getStartNodeIdx(); nodeIdx < nodeCalcer.getEndNodeIdx(); nodeIdx++) {
+        final double value = nodeCalcer.apply(state, weights, nodeIdx);
+        state.set(nodeIdx, value);
       }
     }
 
@@ -159,47 +128,37 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     return parametersGradient(x, target, weights, new ArrayVec(weights.dim()));
   }
 
-  public interface ParamFuncC1 {
-    double apply(Vec state, Vec betta);
+  public interface NodeCalcer {
+    double apply(Vec state, Vec betta, int nodeIdx);
+    int getStartNodeIdx();
+    int getEndNodeIdx();
     void gradByStateTo(Vec state, Vec betta, Vec to);
     void gradByParametersTo(Vec state, Vec betta, Vec to);
   }
 
-  public interface Node extends ParamFuncC1 {}
-
-  public interface NodeType {
-    int getStateStart();
-    int getStateEnd();
-
-    Vec getState(Vec state, int nodeIdx);
-    Vec getWeight(Vec weights, int nodeIdx);
-
-    Node createNode();
-  }
-
-  public interface Topology extends Seq<NodeType> {
+  public interface Topology extends Seq<NodeCalcer> {
     int outputCount();
     boolean isDroppedOut(int nodeIndex);
     int dim();
 
-    abstract class Stub extends Seq.Stub<NodeType> implements Topology {
+    abstract class Stub extends Seq.Stub<NodeCalcer> implements Topology {
       @Override
       public final boolean isImmutable() {
         return true;
       }
 
       @Override
-      public final Seq<NodeType> sub(int start, int end) {
+      public final Seq<NodeCalcer> sub(int start, int end) {
         throw new NotImplementedException();
       }
 
       @Override
-      public final Class<NodeType> elementType() {
-        return NodeType.class;
+      public final Class<NodeCalcer> elementType() {
+        return NodeCalcer.class;
       }
 
       @Override
-      public Stream<NodeType> stream() {
+      public Stream<NodeCalcer> stream() {
         return IntStream.range(0, length()).mapToObj(this::at);
       }
     }
