@@ -4,10 +4,12 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.seq.CharSeqTools;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.FakePool;
 import com.expleague.ml.data.tools.Pool;
+import com.expleague.ml.data.tools.WritableCsvRow;
 import com.expleague.ml.meta.items.FakeItem;
 import com.expleague.ml.meta.items.QURLItem;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
@@ -17,6 +19,7 @@ import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.testUtils.TestResourceLoader;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -148,9 +151,56 @@ public class DataToolsTest extends GridTest {
     DataTools.csvLines(new StringReader("")).forEach(System.out::println);
   }
 
+  public void testQuotesValue() throws Exception {
+    TObjectIntHashMap<String> names = new TObjectIntHashMap<>();
+    names.put("a", 1);
+    names.put("b", 2);
+    names.put("c", 3);
+    names.put("d", 4);
+    WritableCsvRow row = new WritableCsvRow(new CharSeq[4], names);
+    row.set("a", 1);
+    row.set("b", "Hello \" world");
+    row.set("c", "Hello \"\" world 2 \"");
+    row.set("d", "Hello \"\" world \"\"\" 3");
+
+    String text = row.names().toString() + "\n" + row.toString();
+    DataTools.readCSVWithHeader(new StringReader(text), r -> {
+      Assert.assertEquals("Hello \" world", r.asString("b"));
+      Assert.assertEquals("Hello \"\" world 2 \"", r.asString("c"));
+      Assert.assertEquals("Hello \"\" world \"\"\" 3", r.asString("d"));
+    });
+  }
+
+  public void testQuotesValue2() throws Exception {
+    String header = "userid,deviceid,type,serverts,clientts,relativets,experiments,ostype,country,gender,hardwaremodel,rowsperscreen,columnsperscreen,productid,categoryid,storeid,merchantid,rating,price,position,revenue,search_query,search_categoryid,context_pg,context_catalog,context_search,context_similar,pushtype,pushid,utmparams,split,partition_date";
+    String value = "\"1493377914783841726-153-53-581-795312800\",\"1493377914783816035-152-51-581-448137233\",\"productClick\",\"1498368305377\",\"1498368283964\"," +
+        "\"4990390594\",\"{productQuestions=enabled, web-payments-enabled=enabled, searchEngine=detectum2, coupon-to-lazy-buyers=coupon-10-7, inviteFriends=enabled, " +
+        "productSizeChart=baseline, merchant-offers=enabled, helpshift=enabled, enable-paybox=enabled, rankerPenaltyQuota=baseline, " +
+        "groupsInSocialNetworks=groupsInSocialNetworks, catalog-mappings=enabled, productPreviewIndicator=sales, rankerUserModelWeights=purchases_smooth, " +
+        "rankerRtUserModels=test30, product-price-elasticy=linear_up_to_5}\",\"android\",\"RU\",\"male\",\"Ixion ML4.5\"\" Ixion ML4.5\"\"\",\"3\",\"2\"," +
+        "\"1487567655694365587-198-1-629-1713024225\",\"1473502935938677404-248-2-118-2064455579\",\"1484918498706781429-242-3-26341-1572668229\"," +
+        "\"1484917952654400105-31-11-26341-3246049605\",\"4.628158844765343\",\"6.0\",\"100\",\"\",\"\",\"\",\"false\",\"false\",\"false\",\"false\",\"\",\"\",\"\",\"F\"," +
+        "\"2017-06-25\"";
+    String value1 = "\"1493377914783841726-153-53-581-795312800\",\"1493377914783816035-152-51-581-448137233\",\"productClick\",\"1498368305377\",\"1498368283964\"," +
+        "\"4990390594\",\"{productQuestions=enabled, web-payments-enabled=enabled, searchEngine=detectum2, coupon-to-lazy-buyers=coupon-10-7, inviteFriends=enabled, " +
+        "productSizeChart=baseline, merchant-offers=enabled, helpshift=enabled, enable-paybox=enabled, rankerPenaltyQuota=baseline, " +
+        "groupsInSocialNetworks=groupsInSocialNetworks, catalog-mappings=enabled, productPreviewIndicator=sales, rankerUserModelWeights=purchases_smooth, " +
+        "rankerRtUserModels=test30, product-price-elasticy=linear_up_to_5}\",\"android\",\"RU\",\"male\",\"Ixion ML4.5\"\"Ixion ML4.5\"\"\"\",\"3\",\"2\"," +
+        "\"1487567655694365587-198-1-629-1713024225\",\"1473502935938677404-248-2-118-2064455579\",\"1484918498706781429-242-3-26341-1572668229\"," +
+        "\"1484917952654400105-31-11-26341-3246049605\",\"4.628158844765343\",\"6.0\",\"100\",\"\",\"\",\"\",\"false\",\"false\",\"false\",\"false\",\"\",\"\",\"\",\"F\"," +
+        "\"2017-06-25\"";
+
+//    Assert.assertEquals(value, value1);
+    DataTools.readCSVWithHeader(new StringReader(header + "\n" + value), r -> {
+      Assert.assertEquals(value, r.clone().toString());
+    });
+  }
+
+  // "1493377914783841726-153-53-581-795312800","1493377914783816035-152-51-581-448137233","productClick","1498367984084","1498367962403","4990069301","{productQuestions=enabled, web-payments-enabled=enabled, searchEngine=detectum2, coupon-to-lazy-buyers=coupon-10-7, inviteFriends=enabled, productSizeChart=baseline, merchant-offers=enabled, helpshift=enabled, enable-paybox=enabled, rankerPenaltyQuota=baseline, groupsInSocialNetworks=groupsInSocialNetworks, catalog-mappings=enabled, productPreviewIndicator=sales, rankerUserModelWeights=purchases_smooth, rankerRtUserModels=test30, product-price-elasticy=linear_up_to_5}","android","RU","male","Ixion ML4.5"" Ixion ML4.5""","3","2","1461934112596872736-249-1-553-47564357","1473502943259066792-27-2-118-1329907027","1460707199853346096-1-3-553-3675721035","1479114284851797703-1-11-118-3521699745","4.647969052224371","2.54","29","","","","false","false","false","false","","","","F","2017-06-25"
+
   public void testEmptyValue() throws Exception {
     String data =
-        "\"week\",\"categoryId\",\"productOpen\",\"productToCart\",\"productToFavorites\",\"productPurchase\"\n" +
+        "\"\"\"week\",\"categoryId\",\"productOpen\",\"productToCart\",\"productToFavorites\",\"productPurchase\"\n" +
             "\"0\",\"1482944890164121278-235-2-629-2442933182\",\"141414\",\"15308\",\"4180\",\"2184\"\n" +
             "\"2\",\"\",\"0\",\"2\",\"7\",\"0\"\n";
 

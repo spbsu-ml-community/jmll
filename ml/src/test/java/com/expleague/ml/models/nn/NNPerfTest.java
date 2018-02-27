@@ -28,9 +28,9 @@ public class NNPerfTest {
     }
   }
 
-  private void blackHole(Vec x) {
-    x.get(rng.nextInt(x.dim()));
-  }
+//  private void blackHole(Vec x) {
+//    x.get(rng.nextInt(x.xdim()));
+//  }
 
   @Test
   public void perceptronMultiTest() {
@@ -44,14 +44,16 @@ public class NNPerfTest {
     System.out.println("config: [1, " + n_hid1 + ", " + n_hid2 + ", 1]");
 
     double[] times = new double[NUM_SHOTS];
+    LayeredNetwork nn = new LayeredNetwork(new FastRandom(), 0., 1, n_hid1, n_hid1, n_hid1, n_hid1, n_hid2, 1);
+    Vec input = new ArrayVec(1.);
+    final Vec weights = new ArrayVec(nn.numParameters());
+    VecTools.fill(weights, 1.);
+
     for (int i = 0; i < NUM_SHOTS; i++) {
       final long start = System.nanoTime();
-      Vec result = perceptronForward(n_hid1, n_hid2);
-
+      input = nn.compute(input, weights);
       final long finish = System.nanoTime();
       times[i] = (finish - start) / 1_000_000.;
-
-      blackHole(result);
     }
 
     System.out.println(stat(times));
@@ -65,11 +67,4 @@ public class NNPerfTest {
     return new Stat(array[median], array[median / 2], array[median + median / 2]);
   }
 
-  public Vec perceptronForward(int n_hid1, int n_hid2) {
-    LayeredNetwork nn = new LayeredNetwork(new FastRandom(), 0., 1, n_hid1, n_hid2, 1);
-    final ArrayVec input = new ArrayVec(1.);
-    final ArrayVec weights = new ArrayVec(nn.numParameters());
-    VecTools.fill(weights, 1.);
-    return nn.compute(input, weights);
-  }
 }

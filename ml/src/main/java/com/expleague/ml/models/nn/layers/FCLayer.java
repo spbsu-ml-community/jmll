@@ -1,46 +1,41 @@
 package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.ml.models.nn.NeuralSpider;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class FCLayer implements NeuralSpider.NodeCalcer {
-  private final int stateStart;
-  private final int stateEnd;
   private final int prevStateStart;
   private final int prevStateLength;
   private final int weightStart;
   private final int weightPerState;
+  private final int layerStart;
 
-  public FCLayer(int stateStart, int stateLength,
+  public FCLayer(int layerStart, int stateLength,
                  int prevStateStart, int prevStateLength,
                  int weightStart, int weightLength) {
-    this.stateStart = stateStart;
+    this.layerStart = layerStart;
     this.prevStateStart = prevStateStart;
     this.prevStateLength = prevStateLength;
     this.weightStart = weightStart;
     this.weightPerState = weightLength / stateLength;
-    this.stateEnd = stateStart + stateLength;
   }
 
   @Override
   public double apply(Vec state, Vec betta, int nodeIdx) {
-    final int wStart = weightStart + (nodeIdx - stateStart) * weightPerState;
-    double result = 0.;
-    for (int i = 0; i < prevStateLength; i++) {
-      result += state.get(i + prevStateStart) * betta.get(i + wStart);
-    }
-    return result;
+    final int wStart = weightStart + (nodeIdx - layerStart) * weightPerState;
+    return VecTools.multiply(state.sub(prevStateStart, prevStateLength), betta.sub(wStart, prevStateLength));
   }
 
   @Override
-  public int getStartNodeIdx() {
-    return stateStart;
+  public int start(int nodeIdx) {
+    return prevStateStart;
   }
 
   @Override
-  public int getEndNodeIdx() {
-    return stateEnd;
+  public int end(int nodeIdx) {
+    return prevStateStart + prevStateLength;
   }
 
   @Override

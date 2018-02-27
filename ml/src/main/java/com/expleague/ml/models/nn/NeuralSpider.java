@@ -1,11 +1,8 @@
 package com.expleague.ml.models.nn;
 
-import com.expleague.commons.math.MathTools;
-import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
-import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.TransC1;
@@ -31,7 +28,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 
   public Vec compute(S argument, Vec weights) {
     final Topology topology = topology(false);
-    final Vec state = this.stateCache.get(topology.dim());
+    final Vec state = this.stateCache.get(topology.length());
     final Vec arg = new ArrayVec(argument.toArray());
     for (int i = 0; i < arg.length(); i++) {
       state.set(i, arg.get(i));
@@ -53,8 +50,8 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 //    final Vec output = produceState(topology, allWeights, state);
 //
 //    target.gradientTo(output, dT.sub(dT.length() - topology.outputCount(), topology.outputCount()));
-//    final Vec prevLayerGrad = new SparseVec(state.dim());
-//    final Vec wGrad = new SparseVec(allWeights.dim());
+//    final Vec prevLayerGrad = new SparseVec(state.xdim());
+//    final Vec wGrad = new SparseVec(allWeights.xdim());
 //    for (int topologIdx = topology.length() - 1; topologIdx > 0; topologIdx--) {
 //      final NodeCalcer nodeCalcer = topology.at(topologIdx);
 //      final Node node = nodeCalcer.createNode();
@@ -88,16 +85,42 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
   }
 
   protected Vec produceState(Topology topology, Vec weights, Vec state) {
-    final int typesCount = topology.length();
-    for (int topologIdx = 0; topologIdx < typesCount; topologIdx++) {
-      final NodeCalcer nodeCalcer = topology.at(topologIdx);
-
-      for (int nodeIdx = nodeCalcer.getStartNodeIdx(); nodeIdx < nodeCalcer.getEndNodeIdx(); nodeIdx++) {
-        final double value = nodeCalcer.apply(state, weights, nodeIdx);
-        state.set(nodeIdx, value);
-      }
+    final int parallelism = ForkJoinPool.getCommonPoolParallelism();
+    final int[] cursor = new int[parallelism + 1];
+    cursor[0] = topology.dim();
+    final CyclicBarrier barrier = new CyclicBarrier(parallelism, () ->
+        cursor[0] = IntStream.of(cursor).max().orElse(topology.dim())
+    );
+    final CountDownLatch latch = new CountDownLatch(parallelism);
+    for (int t = 0; t < parallelism; t++) {
+      final int thread = t;
+      ForkJoinPool.commonPool().execute(() -> {
+        for (int i = topology.dim(); i < topology.length() - parallelism; i += parallelism) {
+          int nodeIdx = thread + i;
+          final NodeCalcer at = topology.at(nodeIdx);
+          if (at.start(nodeIdx) < cursor[0]) {
+            state.set(nodeIdx, at.apply(state, weights, nodeIdx));
+          }
+          else {
+            cursor[thread + 1] = nodeIdx - parallelism + 1;
+            i -= parallelism;
+            try {
+              barrier.await();
+            }
+            catch (InterruptedException | BrokenBarrierException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        }
+        latch.countDown();
+      });
     }
-
+    try {
+      latch.await();
+    }
+    catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
     return state.sub(state.length() - topology.outputCount(), topology.outputCount());
   }
 
@@ -105,7 +128,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 
   protected abstract Topology topology(boolean dropout);
 
-  public abstract int dim();
+  public abstract int xdim();
 
   @SuppressWarnings("UnusedDeclaration")
   public void printTopology(Topology topology, Vec allWeights, Writer to) throws IOException {
@@ -130,8 +153,8 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 
   public interface NodeCalcer {
     double apply(Vec state, Vec betta, int nodeIdx);
-    int getStartNodeIdx();
-    int getEndNodeIdx();
+    int start(int nodeIdx);
+    int end(int nodeIdx);
     void gradByStateTo(Vec state, Vec betta, Vec to);
     void gradByParametersTo(Vec state, Vec betta, Vec to);
   }
@@ -140,6 +163,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
     int outputCount();
     boolean isDroppedOut(int nodeIndex);
     int dim();
+    Stream<NodeCalcer> stream();
 
     abstract class Stub extends Seq.Stub<NodeCalcer> implements Topology {
       @Override
@@ -155,11 +179,6 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
       @Override
       public final Class<NodeCalcer> elementType() {
         return NodeCalcer.class;
-      }
-
-      @Override
-      public Stream<NodeCalcer> stream() {
-        return IntStream.range(0, length()).mapToObj(this::at);
       }
     }
   }
@@ -202,7 +221,7 @@ public abstract class NeuralSpider<T, S extends Seq<T>> {
 
     @Override
     public int xdim() {
-      return spider.dim();
+      return spider.xdim();
     }
 
     @Override

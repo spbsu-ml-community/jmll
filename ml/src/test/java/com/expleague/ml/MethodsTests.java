@@ -366,13 +366,13 @@ public void testElasticNetBenchmark() {
       System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
       System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
       w = result.weights;
-//      for (int i=0; i < beta.dim();++i) {
+//      for (int i=0; i < beta.xdim();++i) {
 //        if (beta.get(i) == 0)
 //          assertTrue(Math. abs(result.weights.get(i)-0.0) < 1e-9);
 //      }
-//      System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
-//      System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
-//      System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
+//      System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.xdim());
+//      System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.xdim());
+//      System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.xdim());
 //      System.out.println("Fit weights " + result.weights);
 //      System.out.println("Real weights " + beta);
     }

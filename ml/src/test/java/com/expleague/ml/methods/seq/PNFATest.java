@@ -35,7 +35,7 @@
 //            final double value = func.models[0].trans(x0).get(0);
 //            final Vec grad = func.models[0].gradient(x0);
 //
-//            for (int i = 0; i < x0.dim() - stateCount; i++) {
+//            for (int i = 0; i < x0.xdim() - stateCount; i++) {
 //              x0.adjust(i, EPS);
 //              final double newValue = func.models[0].trans(x0).get(0);
 //              assertEquals(grad.get(i), (newValue - value) / EPS, 1e-3);
@@ -56,7 +56,7 @@
 //            final double value = func.models[0].trans(x0).get(0);
 //            final Vec grad = func.models[0].gradient(x0);
 //
-//            for (int i = x0.dim() - stateCount; i < x0.dim(); i++) {
+//            for (int i = x0.xdim() - stateCount; i < x0.xdim(); i++) {
 //              x0.adjust(i, EPS);
 //              final double newValue = func.models[0].trans(x0).get(0);
 //              assertEquals(grad.get(i), (newValue - value) / EPS, 1e-3);

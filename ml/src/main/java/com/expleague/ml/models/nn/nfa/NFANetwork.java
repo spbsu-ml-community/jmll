@@ -26,7 +26,7 @@
 //  private final double dropout;
 //  final int statesCount;
 //  private final Seq<T> alpha;
-//  private final int dim;
+//  private final int xdim;
 //  private final int transitionMxDim;
 //
 //  public NFANetwork(FastRandom rng, double dropout, int statesCount, Seq<T> alpha) {
@@ -36,7 +36,7 @@
 //    this.statesCount = statesCount;
 //    this.alpha = alpha;
 //    transitionMxDim = (statesCount - 1) * (statesCount - 1);
-//    dim = transitionMxDim * alpha.length();
+//    xdim = transitionMxDim * alpha.length();
 //  }
 //
 //  final ThreadLocal<WeightsCalculator[]> calculators = new ThreadLocal<WeightsCalculator[]>() {
@@ -82,8 +82,8 @@
 //  }
 //
 //  @Override
-//  public int dim() {
-//    return dim;
+//  public int xdim() {
+//    return xdim;
 //  }
 //
 //  public String ppSolution(Vec x) {
@@ -169,8 +169,8 @@
 //        }
 //
 //        @Override
-//        public int dim() {
-//          return parents.dim();
+//        public int xdim() {
+//          return parents.xdim();
 //        }
 //      };
 //    }

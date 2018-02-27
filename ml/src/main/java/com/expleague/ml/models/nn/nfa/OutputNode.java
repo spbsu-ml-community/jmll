@@ -40,7 +40,7 @@
 //      }
 //
 //      @Override
-//      public int dim() {
+//      public int xdim() {
 //        return nodes.length;
 //      }
 //    };

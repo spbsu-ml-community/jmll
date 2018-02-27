@@ -94,8 +94,8 @@ public class TwoStepBlenderLearning {
     }
 
     System.out.println("Phase 2");
-//    System.out.print(" learn residual: " + Math.sqrt(sum2(phaseTwoLearn.target()) / phaseTwoLearn.dim()));
-//    System.out.println(" test residual: " + Math.sqrt(sum2(phaseTwoTest.target()) / phaseTwoTest.dim()));
+//    System.out.print(" learn residual: " + Math.sqrt(sum2(phaseTwoLearn.target()) / phaseTwoLearn.xdim()));
+//    System.out.println(" test residual: " + Math.sqrt(sum2(phaseTwoTest.target()) / phaseTwoTest.xdim()));
 
     {
       final BFGrid grid = GridTools.medianGrid(learn.vecData(), 32);

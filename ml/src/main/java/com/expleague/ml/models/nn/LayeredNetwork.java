@@ -4,9 +4,11 @@ import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.models.nn.layers.FCLayer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
 * User: solar
@@ -26,24 +28,30 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
     this.dropout = dropout;
     this.config = config;
 
-    int wStart = 0;
-    int stateStart = config[0];
-    final List<NodeCalcer> nodeCalcers = new ArrayList<>();
-    for (int d = 1; d < config.length; d++) {
-      final int prevLayerPower = config[d - 1];
-      final int wSize = config[d] * config[d - 1];
-      nodeCalcers.add(new FCLayer(stateStart, config[d],
-          stateStart - prevLayerPower, prevLayerPower, wStart, wSize));
-      stateStart += config[d];
-      wStart += wSize;
+    this.dim = config[0];
+    int len = IntStream.of(config).sum();
+    this.nodeCalcers = new NodeCalcer[len];
+    int layer = 0;
+    int index = 0;
+    int wCount = 0;
+    NodeCalcer current = new StartNodeCalcer();
+    for (int i = 0; i < len; i++) {
+      this.nodeCalcers[i] = current;
+      if (++index >= config[layer]) {
+        layer++;
+        if (layer >= config.length)
+          break;
+
+        current = new FCLayer(i + 1, config[layer], i - config[layer - 1] + 1, config[layer - 1], wCount, config[layer - 1] * config[layer]);
+        wCount += config[layer - 1] * config[layer];
+        index = 0;
+      }
     }
-    this.dim = stateStart;
-    this.numParameters = wStart;
-    this.nodeCalcers = nodeCalcers.toArray(new NodeCalcer[nodeCalcers.size()]);
+    this.numParameters = wCount;
   }
   @Override
-  public int dim() {
-    return dim;
+  public int xdim() {
+    return config[0];
   }
 
   @Override
@@ -81,6 +89,36 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
       public int length() {
         return nodeCalcers.length;
       }
+
+      @Override
+      public Stream<NodeCalcer> stream() {
+        return Stream.of(nodeCalcers);
+      }
     };
+  }
+
+  private static class StartNodeCalcer implements NeuralSpider.NodeCalcer {
+    @Override
+    public double apply(Vec state, Vec betta, int nodeIdx) {
+      return state.get(nodeIdx);
+    }
+
+    @Override
+    public int start(int nodeIdx) {
+      return 0;
+    }
+
+    @Override
+    public int end(int nodeIdx) {
+      return 0;
+    }
+
+    @Override
+    public void gradByStateTo(Vec state, Vec betta, Vec to) {
+    }
+
+    @Override
+    public void gradByParametersTo(Vec state, Vec betta, Vec to) {
+    }
   }
 }
