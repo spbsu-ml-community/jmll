@@ -130,7 +130,7 @@ public class GPFGbrtModel<Blk extends Session.Block> extends GPFModel.Stub<Blk> 
 
     // 1 & для каждой пары блоков $i$, $j$ вычислить $f(i,j)$; третья координата - наличие клика c_i
     if (f.dim() != sesf.f_count)
-      throw new IllegalArgumentException("f.dim() != sesf.f_count:" + f.dim() + " != " + sesf.f_count);
+      throw new IllegalArgumentException("f.xdim() != sesf.f_count:" + f.dim() + " != " + sesf.f_count);
     //  f = new ArrayVec(sesf.f_count);
     //  for (int i = 0; i < sesf.f_count; i++)
     //    f.set(i, f_model.value(sesf.features.row(i)));

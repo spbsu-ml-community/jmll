@@ -45,7 +45,7 @@ public class Tensor3 {
 
   public Tensor3 setRow(final int i, final int j, final Vec val) {
     if (val.dim() != dim3)
-      throw new IllegalArgumentException("val.dim() != dim3, val.dim() = " + val.dim() + ", dim3 = " + dim3);
+      throw new IllegalArgumentException("val.xdim() != dim3, val.xdim() = " + val.dim() + ", dim3 = " + dim3);
     final int index = index(i, j, 0);
     for (int l = 0; l < dim3; l++)
       vec.set(index + l, val.get(l));

@@ -65,12 +65,12 @@
 //            double denomA = 0;
 //            double demomB = 0;
 //
-//            for (int i = 0; i < loss.dim(); i++) {
+//            for (int i = 0; i < loss.xdim(); i++) {
 //
 //            }
 //
 //            final int conditionIndex = conditionIndices[b];
-//            for (int i = 0; i < loss.dim(); i++) {
+//            for (int i = 0; i < loss.xdim(); i++) {
 //              final double p;
 //              if (reverse[i] > conditionIndex)
 //                p = exp(-x * (reverse[i] - conditionIndex));

@@ -39,11 +39,11 @@ public class CreateCharDict {
 
 
   public static void main(String args[]) throws Exception {
-    for (int i : new int[]{20000}) {
-//      ng20(i);
+    for (int i : new int[]{2000}) {
+      ng20(i);
 ////      imdb(i);
     }
-    convertNG20();
+//    convertNG20();
 //    for (int i : new int[]{30000}) {
 //      testDictionaryNG(i);
 //      testDictionaryIMDB(i);

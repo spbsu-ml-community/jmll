@@ -14,7 +14,7 @@ import java.util.function.Function;
 public interface Optimization<Loss extends TargetFunc, DSType extends DataSet<DSItem>, DSItem> {
   /**
    * @param learn X part of data set
-   * @param loss is function of solution function results on each point of data set, loss.xdim() == solution.value(learn).dim() * f.dim()
+   * @param loss is function of solution function results on each point of data set, loss.xdim() == solution.value(learn).xdim() * f.xdim()
    * @return function f = \arg \min_f Loss((f(learn_i))_1^m)
    */
   Function<DSItem,Vec> fit(DSType learn, Loss loss);

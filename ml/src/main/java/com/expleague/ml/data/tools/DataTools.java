@@ -90,7 +90,7 @@ public class DataTools {
   public static Logger log = Logger.create(DataTools.class);
 
   public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
-      new TypeConvertersCollection(MathTools.CONVERSION, "com.expleague.ml.io"), CharSequence.class);
+      new TypeConvertersCollection(MathTools.CONVERSION, DataTools.class, "com.expleague.ml.io"), CharSequence.class);
 
 
   public static Pool<QURLItem> loadFromFeaturesTxt(final String file) throws IOException {
@@ -715,7 +715,7 @@ public class DataTools {
 
   public static Stream<CharSeq[]> readCSV(Reader reader, boolean parallel) {
     final ReaderChopper chopper = new ReaderChopper(reader);
-    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CVSLinesIterator(chopper), Spliterator.IMMUTABLE), parallel).onClose(() -> StreamTools.close(reader));
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new CSVLinesIterator(chopper), Spliterator.IMMUTABLE), parallel).onClose(() -> StreamTools.close(reader));
   }
 
   public static void readCSVWithHeader(String file, Consumer<CsvRow> processor) {
@@ -748,7 +748,7 @@ public class DataTools {
 
     slice.forEach(split -> {
       try {
-        processor.accept(new CsvRowImpl(split, names));
+        processor.accept(new WritableCsvRow(split, names));
       }
       catch (Exception e) {
         log.error("Unable to parse line: " + Arrays.toString(split), e);
@@ -766,16 +766,16 @@ public class DataTools {
       }
     });
 
-    return StreamSupport.stream(spliterator, false).onClose(() -> StreamTools.close(reader)).map(line -> new CsvRowImpl(line, names));
+    return StreamSupport.stream(spliterator, false).onClose(() -> StreamTools.close(reader)).map(line -> new WritableCsvRow(line, names));
   }
 
-  private static class CVSLinesIterator implements Iterator<CharSeq[]> {
+  private static class CSVLinesIterator implements Iterator<CharSeq[]> {
     private final ReaderChopper chopper;
     CharSeq[] next;
     CharSeq[] prev;
     CharSeqBuilder builder;
 
-    public CVSLinesIterator(ReaderChopper chopper) {
+    public CSVLinesIterator(ReaderChopper chopper) {
       this.chopper = chopper;
       builder = new CharSeqBuilder();
     }
@@ -853,49 +853,4 @@ public class DataTools {
     }
   }
 
-  private static class CsvRowImpl implements CsvRow {
-    private final CharSeq[] split;
-    private final TObjectIntMap<String> names;
-
-    public CsvRowImpl(CharSeq[] split, TObjectIntMap<String> names) {
-      this.split = split;
-      this.names = names;
-    }
-
-    @Override
-    public CharSeq at(int i) {
-      return split[i];
-    }
-
-    @Override
-    public CsvRow names() {
-      final CharSeq[] names = new CharSeq[Arrays.stream(this.names.values()).max().orElse(0)];
-      Arrays.fill(names, CharSeq.create("duplicate"));
-      this.names.forEachEntry((name, index) -> {
-        names[index - 1] = CharSeq.create(name);
-        return true;
-      });
-      return new CsvRowImpl(names, this.names);
-    }
-
-    @Override
-    public Optional<CharSeq> apply(String name) {
-      final int index = names.get(name);
-      if (index == 0)
-        throw new RuntimeException("Stream does not contain required column '" + name + "'!");
-      final CharSeq part = split[index - 1];
-      return part.length() > 0 ? Optional.of(part) : Optional.empty();
-    }
-
-    @Override
-    public String toString() {
-      final CharSeqBuilder builder = new CharSeqBuilder();
-      for (int i = 0; i < split.length; i++) {
-        builder.append('"').append(CharSeqTools.replace(split[i], "\"", "\"\"")).append('"');
-        if (i < split.length - 1)
-          builder.append(',');
-      }
-      return builder.toString();
-    }
-  }
 }

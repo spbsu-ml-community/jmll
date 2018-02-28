@@ -180,7 +180,7 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
     final double targetThroughInvSigmaDot = VecTools.multiply(targetProj, tmp);
 //    final double rss = sum2 - 2 * targetThroughInvSigmaDot + targetBetasProd;
     return (0.5 * targetBetasProd - targetThroughInvSigmaDot);
-//     return n * Math.log(rss / (n - targetProj.dim())) + betas.dim() * Math.log(n);
+//     return n * Math.log(rss / (n - targetProj.xdim())) + betas.xdim() * Math.log(n);
   }
 
   private Vec makeVector(TDoubleArrayList sums, double sum) {
@@ -329,7 +329,7 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
     public Vec mu() {
       return mu;
 //      Mx cov = new VecBasedMx(empericalCov);
-//      for (int i = 0; i < mu.dim(); ++i) {
+//      for (int i = 0; i < mu.xdim(); ++i) {
 ////      final double preWeight = weights.get(i - 1);
 ////      final double w = empericalCov.get(i, i);
 //        cov.adjust(i, i, alphas.get(i));

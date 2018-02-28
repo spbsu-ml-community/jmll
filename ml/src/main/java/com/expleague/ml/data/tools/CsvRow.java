@@ -13,32 +13,75 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
-public interface CsvRow extends Function<String, Optional<CharSeq>> {
-  CharSeq at(int i);
+public interface CsvRow extends Function<String, Optional<CharSeq>>, Cloneable {
   CsvRow names();
+  CsvRow clone();
 
-  default double asDouble(String header) {
-    return CharSeqTools.parseDouble(apply(header).get());
+  CharSeq at(int i);
+
+  default double asDouble(String name) {
+    final Optional<CharSeq> apply = apply(name);
+    if (apply.isPresent())
+      return CharSeqTools.parseDouble(apply.get());
+    else
+      throw new IllegalArgumentException("Unable to find non-empty double field " + name);
   }
 
   default double asDouble(String name, double defaultV) {
     try {
       return apply(name).map(CharSeqTools::parseDouble).orElse(defaultV);
     }
-    catch (IllegalArgumentException iae) {
+    catch (NumberFormatException ignore) {
       return defaultV;
     }
   }
 
-  default int asInt(String header) {
-    return CharSeqTools.parseInt(apply(header).get());
+  default int asInt(String name) {
+    final Optional<CharSeq> apply = apply(name);
+    if (apply.isPresent())
+      return CharSeqTools.parseInt(apply.get());
+    else
+      throw new IllegalArgumentException("Unable to find non-empty integer field " + name);
   }
 
   default int asInt(String name, int defaultV) {
     try {
       return apply(name).map(CharSeqTools::parseInt).orElse(defaultV);
     }
-    catch (IllegalArgumentException iae) {
+    catch (NumberFormatException ignore) {
+      return defaultV;
+    }
+  }
+
+  default boolean asBool(String name) {
+    final Optional<CharSeq> apply = apply(name);
+    if (apply.isPresent()) {
+      CharSeq val = apply.get();
+      //noinspection EqualsBetweenInconvertibleTypes
+      return val.equals("true") || val.equals("1") || val.equals("da") || val.equals("yes");
+    }
+    else
+      throw new IllegalArgumentException("Unable to find non-empty integer field " + name);
+  }
+
+  default boolean asBool(String name, boolean defaultV) {
+    //noinspection EqualsBetweenInconvertibleTypes
+    return apply(name).map(val -> val.equals("true") || val.equals("1") || val.equals("da") || val.equals("yes")).orElse(defaultV);
+  }
+
+  default long asLong(String name) {
+    final Optional<CharSeq> apply = apply(name);
+    if (apply.isPresent())
+      return CharSeqTools.parseLong(apply.get());
+    else
+      throw new IllegalArgumentException("Unable to find non-empty long field " + name);
+  }
+
+  default long asLong(String name, long defaultV) {
+    try {
+      return apply(name).map(CharSeqTools::parseLong).orElse(defaultV);
+    }
+    catch (NumberFormatException ignore) {
       return defaultV;
     }
   }
@@ -47,7 +90,11 @@ public interface CsvRow extends Function<String, Optional<CharSeq>> {
   default Date asDate(String name, String pattern) {
     final DateParser parser = dateParsers.compute(pattern, (p, v) -> v != null ? v : FastDateFormat.getInstance(p));
     try {
-      return parser.parse(apply(name).get().toString());
+      Optional<CharSeq> apply = apply(name);
+      if (apply.isPresent())
+        return parser.parse(apply.get().toString());
+      else
+        throw new IllegalArgumentException("Unable to find non-empty date field " + name);
     }
     catch (ParseException e) {
       throw new RuntimeException(e);
@@ -55,21 +102,13 @@ public interface CsvRow extends Function<String, Optional<CharSeq>> {
   }
 
   default String asString(String name) {
-    return apply(name).get().toString();
+    return apply(name).map(CharSeq::toString).orElse(null);
   }
   default String asString(String name, String defaultValue) {
-    return apply(name).orElseGet(() -> CharSeq.create(defaultValue)).toString();
+    return apply(name).map(CharSeq::toString).orElse(defaultValue);
   }
 
-  default long asLong(String name) {
-    return CharSeqTools.parseLong(apply(name).get());
-  };
-
-  default long asLong(String name, long defaultV) {
-    return apply(name).map(CharSeqTools::parseLong).orElse(defaultV);
-  };
-
   default CharSeq at(String type) {
-    return apply(type).get();
+    return apply(type).orElse(null);
   }
 }

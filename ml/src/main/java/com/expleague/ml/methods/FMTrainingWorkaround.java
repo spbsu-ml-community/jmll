@@ -60,7 +60,7 @@ public class FMTrainingWorkaround extends VecOptimization.Stub<L2> {
       final String[] params = {
           LIBFM_PATH,
           "-task", task,
-          "-dim", dim,
+          "-xdim", dim,
           "-iter", iters,
           "-verbosity",
           others

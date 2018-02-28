@@ -3,7 +3,6 @@ package com.expleague.ml.io;
 import com.expleague.commons.func.types.ConversionRepository;
 import com.expleague.commons.func.types.SerializationRepository;
 import com.expleague.commons.math.MathTools;
-import com.expleague.commons.func.types.TypeConverter;
 import com.expleague.commons.func.types.impl.TypeConvertersCollection;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.DynamicGridEnabled;
@@ -11,15 +10,13 @@ import com.expleague.ml.GridEnabled;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Predicate;
-
 /**
  * User: solar
  * Date: 12.08.13
  * Time: 13:01
  */
 public class ModelsSerializationRepository extends SerializationRepository<CharSequence> {
-  private static final ConversionRepository conversion = new TypeConvertersCollection(MathTools.CONVERSION,
+  private static final ConversionRepository conversion = new TypeConvertersCollection(MathTools.CONVERSION, ModelsSerializationRepository.class,
           new ObliviousTreeConversionPack(),
           new RegionConversionPack(),
           new ObliviousMultiClassTreeConversionPack(),
@@ -60,7 +57,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
         ((DynamicGridEnabled) typeConverter).setGrid(grid);
       return true;
     }), CharSequence.class);
-    this.dynamicGrid = dynamicGrid;
+    this.dynamicGrid = grid;
   }
 
 
