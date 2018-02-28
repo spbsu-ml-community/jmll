@@ -41,8 +41,8 @@ public class PNFAonGPUTest {
     PNFAonGPU<WeightedL2> pnfAonGPU = new PNFAonGPU<>(stateCount, alphabetSize, random, null);
     PNFAonGPU.PNFAPointLossFunc func = pnfAonGPU.new PNFAPointLossFunc(seq, y, w);
 
-    PNFA<WeightedL2> pnfa = new PNFA<>(stateCount, alphabetSize, random, null, 1);
-    PNFA.PNFAPointLossFunc pointLossFunc = pnfa.new PNFAPointLossFunc(seq, y, w);
+    PNFA<WeightedL2> pnfa = new PNFA<>(stateCount, 1, alphabetSize, 0.01, 0, random, null,null, 1);
+    PNFA.PNFAPointLossFunc pointLossFunc = pnfa.new PNFAPointLossFunc(seq, new ArrayVec(y), w);
 
     double v = pointLossFunc.value(new ArrayVec(hostArray));
     System.out.println(v);

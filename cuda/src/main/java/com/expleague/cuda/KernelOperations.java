@@ -3,6 +3,7 @@ package com.expleague.cuda;
 import com.expleague.cuda.data.GPUMx;
 import com.expleague.cuda.data.GPUVec;
 import jcuda.Pointer;
+import jcuda.Sizeof;
 import jcuda.driver.CUfunction;
 import jcuda.driver.JCudaDriver;
 
@@ -37,12 +38,35 @@ public class KernelOperations {
         Pointer.to(matrix.gpuVec.devicePointer),
         Pointer.to(result.gpuVec.devicePointer));
 
-    final int blockDim = 6;
+    final int blockDim = result.rows;
 
     JCudaDriver.cuLaunchKernel(F_MATRIX_REDUCE,
         blockDim, 1, 1,
         blockDim, 1, 1,
         0, null,
+        kernelParameters, null
+    );
+    JCudaDriver.cuCtxSynchronize();
+  }
+
+
+  private static final CUfunction REDUCE5 =
+      JCudaHelper.getFunction(CU_FILE_PATH, "reduce5");
+
+  public static void reduce5(GPUVec args, GPUVec result) {
+
+    int dim = args.dim();
+    final Pointer kernelParameters = Pointer.to(
+        Pointer.to(args.devicePointer),
+        Pointer.to(result.devicePointer),
+        Pointer.to(new int[]{dim}));
+
+    final int blockDim = 32;
+
+    JCudaDriver.cuLaunchKernel(REDUCE5,
+        dim / blockDim, 1, 1,
+        blockDim, 1, 1,
+        blockDim* Sizeof.FLOAT, null,
         kernelParameters, null
     );
     JCudaDriver.cuCtxSynchronize();

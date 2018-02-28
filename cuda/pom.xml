@@ -76,6 +76,11 @@
       <artifactId>xchart</artifactId>
       <version>2.5.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.aparapi</groupId>
+      <artifactId>aparapi</artifactId>
+      <version>1.4.1</version>
+    </dependency>
   </dependencies>
 
   <build>

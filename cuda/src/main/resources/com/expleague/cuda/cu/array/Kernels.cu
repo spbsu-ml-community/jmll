@@ -22,7 +22,7 @@ __global__ void fMatrixExp(
 }
 
 extern "C"
-#define BLOCK_DIM 6
+#define BLOCK_DIM 1024
 __global__ void fMatrixReduce(
     const float* arguments,
     float* results
@@ -31,28 +31,50 @@ __global__ void fMatrixReduce(
   const int states = blockDim.x;
   const int tid = threadIdx.x;
   const int index = states * col + tid;
-  __shared__ float sdata[BLOCK_DIM - 1];
+  __shared__ float sdata[BLOCK_DIM];
   __shared__ float res[BLOCK_DIM];
   if (tid < (states - 1)) {
     const float f = expf(arguments[col * (states - 1) + tid]);
     sdata[tid] = f;
     res[tid] = f;
   } else {
+    sdata[tid] = 1;
     res[tid] = 1;
   }
+
   __syncthreads();
 
-  if (tid < (states - 1)) {
-    for (int s = 1; s < states - 1; s *= 2) {
-      if (tid % (2 * s) == 0) {
+  for (int s = BLOCK_DIM / 2; s > 0; s>>=1) {
+    if (tid < s) {
         sdata[tid] += sdata[tid + s];
-      }
-     __syncthreads();
     }
+    __syncthreads();
   }
 
-  const float sum = sdata[0] + 1;
-  results[index] = res[tid] / sum;
+  results[index] = res[tid] / sdata[0];
+}
+
+extern "C"
+#define BLOCK_SIZE 32
+__global__ void reduce5(const float* arguments, float* results, const int n) {
+    extern __shared__ float sdata[];
+    const int tid = threadIdx.x;
+    const int i = blockIdx.x*blockDim.x + tid;
+
+    if (i < n) {
+        sdata[tid] = arguments[i];
+    }
+
+    for (int s = BLOCK_SIZE / 2; s > 0; s>>=1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) {
+        results[blockIdx.x] = sdata[0];
+    }
 }
 
 
