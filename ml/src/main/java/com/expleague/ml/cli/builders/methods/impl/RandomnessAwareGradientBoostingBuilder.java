@@ -13,15 +13,14 @@ import com.expleague.ml.randomnessAware.ProcessRandomnessPolicy;
 /**
  * User: noxoomo
  */
-public class RandomnessAwareGradientBoostingBuilder implements Factory<VecOptimization> {
-  private final Factory<VecOptimization> defaultWeakBuilder = new GreedyRandomnessAwareObliviousTreeBuilder();
+public class RandomnessAwareGradientBoostingBuilder implements Factory<RandomnessAwareVecOptimization> {
+  private final Factory<RandomnessAwareVecOptimization> defaultWeakBuilder = new GreedyRandomnessAwareObliviousTreeBuilder();
 
-  private VecOptimization weak;
+  private RandomnessAwareVecOptimization weak;
   private String lossName = "L2Reg";
   private double step = 0.005;
   private int iters = 1000;
   private ProcessRandomnessPolicy policy = BinOptimizedRandomnessPolicy.PointEstimateBin;
-  private ProcessRandomnessPolicy scoreApplyPolicy = BinOptimizedRandomnessPolicy.PointEstimateBin;
 
   public void setStep(final double s) {
     this.step = s;
@@ -35,7 +34,7 @@ public class RandomnessAwareGradientBoostingBuilder implements Factory<VecOptimi
     this.lossName = lossName;
   }
 
-  public void setWeak(final VecOptimization weak) {
+  public void setWeak(final RandomnessAwareVecOptimization weak) {
     this.weak = weak;
   }
 
@@ -52,19 +51,14 @@ public class RandomnessAwareGradientBoostingBuilder implements Factory<VecOptimi
     }
   }
 
-  public RandomnessAwareGradientBoostingBuilder setScoreApplyPolicy(final String policy) {
-    this.scoreApplyPolicy = getPolicy(policy);
-    return this;
-  }
-
 
   @Override
-  public VecOptimization create() {
+  public RandomnessAwareVecOptimization create() {
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }
-    RandomnessAwareGradientBoosting.Config config = new RandomnessAwareGradientBoosting.Config(iters, step, scoreApplyPolicy);
+    RandomnessAwareGradientBoosting.Config config = new RandomnessAwareGradientBoosting.Config(iters, step);
     //noinspection unchecked
-    return new RandomnessAwareGradientBoosting((RandomnessAwareVecOptimization<L2>) weak, DataTools.targetByName(lossName), policy, config);
+    return new RandomnessAwareGradientBoosting((RandomnessAwareVecOptimization<L2>) weak, DataTools.targetByName(lossName),  config);
   }
 }

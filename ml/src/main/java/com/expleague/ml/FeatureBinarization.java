@@ -38,7 +38,7 @@ public class FeatureBinarization {
     return index;
   }
 
-  public VecRandomFeatureExtractor owner() {
+  public VecRandomFeatureExtractor featureExtractor() {
     return owner;
   }
 
@@ -58,9 +58,9 @@ public class FeatureBinarization {
 
     boolean value(final int binId);
 
-    FeatureBinarization owner();
+    FeatureBinarization featureBinarization();
 
-    float border();
+    double border();
 
   }
 
@@ -76,7 +76,7 @@ public class FeatureBinarization {
 
     @Override
     public String toString() {
-      return owner().owner.toString() + " == " + Double.toString(owner.borders[idx]);
+      return featureBinarization().owner.toString() + " == " + Double.toString(owner.borders[idx]);
     }
 
     @Override
@@ -95,12 +95,12 @@ public class FeatureBinarization {
     }
 
     @Override
-    public FeatureBinarization owner() {
+    public FeatureBinarization featureBinarization() {
       return owner;
     }
 
     @Override
-    public float border() {
+    public double border() {
       throw new RuntimeException("unimplemented");
     }
   }
@@ -131,18 +131,18 @@ public class FeatureBinarization {
     }
 
     @Override
-    public FeatureBinarization owner() {
+    public FeatureBinarization featureBinarization() {
       return owner;
     }
 
     @Override
-    public float border() {
-      return (float) owner.borders[idx];
+    public double border() {
+      return owner.borders[idx];
     }
 
     @Override
     public String toString() {
-      return owner().owner.toString() + " >" + Double.toString(owner.borders[idx]);
+      return featureBinarization().owner.toString() + " >" + Double.toString(owner.borders[idx]);
     }
   }
 
@@ -174,10 +174,10 @@ public class FeatureBinarization {
       return this;
     }
 
-    public FeatureBinarizationBuilder addSample(final RandomVec<?> vec,
+    public FeatureBinarizationBuilder addSample(final RandomVec vec,
                                                 final FastRandom fastRandom) {
 //      final Vec sample = vec.expectation();//vec.sampler().sample(fastRandom);
-      final Vec sample = vec.sampler().sample(fastRandom);
+      final Vec sample = vec.instance(fastRandom);
       addSample(sample);
       return this;
     }

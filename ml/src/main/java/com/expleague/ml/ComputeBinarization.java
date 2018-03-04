@@ -26,7 +26,7 @@ public class ComputeBinarization implements Computable<VecDataSet, ComputeBinari
       } else {
         featureBinarizationBuilder.setBinFactor(binCount);
       }
-      featureBinarizationBuilder.addSample(featureExtractor.apply(dataSet), random);
+      featureBinarizationBuilder.addSample(featureExtractor.computeAll(dataSet), random);
       if (OneHotFeaturesSet.isOneHot(featureExtractor)) {
         featureBinarizationBuilder.buildOneHot(true);
       }

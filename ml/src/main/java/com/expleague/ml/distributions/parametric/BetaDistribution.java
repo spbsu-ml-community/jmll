@@ -2,27 +2,24 @@ package com.expleague.ml.distributions.parametric;
 
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.distributions.RandomVariable;
-import com.expleague.ml.distributions.RandomVecBuilder;
-import com.expleague.ml.distributions.parametric.impl.BetaVecDistributionImpl;
 import org.apache.commons.math3.exception.NumberIsTooSmallException;
 import org.apache.commons.math3.exception.util.LocalizedFormats;
 import org.apache.commons.math3.special.Beta;
 import org.apache.commons.math3.special.Gamma;
 import org.apache.commons.math3.util.FastMath;
 
-import static com.expleague.commons.math.MathTools.sqr;
 
-public interface BetaDistribution extends RandomVariable<BetaDistribution> {
+public interface BetaDistribution extends RandomVariable {
 
   double alpha();
 
   double beta();
 
-  default RandomVecBuilder<BetaDistribution> vecBuilder() {
-    return new BetaVecDistributionImpl.Builder();
-  }
-
   BetaDistribution update(double alpha, double beta);
+
+  default double expectation() {
+    return alpha() / (alpha() + beta());
+  }
 
   public class Stub {
 
@@ -32,7 +29,7 @@ public interface BetaDistribution extends RandomVariable<BetaDistribution> {
 
     public static double expectation(double alpha, double beta) {
 //      final double var = (alpha * beta) / (sqr(alpha + beta) * (alpha + beta + 1));
-      return (alpha ) / (alpha + beta);
+      return (alpha) / (alpha + beta);
 //      return (alpha ) / (alpha + beta);
     }
 
@@ -41,10 +38,10 @@ public interface BetaDistribution extends RandomVariable<BetaDistribution> {
     }
 
     public static double instance(final FastRandom random, double alpha, double beta) {
-        //TODO: is it fastest way?
-        final double x = random.nextGamma(alpha);
-        final double y = random.nextGamma(beta);
-        return x / (x + y);
+      //TODO: is it fastest way?
+      final double x = random.nextBayessianGamma(alpha, 1.0);
+      final double y = random.nextBayessianGamma(beta, 1.0);
+      return x / (x + y);
     }
 
     public static double logDensity(final double x, final double alpha, final double beta, final double z) {

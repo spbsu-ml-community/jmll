@@ -700,34 +700,7 @@ public void testElasticNetBenchmark() {
 
     }
 
-    addBoostingListeners(final RandomnessAwareGradientBoosting<GlobalLoss> boosting, final GlobalLoss loss, final Pool<?> _learn, final Pool<?> _validate) {
-      final Action counter = new ProgressHandler() {
-        int index = 0;
 
-        @Override
-        public void invoke(final Trans partial) {
-          System.out.print("\n" + index++);
-        }
-      };
-      final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", _learn.vecData(), _learn.target(L2.class));
-      final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", _validate.vecData(), _validate.target(L2.class));
-      final Action modelPrinter = new ModelPrinter();
-      final Action qualityCalcer = new QualityCalcer();
-      boosting.addListener(counter);
-      boosting.addListener(learnListener);
-      boosting.addListener(validateListener);
-      boosting.addListener(qualityCalcer);
-//    boosting.addListener(modelPrinter);
-      final Ensemble ans = boosting.fit(_learn.vecData(), loss);
-      Vec current = new ArrayVec(_validate.size());
-      for (int i = 0; i < _validate.size(); i++) {
-        double f = 0;
-        for (int j = 0; j < ans.models.length; j++)
-          f += ans.weights.get(j) * ((Func) ans.models[j]).value(((VecDataSet) _validate).data().row(i));
-        current.set(i, f);
-      }
-      System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
-    }
   }
 
 
@@ -762,14 +735,7 @@ public void testElasticNetBenchmark() {
   }
 
 
-  public void testRandomnessAwareBoost() {
-    RandomnessAwareGradientBoosting.Config config = new RandomnessAwareGradientBoosting.Config(1000, 0.01, BinOptimizedRandomnessPolicy.PointEstimateBin);
-    FeatureExtractorsBuilder gridBuilder = new FeatureExtractorsBuilder(learn);
-    gridBuilder.build();
-    final GreedyRandomnessAwareObliviousTree<L2> weak = new GreedyRandomnessAwareObliviousTree<>(6, gridBuilder.build(), 32, BinOptimizedRandomnessPolicy.PointEstimateBin, rng);
-    final RandomnessAwareGradientBoosting<L2> boosting = new RandomnessAwareGradientBoosting<>(weak, L2Reg.class, BinOptimizedRandomnessPolicy.PointEstimateBin, config);
-    new addBoostingListeners<L2>(boosting, learn.target(L2.class), learn, validate);
-  }
+
 
   public void testOTBoost1() throws IOException {
     final FastRandom rnd = new FastRandom(0);

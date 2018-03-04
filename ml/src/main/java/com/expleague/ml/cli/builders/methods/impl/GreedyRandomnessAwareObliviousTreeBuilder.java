@@ -3,10 +3,8 @@ package com.expleague.ml.cli.builders.methods.impl;
 import com.expleague.commons.func.Factory;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.FeatureExtractorsBuilder;
-import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.methods.RandomnessAwareVecOptimization;
 import com.expleague.ml.methods.VecOptimization;
-import com.expleague.ml.methods.trees.GreedyRandomnessAwareCtrTrans;
 import com.expleague.ml.methods.trees.GreedyRandomnessAwareObliviousTree;
 import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
 import com.expleague.ml.models.RandomVariableRandomnessPolicy;
@@ -14,7 +12,7 @@ import com.expleague.ml.models.RandomVariableRandomnessPolicy;
 /**
  * User: noxoomo
  */
-public class GreedyRandomnessAwareObliviousTreeBuilder implements Factory<VecOptimization> {
+public class GreedyRandomnessAwareObliviousTreeBuilder implements Factory<RandomnessAwareVecOptimization> {
   public static FastRandom defaultRandom;
   public static FeatureExtractorsBuilder defaultFeaturesExtractorBuilder;
   private FastRandom random = defaultRandom;

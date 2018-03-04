@@ -46,7 +46,7 @@ public class GridSearch {
       final Object[] parameters = enumerator.getParameters();
       System.out.println(Arrays.toString(parameters));
       final String concreteScheme = String.format(commonScheme, parameters);
-      final VecOptimization method = methodsBuilder.create(concreteScheme);
+      final VecOptimization method = (VecOptimization) methodsBuilder.create(concreteScheme);
       final Trans result = method.fit(learn.vecData(), loss);
       final double targetValue = loss.value(DataTools.calcAll(result, learn.vecData()));
       final double[] metricsValues = new double[this.metrics.length];

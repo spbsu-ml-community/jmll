@@ -1,5 +1,6 @@
 package com.expleague.ml.cli.modes.impl;
 
+import com.expleague.commons.func.Action;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.FeatureExtractorsBuilder;
@@ -33,9 +34,12 @@ import com.expleague.ml.loss.blockwise.BlockwiseMultiLabelLogit;
 import com.expleague.ml.loss.multiclass.ClassicMulticlassLoss;
 import com.expleague.ml.loss.multilabel.ClassicMultiLabelLoss;
 import com.expleague.ml.loss.multilabel.MultiLabelOVRLogit;
+import com.expleague.ml.methods.AnyOptimization;
+import com.expleague.ml.methods.RandomnessAwareVecOptimization;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.multiclass.JoinedBinClassModel;
 import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
+import com.expleague.ml.randomnessAware.RandomFunc;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
 
@@ -122,7 +126,6 @@ public class Fit extends AbstractMode {
     }
 
 
-    final VecOptimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
 
     //set metrics
     final String[] metricNames = command.getOptionValues(METRICS_OPTION);
@@ -136,8 +139,9 @@ public class Fit extends AbstractMode {
       metrics = new Func[]{test.targetByName(target)};
     }
 
+    final AnyOptimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
     //added progress handlers
-    ProgressHandler progressPrinter = null;
+    Action progressPrinter = null;
     if (method instanceof WeakListenerHolder && command.hasOption(VERBOSE_OPTION) && !command.hasOption(FAST_OPTION)) {
       final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "10"));
       if (loss instanceof BlockwiseMLLLogit) {
@@ -145,7 +149,11 @@ public class Fit extends AbstractMode {
       } else if (loss instanceof BlockwiseMultiLabelLogit || loss instanceof MultiLabelOVRLogit) {
         progressPrinter = new MultiLabelLogitProgressPrinter(learn, test, printPeriod);
       } else {
-        progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics, printPeriod);
+        if (method instanceof RandomnessAwareVecOptimization) {
+          progressPrinter = new RandomnessAwareProgressPrinter(learn, test, loss, metrics, printPeriod);
+        } else {
+          progressPrinter = new DefaultProgressPrinter(learn, test, loss, metrics, printPeriod);
+        }
       }
       //noinspection unchecked
       ((WeakListenerHolder) method).addListener(progressPrinter);
@@ -159,38 +167,48 @@ public class Fit extends AbstractMode {
 
 
     //fitting
-    Interval.start();
-    Interval.suspend();
-    final Trans result = method.fit(learn.vecData(), loss);
-    Interval.stopAndPrint("Total fit time:");
+    if (method instanceof VecOptimization) {
+      Interval.start();
+      Interval.suspend();
+      final Trans result = ((VecOptimization)method).fit(learn.vecData(), loss);
+      Interval.stopAndPrint("Total fit time:");
 
 
-    //calc & print scores
-    if (!command.hasOption(FAST_OPTION) && !command.hasOption(SKIP_FINAL_EVAL_OPTION)) {
-      ResultsPrinter.printResults(result, learn, test, loss, metrics);
-      if (loss instanceof BlockwiseMLLLogit) {
-        ResultsPrinter.printMulticlassResults(result, learn, test);
-      } else if (loss instanceof ClassicMulticlassLoss) {
-        final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
-        MCTools.makeOneVsRestReport(learn, test, (JoinedBinClassModel) result, printPeriod);
-      } else if (loss instanceof ClassicMultiLabelLoss || loss instanceof BlockwiseMultiLabelLogit || loss instanceof MultiLabelOVRLogit) {
-        ResultsPrinter.printMultilabelResult(result, learn, test);
+      //calc & print scores
+      if (!command.hasOption(FAST_OPTION) && !command.hasOption(SKIP_FINAL_EVAL_OPTION)) {
+        ResultsPrinter.printResults(result, learn, test, loss, metrics);
+        if (loss instanceof BlockwiseMLLLogit) {
+          ResultsPrinter.printMulticlassResults(result, learn, test);
+        }
+        else if (loss instanceof ClassicMulticlassLoss) {
+          final int printPeriod = Integer.valueOf(command.getOptionValue(PRINT_PERIOD, "20"));
+          MCTools.makeOneVsRestReport(learn, test, (JoinedBinClassModel) result, printPeriod);
+        }
+        else if (loss instanceof ClassicMultiLabelLoss || loss instanceof BlockwiseMultiLabelLogit || loss instanceof MultiLabelOVRLogit) {
+          ResultsPrinter.printMultilabelResult(result, learn, test);
+        }
       }
-    }
 
 
-    //write model
-    final String outName = getOutputName(command);
-    final ModelWriter modelWriter = new ModelWriter(outName);
+      //write model
+      final String outName = getOutputName(command);
+      final ModelWriter modelWriter = new ModelWriter(outName);
 
-    if (command.hasOption(WRITE_BIN_FORMULA)) {
-      modelWriter.tryWriteBinFormula(result);
-    } else {
-      if (!command.hasOption(GRID_OPTION)) {
-        modelWriter.tryWriteGrid(result);
+      if (command.hasOption(WRITE_BIN_FORMULA)) {
+        modelWriter.tryWriteBinFormula(result);
       }
-      modelWriter.tryWriteDynamicGrid(result);
-      modelWriter.writeModel(result);
+      else {
+        if (!command.hasOption(GRID_OPTION)) {
+          modelWriter.tryWriteGrid(result);
+        }
+        modelWriter.tryWriteDynamicGrid(result);
+        modelWriter.writeModel(result);
+      }
+    } else if (method instanceof RandomnessAwareVecOptimization) {
+      Interval.start();
+      Interval.suspend();
+      final RandomFunc result = ((RandomnessAwareVecOptimization)method).fit(learn.vecData(), loss);
+      Interval.stopAndPrint("Total fit time:");
     }
   }
 

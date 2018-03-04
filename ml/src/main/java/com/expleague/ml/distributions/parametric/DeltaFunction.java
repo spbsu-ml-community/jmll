@@ -1,15 +1,15 @@
 package com.expleague.ml.distributions.parametric;
 
+import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.distributions.RandomVariable;
-import com.expleague.ml.distributions.RandomVec;
 import com.expleague.ml.distributions.RandomVecBuilder;
 import com.expleague.ml.distributions.parametric.impl.DeltaDistributionVec;
-import com.expleague.ml.distributions.samplers.RandomVariableSampler;
 
-public interface DeltaFunction extends RandomVariable<DeltaFunction> {
+public interface DeltaFunction extends RandomVariable {
 
   double value();
 
+//  P(x <= V) = [1,
   default double cdf(final double value) {
     return value < value() ? 0 : 1;
   }
@@ -18,27 +18,18 @@ public interface DeltaFunction extends RandomVariable<DeltaFunction> {
     return value();
   }
 
-  default RandomVariableSampler sampler() {
-    return rng -> value();
+  default double logDensity(final double value) {
+    return value == value() ? 0.0 : Double.NEGATIVE_INFINITY;
   }
 
-  default RandomVecBuilder<DeltaFunction> vecBuilder() {
-    return new VecBuilder();
+  default double sample(final FastRandom random) {
+    return value();
   }
 
-  class VecBuilder implements RandomVecBuilder<DeltaFunction> {
-    final com.expleague.commons.math.vectors.impl.vectors.VecBuilder vecBuilder = new com.expleague.commons.math.vectors.impl.vectors.VecBuilder();
-
-    @Override
-    public RandomVecBuilder<DeltaFunction> add(final DeltaFunction distribution) {
-      vecBuilder.append(distribution.value());
-      return this;
-    }
-
-    @Override
-    public RandomVec<DeltaFunction> build() {
-      return new DeltaDistributionVec(vecBuilder.build());
-    }
+  default double expectation() {
+    return mean();
   }
+
+
 }
 

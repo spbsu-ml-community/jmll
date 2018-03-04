@@ -2,27 +2,21 @@ package com.expleague.ml.distributions.parametric;
 
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.distributions.RandomVariable;
-import com.expleague.ml.distributions.RandomVecBuilder;
-import com.expleague.ml.distributions.samplers.RandomVariableSampler;
-import org.apache.commons.math3.distribution.TDistribution;
-import org.apache.commons.math3.random.RandomGenerator;
-
-import java.util.Map;
-import java.util.WeakHashMap;
 
 import static java.lang.StrictMath.sqrt;
 
 /**
  * Created by noxoomo on 06/11/2017.
  */
-public interface StudentDistriubtion extends RandomVariable<StudentDistriubtion> {
+public interface StudentDistribution extends RandomVariable {
+
   double degreesOfFreedom();
 
   double mu();
 
   double scale();
 
-  class Impl implements StudentDistriubtion {
+  class Impl implements StudentDistribution {
     private final double degrees;
     private final double mu;
     private final double scale;
@@ -42,28 +36,19 @@ public interface StudentDistriubtion extends RandomVariable<StudentDistriubtion>
     }
 
     @Override
-    public double mean() {
-      return mu;
+    public double logDensity(double value) {
+      throw new RuntimeException("Unimplemented");
     }
 
     @Override
-    public RandomVariableSampler sampler() {
-      return random -> {
-        final double instance = generate(random);
-        return mu + scale * instance;
-      };
-    }
-
-    @Override
-    public RandomVecBuilder<StudentDistriubtion> vecBuilder() {
-      throw new RuntimeException("unimplemented");
+    public double sample(FastRandom random) {
+      return random.nextGaussian() * sqrt(1.0 / random.nextBayessianGamma(degrees / 2, degrees / 2));
     }
 
     @Override
     public double degreesOfFreedom() {
       return degrees;
     }
-//
 
 
     @Override
@@ -76,8 +61,5 @@ public interface StudentDistriubtion extends RandomVariable<StudentDistriubtion>
       return scale;
     }
 
-    private double generate(final FastRandom random) {
-      return random.nextGaussian() * sqrt(1.0 / random.nextBayessianGamma(degrees / 2, degrees / 2));
-    }
   }
 }

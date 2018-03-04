@@ -1,17 +1,20 @@
 package com.expleague.ml.distributions;
 
-import com.expleague.ml.distributions.samplers.DistributionSampler;
+import com.expleague.commons.random.FastRandom;
 
 /**
  * Created by noxoomo on 22/10/2017.
  */
 public interface Distribution<T> {
 
-//  double logLikelihood(final T object);
+  double logProb(final T object);
 
-  T expectation();
+  default double prob(final T object) {
+    return Math.exp(logProb(object));
+  }
 
-  DistributionSampler<T> sampler();
+  T instance(final FastRandom random);
 }
+
 
 

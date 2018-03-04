@@ -8,7 +8,7 @@ import com.expleague.ml.data.impl.SampledBinarizedFeature;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.distributions.RandomVec;
 import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
-import com.expleague.ml.randomnessAware.DeterministicFeatureExctractor;
+import com.expleague.ml.randomnessAware.DeterministicFeatureExtractor;
 import com.expleague.ml.randomnessAware.VecRandomFeatureExtractor;
 
 import java.util.WeakHashMap;
@@ -25,9 +25,9 @@ public class ComputeBinarizedFeature implements Computable<VecDataSet, ComputeBi
                                 BinOptimizedRandomnessPolicy policy
   ) {
     if (!binarizedFeatures.containsKey(featureExtractor)) {
-      final RandomVec feature = featureExtractor.apply(dataSet);
+      final RandomVec feature = featureExtractor.computeAll(dataSet);
       final BinarizedFeature binarizedFeature;
-      if (featureExtractor instanceof DeterministicFeatureExctractor) {
+      if (featureExtractor instanceof DeterministicFeatureExtractor) {
         binarizedFeature = new PointEstimateBinarizedFeature(featureBinarization, feature);
       }
       else {

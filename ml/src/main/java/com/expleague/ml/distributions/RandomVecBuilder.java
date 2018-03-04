@@ -1,8 +1,12 @@
 package com.expleague.ml.distributions;
 
-import com.expleague.commons.func.Action;
+import com.expleague.commons.seq.Seq;
 
-public interface RandomVecBuilder<U extends RandomVariable<U>> {
+public interface RandomVecBuilder<U extends RandomVariable> extends RandomSeqBuilder<Double, U> {
+
   RandomVecBuilder<U> add(final U distribution);
-  RandomVec<U> build();
+
+  RandomVec build();
+
+
 }

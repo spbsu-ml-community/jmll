@@ -1,7 +1,7 @@
 package com.expleague.ml.distributions.parametric.impl;
 
+import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.distributions.parametric.BetaDistribution;
-import com.expleague.ml.distributions.samplers.RandomVariableSampler;
 
 public class BetaDistributionImpl implements BetaDistribution {
   double alpha;
@@ -18,14 +18,19 @@ public class BetaDistributionImpl implements BetaDistribution {
   }
 
   @Override
+  public double logDensity(double value) {
+    throw new RuntimeException("Unimplemented");
+  }
+
+  @Override
+  public double sample(FastRandom random) {
+    return BetaDistribution.Stub.instance(random, alpha, beta);
+  }
+
   public double mean() {
     return BetaDistribution.Stub.expectation(alpha, beta);
   }
 
-  @Override
-  public RandomVariableSampler sampler() {
-    return random -> BetaDistribution.Stub.instance(random, alpha, beta);
-  }
 
   @Override
   public double alpha() {
@@ -38,7 +43,6 @@ public class BetaDistributionImpl implements BetaDistribution {
   }
 
 
-  @Override
   public BetaDistribution update(final double alpha, final double beta) {
     this.alpha = alpha;
     this.beta = beta;

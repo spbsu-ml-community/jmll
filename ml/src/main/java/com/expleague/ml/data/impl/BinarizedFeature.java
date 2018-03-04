@@ -3,7 +3,7 @@ package com.expleague.ml.data.impl;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.FeatureBinarization;
 import com.expleague.ml.distributions.RandomVec;
-import com.expleague.ml.randomnessAware.DeterministicFeatureExctractor;
+import com.expleague.ml.randomnessAware.DeterministicFeatureExtractor;
 
 /**
  * User: noxoomo
@@ -19,7 +19,7 @@ public interface BinarizedFeature {
 
 
   default boolean isDeterministic() {
-    return binarization().owner() instanceof DeterministicFeatureExctractor;
+    return binarization().featureExtractor() instanceof DeterministicFeatureExtractor;
   }
 
   //line is index in indices

@@ -2,17 +2,16 @@ package com.expleague.ml.distributions.parametric.impl;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
+import com.expleague.ml.distributions.RandomVariable;
 import com.expleague.ml.distributions.RandomVec;
 import com.expleague.ml.distributions.RandomVecBuilder;
 import com.expleague.ml.distributions.parametric.DeltaFunction;
-import com.expleague.ml.distributions.samplers.RandomVecSampler;
 
 /**
  * Created by noxoomo on 01/11/2017.
  */
-public class DeltaDistributionVec implements RandomVec<DeltaFunction> {
+public class DeltaDistributionVec extends RandomVec.CoordinateIndependentStub implements RandomVec {
   private final Vec data;
 
   public DeltaDistributionVec(final Vec data) {
@@ -20,70 +19,62 @@ public class DeltaDistributionVec implements RandomVec<DeltaFunction> {
   }
 
   @Override
-  public DeltaFunction randomVariable(final int idx) {
-    return new CoordinateImpl(idx);
+  public RandomVariable at(int idx) {
+    return new CoordinateImpl(this, idx);
   }
 
   @Override
-  public RandomVecBuilder<DeltaFunction> builder() {
-    return new DeltaFunction.VecBuilder();
+  public double instance(int idx, FastRandom random) {
+    return data.get(idx);
   }
 
   @Override
-  public RandomVec<DeltaFunction> setRandomVariable(final int idx, final DeltaFunction var) {
-     data.set(idx, var.value());
-     return this;
+  public double logDensity(int idx, double value) {
+    return data.get(idx) == value ? 0 : Double.NEGATIVE_INFINITY;
   }
 
-  private RandomVecSampler sampler = new RandomVecSampler() {
-    @Override
-    public final double instance(final FastRandom random, final int i) {
-      return data.get(i);
-    }
-
-    @Override
-    public final int dim() {
-      return data.dim();
-    }
-  };
 
   @Override
-  public RandomVecSampler sampler() {
-    return sampler;
-  }
-
-  @Override
-  public Vec expectationTo(final Vec to) {
-    VecTools.copyTo(data, to, 0);
-    return to;
-  }
-
-  @Override
-  public int dim() {
+  public int length() {
     return data.dim();
   }
 
-  @Override
   public double expectation(final int idx) {
     return data.get(idx);
   }
 
   @Override
-  public double cumulativeProbability(final int idx, final double x) {
-    return data.get(idx) < x ? 0 : 1;
+  public double cdf(final int idx, final double x) {
+    return x < data.get(idx) ? 0 : 1;
   }
 
-  class CoordinateImpl implements DeltaFunction {
-    final int idx;
 
-    CoordinateImpl(final int idx) {
-      this.idx = idx;
+  class CoordinateImpl  extends RandomVec.CoordinateProjectionStub<DeltaDistributionVec> implements DeltaFunction {
+
+    CoordinateImpl(final DeltaDistributionVec owner, final int idx) {
+      super(owner, idx);
     }
 
     @Override
     public double value() {
       return data.get(idx);
     }
-
   }
+
+  static public class VecBuilder implements RandomVecBuilder<DeltaFunction> {
+    final com.expleague.commons.math.vectors.impl.vectors.VecBuilder vecBuilder = new com.expleague.commons.math.vectors.impl.vectors.VecBuilder();
+
+    @Override
+    public RandomVecBuilder<DeltaFunction> add(final DeltaFunction distribution) {
+      vecBuilder.append(distribution.value());
+      return this;
+    }
+
+    @Override
+    public RandomVec build() {
+      return new DeltaDistributionVec(vecBuilder.build());
+    }
+  }
+
+
 }

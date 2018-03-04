@@ -1,30 +1,21 @@
 package com.expleague.ml.methods.trees;
 
 import com.expleague.commons.func.AdditiveStatistics;
-import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.impl.idxtrans.ArrayPermutation;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.ThreadTools;
 import com.expleague.ml.FeatureBinarization;
-import com.expleague.ml.FeatureExtractorsBuilder;
-import com.expleague.ml.bayesianEstimation.ConjugateBayesianEstimator;
 import com.expleague.ml.data.BinarizedFeatureDataSet;
-import com.expleague.ml.data.ctrs.Ctr;
 import com.expleague.ml.data.ctrs.CtrEstimationPolicy;
-import com.expleague.ml.data.ctrs.CtrTarget;
-import com.expleague.ml.data.ctrs.EstimationAwareCtr;
-import com.expleague.ml.data.impl.BinarizedFeatureExpectation;
 import com.expleague.ml.data.perfectHash.PerfectHash;
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.distributions.DynamicRandomVec;
+import com.expleague.ml.distributions.DistributionConvolution;
 import com.expleague.ml.distributions.RandomVariable;
 import com.expleague.ml.distributions.RandomVec;
-import com.expleague.ml.distributions.parametric.DeltaFunction;
-import com.expleague.ml.distributions.parametric.NormalDistribution;
-import com.expleague.ml.distributions.parametric.NormalGammaDistribution;
-import com.expleague.ml.distributions.parametric.StudentDistriubtion;
-import com.expleague.ml.distributions.parametric.impl.NormalGammaDistributionImpl;
+import com.expleague.ml.distributions.StupidOnlyNormalDistributionConvolution;
+import com.expleague.ml.distributions.parametric.NormalDistributionImpl;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.methods.RandomnessAwareVecOptimization;
@@ -32,8 +23,7 @@ import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.BinOptimizedRandomnessPolicy;
 import com.expleague.ml.models.RandomVariableRandomnessPolicy;
 import com.expleague.ml.models.RandomnessAwareObliviousTree;
-import com.expleague.ml.randomnessAware.DeterministicFeatureExctractor;
-import com.expleague.ml.randomnessAware.RandomnessAwareTrans;
+import com.expleague.ml.randomnessAware.RandomFunc;
 import com.expleague.ml.randomnessAware.VecRandomFeatureExtractor;
 import org.apache.commons.math3.special.Gamma;
 
@@ -41,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.expleague.commons.math.MathTools.sqr;
@@ -49,7 +38,7 @@ import static com.expleague.commons.math.MathTools.sqr;
 /**
  * User: noxoomo
  */
-public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> implements RandomnessAwareVecOptimization<Loss> {
+public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss>  implements RandomnessAwareVecOptimization<Loss> {
   private final int depth;
   private final int binarization;
   private final FastRandom random;
@@ -64,7 +53,7 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
   private CtrEstimationPolicy ctrEstimationPolicy;
   private ArrayPermutation ctrEstimationOrder;
   private RandomVariableRandomnessPolicy randomnessPolicy = RandomVariableRandomnessPolicy.Expectation;
-
+  private final DistributionConvolution convolution = new StupidOnlyNormalDistributionConvolution();
   public void useBootstrap(final boolean bootstrap) {
     this.useBootstrap = bootstrap;
   }
@@ -76,9 +65,8 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
 
 
   enum LeavesType {
-    BayesianMean,
     DeterministicMean,
-    NormalVal
+    EstimationAwareMean
   }
 
   public GreedyRandomnessAwareObliviousTree(final int depth,
@@ -96,8 +84,18 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
   int i = 0;
 
   @Override
-  public RandomnessAwareTrans fit(final VecDataSet learn,
-                                  final Loss loss) {
+  public RandomVec emptyVec(int dim) {
+    return convolution.empty(dim);
+  }
+
+  @Override
+  public RandomVariable emptyVar() {
+    return convolution.empty();
+  }
+
+  @Override
+  public RandomFunc fit(final VecDataSet learn,
+                        final Loss loss) {
     List<RandomnessAwareOptimizationSubset> leaves = new ArrayList<>(1 << depth);
     final List<FeatureBinarization.BinaryFeature> conditions = new ArrayList<>(depth);
     double currentScore = Double.POSITIVE_INFINITY;
@@ -110,6 +108,7 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
       if (useBootstrap) {
         for (int i = 0; i < weights.length; ++i) {
           weights[i] = random.nextPoisson(1.0);
+//          weights[i] = random.nextGamma(1.0);
         }
       }
       leaves.add(new RandomnessAwareOptimizationSubset(dataSet, loss, ArrayTools.sequence(0, learn.length()), weights, random));
@@ -124,8 +123,8 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
       final double sum = ((L2.MSEStats) stat).sum;
       final double sum2 = ((L2.MSEStats) stat).sum2;
       final double weight = ((L2.MSEStats) stat).weight;
-      priorSigma2 =(sum2 - sqr(sum) / weight) / (weight - 1);
-      priorMu =  0;//sum / (weight + 1.0);
+      priorSigma2 = (sum2 - sqr(sum) / weight) / (weight - 1);
+      priorMu = 0;//sum / (weight + 1.0);
     }
 
     for (int level = 0; level < depth; level++) {
@@ -150,7 +149,7 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
       }
       conditions.add(bestSplitBF);
       leaves = next;
-      currentScore  = scores[bestSplit];
+      currentScore = scores[bestSplit];
     }
 
     final RandomVariable[] step = new RandomVariable[leaves.size()];
@@ -162,41 +161,46 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
       final double weight = ((L2.MSEStats) total).weight;
 
 
-      if (weight < 1) {
-        step[i] = (DeltaFunction) () -> 0;
-      }
-
-      else {
-        switch (leavesType) {
-          case BayesianMean: {
-            final double beta0 = priorSigma2 * alpha0;
-
-            final double mu = (lambda0 * priorMu + sum) / (lambda0 + weight);
-            final double lambda = lambda0 + weight;
-            final double alpha = alpha0 + weight / 2;
-            final double beta = beta0 + 0.5 * (sum2 - sqr(sum) / weight) + weight * lambda0 * sqr(sum / weight - priorMu) / (lambda0 + weight) / 2;
-
-
-            step[i] = new StudentDistriubtion.Impl(2 * alpha, mu, beta * (lambda + 1) / (alpha * lambda));
-            break;
-          }
-          case NormalVal: {
-            step[i] = new NormalDistribution.Impl(sum / weight, 1.0 / (sum2 / weight - sqr(sum / weight)));
-            break;
-
-          }
-          case DeterministicMean: {
-            final double mean = mean(total, priorMu);
-            step[i] = (DeltaFunction) () -> mean;
-            break;
-          }
-          default: {
-            throw new RuntimeException("Unknown leave type");
-          }
-        }
+      if (weight <= 1) {
+        step[i] = new NormalDistributionImpl(0, 0);
+      } else {
+//        switch (leavesType) {
+//          case BayesianMean: {
+//            final double beta0 = priorSigma2 * alpha0;
+//
+//            final double mu = (lambda0 * priorMu + sum) / (lambda0 + weight);
+//            final double lambda = lambda0 + weight;
+//            final double alpha = alpha0 + weight / 2;
+//            final double beta = beta0 + 0.5 * (sum2 - sqr(sum) / weight) + weight * lambda0 * sqr(sum / weight - priorMu) / (lambda0 + weight) / 2;
+//
+//
+//            step[i] = new StudentDistribution.Impl(2 * alpha, mu, beta * (lambda + 1) / (alpha * lambda));
+//            break;
+//          }
+//          case EstimationAwareMean: {
+            final double var = (sum2 / weight - sum * sum / weight / weight) * weight * weight / (weight - 1) / (weight - 1);
+//            final double sd = Math.sqrt(var / weight);
+            if (var <= 0) {
+              step[i] = new NormalDistributionImpl(0, 0);
+            } else {
+              final double sd = Math.sqrt(var);
+              step[i] = new NormalDistributionImpl(sum / (weight + 1), sd);
+            }
+//            step[i] = new NormalDistributionImpl(sum / weight, );
+//            break;
+//          }
+//          case DeterministicMean: {
+//            final double mean = mean(total, priorMu);
+//            step[i] = new NormalDistributionImpl(mean, 0);
+//            break;
+//          }
+//          default: {
+//            throw new RuntimeException("Unknown leave type");
+//          }
+//        }
       }
     }
-    return new RandomnessAwareObliviousTree(conditions, step);
+    return new RandomnessAwareObliviousTree(conditions, step, convolution);
   }
 
   final double lambda0 = 1;
@@ -223,7 +227,7 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
 //    return (beta / alpha) * weight;//-score;
 //    return Gamma.logGamma(alpha) - Gamma.logGamma(alpha0) + alpha0 * Math.log(beta0) - alpha * Math.log(beta) + 0.5 * (Math.log(lambda0) - Math.log(lambda)) - 0.5 * weight * (Math.log(2 * Math.PI));
 
-    return -(weight * 0.5 * Math.log(tau)  - 0.5 * tau * (sum2 - 2 * sum * mu + weight * sqr(mu)) - 0.5 * weight * Math.log(2 * Math.PI) + 0.5 * Math.log(lambda0) + alpha0 * Math.log(beta0)
+    return -(weight * 0.5 * Math.log(tau) - 0.5 * tau * (sum2 - 2 * sum * mu + weight * sqr(mu)) - 0.5 * weight * Math.log(2 * Math.PI) + 0.5 * Math.log(lambda0) + alpha0 * Math.log(beta0)
         + (alpha0 - 0.5) * Math.log(tau) - beta * tau - lambda0 * tau * 0.5 * sqr(mu - mu0) - Gamma.logGamma(alpha0) - 0.5 * Math.log(2 * Math.PI));
   }
 
@@ -239,7 +243,7 @@ public class GreedyRandomnessAwareObliviousTree<Loss extends StatBasedLoss> exte
 //    if (ds == null) {
 //      final BinarizedFeatureDataSet.Builder builder = new BinarizedFeatureDataSet.Builder(learn, binarization, random);
 //      builder.setPolicy(policy);
-//      featureExtractors.stream().filter(extractor -> extractor instanceof DeterministicFeatureExctractor).forEach(builder::addFeature);
+//      featureExtractors.stream().filter(extractor -> extractor instanceof DeterministicFeatureExtractor).forEach(builder::addFeature);
 //      {
 //        {
 //          final double priorSigma2;

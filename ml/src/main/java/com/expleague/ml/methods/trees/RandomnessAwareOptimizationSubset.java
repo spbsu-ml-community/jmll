@@ -60,9 +60,9 @@ public class RandomnessAwareOptimizationSubset {
                                                  boolean rebuildStochasticAggregates,
                                                  boolean forceSampledSplit
                                                  ) {
-    final BinarizedFeature binarizedFeature = dataSet.binarizedFeature(feature.owner().owner());
+    final BinarizedFeature binarizedFeature = dataSet.binarizedFeature(feature.featureBinarization().featureExtractor());
     if (binarizedFeature instanceof BinarizedFeatureExpectation || forceSampledSplit) {
-      final SampledBinarizedFeature sampledBinarizedFeature = new SampledBinarizedFeature(feature.owner(), feature.owner().owner().apply(dataSet.owner()));
+      final SampledBinarizedFeature sampledBinarizedFeature = new SampledBinarizedFeature(feature.featureBinarization(), feature.featureBinarization().featureExtractor().computeAll(dataSet.owner()));
       return exclusiveSplit(feature, sampledBinarizedFeature, rebuildStochasticAggregates);
 //      throw new RuntimeException("Error: soft split is not implemented yet");
     } else {

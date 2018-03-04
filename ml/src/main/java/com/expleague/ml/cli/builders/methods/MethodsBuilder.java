@@ -4,7 +4,9 @@ import com.expleague.commons.func.Factory;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.FeatureExtractorsBuilder;
 import com.expleague.ml.cli.builders.methods.impl.*;
+import com.expleague.ml.methods.AnyOptimization;
 import com.expleague.ml.methods.Optimization;
+import com.expleague.ml.methods.RandomnessAwareVecOptimization;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
@@ -35,8 +37,8 @@ public class MethodsBuilder {
 
   public void setFeaturesExtractorBuilder(final FeatureExtractorsBuilder featuresExtractorBuilder) {
     GreedyRandomnessAwareObliviousTreeBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
-    GreedyRandomnessAwareRegionBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
-    GreedyRandomnessAwareCtrTransBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
+//    GreedyRandomnessAwareRegionBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
+//    GreedyRandomnessAwareCtrTransBuilder.defaultFeaturesExtractorBuilder = featuresExtractorBuilder;
   }
 
   public void setRandom(final FastRandom random) {
@@ -46,17 +48,17 @@ public class MethodsBuilder {
     FMCBoostingBuilder.defaultRandom = random;
     RidgeRegressionLeavesObliviousTreeBuilder.defaultRandom = random;
     GreedyRandomnessAwareObliviousTreeBuilder.defaultRandom = random;
-    GreedyRandomnessAwareRegionBuilder.defaultRandom = random;
-    GreedyRandomnessAwareCtrTransBuilder.defaultRandom = random;
+//    GreedyRandomnessAwareRegionBuilder.defaultRandom = random;
+//    GreedyRandomnessAwareCtrTransBuilder.defaultRandom = random;
   }
 
-  public VecOptimization create(final String scheme) {
+  public AnyOptimization create(final String scheme) {
     return chooseMethod(scheme);
   }
 
-  private static VecOptimization chooseMethod(final String scheme) {
+  private static AnyOptimization chooseMethod(final String scheme) {
     final int parametersStart = scheme.indexOf('(') >= 0 ? scheme.indexOf('(') : scheme.length();
-    final Factory<? extends VecOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart));
+    final Factory<? extends AnyOptimization> factory = methodBuilderByName(scheme.substring(0, parametersStart));
     final String parameters = parametersStart < scheme.length() ? scheme.substring(parametersStart + 1, scheme.lastIndexOf(')')) : "";
     final StringTokenizer paramsTok = new StringTokenizer(parameters, ",");
     final Method[] builderMethods = factory.getClass().getMethods();
@@ -75,17 +77,20 @@ public class MethodsBuilder {
             final char c = token.charAt(i);
             if (c == '(') {
               ++open;
-            } else if (c == ')') {
+            }
+            else if (c == ')') {
               if (open <= 0) {
                 throw new RuntimeException("Can not set up parameter \"" + name + "\" because of bad parsing stack");
-              } else {
+              }
+              else {
                 --open;
               }
             }
           }
           if (open == 0) {
             break;
-          } else {
+          }
+          else {
             token = ',' + paramsTok.nextToken();
           }
         }
@@ -105,29 +110,36 @@ public class MethodsBuilder {
       try {
         if (Integer.class.equals(type) || int.class.equals(type)) {
           setter.invoke(factory, Integer.parseInt(value));
-        } else if (Double.class.equals(type) || double.class.equals(type)) {
+        }
+        else if (Double.class.equals(type) || double.class.equals(type)) {
           setter.invoke(factory, Double.parseDouble(value));
-        } else if (Boolean.class.equals(type) || boolean.class.equals(type)) {
+        }
+        else if (Boolean.class.equals(type) || boolean.class.equals(type)) {
           setter.invoke(factory, Boolean.parseBoolean(value));
-        } else if (String.class.equals(type)) {
+        }
+        else if (String.class.equals(type)) {
           setter.invoke(factory, value);
-        } else if (Optimization.class.isAssignableFrom(type)) {
+        }
+        else if (AnyOptimization.class.isAssignableFrom(type)) {
           setter.invoke(factory, chooseMethod(value));
-        } else {
+        }
+        else {
           throw new IllegalArgumentException("Can not set up parameter: " + name + " to value: " + value + ". Unknown parameter type: " + type + "");
         }
-      } catch (Exception e) {
+      }
+      catch (Exception e) {
         throw new RuntimeException("Can not set up parameter: " + name + " to value: " + value + "", e);
       }
     }
     return factory.create();
   }
 
-  private static Factory<? extends VecOptimization> methodBuilderByName(final String name) {
+  private static Factory<? extends AnyOptimization> methodBuilderByName(final String name) {
     try {
-      final Class<Factory<VecOptimization>> clazz = (Class<Factory<VecOptimization>>) Class.forName("com.expleague.ml.cli.builders.methods.impl." + name + "Builder");
+      final Class<Factory<? extends AnyOptimization>> clazz = (Class<Factory<? extends AnyOptimization>>) Class.forName("com.expleague.ml.cli.builders.methods.impl." + name + "Builder");
       return clazz.newInstance();
-    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+    }
+    catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
       throw new RuntimeException("Couldn't create weak model: " + name, e);
     }
   }

@@ -6,14 +6,11 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.Pool;
-import com.expleague.ml.BinModelWithGrid;
-import com.expleague.ml.Binarize;
 import com.expleague.ml.ProgressHandler;
 import com.expleague.ml.func.Ensemble;
-import com.expleague.ml.randomnessAware.RandomnessAwareTrans;
+import com.expleague.ml.randomnessAware.RandomFunc;
 
 /**
  * User: qdeee
@@ -63,13 +60,9 @@ public class DefaultProgressPrinter implements ProgressHandler {
 //        testTrans = model.transAll(testSet);
 //      }
 //      else
-      if (last instanceof RandomnessAwareTrans) {
-        learnTrans = ((RandomnessAwareTrans) last).transAll(learnDs);
-        testTrans = ((RandomnessAwareTrans) last).transAll(testDs);
-      } else {
-        learnTrans = last.transAll(learnDs.data());
-        testTrans = last.transAll(testDs.data());
-      }
+
+      learnTrans = last.transAll(learnDs.data());
+      testTrans = last.transAll(testDs.data());
 
       VecTools.append(learnValues, VecTools.scale(learnTrans, step));
       final Mx testEvaluation = VecTools.scale(testTrans, step);

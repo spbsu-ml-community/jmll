@@ -115,7 +115,7 @@ public class BinarizedFeatureDataSet implements CacheHolder {
 
     public int binaryFeatureOffset(final FeatureBinarization.BinaryFeature binaryFeature) {
       final int[] offsets = binFeatureOffsets();
-      return offsets[featureIds.get(binaryFeature.owner())] + binaryFeature.binId();
+      return offsets[featureIds.get(binaryFeature.featureBinarization())] + binaryFeature.binId();
     }
 
     public int binFeatureCount() {

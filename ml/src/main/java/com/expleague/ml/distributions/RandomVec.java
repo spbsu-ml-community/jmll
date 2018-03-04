@@ -2,96 +2,81 @@ package com.expleague.ml.distributions;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.distributions.samplers.RandomVariableSampler;
-import com.expleague.ml.distributions.samplers.RandomVecSampler;
-
-/**
- * Created by noxoomo on 22/10/2017.
- */
-public interface RandomVec<U extends RandomVariable<U>> extends Distribution<Vec> {
-
-  U randomVariable(final int idx);
-
-  RandomVecBuilder<U> builder();
-
-  RandomVec<U> setRandomVariable(final int idx, final U var);
-
-  //  default Vec logDensity(Vec point, Vec to) {
-//    for (int i = 0; i < point.dim(); ++i) {
-//      to.set(i, logDensity(i, point));
-//    }
-//    return to;
-//  }
-//
-  RandomVecSampler sampler();
-
-  Vec expectationTo(Vec to);
-
-  default Vec expectation() {
-    Vec result = new ArrayVec(dim());
-    return expectationTo(result);
-  }
-
-  int dim();
-
-  double expectation(final int idx);
-
-  double cumulativeProbability(int idx, double x);
+import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.seq.Seq;
 
 
-  public abstract class IndependentCoordinatesDistribution<U extends RandomVariable<U>> implements RandomVec<U> {
+public interface RandomVec extends RandomSeq<Double> {
+
+  RandomVariable at(final int idx);
+
+  double instance(final int idx, final FastRandom random);
+
+  double logDensity(final int idx, final double value);
+
+  double cdf(final int idx, final double value);
+
+  Vec instance(final FastRandom random);
+
+
+  public abstract class CoordinateIndependentStub implements RandomVec{
+
+    public double logProb(final Seq<Double> data) {
+      double ll = 0;
+      if (data instanceof Vec) {
+        for (int i = 0; i < length(); ++i) {
+          ll += logDensity(i, ((Vec) data).get(i));
+        }
+      } else {
+        for (int i = 0; i < length(); ++i) {
+          ll += logDensity(i, data.at(i));
+        }
+      }
+      return ll;
+    };
 
     @Override
-    public Vec expectationTo(final Vec to) {
-      for (int i = 0; i < dim(); ++i) {
-        to.set(i, expectation(i));
+    public Vec instance(final FastRandom random) {
+      Vec result = new ArrayVec(length());
+      for (int i = 0; i < result.dim(); ++i) {
+        result.set(i, instance(i, random));
       }
-      return to;
-    }
-
-//    public double logLikelihood(final Vec object) {
-//      double sum = 0;
-//      for (int i = 0; i < dim(); ++i) {
-//        sum += randomVariable(i).logLikelihood(object.get(i));
-//      }
-//      return sum;
-//    }
-
-
-//  protected abstract double logDensity(final int idx, final double x);
-
-    protected abstract class CoordinateProjectionStub<D extends IndependentCoordinatesDistribution<U>> implements RandomVariable<U> {
-      protected final D owner;
-      protected final int idx;
-
-      protected CoordinateProjectionStub(final D owner,
-                                         final int idx) {
-        this.owner = owner;
-        this.idx = idx;
-      }
-
-      @Override
-      public double cdf(final double value) {
-        return cumulativeProbability(idx, value);
-      }
-
-      //    @Override
-//    public double logDensity(final double x) {
-//      return owner.logDensity(idx, x);
-//    }
-//
-      @Override
-      public double mean() {
-        return owner.expectation(idx);
-      }
-
-      @Override
-      public RandomVariableSampler sampler() {
-        return random -> owner.sampler().instance(random, idx);
-      }
-
+      return result;
     }
   }
-}
 
+  public abstract class CoordinateProjectionStub<Owner extends RandomVec>  implements RandomVariable {
+    protected final Owner owner;
+    protected final int idx;
+
+    public CoordinateProjectionStub(final Owner owner, int idx) {
+      this.idx = idx;
+      this.owner = owner;
+    }
+
+
+    @Override
+    public double logDensity(final double value) {
+      return owner.logDensity(idx, value);
+    }
+
+    @Override
+    public double cdf(final double value) {
+      return owner.cdf(idx, value);
+    }
+
+    @Override
+    public double sample(FastRandom random) {
+      return owner.instance(idx, random);
+    }
+  }
+
+  default Vec expectation() {
+    Vec vec = new ArrayVec(length());
+    for (int i = 0; i < vec.dim(); ++i) {
+      vec.set(i, at(i).expectation());
+    }
+    return vec;
+  }
+}
 

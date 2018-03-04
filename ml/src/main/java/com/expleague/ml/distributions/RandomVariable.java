@@ -1,30 +1,29 @@
 package com.expleague.ml.distributions;
 
-import com.expleague.ml.distributions.samplers.RandomVariableSampler;
+import com.expleague.commons.random.FastRandom;
 
-public interface RandomVariable<U extends RandomVariable<U>> extends Distribution<Double> {
+public interface RandomVariable extends Distribution<Double> {
 
-  double cdf(final double value);
-
-//  default double inverseCdf(final double p) {
-//    throw new RuntimeException("Unimplemented");
-//  }
-
-//  double logDensity(final double x);
-
-  double mean();
-
-//  default double logLikelihood(final Double x) {
-//    return logDensity(x);
-//  }
-
-  default Double expectation() {
-    return mean();
+  //P(x < value)
+  default double cdf(final double value) {
+    throw new RuntimeException("Unimplemented");
   }
 
-  RandomVariableSampler sampler();
+  default double logProb(final Double value) {
+    return logDensity(value);
+  }
 
-  RandomVecBuilder<U> vecBuilder();
+  double logDensity(final double value);
+
+  double sample(final FastRandom random);
+
+  default Double instance(final FastRandom random) {
+    return sample(random);
+  }
+
+  default double expectation() {
+    throw new RuntimeException("Unimplemented");
+  }
 
 }
 

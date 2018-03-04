@@ -84,7 +84,7 @@ public class KFoldCrossValidation {
   }
 
   public double evaluate(final String concreteTrainingScheme) {
-    final VecOptimization method = methodsBuilder.create(concreteTrainingScheme);
+    final VecOptimization method = (VecOptimization) methodsBuilder.create(concreteTrainingScheme);
     double totalScore = 0.;
     for (int i = 0; i < folds.size(); i++) {
       final Pair<? extends Pool, ? extends Pool> learnAndTest = folds.get(i);
@@ -210,7 +210,7 @@ public class KFoldCrossValidation {
       cvBuilder.startNextFold();
 
       for (String optimizationScheme : schemes) {
-        final VecOptimization method = methodsBuilder.create(optimizationScheme);
+        final VecOptimization method = (VecOptimization) methodsBuilder.create(optimizationScheme);
         final Pair<? extends Pool, ? extends Pool> learnAndTest = folds.get(i);
         final Pool learnPool = learnAndTest.getFirst();
         final Pool testPool = learnAndTest.getSecond();
