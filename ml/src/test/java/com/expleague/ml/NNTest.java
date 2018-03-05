@@ -9,6 +9,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.CharSeqArray;
 import com.expleague.ml.func.generic.ParallelFunc;
+import com.expleague.ml.func.generic.Sum;
 import com.expleague.ml.func.generic.WSum;
 import com.expleague.ml.loss.CompositeFunc;
 import com.expleague.ml.loss.DSSumFuncComposite;
@@ -31,6 +32,7 @@ import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.models.nn.nfa.NFANetwork;
 import com.expleague.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.FileInputStream;
@@ -116,6 +118,7 @@ public abstract class NNTest {
       Assert.assertEquals(0.2 + 0.16 + 0.128, aba.trans(new ArrayVec(nfa.dim())).get(1), 0.0001);
   }
 
+  @Ignore
   @Test
   public void testSeqGradient1() {
     String message = "\n";
@@ -158,6 +161,7 @@ public abstract class NNTest {
     }
   }
 
+  @Ignore
   @Test
   public void testSeqGradient2() {
     String message = "\n";
@@ -180,6 +184,7 @@ public abstract class NNTest {
     Assert.assertTrue(message, VecTools.equals(gradientBa, new Vec2CharSequenceConverter().convertFrom("8 -0.04167 -0.01533 -0.04167 -0.11327 -0.057 -0.15494 0 0"), 0.00001));
   }
 
+  @Ignore
   @Test
   public void testSeqGradient3() {
     String message = "\n";
@@ -419,13 +424,14 @@ public abstract class NNTest {
     digIntoSolution(pool, network, ll, fit.x, "www.yamdex.ru/yandsearch?text=xyu.htm", "www.yamdex.ru");
   }
 
+  @Ignore
   @Test
   public void testSeqConvergence() throws Exception {
     final PoolByRowsBuilder<FakeItem> pbuilder = new PoolByRowsBuilder<>(FakeItem.class);
     pbuilder.allocateFakeFeatures(1, FeatureMeta.ValueType.CHAR_SEQ);
     pbuilder.allocateFakeTarget(FeatureMeta.ValueType.INTS);
     CharSeqTools.processLines(
-            new InputStreamReader(new GZIPInputStream(new FileInputStream("/Users/solar/tree/java/relpred/trunk/relpred/main/tests/data/in/train.txt.gz"))),
+            new InputStreamReader(new GZIPInputStream(new FileInputStream("src/test/resources/com/expleague/ml/train.txt.gz"))),
             new Consumer<CharSequence>() {
               CharSequence[] parts = new CharSequence[2];
               boolean next = true;
@@ -448,7 +454,7 @@ public abstract class NNTest {
     final CharSeqArray alpha = new CharSeqArray('U', 'L', 'H', 'C', 'S', 'N', 'R', 'F', 'V', 'O');
     final int statesCount = 10;
     final NFANetwork<Character> network = new NFANetwork<>(rng, 0.5, statesCount, alpha);
-    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, 1000000, 1) {
+    final StochasticGradientDescent<FakeItem> gradientDescent = new StochasticGradientDescent<FakeItem>(rng, 4, 1000, 1) {
       @Override
       public void init(Vec cursor) {
         final int paramsDim = (statesCount - 1) * (statesCount - 1);

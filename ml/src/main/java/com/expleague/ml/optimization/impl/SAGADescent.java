@@ -41,8 +41,8 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     if (threadCount == 1) {
       x = VecTools.copy(x0);
     } else {
-//      x = new AtomicArrayVec(x0.dim());
-//      for (int i = 0; i < x0.dim(); i++) {
+//      x = new AtomicArrayVec(x0.xdim());
+//      for (int i = 0; i < x0.xdim(); i++) {
 //        x.set(i, x0.get(i));
 //      } TODO
       throw new UnsupportedOperationException("No multithread support yet");

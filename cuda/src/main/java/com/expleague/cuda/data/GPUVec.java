@@ -90,7 +90,7 @@ public class GPUVec extends Vec.Stub implements OperableVec<GPUVec> {
     return new GPUVec(len, cUdeviceptr);
   }
 
-  private static float[] convert(double[] doubles) {
+  public static float[] convert(double[] doubles) {
     float[] floats = new float[doubles.length];
     for (int i = 0; i < doubles.length; i++) {
       floats[i] = (float) doubles[i];
@@ -98,7 +98,7 @@ public class GPUVec extends Vec.Stub implements OperableVec<GPUVec> {
     return floats;
   }
 
-  private static double[] convert(float[] floats) {
+  public static double[] convert(float[] floats) {
     double[] doubles = new double[floats.length];
     for (int i = 0; i < doubles.length; i++) {
       doubles[i] = floats[i];

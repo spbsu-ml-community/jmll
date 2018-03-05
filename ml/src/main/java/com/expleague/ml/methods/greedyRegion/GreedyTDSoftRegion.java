@@ -156,7 +156,7 @@
 //
 ////
 //    final double bias = bestSolution.get(0);
-//    final double[] values = new double[bestSolution.dim() - 1];
+//    final double[] values = new double[bestSolution.xdim() - 1];
 //    for (int i = 0; i < values.length; ++i) {
 //      values[i] = bestSolution.get(i + 1);
 //    }
@@ -166,7 +166,7 @@
 //
 //  private Vec adjustTarget(Vec target, TDoubleArrayList weights, double weight) {
 //    final Vec adjusted = VecTools.copy(target);
-//    for (int i = 0; i < target.dim(); ++i) {
+//    for (int i = 0; i < target.xdim(); ++i) {
 //      final double w = i < weights.size() ? weights.get(i) : weight;
 ////      adjusted.set(i, target.get(i) * w / (w + 1));
 //      adjusted.set(i, target.get(i) * (w - 1) / w);
@@ -181,7 +181,7 @@
 //    final double targetThroughInvSigmaDot = VecTools.multiply(targetProj, tmp);
 ////    final double rss = sum2 - 2 * targetThroughInvSigmaDot + targetBetasProd;
 //    return (0.5 * targetBetasProd - targetThroughInvSigmaDot);
-////     return n * Math.log(rss / (n - targetProj.dim())) + betas.dim() * Math.log(n);
+////     return n * Math.log(rss / (n - targetProj.xdim())) + betas.xdim() * Math.log(n);
 //  }
 //
 //  private Vec makeVector(TDoubleArrayList sums, double sum) {
@@ -262,7 +262,7 @@
 //
 //      for (int k = 0; k < iterations; ++k) {
 //        double N = weight;
-//        for (int i = 0; i < alphas.dim(); ++i) {
+//        for (int i = 0; i < alphas.xdim(); ++i) {
 //          final double gamma = 1.0 - alphas.get(i) * posteriorCovInv.get(i, i);
 //          N -= gamma;
 //          double val = gamma / MathTools.sqr(mu.get(i));
@@ -287,8 +287,8 @@
 //      for (int k = 0; k < 2; ++k) {
 //        double N = weight;
 //        final double w = empericalCov.get(0, empericalCov.rows() - 1);
-//        for (int i = 0; i < alphas.dim(); ++i) {
-//          if (i == (alphas.dim() - 1)) {
+//        for (int i = 0; i < alphas.xdim(); ++i) {
+//          if (i == (alphas.xdim() - 1)) {
 //            final double q = tau * w - tau * tau * VecTools.sum(MxTools.multiply(posteriorCovInv, targetProj));
 //            final double s = tau * w - tau * tau * w * w * VecTools.sum(posteriorCovInv);
 //            if (q * q > s) {
@@ -330,7 +330,7 @@
 //    public Vec mu() {
 //      return mu;
 ////      Mx cov = new VecBasedMx(empericalCov);
-////      for (int i = 0; i < mu.dim(); ++i) {
+////      for (int i = 0; i < mu.xdim(); ++i) {
 //////      final double preWeight = weights.get(i - 1);
 //////      final double w = empericalCov.get(i, i);
 ////        cov.adjust(i, i, alphas.get(i));

@@ -45,7 +45,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     final Vec val = MxTools.multiply(a, sol);
     final double l2 = VecTools.distance(val, right);
     if (l2 > right.dim()) {
-      /*for (int i = 0; i < right.dim(); i++)
+      /*for (int i = 0; i < right.xdim(); i++)
         System.out.format("%f = %f\n", val.at(i), right.at(i));*/
     }
     //System.out.println(l2);
@@ -150,7 +150,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     //System.out.println(VecTools.inverseCholesky(mx));
     final Vec result = solveLinearEquationUsingLQ(mx, linear);
     //result.set(0, sum / countIn);
-    //for (int i = 1; i < result.dim(); i++)
+    //for (int i = 1; i < result.xdim(); i++)
     //result.set(i, 0);
     System.out.println(result);
     final PolynomialExponentRegion ret = new PolynomialExponentRegion(features, mask, result.toArray(), distCoeffiecent);

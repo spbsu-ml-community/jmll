@@ -26,7 +26,7 @@ public class LSTMNode implements NetworkNode {
 
   /**
    *
-   * @param inputDim dim of input (not including previous cell value)
+   * @param inputDim xdim of input (not including previous cell value)
    * @param random
    */
   public LSTMNode(int inputDim, FastRandom random) {

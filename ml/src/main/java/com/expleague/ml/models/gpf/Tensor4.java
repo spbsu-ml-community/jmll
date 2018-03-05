@@ -45,7 +45,7 @@ public class Tensor4 {
 
   public Tensor4 setRow(final int i, final int j, final int k, final Vec val) {
     if (val.dim() != dim4)
-      throw new IllegalArgumentException("val.dim() != dim4, val.dim() = " + val.dim() + ", dim4 = " + dim4);
+      throw new IllegalArgumentException("val.xdim() != dim4, val.xdim() = " + val.dim() + ", dim4 = " + dim4);
     final int index = index(i, j, k, 0);
     for (int l = 0; l < dim4; l++)
       vec.set(index + l, val.get(l));

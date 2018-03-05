@@ -69,9 +69,9 @@
 //  }
 //
 //  public int[] extractControlPoints(Vec x) {
-//    TIntArrayList toInt = new TIntArrayList(x.dim() + 1);
+//    TIntArrayList toInt = new TIntArrayList(x.xdim() + 1);
 //    toInt.add(0);
-//    for (int i = 0; i < x.dim(); i++) {
+//    for (int i = 0; i < x.xdim(); i++) {
 //      final double next = x.at(i);
 //      if (next < 1 || next >= topology.rows())
 //        break;
@@ -86,13 +86,13 @@
 //      int next = 1;
 //      int index = 0;
 //
-//      while (index < result.dim()) {
+//      while (index < result.xdim()) {
 //        next = rng.nextSimple(topology.row(next - 1)) + 1;
 //        result.set(index++, next);
 //        if (next == topology.columns())
 //          break;
 //      }
-//      if (result.at(result.dim()) == 0.)
+//      if (result.at(result.xdim()) == 0.)
 //        return result;
 //    }
 //  }

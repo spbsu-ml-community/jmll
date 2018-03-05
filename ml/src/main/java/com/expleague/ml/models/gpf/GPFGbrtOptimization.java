@@ -92,7 +92,7 @@ public class GPFGbrtOptimization {
     @Override
     public Vec gradient(final Vec x) {
       if (x.dim() != dataset.data().rows())
-        throw new IllegalArgumentException("x.dim() != dataset.data().rows():" + x.dim() + " != " + dataset.data().rows());
+        throw new IllegalArgumentException("x.xdim() != dataset.data().rows():" + x.dim() + " != " + dataset.data().rows());
 
       final List<Callable<GPFGbrtModel.SessionGradientValue>> tasks = new ArrayList<>(dataset.sfrList.size());
       final List<Vec> sessions_f = new ArrayList<>(dataset.sfrList.size());
@@ -185,7 +185,7 @@ public class GPFGbrtOptimization {
           //throw new IllegalStateException("unexpected state: !(fmodel instanceof Ensemble), you can safely remove this exception call");
         }
 
-        if (f.dim() != sfr.f_count) throw new IllegalArgumentException("wrong fmodel: f.dim() != sfr.f_count, " + f.dim() + " != " + sfr.f_count);
+        if (f.dim() != sfr.f_count) throw new IllegalArgumentException("wrong fmodel: f.xdim() != sfr.f_count, " + f.dim() + " != " + sfr.f_count);
 
         final Vec f_exp = new ArrayVec(f.dim());
         for (int j = 0; j < f.dim(); j++)

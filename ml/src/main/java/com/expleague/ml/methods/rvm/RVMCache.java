@@ -159,7 +159,7 @@ class RVMCache {
 //        q[i] =  VecTools.multiply(F.col(i), cTar);
 //      }
 //
-////      for (int i=0; i < S.dim();++i) {
+////      for (int i=0; i < S.xdim();++i) {
 ////        s[i] = S.get(i);
 ////        q[i] = Q.get(i);
 //////        if (Math.abs(S.get(i)- s[i]) > 1e-2) {

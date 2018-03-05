@@ -62,6 +62,10 @@ public class JCudaMemory {
     return copy(Pointer.to(data), devicePointer, data.length * Sizeof.DOUBLE);
   }
 
+  public static CUdeviceptr copy(int[] data, CUdeviceptr devicePointer) {
+    return copy(Pointer.to(data), devicePointer, data.length * Sizeof.INT);
+  }
+
   public static CUdeviceptr copy(
       final @NotNull Pointer hostPointer,
       final @NotNull CUdeviceptr devicePointer,

@@ -55,7 +55,7 @@ public class SVDAdapterEjml implements Factorization {
     SingularOps.descendingOrder(U, false, W, V, false);
 
     if (W.getNumCols() < factorDim) {
-      throw new IllegalStateException("Factor dim is too big for this mx. Try a smaller value (" + Math.min(W.getNumRows(), W.getNumCols()) + ") or disable compact svd mode by setting 'needCompact' = false");
+      throw new IllegalStateException("Factor xdim is too big for this mx. Try a smaller value (" + Math.min(W.getNumRows(), W.getNumCols()) + ") or disable compact svd mode by setting 'needCompact' = false");
     }
 
     final Mx u = getSubFromEjmlMatrix(U, 0, 0, m, factorDim);
