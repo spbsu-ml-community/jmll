@@ -66,8 +66,9 @@ public class RunImdb {
     trainTarget = new ArrayVec(TRAIN_SIZE);
     testTarget = new ArrayVec(TRAIN_SIZE);
 
-    readWordData("src/train.txt", train, trainTarget);
-    readWordData("src/test.txt", test, testTarget);
+    //readWordData("src/train.txt", train, trainTarget);
+    //readWordData("src/test.txt", test, testTarget);
+    loadData();
   }
 
   public void loadData() throws IOException {
@@ -81,8 +82,8 @@ public class RunImdb {
     System.out.println("Train size: " + TRAIN_SIZE);
 
 
-    List<CharSeq> positiveRaw = readData("src/aclImdb/train/pos");
-    List<CharSeq> negativeRaw = readData("src/aclImdb/train/neg");
+    List<CharSeq> positiveRaw = readData("ml/src/aclImdb/train/pos");
+    List<CharSeq> negativeRaw = readData("ml/src/aclImdb/train/neg");
 
     List<CharSeq> all = new ArrayList<>(positiveRaw);
     all.addAll(negativeRaw);
@@ -126,8 +127,10 @@ public class RunImdb {
     }
     trainTarget = VecTools.fromIntSeq(new IntSeq(targetArray));
 
-    test = readData("src/aclImdb/test/pos").stream().map(dictionary::parse).collect(Collectors.toList());
-    test.addAll(readData("src/aclImdb/test/neg").stream().map(dictionary::parse).collect(Collectors.toList()));
+    test = readData("ml/src/aclImdb/test/pos").stream().map(dictionary::parse).collect(Collectors
+        .toList());
+    test.addAll(readData("ml/src/aclImdb/test/neg").stream().map(dictionary::parse).collect
+        (Collectors.toList()));
     for (int i = 0; i < train.size(); i++) {
       maxLen = Math.max(maxLen, train.get(i).length());
     }

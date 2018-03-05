@@ -48,7 +48,7 @@ public class FullGradientDescent implements Optimize<FuncEnsemble<? extends Func
       if (curLoss > newLoss) {
         curLoss = newLoss;
       } else {
-        VecTools.incscale(x, grad, step);
+        VecTools.incscale(x, grad, step / sumFuncs.size());
         return x;
       }
     }

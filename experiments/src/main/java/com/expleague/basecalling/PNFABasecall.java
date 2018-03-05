@@ -1,7 +1,5 @@
 package com.expleague.basecalling;
 
-import com.expleague.commons.io.codec.seq.DictExpansion;
-import com.expleague.commons.io.codec.seq.Dictionary;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -20,32 +18,31 @@ import com.expleague.ml.loss.multiclass.util.ConfusionMatrix;
 import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlassSeq;
 import com.expleague.ml.methods.seq.BootstrapSeqOptimization;
+import com.expleague.ml.methods.seq.DictExpansionOptimization;
 import com.expleague.ml.methods.seq.GradientSeqBoosting;
 import com.expleague.ml.methods.seq.PNFA;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.impl.AdamDescent;
 import com.expleague.ml.optimization.impl.FullGradientDescent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class PNFABasecall {
   private static final int WEIGHT_EPOCH_COUNT = 30;
-  private static final int VALUE_EPOCH_COUNT = 10;
+  private static final int VALUE_EPOCH_COUNT = 5;
   private static final int BATCH_SIZE = 16;
-  private static final int BOOST_ITERS = 300;
+  private static final int BOOST_ITERS = 30;
 
-  private static final double WEIGHT_STEP = 0.0003;
-  private static final double VALUE_STEP = 1;
-  private static final int ALPHABET_SIZE = 2500;
-  private final int alphabetSize;
+  private static final double WEIGHT_STEP = 0.001;
+  private static final double VALUE_STEP = 2;
+  private static final int ALPHABET_SIZE = 1000;
 
   private final static String NUCLEOTIDES = "ACGT";
   private final static int CLASS_COUNT = 4;
@@ -54,30 +51,43 @@ public class PNFABasecall {
   private final DataSet<Seq<Integer>> testDataSet;
   private final IntSeq trainLabels;
   private final IntSeq testLabels;
+  private final int randomSeed;
   private final FastRandom random;
 
   private final double boostStep;
   private final double lambda;
   private final double addToDiag;
   private final int stateCount;
+  private final Set<Integer> alphabet;
+  private final Path checkpointPath;
+  private final Path datasetPath;
+  private final boolean useDifferences;
+  private final int alphaShrink;
 
   public PNFABasecall(final Path datasetPath,
+                      final Path checkpointPath,
                       final int stateCount,
+                      final int alphaShrink,
                       final double lambda,
                       final double addToDiag,
                       final double boostStep,
                       final double trainPart,
                       final double testPart,
-                      final FastRandom random,
+                      final int randomSeed,
                       final boolean useDifferences) throws IOException {
-    this.random = random;
+    this.datasetPath = datasetPath;
+    this.checkpointPath = checkpointPath;
+    this.randomSeed = randomSeed;
+    this.random = new FastRandom(randomSeed);
     this.stateCount = stateCount;
+    this.alphaShrink = alphaShrink;
     this.lambda = lambda;
     this.addToDiag = addToDiag;
     this.boostStep = boostStep;
+    this.useDifferences = useDifferences;
 
-    final List<IntSeq> trainOld = new ArrayList<>();
-    final List<IntSeq> testOld = new ArrayList<>();
+    final List<IntSeq> train = new ArrayList<>();
+    final List<IntSeq> test = new ArrayList<>();
     final List<Integer> trainClass = new ArrayList<>();
     final List<Integer> testClass = new ArrayList<>();
 
@@ -86,84 +96,39 @@ public class PNFABasecall {
       final int clazz = NUCLEOTIDES.indexOf(tokens[0]);
       final int[] signal = Arrays
           .stream(tokens[1].split(","))
-          .mapToInt(Integer::parseInt)
+          .mapToInt(s -> Integer.parseInt(s) / alphaShrink)
           .toArray();
       final IntSeq seq = useDifferences ? getDiffSeq(signal) : new IntSeq(signal);
 
 
       final double rnd = random.nextDouble();
       if (rnd < trainPart) {
-        trainOld.add(seq);
+        train.add(seq);
         trainClass.add(clazz);
       } else if (rnd < trainPart + testPart) {
-        testOld.add(seq);
+        test.add(seq);
         testClass.add(clazz);
       }
     });
 
-    final int minLevel = trainOld.stream().flatMapToInt(seq -> ((IntSeq) seq).stream()).min()
-        .getAsInt();
-    final int maxLevel = trainOld.stream().flatMapToInt(seq -> ((IntSeq) seq).stream()).max().getAsInt();
-    //    final int minLevel = -4098;
-    //    final int maxLevel = 4097;
-    List<IntSeq> all = new ArrayList<>(trainOld);
-    all.addAll(testOld);
-    DictExpansion<Integer> de = new DictExpansion<>(all.stream().flatMapToInt(it -> Arrays
-        .stream(it.toArray()))
-        .sorted()
-        .distinct()
-        .boxed()
-        .collect(Collectors.toList()), ALPHABET_SIZE, System.out);
-    System.out.println("Original dict size: " + de.alpha().size());
-    for (int i = 0; i < 4; i++) {
-      all.forEach(de::accept);
-    }
-
-    Dictionary<Integer> dictionary = de.result();
-
-    final List<IntSeq> train = trainOld.stream().map(dictionary::parse).collect(Collectors.toList());
-    final List<IntSeq> test = testOld.stream().map(dictionary::parse).collect(Collectors.toList());
-    System.out.println("Min level: " + minLevel + ", max level: " + maxLevel);
-    alphabetSize = dictionary.alphabet().size();
-    System.out.println("alphabetSize= " + alphabetSize);
-
-    trainDataSet = new DataSet.Stub<Seq<Integer>>(null) {
-      @Override
-      public Seq<Integer> at(int i) {
-        return train.get(i);
-      }
-
-      @Override
-      public int length() {
-        return train.size();
-      }
-
-      @Override
-      public Class<Seq<Integer>> elementType() {
-        return null;
-      }
-    };
-    testDataSet = new DataSet.Stub<Seq<Integer>>(null) {
-      @Override
-      public Seq<Integer> at(int i) {
-        return test.get(i);
-      }
-
-      @Override
-      public int length() {
-        return test.size();
-      }
-
-      @Override
-      public Class<Seq<Integer>> elementType() {
-        return null;
-      }
-    };
+    alphabet = getAlphabet(train);
+    alphabet.addAll(getAlphabet(test));
 
     trainLabels = new IntSeq(trainClass.stream().mapToInt(Integer::intValue).toArray());
     testLabels = new IntSeq(testClass.stream().mapToInt(Integer::intValue).toArray());
 
+    trainDataSet = createDataSet(train);
+    testDataSet = createDataSet(test);
+
     System.out.println("Train size: " + train.size());
+  }
+
+  private Set<Integer> getAlphabet(List<IntSeq> data) {
+    Set<Integer> set = new HashSet<>();
+    for (IntSeq seq: data) {
+      seq.forEach(set::add);
+    }
+    return set;
   }
 
   private IntSeq getDiffSeq(int[] signal) {
@@ -184,7 +149,7 @@ public class PNFABasecall {
     );
     final PNFA model = new PNFA<>(stateCount,
         1,
-        alphabetSize,
+        ALPHABET_SIZE,
         lambda,
         addToDiag,
         random,
@@ -198,19 +163,37 @@ public class PNFABasecall {
         WeightedL2.class //todo -> weighted log l2 ?
     );
 
-    fitBoosting(multiClassModel, globalLoss, true);
+    fitBoostingForModel(multiClassModel, globalLoss, true);
   }
 
-  private <Loss extends TargetFunc> void fitBoosting(
+  private <Loss extends TargetFunc> void fitBoostingForModel(
       SeqOptimization<Integer, L2> model,
       Loss loss,
       boolean negativeIsLastClass
   ) {
-    final GradientSeqBoosting<Integer, Loss> boosting = new GradientSeqBoosting<>(
-        model, BOOST_ITERS, boostStep
+    final DictExpansionOptimization<Integer, L2> optimization = new DictExpansionOptimization<>(
+        model, alphabet.size(), alphabet, System.err
     );
-    Consumer<Function<Seq<Integer>, Vec>> listener = it -> printProgress(it, negativeIsLastClass);
+    final GradientSeqBoosting<Integer, Loss> boosting = new GradientSeqBoosting<>(
+        optimization, BOOST_ITERS, boostStep
+    );
+    int[] modelCount = new int[1];
+
+    Consumer<Function<Seq<Integer>, Vec>> listener = boostModel -> {
+      printProgress(boostModel, negativeIsLastClass);
+      modelCount[0]++;
+      if (modelCount[0] % 1 == 0) {
+        try {
+          saveModel(Integer.toString(modelCount[0]), boostModel);
+        }
+        catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+
+    };
     boosting.addListener(listener);
+
     boosting.fit(trainDataSet, loss);
 
   }
@@ -249,7 +232,9 @@ public class PNFABasecall {
   void tranVecPNFA() {
     final Vec l2LossVec = new ArrayVec(trainLabels.length() * CLASS_COUNT);
     for (int i = 0; i < trainLabels.length(); i++) {
-      l2LossVec.set(i * CLASS_COUNT + trainLabels.at(i), 1);
+      for (int j = 0; j < CLASS_COUNT; j++) {
+        l2LossVec.set(i * CLASS_COUNT + j, trainLabels.at(i) == j ? 1 : -1.0 / (CLASS_COUNT - 1));
+      }
     }
     final L2 globalLoss = new L2(l2LossVec, trainDataSet);
     final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
@@ -261,7 +246,7 @@ public class PNFABasecall {
     final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
         new PNFA<>(stateCount,
             CLASS_COUNT,
-            alphabetSize,
+            ALPHABET_SIZE,
             lambda,
             addToDiag,
             random,
@@ -271,19 +256,21 @@ public class PNFABasecall {
         ),
         random
     );
-    final GradientSeqBoosting<Integer, L2> boosting = new GradientSeqBoosting<>(
-        model, BOOST_ITERS, boostStep
-    );
 
-    fitBoosting(model, globalLoss, false);
+    fitBoostingForModel(model, globalLoss, false);
   }
 
   private void printProgress(Function<Seq<Integer>, Vec> model, boolean negativeIsLastClass) {
     final IntSeq trainPred = predict(model, trainDataSet, negativeIsLastClass);
     final IntSeq testPred = predict(model, testDataSet, negativeIsLastClass);
-    System.out.println(testPred);
-    System.out.println("Train confusion: " + new ConfusionMatrix(trainLabels, trainPred).oneLineReport());
-    System.out.println("Test confusion: " + new ConfusionMatrix(testLabels, testPred).oneLineReport());
+//    System.out.println(testPred);
+    ConfusionMatrix matrix = new ConfusionMatrix(trainLabels, trainPred);
+    System.out.println("Train confusion: " + matrix.oneLineReport());
+    System.out.println(matrix.toString());
+
+    matrix = new ConfusionMatrix(testLabels, testPred);
+    System.out.println("Test confusion: " + matrix.oneLineReport());
+    System.out.println(matrix.toString());
   }
 
   private IntSeq predict(Function<Seq<Integer>, Vec> model, DataSet<Seq<Integer>> dataSet,
@@ -297,5 +284,146 @@ public class PNFABasecall {
       }
     }
     return new IntSeq(pred);
+  }
+
+  private DataSet<Seq<Integer>> createDataSet(List<IntSeq> data) {
+    return new DataSet.Stub<Seq<Integer>>(null) {
+      @Override
+      public Seq<Integer> at(int i) {
+        return data.get(i);
+      }
+
+      @Override
+      public int length() {
+        return data.size();
+      }
+
+      @Override
+      public Class<? extends Seq<Integer>> elementType() {
+        return null;
+      }
+    };
+  }
+
+  private void saveModel(String modelName, Function<Seq<Integer>, Vec> model) throws IOException {
+    final Path savePath = Paths.get(checkpointPath.toString(), modelName);
+    if (!checkpointPath.toFile().exists()) {
+      checkpointPath.toFile().mkdirs();
+    }
+    final PNFABasecallModel modelWithMetaData = new PNFABasecallModel(
+        datasetPath,
+        checkpointPath,
+        randomSeed,
+        stateCount,
+        lambda,
+        addToDiag,
+        boostStep,
+        useDifferences,
+        model
+    );
+
+    Files.write(savePath, new ObjectMapper().writeValueAsString(modelWithMetaData).getBytes());
+  }
+
+  static class PNFABasecallModel {
+    // some metadata
+    private Path datasetPath;
+    private Path checkpointPath;
+    private int randomSeed;
+    private int stateCount;
+    private double lambda;
+    private double addToDiag;
+    private double boostStep;
+    private boolean useDifferences;
+
+    final GradientSeqBoosting.GradientSeqBoostingModel model;
+
+    PNFABasecallModel(Path datasetPath,
+                      Path checkpointPath,
+                      int randomSeed,
+                      int stateCount,
+                      double lambda,
+                      double addToDiag,
+                      double boostStep,
+                      boolean useDifferences,
+                      Function<Seq<Integer>, Vec> model) {
+      this.datasetPath = datasetPath;
+      this.checkpointPath = checkpointPath;
+      this.randomSeed = randomSeed;
+      this.stateCount = stateCount;
+      this.lambda = lambda;
+      this.addToDiag = addToDiag;
+      this.boostStep = boostStep;
+      this.useDifferences = useDifferences;
+      this.model = (GradientSeqBoosting.GradientSeqBoostingModel) model;
+    }
+
+    public Path getDatasetPath() {
+      return datasetPath;
+    }
+
+    public void setDatasetPath(Path datasetPath) {
+      this.datasetPath = datasetPath;
+    }
+
+    public Path getCheckpointPath() {
+      return checkpointPath;
+    }
+
+    public void setCheckpointPath(Path checkpointPath) {
+      this.checkpointPath = checkpointPath;
+    }
+
+    public int getRandomSeed() {
+      return randomSeed;
+    }
+
+    public void setRandomSeed(int randomSeed) {
+      this.randomSeed = randomSeed;
+    }
+
+    public int getStateCount() {
+      return stateCount;
+    }
+
+    public void setStateCount(int stateCount) {
+      this.stateCount = stateCount;
+    }
+
+    public double getLambda() {
+      return lambda;
+    }
+
+    public void setLambda(double lambda) {
+      this.lambda = lambda;
+    }
+
+    public double getAddToDiag() {
+      return addToDiag;
+    }
+
+    public void setAddToDiag(double addToDiag) {
+      this.addToDiag = addToDiag;
+    }
+
+    public double getBoostStep() {
+      return boostStep;
+    }
+
+    public void setBoostStep(double boostStep) {
+      this.boostStep = boostStep;
+    }
+
+    public boolean isUseDifferences() {
+      return useDifferences;
+    }
+
+    public void setUseDifferences(boolean useDifferences) {
+      this.useDifferences = useDifferences;
+    }
+
+    public Function<Seq<Integer>, Vec> getModel() {
+      return model;
+    }
   }
 }

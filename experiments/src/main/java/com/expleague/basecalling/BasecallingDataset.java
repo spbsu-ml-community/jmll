@@ -133,10 +133,14 @@ public class BasecallingDataset {
                 final int[] signal = Arrays.copyOfRange(
                       rawSignal, signalStartPos - PREFIX_CONTEXT_LENGTH, signalStartPos + SUFFIX_CONTEXT_LENGTH
                 );
+                if (eventPos + 2 >= baseCalledNucleotides.length()) {
+                  continue;
+                }
                 writer
 //                    .append(filePath.getFileName().toString()).append("-")
 //                    .append(String.valueOf(event.startTime)).append(" ")
-                    .append(baseCalledNucleotides.substring(eventPos, eventPos + 1)).append(" ")
+                    .append(baseCalledNucleotides.substring(eventPos + 2, eventPos + 3)).append
+                    (" ")
                     .append(Arrays.stream(signal)
                         .mapToObj(Integer::toString)
                         .collect(Collectors.joining(","))

@@ -17,12 +17,13 @@ import static org.junit.Assert.assertTrue;
 
 public class PNFATest {
   private final FastRandom random = new FastRandom(1);
-  private final static double EPS = 1e-3;
+  private final static double EPS = 1e-5;
 
   @Test
   public void testGradient() {
     final int stateCount = 4;
-    PNFA<WeightedL2> pnfa = new PNFA<>(stateCount, 10, random,
+    final int stateDim = 3;
+    PNFA<WeightedL2> pnfa = new PNFA<>(stateCount, stateDim,10, 0.0, 1, random,
         new Optimize<FuncEnsemble<? extends FuncC1>>() {
           @Override
           public Vec optimize(FuncEnsemble func) {
@@ -35,7 +36,7 @@ public class PNFATest {
             final double value = func.models[0].trans(x0).get(0);
             final Vec grad = func.models[0].gradient(x0);
 
-            for (int i = 0; i < x0.dim() - stateCount; i++) {
+            for (int i = 0; i < x0.dim() - stateCount * stateDim; i++) {
               x0.adjust(i, EPS);
               final double newValue = func.models[0].trans(x0).get(0);
               assertEquals(grad.get(i), (newValue - value) / EPS, 1e-3);
@@ -56,7 +57,7 @@ public class PNFATest {
             final double value = func.models[0].trans(x0).get(0);
             final Vec grad = func.models[0].gradient(x0);
 
-            for (int i = x0.dim() - stateCount; i < x0.dim(); i++) {
+            for (int i = x0.dim() - stateCount * stateDim; i < x0.dim(); i++) {
               x0.adjust(i, EPS);
               final double newValue = func.models[0].trans(x0).get(0);
               assertEquals(grad.get(i), (newValue - value) / EPS, 1e-3);
@@ -81,6 +82,6 @@ public class PNFATest {
       public Class<Seq<Integer>> elementType() {
         return null;
       }
-    }, new WeightedL2(new ArrayVec(-1.0, 1.0), null));
+    }, new WeightedL2(new ArrayVec(-1.0, 1.0, -23, 32, 44, 2), null));
   }
 }

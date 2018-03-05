@@ -47,7 +47,7 @@ public class GradientSeqBoosting<T, GlobalLoss extends TargetFunc> extends WeakL
       System.out.println("Iteration " + t + ". Gradient norm: " + VecTools.norm(localLoss.target));
       final Function<Seq<T>, Vec> weakModel = weak.fit(learn, localLoss);
       weakModels.add(weakModel);
-      final Function<Seq<T>,Vec> curRes = getResult(new ArrayList<>(weakModels));
+      final Function<Seq<T>,Vec> curRes = new GradientSeqBoostingModel<>(new ArrayList<>(weakModels), step);
       invoke(curRes);
       for (int i = 0; i < learn.length(); i++) {
         final Vec val = weakModel.apply(learn.at(i));
@@ -56,21 +56,46 @@ public class GradientSeqBoosting<T, GlobalLoss extends TargetFunc> extends WeakL
         }
       }
     }
-    return getResult(weakModels);
+    return new GradientSeqBoostingModel<>(weakModels, step);
   }
 
-  private Function<Seq<T>, Vec> getResult(final List<Function<Seq<T>,Vec>> weakModels) {
-    return argument -> {
+  public static class GradientSeqBoostingModel<T> implements Function<Seq<T>, Vec> {
+    private List<Function<Seq<T>, Vec>> models;
+    private double step;
+
+    GradientSeqBoostingModel(final List<Function<Seq<T>, Vec>> models, final double step) {
+      this.models = new ArrayList<>(models);
+      this.step = step;
+    }
+
+    @Override
+    public Vec apply(Seq<T> seq) {
       Vec result = null;
-      for (Function<Seq<T>, Vec> model: weakModels) {
+      for (Function<Seq<T>, Vec> model: models) {
         if (result == null) {
-          result = model.apply(argument);
+          result = model.apply(seq);
         } else {
-          VecTools.append(result, model.apply(argument));
+          VecTools.append(result, model.apply(seq));
         }
       }
       VecTools.scale(result, -step);
       return result;
-    };
+    }
+
+    public List<Function<Seq<T>, Vec>> getModels() {
+      return models;
+    }
+
+    public void setModels(List<Function<Seq<T>, Vec>> models) {
+      this.models = models;
+    }
+
+    public double getStep() {
+      return step;
+    }
+
+    public void setStep(double step) {
+      this.step = step;
+    }
   }
 }
