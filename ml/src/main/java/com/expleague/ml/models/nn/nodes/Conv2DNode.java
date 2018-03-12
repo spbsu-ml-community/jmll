@@ -3,16 +3,16 @@
 //import com.expleague.commons.math.vectors.Vec;
 //import com.expleague.commons.math.vectors.VecTools;
 //import com.expleague.ml.models.nn.NeuralSpider;
-//import com.expleague.ml.models.nn.layers.ConvLayer;
+//import com.expleague.ml.models.nn.layers.ConvCalcer;
 //
 //public class Conv2DNode implements NeuralSpider.Node {
-//  private final ConvLayer owner;
+//  private final ConvCalcer owner;
 //  private final int channelSize;
 //  private final int width;
 //  private final int kSizeX;
 //  private final int kSizeY;
 //
-//  public Conv2DNode(ConvLayer owner) {
+//  public Conv2DNode(ConvCalcer owner) {
 //    this.owner = owner;
 //    channelSize = owner.getChannelSize();
 //    width = owner.getChannelWidth();

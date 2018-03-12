@@ -5,16 +5,18 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.ml.models.nn.NeuralSpider;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-public class FCLayer implements NeuralSpider.NodeCalcer {
+import static java.lang.Math.max;
+
+public class FCCalcer implements NeuralSpider.NodeCalcer {
   private final int prevStateStart;
   private final int prevStateLength;
   private final int weightStart;
   private final int weightPerState;
   private final int layerStart;
 
-  public FCLayer(int layerStart, int stateLength,
-                 int prevStateStart, int prevStateLength,
-                 int weightStart, int weightLength) {
+  public FCCalcer(int layerStart, int stateLength,
+                  int prevStateStart, int prevStateLength,
+                  int weightStart, int weightLength) {
     this.layerStart = layerStart;
     this.prevStateStart = prevStateStart;
     this.prevStateLength = prevStateLength;
@@ -25,7 +27,9 @@ public class FCLayer implements NeuralSpider.NodeCalcer {
   @Override
   public double apply(Vec state, Vec betta, int nodeIdx) {
     final int wStart = weightStart + (nodeIdx - layerStart) * weightPerState;
-    return VecTools.multiply(state.sub(prevStateStart, prevStateLength), betta.sub(wStart, prevStateLength));
+    final double result = VecTools.multiply(state.sub(prevStateStart, prevStateLength),
+        betta.sub(wStart, prevStateLength));
+    return max(result, 0.);
   }
 
   @Override

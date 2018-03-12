@@ -2,13 +2,11 @@ package com.expleague.ml.models.nn;
 
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.ml.models.nn.layers.FCLayer;
+import com.expleague.ml.models.nn.layers.FCCalcer;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
 * User: solar
@@ -42,13 +40,14 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
         if (layer >= config.length)
           break;
 
-        current = new FCLayer(i + 1, config[layer], i - config[layer - 1] + 1, config[layer - 1], wCount, config[layer - 1] * config[layer]);
+        current = new FCCalcer(i + 1, config[layer], i - config[layer - 1] + 1, config[layer - 1], wCount, config[layer - 1] * config[layer]);
         wCount += config[layer - 1] * config[layer];
         index = 0;
       }
     }
     this.numParameters = wCount;
   }
+
   @Override
   public int xdim() {
     return config[0];
