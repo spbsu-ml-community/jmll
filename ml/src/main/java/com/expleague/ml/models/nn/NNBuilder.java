@@ -1,16 +1,18 @@
 package com.expleague.ml.models.nn;
 
+import com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
 import com.expleague.ml.models.nn.layers.Layer;
 
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class NNBuilder {
   private int inputDim;
   private int weightLength;
   private int outputDim;
   private final HashSet<Layer> seenLayers = new HashSet<>();
-  private List<NeuralSpider.NodeCalcer> nodeCalcers;
+  private final Queue<Layer> seqLayers = new ArrayDeque<>();
+
+  private List<NodeCalcer> nodeCalcers;
   private double dropout = 0.;
 
   public NNBuilder setDropout(double dropout) {
@@ -27,17 +29,10 @@ public class NNBuilder {
     }
 
     for (Layer output: outputs) {
-      processLayer(output);
       outputDim += output.getStateLength();
     }
 
     return new ConvNet(nodeCalcers, inputDim, weightLength, outputDim, dropout);
-  }
-
-  private void processLayer(final Layer layer) {
-    seenLayers.add(layer);
-    layer.addCalcers(nodeCalcers);
-    weightLength += layer.getWeightLength();
   }
 
   private void visit(final Layer layer) {
@@ -45,10 +40,16 @@ public class NNBuilder {
       return;
     }
 
-    processLayer(layer);
+    seenLayers.add(layer);
 
     for (final Layer child: layer.getChildren()) {
       visit(child);
     }
+
+    seqLayers.add(layer);
+  }
+
+  private void addCalcers(final Layer layer) {
+//    layer.createCalcers();
   }
 }

@@ -1,4 +1,4 @@
-package com.expleague.ml.models.nn.layers;
+package com.expleague.ml.models.nn.nodes;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;

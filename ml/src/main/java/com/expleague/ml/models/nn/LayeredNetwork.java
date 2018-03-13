@@ -2,7 +2,7 @@ package com.expleague.ml.models.nn;
 
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.ml.models.nn.layers.FCCalcer;
+import com.expleague.ml.models.nn.nodes.FCCalcer;
 
 import java.util.*;
 import java.util.stream.IntStream;

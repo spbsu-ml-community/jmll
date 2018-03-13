@@ -1,4 +1,4 @@
-package com.expleague.ml.models.nn.layers;
+package com.expleague.ml.models.nn.nodes;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.models.nn.NeuralSpider;
@@ -23,14 +23,14 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
   private final int strideX;
   private final int strideY;
 
-//  private final int paddX;
-//  private final int paddY;
+  private final int paddX;
+  private final int paddY;
 
   private final int weightPerState;
 
   public ConvCalcer(int layerStart, int weightStart, int prevLayerStart,
-                    int kSizeX, int kSizeY, int strideX, int strideY, int width, int height,
-                    int numInputChannels, int numOutChannels, boolean padding) {
+                    int kSizeX, int kSizeY, int strideX, int strideY, int paddX, int paddY,
+                    int width, int height, int numInputChannels, int numOutChannels) {
     this.layerStart = layerStart;
     this.weightStart = weightStart;
     this.prevLayerStart = prevLayerStart;
@@ -46,6 +46,8 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
 
     this.numInputChannels = numInputChannels;
     this.numOutChannels = numOutChannels;
+    this.paddX = paddX;
+    this.paddY = paddY;
 
     weightPerState = kSizeX * kSizeY * numInputChannels;
   }

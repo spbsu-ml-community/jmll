@@ -1,6 +1,6 @@
 package com.expleague.ml.models.nn.layers;
 
-import com.expleague.ml.models.nn.NeuralSpider;
+import com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
 
 import java.util.List;
 
@@ -9,7 +9,7 @@ public abstract class Layer {
 
   public abstract int getStateLength();
   public abstract int getWeightLength();
-  public abstract void addCalcers(List<NeuralSpider.NodeCalcer> calcers);
+  public abstract List<NodeCalcer> createCalcers(int prevLayerStart, int layerStart, int weightStart);
 
   public void appendChild(Layer layer) {
     childLayers.add(layer);
