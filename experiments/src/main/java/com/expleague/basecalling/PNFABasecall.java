@@ -35,8 +35,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class PNFABasecall {
-  private static final int WEIGHT_EPOCH_COUNT = 30;
-  private static final int VALUE_EPOCH_COUNT = 5;
+  private static final int WEIGHT_EPOCH_COUNT = 10;
+  private static final int VALUE_EPOCH_COUNT = 3;
   private static final int BATCH_SIZE = 16;
   private static final int BOOST_ITERS = 30;
 
@@ -244,17 +244,17 @@ public class PNFABasecall {
         random, VALUE_STEP, VALUE_EPOCH_COUNT
     );
     final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
-        new PNFA<>(stateCount,
-            CLASS_COUNT,
-            ALPHABET_SIZE,
-            lambda,
-            addToDiag,
-            random,
-            weightOptimizer,
-            valueOptimizer,
-            2
-        ),
-        random
+      new PNFA<>(
+          stateCount,
+          CLASS_COUNT,
+          ALPHABET_SIZE,
+          lambda,
+          addToDiag,
+          random,
+          weightOptimizer,
+          valueOptimizer,
+          2
+      ), random
     );
 
     fitBoostingForModel(model, globalLoss, false);

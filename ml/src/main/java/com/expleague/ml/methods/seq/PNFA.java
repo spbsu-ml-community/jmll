@@ -46,6 +46,9 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     this.stateCount = stateCount;
     this.stateDim = stateDim;
     this.alphabetSize = alphabetSize;
+    if (lambda != 0) {
+      throw new IllegalArgumentException();
+    }
     this.lambda = lambda;
     this.addToDiag = addToDiag;
     this.random = random;
@@ -81,7 +84,6 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     }
 
     return new PNFAModel(params, stateCount, stateDim);
-    // (seq) -> getSeqValue(optParams, (IntSeq) seq);
   }
 
   private Vec init(Vec target) {
@@ -175,6 +177,10 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     return MxTools.transpose(getValues(params, stateCount, stateDim));
   }
 
+  private Vec getSeqDistribution(final Vec params, final IntSeq seq) {
+    return getSeqDistribution(params, stateCount, seq);
+  }
+
   private static Vec getSeqDistribution(final Vec params,
                                         final int stateCount,
                                         final IntSeq seq) {
@@ -188,6 +194,10 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
       distribution = multiplyLeft(distribution, weightMx);
     }
     return distribution;
+  }
+
+  private Vec getSeqValue(final Vec params, final IntSeq seq) {
+    return getSeqValue(params, stateCount, stateDim, seq);
   }
 
   private static Vec getSeqValue(final Vec params,
@@ -226,7 +236,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
     @Override
     public double value(Vec x) {
-      return weight * VecTools.sum2(VecTools.subtract(getSeqValue(x, stateCount, stateDim, seq), y));
+      return weight * VecTools.sum2(VecTools.subtract(getSeqValue(x, seq), y));
     }
 
     @Override
@@ -256,29 +266,19 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
       for (int i = seq.length() - 1; i >= 0; i--) {
         final int a = alphabetToOrderMap.get(seq.intAt(i));
+        final Mx outerGrad = new VecBasedMx(stateCount, stateCount);
 
-
-        for (int to = 0; to < stateCount; to++) {
-          for (int from = 0; from < stateCount; from++) {
-            for (int j = 0; j < stateCount - 1; j++) {
-              final double curW = w[a].get(from, to);
-              double grad = 0;
-              for (int valueCol = 0; valueCol < stateDim; valueCol++) {
-                grad += diff.get(valueCol) * expectedValue.get(to, valueCol);
-              }
-              grad = grad * 2 * weight * distributions[i].get(from) + lambda * curW;
-              //                double grad = 2 * weight * diff.get(valueCol) * distributions[i].get(from) *
-              //                    expectedValue.get(to, valueCol) + lambda * curW;
-
-              if (j == to) {
-                betaGrad[a].adjust(from, j, grad * curW * (1 - curW));
-              }
-              else {
-                betaGrad[a].adjust(from, j, -grad * curW * w[a].get(from, j));
-              }
+        for (int from = 0; from < stateCount; from++) {
+          for (int to = 0; to < stateCount; to++) {
+            for (int valueCol = 0; valueCol < stateDim; valueCol++) {
+              outerGrad.adjust(from, to,diff.get(valueCol) * expectedValue.get(to, valueCol));
             }
           }
+
+          VecTools.scale(outerGrad.row(from), 2 * weight * distributions[i].get(from));
         }
+
+        mySoftmaxGradMx(w[a], betaGrad[a], outerGrad);
         expectedValue = MxTools.multiply(w[a], expectedValue);
       }
       final int[] indices = new int[betaGrad.length * betaGrad[0].dim()];
@@ -319,7 +319,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
     @Override
     public Vec gradient(Vec params) {
-      Vec seqDistribution = getSeqDistribution(params, stateCount, seq);
+      Vec seqDistribution = getSeqDistribution(params, seq);
       final Vec grad = VecTools.subtract(
           MxTools.multiply(getValuesTransposed(params), seqDistribution), y
       );
@@ -337,7 +337,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
     @Override
     public double value(Vec params) {
-      return weight * VecTools.sum2(VecTools.subtract(getSeqValue(params, stateCount, stateDim, seq), y));
+      return weight * VecTools.sum2(VecTools.subtract(getSeqValue(params, seq), y));
     }
 
     @Override
@@ -384,6 +384,27 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
     public void setStateDim(int stateDim) {
       this.stateDim = stateDim;
+    }
+  }
+
+
+  // gradient of softmax multiplied by derivative of some outer function by each row
+  private static void mySoftmaxGradMx(final Mx softmaxValues, final Mx gradTo, final Mx outerGrad) {
+    final int rows = softmaxValues.rows();
+    final int columns = softmaxValues.columns();
+    for (int from = 0; from < rows; from++) {
+      for (int to = 0; to < columns; to++) {
+        final double curW = softmaxValues.get(from, to);
+        final double grad = outerGrad.get(from, to);
+        for (int j = 0; j < columns - 1; j++) {
+          if (j == to) {
+            gradTo.adjust(from, j, grad * curW * (1 - curW));
+          }
+          else {
+            gradTo.adjust(from, j, -grad * curW * softmaxValues.get(from, j));
+          }
+        }
+      }
     }
   }
 }

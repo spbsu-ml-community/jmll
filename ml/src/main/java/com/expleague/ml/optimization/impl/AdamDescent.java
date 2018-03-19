@@ -8,10 +8,7 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.optimization.Optimize;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.IntStream;
 
 public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
@@ -58,7 +55,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     final Vec x = VecTools.copy(x0);
     final Vec v = new ArrayVec(x.dim());
     final Vec c = new ArrayVec(x.dim());
-    double error = sumFuncs.value(x) / sumFuncs.size();
+    double error = getLoss(sumFuncs, x);
 
     final List<Integer> permutation = new ArrayList<>(sumFuncs.size());
     for (int i = 0; i < sumFuncs.size(); i++) {
@@ -97,7 +94,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         timeToSum += System.nanoTime() - start;
       }
       if ((epoch + 1) % 5 == 0) {
-        final double curError = sumFuncs.value(x) / sumFuncs.size();
+        final double curError = getLoss(sumFuncs, x);
         System.out.printf("ADAM descent epoch %d: new=%.6f old=%.6f\n", epoch, curError, error);
         if (curError > error) {
           System.out.printf("ADAM descent finished after %d epochs\n", epoch);
@@ -112,5 +109,9 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     System.out.printf("Time to grad: %.3f, time to sum: %.3f\n", timeToGrad / 1e9, timeToSum / 1e9);
     System.out.printf("Adam Descent finished in %.2f seconds\n", (System.nanoTime() - startTime) / 1e9);
     return x;
+  }
+
+  private double getLoss(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x) {
+    return Arrays.stream(sumFuncs.models).parallel().mapToDouble(func -> func.value(x)).sum() / sumFuncs.size();
   }
 }
