@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 
 public class PNFATest {
   private final FastRandom random = new FastRandom(1);
-  private final static double EPS = 1e-5;
+  private final static double EPS = 1e-6;
   private final int stateCount = 4;
   private final int stateDim = 3;
 

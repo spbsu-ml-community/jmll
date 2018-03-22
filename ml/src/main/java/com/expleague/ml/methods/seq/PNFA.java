@@ -1,6 +1,7 @@
 package com.expleague.ml.methods.seq;
 
 import com.expleague.commons.math.FuncC1;
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
@@ -17,7 +18,6 @@ import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.optimization.Optimize;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
-import org.apache.commons.math3.util.FastMath;
 
 import java.util.*;
 import java.util.function.Function;
@@ -46,9 +46,6 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     this.stateCount = stateCount;
     this.stateDim = stateDim;
     this.alphabetSize = alphabetSize;
-    if (lambda != 0) {
-      throw new IllegalArgumentException();
-    }
     this.lambda = lambda;
     this.addToDiag = addToDiag;
     this.random = random;
@@ -147,7 +144,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     for (int i = 0; i < stateCount; i++) {
       double sum = 0;
       for (int j = 0; j < stateCount - 1; j++) {
-        final double e = FastMath.exp(beta.get(i, j));
+        final double e = MathTools.sqr(beta.get(i, j));
         sum += e;
         w.set(i, j, e);
       }
@@ -250,10 +247,12 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     public Vec gradient(Vec x) {
       final Mx[] betaGrad = new Mx[seqAlphabet.length];
       final Mx[] w = new Mx[seqAlphabet.length];
+      final Mx[] beta = new Mx[seqAlphabet.length];
 
       for (int i = 0; i < seqAlphabet.length; i++) {
         betaGrad[i] = new VecBasedMx(stateCount, stateCount - 1);
         w[i] = getWeightMx(x, stateCount, addToDiag, seqAlphabet[i]);
+        beta[i] = getBetaMx(x, stateCount, addToDiag, seqAlphabet[i]);
       }
 
       final Vec[] distributions = new Vec[seq.length() + 1];
@@ -280,12 +279,21 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
             for (int valueCol = 0; valueCol < stateDim; valueCol++) {
               outerGrad.adjust(from, to,diff.get(valueCol) * expectedValue.get(to, valueCol));
             }
+            if (Math.abs(outerGrad.get(from, to)) > lambda) {
+              if (outerGrad.get(from, to) > lambda) {
+                outerGrad.adjust(from, to, -lambda);
+              } else {
+                outerGrad.adjust(from, to, lambda);
+              }
+            } else {
+              outerGrad.set(from, to, 0);
+            }
           }
 
           VecTools.scale(outerGrad.row(from), 2 * weight * distributions[i].get(from));
         }
 
-        mySoftmaxGradMx(w[a], betaGrad[a], outerGrad);
+        mySoftmaxGradMx(beta[a], w[a], betaGrad[a], outerGrad);
         expectedValue = MxTools.multiply(w[a], expectedValue);
       }
       final int[] indices = new int[betaGrad.length * (2 * stateCount - 1)];
@@ -308,6 +316,13 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
           }
         }
       }
+
+//      for (int i = 0; i < values.length; i++) {
+//        if (values[i] > lambda) values[i] -= lambda;
+//        else if (values[i] < -lambda) values[i] += lambda;
+//        else values[i] = 0;
+//      }
+
       return new SparseVec(dim(), indices, values);
     }
   }
@@ -350,6 +365,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
           indices[idx] = (2 * stateCount - 1) * alphabetSize + idx;
         }
       }
+
       return new SparseVec(dim(), indices, result);
     }
 
@@ -417,19 +433,29 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
 
   // gradient of softmax multiplied by derivative of some outer function by each row
-  private static void mySoftmaxGradMx(final Mx softmaxValues, final Mx gradTo, final Mx outerGrad) {
+  private static void mySoftmaxGradMx(final Mx beta,
+                                      final Mx softmaxValues,
+                                      final Mx gradTo,
+                                      final Mx outerGrad) {
     final int rows = softmaxValues.rows();
     final int columns = softmaxValues.columns();
     for (int from = 0; from < rows; from++) {
+      double sum = 1;
+      for (int j = 0; j < columns - 1; j++) {
+        sum += MathTools.sqr(beta.get(from, j));
+      }
+
       for (int to = 0; to < columns; to++) {
         final double curW = softmaxValues.get(from, to);
         final double grad = outerGrad.get(from, to);
         for (int j = 0; j < columns - 1; j++) {
           if (j == to) {
-            gradTo.adjust(from, j, grad * curW * (1 - curW));
+            gradTo.adjust(from, j, 2 * grad * beta.get(from, j) * (sum - MathTools.sqr(beta.get(from, j))) / sum / sum);
           }
-          else {
-            gradTo.adjust(from, j, -grad * curW * softmaxValues.get(from, j));
+          else if (to != columns - 1) {
+            gradTo.adjust(from, j, -2 * grad * MathTools.sqr(beta.get(from, to)) * beta.get(from, j) / sum / sum);
+          } else {
+            gradTo.adjust(from, j, -2 * grad * beta.get(from, j) / sum / sum);
           }
         }
       }
