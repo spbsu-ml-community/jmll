@@ -80,7 +80,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
       System.out.println("Values after: " + getValues(params));
     }
 
-    return new PNFAModel(params, stateCount, stateDim, addToDiag);
+    return new PNFAModel(params, stateCount, stateDim, addToDiag, lambda);
   }
 
   private Vec init(Vec target) {
@@ -128,7 +128,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     }
     for (int i = 0; i < stateCount - 1; i++) {
       beta.adjust(i, i, addToDiag);
-      beta.adjust(stateCount - 1, i, -addToDiag);
+      beta.set(stateCount - 1, i, 0);
     }
 
 
@@ -138,6 +138,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
   private static Mx getWeightMx(final Vec params,
                                 final int stateCount,
                                 final double addToDiag,
+                                final double lambda,
                                 final int c) {
     final Mx beta = getBetaMx(params, stateCount, addToDiag, c);
     final Mx w = new VecBasedMx(stateCount, stateCount);
@@ -152,7 +153,11 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
       sum += 1;
       for (int j = 0; j < stateCount; j++) {
         w.set(i, j, w.get(i, j) / sum);
+        if (w.get(i, j) < lambda) {
+          w.set(i, j, 0);
+        }
       }
+      VecTools.normalizeL1(w.row(i));
     }
 
     return w;
@@ -180,18 +185,19 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
   }
 
   private Vec getSeqDistribution(final Vec params, final IntSeq seq) {
-    return getSeqDistribution(params, stateCount, addToDiag, seq);
+    return getSeqDistribution(params, stateCount, addToDiag, lambda, seq);
   }
 
   private static Vec getSeqDistribution(final Vec params,
                                         final int stateCount,
                                         final double addToDiag,
+                                        final double lambda,
                                         final IntSeq seq) {
     Vec distribution = new ArrayVec(stateCount);
     VecTools.fill(distribution, 1.0 / stateCount);
     //System.out.println("CPU Distribution: " + Arrays.toString(distribution.toArray()));
     for (int i = 0; i < seq.length(); i++) {
-      Mx weightMx = getWeightMx(params, stateCount, addToDiag, seq.intAt(i));
+      Mx weightMx = getWeightMx(params, stateCount, addToDiag, lambda, seq.intAt(i));
       //System.out.println(String.format("-- (%s) CPU WeightMx: %s", i,
       //    Arrays.toString(weightMx.toArray())));
       distribution = multiplyLeft(distribution, weightMx);
@@ -200,17 +206,18 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
   }
 
   private Vec getSeqValue(final Vec params, final IntSeq seq) {
-    return getSeqValue(params, stateCount, stateDim, addToDiag, seq);
+    return getSeqValue(params, stateCount, stateDim, addToDiag, lambda, seq);
   }
 
   private static Vec getSeqValue(final Vec params,
                                  final int stateCount,
                                  final int stateDim,
                                  final double addToDiag,
+                                 final double lambda,
                                  final IntSeq seq) {
     return MxTools.multiply(
         getValuesTransposed(params, stateCount, stateDim),
-        getSeqDistribution(params, stateCount, addToDiag, seq)
+        getSeqDistribution(params, stateCount, addToDiag, lambda, seq)
     );
   }
 
@@ -251,7 +258,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
       for (int i = 0; i < seqAlphabet.length; i++) {
         betaGrad[i] = new VecBasedMx(stateCount, stateCount - 1);
-        w[i] = getWeightMx(x, stateCount, addToDiag, seqAlphabet[i]);
+        w[i] = getWeightMx(x, stateCount, addToDiag, lambda, seqAlphabet[i]);
         beta[i] = getBetaMx(x, stateCount, addToDiag, seqAlphabet[i]);
       }
 
@@ -385,17 +392,19 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     private int stateCount;
     private int stateDim;
     private double addToDiag;
+    private double lambda;
 
-    public PNFAModel(Vec params, int stateCount, int stateDim, double addToDiag) {
+    public PNFAModel(Vec params, int stateCount, int stateDim, double addToDiag, double lambda) {
       this.params = new ArrayVec(params.toArray());
       this.stateCount = stateCount;
       this.stateDim = stateDim;
       this.addToDiag = addToDiag;
+      this.lambda = lambda;
     }
 
     @Override
     public Vec apply(Seq<Integer> seq) {
-      return getSeqValue(params, stateCount, stateDim, addToDiag, (IntSeq) seq);
+      return getSeqValue(params, stateCount, stateDim, addToDiag, lambda, (IntSeq) seq);
     }
 
     public ArrayVec getParams() {
@@ -428,6 +437,14 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
 
     public void setAddToDiag(double addToDiag) {
       this.addToDiag = addToDiag;
+    }
+
+    public double getLambda() {
+      return lambda;
+    }
+
+    public void setLambda(double lambda) {
+      this.lambda = lambda;
     }
   }
 
