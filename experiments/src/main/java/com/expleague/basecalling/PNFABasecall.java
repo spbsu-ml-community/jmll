@@ -41,7 +41,7 @@ public class PNFABasecall {
   private static final int BOOST_ITERS = 30;
 
   private static final double WEIGHT_STEP = 0.0002;
-  private static final double VALUE_STEP = 0.3;
+  private static final double VALUE_STEP = 1;
   private static final int ALPHABET_SIZE = 1000;
 
   private final static String NUCLEOTIDES = "ACGT";
@@ -253,7 +253,7 @@ public class PNFABasecall {
           random,
           weightOptimizer,
           valueOptimizer,
-          2
+          4
       ), random
     );
 
