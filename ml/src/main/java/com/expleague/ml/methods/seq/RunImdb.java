@@ -14,6 +14,7 @@ import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
 import com.expleague.ml.optimization.impl.AdamDescent;
 import com.expleague.ml.optimization.impl.FullGradientDescent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -66,9 +67,9 @@ public class RunImdb {
     trainTarget = new ArrayVec(TRAIN_SIZE);
     testTarget = new ArrayVec(TRAIN_SIZE);
 
-    //readWordData("src/train.txt", train, trainTarget);
-    //readWordData("src/test.txt", test, testTarget);
-    loadData();
+    readWordData("src/train.txt", train, trainTarget);
+    readWordData("src/test.txt", test, testTarget);
+//    loadData();
   }
 
   public void loadData() throws IOException {
@@ -178,6 +179,13 @@ public class RunImdb {
 
 
     Consumer<Function<Seq<Integer>,Vec>> listener = classifier -> {
+      try {
+        Files.write(Paths.get("kek/1"), new ObjectMapper().writeValueAsString(classifier).getBytes());
+      }
+      catch (IOException e) {
+        e.printStackTrace();
+      }
+
       System.out.println("Current time: " + new SimpleDateFormat("yyyy/MM/dd_HH:mm:ss").format(Calendar.getInstance().getTime()));
       System.out.println("Current accuracy:");
       System.out.println("Train accuracy: " + getAccuracy(train, trainTarget, classifier));

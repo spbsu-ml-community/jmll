@@ -40,9 +40,10 @@ public class PNFABasecall {
   private static final int BATCH_SIZE = 16;
   private static final int BOOST_ITERS = 30;
 
-  private static final double WEIGHT_STEP = 0.0002;
+  private static final double WEIGHT_STEP = 0.0003;
   private static final double VALUE_STEP = 1;
   private static final int ALPHABET_SIZE = 1000;
+  private static final int WEIGHT_VALUE_ITERS = 2;
 
   private final static String NUCLEOTIDES = "ACGT";
   private final static int CLASS_COUNT = 4;
@@ -155,7 +156,7 @@ public class PNFABasecall {
         random,
         weightOptimizer,
         valueOptimizer,
-        3
+        WEIGHT_VALUE_ITERS
     );
     final GradFacMulticlassSeq<Integer> multiClassModel = new GradFacMulticlassSeq<Integer>(
         model,
@@ -253,7 +254,7 @@ public class PNFABasecall {
           random,
           weightOptimizer,
           valueOptimizer,
-          4
+          WEIGHT_VALUE_ITERS
       ), random
     );
 

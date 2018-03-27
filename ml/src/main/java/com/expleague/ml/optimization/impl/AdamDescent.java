@@ -3,6 +3,7 @@ package com.expleague.ml.optimization.impl;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
@@ -74,9 +75,11 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
           stream = IntStream.range(i, i + batchSize);
         }
         long start = System.nanoTime();
-        final double[] grad = stream
+        final Vec gradVec = stream
             .mapToObj(j -> sumFuncs.models[permutation.get(j)].gradient(x))
-            .reduce(VecTools::append).get().toArray();
+            .reduce(VecTools::append).get();
+        final double[] grad = gradVec.toArray();
+
         //todo is converting sparse vector to array a good idea?
         timeToGrad += System.nanoTime() - start;
         start = System.nanoTime();
@@ -91,6 +94,25 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
             x.adjust(index, -step * v.get(index) / (Math.sqrt(c.get(index) + eps)));
           }
         });
+
+        VecIterator iterator = gradVec.nonZeroes();
+        final double LAMBDA = 0.00000;
+        iterator.advance();
+        while (iterator.isValid()) {
+          final int id = iterator.index();
+          final double val = x.get(id);
+          if (Math.abs(val) > LAMBDA) {
+            if (val > LAMBDA) {
+              x.adjust(id, -LAMBDA);
+            } else {
+              x.adjust(id, LAMBDA);
+            }
+          } else {
+            x.set(id, 0);
+            v.set(id, 0);
+          }
+          iterator.advance();
+        }
         timeToSum += System.nanoTime() - start;
       }
       if ((epoch + 1) % 5 == 0) {
