@@ -10,7 +10,6 @@ import java.util.Arrays;
 
 public class NNPerfTest {
   private static final int NUM_SHOTS = 200;
-  private static final FastRandom rng = new FastRandom();
   private static class Stat {
     public final double median;
     public final double quart1;
@@ -28,10 +27,6 @@ public class NNPerfTest {
     }
   }
 
-//  private void blackHole(Vec x) {
-//    x.get(rng.nextInt(x.xdim()));
-//  }
-
   @Test
   public void perceptronMultiTest() {
     System.out.println("perceptron test, forward pass");
@@ -45,13 +40,16 @@ public class NNPerfTest {
 
     double[] times = new double[NUM_SHOTS];
     LayeredNetwork nn = new LayeredNetwork(new FastRandom(), 0., 1, n_hid1, n_hid1, n_hid1, n_hid1, n_hid2, 1);
-    Vec input = new ArrayVec(1.);
-    final Vec weights = new ArrayVec(nn.numParameters());
+    final Vec weights = new ArrayVec(n_hid1 + n_hid1 * n_hid1 + n_hid1 * n_hid1
+                                    + n_hid1 * n_hid1 + n_hid1 * n_hid2 + n_hid2);
     VecTools.fill(weights, 1.);
+    Vec state = new ArrayVec(weights.dim());
+    state.set(0, 1.);
 
     for (int i = 0; i < NUM_SHOTS; i++) {
       final long start = System.nanoTime();
-      input = nn.compute(input, weights);
+      /* TODO */
+//      state = nn.produceState(, weights, state);
       final long finish = System.nanoTime();
       times[i] = (finish - start) / 1_000_000.;
     }

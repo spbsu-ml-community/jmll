@@ -1,7 +1,7 @@
 package com.expleague.ml.models.nn.layers;
 
-public abstract class Layer3D extends Layer {
-  abstract int getHeight();
-  abstract int getWidth();
-  abstract int getNumChannels();
+public interface Layer3D extends Layer {
+  int height();
+  int width();
+  int channels();
 }

@@ -3,6 +3,7 @@ package com.expleague.ml.models.nn;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.models.nn.nodes.FCCalcer;
+import com.expleague.ml.models.nn.nodes.InputNodeCalcer;
 
 import java.util.*;
 import java.util.stream.IntStream;
@@ -13,7 +14,7 @@ import java.util.stream.Stream;
 * Date: 26.05.15
 * Time: 11:46
 */
-public class LayeredNetwork extends NeuralSpider<Double, Vec> {
+public class LayeredNetwork extends NeuralSpider<Vec> {
   private final NodeCalcer[] nodeCalcers;
   private final Random rng;
   private final double dropout;
@@ -32,7 +33,7 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
     int layer = 0;
     int index = 0;
     int wCount = 0;
-    NodeCalcer current = new StartNodeCalcer();
+    NodeCalcer current = new InputNodeCalcer();
     for (int i = 0; i < len; i++) {
       this.nodeCalcers[i] = current;
       if (++index >= config[layer]) {
@@ -46,78 +47,5 @@ public class LayeredNetwork extends NeuralSpider<Double, Vec> {
       }
     }
     this.numParameters = wCount;
-  }
-
-  @Override
-  public int xdim() {
-    return config[0];
-  }
-
-  @Override
-  public int numParameters() {
-    return numParameters;
-  }
-
-  @Override
-  protected Topology topology(final boolean dropout) {
-    return new Topology.Stub() {
-      @Override
-      public int outputCount() {
-        return config[config.length - 1];
-      }
-
-      @Override
-      public boolean isDroppedOut(int nodeIndex) {
-        //noinspection SimplifiableIfStatement
-        if (!dropout || nodeIndex > nodeCalcers.length)
-          return false;
-        return LayeredNetwork.this.dropout > MathTools.EPSILON && rng.nextDouble() < LayeredNetwork.this.dropout;
-      }
-
-      @Override
-      public NodeCalcer at(int i) {
-        return nodeCalcers[i];
-      }
-
-      @Override
-      public int dim() {
-        return dim;
-      }
-
-      @Override
-      public int length() {
-        return nodeCalcers.length;
-      }
-
-      @Override
-      public Stream<NodeCalcer> stream() {
-        return Stream.of(nodeCalcers);
-      }
-    };
-  }
-
-  private static class StartNodeCalcer implements NeuralSpider.NodeCalcer {
-    @Override
-    public double apply(Vec state, Vec betta, int nodeIdx) {
-      return state.get(nodeIdx);
-    }
-
-    @Override
-    public int start(int nodeIdx) {
-      return 0;
-    }
-
-    @Override
-    public int end(int nodeIdx) {
-      return 0;
-    }
-
-    @Override
-    public void gradByStateTo(Vec state, Vec betta, Vec to) {
-    }
-
-    @Override
-    public void gradByParametersTo(Vec state, Vec betta, Vec to) {
-    }
   }
 }
