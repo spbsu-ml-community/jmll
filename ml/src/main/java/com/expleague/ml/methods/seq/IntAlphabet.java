@@ -17,7 +17,7 @@ public class IntAlphabet implements Alphabet<Integer> {
   }
 
   @Override
-  public int getOrder(Matcher.Condition<Integer> c) {
+  public int indexCondition(Matcher.Condition<Integer> c) {
     if (!(c instanceof IntCondition)) {
       throw new IllegalArgumentException("Not a int condition");
     }
@@ -25,17 +25,17 @@ public class IntAlphabet implements Alphabet<Integer> {
   }
 
   @Override
-  public Matcher.Condition<Integer> get(int i) {
+  public Matcher.Condition<Integer> condition(int i) {
     return new IntCondition(i);
   }
 
   @Override
-  public Matcher.Condition<Integer> getByT(Integer i) {
+  public Matcher.Condition<Integer> conditionByT(Integer i) {
     return new IntCondition(i);
   }
 
   @Override
-  public Integer getT(Matcher.Condition condition) {
+  public Integer getT(Matcher.Condition<Integer> condition) {
     if (condition instanceof IntCondition) {
       return ((IntCondition) condition).my;
     }

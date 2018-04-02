@@ -3,17 +3,16 @@ package com.expleague.ml.optimization.impl;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
-
   private final double step;
   private final double beta1;
   private final double beta2;
@@ -21,6 +20,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   private final Random random;
   private final int epochCount;
   private final int batchSize;
+  private Function<Vec, Vec> projection;
 
   public AdamDescent(Random random, int epochCount, int batchSize) {
     this(random, epochCount, batchSize, 0.001, 0.9, 0.999, 1e-8);
@@ -53,7 +53,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x0) {
     final long startTime = System.nanoTime();
 
-    final Vec x = VecTools.copy(x0);
+    Vec x = VecTools.copy(x0);
     final Vec v = new ArrayVec(x.dim());
     final Vec c = new ArrayVec(x.dim());
     double error = getLoss(sumFuncs, x);
@@ -69,6 +69,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
       Collections.shuffle(permutation, random);
       for (int i = 0; i + batchSize <= sumFuncs.size(); i += batchSize) {
         IntStream stream;
+        Vec finalX = x;
         if (batchSize > 1) {
           stream = IntStream.range(i, i + batchSize).parallel();
         } else {
@@ -76,7 +77,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         }
         long start = System.nanoTime();
         final Vec gradVec = stream
-            .mapToObj(j -> sumFuncs.models[permutation.get(j)].gradient(x))
+            .mapToObj(j -> sumFuncs.models[permutation.get(j)].gradient(finalX))
             .reduce(VecTools::append).get();
         final double[] grad = gradVec.toArray();
 
@@ -87,32 +88,15 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         final int threadCount = Runtime.getRuntime().availableProcessors();
         final int blockSize = (x.dim() + threadCount - 1) / threadCount;
         IntStream.range(0, threadCount).parallel().forEach(blockNum -> {
-          for (int index = blockNum * blockSize; index < Math.min(x.dim(), (blockNum + 1) * blockSize); index++) {
+          for (int index = blockNum * blockSize; index < Math.min(finalX.dim(), (blockNum + 1) * blockSize); index++) {
             final double gradAt = grad[index] / batchSize;
             v.set(index, v.get(index) * beta2 + gradAt * (1 - beta2));
             c.set(index, c.get(index) * beta1 + MathTools.sqr(gradAt * (1 - beta1)));
-            x.adjust(index, -step * v.get(index) / (Math.sqrt(c.get(index) + eps)));
+            finalX.adjust(index, -step * v.get(index) / (Math.sqrt(c.get(index) + eps)));
           }
         });
-
-        VecIterator iterator = gradVec.nonZeroes();
-        final double LAMBDA = 0.00000;
-        iterator.advance();
-        while (iterator.isValid()) {
-          final int id = iterator.index();
-          final double val = x.get(id);
-          if (Math.abs(val) > LAMBDA) {
-            if (val > LAMBDA) {
-              x.adjust(id, -LAMBDA);
-            } else {
-              x.adjust(id, LAMBDA);
-            }
-          } else {
-            x.set(id, 0);
-            v.set(id, 0);
-          }
-          iterator.advance();
-        }
+        if (projection != null)
+          x = projection.apply(x);
         timeToSum += System.nanoTime() - start;
       }
       if ((epoch + 1) % 5 == 0) {
@@ -131,6 +115,11 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     System.out.printf("Time to grad: %.3f, time to sum: %.3f\n", timeToGrad / 1e9, timeToSum / 1e9);
     System.out.printf("Adam Descent finished in %.2f seconds\n", (System.nanoTime() - startTime) / 1e9);
     return x;
+  }
+
+  @Override
+  public void projector(Function<Vec, Vec> projection) {
+    this.projection = projection;
   }
 
   private double getLoss(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x) {

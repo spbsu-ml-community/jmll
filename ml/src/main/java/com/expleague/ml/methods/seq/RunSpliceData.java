@@ -18,6 +18,7 @@ import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
 import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.optimization.impl.AdamDescent;
+import com.expleague.ml.optimization.impl.SAGADescent;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -39,7 +40,7 @@ public class RunSpliceData {
   private static final int BOOST_ITERS = 450;
   private static final double BOOST_STEP = 1;
   private static final int MAX_STATE_COUNT = 6;
-  private static final double GRAD_STEP = 0.1;
+  private static final double GRAD_STEP = 0.001;
   private static final FastRandom random = new FastRandom(239);
   private static final int THREAD_COUNT = 1;
   private static final int EPOCH_COUNT = 100;
@@ -102,7 +103,7 @@ public class RunSpliceData {
     });
     Map<String, Double> map = new TreeMap<>();
     for (int i = 0; i < ALPHABET_SIZE; i++) {
-      map.put(dictionary.get(i).toString(), 1.0 * freqs[i] / sum[0]);
+      map.put(dictionary.condition(i).toString(), 1.0 * freqs[i] / sum[0]);
     }
 
     map.entrySet().stream().sorted(Map.Entry.comparingByValue(Collections.reverseOrder())).forEach(it -> System.out.printf("%s: %.5f, ", it.getKey(), it.getValue()));
@@ -167,12 +168,12 @@ public class RunSpliceData {
     long start = System.nanoTime();
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFA<>(
-                MAX_STATE_COUNT, 1, alphabet.size(), -0.005, 3, random,
-                //new SAGADescent(GRAD_STEP, EPOCH_COUNT, random, THREAD_COUNT)
-                new AdamDescent(random, 100, 4),
-                new AdamDescent(random, 100, 4),
-                1
+            new PNFARegressor<>(
+                MAX_STATE_COUNT, 1, alphabet, 0, 3, random,
+                new SAGADescent(GRAD_STEP, 10000, random, THREAD_COUNT),
+//                new AdamDescent(random, 100, 4),
+                new SAGADescent(GRAD_STEP, 10000, random, THREAD_COUNT),
+                2
             )
             , random
         ), BOOST_ITERS, BOOST_STEP
@@ -199,7 +200,7 @@ public class RunSpliceData {
   private GradientSeqBoosting<Integer, LLLogit> getBoosting() {
     return new GradientSeqBoosting<>(
           new BootstrapSeqOptimization<>(
-              new PNFA<>(MAX_STATE_COUNT, alphabet.size(), random, new SAGADescent(
+              new PNFARegressor<>(MAX_STATE_COUNT, alphabet.size(), random, new SAGADescent(
                   GRAD_STEP, DESCENT_STEP_COUNT, random, THREAD_COUNT
               )), random
           ), BOOST_ITERS, BOOST_STEP

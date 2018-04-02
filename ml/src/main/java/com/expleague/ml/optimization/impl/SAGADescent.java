@@ -9,12 +9,14 @@ import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.Random;
+import java.util.function.Function;
 
 public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   private final double step;
   private final int maxIter;
   private final Random random;
   private final int threadCount;
+  private Function<Vec, Vec> projection;
   private long time;
 
   public SAGADescent(final double step, final int maxIter, final Random random, final int threadCount) {
@@ -49,11 +51,14 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     }
 
     final Vec[] lastGrad = new Vec[sumFuncs.size()];
+    for (int i = 0; i < lastGrad.length; i++) {
+      lastGrad[i] = new ArrayVec(x.dim());
+    }
     final Vec totalGrad = new ArrayVec(x.dim());
     final Vec gradCoordinateInverseFreq = new ArrayVec(x.dim());
 
     for (int i = 0; i < sumFuncs.size(); i++) {
-      lastGrad[i] = sumFuncs.models[i].gradient(x);
+      sumFuncs.models[i].gradientTo(x, lastGrad[i]);
       VecTools.append(totalGrad, lastGrad[i]);
       final VecIterator iterator = lastGrad[i].nonZeroes();
       while (iterator.advance()) {
@@ -87,6 +92,11 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     return x;
   }
 
+  @Override
+  public void projector(Function<Vec, Vec> projection) {
+    this.projection = projection;
+  }
+
   private void run(final FuncEnsemble<? extends FuncC1> sumFuncs, final Vec gradCoordinateInverseFreq, Vec x,
                    final Vec[] lastGrad, final Vec totalGrad) {
     double error = sumFuncs.value(x) / sumFuncs.size();
@@ -104,7 +114,8 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         final int index = iterator.index();
         x.adjust(index, -step * gradCoordinateInverseFreq.get(index) * totalGrad.get(index) / sumFuncs.size());
       }
-
+      if (projection != null)
+        x = projection.apply(x);
       VecTools.append(totalGrad, grad); // total += new grad - old grad
 
 

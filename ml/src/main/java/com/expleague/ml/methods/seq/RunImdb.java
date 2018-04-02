@@ -12,6 +12,7 @@ import com.expleague.commons.seq.IntSeq;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
+import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.optimization.impl.AdamDescent;
 import com.expleague.ml.optimization.impl.FullGradientDescent;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -166,9 +167,10 @@ public class RunImdb {
     };
 
 
+    IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFA<>(stateCount, 1, ALPHABET_SIZE, lambda, addToDiag, random,
+            new PNFARegressor<>(stateCount, 1, alphabet, lambda, addToDiag, random,
                 new AdamDescent(random, WEIGHTS_EPOCH_COUNT, 4),
                 new FullGradientDescent(random, VALUE_GRAD_STEP, VALUES_EPOCH_COUNT),
                 2

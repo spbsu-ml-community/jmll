@@ -235,7 +235,7 @@ public class BroadMatch {
                     for (int i = 0; i < stats.length; i++) {
                       final SparseVec stat = stats[i];
                       if (i < dict.size())
-                        out.append(dict.get(i).toString());
+                        out.append(dict.condition(i).toString());
                       else
                         out.append(SimpleGenerativeModel.EMPTY_ID);
                       out.append("\t");
@@ -305,7 +305,7 @@ public class BroadMatch {
       dict = new ListDictionary<>(dictSeqs.toArray(new Seq[dictSeqs.size()]));
       freqs.fill(0, dict.size(), 0);
       for (int i = 0; i < dict.size(); i++) {
-        final double val = freqsHash.get(dict.get(i));
+        final double val = freqsHash.get(dict.condition(i));
         freqs.add((int)val);
       }
     }

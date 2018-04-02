@@ -17,13 +17,11 @@ import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.loss.multiclass.util.ConfusionMatrix;
 import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlassSeq;
-import com.expleague.ml.methods.seq.BootstrapSeqOptimization;
-import com.expleague.ml.methods.seq.DictExpansionOptimization;
-import com.expleague.ml.methods.seq.GradientSeqBoosting;
-import com.expleague.ml.methods.seq.PNFA;
+import com.expleague.ml.methods.seq.*;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.impl.AdamDescent;
 import com.expleague.ml.optimization.impl.FullGradientDescent;
+import com.expleague.ml.optimization.impl.SAGADescent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -148,9 +146,9 @@ public class PNFABasecall {
     final Optimize<FuncEnsemble<? extends FuncC1>> valueOptimizer  = new FullGradientDescent(
         random, VALUE_STEP, VALUE_EPOCH_COUNT
     );
-    final PNFA model = new PNFA<>(stateCount,
-        1,
-        ALPHABET_SIZE,
+    IntAlphabet intAlphabet = new IntAlphabet(ALPHABET_SIZE);
+    final PNFARegressor model = new PNFARegressor<>(stateCount,
+        1, intAlphabet,
         lambda,
         addToDiag,
         random,
@@ -208,7 +206,7 @@ public class PNFABasecall {
   //        random, VALUE_STEP, VALUE_EPOCH_COUNT
   //    );
   //    final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
-  //        new PNFA<>(stateCount,
+  //        new PNFARegressor<>(stateCount,
   //            1,
   //            alphabetSize,
   //            lambda,
@@ -241,15 +239,16 @@ public class PNFABasecall {
     final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
         random, WEIGHT_EPOCH_COUNT, BATCH_SIZE, WEIGHT_STEP
     );
+//    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(0.3, 10000, random, 1);
     final Optimize<FuncEnsemble<? extends FuncC1>> valueOptimizer  = new FullGradientDescent(
         random, VALUE_STEP, VALUE_EPOCH_COUNT
     );
+    IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
     final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
-      new PNFA<>(
+      new PNFARegressor<>(
           stateCount,
-          CLASS_COUNT,
-          ALPHABET_SIZE,
-          lambda,
+          CLASS_COUNT, alphabet,
+          lambda * WEIGHT_STEP * Math.sqrt(BATCH_SIZE),
           addToDiag,
           random,
           weightOptimizer,
