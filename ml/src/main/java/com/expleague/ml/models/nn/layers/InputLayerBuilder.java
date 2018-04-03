@@ -27,11 +27,6 @@ public interface InputLayerBuilder<InputType> extends LayerBuilder {
     void toState(Vec state);
 
     @Override
-    default int xdim() {
-      return 0;
-    }
-
-    @Override
     default int wdim() {
       return 0;
     }

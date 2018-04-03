@@ -3,6 +3,7 @@ package com.expleague.ml.models.nn;
 import com.expleague.commons.math.TransC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.models.nn.layers.InputLayerBuilder;
 import com.expleague.ml.models.nn.layers.Layer;
 import com.expleague.ml.models.nn.layers.LayerBuilder;
@@ -15,6 +16,8 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
 
   public ConvNet(NetworkBuilder<Vec>.Network network) {
     this.network = network;
+    weights = new ArrayVec(network.wdim());
+    network.initWeights(weights);
   }
 
   @Override
@@ -98,6 +101,11 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
       @Override
       public void toState(Vec state) {
         VecTools.assign(state.sub(0, input.dim()), input);
+      }
+
+      @Override
+      public int xdim() {
+        return ydim();
       }
 
       @Override

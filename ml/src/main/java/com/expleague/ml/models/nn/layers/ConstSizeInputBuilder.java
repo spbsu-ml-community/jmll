@@ -24,6 +24,11 @@ public class ConstSizeInputBuilder implements InputLayerBuilder<Vec> {
     }
 
     @Override
+    public int xdim() {
+      return ydim;
+    }
+
+    @Override
     public int ydim() {
       return ydim;
     }

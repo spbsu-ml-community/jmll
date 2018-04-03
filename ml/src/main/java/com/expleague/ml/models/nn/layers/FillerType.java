@@ -2,7 +2,8 @@ package com.expleague.ml.models.nn.layers;
 
 public enum FillerType {
   NORMAL,
-  XAVIER;
+  XAVIER,
+  CONSTANT;
 
   public static Filler getInstance(FillerType type, Layer layer) {
     switch (type) {

@@ -10,8 +10,8 @@ import com.expleague.ml.models.nn.nodes.FCCalcer;
 import java.util.stream.IntStream;
 
 public class FCLayerBuilder implements LayerBuilder {
-  private int nOut = 0;
-  private FillerType fillerType;
+  private int nOut;
+  private FillerType fillerType = FillerType.CONSTANT;
   private LayerBuilder prevBuilder;
   private int yStart;
   private int wStart;

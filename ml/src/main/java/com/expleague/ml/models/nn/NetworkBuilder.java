@@ -5,22 +5,16 @@ import com.expleague.commons.seq.ArraySeqBuilder;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.SeqBuilder;
 import com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
-import com.expleague.ml.models.nn.layers.InputLayerBuilder;
+import com.expleague.ml.models.nn.layers.*;
 import com.expleague.ml.models.nn.layers.InputLayerBuilder.InputLayer;
-import com.expleague.ml.models.nn.layers.Layer;
-import com.expleague.ml.models.nn.layers.LayerBuilder;
-import com.expleague.ml.models.nn.layers.OutputLayerBuilder;
 import com.expleague.ml.models.nn.layers.OutputLayerBuilder.OutputLayer;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class NetworkBuilder<InType> {
   private List<LayerBuilder> layers = new ArrayList<>();
   private final List<List<Integer>> adjList = new ArrayList<>();
-  private final ArrayDeque<LayerBuilder> topSort = new ArrayDeque<>();
+  private final Deque<LayerBuilder> topSort = new ArrayDeque<>();
   private InputLayerBuilder<InType> inputLayerBuilder;
   private OutputLayerBuilder outputLayerBuilder;
 
@@ -59,8 +53,9 @@ public class NetworkBuilder<InType> {
   }
 
   private void connectLayers(int idxFrom, int idxTo) {
+    layers.get(idxTo).setPrevBuilder(layers.get(idxFrom));
     adjList.get(idxFrom).add(idxTo);
-    if (idxTo > adjList.size()) {
+    if (idxTo >= adjList.size()) {
       adjList.add(new ArrayList<>());
     }
   }
@@ -82,6 +77,10 @@ public class NetworkBuilder<InType> {
 
   public Network build(OutputLayerBuilder output, LayerBuilder... outLayers) {
     this.outputLayerBuilder = output;
+
+    if (outLayers.length == 0) {
+      connect(layers.get(layers.size() - 1), output);
+    }
 
     for (LayerBuilder layer: outLayers) {
       final int idxFrom = layers.indexOf(layer);
@@ -129,8 +128,19 @@ public class NetworkBuilder<InType> {
     private InputLayer inputLayer;
     private OutputLayer outputLayer;
     private final List<Layer> layers = new ArrayList<>();
+    private Seq<NodeCalcer> cacheCalcers;
+    private int wdim;
+    private int sdim;
+    private int inputSize;
 
-    private Network() {}
+    private Network() {
+      /* TODO: materialize here */
+      if (inputLayerBuilder instanceof ConstSizeInputBuilder) {
+        inputLayer = inputLayerBuilder.build();
+        inputSize = inputLayer.xdim();
+        cacheCalcers = materialize();
+      }
+    }
 
     InputLayerBuilder<InType> input() {
       return NetworkBuilder.this.input();
@@ -142,39 +152,58 @@ public class NetworkBuilder<InType> {
       }
     }
 
-    Seq<NodeCalcer> materialize(InType input, Vec state) {
+    void setInput(InType input, Vec state) {
       inputLayerBuilder.setInput(input);
       inputLayer = inputLayerBuilder.build();
       inputLayer.toState(state);
+    }
 
-      Layer prevLayer = inputLayer;
-      int yStart = 0;
-      int wStart = 0;
-      SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
-      seqBuilder.addAll(inputLayer.materialize());
+    Seq<NodeCalcer> materialize() {
+      if (inputSize != inputLayer.xdim() || cacheCalcers == null) {
+        int yStart = 0;
+        int wStart = 0;
+        SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
+        seqBuilder.addAll(inputLayer.materialize());
 
-      for (LayerBuilder builder: topSort) {
-        yStart += prevLayer.ydim();
-        wStart += prevLayer.wdim();
+        Layer prevLayer = inputLayer;
+        Iterator<LayerBuilder> layerIt = topSort.iterator();
+        layerIt.next();
+        while (layerIt.hasNext()) {
+          LayerBuilder builder = layerIt.next();
+          yStart += prevLayer.ydim();
+          wStart += prevLayer.wdim();
 
-        builder.yStart(yStart);
-        builder.wStart(wStart);
-        prevLayer = builder.build();
-        seqBuilder.addAll(prevLayer.materialize());
+          builder.yStart(yStart);
+          builder.wStart(wStart);
+          prevLayer = builder.build();
+          seqBuilder.addAll(prevLayer.materialize());
 
-        layers.add(prevLayer);
+          layers.add(prevLayer);
+        }
+
+        wdim = wStart;
+        sdim = yStart;
+        outputLayer = outputLayerBuilder.getLayer();
+        return seqBuilder.build();
       }
 
-      outputLayer = outputLayerBuilder.getLayer();
-      return seqBuilder.build();
+      return cacheCalcers;
     }
 
     public int xdim(InType input) {
       return inputLayerBuilder.ydim(input);
     }
 
+    public int stateDim() {
+      return sdim;
+    }
+
     public Vec outputFrom(Vec state) {
       return outputLayer.fromState(state);
+    }
+
+    public int wdim() {
+      return wdim;
     }
   }
 }

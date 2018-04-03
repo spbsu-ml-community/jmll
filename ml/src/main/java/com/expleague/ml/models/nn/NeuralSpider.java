@@ -20,8 +20,11 @@ public class NeuralSpider<In> {
   private final ThreadLocalArrayVec gradientSCache = new ThreadLocalArrayVec();
 
   public Vec compute(final NetworkBuilder<In>.Network network, In argument, Vec weights) {
-    final Vec state = stateCache.get(network.xdim(argument));
-    Seq<NodeCalcer> calcers = network.materialize(argument, state);
+    final Vec state = stateCache.get(network.stateDim());
+    network.setInput(argument, state);
+
+    Seq<NodeCalcer> calcers = network.materialize();
+
     produceState(calcers, weights, state);
     return network.outputFrom(state);
   }
