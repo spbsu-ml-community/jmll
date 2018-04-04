@@ -74,10 +74,11 @@ public class FCLayerBuilder implements LayerBuilder {
 
   public class FCLayer implements Layer {
     private final Layer input;
-    private final Filler filler = FillerType.getInstance(fillerType, this);
+    private final Filler filler;
 
     private FCLayer(Layer input) {
       this.input = input;
+      filler = FillerType.getInstance(fillerType, this);
     }
 
     public void initWeights(Vec weights) {

@@ -1,8 +1,14 @@
 package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.seq.ArraySeqBuilder;
 import com.expleague.commons.seq.Seq;
-import com.expleague.ml.models.nn.NeuralSpider;
+import com.expleague.commons.seq.SeqBuilder;
+import com.expleague.ml.models.nn.nodes.PoolCalcer;
+
+import java.util.stream.IntStream;
+
+import static com.expleague.ml.models.nn.NeuralSpider.*;
 
 public class PoolLayerBuilder extends ConvLayerBuilder {
   private int kSizeX = 3;
@@ -83,8 +89,12 @@ public class PoolLayerBuilder extends ConvLayerBuilder {
     public void initWeights(Vec weights) { }
 
     @Override
-    public Seq<NeuralSpider.NodeCalcer> materialize() {
-      return null;
+    public Seq<NodeCalcer> materialize() {
+      final NodeCalcer calcer = new PoolCalcer(yStart, input.yStart(), input.channels(),
+          input.height(), input.width(), kSizeX, kSizeY, strideX, strideY);
+      final SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
+      IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
+      return seqBuilder.build();
     }
   }
 }

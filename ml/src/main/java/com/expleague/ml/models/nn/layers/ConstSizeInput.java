@@ -5,12 +5,12 @@ import com.expleague.commons.math.vectors.VecTools;
 
 import java.util.Arrays;
 
-public class ConstSizeInputBuilder implements InputLayerBuilder<Vec> {
+public class ConstSizeInput implements InputLayerBuilder<Vec> {
   private Vec input;
   private final int ydim;
   private int yStart;
 
-  public ConstSizeInputBuilder(int... dims) {
+  public ConstSizeInput(int... dims) {
     ydim = Arrays.stream(dims).reduce(1, (a, b) -> a * b);
     if (ydim <= 0) {
       throw new IllegalArgumentException("dims product must be greater than zero");

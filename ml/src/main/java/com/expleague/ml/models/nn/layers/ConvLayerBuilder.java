@@ -111,11 +111,12 @@ public class ConvLayerBuilder implements LayerBuilder {
   }
 
   public class ConvLayer implements Layer3D {
-    private final Layer3D input;
-    private final Filler filler = FillerType.getInstance(fillerType, this);
+    protected final Layer3D input;
+    private final Filler filler;
 
     protected ConvLayer(Layer3D input) {
       this.input = input;
+      filler = FillerType.getInstance(fillerType, this);
     }
 
     public void initWeights(Vec weights) {

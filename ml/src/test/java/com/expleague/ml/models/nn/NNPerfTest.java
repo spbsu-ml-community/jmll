@@ -2,7 +2,7 @@ package com.expleague.ml.models.nn;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.models.nn.layers.ConstSizeInputBuilder;
+import com.expleague.ml.models.nn.layers.ConstSizeInput;
 import com.expleague.ml.models.nn.layers.FCLayerBuilder;
 import com.expleague.ml.models.nn.layers.OneOutLayer;
 import org.junit.Test;
@@ -41,7 +41,7 @@ public class NNPerfTest {
 
     double[] times = new double[NUM_SHOTS];
 
-    NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(new ConstSizeInputBuilder(1))
+    NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(new ConstSizeInput(1))
         .append(FCLayerBuilder.create().nOut(n_hid))
         .append(FCLayerBuilder.create().nOut(n_hid))
         .append(FCLayerBuilder.create().nOut(n_hid))

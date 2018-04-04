@@ -78,18 +78,19 @@ public class NetworkBuilder<InType> {
   public Network build(OutputLayerBuilder output, LayerBuilder... outLayers) {
     this.outputLayerBuilder = output;
 
+    final int size = layers.size();
+    layers.add(output);
     if (outLayers.length == 0) {
-      connect(layers.get(layers.size() - 1), output);
+      connectLayers(size - 1, size);
     }
 
     for (LayerBuilder layer: outLayers) {
       final int idxFrom = layers.indexOf(layer);
-      final int idxTo = layers.size();
       if (idxFrom == -1) {
         throw new IllegalArgumentException("Layer chosen for output doesn't exist");
       }
 
-      adjList.get(idxFrom).add(idxTo);
+      connectLayers(idxFrom, size);
     }
 
     buildGraph();
@@ -135,7 +136,7 @@ public class NetworkBuilder<InType> {
 
     private Network() {
       /* TODO: materialize here */
-      if (inputLayerBuilder instanceof ConstSizeInputBuilder) {
+      if (inputLayerBuilder instanceof ConstSizeInput) {
         inputLayer = inputLayerBuilder.build();
         inputSize = inputLayer.xdim();
         cacheCalcers = materialize();

@@ -36,7 +36,7 @@ public class LeNetTest {
 
 
     NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(
-        new ConstSizeInputBuilder(28, 28))
+        new ConstSizeInput3D(28, 28, 1))
         .addSeq(conv1, pool1, conv2, pool2, fc1, fc2)
         .build(new OneOutLayer(), fc2);
 
@@ -50,7 +50,7 @@ public class LeNetTest {
     ConvLayerBuilder conv1 = ConvLayerBuilder.create().ksize(1, 1).channels(5);
     MergeLayerBuilder merge = MergeLayerBuilder.create().layers(conv1, conv3, conv5);
 
-    final NetworkBuilder<Vec> builder = new NetworkBuilder<>(new ConstSizeInputBuilder());
+    final NetworkBuilder<Vec> builder = new NetworkBuilder<>(new ConstSizeInput());
     final InputLayerBuilder<Vec> input = builder.input();
 
     builder.connect(input, conv1)

@@ -77,14 +77,15 @@ public class NeuralSpider<In> {
     final int parallelism = ForkJoinPool.getCommonPoolParallelism();
     final int[] cursor = new int[parallelism + 1];
     final CountDownLatch latch = new CountDownLatch(parallelism);
-    final int steps = calcers.length() / parallelism;
+    final int steps = (calcers.length() + parallelism - 1) / parallelism;
     for (int t = 0; t < parallelism; t++) {
       final int thread = t;
-      ForkJoinPool.commonPool().execute(() -> {
+      ForkJoinPool.commonPool().execute(() ->
+      {
         int i = 0;
         while(i < steps) {
           final int nodeIdx = thread + i * parallelism;
-          if (nodeIdx > state.length())
+          if (nodeIdx >= state.length())
             break;
 
           final NodeCalcer at = calcers.at(nodeIdx);
@@ -104,7 +105,8 @@ public class NeuralSpider<In> {
           }
         }
         latch.countDown();
-      });
+      }
+      );
     }
     try {
       latch.await();
