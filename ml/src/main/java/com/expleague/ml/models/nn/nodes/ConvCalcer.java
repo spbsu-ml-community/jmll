@@ -10,7 +10,7 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
   private final int prevLayerStart;
 
   private final int numInputChannels;
-  private final int height;
+  private final int prevWidth;
   private final int width;
 
   private final int numOutChannels;
@@ -26,14 +26,14 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
 
   private final int weightPerState;
 
-  public ConvCalcer(int layerStart, int weightStart, int prevLayerStart,
+  public ConvCalcer(int layerStart, int weightStart, int prevLayerStart, int prevWidth, int width,
                     int kSizeX, int kSizeY, int strideX, int strideY, int paddX, int paddY,
-                    int width, int height, int numInputChannels, int numOutChannels) {
+                    int numInputChannels, int numOutChannels) {
     this.layerStart = layerStart;
     this.weightStart = weightStart;
     this.prevLayerStart = prevLayerStart;
 
-    this.height = height;
+    this.prevWidth = prevWidth;
     this.width = width;
 
     this.kSizeY = kSizeY;
@@ -53,12 +53,11 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
   @Override
   public double apply(Vec state, Vec betta, int nodeIdx) {
     final int localIdx = nodeIdx - layerStart;
-    final int localWIdx = localIdx % numOutChannels;
-    final int wStart = weightStart + localWIdx * weightPerState;
+    final int c_out = localIdx % numOutChannels;
+    final int wStart = weightStart + c_out * weightPerState;
 
-    final int c_out = localIdx % width;
-    final int y_out = ((localIdx - c_out) / width) % height;
-    final int x_out = (((localIdx - c_out) / width) - y_out) / height;
+    final int y_out = (localIdx / numOutChannels) % width;
+    final int x_out = localIdx / numOutChannels / width;
     final int y = y_out * strideY;
     final int x = x_out * strideX;
 
@@ -68,8 +67,10 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
     for (int i = 0; i < kSizeX; i++) {
       for (int j = 0; j < kSizeY; j++) {
         for (int k = 0; k < numInputChannels; k++) {
-          final int idx = prevLayerStart + ((x + i) * width + (y + j)) * numOutChannels + k;
-          result += state.get(idx) * betta.get(wStart + i * kSizeY + j);
+          final int idx = prevLayerStart + ((x + i) * prevWidth + (y + j)) * numInputChannels + k;
+          final double a = state.get(idx);
+          final double b = betta.get(wStart + (i * kSizeY + j) * numInputChannels + k);
+          result += a * b;
         }
       }
     }
@@ -79,21 +80,19 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
 
   private int getX(int nodeIdx) {
     final int localIdx = nodeIdx - layerStart;
-    final int c_out = localIdx % width;
-    final int y_out = ((localIdx - c_out) / width) % height;
-    final int x_out = (((localIdx - c_out) / width) - y_out) / height;
+    final int x_out = localIdx / numOutChannels / width;
     return x_out * strideX;
   }
 
   @Override
   public int start(int nodeIdx) {
-    return prevLayerStart + getX(nodeIdx) * width * numInputChannels;
+    return prevLayerStart + getX(nodeIdx) * prevWidth * numInputChannels;
   }
 
   @Override
   public int end(int nodeIdx) {
-    final int endX = getX(nodeIdx) + kSizeX + 1;
-    return prevLayerStart + endX * width * numInputChannels;
+    final int endX = getX(nodeIdx) + kSizeX;
+    return prevLayerStart + endX * prevWidth * numInputChannels;
   }
 
   @Override

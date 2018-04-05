@@ -112,5 +112,10 @@ public class FCLayerBuilder implements LayerBuilder {
       IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
       return seqBuilder.build();
     }
+
+    @Override
+    public String toString() {
+      return "FC [" + input.ydim() + ", " + nOut + "]\n";
+    }
   }
 }

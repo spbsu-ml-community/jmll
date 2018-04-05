@@ -99,7 +99,7 @@ public class NeuralSpider<In> {
             cursor[0] = IntStream.range(1, cursor.length).map(idx -> cursor[idx])
                 .sorted().reduce((a, b) -> a + 1 <= b ? a + 1 : a).orElse(0);
             counter++;
-            if (cursor[0] + 1 < end) {
+            if (cursor[0] < end) {
               Thread.yield();
             }
           }

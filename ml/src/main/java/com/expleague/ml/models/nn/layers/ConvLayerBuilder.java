@@ -158,14 +158,37 @@ public class ConvLayerBuilder implements LayerBuilder {
       return yStart;
     }
 
+    public int kSizeX() {
+      return kSizeX;
+    }
+
+    public int kSizeY() {
+      return kSizeY;
+    }
+
+    public int strideX() {
+      return strideX;
+    }
+
+    public int strideY() {
+      return strideY;
+    }
+
     @Override
     public Seq<NodeCalcer> materialize() {
-      final NodeCalcer calcer = new ConvCalcer(yStart, wStart, input.yStart(),
+      final NodeCalcer calcer = new ConvCalcer(yStart, wStart, input.yStart(), input.width(), width(),
           kSizeX, kSizeY, strideX, strideY, paddX, paddY,
-          width(), height(), input.channels(), outChannels);
+          input.channels(), outChannels);
       final SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
       IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
       return seqBuilder.build();
+    }
+
+    @Override
+    public String toString() {
+      return "Conv outSize[" + height() + ", " + width() + ", " + channels() + "] " +
+          "kernel[" + kSizeX + ", " + kSizeY + "] " +
+          "stride[" + strideX + ", " + strideY + "]\n";
     }
   }
 

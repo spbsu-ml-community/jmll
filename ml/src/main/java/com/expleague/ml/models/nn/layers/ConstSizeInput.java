@@ -9,12 +9,14 @@ public class ConstSizeInput implements InputLayerBuilder<Vec> {
   private Vec input;
   private final int ydim;
   private int yStart;
+  private final int[] dims;
 
   public ConstSizeInput(int... dims) {
     ydim = Arrays.stream(dims).reduce(1, (a, b) -> a * b);
     if (ydim <= 0) {
       throw new IllegalArgumentException("dims product must be greater than zero");
     }
+    this.dims = dims;
   }
 
   private final InputLayer inputLayer = new InputLayer() {
@@ -66,5 +68,10 @@ public class ConstSizeInput implements InputLayerBuilder<Vec> {
   @Override
   public InputLayer build() {
     return inputLayer;
+  }
+
+  @Override
+  public String toString() {
+    return "Input " + Arrays.toString(dims) + "\n";
   }
 }

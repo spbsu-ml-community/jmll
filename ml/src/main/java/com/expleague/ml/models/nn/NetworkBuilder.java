@@ -10,6 +10,7 @@ import com.expleague.ml.models.nn.layers.InputLayerBuilder.InputLayer;
 import com.expleague.ml.models.nn.layers.OutputLayerBuilder.OutputLayer;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class NetworkBuilder<InType> {
   private List<LayerBuilder> layers = new ArrayList<>();
@@ -136,7 +137,8 @@ public class NetworkBuilder<InType> {
 
     private Network() {
       /* TODO: materialize here */
-      if (inputLayerBuilder instanceof ConstSizeInput) {
+      if (inputLayerBuilder instanceof ConstSizeInput ||
+          inputLayerBuilder instanceof ConstSizeInput3D) {
         inputLayer = inputLayerBuilder.build();
         inputSize = inputLayer.xdim();
         cacheCalcers = materialize();
@@ -159,7 +161,7 @@ public class NetworkBuilder<InType> {
       inputLayer.toState(state);
     }
 
-    Seq<NodeCalcer> materialize() {
+    private void rebuildNetwork() {
       if (inputSize != inputLayer.xdim() || cacheCalcers == null) {
         int yStart = 0;
         int wStart = 0;
@@ -167,6 +169,8 @@ public class NetworkBuilder<InType> {
         seqBuilder.addAll(inputLayer.materialize());
 
         Layer prevLayer = inputLayer;
+        layers.add(inputLayer);
+
         Iterator<LayerBuilder> layerIt = topSort.iterator();
         layerIt.next();
         while (layerIt.hasNext()) {
@@ -185,9 +189,12 @@ public class NetworkBuilder<InType> {
         wdim = wStart;
         sdim = yStart;
         outputLayer = outputLayerBuilder.getLayer();
-        return seqBuilder.build();
+        cacheCalcers = seqBuilder.build();
       }
+    }
 
+    Seq<NodeCalcer> materialize() {
+      rebuildNetwork();
       return cacheCalcers;
     }
 
@@ -205,6 +212,21 @@ public class NetworkBuilder<InType> {
 
     public int wdim() {
       return wdim;
+    }
+
+    public int ydim() {
+      return outputLayer.ydim();
+    }
+
+    public Stream<Layer> layers() {
+      return layers.stream();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder builder = new StringBuilder();
+      layers.forEach(layer -> builder.append(layer.toString()));
+      return builder.toString();
     }
   }
 }

@@ -1,6 +1,7 @@
 package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 
 public class ConstSizeInput3D implements InputLayerBuilder<Vec> {
   private int yStart;
@@ -56,7 +57,7 @@ public class ConstSizeInput3D implements InputLayerBuilder<Vec> {
   public class Input3D implements InputLayer, Layer3D {
     @Override
     public void toState(Vec state) {
-      state.sub(yStart, input.dim());
+      VecTools.assign(state.sub(yStart, input.dim()), input);
     }
 
     @Override
@@ -91,5 +92,10 @@ public class ConstSizeInput3D implements InputLayerBuilder<Vec> {
 
     @Override
     public void initWeights(Vec weights) { }
+
+    @Override
+    public String toString() {
+      return "Input [" + height + ", " + width + ", " + channels + "]\n";
+    }
   }
 }

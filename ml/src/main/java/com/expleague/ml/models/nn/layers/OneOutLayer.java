@@ -24,6 +24,11 @@ public class OneOutLayer implements OutputLayerBuilder {
     public Seq<NodeCalcer> materialize() {
       return new ArraySeq<>(new NodeCalcer[0]);
     }
+
+    @Override
+    public String toString() {
+      return "Out";
+    }
   };
 
   private int prevStart() {
