@@ -102,10 +102,12 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
       if ((epoch + 1) % 5 == 0) {
         final double curError = getLoss(sumFuncs, x);
         System.out.printf("ADAM descent epoch %d: new=%.6f old=%.6f\n", epoch, curError, error);
-        if (curError > error) {
-          System.out.printf("ADAM descent finished after %d epochs\n", epoch);
-          break;
-        }
+//        if (curError > error) {
+//          System.out.printf("ADAM descent finished after %d epochs\n", epoch);
+//          break;
+//        }
+        System.out.println(x);
+        System.out.println("|x|=" + VecTools.norm(x));
         error = curError;
       } else if (epoch == epochCount - 1) {
         final double curError = sumFuncs.value(x) / sumFuncs.size();

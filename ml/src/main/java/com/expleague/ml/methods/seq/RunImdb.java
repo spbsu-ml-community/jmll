@@ -12,9 +12,7 @@ import com.expleague.commons.seq.IntSeq;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
-import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.optimization.impl.AdamDescent;
-import com.expleague.ml.optimization.impl.FullGradientDescent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.*;
 
@@ -37,7 +35,7 @@ public class RunImdb {
   private static final int VALUES_EPOCH_COUNT = 5;
   private static final double VALUE_GRAD_STEP = 0.3;
   private static final double GRAD_STEP = 0.3;
-  private final double lambda;
+  private final double alpha;
   private final double addToDiag;
   private final int stateCount;
   private final double boostStep;
@@ -53,11 +51,11 @@ public class RunImdb {
   private Dictionary<Character> dictionary;
 
   public RunImdb(final int stateCount,
-                 final double lambda,
+                 final double alpha,
                  final double addToDiag,
                  final double boostStep) {
     this.stateCount = stateCount;
-    this.lambda = lambda;
+    this.alpha = alpha;
     this.addToDiag = addToDiag;
     this.boostStep = boostStep;
   }
@@ -170,10 +168,8 @@ public class RunImdb {
     IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFARegressor<>(stateCount, 1, alphabet, lambda, addToDiag, random,
-                new AdamDescent(random, WEIGHTS_EPOCH_COUNT, 4),
-                new FullGradientDescent(random, VALUE_GRAD_STEP, VALUES_EPOCH_COUNT),
-                2
+            new PNFARegressor<>(stateCount, 1, alphabet, alpha, 0.001, addToDiag, random,
+                new AdamDescent(random, WEIGHTS_EPOCH_COUNT, 4)
             ), random
         ),
         BOOST_ITERS, boostStep

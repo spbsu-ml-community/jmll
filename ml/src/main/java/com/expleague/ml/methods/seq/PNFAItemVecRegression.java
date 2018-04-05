@@ -10,7 +10,7 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.IntSeq;
 
-public class PNFAPointRegression extends FuncC1.Stub {
+public class PNFAItemVecRegression extends FuncC1.Stub {
   private final IntSeq seq;
   private final Vec y;
   private final int stateCount;
@@ -20,7 +20,7 @@ public class PNFAPointRegression extends FuncC1.Stub {
   private final double diag;
   private volatile Mx[] wCache;
 
-  public PNFAPointRegression(final IntSeq seq, final Vec y, final Mx[] wCache, int stateCount, int alphabetSize, int stateDim, double diag) {
+  public PNFAItemVecRegression(final IntSeq seq, final Vec y, final Mx[] wCache, int stateCount, int alphabetSize, int stateDim, double diag) {
     this.wCache = wCache;
     this.seq = seq;
     this.y = y;
@@ -43,27 +43,34 @@ public class PNFAPointRegression extends FuncC1.Stub {
   }
 
   @Override
-  public Vec gradientTo(Vec betta, Vec grad) {
+  public Vec gradientTo(Vec x, Vec grad) {
     VecTools.fill(grad, 0);
     final Vec state = new ArrayVec(stateCount * (seq.length() + 1));
     VecTools.fill(state.sub(0, stateCount), 1.0 / stateCount);
     //System.out.println("CPU Distribution: " + Arrays.toString(distribution.toArray()));
     for (int i = 0; i < seq.length(); i++) {
-      Mx weightMx = weightMx(betta, seq.intAt(i));
+      Mx weightMx = weightMx(x, seq.intAt(i));
       MxTools.multiplyTo(weightMx, state.sub(i * stateCount, stateCount), state.sub((i + 1) * stateCount, stateCount));
     }
-    final Mx expectedValues = getValues(betta);
+    final Mx V = getValues(x);
     final Vec[] dS = new Vec[]{new ArrayVec(stateCount), new ArrayVec((stateCount))};
     final Vec lastLayerGrad = dS[seq.length() % 2];
     final Vec lastLayerState = state.sub(seq.length() * stateCount, stateCount);
-    Vec r = MxTools.multiply(expectedValues, lastLayerState);
+    Vec r = MxTools.multiply(V, lastLayerState);
     VecTools.incscale(r, y, -1);
-    double v_0 = VecTools.sum2(r);
+
+    final Mx vGrad = getValues(grad);
+    for (int s = 0; s < stateCount; s++) {
+      for (int i = 0; i < stateDim; i++) {
+        final int idx = s * stateDim + i;
+        vGrad.adjust(i, s, 2 * r.get(i) * lastLayerState.get(s));
+      }
+    }
 
     for (int s = 0; s < stateCount; s++) {
       double sum = 0;
       for (int d = 0; d < stateDim; d++) {
-        sum += expectedValues.get(d, s) * r.get(d);
+        sum += V.get(d, s) * r.get(d);
       }
       lastLayerGrad.set(s, 2 * sum);
     }
@@ -74,11 +81,11 @@ public class PNFAPointRegression extends FuncC1.Stub {
       Vec out = dS[(i + 1) % 2];
       Vec in = dS[i % 2];
 
-      mySoftmaxGradMx(c, betta, state.sub(i * stateCount, stateCount), out, in, dM);
+      mySoftmaxGradMx(c, x, state.sub(i * stateCount, stateCount), out, in, dM);
       { // dM -> du & dv
         final int betaIdx = 2 * stateCount * c;
-        final Vec v = betta.sub(betaIdx, stateCount);
-        final Vec u = betta.sub(betaIdx + stateCount, stateCount);
+        final Vec v = x.sub(betaIdx, stateCount);
+        final Vec u = x.sub(betaIdx + stateCount, stateCount);
         final Vec dv = grad.sub(betaIdx, stateCount);
         final Vec du = grad.sub(betaIdx + stateCount, stateCount);
         for (int k = 0; k < dM.rows(); k++) {
@@ -87,6 +94,15 @@ public class PNFAPointRegression extends FuncC1.Stub {
             du.adjust(s, v.get(k) * m);
             dv.adjust(k, u.get(s) * m);
           }
+        }
+      }
+    }
+    final double betta = 0.1 * 2 / stateCount / (stateCount - 1) / stateDim;
+    for (int i = 0; i < stateCount; i++) {
+      for (int j = i + 1; j < stateCount; j++) {
+        for (int c = 0; c < stateDim; c++) {
+          vGrad.adjust(i, c, -2 * betta * (V.get(i, c) - V.get(j, c)));
+          vGrad.adjust(j, c, -2 * betta * (V.get(j, c) - V.get(i, c)));
         }
       }
     }
@@ -108,7 +124,7 @@ public class PNFAPointRegression extends FuncC1.Stub {
       return wCached;
     //noinspection SynchronizationOnLocalVariableOrMethodParameter
     synchronized (wCached) {
-      if (wCached.get(0) >= 0)
+      if (wCached.get(wCached.dim() - 1) >= 0)
         return wCached;
       return weightMx(betta, c, wCached, stateCount, diag);
     }
@@ -158,17 +174,18 @@ public class PNFAPointRegression extends FuncC1.Stub {
         { // dT/dM
           final double grad = prevS_f * nextdS.get(t);
           final double betta_ft = t < stateCount - 1 ? getBetta(betta, c, f, t, stateCount, diag) : 0;
-
+          final double betta_ft_2 = MathTools.sqr(betta_ft);
+          final double multiply = 2 * grad  / sum / sum;
           for (int j = 0; j < stateCount - 1; j++) {
             final double betta_fj = getBetta(betta, c, f, j, stateCount, diag);
             if (j == t) {
-              dM.adjust(f, j, 2 * grad * betta_fj * (sum - MathTools.sqr(betta_fj)) / sum / sum);
+              dM.adjust(f, j, multiply * betta_fj * (sum - MathTools.sqr(betta_fj)));
             }
             else if (t != stateCount - 1) {
-              dM.adjust(f, j, -2 * grad * MathTools.sqr(betta_ft) * betta_fj / sum / sum);
+              dM.adjust(f, j, -multiply * betta_ft_2 * betta_fj);
             }
             else {
-              dM.adjust(f, j, -2 * grad * betta_fj / sum / sum);
+              dM.adjust(f, j, -multiply * betta_fj);
             }
           }
         }
@@ -208,6 +225,18 @@ public class PNFAPointRegression extends FuncC1.Stub {
 
   public void removeCache() {
     wCache = null;
+  }
+
+  public int stateCount() {
+    return stateCount;
+  }
+
+  public int stateDim() {
+    return stateDim;
+  }
+
+  public int alphabetSize() {
+    return alphabetSize;
   }
 }
 

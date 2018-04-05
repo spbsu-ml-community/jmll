@@ -14,7 +14,6 @@ import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.impl.AdamDescent;
-import com.expleague.ml.optimization.impl.FullGradientDescent;
 import com.expleague.ml.optimization.impl.SAGADescent;
 import org.junit.Test;
 
@@ -40,7 +39,7 @@ public class PNFATest {
 
     @Override
     public Vec optimize(FuncEnsemble<? extends FuncC1> func, Vec x0) {
-      PNFAPointRegression model = (PNFAPointRegression) func.models[0];
+      PNFAItemVecRegression model = (PNFAItemVecRegression) func.models[0];
       model.removeCache();
       final double value = model.trans(x0).get(0);
       final Vec grad = model.gradient(x0);
@@ -59,31 +58,9 @@ public class PNFATest {
       }
       return x0;
     }
-  };
-
-  private final Optimize<FuncEnsemble<? extends FuncC1>> valueOptimize = new Optimize<FuncEnsemble<? extends FuncC1>>() {
-    @Override
-    public Vec optimize(FuncEnsemble func) {
-      assertTrue(false);
-      return null;
-    }
 
     @Override
-    public Vec optimize(FuncEnsemble<? extends FuncC1> func, Vec x0) {
-      FuncC1 model = func.models[0];
-      final double value = model.trans(x0).get(0);
-      final Vec grad = model.gradient(x0);
-
-      for (int i = x0.dim() - stateCount * stateDim; i < x0.dim(); i++) {
-        x0.adjust(i, EPS);
-        final double newValue = model.trans(x0).get(0);
-        if (Math.abs(grad.get(i) - (newValue - value) / EPS) > 1e-3) {
-          model.gradient(x0);
-          assertEquals(grad.get(i), (newValue - value) / EPS, 1e-3);
-        }
-        x0.adjust(i, -EPS);
-      }
-      return x0;
+    public void projector(Function<Vec, Vec> projection) {
     }
   };
 
@@ -95,8 +72,7 @@ public class PNFATest {
 //    );
 
     PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
-        stateCount, stateDim, alphabet, 0.0, 1, random, weightOptimize, valueOptimize, 1
-    );
+        stateCount, stateDim, alphabet, 0.0001, 0.001, 100, random, weightOptimize);
 
     pnfaRegressor.fit(new DataSet.Stub<Seq<Integer>>(null) {
       @Override
@@ -120,7 +96,7 @@ public class PNFATest {
   public void testSimple() {
     final int stateCount = 2;
     final IntAlphabet alphabet = new IntAlphabet(2);
-    int diag = 1;
+    int diag = 5;
 //    final PNFA<WeightedL2> pnfaRegressor = new PNFA<>(
 //        stateCount, 2, alphabet.size(), 0, diag, random,
 ////        new SAGADescent(0.3, 10000, random, 1),
@@ -129,11 +105,9 @@ public class PNFATest {
 //        1
 //    );
     final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
-        stateCount, 2, alphabet, 0.0, diag, random,
-        new SAGADescent(0.3, 10000, random, 1),
-//        new AdamDescent(random, 50, 4, 0.04 ),
-        new FullGradientDescent(random, 0.3, 10),
-        1
+        stateCount, 2, alphabet, 1e-5, 1e-4, diag, random,
+//        new SAGADescent(0.1, 1000000, random)
+        new AdamDescent(random, 50, 4, 0.0001 )
     );
 
     final int TRAIN_SIZE = 10000;
@@ -141,7 +115,7 @@ public class PNFATest {
     int[] labels = new int[TRAIN_SIZE];
 
     for (int i = 0; i < TRAIN_SIZE; i++) {
-      int len = 2;//random.nextInt(80) + 10;
+      int len = random.nextInt(80) + 10;
       IntSeqBuilder builder = new IntSeqBuilder();
       for (int j = 0; j < len; j++) {
         builder.append(random.nextInt(2));
@@ -149,8 +123,7 @@ public class PNFATest {
       IntSeq seq = builder.build();
       train.add(seq);
 
-      int s = 2 * seq.intAt(seq.length() - 1) - 1;
-      labels[i] = (s + 1) / 2;
+      labels[i] = seq.intAt(seq.length() - 1);
     }
 
     final Vec target = new ArrayVec(TRAIN_SIZE * 2);
@@ -187,16 +160,16 @@ public class PNFATest {
     System.out.println(acc + " " + 1.0 * acc / TRAIN_SIZE);
 
 
-    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 0, stateCount, diag));
+    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 0, stateCount, diag));
     System.out.println("=========");
-    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 1, stateCount, diag));
+    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 1, stateCount, diag));
   }
 
   @Test
   public void testNot() {
     final int stateCount = 3;
     final IntAlphabet alphabet = new IntAlphabet(3);
-    int diag = 1;
+    int diag = 10;
 //    final PNFA<WeightedL2> pnfaRegressor = new PNFA<>(
 //        stateCount, 2, alphabet.size(), 0, diag, random,
 ////        new SAGADescent(0.3, 10000, random, 1),
@@ -204,13 +177,10 @@ public class PNFATest {
 //        new FullGradientDescent(random, 0.3, 10),
 //        1
 //    );
-    double step = 0.0001;
     final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
-        stateCount, 2, alphabet, 0.03 * step * Math.sqrt(4), diag, random,
-//        new SAGADescent(0.3, 10000, random, 1),
-        new AdamDescent(random, 10, 4, step),
-        new FullGradientDescent(random, 0.01, 10),
-        3
+        stateCount, 2, alphabet, 1e-6, 1e-5, diag, random,
+        new SAGADescent(0.1, 1000000, random)
+//        new AdamDescent(random, 50, 4, 0.001)
     );
 
     final int TRAIN_SIZE = 10000;
@@ -267,13 +237,13 @@ public class PNFATest {
     System.out.println(acc + " " + 1.0 * acc / TRAIN_SIZE);
 
 
-    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 0, stateCount, diag));
+    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 0, stateCount, diag));
     System.out.println("=========");
-    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 1, stateCount, diag));
+    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 1, stateCount, diag));
     System.out.println("=========");
-    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 2, stateCount, diag));
+    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 2, stateCount, diag));
 //    System.out.println("=========");
-//    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 3, stateCount, diag));
+//    printMx(PNFAItemVecRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 3, stateCount, diag));
   }
 
   @Test
@@ -331,13 +301,13 @@ public class PNFATest {
 //    System.out.println(acc + " " + 1.0 * acc / TRAIN_SIZE);
 //
 //
-//    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 0, 20, 0));
+//    printMx(PNFAItemVecRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 0, 20, 0));
 //    System.out.println("=========");
-//    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 1, 20, 0));
+//    printMx(PNFAItemVecRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 1, 20, 0));
 //    System.out.println("=========");
-//    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 2, 20, 0));
+//    printMx(PNFAItemVecRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 2, 20, 0));
 //    System.out.println("=========");
-//    printMx(PNFAPointRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 3, 20, 0));
+//    printMx(PNFAItemVecRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 3, 20, 0));
   }
 
 

@@ -17,7 +17,6 @@ import com.expleague.commons.seq.regexp.Alphabet;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
 import com.expleague.ml.methods.SeqOptimization;
-import com.expleague.ml.optimization.impl.AdamDescent;
 import com.expleague.ml.optimization.impl.SAGADescent;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
@@ -169,11 +168,9 @@ public class RunSpliceData {
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
             new PNFARegressor<>(
-                MAX_STATE_COUNT, 1, alphabet, 0, 3, random,
-                new SAGADescent(GRAD_STEP, 10000, random, THREAD_COUNT),
+                MAX_STATE_COUNT, 1, alphabet, 0, 0, 3, random,
+                new SAGADescent(GRAD_STEP, 10000, random)
 //                new AdamDescent(random, 100, 4),
-                new SAGADescent(GRAD_STEP, 10000, random, THREAD_COUNT),
-                2
             )
             , random
         ), BOOST_ITERS, BOOST_STEP

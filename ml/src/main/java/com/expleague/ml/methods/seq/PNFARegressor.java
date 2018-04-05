@@ -23,83 +23,78 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
   private final int alphabetSize;
   private final Alphabet<Type> alphabet;
   private final Random random;
-  private final Optimize<FuncEnsemble<? extends FuncC1>> weightsOptimize, valuesOptimize;
-  private final double lambda;
+  private final Optimize<FuncEnsemble<? extends FuncC1>> weightsOptimize;
+  private final double alpha;
   private final double addToDiag;
-  private final int weightValueIterCount;
+  private final double betta;
 
-  public PNFARegressor(
-      final int stateCount,
-      final int stateDim,
-      final Alphabet<Type> alphabet,
-      final double lambda,
-      final double addToDiag,
-      final Random random,
-      final Optimize<FuncEnsemble<? extends FuncC1>> weightsOptimize,
-      final Optimize<FuncEnsemble<? extends FuncC1>> valuesOptimize,
-      final int weightValueIterCount
-  ) {
+  public PNFARegressor(int stateCount, int stateDim, Alphabet<Type> alphabet, double alpha, double betta, double addToDiag, Random random, Optimize<FuncEnsemble<? extends FuncC1>> weightsOptimize) {
     this.stateCount = stateCount;
+    this.betta = betta;
     this.stateDim = stateDim;
     this.alphabetSize = alphabet.size();
-    this.lambda = lambda;
+    this.alpha = alpha;
     this.addToDiag = addToDiag;
     this.random = random;
     this.weightsOptimize= weightsOptimize;
-    this.valuesOptimize = valuesOptimize;
-    this.weightValueIterCount = weightValueIterCount;
     this.alphabet = alphabet;
   }
 
   @Override
   public PNFAModel<Type> fit(final DataSet<Seq<Type>> learn, final Loss loss) {
     Vec params = init(loss.target());
-    FuncC1[] funcs = new FuncC1[learn.length()];
+    PNFAItemVecRegression[] funcs = new PNFAItemVecRegression[learn.length()];
     Vec wCacheVec = new ArrayVec(stateCount * stateCount * alphabetSize);
+    VecTools.fill(wCacheVec, -1);
     Mx[] wCache = new Mx[alphabetSize];
     for (int i = 0; i < wCache.length; i++) {
       wCache[i] = new VecBasedMx(stateCount, wCacheVec.sub(stateCount * stateCount * i, stateCount * stateCount));
     }
     for (int i = 0; i < learn.length(); i++) {
       final IntSeq seq = (IntSeq) learn.at(i);
-      funcs[i] = new PNFAPointRegression(seq, loss.target().sub(i * stateDim, stateDim), wCache, stateCount, alphabetSize, stateDim, addToDiag);
+      funcs[i] = new PNFAItemVecRegression(seq, loss.target().sub(i * stateDim, stateDim), wCache, stateCount, alphabetSize, stateDim, addToDiag);
     }
 
-    weightsOptimize.projector(x -> {
-      IntStream.range(0, x.length()).parallel().forEach(idx -> {
-        final double val = x.get(idx);
-        if (Math.abs(val) > lambda) {
-          if (val > lambda) {
-            x.adjust(idx, -lambda);
-          } else {
-            x.adjust(idx, lambda);
-          }
-        } else {
-          x.set(idx, 0);
+    weightsOptimize.projector(new Function<Vec, Vec>() {
+      Vec prev = null;
+      @Override
+      public Vec apply(Vec x) {
+        Vec diff = VecTools.copy(x);
+        if (prev != null) {
+          VecTools.incscale(diff, prev, -1);
         }
-      });
-      VecTools.fill(wCacheVec, -1);
-      return x;
+        prev = VecTools.copy(x);
+        Mx values = funcs[0].getValues(x);
+        IntStream.range(0, x.length() - values.dim()).forEach(idx -> {
+          if (diff.get(idx) == 0)
+            return;
+          final double val = x.get(idx);
+          if (Math.abs(val) > alpha) {
+            if (val > alpha) {
+              x.adjust(idx, -alpha);
+            }
+            else {
+              x.adjust(idx, alpha);
+            }
+          }
+          else {
+            x.set(idx, 0);
+          }
+        });
+        for (int i = 0; i < values.columns(); i++) {
+          Vec row = values.col(i);
+          VecTools.scale(row, 1 - betta);
+        }
+        VecTools.fill(wCacheVec, -1);
+        return x;
+      }
     });
 
-    FuncEnsemble<FuncC1> ensemble = new FuncEnsemble<>(funcs, loss.getWeights());
-    for (int iter = 0; iter < weightValueIterCount; iter++) {
-      VecTools.fill(wCacheVec, -1);
-      params = weightsOptimize.optimize(ensemble, params);
+    final FuncEnsemble<FuncC1> func = new FuncEnsemble<>(funcs, loss.getWeights());
+    params = weightsOptimize.optimize(func, params);
+//    System.out.println("Value after: " + func.value(params) / func.size());
 
-      for (int i = 0; i < learn.length(); i++) {
-        final IntSeq seq = (IntSeq) learn.at(i);
-        funcs[i] = new PNFAPointValueLossFunc(
-            seq, loss.target().sub(i* stateDim, stateDim), wCache
-        );
-      }
-
-      System.out.println("Value before: " + funcs[0].value(params));
-      params = valuesOptimize.optimize(ensemble, params);
-      System.out.println("Value after: " + funcs[0].value(params));
-    }
-
-    return new PNFAModel<>(params, stateCount, stateDim, addToDiag, lambda, alphabet);
+    return new PNFAModel<>(params, stateCount, stateDim, addToDiag, alpha, alphabet);
   }
 
   private Vec init(Vec target) {
@@ -109,7 +104,7 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
     { // u & v init
       for (int c = 0; c < alphabetSize; c++) {
         for (int i = 0; i < (2 * stateCount) * alphabetSize; i++) {
-          params.set(i, random.nextGaussian());
+          params.set(i, 0.1 * random.nextGaussian());
         }
       }
     }
@@ -126,117 +121,11 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
         }
         Collections.shuffle(medians, random);
         for (int i = 0; i < stateCount; i++) {
-          values.set(col, i, medians.get(i));
+          values.set(i, col, medians.get(i));
         }
       }
     }
 
     return params;
-  }
-
-
-  private class PNFAPointValueLossFunc extends FuncC1.Stub {
-    private final IntSeq seq;
-    private final Vec y;
-    private final PNFAPointRegression regression;
-
-    public PNFAPointValueLossFunc(IntSeq seq, Vec y, Mx[] wCache) {
-      regression = new PNFAPointRegression(seq, y, wCache, stateCount, alphabetSize, stateDim, addToDiag);
-      this.seq = seq;
-      this.y = y;
-    }
-
-    @Override
-    public Vec gradientTo(Vec params, Vec to) {
-      Vec distribution = regression.distribution(params);
-      final Vec r = VecTools.subtract(
-          MxTools.multiply(
-              regression.getValues(params), distribution
-          ), y
-      );
-      Mx grad = regression.getValues(to);
-      for (int s = 0; s < stateCount; s++) {
-        for (int i = 0; i < stateDim; i++) {
-          final int idx = s * stateDim + i;
-          grad.adjust(i, s, 2 * r.get(i) * distribution.get(s));
-        }
-      }
-
-      return to;
-    }
-
-    @Override
-    public double value(Vec params) {
-      return regression.value(params);
-    }
-
-    @Override
-    public int dim() {
-      return (2 * stateCount) * alphabetSize + stateCount * stateDim;
-    }
-  }
-
-  static class PNFAModel<Type> implements Function<Seq<Type>, Vec> {
-    private Vec params;
-    private int stateCount;
-    private int stateDim;
-    private double addToDiag;
-    private double lambda;
-    private Alphabet<Type> alphabet;
-
-    public PNFAModel(Vec params, int stateCount, int stateDim, double addToDiag, double lambda, Alphabet<Type> alpha) {
-      this.params = params;
-      this.stateCount = stateCount;
-      this.stateDim = stateDim;
-      this.addToDiag = addToDiag;
-      this.lambda = lambda;
-      this.alphabet = alpha;
-    }
-
-    @Override
-    public Vec apply(Seq<Type> seq) {
-      PNFAPointRegression regression = new PNFAPointRegression(alphabet.reindex(seq), Vec.EMPTY, null, stateCount, alphabet.size(), stateDim, addToDiag);
-      return regression.vecValue(params);
-    }
-
-    public Vec getParams() {
-      return params;
-    }
-
-    public void setParams(Vec params) {
-      this.params = params;
-    }
-
-    public int getStateCount() {
-      return stateCount;
-    }
-
-    public void setStateCount(int stateCount) {
-      this.stateCount = stateCount;
-    }
-
-    public int getStateDim() {
-      return stateDim;
-    }
-
-    public void setStateDim(int stateDim) {
-      this.stateDim = stateDim;
-    }
-
-    public double getAddToDiag() {
-      return addToDiag;
-    }
-
-    public void setAddToDiag(double addToDiag) {
-      this.addToDiag = addToDiag;
-    }
-
-    public double getLambda() {
-      return lambda;
-    }
-
-    public void setLambda(double lambda) {
-      this.lambda = lambda;
-    }
   }
 }
