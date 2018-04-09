@@ -82,8 +82,10 @@ public class FCTest {
     int wStart = 0;
     for (int i = 0; i < dims.length - 1; i++) {
       Mx w = new VecBasedMx(dims[i], weights.sub(wStart, dims[i] * dims[i + 1]));
-      x = MxTools.multiply(w, x);
       wStart += dims[i] * dims[i + 1];
+      Vec b = weights.sub(wStart, dims[i + 1]);
+      x = VecTools.sum(MxTools.multiply(w, x), b);
+      wStart += dims[i + 1];
     }
 
     return x;

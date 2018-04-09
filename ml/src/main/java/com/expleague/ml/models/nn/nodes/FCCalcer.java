@@ -9,6 +9,7 @@ public class FCCalcer implements NeuralSpider.NodeCalcer {
   private final int prevStateStart;
   private final int prevStateLength;
   private final int weightStart;
+  private final int biasStart;
   private final int weightPerState;
   private final int layerStart;
   private final AnalyticFunc activation;
@@ -21,15 +22,20 @@ public class FCCalcer implements NeuralSpider.NodeCalcer {
     this.prevStateStart = prevStateStart;
     this.prevStateLength = prevStateLength;
     this.weightStart = weightStart;
-    this.weightPerState = weightLength / stateLength;
+
+    final int mxWeightLength = weightLength - stateLength;
+    this.weightPerState = mxWeightLength / stateLength;
+    this.biasStart = weightStart + mxWeightLength;
+
     this.activation = activation;
   }
 
   @Override
   public double apply(Vec state, Vec betta, int nodeIdx) {
-    final int wStart = weightStart + (nodeIdx - layerStart) * weightPerState;
+    final int localIdx = nodeIdx - layerStart;
+    final int wStart = weightStart + localIdx * weightPerState;
     final double result = VecTools.multiply(state.sub(prevStateStart, prevStateLength),
-        betta.sub(wStart, prevStateLength));
+        betta.sub(wStart, prevStateLength)) + betta.get(biasStart + localIdx);
     return activation.value(result);
   }
 

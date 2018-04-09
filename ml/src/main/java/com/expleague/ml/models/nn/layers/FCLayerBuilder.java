@@ -110,7 +110,7 @@ public class FCLayerBuilder implements LayerBuilder {
 
     @Override
     public int wdim() {
-      return xdim() * ydim();
+      return xdim() * ydim() + ydim();
     }
 
     @Override
