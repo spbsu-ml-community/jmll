@@ -169,7 +169,7 @@ public class ConvLayerBuilder implements LayerBuilder {
 
     @Override
     public int wdim() {
-      return input.channels() * kSizeX * kSizeY * outChannels;
+      return (input.channels() * kSizeX * kSizeY + 1) * outChannels;
     }
 
     @Override

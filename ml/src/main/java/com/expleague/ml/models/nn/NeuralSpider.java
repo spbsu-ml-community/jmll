@@ -82,7 +82,7 @@ public class NeuralSpider<In> {
 
           final NodeCalcer at = calcers.at(nodeIdx);
           int end = at.end(nodeIdx);
-          if (end <= cursor[0] + 1) {
+          if (end < cursor[0] + 1) {
             state.set(nodeIdx, at.apply(state, weights, nodeIdx));
             cursor[thread + 1] = nodeIdx;
             i++;

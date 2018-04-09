@@ -54,7 +54,7 @@ public class ConvTest {
     final int channels = 3;
 
     for (int shot = 0; shot < 50; shot++) {
-      final int numLayers = rng.nextInt(5) + 1;
+      final int numLayers = rng.nextInt(4) + 1;
 
       NetworkBuilder<Vec> builder = new NetworkBuilder<>(new ConstSizeInput3D(height, width, channels));
 
@@ -108,7 +108,7 @@ public class ConvTest {
                 final int dstWidth = (curWidth - ksizeY) / strideY + 1;
                 final int channels = convLayer.channels();
                 final int ydim = dstHeight * dstWidth * channels;
-                final int wdim = ksizeX * ksizeY * prevChannels * channels;
+                final int wdim = (ksizeX * ksizeY * prevChannels + 1) * channels;
 
                 assertEquals(ydim, convLayer.ydim());
                 assertEquals(wdim, convLayer.wdim());
@@ -154,12 +154,14 @@ public class ConvTest {
                    int width, int inChannels, int outChannels) {
     Vec result = new ArrayVec(dstHeight * dstWidth * outChannels);
     final int weightChannelDim = ksizeX * ksizeY * inChannels;
+    final int biasStart = weightChannelDim * outChannels;
 
     for (int x = 0; x < dstHeight; x++) {
       for (int y = 0; y < dstWidth; y++) {
         for (int c = 0; c < outChannels; c++) {
           final double con = conv(x * strideX, y * strideY, c, arg, weights,
-              ksizeX, ksizeY, width, weightChannelDim, inChannels);
+              ksizeX, ksizeY, width, weightChannelDim, inChannels)
+              + weights.get(biasStart + c);
           result.set((x * dstWidth + y) * outChannels + c, con);
         }
       }

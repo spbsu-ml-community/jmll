@@ -25,6 +25,7 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
   private final int paddY;
 
   private final int weightPerState;
+  private final int biasStart;
 
   private final AnalyticFunc activation;
 
@@ -52,6 +53,8 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
     this.activation = activation;
 
     weightPerState = kSizeX * kSizeY * numInputChannels;
+
+    biasStart = weightStart + weightPerState * numOutChannels;
   }
 
   @Override
@@ -78,6 +81,7 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
         }
       }
     }
+    result += betta.get(biasStart + c_out);
 
     return activation.value(result);
   }
