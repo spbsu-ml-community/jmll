@@ -1,29 +1,20 @@
 package com.expleague.ml.func.generic;
 
-import com.expleague.commons.math.vectors.SingleValueVec;
-import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.FuncC1;
+import com.expleague.commons.math.AnalyticFunc;
 
 /**
 * User: solar
 * Date: 27.05.15
 * Time: 17:59
 */
-public class ReLU extends FuncC1.Stub {
+public class ReLU extends AnalyticFunc.Stub {
   @Override
-  public Vec gradient(Vec x) {
-    final double v = x.get(0);
-    return new SingleValueVec(v > 0 ? 1 : 0);
+  public double gradient(double x) {
+    return x > 0 ? 1 : 0;
   }
 
   @Override
-  public double value(Vec x) {
-    final double v = x.get(0);
-    return v > 0 ? v : 0;
-  }
-
-  @Override
-  public int dim() {
-    return 0;
+  public double value(double x) {
+    return x > 0 ? x : 0;
   }
 }

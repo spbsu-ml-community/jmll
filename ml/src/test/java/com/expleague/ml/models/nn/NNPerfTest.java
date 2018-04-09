@@ -3,7 +3,9 @@ package com.expleague.ml.models.nn;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.ml.func.generic.ReLU;
 import com.expleague.ml.models.nn.layers.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -33,6 +35,45 @@ public class NNPerfTest {
     convPerfTest(5);
     convPerfTest(10);
     convPerfTest(20);
+  }
+
+  @Test
+  public void alexNetTest() {
+    System.out.println("alexnet test, forward pass");
+    alexNetPerfTest();
+  }
+
+  private void alexNetPerfTest() {
+    NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(
+        new ConstSizeInput3D(17, 17, 64))
+        .addSeq(
+//            ConvLayerBuilder.create()
+//                .channels(64).ksize(11, 11).stride(4, 4).padd(2, 2).activation(ReLU.class),
+//            PoolLayerBuilder.create()
+//                .ksize(3, 3).stride(2, 2),
+            ConvLayerBuilder.create()
+                .channels(192).ksize(5, 5).padd(2, 2).activation(ReLU.class)
+//            PoolLayerBuilder.create()
+//                .ksize(3, 3).stride(2, 2),
+//            ConvLayerBuilder.create()
+//                .channels(384).ksize(3, 3).padd(2, 2).activation(ReLU.class),
+//            ConvLayerBuilder.create()
+//                .channels(256).ksize(3, 3).activation(ReLU.class),
+//            PoolLayerBuilder.create()
+//                .ksize(3, 3).stride(2, 2),
+//            FCLayerBuilder.create()
+//                .nOut(4096).activation(ReLU.class),
+//            FCLayerBuilder.create()
+//                .nOut(4096).activation(ReLU.class),
+//            FCLayerBuilder.create()
+//                .nOut(1000)
+        )
+        .build(new OneOutLayer());
+
+    Vec input = new ArrayVec(17 * 17 * 64);
+    VecTools.fill(input, 1.);
+
+    perfNNCheck(input, new ConvNet(network));
   }
 
   public void convPerfTest(int channels) {
@@ -90,6 +131,7 @@ public class NNPerfTest {
     System.out.println(stat(times));
   }
 
+  @NotNull
   private static Stat stat(double[] array) {
     Arrays.sort(array);
 

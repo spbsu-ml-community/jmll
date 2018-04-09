@@ -1,9 +1,11 @@
 package com.expleague.ml.models.nn.layers;
 
+import com.expleague.commons.math.AnalyticFunc;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.ArraySeqBuilder;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.SeqBuilder;
+import com.expleague.ml.models.nn.Identity;
 import com.expleague.ml.models.nn.nodes.ConvCalcer;
 
 import java.util.stream.IntStream;
@@ -23,6 +25,7 @@ public class ConvLayerBuilder implements LayerBuilder {
   private ConvLayer layer;
   private int yStart;
   private int wStart;
+  private AnalyticFunc activation = new Identity();
 
   protected ConvLayerBuilder() {}
 
@@ -53,9 +56,15 @@ public class ConvLayerBuilder implements LayerBuilder {
     return this;
   }
 
-  public ConvLayerBuilder withPadd() {
+  public ConvLayerBuilder samePadd() {
     paddX = (kSizeX - 1) / 2;
     paddY = (kSizeY - 1) / 2;
+    return this;
+  }
+
+  public ConvLayerBuilder padd(int paddX, int paddY) {
+    this.paddX = paddX;
+    this.paddY = paddY;
     return this;
   }
 
@@ -108,6 +117,16 @@ public class ConvLayerBuilder implements LayerBuilder {
     layer = new ConvLayer((Layer3D) prevBuilder.getLayer());
 
     return layer;
+  }
+
+  public ConvLayerBuilder activation(Class<? extends AnalyticFunc> actClass) {
+    try {
+      activation = actClass.newInstance();
+    }
+    catch (InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+    return this;
   }
 
   public class ConvLayer implements Layer3D {
@@ -176,9 +195,10 @@ public class ConvLayerBuilder implements LayerBuilder {
 
     @Override
     public Seq<NodeCalcer> materialize() {
-      final NodeCalcer calcer = new ConvCalcer(yStart, wStart, input.yStart(), input.width(), width(),
+      final NodeCalcer calcer = new ConvCalcer(
+          yStart, wStart, input.yStart(), input.width(), width(),
           kSizeX, kSizeY, strideX, strideY, paddX, paddY,
-          input.channels(), outChannels);
+          input.channels(), outChannels, activation);
       final SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
       IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
       return seqBuilder.build();

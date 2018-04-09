@@ -53,7 +53,7 @@ public class ConvTest {
     final int height = 100;
     final int channels = 3;
 
-    for (int shot = 0; shot < 200; shot++) {
+    for (int shot = 0; shot < 50; shot++) {
       final int numLayers = rng.nextInt(5) + 1;
 
       NetworkBuilder<Vec> builder = new NetworkBuilder<>(new ConstSizeInput3D(height, width, channels));
@@ -61,10 +61,10 @@ public class ConvTest {
       int curWidth = width;
       int curHeight = height;
       for (int i = 0; i < numLayers; i++) {
-        final int ksizeX = rng.nextPoisson(curHeight / 20) + 1;
-        final int ksizeY = rng.nextPoisson(curWidth / 20) + 1;
-        final int strideX = rng.nextPoisson(1.) + 1;
-        final int strideY = rng.nextPoisson(1.) + 1;
+        final int ksizeX = rng.nextPoisson(3.) + 1;
+        final int ksizeY = rng.nextPoisson(3.) + 1;
+        final int strideX = rng.nextInt(2) + 1;
+        final int strideY = rng.nextInt(2) + 1;
 
         curWidth = (curWidth - ksizeY) / strideY + 1;
         curHeight = (curHeight - ksizeX) / strideX + 1;

@@ -1,9 +1,11 @@
 package com.expleague.ml.models.nn.layers;
 
+import com.expleague.commons.math.AnalyticFunc;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.ArraySeqBuilder;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.SeqBuilder;
+import com.expleague.ml.models.nn.Identity;
 import com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
 import com.expleague.ml.models.nn.nodes.FCCalcer;
 
@@ -16,6 +18,7 @@ public class FCLayerBuilder implements LayerBuilder {
   private int yStart;
   private int wStart;
   private FCLayer layer;
+  private AnalyticFunc activation = new Identity();
 
   public static FCLayerBuilder create() {
     return new FCLayerBuilder();
@@ -28,6 +31,16 @@ public class FCLayerBuilder implements LayerBuilder {
 
   public FCLayerBuilder weightFill(FillerType fillerType) {
     this.fillerType = fillerType;
+    return this;
+  }
+
+  public FCLayerBuilder activation(Class<? extends AnalyticFunc> actClass) {
+    try {
+      activation = actClass.newInstance();
+    }
+    catch (InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -107,7 +120,8 @@ public class FCLayerBuilder implements LayerBuilder {
 
     @Override
     public Seq<NodeCalcer> materialize() {
-      final NodeCalcer calcer = new FCCalcer(yStart, ydim(), input.yStart(), xdim(), wStart, wdim());
+      final NodeCalcer calcer = new FCCalcer(
+          yStart, ydim(), input.yStart(), xdim(), wStart, wdim(), activation);
       final SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
       IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
       return seqBuilder.build();

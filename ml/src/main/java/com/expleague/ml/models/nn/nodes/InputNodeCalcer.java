@@ -21,11 +21,9 @@ public class InputNodeCalcer implements NodeCalcer {
   }
 
   @Override
-  public void gradByStateTo(Vec state, Vec betta, Vec to) {
-  }
+  public void gradByStateTo(Vec state, Vec betta, int nodeIdx, double wGrad, Vec gradState) { }
 
   @Override
-  public void gradByParametersTo(Vec state, Vec betta, Vec to) {
-  }
+  public void gradByParametersTo(Vec state, Vec betta, int nodeIdx, double sGrad, Vec gradW) { }
 }
 

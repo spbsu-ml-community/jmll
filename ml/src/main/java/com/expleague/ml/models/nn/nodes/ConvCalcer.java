@@ -1,8 +1,8 @@
 package com.expleague.ml.models.nn.nodes;
 
+import com.expleague.commons.math.AnalyticFunc;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.models.nn.NeuralSpider;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ConvCalcer implements NeuralSpider.NodeCalcer {
   private final int layerStart;
@@ -26,9 +26,11 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
 
   private final int weightPerState;
 
+  private final AnalyticFunc activation;
+
   public ConvCalcer(int layerStart, int weightStart, int prevLayerStart, int prevWidth, int width,
                     int kSizeX, int kSizeY, int strideX, int strideY, int paddX, int paddY,
-                    int numInputChannels, int numOutChannels) {
+                    int numInputChannels, int numOutChannels, AnalyticFunc activation) {
     this.layerStart = layerStart;
     this.weightStart = weightStart;
     this.prevLayerStart = prevLayerStart;
@@ -46,6 +48,8 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
     this.numOutChannels = numOutChannels;
     this.paddX = paddX;
     this.paddY = paddY;
+
+    this.activation = activation;
 
     weightPerState = kSizeX * kSizeY * numInputChannels;
   }
@@ -75,7 +79,7 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
       }
     }
 
-    return result;
+    return activation.value(result);
   }
 
   private int getX(int nodeIdx) {
@@ -96,12 +100,8 @@ public class ConvCalcer implements NeuralSpider.NodeCalcer {
   }
 
   @Override
-  public void gradByStateTo(Vec state, Vec betta, Vec to) {
-    throw new NotImplementedException();
-  }
+  public void gradByStateTo(Vec state, Vec betta, int nodeIdx, double wGrad, Vec gradState) { }
 
   @Override
-  public void gradByParametersTo(Vec state, Vec betta, Vec to) {
-    throw new NotImplementedException();
-  }
+  public void gradByParametersTo(Vec state, Vec betta, int nodeIdx, double sGrad, Vec gradW) { }
 }

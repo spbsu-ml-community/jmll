@@ -1,20 +1,20 @@
 package com.expleague.ml.models.nn;
 
-import com.expleague.commons.math.MathTools;
-import com.expleague.commons.math.vectors.Vec;
+import com.expleague.ml.func.generic.ReLU;
 import com.expleague.ml.models.nn.nodes.FCCalcer;
 import com.expleague.ml.models.nn.nodes.InputNodeCalcer;
 
-import java.util.*;
+import java.util.Random;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
+
+import static com.expleague.ml.models.nn.NeuralSpider.*;
 
 /**
 * User: solar
 * Date: 26.05.15
 * Time: 11:46
 */
-public class LayeredNetwork extends NeuralSpider<Vec> {
+public class LayeredNetwork {
   private final NodeCalcer[] nodeCalcers;
   private final Random rng;
   private final double dropout;
@@ -41,7 +41,9 @@ public class LayeredNetwork extends NeuralSpider<Vec> {
         if (layer >= config.length)
           break;
 
-        current = new FCCalcer(i + 1, config[layer], i - config[layer - 1] + 1, config[layer - 1], wCount, config[layer - 1] * config[layer]);
+        current = new FCCalcer(i + 1, config[layer],
+            i - config[layer - 1] + 1, config[layer - 1],
+            wCount, config[layer - 1] * config[layer], new ReLU());
         wCount += config[layer - 1] * config[layer];
         index = 0;
       }

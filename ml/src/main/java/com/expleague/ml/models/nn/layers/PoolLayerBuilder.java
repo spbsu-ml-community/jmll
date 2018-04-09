@@ -91,7 +91,7 @@ public class PoolLayerBuilder extends ConvLayerBuilder {
     @Override
     public Seq<NodeCalcer> materialize() {
       final NodeCalcer calcer = new PoolCalcer(yStart, input.yStart(), input.channels(),
-          input.height(), input.width(), kSizeX, kSizeY, strideX, strideY);
+          input.width(), width(), channels(), kSizeX, kSizeY, strideX, strideY);
       final SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
       IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
       return seqBuilder.build();
