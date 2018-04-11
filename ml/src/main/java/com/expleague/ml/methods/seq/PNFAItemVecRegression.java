@@ -97,15 +97,15 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
         }
       }
     }
-    final double betta = 0.1 * 2 / stateCount / (stateCount - 1) / stateDim;
-    for (int i = 0; i < stateCount; i++) {
-      for (int j = i + 1; j < stateCount; j++) {
-        for (int c = 0; c < stateDim; c++) {
-          vGrad.adjust(i, c, -2 * betta * (V.get(i, c) - V.get(j, c)));
-          vGrad.adjust(j, c, -2 * betta * (V.get(j, c) - V.get(i, c)));
-        }
-      }
-    }
+//    final double betta = 0.1 * 2 / stateCount / (stateCount - 1) / stateDim;
+//    for (int i = 0; i < stateCount; i++) {
+//      for (int j = i + 1; j < stateCount; j++) {
+//        for (int c = 0; c < stateDim; c++) {
+//          vGrad.adjust(c, i,-2 * betta * (V.get(i, c) - V.get(j, c)));
+//          vGrad.adjust(c, j, -2 * betta * (V.get(j, c) - V.get(i, c)));
+//        }
+//      }
+//    }
     return grad;
   }
 

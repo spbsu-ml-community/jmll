@@ -9,6 +9,7 @@ import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.regexp.Alphabet;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.optimization.Optimize;
@@ -55,43 +56,9 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
       funcs[i] = new PNFAItemVecRegression(seq, loss.target().sub(i * stateDim, stateDim), wCache, stateCount, alphabetSize, stateDim, addToDiag);
     }
 
-    weightsOptimize.projector(new Function<Vec, Vec>() {
-      Vec prev = null;
-      @Override
-      public Vec apply(Vec x) {
-        Vec diff = VecTools.copy(x);
-        if (prev != null) {
-          VecTools.incscale(diff, prev, -1);
-        }
-        prev = VecTools.copy(x);
-        Mx values = funcs[0].getValues(x);
-        IntStream.range(0, x.length() - values.dim()).forEach(idx -> {
-          if (diff.get(idx) == 0)
-            return;
-          final double val = x.get(idx);
-          if (Math.abs(val) > alpha) {
-            if (val > alpha) {
-              x.adjust(idx, -alpha);
-            }
-            else {
-              x.adjust(idx, alpha);
-            }
-          }
-          else {
-            x.set(idx, 0);
-          }
-        });
-        for (int i = 0; i < values.columns(); i++) {
-          Vec row = values.col(i);
-          VecTools.scale(row, 1 - betta);
-        }
-        VecTools.fill(wCacheVec, -1);
-        return x;
-      }
-    });
-
+    final ReguralizerFunc reguralizerFunc = new MyReguralizer(funcs, wCacheVec, alpha, betta);
     final FuncEnsemble<FuncC1> func = new FuncEnsemble<>(funcs, loss.getWeights());
-    params = weightsOptimize.optimize(func, params);
+    params = weightsOptimize.optimize(func, reguralizerFunc, params);
 //    System.out.println("Value after: " + func.value(params) / func.size());
 
     return new PNFAModel<>(params, stateCount, stateDim, addToDiag, alpha, alphabet);
@@ -104,7 +71,7 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
     { // u & v init
       for (int c = 0; c < alphabetSize; c++) {
         for (int i = 0; i < (2 * stateCount) * alphabetSize; i++) {
-          params.set(i, 0.1 * random.nextGaussian());
+          params.set(i, 0.1 * Math.abs(random.nextGaussian()));
         }
       }
     }
@@ -127,5 +94,48 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
     }
 
     return params;
+  }
+
+  private class MyReguralizer extends ReguralizerFunc.Stub {
+    private final PNFAItemVecRegression[] funcs;
+    private final double alpha;
+    private final double betta;
+    private final Vec wCacheVec;
+    Vec prev;
+
+    public MyReguralizer(PNFAItemVecRegression[] funcs, Vec wCacheVec, double alpha, double betta) {
+      this.funcs = funcs;
+      this.wCacheVec = wCacheVec;
+      this.alpha = alpha;
+      this.betta = betta;
+      prev = null;
+      prev = new ArrayVec(funcs[0].dim());
+    }
+
+    @Override
+    public double value(Vec x) {
+      return alpha * VecTools.l1(x.sub(0, 2 * stateCount * alphabetSize)) + betta * VecTools.l2(x.sub(2 * stateCount * alphabetSize, stateCount * stateDim));
+    }
+
+    @Override
+    public int dim() {
+      return (2 * stateCount) * alphabetSize + stateCount * stateDim;
+    }
+
+    @Override
+    public Vec project(Vec x) {
+      Mx values = funcs[0].getValues(x);
+      IntStream.range(0, x.length() - values.dim()).filter(idx -> prev.get(idx) != x.get(idx)).forEach(idx -> {
+        final double val = x.get(idx);
+        if (Math.abs(val) > alpha)
+          x.adjust(idx, val > alpha ? -alpha : alpha);
+        else
+          x.set(idx, 0);
+      });
+      VecTools.assign(prev, x);
+      VecTools.scale(values, values.dim() / (betta + values.dim()));
+      VecTools.fill(wCacheVec, -1);
+      return x;
+    }
   }
 }

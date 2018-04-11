@@ -11,9 +11,12 @@ import com.expleague.commons.seq.IntSeqBuilder;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.impl.AdamDescent;
+import com.expleague.ml.optimization.impl.FullGradientDescent;
+import com.expleague.ml.optimization.impl.OnlineDescent;
 import com.expleague.ml.optimization.impl.SAGADescent;
 import org.junit.Test;
 
@@ -38,7 +41,7 @@ public class PNFATest {
     }
 
     @Override
-    public Vec optimize(FuncEnsemble<? extends FuncC1> func, Vec x0) {
+    public Vec optimize(FuncEnsemble<? extends FuncC1> func, ReguralizerFunc reg, Vec x0) {
       PNFAItemVecRegression model = (PNFAItemVecRegression) func.models[0];
       model.removeCache();
       final double value = model.trans(x0).get(0);
@@ -57,10 +60,6 @@ public class PNFATest {
         x0.adjust(i, -EPS);
       }
       return x0;
-    }
-
-    @Override
-    public void projector(Function<Vec, Vec> projection) {
     }
   };
 
@@ -97,20 +96,15 @@ public class PNFATest {
     final int stateCount = 2;
     final IntAlphabet alphabet = new IntAlphabet(2);
     int diag = 5;
-//    final PNFA<WeightedL2> pnfaRegressor = new PNFA<>(
-//        stateCount, 2, alphabet.size(), 0, diag, random,
-////        new SAGADescent(0.3, 10000, random, 1),
-//        new AdamDescent(random, 50, 4, 0.0004 ),
-//        new FullGradientDescent(random, 0.3, 10),
-//        1
-//    );
     final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
-        stateCount, 2, alphabet, 1e-5, 1e-4, diag, random,
-//        new SAGADescent(0.1, 1000000, random)
-        new AdamDescent(random, 50, 4, 0.0001 )
+        stateCount, 2, alphabet, 1e-5, 1e-3, diag, random,
+        new SAGADescent(0.01, 100000, random)
+//        new AdamDescent(random, 50, 4, 0.0001)
+//        new OnlineDescent(0.001, random)
+//        new FullGradientDescent(random, 0.3, 1000)
     );
 
-    final int TRAIN_SIZE = 10000;
+    final int TRAIN_SIZE = 1000;
     List<IntSeq> train = new ArrayList<>();
     int[] labels = new int[TRAIN_SIZE];
 
@@ -178,8 +172,8 @@ public class PNFATest {
 //        1
 //    );
     final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
-        stateCount, 2, alphabet, 1e-6, 1e-5, diag, random,
-        new SAGADescent(0.1, 1000000, random)
+        stateCount, 2, alphabet, 1e-5, 1e-3, diag, random,
+        new SAGADescent(0.001, 1000000, random)
 //        new AdamDescent(random, 50, 4, 0.001)
     );
 

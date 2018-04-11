@@ -30,6 +30,11 @@ public abstract class DSSumFuncC1<Item> extends DSSumFunc<Item> implements FuncC
   }
 
   @Override
+  public Vec L(Vec at) {
+    return new ArrayVec(at.dim());
+  }
+
+  @Override
   public Vec gradient(Vec x) {
     return gradientTo(x, new ArrayVec(x.dim()));
   }

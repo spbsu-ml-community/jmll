@@ -1,5 +1,7 @@
 package com.expleague.ml.func.generic;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * a * x^b
  * User: solar
@@ -20,6 +22,7 @@ public class Pow extends ElementaryFunc {
     return a * Math.pow(x, b);
   }
 
+  @NotNull
   @Override
   public ElementaryFunc gradient() {
     if (b == 1)

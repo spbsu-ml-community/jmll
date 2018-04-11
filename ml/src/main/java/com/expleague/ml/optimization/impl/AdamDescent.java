@@ -6,6 +6,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.*;
@@ -20,7 +21,6 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   private final Random random;
   private final int epochCount;
   private final int batchSize;
-  private Function<Vec, Vec> projection;
 
   public AdamDescent(Random random, int epochCount, int batchSize) {
     this(random, epochCount, batchSize, 0.001, 0.9, 0.999, 1e-8);
@@ -50,7 +50,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   }
 
   @Override
-  public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x0) {
+  public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, ReguralizerFunc reg, Vec x0) {
     final long startTime = System.nanoTime();
 
     Vec x = VecTools.copy(x0);
@@ -95,8 +95,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
             finalX.adjust(index, -step * v.get(index) / (Math.sqrt(c.get(index) + eps)));
           }
         });
-        if (projection != null)
-          x = projection.apply(x);
+        x = reg.project(x);
         timeToSum += System.nanoTime() - start;
       }
       if ((epoch + 1) % 5 == 0) {
@@ -117,11 +116,6 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     System.out.printf("Time to grad: %.3f, time to sum: %.3f\n", timeToGrad / 1e9, timeToSum / 1e9);
     System.out.printf("Adam Descent finished in %.2f seconds\n", (System.nanoTime() - startTime) / 1e9);
     return x;
-  }
-
-  @Override
-  public void projector(Function<Vec, Vec> projection) {
-    this.projection = projection;
   }
 
   private double getLoss(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x) {

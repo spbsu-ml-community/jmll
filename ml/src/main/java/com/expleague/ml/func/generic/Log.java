@@ -1,5 +1,7 @@
 package com.expleague.ml.func.generic;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
 * User: solar
 * Date: 26.05.15
@@ -13,6 +15,7 @@ public class Log extends ElementaryFunc {
     this.b = b;
   }
 
+  @NotNull
   @Override
   public ElementaryFunc gradient() {
     return new Pow(a, -1);

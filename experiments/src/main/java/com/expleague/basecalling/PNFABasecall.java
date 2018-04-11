@@ -21,6 +21,7 @@ import com.expleague.ml.methods.seq.*;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.impl.AdamDescent;
 import com.expleague.ml.optimization.impl.FullGradientDescent;
+import com.expleague.ml.optimization.impl.OnlineDescent;
 import com.expleague.ml.optimization.impl.SAGADescent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -232,16 +233,18 @@ public class PNFABasecall {
       }
     }
     final L2 globalLoss = new L2(l2LossVec, trainDataSet);
-    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
-        random, 50, 4, 0.0001
-    );
-//    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(0.2, 10000000, random);
+
+//    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new OnlineDescent(1e-3, random);
+//    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
+//        random, 50, 4, 0.0001
+//    );
+    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(0.001, 1000000, random);
     IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
     final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
       new PNFARegressor<>(
           stateCount,
           CLASS_COUNT, alphabet,
-          1e-6, 1e-3,
+          1e-6, 1e-4,
           10,
           random,
           weightOptimizer), random

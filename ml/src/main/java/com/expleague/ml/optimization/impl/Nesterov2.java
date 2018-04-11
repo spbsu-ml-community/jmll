@@ -3,6 +3,7 @@ package com.expleague.ml.optimization.impl;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.util.logging.Logger;
+import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.optimization.FuncConvex;
 import com.expleague.ml.optimization.Optimize;
 
@@ -23,7 +24,7 @@ public class Nesterov2 implements Optimize<FuncConvex> {
   }
 
   @Override
-  public Vec optimize(final FuncConvex func, final Vec x0) {
+  public Vec optimize(final FuncConvex func, ReguralizerFunc reg, final Vec x0) {
     final double m = func.getGlobalConvexParam();
     final double lk = func.getGradLipParam();
 
