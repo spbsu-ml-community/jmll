@@ -17,13 +17,12 @@ import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.loss.multiclass.util.ConfusionMatrix;
 import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlassSeq;
-import com.expleague.ml.methods.seq.BootstrapSeqOptimization;
-import com.expleague.ml.methods.seq.DictExpansionOptimization;
-import com.expleague.ml.methods.seq.GradientSeqBoosting;
-import com.expleague.ml.methods.seq.PNFA;
+import com.expleague.ml.methods.seq.*;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.impl.AdamDescent;
 import com.expleague.ml.optimization.impl.FullGradientDescent;
+import com.expleague.ml.optimization.impl.OnlineDescent;
+import com.expleague.ml.optimization.impl.SAGADescent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -40,9 +39,10 @@ public class PNFABasecall {
   private static final int BATCH_SIZE = 16;
   private static final int BOOST_ITERS = 30;
 
-  private static final double WEIGHT_STEP = 0.0002;
+  private static final double WEIGHT_STEP = 0.0003;
   private static final double VALUE_STEP = 1;
   private static final int ALPHABET_SIZE = 1000;
+  private static final int WEIGHT_VALUE_ITERS = 2;
 
   private final static String NUCLEOTIDES = "ACGT";
   private final static int CLASS_COUNT = 4;
@@ -55,7 +55,7 @@ public class PNFABasecall {
   private final FastRandom random;
 
   private final double boostStep;
-  private final double lambda;
+  private final double alpha;
   private final double addToDiag;
   private final int stateCount;
   private final Set<Integer> alphabet;
@@ -68,7 +68,7 @@ public class PNFABasecall {
                       final Path checkpointPath,
                       final int stateCount,
                       final int alphaShrink,
-                      final double lambda,
+                      final double alpha,
                       final double addToDiag,
                       final double boostStep,
                       final double trainPart,
@@ -81,7 +81,7 @@ public class PNFABasecall {
     this.random = new FastRandom(randomSeed);
     this.stateCount = stateCount;
     this.alphaShrink = alphaShrink;
-    this.lambda = lambda;
+    this.alpha = alpha;
     this.addToDiag = addToDiag;
     this.boostStep = boostStep;
     this.useDifferences = useDifferences;
@@ -141,22 +141,18 @@ public class PNFABasecall {
 
   void trainGradFac() {
     final BlockwiseMLLLogit globalLoss = new BlockwiseMLLLogit(trainLabels, trainDataSet);
-    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
-        random, WEIGHT_EPOCH_COUNT, BATCH_SIZE, WEIGHT_STEP
+//    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
+//        random, WEIGHT_EPOCH_COUNT, BATCH_SIZE, WEIGHT_STEP
+//    );
+    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(
+        0.1, 100000, random
     );
-    final Optimize<FuncEnsemble<? extends FuncC1>> valueOptimizer  = new FullGradientDescent(
-        random, VALUE_STEP, VALUE_EPOCH_COUNT
-    );
-    final PNFA model = new PNFA<>(stateCount,
-        1,
-        ALPHABET_SIZE,
-        lambda,
-        addToDiag,
+    IntAlphabet intAlphabet = new IntAlphabet(ALPHABET_SIZE);
+    final PNFARegressor model = new PNFARegressor<>(stateCount,
+        1, intAlphabet, 0.0001, 0.001,
+        0,
         random,
-        weightOptimizer,
-        valueOptimizer,
-        3
-    );
+        weightOptimizer);
     final GradFacMulticlassSeq<Integer> multiClassModel = new GradFacMulticlassSeq<Integer>(
         model,
         new StochasticALS(random,100),
@@ -207,7 +203,7 @@ public class PNFABasecall {
   //        random, VALUE_STEP, VALUE_EPOCH_COUNT
   //    );
   //    final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
-  //        new PNFA<>(stateCount,
+  //        new PNFARegressor<>(stateCount,
   //            1,
   //            alphabetSize,
   //            lambda,
@@ -237,24 +233,21 @@ public class PNFABasecall {
       }
     }
     final L2 globalLoss = new L2(l2LossVec, trainDataSet);
-    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
-        random, WEIGHT_EPOCH_COUNT, BATCH_SIZE, WEIGHT_STEP
-    );
-    final Optimize<FuncEnsemble<? extends FuncC1>> valueOptimizer  = new FullGradientDescent(
-        random, VALUE_STEP, VALUE_EPOCH_COUNT
-    );
+
+//    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new OnlineDescent(1e-3, random);
+//    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
+//        random, 50, 4, 0.0001
+//    );
+    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(0.001, 1000000, random);
+    IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
     final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
-      new PNFA<>(
+      new PNFARegressor<>(
           stateCount,
-          CLASS_COUNT,
-          ALPHABET_SIZE,
-          lambda,
-          addToDiag,
+          CLASS_COUNT, alphabet,
+          1e-6, 1e-4,
+          10,
           random,
-          weightOptimizer,
-          valueOptimizer,
-          4
-      ), random
+          weightOptimizer), random
     );
 
     fitBoostingForModel(model, globalLoss, false);
@@ -314,8 +307,7 @@ public class PNFABasecall {
         datasetPath,
         checkpointPath,
         randomSeed,
-        stateCount,
-        lambda,
+        stateCount, alpha,
         addToDiag,
         boostStep,
         useDifferences,

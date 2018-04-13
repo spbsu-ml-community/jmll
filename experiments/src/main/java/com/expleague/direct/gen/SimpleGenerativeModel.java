@@ -193,7 +193,7 @@ public class SimpleGenerativeModel {
         continue;
       final int windex = currentQSeq.intAt(i);
       if (debug)
-        System.out.print(dict.get(windex));
+        System.out.print(dict.condition(windex));
       newProb += log(freqs.get(windex) + 1.) - log(totalFreq + freqs.size());
     }
     if (debug)

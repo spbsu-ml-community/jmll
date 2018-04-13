@@ -105,17 +105,17 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
 
     for (int from = 0; from < stateCount; from++) {
       for (int c = 0; c < alphabet.size(); c++) {
-        if (automaton.hasTransition(from, alphabet.getT(alphabet.get(c)))) {
+        if (automaton.hasTransition(from, alphabet.getT(alphabet.condition(c)))) {
           // todo commented out to improve performance
-          transforms.add(new RemoveTransitionTransform<>(from, alphabet.getT(alphabet.get(c))));
+          transforms.add(new RemoveTransitionTransform<>(from, alphabet.getT(alphabet.condition(c))));
           for (int to = 0; to < stateCount; to++) {
             if (to != from) {
               // todo commented out to improve performance
-                transforms.add(new ReplaceTransitionTransform<>(from, to, alphabet.getT(alphabet.get(c))));
+                transforms.add(new ReplaceTransitionTransform<>(from, to, alphabet.getT(alphabet.condition(c))));
             }
           }
         } else {
-          final T cT = alphabet.getT(alphabet.get(c));
+          final T cT = alphabet.getT(alphabet.condition(c));
           if (stateCount < maxStateCount) {
             transforms.add(new SplitStateTransform<>(from, cT));
           }
@@ -127,10 +127,10 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
       if (stateCount < maxStateCount) {
         for (int to = 0; to < stateCount; to++) {
           for (int c = 0; c < alphabet.size(); c++) {
-            final T cT = alphabet.getT(alphabet.get(c));
+            final T cT = alphabet.getT(alphabet.condition(c));
             if (!automaton.hasTransition(from, cT)) {
               for (int c1 = 0; c1 < alphabet.size(); c1++) {
-                transforms.add(new AddNewStateTransform<>(from, to, cT, alphabet.getT(alphabet.get(c1))));
+                transforms.add(new AddNewStateTransform<>(from, to, cT, alphabet.getT(alphabet.condition(c1))));
               }
             }
           }
@@ -152,7 +152,7 @@ public class IncrementalAutomatonBuilder<T, Loss extends L2> implements SeqOptim
     while (!queue.isEmpty()) {
       final int v = queue.poll();
       for (int c = 0; c < automatonStats.getAlphabet().size(); c++) {
-        final int to = automaton.getTransition(v, alphabet.getT(alphabet.get(c)));
+        final int to = automaton.getTransition(v, alphabet.getT(alphabet.condition(c)));
         if (to != -1 && !reached[to]) {
           queue.add(to);
           reached[to] = true;

@@ -145,7 +145,7 @@ public class WordGenProbabilityProvider {
     if (index < 0 || index >= dict.size())
       return SimpleGenerativeModel.EMPTY_ID;
     this.dict = dict;
-    return dict.get(index).toString();
+    return dict.condition(index).toString();
   }
 
   public void update(TIntIntMap weightsPools, double alpha) {
@@ -281,7 +281,7 @@ public class WordGenProbabilityProvider {
       final int windex = myIndices[i];
       wordsCount++;
       if (words.size() > windex)
-        wordsNode.put(words.get(windex).toString(), myProbabs[i]);
+        wordsNode.put(words.condition(windex).toString(), myProbabs[i]);
       else
         wordsNode.put(SimpleGenerativeModel.EMPTY_ID, myProbabs[i]);
     }
@@ -292,7 +292,7 @@ public class WordGenProbabilityProvider {
     final ObjectWriter writer = mapper.get().writerWithDefaultPrettyPrinter();
     try {
       if (aindex < dict.size())
-        to.append(dict.get(aindex).toString()).append(": ");
+        to.append(dict.condition(aindex).toString()).append(": ");
       else
         to.append(SimpleGenerativeModel.EMPTY_ID).append(": ");
 

@@ -5,6 +5,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.Random;
@@ -31,7 +32,7 @@ public class FullGradientDescent implements Optimize<FuncEnsemble<? extends Func
   }
 
   @Override
-  public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x0) {
+  public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, ReguralizerFunc reg, Vec x0) {
     final Vec x = VecTools.copy(x0);
     double curLoss = getLoss(sumFuncs, x);
     for (int epoch = 0; epoch < epochCount; epoch++) {
@@ -41,6 +42,7 @@ public class FullGradientDescent implements Optimize<FuncEnsemble<? extends Func
           .reduce(VecTools::append)
           .get();
       VecTools.incscale(x, grad, -step / sumFuncs.size());
+      reg.project(x);
       final double newLoss = getLoss(sumFuncs, x);
       System.out.printf(
           "Full gradient descent epoch %d oldLoss %.6f newLoss %.6f\n", epoch, curLoss, newLoss

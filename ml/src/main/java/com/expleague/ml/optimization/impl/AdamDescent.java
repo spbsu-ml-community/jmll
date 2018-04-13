@@ -6,13 +6,14 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
-
   private final double step;
   private final double beta1;
   private final double beta2;
@@ -49,10 +50,10 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   }
 
   @Override
-  public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x0) {
+  public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, ReguralizerFunc reg, Vec x0) {
     final long startTime = System.nanoTime();
 
-    final Vec x = VecTools.copy(x0);
+    Vec x = VecTools.copy(x0);
     final Vec v = new ArrayVec(x.dim());
     final Vec c = new ArrayVec(x.dim());
     double error = getLoss(sumFuncs, x);
@@ -68,15 +69,18 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
       Collections.shuffle(permutation, random);
       for (int i = 0; i + batchSize <= sumFuncs.size(); i += batchSize) {
         IntStream stream;
+        Vec finalX = x;
         if (batchSize > 1) {
           stream = IntStream.range(i, i + batchSize).parallel();
         } else {
           stream = IntStream.range(i, i + batchSize);
         }
         long start = System.nanoTime();
-        final double[] grad = stream
-            .mapToObj(j -> sumFuncs.models[permutation.get(j)].gradient(x))
-            .reduce(VecTools::append).get().toArray();
+        final Vec gradVec = stream
+            .mapToObj(j -> sumFuncs.models[permutation.get(j)].gradient(finalX))
+            .reduce(VecTools::append).get();
+        final double[] grad = gradVec.toArray();
+
         //todo is converting sparse vector to array a good idea?
         timeToGrad += System.nanoTime() - start;
         start = System.nanoTime();
@@ -84,22 +88,25 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         final int threadCount = Runtime.getRuntime().availableProcessors();
         final int blockSize = (x.dim() + threadCount - 1) / threadCount;
         IntStream.range(0, threadCount).parallel().forEach(blockNum -> {
-          for (int index = blockNum * blockSize; index < Math.min(x.dim(), (blockNum + 1) * blockSize); index++) {
+          for (int index = blockNum * blockSize; index < Math.min(finalX.dim(), (blockNum + 1) * blockSize); index++) {
             final double gradAt = grad[index] / batchSize;
             v.set(index, v.get(index) * beta2 + gradAt * (1 - beta2));
             c.set(index, c.get(index) * beta1 + MathTools.sqr(gradAt * (1 - beta1)));
-            x.adjust(index, -step * v.get(index) / (Math.sqrt(c.get(index) + eps)));
+            finalX.adjust(index, -step * v.get(index) / (Math.sqrt(c.get(index) + eps)));
           }
         });
+        x = reg.project(x);
         timeToSum += System.nanoTime() - start;
       }
       if ((epoch + 1) % 5 == 0) {
         final double curError = getLoss(sumFuncs, x);
         System.out.printf("ADAM descent epoch %d: new=%.6f old=%.6f\n", epoch, curError, error);
-        if (curError > error) {
-          System.out.printf("ADAM descent finished after %d epochs\n", epoch);
-          break;
-        }
+//        if (curError > error) {
+//          System.out.printf("ADAM descent finished after %d epochs\n", epoch);
+//          break;
+//        }
+        System.out.println(x);
+        System.out.println("|x|=" + VecTools.norm(x));
         error = curError;
       } else if (epoch == epochCount - 1) {
         final double curError = sumFuncs.value(x) / sumFuncs.size();

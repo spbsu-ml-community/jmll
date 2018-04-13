@@ -22,10 +22,13 @@ public class FuncEnsemble<X extends Func> extends Ensemble<X> implements Func{
   @Override
   public double value(final Vec x) {
     double result = 0.;
+    double weightTotal = 0;
     for (int i = 0; i < size(); i++) {
-      result += models[i].value(x) * weights.get(i);
+      double weight = weights.get(i);
+      result += models[i].value(x) * weight;
+      weightTotal += weight;
     }
-    return result;
+    return result / weightTotal;
   }
 
   @Override

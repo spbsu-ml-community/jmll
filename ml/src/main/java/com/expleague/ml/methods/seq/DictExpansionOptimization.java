@@ -50,7 +50,7 @@ public class DictExpansionOptimization<T extends Comparable<T>, Loss extends Tar
 
     final DictExpansion<T> de = new DictExpansion<>(realAlphabet, maxAlphabetSize, tracePrint);
 
-    for (int iter = 0; iter < 10; iter++) {
+    for (int iter = 0; iter < 1000; iter++) {
       for (Seq<T> seq: learn) {
         de.accept(seq);
         if (de.result() != null && de.result().size() == maxAlphabetSize) {

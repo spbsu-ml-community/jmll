@@ -39,7 +39,7 @@ public class AutomatonBruteforce<T, Loss extends L2> implements SeqOptimization<
 
     for (int toState = 0; toState < maxStateCount; toState++) {
       final AutomatonStats<T> newAutomatonStats = new AddTransitionTransform<>(
-              curState, toState, alphabet.getT(alphabet.get(curAlpha))
+              curState, toState, alphabet.getT(alphabet.condition(curAlpha))
       ).applyTransform(automatonStats);
 
       final AutomatonStats<T> curAutomatonStats = bruteforce(curState, curAlpha + 1, newAutomatonStats);

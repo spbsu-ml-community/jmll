@@ -97,7 +97,7 @@ public class DFA<T> implements Function<Seq<T>, Vec> {
       for (int c = 0; c < alphabet.size() + 1; c++) {
         if (transitions[i][c] != -1) {
           result += String.format("%d -> %d [label=\"%s\"];", i, transitions[i][c],
-                  alphabet.getT(alphabet.get(c)).toString());
+                  alphabet.getT(alphabet.condition(c)).toString());
         }
       }
     }
