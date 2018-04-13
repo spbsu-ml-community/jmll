@@ -2,7 +2,8 @@ package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.Seq;
-import com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
+import com.expleague.ml.models.nn.NeuralSpider;
+import com.expleague.ml.models.nn.NeuralSpider.ForwardNode;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
@@ -115,8 +116,18 @@ public class MergeLayerBuilder implements LayerBuilder {
     public void initWeights(Vec weights) { }
 
     @Override
-    public Seq<NodeCalcer> materialize() {
+    public Seq<ForwardNode> forwardFlow() {
       throw new NotImplementedException();
+    }
+
+    @Override
+    public Seq<NeuralSpider.BackwardNode> backwardFlow() {
+      return null;
+    }
+
+    @Override
+    public Seq<NeuralSpider.BackwardNode> gradientFlow() {
+      return null;
     }
   }
 }

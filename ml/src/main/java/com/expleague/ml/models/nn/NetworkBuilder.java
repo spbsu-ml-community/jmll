@@ -4,7 +4,8 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.ArraySeqBuilder;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.SeqBuilder;
-import com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
+import com.expleague.ml.models.nn.NeuralSpider.BackwardNode;
+import com.expleague.ml.models.nn.NeuralSpider.ForwardNode;
 import com.expleague.ml.models.nn.layers.*;
 import com.expleague.ml.models.nn.layers.InputLayerBuilder.InputLayer;
 import com.expleague.ml.models.nn.layers.OutputLayerBuilder.OutputLayer;
@@ -130,18 +131,20 @@ public class NetworkBuilder<InType> {
     private InputLayer inputLayer;
     private OutputLayer outputLayer;
     private final List<Layer> layers = new ArrayList<>();
-    private Seq<NodeCalcer> cacheCalcers;
+    private Seq<ForwardNode> forwardCalcers;
+    private Seq<BackwardNode> backwardCalcers;
+    private Seq<BackwardNode> gradientCalcers;
     private int wdim;
     private int sdim;
     private int inputSize;
 
     private Network() {
-      /* TODO: materialize here */
+      /* TODO: update flows here */
       if (inputLayerBuilder instanceof ConstSizeInput ||
           inputLayerBuilder instanceof ConstSizeInput3D) {
         inputLayer = inputLayerBuilder.build();
         inputSize = inputLayer.xdim();
-        cacheCalcers = materialize();
+        forwardCalcers = forwardFlow();
       }
     }
 
@@ -162,11 +165,11 @@ public class NetworkBuilder<InType> {
     }
 
     private void rebuildNetwork() {
-      if (inputSize != inputLayer.xdim() || cacheCalcers == null) {
+      if (inputSize != inputLayer.xdim() || forwardCalcers == null) {
         int yStart = 0;
         int wStart = 0;
-        SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
-        seqBuilder.addAll(inputLayer.materialize());
+        SeqBuilder<ForwardNode> seqBuilder = new ArraySeqBuilder<>(ForwardNode.class);
+        seqBuilder.addAll(inputLayer.forwardFlow());
 
         Layer prevLayer = inputLayer;
         layers.add(inputLayer);
@@ -181,7 +184,7 @@ public class NetworkBuilder<InType> {
           builder.yStart(yStart);
           builder.wStart(wStart);
           prevLayer = builder.build();
-          seqBuilder.addAll(prevLayer.materialize());
+          seqBuilder.addAll(prevLayer.forwardFlow());
 
           layers.add(prevLayer);
         }
@@ -189,13 +192,34 @@ public class NetworkBuilder<InType> {
         wdim = wStart;
         sdim = yStart;
         outputLayer = outputLayerBuilder.getLayer();
-        cacheCalcers = seqBuilder.build();
+
+        SeqBuilder<BackwardNode> backSeqBuilder = new ArraySeqBuilder<>(BackwardNode.class);
+        SeqBuilder<BackwardNode> gradSeqBuilder = new ArraySeqBuilder<>(BackwardNode.class);
+        for (int i = 1; i < layers.size(); i++) {
+          final Layer layer = layers.get(i);
+          backSeqBuilder.addAll(layer.backwardFlow());
+          gradSeqBuilder.addAll(layer.gradientFlow());
+        }
+
+        forwardCalcers = seqBuilder.build();
+        backwardCalcers = backSeqBuilder.build();
+        gradientCalcers = gradSeqBuilder.build();
       }
     }
 
-    Seq<NodeCalcer> materialize() {
+    Seq<ForwardNode> forwardFlow() {
       rebuildNetwork();
-      return cacheCalcers;
+      return forwardCalcers;
+    }
+
+    public Seq<BackwardNode> backwardFlow() {
+      rebuildNetwork();
+      return backwardCalcers;
+    }
+
+    public Seq<BackwardNode> gradientFlow() {
+      rebuildNetwork();
+      return gradientCalcers;
     }
 
     public int xdim(InType input) {

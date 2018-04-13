@@ -1,24 +1,23 @@
 package com.expleague.ml.models.nn;
 
-import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
-import com.expleague.ml.func.generic.ReLU;
+import com.expleague.ml.func.generic.Sigmoid;
+import com.expleague.ml.func.generic.Sum;
 import com.expleague.ml.models.nn.layers.ConstSizeInput;
 import com.expleague.ml.models.nn.layers.FCLayerBuilder;
 import com.expleague.ml.models.nn.layers.OneOutLayer;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.assertEquals;
 
-public class FCTest {
+public class FCGradTest {
   private static final NeuralSpider<Vec> spider = new NeuralSpider<>();
-  private static final int ROUNDS = 100;
+  private static final int ROUNDS = 10;
   private static final FastRandom rng = new FastRandom();
+  private static final double EPS = 1e-6;
 
   @Test
   public void testOneLayer() {
@@ -27,7 +26,7 @@ public class FCTest {
         System.out.println("Test [" + nIn + ", " + nOut + "]");
         final NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(
             new ConstSizeInput(nIn))
-            .append(new FCLayerBuilder().nOut(nOut).activation(ReLU.class))
+            .append(new FCLayerBuilder().nOut(nOut).activation(Sigmoid.class))
             .build(new OneOutLayer());
 
         testNN(network, nIn, nOut);
@@ -50,7 +49,7 @@ public class FCTest {
 
       NetworkBuilder<Vec> builder = new NetworkBuilder<>(new ConstSizeInput(dims[0]));
       for (int j = 1; j < numLayers; j++) {
-        builder.append(new FCLayerBuilder().nOut(dims[j]).activation(ReLU.class));
+        builder.append(new FCLayerBuilder().nOut(dims[j]).activation(Sigmoid.class));
       }
       final NetworkBuilder<Vec>.Network network = builder.build(new OneOutLayer());
 
@@ -58,40 +57,41 @@ public class FCTest {
     }
   }
 
+  private void testNN(NetworkBuilder<Vec>.Network network, int... dims) {
+    for (int i = 0; i < ROUNDS; i++) {
+      final Vec weights = new ArrayVec(network.wdim());
+      VecTools.fillUniform(weights, rng);
+//      VecTools.fill(weights, 1.);
+
+      final Vec weightsCopy = new ArrayVec(network.wdim());
+      VecTools.assign(weightsCopy, weights);
+
+      Vec arg = new ArrayVec(dims[0]);
+      VecTools.fillUniform(arg, rng);
+//      VecTools.fill(arg, 2.);
+
+      final Vec state = spider.compute(network, arg, weights);
+      final double stateSum = VecTools.sum(state);
+
+      Vec gradWeight = new ArrayVec(network.wdim());
+      spider.parametersGradient(network, arg, new Sum(), weights, gradWeight);
+
+      for (int round = 0; round < 10; round++) {
+        final int wIdx = rng.nextInt(network.wdim());
+        weightsCopy.adjust(wIdx, EPS);
+        final double incState = VecTools.sum(spider.compute(network, arg, weightsCopy));
+        double grad = (incState - stateSum) / EPS;
+
+        assertEquals(grad, gradWeight.get(wIdx), EPS);
+
+        weightsCopy.adjust(wIdx, -EPS);
+      }
+    }
+  }
+
   private static void generateDims(int[] dims) {
     for (int i = 0; i < dims.length; i++) {
       dims[i] = rng.nextInt(100) + 1;
     }
-  }
-
-  private void testNN(NetworkBuilder<Vec>.Network network, int... dims) {
-    for (int i = 0; i < ROUNDS; i++) {
-      Vec weights = new ArrayVec(network.wdim());
-      VecTools.fillUniform(weights, rng);
-
-      Vec arg = new ArrayVec(dims[0]);
-      VecTools.fillUniform(arg, rng);
-
-      Vec result = spider.compute(network, arg, weights);
-      Vec expected = matmulNN(arg, weights, dims);
-      assertTrue(VecTools.equals(expected, result, 1e-6));
-    }
-  }
-
-  private Vec matmulNN(Vec arg, Vec weights, int... dims) {
-    Vec x = arg;
-    int wStart = 0;
-    for (int i = 0; i < dims.length - 1; i++) {
-      Mx w = new VecBasedMx(dims[i], weights.sub(wStart, dims[i] * dims[i + 1]));
-      wStart += dims[i] * dims[i + 1];
-      Vec b = weights.sub(wStart, dims[i + 1]);
-      x = VecTools.sum(MxTools.multiply(w, x), b);
-      for (int j = 0; j < x.dim(); j++) {
-        x.set(j, Math.max(x.get(j), 0.));
-      }
-      wStart += dims[i + 1];
-    }
-
-    return x;
   }
 }

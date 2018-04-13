@@ -2,15 +2,13 @@ package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.AnalyticFunc;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.seq.ArraySeqBuilder;
+import com.expleague.commons.seq.ArraySeq;
 import com.expleague.commons.seq.Seq;
-import com.expleague.commons.seq.SeqBuilder;
 import com.expleague.ml.models.nn.Identity;
-import com.expleague.ml.models.nn.nodes.ConvCalcer;
+import com.expleague.ml.models.nn.NeuralSpider.BackwardNode;
+import com.expleague.ml.models.nn.nodes.ConvNode;
 
-import java.util.stream.IntStream;
-
-import static com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
+import static com.expleague.ml.models.nn.NeuralSpider.ForwardNode;
 
 public class ConvLayerBuilder implements LayerBuilder {
   private int kSizeX = 3;
@@ -132,10 +130,15 @@ public class ConvLayerBuilder implements LayerBuilder {
   public class ConvLayer implements Layer3D {
     protected final Layer3D input;
     private final Filler filler;
+    private final ConvNode node;
 
     protected ConvLayer(Layer3D input) {
       this.input = input;
       filler = FillerType.getInstance(fillerType, this);
+      node = new ConvNode(
+          yStart, wStart, input.yStart(), input.width(), width(),
+          kSizeX, kSizeY, strideX, strideY, paddX, paddY,
+          input.channels(), outChannels, activation);
     }
 
     public void initWeights(Vec weights) {
@@ -194,14 +197,18 @@ public class ConvLayerBuilder implements LayerBuilder {
     }
 
     @Override
-    public Seq<NodeCalcer> materialize() {
-      final NodeCalcer calcer = new ConvCalcer(
-          yStart, wStart, input.yStart(), input.width(), width(),
-          kSizeX, kSizeY, strideX, strideY, paddX, paddY,
-          input.channels(), outChannels, activation);
-      final SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
-      IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
-      return seqBuilder.build();
+    public Seq<ForwardNode> forwardFlow() {
+      return ArraySeq.iterate(ForwardNode.class, node.forward(), ydim());
+    }
+
+    @Override
+    public Seq<BackwardNode> backwardFlow() {
+      return ArraySeq.iterate(BackwardNode.class, node.backward(), xdim());
+    }
+
+    @Override
+    public Seq<BackwardNode> gradientFlow() {
+      return  ArraySeq.iterate(BackwardNode.class, node.gradient(), wdim());
     }
 
     @Override

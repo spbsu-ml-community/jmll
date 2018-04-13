@@ -4,7 +4,8 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.ArraySeq;
 import com.expleague.commons.seq.Seq;
 
-import static com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
+import static com.expleague.ml.models.nn.NeuralSpider.BackwardNode;
+import static com.expleague.ml.models.nn.NeuralSpider.ForwardNode;
 
 public class OneOutLayer implements OutputLayerBuilder {
   private LayerBuilder prevBuilder;
@@ -21,13 +22,18 @@ public class OneOutLayer implements OutputLayerBuilder {
     }
 
     @Override
-    public Seq<NodeCalcer> materialize() {
-      return new ArraySeq<>(new NodeCalcer[0]);
+    public Seq<ForwardNode> forwardFlow() {
+      return new ArraySeq<>(new ForwardNode[0]);
     }
 
     @Override
-    public String toString() {
-      return "Out";
+    public Seq<BackwardNode> backwardFlow() {
+      return ArraySeq.emptySeq(BackwardNode.class);
+    }
+
+    @Override
+    public Seq<BackwardNode> gradientFlow() {
+      return ArraySeq.emptySeq(BackwardNode.class);
     }
   };
 

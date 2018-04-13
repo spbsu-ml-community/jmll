@@ -1,10 +1,11 @@
 package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.seq.ArraySeq;
 import com.expleague.commons.seq.ArraySeqBuilder;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.SeqBuilder;
-import com.expleague.ml.models.nn.nodes.PoolCalcer;
+import com.expleague.ml.models.nn.nodes.PoolNode;
 
 import java.util.stream.IntStream;
 
@@ -76,8 +77,12 @@ public class PoolLayerBuilder extends ConvLayerBuilder {
   }
 
   public class PoolLayer extends ConvLayer {
+    private final PoolNode node;
+
     private PoolLayer(Layer3D in) {
       super(in);
+       node = new PoolNode(yStart, input.yStart(), input.channels(),
+          input.width(), width(), channels(), kSizeX, kSizeY, strideX, strideY);
     }
 
     @Override
@@ -89,12 +94,18 @@ public class PoolLayerBuilder extends ConvLayerBuilder {
     public void initWeights(Vec weights) { }
 
     @Override
-    public Seq<NodeCalcer> materialize() {
-      final NodeCalcer calcer = new PoolCalcer(yStart, input.yStart(), input.channels(),
-          input.width(), width(), channels(), kSizeX, kSizeY, strideX, strideY);
-      final SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
-      IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
-      return seqBuilder.build();
+    public Seq<ForwardNode> forwardFlow() {
+      return ArraySeq.iterate(ForwardNode.class, node.forward(), ydim());
+    }
+
+    @Override
+    public Seq<BackwardNode> backwardFlow() {
+      return ArraySeq.iterate(BackwardNode.class, node.backward(), xdim());
+    }
+
+    @Override
+    public Seq<BackwardNode> gradientFlow() {
+      return  ArraySeq.iterate(BackwardNode.class, node.gradient(), wdim());
     }
   }
 }

@@ -1,12 +1,12 @@
 package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.seq.ArraySeqBuilder;
+import com.expleague.commons.seq.ArraySeq;
 import com.expleague.commons.seq.Seq;
-import com.expleague.ml.models.nn.NeuralSpider;
-import com.expleague.ml.models.nn.nodes.InputNodeCalcer;
+import com.expleague.ml.models.nn.nodes.InputNode;
 
-import java.util.stream.IntStream;
+import static com.expleague.ml.models.nn.NeuralSpider.BackwardNode;
+import static com.expleague.ml.models.nn.NeuralSpider.ForwardNode;
 
 public interface InputLayerBuilder<InputType> extends LayerBuilder {
   void setInput(InputType input);
@@ -27,16 +27,28 @@ public interface InputLayerBuilder<InputType> extends LayerBuilder {
     void toState(Vec state);
 
     @Override
+    default int xdim() {
+      return 0;
+    }
+
+    @Override
     default int wdim() {
       return 0;
     }
 
     @Override
-    default Seq<NeuralSpider.NodeCalcer> materialize() {
-      final NeuralSpider.NodeCalcer calcer = new InputNodeCalcer();
-      final ArraySeqBuilder<NeuralSpider.NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NeuralSpider.NodeCalcer.class);
-      IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
-      return seqBuilder.build();
+    default Seq<ForwardNode> forwardFlow() {
+      return ArraySeq.iterate(ForwardNode.class, new InputNode(), ydim());
+    }
+
+    @Override
+    default Seq<BackwardNode> backwardFlow() {
+      return ArraySeq.emptySeq(BackwardNode.class);
+    }
+
+    @Override
+    default Seq<BackwardNode> gradientFlow() {
+      return ArraySeq.emptySeq(BackwardNode.class);
     }
   }
 }

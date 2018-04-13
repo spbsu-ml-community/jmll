@@ -2,14 +2,12 @@ package com.expleague.ml.models.nn.layers;
 
 import com.expleague.commons.math.AnalyticFunc;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.seq.ArraySeqBuilder;
+import com.expleague.commons.seq.ArraySeq;
 import com.expleague.commons.seq.Seq;
-import com.expleague.commons.seq.SeqBuilder;
 import com.expleague.ml.models.nn.Identity;
-import com.expleague.ml.models.nn.NeuralSpider.NodeCalcer;
-import com.expleague.ml.models.nn.nodes.FCCalcer;
-
-import java.util.stream.IntStream;
+import com.expleague.ml.models.nn.NeuralSpider.BackwardNode;
+import com.expleague.ml.models.nn.NeuralSpider.ForwardNode;
+import com.expleague.ml.models.nn.nodes.FCNode;
 
 public class FCLayerBuilder implements LayerBuilder {
   private int nOut;
@@ -88,10 +86,12 @@ public class FCLayerBuilder implements LayerBuilder {
   public class FCLayer implements Layer {
     private final Layer input;
     private final Filler filler;
+    final FCNode node;
 
     private FCLayer(Layer input) {
       this.input = input;
       filler = FillerType.getInstance(fillerType, this);
+      node = new FCNode(yStart, ydim(), input.yStart(), xdim(), wStart, wdim(), activation);
     }
 
     public void initWeights(Vec weights) {
@@ -119,12 +119,18 @@ public class FCLayerBuilder implements LayerBuilder {
     }
 
     @Override
-    public Seq<NodeCalcer> materialize() {
-      final NodeCalcer calcer = new FCCalcer(
-          yStart, ydim(), input.yStart(), xdim(), wStart, wdim(), activation);
-      final SeqBuilder<NodeCalcer> seqBuilder = new ArraySeqBuilder<>(NodeCalcer.class);
-      IntStream.range(0, ydim()).forEach(i -> seqBuilder.add(calcer));
-      return seqBuilder.build();
+    public Seq<ForwardNode> forwardFlow() {
+      return ArraySeq.iterate(ForwardNode.class, node.forward(), ydim());
+    }
+
+    @Override
+    public Seq<BackwardNode> backwardFlow() {
+      return ArraySeq.iterate(BackwardNode.class, node.backward(), xdim());
+    }
+
+    @Override
+    public Seq<BackwardNode> gradientFlow() {
+      return  ArraySeq.iterate(BackwardNode.class, node.gradient(), wdim());
     }
 
     @Override
