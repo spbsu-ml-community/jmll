@@ -136,7 +136,8 @@ public class ConvLayerBuilder implements LayerBuilder {
       this.input = input;
       filler = FillerType.getInstance(fillerType, this);
       node = new ConvNode(
-          yStart, wStart, input.yStart(), input.width(), width(),
+          yStart, wStart, input.yStart(),
+          input.width(), input.height(), width(), height(),
           kSizeX, kSizeY, strideX, strideY, paddX, paddY,
           input.channels(), outChannels, activation);
     }

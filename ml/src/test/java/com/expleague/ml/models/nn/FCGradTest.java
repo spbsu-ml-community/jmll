@@ -61,14 +61,12 @@ public class FCGradTest {
     for (int i = 0; i < ROUNDS; i++) {
       final Vec weights = new ArrayVec(network.wdim());
       VecTools.fillUniform(weights, rng);
-//      VecTools.fill(weights, 1.);
 
       final Vec weightsCopy = new ArrayVec(network.wdim());
       VecTools.assign(weightsCopy, weights);
 
       Vec arg = new ArrayVec(dims[0]);
       VecTools.fillUniform(arg, rng);
-//      VecTools.fill(arg, 2.);
 
       final Vec state = spider.compute(network, arg, weights);
       final double stateSum = VecTools.sum(state);

@@ -35,6 +35,11 @@ public class OneOutLayer implements OutputLayerBuilder {
     public Seq<BackwardNode> gradientFlow() {
       return ArraySeq.emptySeq(BackwardNode.class);
     }
+
+    @Override
+    public String toString() {
+      return "OneOutLayer\n";
+    }
   };
 
   private int prevStart() {

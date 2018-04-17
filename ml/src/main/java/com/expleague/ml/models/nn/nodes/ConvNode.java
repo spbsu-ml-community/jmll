@@ -30,8 +30,11 @@ public class ConvNode implements Layer.Node {
   private final int biasStart;
 
   private final AnalyticFunc activation;
+  private final int height;
+  private final int prevHeight;
 
-  public ConvNode(int layerStart, int weightStart, int prevLayerStart, int prevWidth, int width,
+  public ConvNode(int layerStart, int weightStart, int prevLayerStart,
+                  int prevWidth, int prevHeight, int width, int height,
                    int kSizeX, int kSizeY, int strideX, int strideY, int paddX, int paddY,
                    int numInputChannels, int numOutChannels, AnalyticFunc activation) {
     this.layerStart = layerStart;
@@ -39,7 +42,9 @@ public class ConvNode implements Layer.Node {
     this.prevLayerStart = prevLayerStart;
 
     this.prevWidth = prevWidth;
+    this.prevHeight = prevHeight;
     this.width = width;
+    this.height = height;
 
     this.kSizeY = kSizeY;
     this.kSizeX = kSizeX;
@@ -137,24 +142,108 @@ public class ConvNode implements Layer.Node {
   private class BackwardCalcer implements BackwardNode {
     @Override
     public double apply(Vec state, Vec gradState, Vec gradAct, Vec betta, int nodeIdx) {
-      return 0;
+      final int localIdx = nodeIdx - prevLayerStart;
+      final int i = localIdx / numInputChannels / prevWidth;
+      final int j = (localIdx / numInputChannels) % prevWidth;
+      final int k = localIdx % numInputChannels;
+
+      double result = 0.;
+
+      final int minX = Math.max(((i - kSizeX) / strideX), 0);
+      final int minY = Math.max(((j - kSizeY) / strideY), 0);
+      final int maxX = Math.min((i / strideX), height);
+      final int maxY = Math.min((j / strideY), width);
+
+      if (minX >= height || minY >= width) {
+        return 0.;
+      }
+
+      for (int c = 0; c < numOutChannels; c++) {
+        final int wStart = weightStart + c * weightPerState;
+
+        for (int x_out = minX; x_out <= maxX; x_out++) {
+          for (int y_out = minY; y_out <= maxY; y_out++) {
+            final int x = x_out * strideX;
+            final int y = y_out * strideY;
+            if (x < i - kSizeX + 1 || x > i || y < j - kSizeY + 1 || y > j) {
+              continue;
+            }
+
+            if (x_out >= height || y_out >= width) {
+              continue;
+            }
+
+            final int stateIdx = layerStart + (x_out * width + y_out) * numOutChannels + c;
+
+            final double gradS = gradState.get(stateIdx);
+            final double gradA = gradAct.get(stateIdx);
+
+            result += betta.get(wStart + ((i - x) * kSizeY + (j - y)) * numInputChannels + k)
+                * gradA * gradS;
+          }
+        }
+      }
+
+      return result;
+    }
+
+    private int getX(int nodeIdx) {
+      final int localIdx = nodeIdx - prevLayerStart;
+      final int i = localIdx / numInputChannels / prevWidth;
+      return (i - kSizeX + 1) / strideX;
     }
 
     @Override
     public int start(int nodeIdx) {
-      return 0;
+      return layerStart + getX(nodeIdx) * width * numOutChannels;
     }
 
     @Override
     public int end(int nodeIdx) {
-      return 0;
+      final int endX = getX(nodeIdx) + kSizeX;
+      return layerStart + endX * width * numOutChannels;
     }
   }
 
   private class GradCalcer implements BackwardNode {
     @Override
     public double apply(Vec state, Vec gradState, Vec gradAct, Vec betta, int nodeIdx) {
-      return 0;
+      if (nodeIdx < biasStart) {
+        final int localIdx = nodeIdx - weightStart;
+        final int c = localIdx / weightPerState;
+        final int i = (localIdx / numInputChannels / kSizeY) % kSizeX;
+        final int j = (localIdx / numInputChannels) % kSizeY;
+        final int k = localIdx % numInputChannels;
+
+        double result = 0.;
+        for (int x = 0; x < height; x++) {
+          for (int y = 0; y < width; y++) {
+            final int stateIdx = layerStart + (x * width + y) * numOutChannels + c;
+            final int x_in = x * strideX + i;
+            final int y_in = y * strideY + j;
+
+            final double gradS = gradState.get(stateIdx);
+            final double gradA = gradAct.get(stateIdx);
+            final double s = state.get(prevLayerStart + (x_in * prevWidth + y_in) * numInputChannels + k);
+            result += gradS * gradA * s;
+          }
+        }
+
+        return result;
+      }
+
+      final int localIdx = nodeIdx - biasStart;
+      final int c = localIdx % numOutChannels;
+      double result = 0.;
+
+      for (int x = 0; x < height; x++) {
+        for (int y = 0; y < width; y++) {
+          final int stateIdx = layerStart + (x * width + y) * numOutChannels + c;
+          result += gradState.get(stateIdx) * gradAct.get(stateIdx);
+        }
+      }
+
+      return result;
     }
 
     @Override
