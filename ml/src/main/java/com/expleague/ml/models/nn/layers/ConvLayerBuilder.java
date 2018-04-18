@@ -32,6 +32,9 @@ public class ConvLayerBuilder implements LayerBuilder {
   }
 
   public ConvLayerBuilder ksize(int kSizeX, int kSizeY) {
+    assert(kSizeX > 0);
+    assert(kSizeY > 0);
+
     this.kSizeX = kSizeX;
     this.kSizeY = kSizeY;
 
@@ -44,6 +47,8 @@ public class ConvLayerBuilder implements LayerBuilder {
   }
 
   public ConvLayerBuilder stride(int strideX, int strideY) {
+    assert(strideX > 0);
+    assert(strideY > 0);
     this.strideX = strideX;
     this.strideY = strideY;
     return this;

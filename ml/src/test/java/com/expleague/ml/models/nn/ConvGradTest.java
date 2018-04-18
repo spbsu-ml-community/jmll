@@ -87,20 +87,21 @@ public class ConvGradTest {
   }
 
   private void testNetwork(NetworkBuilder<Vec>.Network network, int... dims) {
+    final Vec weights = new ArrayVec(network.wdim());
+    final Vec weightsCopy = new ArrayVec(network.wdim());
+    Vec arg = new ArrayVec(dims[0] * dims[1] * dims[2]);
+    Vec gradWeight = new ArrayVec(network.wdim());
+
     for (int i = 0; i < 5; i++) {
-      final Vec weights = new ArrayVec(network.wdim());
       VecTools.fillUniform(weights, rng);
 
-      final Vec weightsCopy = new ArrayVec(network.wdim());
       VecTools.assign(weightsCopy, weights);
 
-      Vec arg = new ArrayVec(dims[0] * dims[1] * dims[2]);
       VecTools.fillUniform(arg, rng);
 
       final Vec state = spider.compute(network, arg, weights);
       final double stateSum = VecTools.sum(state);
 
-      Vec gradWeight = new ArrayVec(network.wdim());
       spider.parametersGradient(network, arg, new Sum(), weights, gradWeight);
 
       for (int round = 0; round < ROUNDS; round++) {
@@ -115,5 +116,4 @@ public class ConvGradTest {
       }
     }
   }
-
 }

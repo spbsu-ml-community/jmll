@@ -58,14 +58,15 @@ public class FCGradTest {
   }
 
   private void testNN(NetworkBuilder<Vec>.Network network, int... dims) {
+    final Vec weights = new ArrayVec(network.wdim());
+    final Vec weightsCopy = new ArrayVec(network.wdim());
+    Vec arg = new ArrayVec(dims[0]);
+
     for (int i = 0; i < ROUNDS; i++) {
-      final Vec weights = new ArrayVec(network.wdim());
       VecTools.fillUniform(weights, rng);
 
-      final Vec weightsCopy = new ArrayVec(network.wdim());
       VecTools.assign(weightsCopy, weights);
 
-      Vec arg = new ArrayVec(dims[0]);
       VecTools.fillUniform(arg, rng);
 
       final Vec state = spider.compute(network, arg, weights);

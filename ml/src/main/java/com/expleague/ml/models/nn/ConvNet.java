@@ -3,16 +3,19 @@ package com.expleague.ml.models.nn;
 import com.expleague.commons.math.TransC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.ml.func.generic.Sum;
 import com.expleague.ml.models.nn.layers.InputLayerBuilder;
 import com.expleague.ml.models.nn.layers.Layer;
 import com.expleague.ml.models.nn.layers.LayerBuilder;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
   private final NetworkBuilder<Vec>.Network network;
   private final NeuralSpider<Vec> neuralSpider = new NeuralSpider<>();
+  private final ThreadLocalArrayVec gradCache = new ThreadLocalArrayVec();
   private Vec weights;
+  private TransC1 target = new Sum();
 
   public ConvNet(NetworkBuilder<Vec>.Network network) {
     this.network = network;
@@ -27,7 +30,9 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
 
   @Override
   public Vec gradient(Vec x) {
-    throw new NotImplementedException();
+    final Vec gradWeight = gradCache.get(wdim());
+    neuralSpider.parametersGradient(network, x, target, weights, gradWeight);
+    return gradWeight;
   }
 
   public Vec weights() {
@@ -47,6 +52,18 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
   @Override
   public Vec gradientRowTo(Vec x, Vec to, int index) {
     return null;
+  }
+
+  public int wdim() {
+    return network.wdim();
+  }
+
+  public void setWeights(Vec weights) {
+    this.weights = weights;
+  }
+
+  public void setTarget(TransC1 target) {
+    this.target = target;
   }
 
   public static class InputBuilder implements InputLayerBuilder<Vec> {

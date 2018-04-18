@@ -27,6 +27,23 @@ public class NeuralSpider<In> {
     double apply(Vec state, Vec gradState, Vec gradAct, Vec betta, int nodeIdx);
     int start(int nodeIdx);
     int end(int nodeIdx);
+
+    class Stub implements BackwardNode {
+      @Override
+      public double apply(Vec state, Vec gradState, Vec gradAct, Vec betta, int nodeIdx) {
+        return 0;
+      }
+
+      @Override
+      public int start(int nodeIdx) {
+        return 0;
+      }
+
+      @Override
+      public int end(int nodeIdx) {
+        return 0;
+      }
+    }
   }
 
   private final ThreadLocalArrayVec stateCache = new ThreadLocalArrayVec();
