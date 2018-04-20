@@ -127,7 +127,7 @@ public class PoolLayerBuilder implements LayerBuilder {
 
     @Override
     public Seq<ForwardNode> forwardFlow() {
-      return ArraySeq.iterate(ForwardNode.class, node.forward(), ydim());
+      return ArraySeq.iterate(ForwardNode.class, node.forward(), width() * height() * channels());
     }
 
     @Override

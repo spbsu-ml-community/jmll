@@ -15,7 +15,7 @@ import static junit.framework.TestCase.assertEquals;
 
 public class FCGradTest {
   private static final NeuralSpider<Vec> spider = new NeuralSpider<>();
-  private static final int ROUNDS = 10;
+  private static final int ROUNDS = 30;
   private static final FastRandom rng = new FastRandom();
   private static final double EPS = 1e-6;
 
@@ -49,7 +49,35 @@ public class FCGradTest {
 
       NetworkBuilder<Vec> builder = new NetworkBuilder<>(new ConstSizeInput(dims[0]));
       for (int j = 1; j < numLayers; j++) {
-        builder.append(new FCLayerBuilder().nOut(dims[j]).activation(Sigmoid.class));
+        FCLayerBuilder fcLayerBuilder = new FCLayerBuilder().nOut(dims[j]);
+        if (j != numLayers - 1) {
+          fcLayerBuilder.activation(Sigmoid.class);
+        }
+        builder.append(fcLayerBuilder);
+      }
+      final NetworkBuilder<Vec>.Network network = builder.build(new OneOutLayer());
+
+      testNN(network, dims);
+    }
+  }
+
+  @Test
+  public void testSmallMultiLayer() {
+    for (int i = 0; i < 100; i++) {
+      final int numLayers = rng.nextInt(20) + 2;
+      final int[] dims = new int[numLayers];
+      generateSmallDims(dims);
+
+      System.out.print("Test [");
+      for (int j = 0; j < dims.length - 1; j++) {
+        System.out.print(dims[j] + ", ");
+      }
+      System.out.println(dims[dims.length - 1] + "]");
+
+      NetworkBuilder<Vec> builder = new NetworkBuilder<>(new ConstSizeInput(dims[0]));
+      for (int j = 1; j < numLayers; j++) {
+        FCLayerBuilder fcLayerBuilder = new FCLayerBuilder().nOut(dims[j]);
+        builder.append(fcLayerBuilder);
       }
       final NetworkBuilder<Vec>.Network network = builder.build(new OneOutLayer());
 
@@ -61,6 +89,7 @@ public class FCGradTest {
     final Vec weights = new ArrayVec(network.wdim());
     final Vec weightsCopy = new ArrayVec(network.wdim());
     Vec arg = new ArrayVec(dims[0]);
+    Vec gradWeight = new ArrayVec(network.wdim());
 
     for (int i = 0; i < ROUNDS; i++) {
       VecTools.fillUniform(weights, rng);
@@ -72,16 +101,15 @@ public class FCGradTest {
       final Vec state = spider.compute(network, arg, weights);
       final double stateSum = VecTools.sum(state);
 
-      Vec gradWeight = new ArrayVec(network.wdim());
       spider.parametersGradient(network, arg, new Sum(), weights, gradWeight);
 
-      for (int round = 0; round < 10; round++) {
+      for (int round = 0; round < ROUNDS; round++) {
         final int wIdx = rng.nextInt(network.wdim());
         weightsCopy.adjust(wIdx, EPS);
         final double incState = VecTools.sum(spider.compute(network, arg, weightsCopy));
         double grad = (incState - stateSum) / EPS;
 
-        assertEquals(grad, gradWeight.get(wIdx), EPS);
+        assertEquals("test idx " + wIdx, grad, gradWeight.get(wIdx), EPS);
 
         weightsCopy.adjust(wIdx, -EPS);
       }
@@ -90,7 +118,13 @@ public class FCGradTest {
 
   private static void generateDims(int[] dims) {
     for (int i = 0; i < dims.length; i++) {
-      dims[i] = rng.nextInt(100) + 1;
+      dims[i] = rng.nextInt(100) + 5;
+    }
+  }
+
+  private static void generateSmallDims(int[] dims) {
+    for (int i = 0; i < dims.length; i++) {
+      dims[i] = 1;
     }
   }
 }

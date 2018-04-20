@@ -1,5 +1,6 @@
 package com.expleague.ml.models.nn;
 
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
@@ -113,6 +114,41 @@ public class PoolTest {
     }
   }
 
+  @Test
+  public void mixedLayersGradTest() {
+    final int width = 100;
+    final int height = 100;
+    final int channels = 3;
+
+    for (int shot = 0; shot < 20; shot++) {
+      final int numLayers = rng.nextInt(4) + 2;
+
+      NetworkBuilder<Vec> builder = new NetworkBuilder<>(new ConstSizeInput3D(height, width, channels));
+
+      int curWidth = width;
+      int curHeight = height;
+      for (int i = 0; i < numLayers; i++) {
+        final int ksizeX = 3;
+        final int ksizeY = 3;
+        final int strideX = 1;
+        final int strideY = 1;
+        final int poolSize = rng.nextInt(1) + 2;
+
+        curWidth = (curWidth - ksizeY) / strideY + 1;
+        curHeight = (curHeight - ksizeX) / strideX + 1;
+
+        builder.append(ConvLayerBuilder.create()
+            .ksize(ksizeX, ksizeY).stride(strideX, strideY).channels(channels));
+        builder.append(PoolLayerBuilder.create()
+            .ksize(poolSize, poolSize).stride(poolSize, poolSize));
+      }
+
+      final NetworkBuilder<Vec>.Network network = builder.build(new OneOutLayer());
+      System.out.println(network);
+      testNetworkGrad(network);
+    }
+  }
+
   private Vec pool(Vec arg, int ksizeX, int ksizeY,
                    int strideX, int strideY, int dstWidth, int dstHeight,
                    int width, int inChannels) {
@@ -215,7 +251,7 @@ public class PoolTest {
                 final int dstWidth = (curWidth - ksizeY) / strideY + 1;
                 final int channels = poolLayer.channels();
                 final int ydim = dstHeight * dstWidth * channels;
-                final int wdim = 0;
+                final int wdim = ydim;
 
                 assertEquals(ydim, poolLayer.ydim());
                 assertEquals(wdim, poolLayer.wdim());
@@ -277,6 +313,39 @@ public class PoolTest {
 
       }
       assertTrue(condition);
+    }
+  }
+
+  private void testNetworkGrad(NetworkBuilder<Vec>.Network network) {
+    final Vec weights = new ArrayVec(network.wdim());
+    final Vec weightsCopy = new ArrayVec(network.wdim());
+    Vec arg = new ArrayVec(100 * 100 * 3);
+    Vec gradWeight = new ArrayVec(network.wdim());
+
+    for (int i = 0; i < ROUNDS; i++) {
+      VecTools.fillUniform(weights, rng, 1e-3);
+
+      VecTools.assign(weightsCopy, weights);
+
+      VecTools.fillUniform(arg, rng, 1e-3);
+
+      final Vec state = spider.compute(network, arg, weights);
+      final double stateSum = VecTools.sum(state);
+
+      spider.parametersGradient(network, arg, new Sum(), weights, gradWeight);
+
+      for (int round = 0; round < 10; round++) {
+        final int wIdx = rng.nextInt(network.wdim());
+        weightsCopy.adjust(wIdx, EPS);
+        final double incState = VecTools.sum(spider.compute(network, arg, weightsCopy));
+        double grad = (incState - stateSum) / EPS;
+
+        long gradMant = MathTools.mantissa(grad);
+        long gradWMant = MathTools.mantissa(gradWeight.get(wIdx));
+        assertEquals("test idx " + wIdx, grad, gradWeight.get(wIdx), EPS * 10);
+
+        weightsCopy.adjust(wIdx, -EPS);
+      }
     }
   }
 }

@@ -45,32 +45,32 @@ public class NNPerfTest {
 
   private void alexNetPerfTest() {
     NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(
-        new ConstSizeInput3D(17, 17, 64))
+        new ConstSizeInput3D(224, 224, 3))
         .addSeq(
-//            ConvLayerBuilder.create()
-//                .channels(64).ksize(11, 11).stride(4, 4).padd(2, 2).activation(ReLU.class),
-//            PoolLayerBuilder.create()
-//                .ksize(3, 3).stride(2, 2),
             ConvLayerBuilder.create()
-                .channels(192).ksize(5, 5).padd(2, 2).activation(ReLU.class)
-//            PoolLayerBuilder.create()
-//                .ksize(3, 3).stride(2, 2),
-//            ConvLayerBuilder.create()
-//                .channels(384).ksize(3, 3).padd(2, 2).activation(ReLU.class),
-//            ConvLayerBuilder.create()
-//                .channels(256).ksize(3, 3).activation(ReLU.class),
-//            PoolLayerBuilder.create()
-//                .ksize(3, 3).stride(2, 2),
-//            FCLayerBuilder.create()
-//                .nOut(4096).activation(ReLU.class),
-//            FCLayerBuilder.create()
-//                .nOut(4096).activation(ReLU.class),
-//            FCLayerBuilder.create()
-//                .nOut(1000)
+                .channels(64).ksize(11, 11).stride(4, 4).padd(2, 2).activation(ReLU.class),
+            PoolLayerBuilder.create()
+                .ksize(3, 3).stride(2, 2),
+            ConvLayerBuilder.create()
+                .channels(192).ksize(5, 5).padd(2, 2).activation(ReLU.class),
+            PoolLayerBuilder.create()
+                .ksize(3, 3).stride(2, 2),
+            ConvLayerBuilder.create()
+                .channels(384).ksize(3, 3).padd(2, 2).activation(ReLU.class),
+            ConvLayerBuilder.create()
+                .channels(256).ksize(3, 3).activation(ReLU.class),
+            PoolLayerBuilder.create()
+                .ksize(3, 3).stride(2, 2),
+            FCLayerBuilder.create()
+                .nOut(4096).activation(ReLU.class),
+            FCLayerBuilder.create()
+                .nOut(4096).activation(ReLU.class),
+            FCLayerBuilder.create()
+                .nOut(1000)
         )
         .build(new OneOutLayer());
 
-    Vec input = new ArrayVec(17 * 17 * 64);
+    Vec input = new ArrayVec(224 * 224 * 3);
     VecTools.fill(input, 1.);
 
     perfNNCheck(input, new ConvNet(network));

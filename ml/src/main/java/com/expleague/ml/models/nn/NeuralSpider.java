@@ -4,10 +4,12 @@ import com.expleague.commons.math.TransC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.expleague.commons.seq.Seq;
+import com.expleague.commons.util.ThreadTools;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ForkJoinPool;
-import java.util.stream.IntStream;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import static java.util.Arrays.stream;
 
 /**
  * User: solar
@@ -15,6 +17,10 @@ import java.util.stream.IntStream;
  * Time: 12:57
  */
 public class NeuralSpider<In> {
+
+  private final static int parallelism = ThreadTools.COMPUTE_UNITS;
+  private ThreadPoolExecutor poolExecutor = ThreadTools.createBGExecutor("NeuralSpider calculators", parallelism);
+
   public interface ForwardNode {
     double apply(Vec state, Vec betta, int nodeIdx);
     double activate(double value);
@@ -60,6 +66,14 @@ public class NeuralSpider<In> {
     return network.outputFrom(state);
   }
 
+  private static void mirror(int[] arr) {
+    for(int i = 0; i < arr.length/2; ++i) {
+      int temp = arr[i];
+      arr[i] = arr[arr.length - i - 1];
+      arr[arr.length - i - 1] = temp;
+    }
+  }
+
   public Vec parametersGradient(final NetworkBuilder<In>.Network network, In argument,
                                 TransC1 target, Vec weights, Vec gradWeight) {
     final Vec state = stateCache.get(network.stateDim());
@@ -77,29 +91,91 @@ public class NeuralSpider<In> {
 
     target.gradientTo(output, gradState.sub(gradState.length() - network.ydim(), network.ydim()));
 
-    for (int nodeIdx = backwardNodes.length() - 1; nodeIdx >= 0; nodeIdx--) {
-      final BackwardNode node = backwardNodes.at(nodeIdx);
-      final double dTds_i = node.apply(state, gradState, gradAct, weights, nodeIdx);
-      gradState.set(nodeIdx, dTds_i);
+    {
+      final CountDownLatch latch = new CountDownLatch(parallelism);
+      final int steps = (backwardNodes.length() + parallelism - 1) / parallelism;
+      final int[] cursor = new int[parallelism + 1];
+      cursor[0] = backwardNodes.length();
+      for (int i = 1; i < cursor.length; i++) {
+        cursor[i] = backwardNodes.length();
+      }
+
+      for (int t = 0; t < parallelism; t++) {
+        final int thread = t;
+        this.poolExecutor.execute(() -> {
+          int i = steps;
+          while (i >= 0) {
+            final int nodeIdx = thread + i * parallelism;
+            if (nodeIdx >= backwardNodes.length()) {
+              i--;
+              continue;
+            }
+            final BackwardNode node = backwardNodes.at(nodeIdx);
+            final int start = node.start(nodeIdx);
+            cursor[thread + 1] = start;
+
+            if (start >= cursor[0]) {
+              final double dTds_i = node.apply(state, gradState, gradAct, weights, nodeIdx);
+              gradState.set(nodeIdx, dTds_i);
+              i--;
+            } else {
+              final int result = stream(cursor, 1, cursor.length).sorted().max().getAsInt();
+              cursor[0] = result;
+
+              if (start < cursor[0]) {
+                Thread.yield();
+              }
+            }
+          }
+          cursor[thread + 1] = 0;
+          latch.countDown();
+        });
+      }
+      try {
+        latch.await();
+      }
+      catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
 
-    for (int nodeIdx = weightNodes.length() - 1; nodeIdx >= 0; nodeIdx--) {
-      final BackwardNode node = weightNodes.at(nodeIdx);
-      final double dTds_i = node.apply(state, gradState, gradAct, gradWeight, nodeIdx);
-      gradWeight.set(nodeIdx, dTds_i);
+    {
+      final CountDownLatch latch = new CountDownLatch(parallelism);
+      final int steps = (weightNodes.length() + parallelism - 1) / parallelism;
+
+      for (int t = 0; t < parallelism; t++) {
+        final int thread = t;
+        this.poolExecutor.execute(() -> {
+          for (int i = steps; i >= 0; i--) {
+            final int nodeIdx = thread + i * parallelism;
+            if (nodeIdx >= weightNodes.length())
+              continue;
+            final BackwardNode node = weightNodes.at(nodeIdx);
+            final double dTds_i = node.apply(state, gradState, gradAct, gradWeight, nodeIdx);
+            gradWeight.set(nodeIdx, dTds_i);
+          }
+          latch.countDown();
+        });
+      }
+      try {
+        latch.await();
+      }
+      catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
 
     return gradWeight;
   }
 
+
   private void produceState(Seq<ForwardNode> nodes, Vec weights, Vec state) {
-    final int parallelism = ForkJoinPool.getCommonPoolParallelism();
     final int[] cursor = new int[parallelism + 1];
     final CountDownLatch latch = new CountDownLatch(parallelism);
     final int steps = (nodes.length() + parallelism - 1) / parallelism;
     for (int t = 0; t < parallelism; t++) {
       final int thread = t;
-      ForkJoinPool.commonPool().execute(() ->
+      this.poolExecutor.execute(() ->
       {
         int i = 0;
         while(i < steps) {
@@ -108,21 +184,23 @@ public class NeuralSpider<In> {
             break;
 
           final ForwardNode at = nodes.at(nodeIdx);
-          int end = at.end(nodeIdx);
-          if (end < cursor[0] + 1) {
+          final int end = at.end(nodeIdx);
+          cursor[thread + 1] = end;
+
+          if (end <= cursor[0]) {
             final double value = at.apply(state, weights, nodeIdx);
             state.set(nodeIdx, at.activate(value));
-            cursor[thread + 1] = nodeIdx;
             i++;
           }
           else {
-            cursor[0] = IntStream.range(1, cursor.length).map(idx -> cursor[idx])
-                .sorted().reduce((a, b) -> a + 1 <= b ? a + 1 : a).orElse(0);
-            if (cursor[0] < end) {
+            cursor[0] = stream(cursor, 1, cursor.length)
+                .sorted().min().getAsInt();
+            if (end > cursor[0]) {
               Thread.yield();
             }
           }
         }
+        cursor[thread + 1] = nodes.length();
         latch.countDown();
       }
       );
@@ -136,13 +214,12 @@ public class NeuralSpider<In> {
   }
 
   private void produceStateWithGrad(Seq<ForwardNode> nodes, Vec weights, Vec state, Vec gradAct) {
-    final int parallelism = ForkJoinPool.getCommonPoolParallelism();
     final int[] cursor = new int[parallelism + 1];
     final CountDownLatch latch = new CountDownLatch(parallelism);
     final int steps = (nodes.length() + parallelism - 1) / parallelism;
     for (int t = 0; t < parallelism; t++) {
       final int thread = t;
-      ForkJoinPool.commonPool().execute(() ->
+      this.poolExecutor.execute(() ->
           {
             int i = 0;
             while(i < steps) {
@@ -152,21 +229,23 @@ public class NeuralSpider<In> {
 
               final ForwardNode at = nodes.at(nodeIdx);
               int end = at.end(nodeIdx);
-              if (end < cursor[0] + 1) {
+              cursor[thread + 1] = end;
+
+              if (end <= cursor[0]) {
                 final double value = at.apply(state, weights, nodeIdx);
                 state.set(nodeIdx, at.activate(value));
                 gradAct.set(nodeIdx, at.grad(value));
-                cursor[thread + 1] = nodeIdx;
                 i++;
               }
               else {
-                cursor[0] = IntStream.range(1, cursor.length).map(idx -> cursor[idx])
-                    .sorted().reduce((a, b) -> a + 1 <= b ? a + 1 : a).orElse(0);
+                cursor[0] = stream(cursor, 1, cursor.length)
+                    .sorted().min().getAsInt();
                 if (cursor[0] < end) {
                   Thread.yield();
                 }
               }
             }
+            cursor[thread + 1] = nodes.length();
             latch.countDown();
           }
       );

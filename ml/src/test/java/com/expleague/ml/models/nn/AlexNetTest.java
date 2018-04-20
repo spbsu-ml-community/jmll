@@ -46,7 +46,6 @@ public class AlexNetTest {
     return new ConvNet(network);
   }
 
-  @Test
   public void inceptionTest() {
     ConvLayerBuilder conv5 = ConvLayerBuilder.create().ksize(5, 5).channels(5);
     ConvLayerBuilder conv3 = ConvLayerBuilder.create().ksize(3, 3).channels(5);
@@ -106,7 +105,7 @@ public class AlexNetTest {
         final double incState = VecTools.sum(alexNet.apply(arg));
         double grad = (incState - stateSum) / EPS;
 
-        assertEquals("Test idx " + wIdx, grad, gradWeight.get(wIdx), 1e-2);
+        assertEquals("Test idx " + wIdx, grad, gradWeight.get(wIdx), EPS * 100);
 
         weightsCopy.adjust(wIdx, -EPS);
       }

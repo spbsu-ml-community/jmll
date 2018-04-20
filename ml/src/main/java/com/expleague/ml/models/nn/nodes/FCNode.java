@@ -77,7 +77,7 @@ public class FCNode implements Layer.Node {
 
     @Override
     public int end(int nodeIdx) {
-      return prevStateStart + prevStateLength - 1;
+      return prevStateStart + prevStateLength;
     }
   }
 
@@ -103,7 +103,7 @@ public class FCNode implements Layer.Node {
 
     @Override
     public int end(int nodeIdx) {
-      return layerStart + layerLength - 1;
+      return layerStart + layerLength;
     }
   }
 

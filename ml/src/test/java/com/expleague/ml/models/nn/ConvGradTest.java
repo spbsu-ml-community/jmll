@@ -18,6 +18,7 @@ public class ConvGradTest {
   private static final FastRandom rng = new FastRandom();
   private static final int ROUNDS = 30;
   private static final double EPS = 1e-6;
+  private static final double SCALE = 1e-2;
 
   @Test
   public void convLayerTest() {
@@ -67,8 +68,13 @@ public class ConvGradTest {
         final int strideX = rng.nextInt(2) + 1;
         final int strideY = rng.nextInt(2) + 1;
 
+        if (ksizeX >= curHeight || ksizeY >= curWidth)
+          continue;
+
         curWidth = (curWidth - ksizeY) / strideY + 1;
         curHeight = (curHeight - ksizeX) / strideX + 1;
+        if (curHeight <= 0 || curWidth <= 0)
+          continue;
         prevChannels = rng.nextPoisson(1.) + prevChannels;
 
         ConvLayerBuilder convLayerBuilder = ConvLayerBuilder.create()
@@ -93,11 +99,11 @@ public class ConvGradTest {
     Vec gradWeight = new ArrayVec(network.wdim());
 
     for (int i = 0; i < 5; i++) {
-      VecTools.fillUniform(weights, rng);
+      VecTools.fillUniform(weights, rng, SCALE);
 
       VecTools.assign(weightsCopy, weights);
 
-      VecTools.fillUniform(arg, rng);
+      VecTools.fillUniform(arg, rng, SCALE);
 
       final Vec state = spider.compute(network, arg, weights);
       final double stateSum = VecTools.sum(state);
@@ -110,7 +116,7 @@ public class ConvGradTest {
         final double incState = VecTools.sum(spider.compute(network, arg, weightsCopy));
         double grad = (incState - stateSum) / EPS;
 
-        assertEquals("Test idx " + wIdx, grad, gradWeight.get(wIdx), 1e-2);
+        assertEquals("Test idx " + wIdx, grad, gradWeight.get(wIdx), EPS * 10);
 
         weightsCopy.adjust(wIdx, -EPS);
       }

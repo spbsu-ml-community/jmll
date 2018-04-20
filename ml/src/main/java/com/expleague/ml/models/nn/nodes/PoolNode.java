@@ -52,8 +52,14 @@ public class PoolNode implements Layer.Node {
   }
 
   private class ForwardCalcer implements ForwardNode {
+    private volatile Vec cachedState;
+
     @Override
     public double apply(Vec state, Vec betta, int nodeIdx) {
+      if (cachedState == null) {
+        cachedState = state;
+      }
+
       final int localIdx = nodeIdx - layerStart;
       final int c_out = localIdx % numInputChannels;
       final int y_out = (localIdx / numInputChannels) % width;
@@ -61,25 +67,31 @@ public class PoolNode implements Layer.Node {
       final int y = y_out * strideY;
       final int x = x_out * strideX;
 
-      double result = 0.;
+      double result = Double.NEGATIVE_INFINITY;
+      int bestIdx = 0;
+
       for (int i = 0; i < kSizeX; i++) {
         for (int j = 0; j < kSizeY; j++) {
           final int idx = prevLayerStart + ((x + i) * prevWidth + (y + j)) * numInputChannels + c_out;
-          result = Double.max(state.get(idx), result);
+          final double value = state.get(idx);
+          if (value > result) {
+            result = value;
+            bestIdx = idx;
+          }
         }
       }
 
-      return result;
+      return bestIdx;
     }
 
     @Override
     public double activate(double value) {
-      return value;
+      return cachedState.get((int) value);
     }
 
     @Override
     public double grad(double value) {
-      return 1.;
+      return value;
     }
 
     private int getX(int nodeIdx) {
@@ -131,17 +143,12 @@ public class PoolNode implements Layer.Node {
             continue;
           }
 
-          final int stateIdx = layerStart + (x_out * width + y_out) * numInputChannels + k;
+          final int stateIdx = layerStart +  (x_out * width + y_out) * numInputChannels + k;
           final int prevStateIdx = prevLayerStart + (x * prevWidth + y) * numInputChannels + k;
 
-          final double before = state.get(prevStateIdx);
-          final double after = state.get(stateIdx);
-
-          if (before == after) {
-            final double gradS = gradState.get(stateIdx);
-            final double gradA = gradAct.get(stateIdx);
-
-            result += gradA * gradS;
+          final int index = (int) gradAct.get(stateIdx);
+          if (index == nodeIdx) {
+            result += gradState.get(stateIdx);
           }
         }
       }
