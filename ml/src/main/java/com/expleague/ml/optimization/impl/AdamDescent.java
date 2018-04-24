@@ -10,7 +10,6 @@ import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
@@ -105,7 +104,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
 //          System.out.printf("ADAM descent finished after %d epochs\n", epoch);
 //          break;
 //        }
-        System.out.println(x);
+//        System.out.println(x);
         System.out.println("|x|=" + VecTools.norm(x));
         error = curError;
       } else if (epoch == epochCount - 1) {

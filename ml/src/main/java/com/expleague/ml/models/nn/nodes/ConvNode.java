@@ -187,21 +187,20 @@ public class ConvNode implements Layer.Node {
       return result;
     }
 
-    private int getX(int nodeIdx) {
-      final int localIdx = nodeIdx - prevLayerStart;
-      final int i = localIdx / numInputChannels / prevWidth;
-      return (i - kSizeX + 1) / strideX;
-    }
-
     @Override
     public int start(int nodeIdx) {
-      return layerStart + getX(nodeIdx) * width * numOutChannels;
+      final int localIdx = nodeIdx - prevLayerStart;
+      final int i = localIdx / numInputChannels / prevWidth;
+      final int x = Math.max((i - kSizeX) / strideX, 0);
+      return layerStart + x * width * numOutChannels;
     }
 
     @Override
     public int end(int nodeIdx) {
-      final int endX = getX(nodeIdx) + kSizeX;
-      return layerStart + endX * width * numOutChannels;
+      final int localIdx = nodeIdx - prevLayerStart;
+      final int i = localIdx / numInputChannels / prevWidth;
+      final int x = Math.min((i / strideX), height);
+      return layerStart + x * width * numOutChannels;
     }
   }
 

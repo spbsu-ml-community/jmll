@@ -5,6 +5,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
+import com.expleague.ml.func.generic.ReLU;
 import com.expleague.ml.func.generic.Sigmoid;
 import com.expleague.ml.func.generic.Sum;
 import com.expleague.ml.models.nn.layers.*;
@@ -15,6 +16,29 @@ import static junit.framework.TestCase.assertEquals;
 
 public class AlexNetTest {
   private static final ConvNet alexNet = createNet();
+  private static final ConvNet leNet = createLeNet();
+
+  private static ConvNet createLeNet() {
+    NetworkBuilder<Vec>.Network network =
+        new NetworkBuilder<>(new ConstSizeInput3D(28, 28, 1))
+            .append(ConvLayerBuilder.create()
+                .channels(20)
+                .ksize(5,5)
+                .weightFill(FillerType.XAVIER))
+            .append(PoolLayerBuilder.create().ksize(2, 2).stride(2, 2))
+            .append(ConvLayerBuilder.create()
+                .channels(50)
+                .ksize(5, 5)
+                .weightFill(FillerType.XAVIER))
+            .append(PoolLayerBuilder.create().ksize(2, 2).stride(2, 2))
+            .append(FCLayerBuilder.create().nOut(500).weightFill(FillerType.XAVIER).activation(ReLU.class))
+            .append(FCLayerBuilder.create().nOut(10).weightFill(FillerType.XAVIER))
+            .build(new OneOutLayer());
+
+    System.out.println(network);
+
+    return new ConvNet(network);
+  }
 
   @NotNull
   private static ConvNet createNet() {
@@ -70,17 +94,36 @@ public class AlexNetTest {
     alexNet.apply(sample);
   }
 
+  @Test
+  public void forwardLeNetTest() {
+    Vec sample = new ArrayVec(28 * 28);
+    FastRandom rng = new FastRandom();
+    for (int i = 0; i < 30; i++) {
+      VecTools.fillUniform(sample, rng);
+      leNet.apply(sample);
+    }
+  }
+
+  @Test
+  public void backwardLeNetTest() {
+    backwardTest(leNet, 1, 28, 28);
+  }
+
+  @Test
+  public void backwardAlexNetTest() {
+    backwardTest(alexNet, 3, 224, 224);
+  }
+
   private static final double EPS = 1e-6;
   private static final FastRandom rng = new FastRandom();
 
-  @Test
-  public void backwardTest() {
+  public void backwardTest(ConvNet nn, int channels, int width, int height) {
     final TransC1 target = new Sum();
-    alexNet.setTarget(target);
-    final int wdim = alexNet.wdim();
+    nn.setTarget(target);
+    final int wdim = nn.wdim();
     final Vec weights = new ArrayVec(wdim);
     final Vec weightsCopy = new ArrayVec(wdim);
-    final Vec arg = new ArrayVec(224 * 224 * 3);
+    final Vec arg = new ArrayVec(channels * width * height);
 
     for (int i = 0; i < 5; i++) {
       System.out.println("test no " + i);
@@ -90,19 +133,19 @@ public class AlexNetTest {
 
       VecTools.fillUniform(arg, rng);
 
-      alexNet.setWeights(weights);
-      final Vec state = alexNet.apply(arg);
+      nn.setWeights(weights);
+      final Vec state = nn.apply(arg);
       final double stateSum = VecTools.sum(state);
 
-      Vec gradWeight = alexNet.gradient(arg);
+      Vec gradWeight = nn.gradient(arg);
 
       for (int round = 0; round < 10; round++) {
         System.out.println(round);
         final int wIdx = rng.nextInt(wdim);
         weightsCopy.adjust(wIdx, EPS);
 
-        alexNet.setWeights(weightsCopy);
-        final double incState = VecTools.sum(alexNet.apply(arg));
+        nn.setWeights(weightsCopy);
+        final double incState = VecTools.sum(nn.apply(arg));
         double grad = (incState - stateSum) / EPS;
 
         assertEquals("Test idx " + wIdx, grad, gradWeight.get(wIdx), EPS * 100);

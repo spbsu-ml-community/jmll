@@ -6,12 +6,13 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -108,10 +109,9 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
 
         occupied[component] = false;
 
-        if ((it % 100000) == 0) {
+        if ((it % 100) == 0) {
           final long newTime = System.nanoTime();
           System.out.printf("Iteration %d: value=%.6f time=%dms |x|=%.4f\n", it, ensemble.value(x), TimeUnit.NANOSECONDS.toMillis(newTime - time), VecTools.norm(x));
-          System.out.println(x);
           time = newTime;
         }
       }

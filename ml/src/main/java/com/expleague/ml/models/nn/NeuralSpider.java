@@ -17,7 +17,6 @@ import static java.util.Arrays.stream;
  * Time: 12:57
  */
 public class NeuralSpider<In> {
-
   private final static int parallelism = ThreadTools.COMPUTE_UNITS;
   private ThreadPoolExecutor poolExecutor = ThreadTools.createBGExecutor("NeuralSpider calculators", parallelism);
 
@@ -56,7 +55,7 @@ public class NeuralSpider<In> {
   private final ThreadLocalArrayVec gradientACache = new ThreadLocalArrayVec();
   private final ThreadLocalArrayVec gradientSCache = new ThreadLocalArrayVec();
 
-  public Vec compute(final NetworkBuilder<In>.Network network, In argument, Vec weights) {
+  public synchronized Vec compute(final NetworkBuilder<In>.Network network, In argument, Vec weights) {
     final Vec state = stateCache.get(network.stateDim());
     network.setInput(argument, state);
 
@@ -74,7 +73,7 @@ public class NeuralSpider<In> {
     }
   }
 
-  public Vec parametersGradient(final NetworkBuilder<In>.Network network, In argument,
+  public synchronized Vec parametersGradient(final NetworkBuilder<In>.Network network, In argument,
                                 TransC1 target, Vec weights, Vec gradWeight) {
     final Vec state = stateCache.get(network.stateDim());
     final Vec gradAct = gradientACache.get(network.stateDim());

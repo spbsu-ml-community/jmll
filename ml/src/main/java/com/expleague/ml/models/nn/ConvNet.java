@@ -10,6 +10,8 @@ import com.expleague.ml.models.nn.layers.InputLayerBuilder;
 import com.expleague.ml.models.nn.layers.Layer;
 import com.expleague.ml.models.nn.layers.LayerBuilder;
 
+import java.io.*;
+
 public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
   private final NetworkBuilder<Vec>.Network network;
   private final NeuralSpider<Vec> neuralSpider = new NeuralSpider<>();
@@ -28,11 +30,46 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
     return neuralSpider.compute(network, input, weights);
   }
 
+  public Vec apply(Vec argument, Vec weights) {
+    return neuralSpider.compute(network, argument, weights);
+  }
+
+  public Vec gradientTo(Vec x, Vec weights, TransC1 target, Vec to) {
+    neuralSpider.parametersGradient(network, x, target, weights, to);
+    return to;
+  }
+
   @Override
-  public Vec gradient(Vec x) {
-    final Vec gradWeight = gradCache.get(wdim());
-    neuralSpider.parametersGradient(network, x, target, weights, gradWeight);
-    return gradWeight;
+  public Vec gradientTo(Vec x, Vec to) {
+    neuralSpider.parametersGradient(network, x, target, weights, to);
+    return to;
+  }
+
+  @Override
+  public Vec gradientRowTo(Vec x, Vec to, int index) {
+    return gradientTo(x, to);
+  }
+
+  public void save(String path) {
+    try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(path))) {
+      for (double v : weights.toArray()) {
+        dos.writeDouble(v);
+      }
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void load(String path) {
+    try (DataInputStream dos = new DataInputStream(new FileInputStream(path))) {
+      for (int i = 0; i < wdim(); i++) {
+        weights.set(i, dos.readDouble());
+      }
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public Vec weights() {
@@ -47,11 +84,6 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
   @Override
   public int ydim() {
     return -1;
-  }
-
-  @Override
-  public Vec gradientRowTo(Vec x, Vec to, int index) {
-    return null;
   }
 
   public int wdim() {
@@ -109,7 +141,7 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
         layer = new ConvInput();
       }
 
-      return new ConvInput();
+      return layer;
     }
 
     public class ConvInput implements InputLayer {
