@@ -26,6 +26,14 @@ public class LogSoftMax extends FuncC1.Stub {
 
   @Override
   public Vec gradientTo(Vec x, Vec to) {
+    return staticGrad(x, trueClass, to);
+  }
+
+  public static double staticValue(Vec x, int trueClass) {
+    return - x.get(trueClass) + Math.log(sumExp(x));
+  }
+
+  public static Vec staticGrad(Vec x, int trueClass, Vec to) {
     final double sumExp = sumExp(x);
     VecTools.assign(to, x);
     for (int i = 0; i < to.dim(); i++) {
@@ -33,10 +41,6 @@ public class LogSoftMax extends FuncC1.Stub {
     }
     to.adjust(trueClass, -1.);
     return to;
-  }
-
-  public static double staticValue(Vec x, int trueClass) {
-    return - x.get(trueClass) + Math.log(sumExp(x));
   }
 
   @Override

@@ -1,6 +1,5 @@
 package com.expleague.ml.models.nn;
 
-import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
@@ -340,8 +339,6 @@ public class PoolTest {
         final double incState = VecTools.sum(spider.compute(network, arg, weightsCopy));
         double grad = (incState - stateSum) / EPS;
 
-        long gradMant = MathTools.mantissa(grad);
-        long gradWMant = MathTools.mantissa(gradWeight.get(wIdx));
         assertEquals("test idx " + wIdx, grad, gradWeight.get(wIdx), EPS * 10);
 
         weightsCopy.adjust(wIdx, -EPS);

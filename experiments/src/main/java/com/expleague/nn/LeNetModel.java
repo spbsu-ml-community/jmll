@@ -6,6 +6,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.func.generic.LogSoftMax;
@@ -15,7 +16,7 @@ import com.expleague.ml.models.nn.ConvNet;
 import com.expleague.ml.models.nn.NetworkBuilder;
 import com.expleague.ml.models.nn.layers.*;
 import com.expleague.ml.optimization.Optimize;
-import com.expleague.ml.optimization.StochasticGradientDescent;
+import com.expleague.ml.optimization.impl.AdamDescent;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +27,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
-import java.util.Random;
 import java.util.function.Consumer;
 
 public class LeNetModel {
@@ -36,6 +36,7 @@ public class LeNetModel {
   private static final String pathTest = "experiments/src/main/resources/mnist_test.csv";
   private static final String pathToModel = "experiments/src/main/resources/lenet.nn";
   private static final ConvNet leNet = createLeNet();
+  private static final FastRandom rng = new FastRandom();
   private static final int heightIn = 28;
   private static final int widthIn = 28;
   private static final int nClasses = 10;
@@ -90,10 +91,8 @@ public class LeNetModel {
     }
 
     final FuncEnsemble<FuncC1> func = new FuncEnsemble<>(funcs, weights);
-//    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer =
-//        new AdamDescent(new Random(), 100_000, 10, 1e-5);
     final Optimize<FuncEnsemble<? extends FuncC1>> optimizer =
-        new StochasticGradientDescent(100, 1e-4, new Random());
+        new AdamDescent(rng, 20, 32, 1e-3);
 
     optimizer.optimize(func, leNet.weights());
 

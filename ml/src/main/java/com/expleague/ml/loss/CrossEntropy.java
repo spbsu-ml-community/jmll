@@ -29,9 +29,15 @@ public class CrossEntropy extends FuncC1.Stub implements BlockedTargetFunc {
   }
 
   @Override
-  public Vec gradient(final Vec x) {
-    System.out.println("fuck");
-    return null;
+  public Vec gradientTo(final Vec x, Vec to) {
+    for (int i = 0; i < x.dim() / nClasses; i++) {
+      final int trueClass = label(i);
+      Vec subX = x.sub(i * nClasses, nClasses);
+      Vec subTo = to.sub(i * nClasses, nClasses);
+      LogSoftMax.staticGrad(subX, trueClass, subTo);
+    }
+
+    return to;
   }
 
   @Override
