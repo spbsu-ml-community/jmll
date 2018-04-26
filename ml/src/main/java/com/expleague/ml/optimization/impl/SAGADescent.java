@@ -10,26 +10,27 @@ import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.func.ReguralizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   private final double step;
   private final int maxIter;
   private final Random random;
-  private Function<Vec, Vec> projection;
+  private final PrintStream debug;
   private long time;
 
-  public SAGADescent(final double step, final int maxIter, final Random random) {
+  public SAGADescent(final double step, final int maxIter, final Random random, PrintStream debug) {
     this.step = step;
     this.maxIter = maxIter;
     this.random = random;
+    this.debug = debug;
   }
 
   @Override
@@ -86,7 +87,7 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         xLock.readLock().unlock();
       }
 
-      Vec gradSparse = VecTools.copySparse(grad);
+      Vec gradSparse = VecTools.isSparse(grad, MathTools.EPSILON) ? VecTools.copySparse(grad) : VecTools.copy(grad);
       xLock.writeLock().lock();
       try {
         final int it = ++iter[0];
@@ -109,9 +110,9 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
 
         occupied[component] = false;
 
-        if ((it % 100) == 0) {
+        if (debug != null && (it % 10000) == 0) {
           final long newTime = System.nanoTime();
-          System.out.printf("Iteration %d: value=%.6f time=%dms |x|=%.4f\n", it, ensemble.value(x), TimeUnit.NANOSECONDS.toMillis(newTime - time), VecTools.norm(x));
+          debug.printf("Iteration %d: value=%.6f time=%dms |x|=%.4f\n", it, ensemble.value(x), TimeUnit.NANOSECONDS.toMillis(newTime - time), VecTools.norm(x));
           time = newTime;
         }
       }

@@ -38,7 +38,7 @@ public class OneOutLayer implements OutputLayerBuilder {
 
     @Override
     public String toString() {
-      return "OneOutLayer\n";
+      return "OneOutLayer";
     }
   };
 

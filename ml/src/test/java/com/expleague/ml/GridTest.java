@@ -4,6 +4,7 @@ import java.io.IOException;
 
 
 import com.expleague.commons.FileTestCase;
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.data.set.VecDataSet;
@@ -11,6 +12,7 @@ import com.expleague.ml.data.tools.Pool;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.testUtils.TestResourceLoader;
+import org.junit.Assert;
 
 /**
  * User: solar
@@ -148,6 +150,30 @@ public class GridTest extends FileTestCase {
       assertEquals(1, grid.size());
   }
 
+  public void testIterativeP_cxVsFull() {
+    final double lambda = 0.00001;
+    final int n = 1000;
+    final int c = 300;
+    double D_prev = Double.NEGATIVE_INFINITY;
+    double S_prev = Double.NEGATIVE_INFINITY;
+
+    for (int k = 0; k < n; k++) {
+      double D = 0;
+      for (int i = c; i < n; i++) {
+        D += Math.exp(-lambda * Math.abs(i - k));
+      }
+      double S = 0;
+      for (int i = 0; i < n; i++) {
+        S += Math.exp(-lambda * Math.abs(i - k));
+      }
+      if (Double.isFinite(D_prev)) {
+        Assert.assertEquals(D, D_prev + Math.exp(-lambda * Math.abs(c - k)) - Math.exp(-lambda * (n - k - 1)), 0.01);
+        Assert.assertEquals(S,S_prev + Math.exp(-lambda * k) - Math.exp(-lambda * (n - k - 1)), 0.01);
+      }
+      D_prev = D;
+      S_prev = S;
+    }
+  }
 
   @Override
   protected void setUp() throws Exception {

@@ -11,6 +11,7 @@ import com.expleague.ml.models.nn.layers.InputLayerBuilder.InputLayer;
 import com.expleague.ml.models.nn.layers.OutputLayerBuilder.OutputLayer;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class NetworkBuilder<InType> {
@@ -248,9 +249,7 @@ public class NetworkBuilder<InType> {
 
     @Override
     public String toString() {
-      StringBuilder builder = new StringBuilder();
-      layers.forEach(layer -> builder.append(layer.toString()));
-      return builder.toString();
+      return layers.stream().map(Object::toString).collect(Collectors.joining("\n"));
     }
   }
 }

@@ -143,7 +143,7 @@ public class PoolLayerBuilder implements LayerBuilder {
     @Override
     public String toString() {
       return "Pool outSize[" + height() + ", " + width() + ", " + channels() + "] " +
-          "kernel[" + kSizeX + ", " + kSizeY + "] stride[" + strideX + ", " + strideY + "]\n";
+          "kernel[" + kSizeX + ", " + kSizeY + "] stride[" + strideX + ", " + strideY + "]";
     }
 
     public int kSizeX() {

@@ -169,7 +169,7 @@ public class RunSpliceData {
         new BootstrapSeqOptimization<>(
             new PNFARegressor<>(
                 MAX_STATE_COUNT, 1, alphabet, 0, 0, 3, random,
-                new SAGADescent(GRAD_STEP, 10000, random)
+                new SAGADescent(GRAD_STEP, 10000, random, System.out)
 //                new AdamDescent(random, 100, 4),
             )
             , random

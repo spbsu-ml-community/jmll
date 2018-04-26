@@ -19,9 +19,6 @@ import com.expleague.ml.methods.SeqOptimization;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlassSeq;
 import com.expleague.ml.methods.seq.*;
 import com.expleague.ml.optimization.Optimize;
-import com.expleague.ml.optimization.impl.AdamDescent;
-import com.expleague.ml.optimization.impl.FullGradientDescent;
-import com.expleague.ml.optimization.impl.OnlineDescent;
 import com.expleague.ml.optimization.impl.SAGADescent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -145,8 +142,7 @@ public class PNFABasecall {
 //        random, WEIGHT_EPOCH_COUNT, BATCH_SIZE, WEIGHT_STEP
 //    );
     final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(
-        0.1, 100000, random
-    );
+        0.1, 100000, random, System.out);
     IntAlphabet intAlphabet = new IntAlphabet(ALPHABET_SIZE);
     final PNFARegressor model = new PNFARegressor<>(stateCount,
         1, intAlphabet, 0.0001, 0.001,
@@ -238,7 +234,7 @@ public class PNFABasecall {
 //    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new AdamDescent(
 //        random, 50, 4, 0.0001
 //    );
-    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(0.001, 1000000, random);
+    final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(0.001, 1000000, random, System.out);
     IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
     final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
       new PNFARegressor<>(

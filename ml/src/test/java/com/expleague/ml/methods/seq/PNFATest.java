@@ -95,7 +95,7 @@ public class PNFATest {
     int diag = 5;
     final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
         stateCount, 2, alphabet, 1e-5, 1e-3, diag, random,
-        new SAGADescent(0.01, 100000, random)
+        new SAGADescent(0.01, 100000, random, System.out)
 //        new AdamDescent(random, 50, 4, 0.0001)
 //        new OnlineDescent(0.001, random)
 //        new FullGradientDescent(random, 0.3, 1000)
@@ -170,7 +170,7 @@ public class PNFATest {
 //    );
     final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
         stateCount, 2, alphabet, 1e-5, 1e-3, diag, random,
-        new SAGADescent(0.001, 1000000, random)
+        new SAGADescent(0.001, 1000000, random, System.out)
 //        new AdamDescent(random, 50, 4, 0.001)
     );
 

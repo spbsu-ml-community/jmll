@@ -135,7 +135,7 @@ public class FCLayerBuilder implements LayerBuilder {
 
     @Override
     public String toString() {
-      return "FC [" + input.ydim() + ", " + nOut + "]\n";
+      return "FC [" + input.ydim() + ", " + nOut + "]";
     }
   }
 }

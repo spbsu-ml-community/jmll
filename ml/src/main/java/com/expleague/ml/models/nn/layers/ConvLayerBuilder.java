@@ -221,7 +221,7 @@ public class ConvLayerBuilder implements LayerBuilder {
     public String toString() {
       return "Conv outSize[" + height() + ", " + width() + ", " + channels() + "] " +
           "kernel[" + kSizeX + ", " + kSizeY + "] " +
-          "stride[" + strideX + ", " + strideY + "]\n";
+          "stride[" + strideX + ", " + strideY + "]";
     }
   }
 
