@@ -75,3 +75,8 @@ local.properties
 *.ear
 
 out/
+
+experiments/src/main/resources/lenet.nn
+experiments/src/main/resources/mnist_train.csv
+experiments/src/main/resources/mnist_test.csv
+
