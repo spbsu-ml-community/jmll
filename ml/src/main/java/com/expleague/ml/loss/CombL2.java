@@ -17,12 +17,12 @@ public class CombL2 extends L2 {
   }
 
   @Override
-  public double bestIncrement(MSEStats stats) {
+  public double bestIncrement(Stat stats) {
     return stats.weight > 2 ? stats.sum/stats.weight : 0;
   }
 
   @Override
-  public double score(MSEStats stats) {
+  public double score(Stat stats) {
     final double n = stats.weight;
     final double deltaD = stats.weight > 1 ? (-stats.sum * stats.sum / stats.weight) * MathTools.sqr(stats.weight / (stats.weight - 1.)) : 0;
     return deltaD * (1 + 2 * log(n + 1));

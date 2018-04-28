@@ -109,7 +109,7 @@ public class CherryOptimizationSubset {
   }
 
   public int power() {
-    return (int) ((L2.MSEStats) ((WeightedLoss.Stat) stat).inside).weight;
+    return (int) ((L2.Stat) ((WeightedLoss.Stat) stat).inside).weight;
   }
 
   @Override

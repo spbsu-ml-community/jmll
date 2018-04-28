@@ -85,7 +85,6 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
           final double rightWeight = weight(right);
           final double minExcluded = Math.min(leftWeight, rightWeight);
 
-
           {
             if (minExcluded > 3) {
               final Vec regularizer = makeRegularizer(weights, leftWeight);
@@ -364,8 +363,8 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
   }
 
   private double weight(final AdditiveStatistics stat) {
-    if (stat instanceof L2.MSEStats) {
-      return ((L2.MSEStats) stat).weight;
+    if (stat instanceof L2.Stat) {
+      return ((L2.Stat) stat).weight;
     } else if (stat instanceof WeightedLoss.Stat) {
       return weight(((WeightedLoss.Stat) stat).inside);
     } else {
@@ -374,8 +373,8 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
   }
 
   private double sum(final AdditiveStatistics stat) {
-    if (stat instanceof L2.MSEStats) {
-      return ((L2.MSEStats) stat).sum;
+    if (stat instanceof L2.Stat) {
+      return ((L2.Stat) stat).sum;
     } else if (stat instanceof WeightedLoss.Stat) {
       return sum(((WeightedLoss.Stat) stat).inside);
     } else {

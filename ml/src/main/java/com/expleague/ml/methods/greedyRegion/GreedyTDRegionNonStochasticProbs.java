@@ -263,30 +263,30 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
 
   public static double weight(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
-      return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).weight;
+      return ((L2.Stat) ((WeightedLoss.Stat) stats).inside).weight;
     }
-    if (stats instanceof L2.MSEStats) {
-      return ((L2.MSEStats) stats).weight;
+    if (stats instanceof L2.Stat) {
+      return ((L2.Stat) stats).weight;
     }
     return 0;
   }
 
   public static double sum(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
-      return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).sum;
+      return ((L2.Stat) ((WeightedLoss.Stat) stats).inside).sum;
     }
-    if (stats instanceof L2.MSEStats) {
-      return ((L2.MSEStats) stats).sum;
+    if (stats instanceof L2.Stat) {
+      return ((L2.Stat) stats).sum;
     }
     return 0;
   }
 
   public static double sum2(final AdditiveStatistics stats) {
     if (stats instanceof WeightedLoss.Stat) {
-      return ((L2.MSEStats) ((WeightedLoss.Stat) stats).inside).sum2;
+      return ((L2.Stat) ((WeightedLoss.Stat) stats).inside).sum2;
     }
-    if (stats instanceof L2.MSEStats) {
-      return ((L2.MSEStats) stats).sum2;
+    if (stats instanceof L2.Stat) {
+      return ((L2.Stat) stats).sum2;
     }
     return 0;
   }

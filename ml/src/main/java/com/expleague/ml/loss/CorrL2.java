@@ -14,12 +14,12 @@ public class CorrL2 extends L2 {
   }
 
   @Override
-  public double bestIncrement(final MSEStats stats) {
+  public double bestIncrement(final Stat stats) {
     return stats.weight > 1 ? stats.sum/stats.weight : 0;
   }
 
   @Override
-  public double score(final MSEStats stats) {
+  public double score(final Stat stats) {
     final double n = stats.weight;
     return n > 2 ? n/(n-1) * (stats.sum2 - stats.sum * stats.sum / n) : stats.sum2;
   }

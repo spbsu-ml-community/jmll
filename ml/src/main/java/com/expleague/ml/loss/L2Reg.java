@@ -15,17 +15,17 @@ public class L2Reg extends L2 {
   }
 
   @Override
-  public double value(final MSEStats stats) {
+  public double value(final Stat stats) {
     return stats.weight >= 1 ? stats.sum / (stats.weight + 1): 0;
   }
 
   @Override
-  public double bestIncrement(MSEStats stats) {
+  public double bestIncrement(Stat stats) {
     return stats.weight > MathTools.EPSILON ? stats.sum / (stats.weight + 1) : 0;
   }
 
   @Override
-  public double score(final MSEStats stats) {
+  public double score(final Stat stats) {
     final double weight = stats.weight;
     final double sum = stats.sum;
     return weight > 2 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;

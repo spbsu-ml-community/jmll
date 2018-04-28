@@ -14,12 +14,12 @@ public class LogL2 extends L2 {
   }
 
   @Override
-  public double value(final MSEStats stats) {
+  public double value(final Stat stats) {
     return stats.weight >= 1 ? stats.sum/stats.weight : 0;
   }
 
   @Override
-  public double score(final MSEStats stats) {
+  public double score(final Stat stats) {
     return stats.weight > 1 ? (- stats.sum * stats.sum / stats.weight) * Math.log(stats.weight + 1) : 0;
   }
 }

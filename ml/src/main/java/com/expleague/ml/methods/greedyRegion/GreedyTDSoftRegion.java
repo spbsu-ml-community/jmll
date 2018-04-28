@@ -365,8 +365,8 @@
 //  }
 //
 //  private double weight(final AdditiveStatistics stat) {
-//    if (stat instanceof L2.MSEStats) {
-//      return ((L2.MSEStats) stat).weight;
+//    if (stat instanceof L2.Stat) {
+//      return ((L2.Stat) stat).weight;
 //    } else if (stat instanceof WeightedLoss.Stat) {
 //      return weight(((WeightedLoss.Stat) stat).inside);
 //    } else {
@@ -375,8 +375,8 @@
 //  }
 //
 //  private double sum(final AdditiveStatistics stat) {
-//    if (stat instanceof L2.MSEStats) {
-//      return ((L2.MSEStats) stat).sum;
+//    if (stat instanceof L2.Stat) {
+//      return ((L2.Stat) stat).sum;
 //    } else if (stat instanceof WeightedLoss.Stat) {
 //      return sum(((WeightedLoss.Stat) stat).inside);
 //    } else {
