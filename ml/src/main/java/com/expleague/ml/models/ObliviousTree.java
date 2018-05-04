@@ -1,10 +1,13 @@
 package com.expleague.ml.models;
 
+import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.ml.BinOptimizedModel;
-import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.BinModelWithGrid;
+import com.expleague.ml.BinOptimizedModel;
+import com.expleague.ml.data.impl.BinarizedDataSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,6 +48,11 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
   public double value(final Vec x) {
     final int index = bin(x);
     return values[index];
+  }
+
+  @Override
+  public Trans gradient() {
+    return new ObliviousGrad();
   }
 
   @Override
@@ -193,5 +201,61 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     }
 
     return features.length > 0 ? new ObliviousTree(Arrays.asList(features), values, basedOn) : null;
+  }
+
+  private class ObliviousGrad extends Trans.Stub {
+    @Override
+    public Vec transTo(Vec x, Vec gradient) {
+      final int numFeatures = x.dim();
+      byte[] folds = new byte[numFeatures];
+      grid.binarize(x, folds);
+
+      final double[] leftBorders = new double[numFeatures];
+      final double[] rightBorders = new double[numFeatures];
+
+      for (int i = 0; i < numFeatures; i++) {
+        final BFGrid.BFRow row = grid.row(i);
+        final int leftIdx = folds[i] - 1;
+        final int rightIdx = folds[i] + 1;
+
+        leftBorders[i] = leftIdx == -1 ? x.get(i) : row.borders[leftIdx];
+        rightBorders[i] = rightIdx >= row.borders.length ? x.get(i)
+            : (row.borders[rightIdx] + row.borders[rightIdx - 1]) / 2.;
+
+//        System.out.println(row.bfStart + " " + row.bfEnd);
+//        System.out.println(leftBorders[i] + " " + rightBorders[i]);
+//        assert(leftBorders[i] <= x.get(i) && x.get(i) <= rightBorders[i]);
+      }
+
+      final Vec leftGrad = gradient.sub(0, numFeatures);
+      final Vec rightGrad = gradient.sub(numFeatures, numFeatures);
+
+      final Vec x0 = VecTools.assign(new ArrayVec(numFeatures), x);
+      final double value = ObliviousTree.this.value(x);
+
+      for (int fIdx = 0; fIdx < numFeatures; fIdx++) {
+        x0.set(fIdx, leftBorders[fIdx]);
+        final double leftValue = ObliviousTree.this.value(x0);
+        x0.set(fIdx, rightBorders[fIdx]);
+        final double rightValue = ObliviousTree.this.value(x0);
+
+        leftGrad.adjust(fIdx, value - leftValue);
+        rightGrad.adjust(fIdx, rightValue - value);
+
+        x0.set(fIdx, x.get(fIdx));
+      }
+
+      return gradient;
+    }
+
+    @Override
+    public int xdim() {
+      return ObliviousTree.this.dim();
+    }
+
+    @Override
+    public int ydim() {
+      return xdim() * 2;
+    }
   }
 }
