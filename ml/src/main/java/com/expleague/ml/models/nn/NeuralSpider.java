@@ -65,14 +65,6 @@ public class NeuralSpider<In> {
     return network.outputFrom(state);
   }
 
-  private static void mirror(int[] arr) {
-    for(int i = 0; i < arr.length/2; ++i) {
-      int temp = arr[i];
-      arr[i] = arr[arr.length - i - 1];
-      arr[arr.length - i - 1] = temp;
-    }
-  }
-
   public synchronized Vec parametersGradient(final NetworkBuilder<In>.Network network, In argument,
                                 TransC1 target, Vec weights, Vec gradWeight) {
     final Vec state = stateCache.get(network.stateDim());

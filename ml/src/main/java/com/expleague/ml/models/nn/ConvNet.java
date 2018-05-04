@@ -78,12 +78,12 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
 
   @Override
   public int xdim() {
-    return -1;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public int ydim() {
-    return -1;
+    return network.ydim();
   }
 
   public int wdim() {

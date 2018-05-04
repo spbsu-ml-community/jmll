@@ -1,5 +1,6 @@
 package com.expleague.ml.models;
 
+import com.expleague.commons.math.DiscontinuousTrans;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.SingleValueVec;
 import com.expleague.commons.math.vectors.Vec;
@@ -75,7 +76,8 @@ public class DiffTreeTest {
     };
     boosting.addListener(counter);
     final Ensemble ensemble = boosting.fit(learn, new WeightedL2(target, learn));
-    final Trans gradient = ensemble.gradient();
+    final DiscontinuousTrans subgradient = ensemble.subgradient();
+    assert subgradient != null;
 
     final double[] result = new double[x.length];
     for (int i = 0; i < x.length; i++) {
@@ -94,12 +96,11 @@ public class DiffTreeTest {
 
       @Override
       public Vec gradientTo(Vec x_, Vec to) {
-        final double gridStep = Math.PI / 64.;
         // FIXME: only left derivative?
-        final Vec trans = gradient.trans(x_);
+        final double gridStep = Math.PI / 64.;
+        final double left = subgradient.left(x_).get(0);
+        final double right = subgradient.right(x_).get(0);
         final double x = x_.get(0);
-        final double left = trans.get(0);
-        final double right = trans.get(1);
         final double leftGrad = (Math.sin(x) - Math.sin(x - gridStep));
         final double rightGrad = (Math.sin(x + gridStep) - Math.sin(x));
         to.set(0, -left);
