@@ -7,7 +7,7 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
-import com.expleague.ml.loss.CrossEntropy;
+import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.methods.nn.NeuralTreesOptimization;
 import com.expleague.ml.models.nn.ConvNet;
 import com.expleague.ml.models.nn.NetworkBuilder;
@@ -25,7 +25,7 @@ public class LeTreeNet {
   private static Mx testSamples = new VecBasedMx(numTestSamples, MNISTUtils.widthIn * MNISTUtils.heightIn);
   private static double[] trainLabels = new double[numTrainSamples];
   private static double[] testLabels = new double[numTestSamples];
-  private static CrossEntropy loss;
+  private static BlockwiseMLLLogit loss;
 
   public static void main(String[] args) {
     readMnist(trainLabels, trainSamples, testLabels, testSamples);
@@ -45,7 +45,7 @@ public class LeTreeNet {
                 .ksize(5, 5)
                 .weightFill(FillerType.XAVIER))
             .append(PoolLayerBuilder.create().ksize(2, 2).stride(2, 2))
-            .append(FCLayerBuilder.create().nOut(400).weightFill(FillerType.XAVIER))
+            .append(FCLayerBuilder.create().nOut(50).weightFill(FillerType.XAVIER))
             .build(new OneOutLayer());
 
     System.out.println(network);
@@ -57,12 +57,12 @@ public class LeTreeNet {
     final Vec weights = new ArrayVec(trainSamples.rows());
     VecTools.fill(weights, 1.);
 
-    loss = new CrossEntropy(new ArrayVec(trainLabels),
-        new VecDataSetImpl(trainSamples, null), nClasses);
+    final VecDataSetImpl learn = new VecDataSetImpl(trainSamples, null);
+    loss = new BlockwiseMLLLogit(new ArrayVec(trainLabels), learn);
 
-    NeuralTreesOptimization<CrossEntropy> optimization =
-        new NeuralTreesOptimization<>(100, 10000, leNet, rng);
-    final Function<Vec, Vec> leTreeNet = optimization.fit(new VecDataSetImpl(trainSamples, null), loss);
+    NeuralTreesOptimization optimization =
+        new NeuralTreesOptimization(1000, 2500, 100, leNet, rng);
+    final Function<Vec, Vec> leTreeNet = optimization.fit(learn, loss);
 
     testModel(leTreeNet, trainLabels, trainSamples, testLabels, testSamples);
   }
