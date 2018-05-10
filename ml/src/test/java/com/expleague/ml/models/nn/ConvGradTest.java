@@ -16,7 +16,7 @@ import static junit.framework.TestCase.assertEquals;
 public class ConvGradTest {
   private static final NeuralSpider<Vec> spider = new NeuralSpider<>();
   private static final FastRandom rng = new FastRandom();
-  private static final int ROUNDS = 30;
+  private static final int ROUNDS = 10;
   private static final double EPS = 1e-6;
   private static final double SCALE = 1e-2;
 
@@ -116,7 +116,7 @@ public class ConvGradTest {
         final double incState = VecTools.sum(spider.compute(network, arg, weightsCopy));
         double grad = (incState - stateSum) / EPS;
 
-        assertEquals("Test idx " + wIdx, grad, gradWeight.get(wIdx), EPS * 10);
+        assertEquals("Test idx " + wIdx, grad, gradWeight.get(wIdx), EPS * 100);
 
         weightsCopy.adjust(wIdx, -EPS);
       }
