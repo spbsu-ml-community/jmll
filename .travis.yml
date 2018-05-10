@@ -4,5 +4,5 @@ jdk:
 sudo: required
 dist: trusty
 submodules: false
-install:
+before_install:
   - git submodule update --init --remote --recursive
