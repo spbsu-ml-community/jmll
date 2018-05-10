@@ -18,7 +18,7 @@ import static junit.framework.TestCase.assertTrue;
 public class ConvTest {
   private static final NeuralSpider<Vec> spider = new NeuralSpider<>();
   private static final FastRandom rng = new FastRandom();
-  private static final int ROUNDS = 100;
+  private static final int ROUNDS = 10;
 
   @Test
   public void convLayerTest() {
