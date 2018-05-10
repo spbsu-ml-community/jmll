@@ -5,4 +5,4 @@ sudo: required
 dist: trusty
 submodules: false
 install:
-  - git clone https://github.com/spbsu-ml-community/commons.git
+  - git submodule update --init --remote --recursive
