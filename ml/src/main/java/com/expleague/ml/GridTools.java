@@ -1,8 +1,12 @@
 package com.expleague.ml;
 
+import com.expleague.commons.math.AnalyticFunc;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.commons.math.vectors.impl.idxtrans.ArrayPermutation;
+import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.WeightedLoss;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TDoubleSet;
@@ -119,5 +123,54 @@ public class GridTools {
       bfCount += dborders.size();
     }
     return new BFGrid(rows);
+  }
+
+  public static class PermutationWeightedFunc extends AnalyticFunc.Stub {
+    private final int c;
+    private final Aggregate aggregate;
+    private final WeightedLoss<? extends L2> loss;
+    private final int[] order;
+
+    public PermutationWeightedFunc(int c, int[] order, Aggregate aggregate, WeightedLoss<? extends L2> loss) {
+      this.c = c;
+      this.order = order;
+      this.aggregate = aggregate;
+      this.loss = loss;
+    }
+
+    @Override
+    public double value(double x) {
+      double[] params = new double[]{0, 0, 0};
+      aggregate.visitND(c, order.length, x, (k, N_k, D_k, P_k, S_k) -> {
+        final int index = order[k];
+        final double y_k = loss.target().get(index);
+        final double w_k = loss.weight(index) * N_k / D_k;
+
+        params[0] += w_k * y_k * y_k;
+        params[1] += w_k * y_k;
+        params[2] += w_k;
+      });
+      double sum2 = params[0];
+      double sum = params[1];
+      double weights = params[2];
+      return sum2 - sum * sum / weights;
+    }
+
+    @Override
+    public double gradient(double x) {
+      final double[] params = new double[]{0};
+      final WeightedLoss.Stat stat = (WeightedLoss.Stat) aggregate.total();
+      final L2.Stat l2Stat = (L2.Stat)stat.inside;
+      aggregate.visitND(c, order.length, x, (k, N_k, D_k, P_k, S_k) -> {
+        final int index = order[k];
+        final double y_k = loss.target().get(index);
+        final double w_k = loss.weight(index) * N_k / D_k;
+
+        final double dLdw = y_k * y_k - 2 * (y_k * l2Stat.sum * l2Stat.weight - l2Stat.sum * l2Stat.sum) / l2Stat.weight / l2Stat.weight / l2Stat.weight;
+        final double dwdl = (S_k * D_k - P_k * N_k) / N_k / N_k;
+        params[0] += w_k * dLdw * dwdl;
+      });
+      return params[0];
+    }
   }
 }
