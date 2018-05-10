@@ -4,5 +4,4 @@ jdk:
 sudo: required
 dist: trusty
 install:
-  - git clone git@github.com:spbsu-ml-community/commons.git $TRAVIS_REPO_SLUG/jmll/commons
-  - git checkout -qf $TRAVIS_COMMIT
+  - git clone https://github.com/spbsu-ml-community/commons.git
