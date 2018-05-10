@@ -3,5 +3,6 @@ jdk:
 - oraclejdk8
 sudo: required
 dist: trusty
+submodules: false
 install:
   - git clone https://github.com/spbsu-ml-community/commons.git
