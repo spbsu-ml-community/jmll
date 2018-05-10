@@ -4,6 +4,5 @@ jdk:
 sudo: required
 dist: trusty
 install:
-  - git clone --recurse-submodules  https://github.com/$TRAVIS_REPO_SLUG.git $TRAVIS_REPO_SLUG
-  - cd $TRAVIS_REPO_SLUG
+  - git clone git@github.com:spbsu-ml-community/commons.git $TRAVIS_REPO_SLUG/jmll/commons
   - git checkout -qf $TRAVIS_COMMIT
