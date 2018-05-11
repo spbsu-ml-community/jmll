@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.expleague</groupId>
-  <artifactId>jmll</artifactId>
+  <artifactId>all</artifactId>
   <version>1.4.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
