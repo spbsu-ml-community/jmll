@@ -1,7 +1,6 @@
 package com.expleague.ml.methods.greedyRegion;
 
 import com.expleague.commons.math.FuncC1;
-import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
@@ -50,7 +49,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
 
     int[] weights = extractWeights(loss);
     int[] points = ArrayTools.sequence(0, learn.length());
-    alpha[0] = mean(points, loss);
+    alpha[0] = mean(points, weights, loss);
 
     WeightedLoss<L2> curLoss = updateLoss(loss, learn, weights, alpha[0]);
     BFOptimizationSubset current = new BFOptimizationSubset(bds, curLoss, points);
@@ -59,7 +58,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     final double[] scores = new double[grid.size()];
     for (int l = 0; l < depth; l++) {
       final int level = l;
-      System.out.println(level);
+//      System.out.println(level);
       final int[] curPoints = points;
 
       current.visitAllSplits((bf, left, right) -> {
@@ -68,9 +67,9 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       });
 
       int bestSplit = ArrayTools.min(scores);
-      if (bestSplit < 0)// || scores[bestSplit] >= currentScore)
+      if (bestSplit < 0 || scores[bestSplit] >= currentScore)
         break;
-      System.out.println(scores[bestSplit]);
+//      System.out.println(scores[bestSplit]);
       final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
       final boolean[] isRight = new boolean[1];
       current.visitSplit(bestSplitBF, (bf, left, right) -> {
@@ -81,7 +80,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
 
       points = sampleSubset(bds, bestSplitBF, current.getPoints(), weights, lambda[level], isRight[0]);
 
-      alpha[level + 1] = mean(points, curLoss);
+      alpha[level + 1] = mean(points, weights, curLoss);
       mask[level] = isRight[0];
       conditions.add(bestSplitBF);
       currentScore = scores[bestSplit];
@@ -108,17 +107,17 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     TIntArrayList newPoints = new TIntArrayList();
 
     for (int i = 0; i < points.length; i++) {
-      final double diffX = border(bds, points[i], bestSplitBF.findex) - bestSplitBF.condition;
-      final double prob = prob(diffX, lambda, isRight);
+      final double diffX = x_i(bds, points[i], bestSplitBF.findex) - bestSplitBF.condition;
+      final double prob = isRight ? probRight(diffX, lambda) : 1 - probRight(diffX, lambda);
 
       int numPoints = weights[points[i]];
       for (int j = 0; j < numPoints; j++) {
-        if (rng.nextDouble() < prob) {
+        if (rng.nextDouble() >= prob) {
           weights[points[i]]--;
         }
       }
 
-      if (weights[points[i]] > MathTools.EPSILON) {
+      if (weights[points[i]] > 0) {
         newPoints.add(points[i]);
       }
     }
@@ -126,16 +125,16 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     return newPoints.toArray();
   }
 
-  private double mean(int[] points, WeightedLoss<? extends L2> curLoss) {
+  private double mean(int[] points, int[] weights, WeightedLoss<? extends L2> curLoss) {
     final Vec target = curLoss.target();
     double sum = 0.;
     int count = 0;
     for (int i = 0; i < points.length; i++) {
-      sum += target.get(points[i]) * curLoss.weight(points[i]);
-      count += curLoss.weight(points[i]);
+      sum += target.get(points[i]) * weights[points[i]];
+      count += weights[points[i]];
     }
 
-    return sum / (count + 1.);
+    return count == 0 ? 0 : sum / count;
   }
 
   private static class Stat {
@@ -152,20 +151,20 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     }
   }
 
-  private double prob(double diffX, double lambda, boolean isRight) {
-    final double prob = Math.exp(-lambda * diffX * diffX);
-    return (diffX > 0) == isRight ? prob : 1. - prob;
+  private double probRight(double diffX, double lambda) {
+    double exp = 0; // Math.exp(-lambda * diffX * diffX);
+    return diffX > 0 ? 1 - exp : exp;
   }
 
-  private double border(BinarizedDataSet bds, int pointIdx, int findex) {
-    int binNo = bds.bins(findex)[pointIdx];
-    final double[] borders = grid.row(findex).borders;
-    return binNo == borders.length ? borders[binNo - 1] : borders[binNo];
+  private double x_i(BinarizedDataSet bds, int pointIdx, int findex) {
+    final VecDataSet original = (VecDataSet)bds.original();
+    return original.data().get(pointIdx, findex);
   }
 
   private double score(BinarizedDataSet bds, int[] points, Loss loss, boolean isRight,
                        double lambda, BFGrid.BinaryFeature bf) {
     final Vec target = loss.target();
+    final VecDataSet original = (VecDataSet)bds.original();
 
     double wSumLeft = 0.;
     double sum2Left = 0.;
@@ -175,21 +174,24 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     double sum2Right = 0.;
     double sumRight = 0.;
 
+
     for (int i = 0; i < points.length; i++) {
-      final double xi = border(bds, points[i], bf.findex);
+      final double weight = loss.weight(points[i]);
+      final double xi = original.data().get(points[i], bf.findex);
       final double v = xi - bf.condition;
       final double yi = target.get(points[i]);
 
-      final double prob = prob(v, lambda, isRight);
-      if (v <= 0) {
-        wSumLeft += prob;
-        sumLeft += prob * yi;
-        sum2Left += prob * yi * yi;
-      } else {
-        wSumRight += prob;
-        sumRight += prob * yi;
-        sum2Right += prob * yi * yi;
-      }
+      double prob = probRight(v, lambda);
+      final double probLeft = isRight ? 1 - prob : prob;
+      final double probRight = 1 - probLeft;
+      final double wLeft = weight * probLeft;
+      final double wRight = weight * probRight;
+      wSumLeft += wLeft;
+      sumLeft += wLeft * yi;
+      sum2Left += wLeft * yi * yi;
+      wSumRight += wRight;
+      sumRight += wRight * yi;
+      sum2Right += wRight * yi * yi;
     }
 
     final double leftDisp = sum2Left - sumLeft * sumLeft / (wSumLeft + 1.);
@@ -215,35 +217,35 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     // find argmax by lambda
     double prevLeft = Double.NEGATIVE_INFINITY;
     double prevRight = Double.NEGATIVE_INFINITY;
-    double lambdaLeft = 0.5;
-    double lambdaRight = 0.5;
+    double lambdaLeft = 10;
+    double lambdaRight = 10;
     final double EPS = 1e-6;
     final double sgdStep = 1e-1;
 
-    for (int sgdIter = 0; sgdIter < 30; sgdIter++) {
-      final double left1 = score(bds, points, loss, false, lambdaLeft - EPS, bf);
-      final double left2 = score(bds, points, loss, false, lambdaLeft + EPS, bf);
-      final double gradLeft = (left2 - left1) / (2 * EPS);
-
-      final double right1 = score(bds, points, loss, true, lambdaRight - EPS, bf);
-      final double right2 = score(bds, points, loss, true, lambdaRight + EPS, bf);
-      final double gradRight = (right2 - right1) / (2 * EPS);
-//      System.out.println("sgd ["+ sgdIter + "] " + left1 + " " + right1);
-
-      lambdaLeft -= gradLeft * sgdStep;
-      lambdaRight -= gradRight * sgdStep;
-      lambdaLeft = clamp(lambdaLeft);
-      lambdaRight = clamp(lambdaRight);
-
-      if (Math.abs(lambdaLeft - prevLeft) <= sgdStep / 1000
-          || Math.abs(lambdaRight - prevRight) <= sgdStep / 1000) {
-        break;
-      }
-
-      prevLeft = lambdaLeft;
-      prevRight = lambdaRight;
-    }
-
+//    for (int sgdIter = 0; sgdIter < 30; sgdIter++) {
+//      final double left1 = score(bds, points, loss, false, lambdaLeft - EPS, bf);
+//      final double left2 = score(bds, points, loss, false, lambdaLeft + EPS, bf);
+//      final double gradLeft = (left2 - left1) / (2 * EPS);
+//
+//      final double right1 = score(bds, points, loss, true, lambdaRight - EPS, bf);
+//      final double right2 = score(bds, points, loss, true, lambdaRight + EPS, bf);
+//      final double gradRight = (right2 - right1) / (2 * EPS);
+////      System.out.println("sgd ["+ sgdIter + "] " + left1 + " " + right1);
+//
+//      lambdaLeft -= gradLeft * sgdStep;
+//      lambdaRight -= gradRight * sgdStep;
+//      lambdaLeft = clamp(lambdaLeft);
+//      lambdaRight = clamp(lambdaRight);
+//
+//      if (Math.abs(lambdaLeft - prevLeft) <= sgdStep / 1000
+//          || Math.abs(lambdaRight - prevRight) <= sgdStep / 1000) {
+//        break;
+//      }
+//
+//      prevLeft = lambdaLeft;
+//      prevRight = lambdaRight;
+//    }
+//
     double leftScore = score(bds, points, loss, false, lambdaLeft, bf);
     double rightScore = score(bds, points, loss, true, lambdaRight, bf);
     if (leftScore == 0.) {
@@ -274,7 +276,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       double result = alpha[0];
       for (int i = 0; i < features.length; i++) {
         final double diffX = x.get(features[i].findex) - features[i].condition;
-        final double prob = prob(diffX, lambda[i], mask[i]);
+        final double prob = mask[i] ? probRight(diffX, lambda[i]) : 1 - probRight(diffX, lambda[i]);
         result += alpha[i + 1] * prob;
       }
       return result;

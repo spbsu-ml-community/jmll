@@ -730,7 +730,7 @@ public void testElasticNetBenchmark() {
   }
 
   public void testProbRegionBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyProbLinearRegion<>(GridTools.medianGrid(learn.vecData(), 32), 6), rng), L2Reg.class, 2000, 0.005);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyProbLinearRegion<>(GridTools.medianGrid(learn.vecData(), 32), 6), rng), L2Reg.class, 2000, 0.02);
     new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
   }
 
