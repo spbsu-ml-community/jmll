@@ -1,8 +1,6 @@
 package com.expleague.ml.methods.nn;
 
-import com.expleague.commons.math.DiscontinuousTrans;
 import com.expleague.commons.math.FuncC1;
-import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
@@ -19,14 +17,16 @@ import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.factorization.impl.ALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.ScaledVectorFunc;
-import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.L2Reg;
+import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.expleague.ml.methods.BootstrapOptimization;
 import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.ml.methods.Optimization;
+import com.expleague.ml.methods.greedyRegion.GreedyProbLinearRegion;
+import com.expleague.ml.methods.greedyRegion.GreedyProbLinearRegion.ProbRegion;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlass;
-import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.nn.ConvNet;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
@@ -88,11 +88,11 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
       }
 
       final BFGrid grid = GridTools.medianGrid(highLearn, 64);
-      final GreedyObliviousTree<L2> weak = new GreedyObliviousTree<>(grid, 6);
+      final GreedyProbLinearRegion<WeightedLoss<L2Reg>> weak = new GreedyProbLinearRegion<>(grid, 6);
+      final BootstrapOptimization bootstrap = new BootstrapOptimization(weak, rng);
 
       final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(new GradFacMulticlass(
-          weak, new ALS(150, 0.), L2.class, false), 1000, 0.1);
-
+          bootstrap, new ALS(150, 0.), L2Reg.class, false), L2Reg.class, 500, 0.1);
 
       final Consumer<Trans> counter = new ProgressHandler() {
         int index = 0;
@@ -116,37 +116,18 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 //      System.out.println(((ScaledVectorFunc) ensemble.models[0]).function);
 
       final Vec gradTree = new ArrayVec(loss.blockSize());
-      final DiscontinuousTrans subgradient = new DiscontinuousTrans.Stub() {
-
-        @NotNull
+      final Trans gradient = new Trans.Stub() {
         @Override
-        public Vec leftTo(Vec x, Vec to) {
+        public Vec transTo(Vec x, Vec to) {
           final Vec currentWeights = new ArrayVec(gradTree.dim());
-          final Vec leftGrad = new ArrayVec(nn.ydim());
+          final Vec grad = new ArrayVec(nn.ydim());
           for (int i = 0; i < ensemble.models.length; i++) {
             final ScaledVectorFunc model = (ScaledVectorFunc) ensemble.models[i];
             VecTools.assign(currentWeights, model.weights);
             VecTools.scale(currentWeights, gradTree);
-            model.function.subgradient().leftTo(x, leftGrad);
-            VecTools.scale(leftGrad, ensemble.weights.get(i) * VecTools.sum(currentWeights));
-            VecTools.append(to, leftGrad);
-          }
-
-          return to;
-        }
-
-        @NotNull
-        @Override
-        public Vec rightTo(Vec x, Vec to) {
-          final Vec currentWeights = new ArrayVec(gradTree.dim());
-          final Vec rightGrad = new ArrayVec(nn.ydim());
-          for (int i = 0; i < ensemble.models.length; i++) {
-            final ScaledVectorFunc model = (ScaledVectorFunc) ensemble.models[i];
-            VecTools.assign(currentWeights, model.weights);
-            VecTools.scale(currentWeights, gradTree);
-            model.function.subgradient().rightTo(x, rightGrad);
-            VecTools.scale(rightGrad, ensemble.weights.get(i) * VecTools.sum(currentWeights));
-            VecTools.append(to, rightGrad);
+            ((ProbRegion) model.function).gradientTo(x, grad);
+            VecTools.scale(grad, ensemble.weights.get(i) * VecTools.sum(currentWeights));
+            VecTools.append(to, grad);
           }
 
           return to;
@@ -166,58 +147,38 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
       final Vec result = ensemble.transAll(highLearn.data()).vec();
       final double curLossValue = curLossTrain.value(result);
       System.out.println("[" + iter + "], loss: " + curLossValue);
-      double sgdStep = 1e-17;
+      double sgdStep = 1e-3;
 
-      final Vec sumGrad = VecTools.fill(new ArrayVec(nn.wdim()), 0);
-//      for (int k = 0; k < 10; k++)
       {
         final Vec grad = new ArrayVec(nn.wdim());
-//        final Vec lipshitz = new ArrayVec(nn.wdim());
         final Vec x = nn.weights();
         for (int sgdIter = 0; sgdIter < sgdIterations; sgdIter++) {
-//          final int sampleIdx = sampleIdxsTrain[rng.nextInt(nSampleBuildTree)];
-//          final Vec nnResult = nn.apply(learn.data().row(sampleIdx));
-//          final Vec treeOut = ensemble.trans(nnResult);
 
           VecTools.fill(grad, 0);
           Vec partial = new ArrayVec(nn.wdim());
-          for (int i = 0; i < nSampleBuildTree; i++) {
-            int idx = sampleIdxsTrain[i];
+          for (int i = 0; i < 128; i++) {
+            int idx = sampleIdxsTrain[rng.nextInt(nSampleBuildTree)];
             final Vec nnResult = nn.apply(learn.data().row(idx));
             final Vec treeOut = ensemble.trans(nnResult);
             loss.gradient(treeOut, gradTree, idx);
             final double value = loss.value(ensemble.trans(nnResult), idx);
             final Vec treeGrad = new ArrayVec(nnResult.dim());
-            subgradient.leftTo(nnResult, treeGrad);
-            final Vec realSubgrad = new ArrayVec(nnResult.dim());
-            for (int j = 0; j < nnResult.dim(); j++) {
-              final double epsilon = 1e-7;
-              nnResult.adjust(j, epsilon);
-              double newVal = loss.value(ensemble.trans(nnResult), idx);
-              nnResult.adjust(j, -epsilon);
-              realSubgrad.set(j, (newVal - value) / epsilon);
-            }
-            nn.gradientTo(learn.data().row(idx), x, new TargetByTreeOut(realSubgrad), partial);
+            gradient.transTo(nnResult, treeGrad);
+//            final Vec realGrad = new ArrayVec(nnResult.dim());
+//            for (int j = 0; j < nnResult.dim(); j++) {
+//              final double epsilon = 1e-7;
+//              nnResult.adjust(j, epsilon);
+//              double newVal = loss.value(ensemble.trans(nnResult), idx);
+//              nnResult.adjust(j, -epsilon);
+//              realGrad.set(j, (newVal - value) / epsilon);
+//            }
+            nn.gradientTo(learn.data().row(idx), x, new TargetByTreeOut(treeGrad), partial);
             VecTools.append(grad, partial);
           }
-//          VecTools.append(sumGrad, grad);
-//          for (int w = 0; w < nn.wdim(); w++) {
-//            double gradAbs = Math.abs(grad.get(w));
-//            if (gradAbs == 0)
-//              continue;
-//
-//            final double minGradW = sgdIter == 0 ? gradAbs :
-//                Math.min(gradAbs, lipshitz.get(w));
-//            lipshitz.set(w, minGradW);
-//          }
 
-          VecTools.scale(grad, sgdStep / Math.log(sgdIter + 2));
+          VecTools.scale(grad, sgdStep);
           VecTools.append(nn.weights(), grad);
-//          for (int w = 0; w < nn.wdim(); w++) {
-//            if (lipshitz.get(w) > MathTools.EPSILON && sgdIter > 1000)
-//              grad.set(w, grad.get(w) / lipshitz.get(w));
-//          }
-//          if (((sgdIter) % 1000) == 1) {
+
             for (int i = 0; i < nSampleBuildTree; i++) {
               VecTools.assign(highFeaturesTrain.row(i), nn.apply(learn.data().row(sampleIdxsTrain[i])));
             }
@@ -240,10 +201,10 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   }
 
   private class TargetByTreeOut extends FuncC1.Stub {
-    private final Vec treesSubgradient;
+    private final Vec treesGradient;
 
-    TargetByTreeOut(Vec subgradient) {
-      this.treesSubgradient = subgradient;
+    TargetByTreeOut(Vec gradient) {
+      this.treesGradient = gradient;
     }
 
     @Override
@@ -253,16 +214,13 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
     @Override
     public Vec gradientTo(Vec x, Vec to) {
-      VecTools.assign(to, treesSubgradient);
-//      System.out.println(VecTools.norm(to));
-//      treesSubgradient.rightTo(x, to);
-//      VecTools.scale(to, treeGrad);
+      VecTools.assign(to, treesGradient);
       return to;
     }
 
     @Override
     public int dim() {
-      return treesSubgradient.dim();
+      return treesGradient.dim();
     }
   }
 }
