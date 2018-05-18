@@ -1,8 +1,11 @@
 package com.expleague.ml.methods.greedyRegion;
 
+import com.expleague.commons.math.AnalyticFunc;
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
@@ -14,11 +17,16 @@ import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
+import com.expleague.ml.optimization.FuncConvex;
+import com.expleague.ml.optimization.PDQuadraticFunction;
+import com.expleague.ml.optimization.impl.GradientDescent;
 import gnu.trove.list.array.TIntArrayList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.DoubleAccumulator;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
@@ -43,16 +51,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   @Override
   public ProbRegion fit(VecDataSet learn, final Loss globalLoss) {
 //    if (lastLambda1 == null)
-    {
-      lastLambda1 = new double[grid.size()];
-      lastLambda2 = new double[grid.size()];
-
-      for (int bfIndex = 0; bfIndex < grid.size(); bfIndex++) {
-        final BFGrid.BinaryFeature bf = grid.bf(bfIndex);
-        lastLambda1[bfIndex] = Math.sqrt(0.01 / IntStream.of(globalLoss.points()).mapToDouble(idx -> Math.abs(learn.data().get(idx, bf.findex) - bf.condition)).average().orElse(0));
-        lastLambda2[bfIndex] = lastLambda1[bfIndex];
-      }
-    }
+    lastLambda1 = new Vec[grid.size()];
 
     final double[] mean = new double[depth + 1];
     final double[] lambda1 = new double[depth];
@@ -89,9 +88,9 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
         final double leftScore = globalLoss.score((WeightedLoss.Stat) left);
         final double rightScore = globalLoss.score((WeightedLoss.Stat) right);
         isRight[0] = rightScore <= leftScore;
-        Pair<Double, Double> lambda = estimateLambda(finalPoints, bf, isRight[0], globalLoss, bds);
-        lambda1[level] = lambda.first;
-        lambda2[level] = lambda.second;
+        Vec lambda = estimateLambda(finalPoints, bf, isRight[0], globalLoss, bds);
+        lambda1[level] = lambda.get(0);
+        lambda2[level] = lambda.get(1);
         {
           L2.Stat updatedStat = new L2.Stat(globalLoss.target());
           IntStream.of(finalPoints).forEach(idx -> {
@@ -149,13 +148,13 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   }
 
 
-  private double probRight(double diffX, double lambda1, double lambda2) {
+  private static double probRight(double diffX, double lambda1, double lambda2) {
 //    return diffX <= 0 ? 0. : 1.;
 
 //    final double exp = 1. / lambda * Math.exp(-lambda * diffX * diffX);
 //    return diffX <= 0 ? exp : 1 - exp;
 
-    return diffX > 0 ? 1. / (1. + Math.exp(-(lambda1 * lambda1) * diffX)) : 1. / (1. + Math.exp(-(lambda2 * lambda2) * diffX));
+    return diffX > 0 ? 1. / (1. + Math.exp(-lambda1 * lambda1 * diffX)) : 1. / (1. + Math.exp(-lambda2 * lambda2 * diffX));
   }
 
   private double gradProbRight(double diffX, double lambda1, double lambda2) {
@@ -163,7 +162,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     return diffX > 0 ? v * (1 - v) * (- lambda1 * lambda1) : v * (1 - v) * (- lambda2 * lambda2);
   }
 
-  private double x_i(BinarizedDataSet bds, int pointIdx, int findex) {
+  private static double x_i(BinarizedDataSet bds, int pointIdx, int findex) {
     final VecDataSet original = (VecDataSet)bds.original();
     return original.data().get(pointIdx, findex);
   }
@@ -191,42 +190,59 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   }
 
 
-  double[] lastLambda1;
-  double[] lastLambda2;
+  Vec[] lastLambda1;
 
   @NotNull
-  private Pair<Double, Double> estimateLambda(int[] points, BFGrid.BinaryFeature bf, boolean isRight, WeightedLoss<? extends L2> loss, BinarizedDataSet bds) {
-    VecDataSet original = (VecDataSet)bds.original();
-    final double maxDiff = IntStream.of(points).mapToDouble(idx -> Math.abs(original.data().get(idx, bf.findex) - bf.condition)).max().orElse(0);
-    if (maxDiff == 0)
-      throw new IllegalArgumentException();
-    double current1 = lastLambda1[bf.bfIndex];// 1 / maxDiff;
-    double current2 = lastLambda2[bf.bfIndex];// 1 / maxDiff;
-    final double gradStep = 0.3;
+  private Vec estimateLambda(int[] points, BFGrid.BinaryFeature bf, boolean isRight, WeightedLoss<? extends L2> loss, BinarizedDataSet bds) {
+    final ScoreFromLambda sfl = new ScoreFromLambda(bds, points, loss, isRight, bf);
 
-    for (int sgdIter = 0; sgdIter < 200; sgdIter++) {
-      if ((sgdIter) % 100 == 0) {
-        System.out.println("\t l1 " + current1 + " l2 " + current2);
+    Vec cursor = lastLambda1[bf.bfIndex] != null ? lastLambda1[bf.bfIndex] : (lastLambda1[bf.bfIndex] = new ArrayVec(1, 1));
+    Vec L = new ArrayVec(0.2, 0.2);
+    Vec grad = new ArrayVec(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+    Vec step = new ArrayVec(2);
+    int iter = 0;
+    while (iter < 100000) {
+      sfl.gradientTo(cursor, grad);
+      if (VecTools.l2(grad) < 1e-12)
+        break;
+
+      VecTools.assign(step, grad);
+      VecTools.scale(step, L);
+      VecTools.incscale(cursor, step, 0.01);
+      for (int i = 0; i < L.dim(); i++) {
+        L.set(i, Math.min(L.get(i) / 0.999, 1 / grad.get(i)));
       }
-      final double v = score(bds, points, loss, isRight, current1, current2, bf);
-      final double vPrime1 = score(bds, points, loss, isRight, current1 + MathTools.EPSILON * Math.abs(current1), current2, bf);
-      final double grad1 = (vPrime1 - v) / MathTools.EPSILON / Math.abs(current1);
-
-      final double vPrime2 = score(bds, points, loss, isRight, current1, current2 + MathTools.EPSILON * Math.abs(current2), bf);
-      final double grad2 = (vPrime2 - v) / MathTools.EPSILON / Math.abs(current2);
-
-      current1 -= gradStep * grad1;
-      if (current1 <= 0)
-        current1 = MathTools.EPSILON;
-
-      current2 -= gradStep * grad2;
-      if (current2 <= 0)
-        current2 = MathTools.EPSILON;
+      iter++;
+      if (iter % 1000 == 0)
+        System.out.println(cursor + " score: " + sfl.value(cursor));
     }
-    lastLambda1[bf.bfIndex] = current1;
-    lastLambda2[bf.bfIndex] = current2;
 
-    return new Pair<>(current1, current2);
+    //        LOG.message("GDM iterations = " + iter + "\n\n");
+    return cursor;
+//
+//    GradientDescent descent = new GradientDescent(new ArrayVec(0, 0), 0.00001);
+//    return descent.optimize(sfl);
+//    final Vec l = new ArrayVec(1, 1);
+    //    final double rightBorderL1 = sfl.findRight(l, 0);
+//    final double lambda1 = MathTools.bisection(new AnalyticFunc.Stub() {
+//      @Override
+//      public double value(double x) {
+//        l.set(0, x);
+//        return sfl.gradient(l).get(0);
+//      }
+//    }, -rightBorderL1, rightBorderL1);
+//    l.set(0, lambda1);
+//    final double rightBorderL2 = sfl.findRight(l, 1);
+//    final double lambda2 = MathTools.bisection(new AnalyticFunc.Stub() {
+//      @Override
+//      public double value(double x) {
+//        l.set(1, x);
+//        return sfl.gradient(l).get(1);
+//      }
+//    }, -rightBorderL2, rightBorderL2);
+//    l.set(1, lambda2);
+//
+//    return l;
   }
 
   public class ProbRegion extends FuncC1.Stub {
@@ -297,6 +313,96 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     @Override
     public int dim() {
       return grid.rows();
+    }
+  }
+
+  public static class ScoreFromLambda extends FuncC1.Stub {
+    private final BinarizedDataSet bds;
+    private final int[] points;
+    private final WeightedLoss<? extends L2> loss;
+    private final boolean isRight;
+    private final BFGrid.BinaryFeature bf;
+
+    public ScoreFromLambda(BinarizedDataSet bds, int[] points, WeightedLoss<? extends L2> loss, boolean isRight, BFGrid.BinaryFeature bf) {
+      this.bds = bds;
+      this.points = points;
+      this.loss = loss;
+      this.isRight = isRight;
+      this.bf = bf;
+    }
+
+    @Override
+    public double value(Vec x) {
+      final double lambda1 = x.get(0);
+      final double lambda2 = x.get(1);
+      Lock lock = new ReentrantLock();
+      L2.Stat updatedStat = new L2.Stat(loss.target());
+      IntStream.of(points).parallel().forEach(idx -> {
+        double probRight = probRight(x_i(bds, idx, bf.findex) - bf.condition, lambda1, lambda2);
+        //noinspection StatementWithEmptyBody
+        while (!lock.tryLock());
+        updatedStat.append(idx, (isRight ? probRight : 1 - probRight) * loss.weight(idx));
+        lock.unlock();
+      });
+      return loss.base().score(updatedStat);
+    }
+
+    @Override
+    public Vec gradientTo(Vec x, Vec to) {
+      final DoubleAccumulator sumYAcc = new DoubleAccumulator((left, right) -> left + right, 0);
+      final DoubleAccumulator sumWAcc = new DoubleAccumulator((left, right) -> left + right, 0);
+      final double lambda1 = x.get(0);
+      final double lambda2 = x.get(1);
+
+      IntStream.of(points).parallel().forEach(idx -> {
+        final double diffX = x_i(bds, idx, bf.findex) - bf.condition;
+        final double probRight = probRight(diffX, lambda1, lambda2);
+        final double w_i = probRight * loss.weight(idx);
+        final double y_i = loss.target().get(idx);
+        sumWAcc.accumulate(w_i);
+        sumYAcc.accumulate(w_i * y_i);
+      });
+
+      final double sumW = sumWAcc.doubleValue();
+      final double sumY = sumYAcc.doubleValue();
+
+      final DoubleAccumulator sumLambda1 = new DoubleAccumulator((left, right) -> left + right, 0);
+      final DoubleAccumulator sumLambda2 = new DoubleAccumulator((left, right) -> left + right, 0);
+      IntStream.of(points).parallel().forEach(idx -> {
+        final double diffX = x_i(bds, idx, bf.findex) - bf.condition;
+        final double probRight = probRight(diffX, lambda1, lambda2);
+        final double y_i = loss.target().get(idx);
+        double dTdw_i = - (sumY * sumY - 2 * y_i * sumW * sumY);
+        if (diffX >= 0)
+          sumLambda1.accumulate(diffX * probRight * (1 - probRight) * dTdw_i);
+        else
+          sumLambda2.accumulate(diffX * probRight * (1 - probRight) * dTdw_i);
+      });
+      to.set(0, 2 * lambda1 * sumLambda1.doubleValue() / sumW / sumW);
+      to.set(1, 2 * lambda2 * sumLambda2.doubleValue() / sumW / sumW);
+      return to;
+    }
+
+    @Override
+    public int dim() {
+      return 2;
+    }
+
+    @Override
+    public Vec L(Vec at) {
+      return new ArrayVec(2, 2);
+    }
+
+    public double findRight(Vec l, int i) {
+      l.set(i, 0);
+      Vec to = new ArrayVec(dim());
+      gradientTo(l, to);
+      l.set(i, 1);
+      double v_0 = to.get(i);
+      while (v_0 * gradientTo(l, to).get(i) > 0) {
+        l.set(i, 2 * l.get(i));
+      }
+      return l.get(i);
     }
   }
 }

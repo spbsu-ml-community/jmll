@@ -1,18 +1,26 @@
 package com.expleague.ml;
 
 import java.io.IOException;
+import java.util.stream.IntStream;
 
 
 import com.expleague.commons.FileTestCase;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
+import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.WeightedL2;
+import com.expleague.ml.loss.WeightedLoss;
+import com.expleague.ml.methods.greedyRegion.GreedyProbLinearRegion;
 import com.expleague.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * User: solar
@@ -172,6 +180,45 @@ public class GridTest extends FileTestCase {
       }
       D_prev = D;
       S_prev = S;
+    }
+  }
+
+  public void testProbLinearScoreFromLambda() {
+    final VecDataSet ds = learn.vecData();
+    final BFGrid grid = GridTools.medianGrid(ds, 32);
+    final L2 target = learn.target(L2.class);
+    WeightedLoss<L2> wloss = new WeightedLoss<>(target, IntStream.range(0, target.dim()).map(idx -> 1).toArray());
+    BinarizedDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+
+    GreedyProbLinearRegion.ScoreFromLambda scoreFromLambda = new GreedyProbLinearRegion.ScoreFromLambda(bds, IntStream.range(0, learn.size()).toArray(), wloss, true, grid.bf(10));
+
+    Vec x = new ArrayVec(10, 10);
+    Vec grad = new ArrayVec(2);
+    scoreFromLambda.gradientTo(x, grad);
+    Vec realGrad = new ArrayVec(2);
+    double v = scoreFromLambda.value(x);
+    x.adjust(0, MathTools.EPSILON);
+    realGrad.set(0, (v - scoreFromLambda.value(x)) / MathTools.EPSILON);
+    x.adjust(0, -MathTools.EPSILON);
+    x.adjust(1, MathTools.EPSILON);
+    realGrad.set(1, (v - scoreFromLambda.value(x)) / MathTools.EPSILON);
+    x.adjust(1, -MathTools.EPSILON);
+    assertTrue(VecTools.distanceL2(grad, realGrad) < 1e-3);
+  }
+
+  public void testPlotProbLinearScoreFromLambda() {
+    final VecDataSet ds = learn.vecData();
+    final BFGrid grid = GridTools.medianGrid(ds, 32);
+    final L2 target = learn.target(L2.class);
+    WeightedLoss<L2> wloss = new WeightedLoss<>(target, IntStream.range(0, target.dim()).map(idx -> 1).toArray());
+    BinarizedDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+
+    GreedyProbLinearRegion.ScoreFromLambda scoreFromLambda = new GreedyProbLinearRegion.ScoreFromLambda(bds, IntStream.range(0, learn.size()).toArray(), wloss, true, grid.bf(10));
+
+    Vec x = new ArrayVec(10, 10);
+    for (int i = 0; i < 100; i++) {
+      x.set(0, i * 0.1 - 5);
+      System.out.println(x + "\t" + scoreFromLambda.value(x));
     }
   }
 
