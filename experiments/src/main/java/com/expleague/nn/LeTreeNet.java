@@ -18,7 +18,7 @@ import java.util.function.Function;
 import static com.expleague.nn.MNISTUtils.*;
 
 public class LeTreeNet {
-  private static final String pathToModel = "experiments/src/main/resources/letreenet.nn";
+  private static final String pathToModel = "experiments/src/main/resources/lenet.nn";
   private static final ConvNet leNet = createLeNet();
   private static final FastRandom rng = new FastRandom();
   private static Mx trainSamples = new VecBasedMx(numTrainSamples, MNISTUtils.widthIn * MNISTUtils.heightIn);
@@ -56,6 +56,12 @@ public class LeTreeNet {
   public static void train() {
     final Vec weights = new ArrayVec(trainSamples.rows());
     VecTools.fill(weights, 1.);
+
+    leNet.load(pathToModel, 4);
+    final int i1 = leNet.wdim() - 500 * 80 - 1;
+    for (int i = i1; i < leNet.wdim(); i++) {
+      leNet.weights().set(i, rng.nextGaussian() * 10);
+    }
 
     final VecDataSetImpl learn = new VecDataSetImpl(trainSamples, null);
     loss = new BlockwiseMLLLogit(new ArrayVec(trainLabels), learn);

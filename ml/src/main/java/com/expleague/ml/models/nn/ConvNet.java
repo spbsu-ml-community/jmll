@@ -62,8 +62,16 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
   }
 
   public void load(String path) {
+    load(path, (int) network.layers().count());
+  }
+
+  public void load(String path, int numLayers) {
+    final int wDimRead = network.layers()
+        .limit(numLayers)
+        .mapToInt(Layer::wdim).sum();
+
     try (DataInputStream dos = new DataInputStream(new FileInputStream(path))) {
-      for (int i = 0; i < wdim(); i++) {
+      for (int i = 0; i < wDimRead; i++) {
         weights.set(i, dos.readDouble());
       }
     }

@@ -147,12 +147,12 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
       final Vec result = ensemble.transAll(highLearn.data()).vec();
       final double curLossValue = curLossTrain.value(result);
       System.out.println("[" + iter + "], loss: " + curLossValue);
-      double sgdStep = 1e-3;
+      double sgdStep = 1e-4;
 
       {
         final Vec grad = new ArrayVec(nn.wdim());
         final Vec x = nn.weights();
-        for (int sgdIter = 0; sgdIter < sgdIterations; sgdIter++) {
+        for (int sgdIter = 0; sgdIter < 100000; sgdIter++) {
 
           VecTools.fill(grad, 0);
           Vec partial = new ArrayVec(nn.wdim());
@@ -176,6 +176,10 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
             VecTools.append(grad, partial);
           }
 
+          final int lastLayerWStart = nn.wdim() - 500 * 80;
+          for (int i = 0; i < lastLayerWStart; i++) {
+            grad.set(i, 0);
+          }
           VecTools.scale(grad, sgdStep);
           VecTools.append(nn.weights(), grad);
 
