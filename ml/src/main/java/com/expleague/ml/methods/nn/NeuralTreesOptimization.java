@@ -49,7 +49,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   public NeuralTreesOptimization(int numIterations, int nSampleBuildTree, int sgdIterations, ConvNet nn, FastRandom rng, PrintStream debug) {
     this.numIterations = numIterations;
     this.nSampleBuildTree = 1000;//nSampleBuildTree;
-    this.sgdIterations = 1000;//10;
+    this.sgdIterations = 100;//10;
     this.batchSize = 128;
     this.nn = nn;
     this.rng = rng;
@@ -67,13 +67,18 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
       final Ensemble ensemble = fitBoosting(highLearn, highTest);
 
       {
+        Vec L = new ArrayVec(nn.wdim());
+        Vec grad = new ArrayVec(nn.wdim());
+        Vec step = new ArrayVec(nn.wdim());
+        VecTools.fill(L, this.sgdStep);
+
         final Vec prevGrad = new ArrayVec(nn.wdim());
         for (int sgdIter = 0; sgdIter < sgdIterations; sgdIter++) {
-          final Vec grad = VecTools.fill(new ArrayVec(nn.wdim()), 0);
-
           final Vec partial = new ArrayVec(nn.wdim());
+          VecTools.fill(grad, 0);
           for (int i = 0; i < batchSize; i++) {
             final int sampleIdx = rng.nextInt(nSampleBuildTree);
+//            final Vec nnResult = highLearn.getCached(sampleIdx);
             final Vec nnResult = highLearn.get(sampleIdx);
             final Vec treeGrad = ensembleGradient(ensemble, highLearn.loss(), nnResult, sampleIdx);
             final Vec baseVec = highLearn.baseVecById(sampleIdx);
@@ -88,20 +93,25 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
             grad.set(i, 0);
           }
           //
+          VecTools.assign(step, grad);
+          VecTools.scale(step, L);
+          VecTools.incscale(nn.weights(), step, 0.1);
+          for (int i = 0; i < L.dim(); i++) {
+            L.set(i, Math.min(L.get(i) / 0.95, 1 / Math.abs(grad.get(i))));
+          }
 
-          VecTools.scale(grad, sgdStep);
-          VecTools.append(nn.weights(), grad);
+          if (sgdIter % 10 == 0 && sgdIter != 0) {
+            highLearn.update();
+            highTest.update();
 
-          highLearn.update();
-          highTest.update();
-
-          final Mx resultTrain = ensemble.transAll(highLearn.data());
-          final Mx resultTest = ensemble.transAll(highTest.data());
-          final double lTrain = highLearn.loss().value(resultTrain);
-          final double lTest = highTest.loss().value(resultTest);
-          debug.println("sgd [" + (sgdIter) + "], loss(train): " + lTrain + " loss(test): " + lTest);
-          debug.println("Grad alignment: " + VecTools.cosine(prevGrad, grad));
-          VecTools.assign(prevGrad, grad);
+            final Mx resultTrain = ensemble.transAll(highLearn.data());
+            final Mx resultTest = ensemble.transAll(highTest.data());
+            final double lTrain = highLearn.loss().value(resultTrain);
+            final double lTest = highTest.loss().value(resultTest);
+            debug.println("sgd [" + (sgdIter) + "], loss(train): " + lTrain + " loss(test): " + lTest);
+            debug.println("Grad alignment: " + VecTools.cosine(prevGrad, grad));
+            VecTools.assign(prevGrad, grad);
+          }
         }
       }
     }
@@ -143,7 +153,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
     final BootstrapOptimization bootstrap = new BootstrapOptimization(weak, rng);
 
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(new GradFacMulticlass(
-        bootstrap, new ALS(150, 0.), L2Reg.class, false), L2Reg.class, 1000, 0.1);
+        bootstrap, new ALS(150, 0.), L2Reg.class, false), L2Reg.class, 1000, 0.2);
 
     final Consumer<Trans> counter = new ProgressHandler() {
       int index = 0;
@@ -256,8 +266,14 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
       highData = normalizer.transAll(highData, true);
     }
 
-    public Vec get(int sampleIdx) {
+    public Vec getCached(int sampleIdx) {
       return highData.row(sampleIdx);
+    }
+
+    public Vec get(int idx) {
+      final Vec apply = nn.apply(base.data().row(sampleIdxs[idx]));
+      normalizer.transTo(apply, apply);
+      return apply;
     }
   }
 

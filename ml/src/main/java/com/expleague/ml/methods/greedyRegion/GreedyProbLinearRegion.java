@@ -202,7 +202,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
 //      VecTools.scale(step, L);
 //      VecTools.incscale(cursor, step, 0.01);
 //      for (int i = 0; i < L.dim(); i++) {
-//        L.set(i, Math.min(L.get(i) / 0.999, 1 / grad.get(i)));
+//        L.set(i, Math.min(L.getCached(i) / 0.999, 1 / grad.getCached(i)));
 //      }
 //      iter++;
 //      if (iter % 1000 == 0)
@@ -220,7 +220,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
 //      @Override
 //      public double value(double x) {
 //        l.set(0, x);
-//        return sfl.gradient(l).get(0);
+//        return sfl.gradient(l).getCached(0);
 //      }
 //    }, -rightBorderL1, rightBorderL1);
 //    l.set(0, lambda1);
@@ -229,7 +229,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
 //      @Override
 //      public double value(double x) {
 //        l.set(1, x);
-//        return sfl.gradient(l).get(1);
+//        return sfl.gradient(l).getCached(1);
 //      }
 //    }, -rightBorderL2, rightBorderL2);
 //    l.set(1, lambda2);
@@ -289,7 +289,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
         beta[level] = mean[level + 1] + probLevel(level, x) * beta[level + 1];
       }
 
-      for (int fIndex = 0; fIndex < x.dim(); fIndex++) {
+      IntStream.range(0, x.dim()).parallel().forEach(fIndex -> {
         double grad = 0.;
         double prob = 1.;
         for (int level = 0; level < features.length; level++) {
@@ -297,7 +297,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
           prob *= probLevel(level, x);
         }
         to.set(fIndex, grad);
-      }
+      });
 
       return to;
     }
