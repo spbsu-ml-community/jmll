@@ -2,7 +2,6 @@ package com.expleague.ml.methods.greedyRegion;
 
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
@@ -90,7 +89,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
             double probRight = probRight(x_i(bds, idx, bf.findex) - bf.condition, lambda1[level], lambda2[level]);
             updatedStat.append(idx, (isRight[0] ? probRight : 1 - probRight) * globalLoss.weight(idx));
           });
-          System.out.println("Optimized lambda: " + lambda1[level] + " " + lambda2[level] + " score: " + (isRight[0] ? rightScore : leftScore) + " -> " + globalLoss.base().score(updatedStat));
+//          System.out.println("Optimized lambda: " + lambda1[level] + " " + lambda2[level] + " score: " + (isRight[0] ? rightScore : leftScore) + " -> " + globalLoss.base().score(updatedStat));
         }
       });
 
@@ -187,31 +186,31 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
 
   @NotNull
   private Vec estimateLambda(int[] points, BFGrid.BinaryFeature bf, boolean isRight, WeightedLoss<? extends L2> loss, BinarizedDataSet bds) {
-    final ScoreFromLambda sfl = new ScoreFromLambda(bds, points, loss, isRight, bf);
-
-    Vec cursor = lastLambda1[bf.bfIndex] != null ? lastLambda1[bf.bfIndex] : (lastLambda1[bf.bfIndex] = new ArrayVec(1, 1));
-    Vec L = new ArrayVec(0.2, 0.2);
-    Vec grad = new ArrayVec(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-    Vec step = new ArrayVec(2);
-    int iter = 0;
-    while (iter < 100000) {
-      sfl.gradientTo(cursor, grad);
-      if (VecTools.l2(grad) < 1e-12)
-        break;
-
-      VecTools.assign(step, grad);
-      VecTools.scale(step, L);
-      VecTools.incscale(cursor, step, 0.01);
-      for (int i = 0; i < L.dim(); i++) {
-        L.set(i, Math.min(L.get(i) / 0.999, 1 / grad.get(i)));
-      }
-      iter++;
+//    final ScoreFromLambda sfl = new ScoreFromLambda(bds, points, loss, isRight, bf);
+//
+//    Vec cursor = lastLambda1[bf.bfIndex] != null ? lastLambda1[bf.bfIndex] : (lastLambda1[bf.bfIndex] = new ArrayVec(1, 1));
+//    Vec L = new ArrayVec(0.2, 0.2);
+//    Vec grad = new ArrayVec(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+//    Vec step = new ArrayVec(2);
+//    int iter = 0;
+//    while (iter < 100000) {
+//      sfl.gradientTo(cursor, grad);
+//      if (VecTools.l2(grad) < 1e-12)
+//        break;
+//
+//      VecTools.assign(step, grad);
+//      VecTools.scale(step, L);
+//      VecTools.incscale(cursor, step, 0.01);
+//      for (int i = 0; i < L.dim(); i++) {
+//        L.set(i, Math.min(L.get(i) / 0.999, 1 / grad.get(i)));
+//      }
+//      iter++;
 //      if (iter % 1000 == 0)
 //        System.out.println(cursor + " score: " + sfl.value(cursor));
-    }
+//    }
 
     //        LOG.message("GDM iterations = " + iter + "\n\n");
-    return cursor;
+    return new ArrayVec(1., 1.);
 //
 //    GradientDescent descent = new GradientDescent(new ArrayVec(0, 0), 0.00001);
 //    return descent.optimize(sfl);

@@ -154,9 +154,9 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
         if (index % 100 == 0) {
           final Mx resultTrain = partial.transAll(learn.data());
-          final double lTest = learn.loss().value(resultTrain);
-          final Mx resultTest = partial.transAll(learn.data());
-          final double lTrain = test.loss().value(resultTest);
+          final double lTrain = learn.loss().value(resultTrain);
+          final Mx resultTest = partial.transAll(test.data());
+          final double lTest = test.loss().value(resultTest);
           debug.println("boost [" + (index) + "], loss(train): " + lTrain + " loss(test): " + lTest);
         }
       }
@@ -272,8 +272,8 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
       this.newDisp = newDisp;
       final int featuresDim = data.columns();
 
-      mean = new ArrayVec(featuresDim);
-      disp = new ArrayVec(featuresDim);
+      mean = VecTools.fill(new ArrayVec(featuresDim), 0.);
+      disp = VecTools.fill(new ArrayVec(featuresDim), 0.);
 
       for (int i = 0; i < data.rows(); i++) {
         final Vec row = data.row(i);
@@ -281,9 +281,14 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
         appendSqr(disp, row, 1.);
       }
 
-      VecTools.scale(mean, 1. / featuresDim);
-      VecTools.scale(disp, 1. / featuresDim);
+      VecTools.scale(mean, 1. / data.rows());
+      VecTools.scale(disp, 1. / data.rows());
       appendSqr(disp, mean, -1.);
+
+      for (int i = 0; i < featuresDim; i++) {
+        double v = disp.get(i) == 0. ? 1. : disp.get(i);
+        disp.set(i, v);
+      }
     }
 
     @Override

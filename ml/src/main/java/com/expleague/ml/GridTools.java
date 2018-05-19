@@ -114,7 +114,7 @@ public class GridTools {
           if (known.contains(crcs[b]))
             continue;
           known.add(crcs[b]);
-          dborders.add(feature[borders.get(b) - 1] + feature[borders.get(b)] / 2);
+          dborders.add((feature[borders.get(b) - 1] + feature[borders.get(b)]) / 2.);
           sizes.add(borders.get(b));
         }
       }
