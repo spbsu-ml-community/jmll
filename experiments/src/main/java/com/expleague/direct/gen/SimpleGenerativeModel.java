@@ -12,6 +12,7 @@ import com.expleague.commons.seq.*;
 import com.expleague.commons.util.ArrayTools;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 import gnu.trove.procedure.TIntDoubleProcedure;
 
@@ -38,7 +39,7 @@ public class SimpleGenerativeModel {
   private final FastRandom rng = new FastRandom(0);
   public static final int GIBBS_COUNT = 10;
 
-  public SimpleGenerativeModel(Dictionary<CharSeq> dict, TIntList freqsLA) {
+  public SimpleGenerativeModel(Dictionary<CharSeq> dict, TIntArrayList freqsLA) {
     this.dict = dict;
     this.providers = new WordGenProbabilityProvider[dict.size() + 1];
     this.freqs = freqsLA;
@@ -88,7 +89,7 @@ public class SimpleGenerativeModel {
   private double windowSum = 0;
 
   public double totalFreq = 0;
-  public final TIntList freqs;
+  public final TIntArrayList freqs;
 
   public void processSeq(IntSeq prevQSeq) {
     for (int i = 0; i < prevQSeq.length(); i++) {

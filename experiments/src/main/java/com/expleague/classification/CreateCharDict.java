@@ -111,7 +111,7 @@ public class CreateCharDict {
 
   private static void convertNG20() throws Exception {
     List<CharSeq> alpha = new ArrayList<>();
-    TIntList freqs = new TIntArrayList();
+    TIntArrayList freqs = new TIntArrayList();
     {
       BufferedReader br = new BufferedReader(new FileReader(new File("results/20000_20ng.txt")));
 //      int idx = 0;
