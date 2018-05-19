@@ -39,6 +39,10 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
     return to;
   }
 
+  public Vec gradientTo(Vec x, TransC1 target, Vec to) {
+    return gradientTo(x, weights, target, to);
+  }
+
   @Override
   public Vec gradientTo(Vec x, Vec to) {
     neuralSpider.parametersGradient(network, x, target, weights, to);

@@ -206,8 +206,8 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
         L.set(i, Math.min(L.get(i) / 0.999, 1 / grad.get(i)));
       }
       iter++;
-      if (iter % 1000 == 0)
-        System.out.println(cursor + " score: " + sfl.value(cursor));
+//      if (iter % 1000 == 0)
+//        System.out.println(cursor + " score: " + sfl.value(cursor));
     }
 
     //        LOG.message("GDM iterations = " + iter + "\n\n");
