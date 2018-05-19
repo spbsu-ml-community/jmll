@@ -1,26 +1,23 @@
 package com.expleague.ml;
 
-import java.io.IOException;
-import java.util.stream.IntStream;
-
-
 import com.expleague.commons.FileTestCase;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.data.tools.Pool;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
+import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.greedyRegion.GreedyProbLinearRegion;
 import com.expleague.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
-import org.junit.Test;
+
+import java.io.IOException;
+import java.util.stream.IntStream;
 
 /**
  * User: solar
