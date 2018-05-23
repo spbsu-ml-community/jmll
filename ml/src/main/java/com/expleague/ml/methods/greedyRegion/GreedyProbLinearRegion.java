@@ -80,17 +80,17 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
         final double leftScore = globalLoss.score((WeightedLoss.Stat) left);
         final double rightScore = globalLoss.score((WeightedLoss.Stat) right);
         isRight[0] = rightScore <= leftScore;
-        Vec lambda = estimateLambda(finalPoints, bf, isRight[0], globalLoss, bds);
-        lambda1[level] = lambda.get(0);
-        lambda2[level] = lambda.get(1);
-        {
-          L2.Stat updatedStat = new L2.Stat(globalLoss.target());
-          IntStream.of(finalPoints).forEach(idx -> {
-            double probRight = probRight(x_i(bds, idx, bf.findex) - bf.condition, lambda1[level], lambda2[level]);
-            updatedStat.append(idx, (isRight[0] ? probRight : 1 - probRight) * globalLoss.weight(idx));
-          });
+//        Vec lambda = estimateLambda(finalPoints, bf, isRight[0], globalLoss, bds);
+        lambda1[level] = 1.;
+        lambda2[level] = 1.;
+//        {
+//          L2.Stat updatedStat = new L2.Stat(globalLoss.target());
+//          IntStream.of(finalPoints).forEach(idx -> {
+//            double probRight = probRight(x_i(bds, idx, bf.findex) - bf.condition, lambda1[level], lambda2[level]);
+//            updatedStat.append(idx, (isRight[0] ? probRight : 1 - probRight) * globalLoss.weight(idx));
+//          });
 //          System.out.println("Optimized lambda: " + lambda1[level] + " " + lambda2[level] + " score: " + (isRight[0] ? rightScore : leftScore) + " -> " + globalLoss.base().score(updatedStat));
-        }
+//        }
       });
 
       points = sampleSubset(bds, bestSplitBF, current.getPoints(), lambda1[level], lambda2[level], isRight[0]);

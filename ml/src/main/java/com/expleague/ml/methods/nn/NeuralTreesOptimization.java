@@ -14,7 +14,7 @@ import com.expleague.ml.GridTools;
 import com.expleague.ml.ProgressHandler;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
-import com.expleague.ml.factorization.impl.ALS;
+import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.ScaledVectorFunc;
 import com.expleague.ml.loss.L2Reg;
@@ -52,12 +52,12 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   }
 
   public NeuralTreesOptimization(int numIterations, int nSampleBuildTree, int sgdIterations, ConvNet nn, FastRandom rng, PrintStream debug) {
-    this.numIterations = 0;
+    this.numIterations = 1000;
     this.nSampleBuildTree = 4000;
-    this.sgdIterations = 500;
+    this.sgdIterations = 250;
     this.batchSize = 64;
-    this.numTrees = 5000;
-    this.boostingStep = 2;
+    this.numTrees = 2000;
+    this.boostingStep = 1;
     this.nn = nn;
     this.rng = rng;
     this.debug = debug;
@@ -173,7 +173,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
     final BootstrapOptimization bootstrap = new BootstrapOptimization(weak, rng);
 
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(new GradFacMulticlass(
-        bootstrap, new ALS(150, 0.), L2Reg.class, false), L2Reg.class, numTrees, boostingStep);
+        bootstrap, new StochasticALS(rng, 1000.), L2Reg.class, false), L2Reg.class, numTrees, boostingStep);
 
     final Consumer<Trans> counter = new ProgressHandler() {
       int index = 0;
