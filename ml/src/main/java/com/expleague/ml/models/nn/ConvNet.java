@@ -6,9 +6,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.generic.Sum;
-import com.expleague.ml.models.nn.layers.InputLayerBuilder;
-import com.expleague.ml.models.nn.layers.Layer;
-import com.expleague.ml.models.nn.layers.LayerBuilder;
+import com.expleague.ml.models.nn.layers.*;
 
 import java.io.*;
 
@@ -84,12 +82,22 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
     }
   }
 
+  @Override
+  public String toString() {
+    return network.toString();
+  }
+
   public Vec weights() {
     return weights;
   }
 
   @Override
   public int xdim() {
+    if (network.input() instanceof ConstSizeInput
+        || network.input() instanceof ConstSizeInput3D){
+      return network.input().getLayer().xdim();
+    }
+
     throw new UnsupportedOperationException();
   }
 

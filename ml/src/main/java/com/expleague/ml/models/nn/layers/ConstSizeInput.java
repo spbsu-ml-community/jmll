@@ -42,6 +42,11 @@ public class ConstSizeInput implements InputLayerBuilder<Vec> {
 
     @Override
     public void initWeights(Vec weights) { }
+
+    @Override
+    public String toString() {
+      return "Input " + Arrays.toString(dims);
+    }
   };
 
   @Override
@@ -72,6 +77,6 @@ public class ConstSizeInput implements InputLayerBuilder<Vec> {
 
   @Override
   public String toString() {
-    return "Input " + Arrays.toString(dims) + "\n";
+    return "Input " + Arrays.toString(dims);
   }
 }
