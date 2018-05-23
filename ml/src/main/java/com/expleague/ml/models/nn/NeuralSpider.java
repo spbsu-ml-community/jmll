@@ -4,8 +4,11 @@ import com.expleague.commons.math.TransC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.expleague.commons.seq.Seq;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.ThreadTools;
 
+import java.lang.reflect.Array;
+import java.util.OptionalInt;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -169,6 +172,7 @@ public class NeuralSpider<In> {
       this.poolExecutor.execute(() ->
       {
         int i = 0;
+        int counter = 0;
         while(i < steps) {
           final int nodeIdx = thread + i * parallelism;
           if (nodeIdx >= state.length())
@@ -184,11 +188,20 @@ public class NeuralSpider<In> {
             i++;
           }
           else {
-            cursor[0] = stream(cursor, 1, cursor.length)
-                .sorted().min().getAsInt();
-            if (end > cursor[0]) {
-              Thread.yield();
+            int min = Integer.MAX_VALUE;
+            for (int k = 1; k < cursor.length; k++) {
+              min = Math.min(cursor[k], min);
             }
+            //noinspection StatementWithEmptyBody
+            while (ArrayTools.indexOf(++min, cursor) > 0);
+            cursor[0] = min - 1;
+            if (end > cursor[0]) {
+              if (counter++ > 1000000) {
+                counter = 0;
+                Thread.yield();
+              }
+            }
+            else counter = 0;
           }
         }
         cursor[thread + 1] = nodes.length();
@@ -229,8 +242,7 @@ public class NeuralSpider<In> {
                 i++;
               }
               else {
-                cursor[0] = stream(cursor, 1, cursor.length)
-                    .sorted().min().getAsInt();
+                cursor[0] = stream(cursor, 1, cursor.length).sorted().min().orElse(-1);
                 if (cursor[0] < end) {
                   Thread.yield();
                 }

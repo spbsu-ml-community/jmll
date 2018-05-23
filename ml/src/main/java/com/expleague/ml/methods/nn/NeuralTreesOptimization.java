@@ -54,10 +54,10 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   public NeuralTreesOptimization(int numIterations, int nSampleBuildTree, int sgdIterations, ConvNet nn, FastRandom rng, PrintStream debug) {
     this.numIterations = 1000;
     this.nSampleBuildTree = 4000;
-    this.sgdIterations = 250;
+    this.sgdIterations = 500;
     this.batchSize = 64;
-    this.numTrees = 2000;
-    this.boostingStep = 1;
+    this.numTrees = 15000;
+    this.boostingStep = 2;
     this.nn = nn;
     this.rng = rng;
     this.debug = debug;
@@ -177,15 +177,30 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
     final Consumer<Trans> counter = new ProgressHandler() {
       int index = 0;
+      Mx currentLearn = new VecBasedMx(learn.data().rows(), learn.loss.blockSize());
+      Mx currentTest = new VecBasedMx(test.data().rows(), learn.loss.blockSize());;
 
       @Override
       public void accept(Trans partial) {
         index++;
+        Mx resultTrain = null;
+        Mx resultTest = null;
+        if (partial instanceof Ensemble) {
+          Ensemble ensemble = (Ensemble) partial;
+          Trans last = ensemble.last();
+          VecTools.incscale(currentLearn, last.transAll(learn.data()), ensemble.wlast());
+          resultTrain = currentLearn;
+          VecTools.incscale(currentTest, last.transAll(test.data()), ensemble.wlast());
+          resultTest = currentTest;
+        }
 
         if (index % 100 == 0) {
-          final Mx resultTrain = partial.transAll(learn.data());
+          if (resultTest == null || resultTrain == null){
+            resultTrain = partial.transAll(learn.data());
+            resultTest = partial.transAll(test.data());
+          }
+
           final double lTrain = learn.loss().value(resultTrain);
-          final Mx resultTest = partial.transAll(test.data());
           final double lTest = test.loss().value(resultTest);
           final double accTest = accuracy(test.loss(), resultTest);
           debug.println("boost [" + (index) + "], loss(train): " + lTrain +

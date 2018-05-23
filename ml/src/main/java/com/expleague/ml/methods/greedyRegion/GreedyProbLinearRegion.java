@@ -35,9 +35,11 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   protected final BFGrid grid;
   private final int depth;
 
+  private final double[] beta;
   public GreedyProbLinearRegion(final BFGrid grid, int depth) {
     this.grid = grid;
     this.depth = depth;
+    beta = new double[this.depth];
   }
 
   @Override
@@ -283,10 +285,10 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
 
     @Override
     public Vec gradientTo(Vec x, Vec to) {
-      final double[] beta = new double[depth];
+      final double[] probs = IntStream.range(0, depth).parallel().mapToDouble(lvl -> probLevel(lvl, x)).toArray();
       beta[depth - 1] = mean[depth];
       for (int level = depth - 2; level >= 0; level--) {
-        beta[level] = mean[level + 1] + probLevel(level, x) * beta[level + 1];
+        beta[level] = mean[level + 1] + probs[level] * beta[level + 1];
       }
 
       IntStream.range(0, x.dim()).parallel().forEach(fIndex -> {
@@ -294,7 +296,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
         double prob = 1.;
         for (int level = 0; level < features.length; level++) {
           grad += prob * gradientByFeature(level, fIndex, x) * beta[level];
-          prob *= probLevel(level, x);
+          prob *= probs[level];
         }
         to.set(fIndex, grad);
       });
