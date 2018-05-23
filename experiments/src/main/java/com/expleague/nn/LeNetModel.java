@@ -7,6 +7,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.seq.IntSeq;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.func.generic.ReLU;
@@ -25,8 +26,8 @@ public class LeNetModel {
   private static final FastRandom rng = new FastRandom();
   private static Mx trainSamples = new VecBasedMx(numTrainSamples, MNISTUtils.widthIn * MNISTUtils.heightIn);
   private static Mx testSamples = new VecBasedMx(numTestSamples, MNISTUtils.widthIn * MNISTUtils.heightIn);
-  private static double[] trainLabels = new double[numTrainSamples];
-  private static double[] testLabels = new double[numTestSamples];
+  private static int[] trainLabels = new int[numTrainSamples];
+  private static int[] testLabels = new int[numTestSamples];
   private static CrossEntropy loss;
 
   public static void main(String[] args) {
@@ -63,7 +64,7 @@ public class LeNetModel {
     final Vec weights = new ArrayVec(trainSamples.rows());
     VecTools.fill(weights, 1.);
 
-    loss = new CrossEntropy(new ArrayVec(trainLabels),
+    loss = new CrossEntropy(new IntSeq(trainLabels),
         new VecDataSetImpl(trainSamples, null), nClasses);
 
     final ConvNetSample[] funcs = new ConvNetSample[trainSamples.rows()];
@@ -77,7 +78,7 @@ public class LeNetModel {
 
     optimizer.optimize(func, leNet.weights());
 
-    testModel(leNet, trainLabels, trainSamples, testLabels, testSamples);
+    testSoftmaxModel(leNet, trainLabels, trainSamples, testLabels, testSamples);
 
     leNet.save(pathToModel);
   }

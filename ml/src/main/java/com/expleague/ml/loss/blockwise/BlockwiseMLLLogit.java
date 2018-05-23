@@ -90,6 +90,20 @@ public class BlockwiseMLLLogit extends BlockwiseFuncC1.Stub implements TargetFun
     return result;
   }
 
+  public Vec prob(Vec argument, Vec to) {
+    double sum = 0.;
+    for (int c = 0; c < blockSize(); c++) {
+      sum += exp(argument.get(c));
+    }
+
+    for (int c = 0; c < blockSize(); c++) {
+      to.set(c, exp(argument.get(c)) / (1. + sum));
+    }
+    to.set(blockSize(), 1. / (1. + sum));
+
+    return to;
+  }
+
   @Override
   public Vec gradientTo(Vec x, Vec to) {
     VecTools.assign(to, x);
