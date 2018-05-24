@@ -120,7 +120,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 //          //
 //          VecTools.assign(step, grad);
 //          VecTools.scale(step, L);
-          VecTools.incscale(nn.weights(), grad, -sgdStep);
+          VecTools.incscale(nn.weights(), grad, sgdStep);
 //          for (int i = 0; i < L.dim(); i++) {
 //            L.set(i, Math.min(L.get(i) / 0.99, 1 / Math.abs(grad.get(i))));
 //          }
