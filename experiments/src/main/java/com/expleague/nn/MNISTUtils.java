@@ -28,10 +28,11 @@ public class MNISTUtils {
   public static final int nClasses = 10;
   public static final int numTrainSamples = 60000;
   public static final int numTestSamples = 10000;
+  private static final String projectDir = System.getProperty("user.dir");
   private static final String urlTrain = "https://pjreddie.com/media/files/mnist_train.csv";
   private static final String urlTest = "https://pjreddie.com/media/files/mnist_test.csv";
-  private static final String pathTrain = "experiments/src/main/resources/mnist_train.csv";
-  private static final String pathTest = "experiments/src/main/resources/mnist_test.csv";
+  private static final String pathTrain = projectDir + "/src/main/resources/mnist_train.csv";
+  private static final String pathTest = projectDir + "/src/main/resources/mnist_test.csv";
 
   public static void downloadFile(String url, String path) {
     try {

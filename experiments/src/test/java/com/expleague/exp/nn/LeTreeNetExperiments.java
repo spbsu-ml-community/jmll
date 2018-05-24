@@ -1,10 +1,8 @@
-package com.expleague.nn;
+package com.expleague.exp.nn;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.IntSeq;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
@@ -13,28 +11,30 @@ import com.expleague.ml.methods.nn.NeuralTreesOptimization;
 import com.expleague.ml.models.nn.ConvNet;
 import com.expleague.ml.models.nn.NetworkBuilder;
 import com.expleague.ml.models.nn.layers.*;
-
-import java.util.function.Function;
+import com.expleague.nn.MNISTUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 import static com.expleague.nn.MNISTUtils.*;
 
-public class LeTreeNet {
-  private static final String pathToModel = "experiments/src/main/resources/lenet.nn";
-  private static final ConvNet leNet = createLeNet();
-  private static final ConvNet mobileNet = createMobileNet();
+public class LeTreeNetExperiments {
+  private static final String PATH_TO_LENET_MODEL = "../experiments/src/main/resources/lenet.nn";
   private static final FastRandom rng = new FastRandom();
   private static Mx trainSamples = new VecBasedMx(numTrainSamples, MNISTUtils.widthIn * MNISTUtils.heightIn);
   private static Mx testSamples = new VecBasedMx(numTestSamples, MNISTUtils.widthIn * MNISTUtils.heightIn);
   private static int[] trainLabels = new int[numTrainSamples];
   private static int[] testLabels = new int[numTestSamples];
   private static BlockwiseMLLLogit loss;
+  private VecDataSetImpl learn;
 
-  public static void main(String[] args) {
+  @Before
+  public void setUp() {
     readMnist(trainLabels, trainSamples, testLabels, testSamples);
-    train();
+    learn = new VecDataSetImpl(trainSamples, null);
+    loss = new BlockwiseMLLLogit(new IntSeq(trainLabels), learn);
   }
 
-  private static ConvNet createLeNet() {
+  private static ConvNet createConvLeNet() {
     final NetworkBuilder<Vec>.Network network =
         new NetworkBuilder<>(new ConstSizeInput3D(heightIn, widthIn, 1))
             .append(ConvLayerBuilder.create()
@@ -47,7 +47,6 @@ public class LeTreeNet {
                 .ksize(5, 5)
                 .weightFill(FillerType.XAVIER))
             .append(PoolLayerBuilder.create().ksize(2, 2).stride(2, 2))
-//            .append(FCLayerBuilder.create().nOut(50).weightFill(FillerType.XAVIER))
             .build(new OneOutLayer());
 
     System.out.println(network);
@@ -75,22 +74,38 @@ public class LeTreeNet {
     return new ConvNet(network);
   }
 
-  public static void train() {
-    final Vec weights = new ArrayVec(trainSamples.rows());
-    VecTools.fill(weights, 1.);
-
-//    leNet.load(pathToModel, 4);
-//    final int i1 = leNet.wdim() - 500 * 80 - 1;
-//    for (int i = i1; i < leNet.wdim(); i++) {
-//      leNet.weights().set(i, rng.nextGaussian() * 10);
-//    }
-
-    final VecDataSetImpl learn = new VecDataSetImpl(trainSamples, null);
-    loss = new BlockwiseMLLLogit(new IntSeq(trainLabels), learn);
+  @Test
+  public void trainOnLeNetFeatures() {
+    final ConvNet nn = createConvLeNet();
+    nn.load(PATH_TO_LENET_MODEL, 4);
 
     NeuralTreesOptimization optimization =
-        new NeuralTreesOptimization(1000, 2500, 100, mobileNet, rng);
+        new NeuralTreesOptimization(0, 4000, 500, 64, 1e-6,
+            15000, 0.6, nn, rng, System.out);
     optimization.setTest(new VecDataSetImpl(testSamples, null), new IntSeq(testLabels));
-    final Function<Vec, Vec> leTreeNet = optimization.fit(learn, loss);
+    optimization.fit(learn, loss);
+  }
+
+  @Test
+  public void trainSgdOnLeNetFeatures() {
+    final ConvNet nn = createConvLeNet();
+    nn.load(PATH_TO_LENET_MODEL, 4);
+
+    NeuralTreesOptimization optimization =
+        new NeuralTreesOptimization(1000, 512, 500, 64, 1e-5,
+            15000, 0.8, nn, rng, System.out);
+    optimization.setTest(new VecDataSetImpl(testSamples, null), new IntSeq(testLabels));
+    optimization.fit(learn, loss);
+  }
+
+  @Test
+  public void trainMobileNetFromScratch() {
+    final ConvNet nn = createMobileNet();
+
+    NeuralTreesOptimization optimization =
+        new NeuralTreesOptimization(1000, 4000, 300, 64, 1e-8,
+            3000, 0.3, nn, rng, System.out);
+    optimization.setTest(new VecDataSetImpl(testSamples, null), new IntSeq(testLabels));
+    optimization.fit(learn, loss);
   }
 }

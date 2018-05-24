@@ -291,7 +291,8 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
         beta[level] = mean[level + 1] + probs[level] * beta[level + 1];
       }
 
-      IntStream.range(0, x.dim()).parallel().forEach(fIndex -> {
+      for (int i = 0; i < features.length; i++) {
+        final int fIndex = features[i].findex;
         double grad = 0.;
         double prob = 1.;
         for (int level = 0; level < features.length; level++) {
@@ -299,7 +300,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
           prob *= probs[level];
         }
         to.set(fIndex, grad);
-      });
+      }
 
       return to;
     }

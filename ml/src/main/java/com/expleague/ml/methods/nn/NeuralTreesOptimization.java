@@ -47,21 +47,29 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   private VecDataSet test;
   private BlockwiseMLLLogit testLoss;
 
-  public NeuralTreesOptimization(int numIterations, int nSampleBuildTree, int sgdIterations, ConvNet nn, FastRandom rng) {
-    this(numIterations, nSampleBuildTree, sgdIterations, nn, rng, System.out);
-  }
-
-  public NeuralTreesOptimization(int numIterations, int nSampleBuildTree, int sgdIterations, ConvNet nn, FastRandom rng, PrintStream debug) {
-    this.numIterations = 1000;
-    this.nSampleBuildTree = 4000;
-    this.sgdIterations = 500;
-    this.batchSize = 64;
-    this.numTrees = 15000;
-    this.boostingStep = 2;
+  public NeuralTreesOptimization(int numIterations, int nSampleBuildTree, int sgdIterations, int batchSize,
+                                 double sgdStep, int numTrees, double boostingStep,
+                                 ConvNet nn, FastRandom rng, PrintStream debug) {
+    this.numIterations = numIterations;
+    this.nSampleBuildTree = nSampleBuildTree;
+    this.sgdIterations = sgdIterations;
+    this.batchSize = batchSize;
+    this.numTrees = numTrees;
+    this.boostingStep = boostingStep;
     this.nn = nn;
     this.rng = rng;
     this.debug = debug;
-    this.sgdStep = 1e-6;
+    this.sgdStep = sgdStep;
+
+    debug.printf("parameters:\n" +
+        "    numIterations = %d;\n" +
+        "    nSampleBuildTree = %d;\n" +
+        "    sgdIterations = %d;\n" +
+        "    batchSize = %d;\n" +
+        "    numTrees = %d;\n" +
+        "    boostingStep = %f;\n" +
+        "    sgdStep = %f;\n", numIterations, nSampleBuildTree, sgdIterations,
+        batchSize, numTrees, boostingStep, sgdStep);
   }
 
   public void setTest(VecDataSet test, IntSeq labels) {
@@ -73,7 +81,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   public Function<Vec, Vec> fit(VecDataSet learn, BlockwiseMLLLogit loss) {
     for (int iter = 0; iter < numIterations; iter++) {
       final HighLevelDataset highLearn = HighLevelDataset.sampleFromDataset(learn, loss, nn, nSampleBuildTree, rng);
-      final HighLevelDataset highTest = HighLevelDataset.sampleFromDataset(learn, highLearn.getNormalizer(), loss, nn, nSampleBuildTree, rng);
+      final HighLevelDataset highTest = HighLevelDataset.sampleFromDataset(test, highLearn.getNormalizer(), testLoss, nn, nSampleBuildTree, rng);
       final Ensemble ensemble = fitBoosting(highLearn, highTest);
 
       {
@@ -110,12 +118,12 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 //            grad.set(i, 0);
 //          }
 //          //
-          VecTools.assign(step, grad);
-          VecTools.scale(step, L);
-          VecTools.incscale(nn.weights(), step, 0.1);
-          for (int i = 0; i < L.dim(); i++) {
-            L.set(i, Math.min(L.get(i) / 0.99, 1 / Math.abs(grad.get(i))));
-          }
+//          VecTools.assign(step, grad);
+//          VecTools.scale(step, L);
+          VecTools.incscale(nn.weights(), grad, -sgdStep);
+//          for (int i = 0; i < L.dim(); i++) {
+//            L.set(i, Math.min(L.get(i) / 0.99, 1 / Math.abs(grad.get(i))));
+//          }
 
           if (sgdIter % 20 == 0 && sgdIter != 0) {
             highLearn.update();
@@ -147,7 +155,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   }
 
   private Vec ensembleGradient(Ensemble ensemble, BlockwiseMLLLogit loss, Vec x, int blockId) {
-    final Vec ensembleGrad = VecTools.fill(new ArrayVec(nn.ydim()), 0.);
+    final Vec ensembleGrad = new ArrayVec(nn.ydim());
 
     final Vec lossGrad = new ArrayVec(loss.blockSize());
     final Vec treeOut = ensemble.trans(x);
@@ -156,6 +164,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
     final Vec currentWeights = new ArrayVec(loss.blockSize());
     final Vec grad = new ArrayVec(nn.ydim());
     for (int i = 0; i < ensemble.models.length; i++) {
+      VecTools.fill(grad, 0.);
       final ScaledVectorFunc model = (ScaledVectorFunc) ensemble.models[i];
       VecTools.assign(currentWeights, model.weights);
       VecTools.scale(currentWeights, lossGrad);
@@ -169,7 +178,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
   private Ensemble fitBoosting(HighLevelDataset learn, HighLevelDataset test) {
     final BFGrid grid = GridTools.medianGrid(learn.vec(), 32);
-    final GreedyProbLinearRegion<WeightedLoss<L2Reg>> weak = new GreedyProbLinearRegion<>(grid, 6);
+    final GreedyProbLinearRegion<WeightedLoss<L2Reg>> weak = new GreedyProbLinearRegion<>(grid, 7);
     final BootstrapOptimization bootstrap = new BootstrapOptimization(weak, rng);
 
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(new GradFacMulticlass(
