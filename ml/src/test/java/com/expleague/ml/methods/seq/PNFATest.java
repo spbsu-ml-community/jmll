@@ -11,8 +11,9 @@ import com.expleague.commons.seq.IntSeqBuilder;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.func.FuncEnsemble;
-import com.expleague.ml.func.ReguralizerFunc;
+import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.loss.WeightedL2;
+import com.expleague.ml.methods.seq.param.*;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.impl.SAGADescent;
 import org.junit.Test;
@@ -38,9 +39,9 @@ public class PNFATest {
     }
 
     @Override
-    public Vec optimize(FuncEnsemble<? extends FuncC1> func, ReguralizerFunc reg, Vec x0) {
+    public Vec optimize(FuncEnsemble<? extends FuncC1> func, RegularizerFunc reg, Vec x0) {
       PNFAItemVecRegression model = (PNFAItemVecRegression) func.models[0];
-      model.removeCache();
+
       final double value = model.trans(x0).get(0);
       final Vec grad = model.gradient(x0);
 
@@ -66,9 +67,13 @@ public class PNFATest {
 //    PNFA<WeightedL2> pnfaRegressor = new PNFA<>(
 //        stateCount, stateDim,10, 0.0, 1, random, weightOptimize, valueOptimize, 1
 //    );
+    final double addToDiag = 10;
+
+    BettaParametrization bettaParametrization = new BettaMxParametrization(addToDiag);
+    WeightParametrization weightParametrization = new WeightSquareParametrization(bettaParametrization);
 
     PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
-        stateCount, stateDim, alphabet, 0.0001, 0.001, 100, random, weightOptimize);
+        stateCount, stateCount, stateDim, alphabet, 0.0001, 0.001, addToDiag, 0.1, random, weightOptimize, bettaParametrization, weightParametrization);
 
     pnfaRegressor.fit(new DataSet.Stub<Seq<Integer>>(null) {
       @Override
@@ -93,12 +98,25 @@ public class PNFATest {
     final int stateCount = 2;
     final IntAlphabet alphabet = new IntAlphabet(2);
     int diag = 5;
+    BettaParametrization bettaParametrization = new BettaTwoVecParametrization(diag);
+    WeightParametrization weightParametrization = new WeightSquareParametrization(bettaParametrization);
+
     final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
-        stateCount, 2, alphabet, 1e-5, 1e-3, diag, random,
-        new SAGADescent(0.01, 100000, random, System.out)
-//        new AdamDescent(random, 50, 4, 0.0001)
+        stateCount,
+        stateCount,
+        stateCount,
+        alphabet,
+        1e-5,
+        1e-3,
+        diag,
+        0.0,
+        random,
+        new SAGADescent(0.01, 100000, random, System.out),
+        //        new AdamDescent(random, 50, 4, 0.0001)
 //        new OnlineDescent(0.001, random)
 //        new FullGradientDescent(random, 0.3, 1000)
+        bettaParametrization,
+        weightParametrization
     );
 
     final int TRAIN_SIZE = 1000;
@@ -151,9 +169,9 @@ public class PNFATest {
     System.out.println(acc + " " + 1.0 * acc / TRAIN_SIZE);
 
 
-    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 0, stateCount, diag));
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 0, stateCount));
     System.out.println("=========");
-    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 1, stateCount, diag));
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 1, stateCount));
   }
 
   @Test
@@ -168,11 +186,14 @@ public class PNFATest {
 //        new FullGradientDescent(random, 0.3, 10),
 //        1
 //    );
+    BettaParametrization bettaParametrization = new BettaTwoVecParametrization(diag);
+    WeightParametrization weightParametrization = new WeightSquareParametrization(bettaParametrization);
+
     final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
-        stateCount, 2, alphabet, 1e-5, 1e-3, diag, random,
-        new SAGADescent(0.001, 1000000, random, System.out)
-//        new AdamDescent(random, 50, 4, 0.001)
-    );
+        2, stateCount, 2, alphabet, 1e-5, 1e-3, diag, 0.5, random,
+        new SAGADescent(0.001, 1000000, random, System.out),
+        //        new AdamDescent(random, 50, 4, 0.001)
+        bettaParametrization, weightParametrization);
 
     final int TRAIN_SIZE = 10000;
     List<IntSeq> train = new ArrayList<>();
@@ -228,11 +249,11 @@ public class PNFATest {
     System.out.println(acc + " " + 1.0 * acc / TRAIN_SIZE);
 
 
-    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 0, stateCount, diag));
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 0, stateCount));
     System.out.println("=========");
-    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 1, stateCount, diag));
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 1, stateCount));
     System.out.println("=========");
-    printMx(PNFAItemVecRegression.weightMx(((PNFAModel) model).getParams(), 2, stateCount, diag));
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 2, stateCount));
 //    System.out.println("=========");
 //    printMx(PNFAItemVecRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 3, stateCount, diag));
   }

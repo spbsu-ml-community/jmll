@@ -2,28 +2,19 @@ package com.expleague.ml.optimization.impl;
 
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.MathTools;
-import com.expleague.commons.math.TransC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.func.FuncEnsemble;
-import com.expleague.ml.func.ReguralizerFunc;
+import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.Optimize;
-import com.expleague.ml.optimization.StochasticGradientDescent;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 import java.util.stream.IntStream;
-
-import static java.lang.Math.log;
 
 public class OnlineDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   private final double step;
@@ -36,7 +27,7 @@ public class OnlineDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
 
   private long time;
   @Override
-  public Vec optimize(final FuncEnsemble<? extends FuncC1> ensemble, ReguralizerFunc reg, final Vec x0) {
+  public Vec optimize(final FuncEnsemble<? extends FuncC1> ensemble, RegularizerFunc reg, final Vec x0) {
     time = System.nanoTime();
     Vec cursor = VecTools.copy(x0);
     TIntArrayList taken = new TIntArrayList();

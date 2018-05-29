@@ -12,6 +12,10 @@ import com.expleague.commons.seq.IntSeq;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
+import com.expleague.ml.methods.seq.param.BettaParametrization;
+import com.expleague.ml.methods.seq.param.BettaTwoVecParametrization;
+import com.expleague.ml.methods.seq.param.WeightParametrization;
+import com.expleague.ml.methods.seq.param.WeightSquareParametrization;
 import com.expleague.ml.optimization.impl.AdamDescent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.*;
@@ -31,7 +35,7 @@ public class RunImdb {
   private static final FastRandom random = new FastRandom(239);
 
   private static final int BOOST_ITERS = 1000;
-  private static final int WEIGHTS_EPOCH_COUNT = 5;
+  private static final int WEIGHTS_EPOCH_COUNT = 3;
   private static final int VALUES_EPOCH_COUNT = 5;
   private static final double VALUE_GRAD_STEP = 0.3;
   private static final double GRAD_STEP = 0.3;
@@ -50,6 +54,9 @@ public class RunImdb {
 
   private Dictionary<Character> dictionary;
 
+  private final BettaParametrization bettaParametrization;
+  private final WeightParametrization weightParametrization;
+
   public RunImdb(final int stateCount,
                  final double alpha,
                  final double addToDiag,
@@ -58,6 +65,8 @@ public class RunImdb {
     this.alpha = alpha;
     this.addToDiag = addToDiag;
     this.boostStep = boostStep;
+    bettaParametrization = new BettaTwoVecParametrization(addToDiag);
+    weightParametrization = new WeightSquareParametrization(bettaParametrization);
   }
 
   public void loadWordData() throws IOException {
@@ -168,9 +177,8 @@ public class RunImdb {
     IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFARegressor<>(stateCount, 1, alphabet, alpha, 0.001, addToDiag, random,
-                new AdamDescent(random, WEIGHTS_EPOCH_COUNT, 4)
-            ), random
+            new PNFARegressor<>(2, 5,1, alphabet, alpha, 0.001, addToDiag, 0.1, random,
+                new AdamDescent(random, WEIGHTS_EPOCH_COUNT, 4), bettaParametrization, weightParametrization), random
         ),
         BOOST_ITERS, boostStep
     );

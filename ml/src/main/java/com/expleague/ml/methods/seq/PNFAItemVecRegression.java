@@ -1,7 +1,6 @@
 package com.expleague.ml.methods.seq;
 
 import com.expleague.commons.math.FuncC1;
-import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
@@ -9,6 +8,8 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.IntSeq;
+import com.expleague.ml.methods.seq.param.BettaParametrization;
+import com.expleague.ml.methods.seq.param.WeightParametrization;
 
 public class PNFAItemVecRegression extends FuncC1.Stub {
   private final IntSeq seq;
@@ -16,12 +17,16 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
   private final int stateCount;
   private final int alphabetSize;
   private final int stateDim;
+  private final BettaParametrization bettaParametrization;
+  private final WeightParametrization weightParametrization;
 
-  private final double diag;
-  private volatile Mx[] wCache;
-
-  public PNFAItemVecRegression(final IntSeq seq, final Vec y, final Mx[] wCache, int stateCount, int alphabetSize, int stateDim, double diag) {
-    this.wCache = wCache;
+  public PNFAItemVecRegression(final IntSeq seq,
+                               final Vec y,
+                               int stateCount,
+                               int alphabetSize,
+                               int stateDim,
+                               BettaParametrization bettaParametrization,
+                               WeightParametrization weightParametrization) {
     this.seq = seq;
     this.y = y;
 
@@ -29,12 +34,14 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
     this.alphabetSize = alphabetSize;
     this.stateDim = stateDim;
 
-    this.diag = diag;
+    this.bettaParametrization = bettaParametrization;
+    this.weightParametrization = weightParametrization;
+
   }
 
   @Override
   public int dim() {
-    return 2 * stateCount * alphabetSize + stateCount * stateDim;
+    return bettaParametrization.paramCount(stateCount) * alphabetSize + stateCount * stateDim;
   }
 
   @Override
@@ -49,7 +56,7 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
     VecTools.fill(state.sub(0, stateCount), 1.0 / stateCount);
     //System.out.println("CPU Distribution: " + Arrays.toString(distribution.toArray()));
     for (int i = 0; i < seq.length(); i++) {
-      Mx weightMx = weightMx(x, seq.intAt(i));
+      Mx weightMx = weightParametrization.getMx(x, seq.intAt(i), stateCount);
       MxTools.multiplyTo(weightMx, state.sub(i * stateCount, stateCount), state.sub((i + 1) * stateCount, stateCount));
     }
     final Mx V = getValues(x);
@@ -75,27 +82,16 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
       lastLayerGrad.set(s, 2 * sum);
     }
 
-    final Mx dM = new VecBasedMx(stateCount, stateCount - 1);
+    final Mx dW = new VecBasedMx(stateCount, stateCount);
+    final int paramCount = bettaParametrization.paramCount(stateCount);
+
     for (int i = seq.length() - 1; i >= 0; i--) {
       final int c = seq.intAt(i);
       Vec out = dS[(i + 1) % 2];
       Vec in = dS[i % 2];
 
-      mySoftmaxGradMx(c, x, state.sub(i * stateCount, stateCount), out, in, dM);
-      { // dM -> du & dv
-        final int betaIdx = 2 * stateCount * c;
-        final Vec v = x.sub(betaIdx, stateCount);
-        final Vec u = x.sub(betaIdx + stateCount, stateCount);
-        final Vec dv = grad.sub(betaIdx, stateCount);
-        final Vec du = grad.sub(betaIdx + stateCount, stateCount);
-        for (int k = 0; k < dM.rows(); k++) {
-          for (int s = 0; s < dM.columns(); s++) {
-            double m = dM.get(k, s);
-            du.adjust(s, v.get(k) * m);
-            dv.adjust(k, u.get(s) * m);
-          }
-        }
-      }
+      weightParametrization.gradientTo(x, state.sub(i * stateCount, stateCount), out, in, dW, c, stateCount);
+      bettaParametrization.gradientTo(x, dW, grad.sub(paramCount * c, paramCount), c, stateCount);
     }
 //    final double betta = 0.1 * 2 / stateCount / (stateCount - 1) / stateDim;
 //    for (int i = 0; i < stateCount; i++) {
@@ -109,97 +105,11 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
     return grad;
   }
 
-  Mx getValues(final Vec params) {
+  public Mx getValues(final Vec params) {
     return new VecBasedMx(
         stateCount,
         params.sub(params.dim() - stateCount * stateDim, stateCount * stateDim)
     );
-  }
-
-  public Mx weightMx(final Vec betta, final int c) {
-    if (wCache == null)
-      return weightMx(betta, c, new VecBasedMx(stateCount, stateCount), stateCount, diag);
-    final Mx wCached = wCache[c];
-    if (wCached.get(wCached.dim() - 1) >= 0)
-      return wCached;
-    //noinspection SynchronizationOnLocalVariableOrMethodParameter
-    synchronized (wCached) {
-      if (wCached.get(wCached.dim() - 1) >= 0)
-        return wCached;
-      return weightMx(betta, c, wCached, stateCount, diag);
-    }
-  }
-
-  public static Mx weightMx(Vec betta, int c, int stateCount, double diag) {
-    return weightMx(betta, c, new VecBasedMx(stateCount, stateCount), stateCount, diag);
-  }
-
-  private static Mx weightMx(Vec betta, int c, Mx to, int stateCount, double diag) {
-    for (int f = 0; f < stateCount; f++) {
-      double sum = 1;
-      for (int j = 0; j < stateCount - 1; j++) {
-        final double bettaIJ = getBetta(betta, c, f, j, stateCount, diag);
-        final double e = MathTools.sqr(bettaIJ);
-        sum += e;
-        to.set(j, f, e);
-      }
-      for (int t = 0; t < stateCount - 1; t++) {
-        to.set(t, f, to.get(t, f) / sum);
-      }
-      to.set(stateCount - 1, f,1 / sum); // this last operation is needed for caching
-    }
-    return to;
-  }
-
-  private void mySoftmaxGradMx(int c, final Vec betta, Vec state, final Vec nextdS, final Vec prevdS, final Mx dM) {
-    VecTools.fill(dM, 0);
-    final int stateCount = this.stateCount;
-    for (int f = 0; f < stateCount; f++) {
-      final double prevS_f = state.get(f);
-
-      double sum = 1;
-      {
-        for (int i = 0; i < stateCount - 1; i++) {
-          sum += MathTools.sqr(getBetta(betta, c, f, i, stateCount, diag));
-        }
-      }
-
-      double prevdS_f = 0;
-      final Mx W = weightMx(betta, c);
-      for (int t = 0; t < stateCount; t++) {
-        { // dT/dS_prev_f
-          prevdS_f += W.get(t, f) * nextdS.get(t);
-        }
-
-        { // dT/dM
-          final double grad = prevS_f * nextdS.get(t);
-          final double betta_ft = t < stateCount - 1 ? getBetta(betta, c, f, t, stateCount, diag) : 0;
-          final double betta_ft_2 = MathTools.sqr(betta_ft);
-          final double multiply = 2 * grad  / sum / sum;
-          for (int j = 0; j < stateCount - 1; j++) {
-            final double betta_fj = getBetta(betta, c, f, j, stateCount, diag);
-            if (j == t) {
-              dM.adjust(f, j, multiply * betta_fj * (sum - MathTools.sqr(betta_fj)));
-            }
-            else if (t != stateCount - 1) {
-              dM.adjust(f, j, -multiply * betta_ft_2 * betta_fj);
-            }
-            else {
-              dM.adjust(f, j, -multiply * betta_fj);
-            }
-          }
-        }
-      }
-      prevdS.set(f, prevdS_f);
-    }
-  }
-
-  private static double getBetta(final Vec params, final int c, final int i, final int j, int stateCount, double diag) {
-    final int betaSize = 2 * stateCount;
-    double value = Math.min(1e9, Math.max(-1e9, params.get(c * betaSize + i) * params.get(c * betaSize + stateCount + j)));
-    if (i == j)
-      value += diag;
-    return value;
   }
 
   public Vec distribution(Vec betta) {
@@ -207,7 +117,7 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
     VecTools.fill(distribution[0], 1.0 / stateCount);
     //System.out.println("CPU Distribution: " + Arrays.toString(distribution.toArray()));
     for (int i = 0; i < seq.length(); i++) {
-      Mx weightMx = weightMx(betta, seq.intAt(i));
+      Mx weightMx = weightParametrization.getMx(betta, seq.intAt(i), stateCount);
       //System.out.println(String.format("-- (%s) CPU WeightMx: %s", i,
       //    Arrays.toString(weightMx.toArray())));
       MxTools.multiplyTo(weightMx, distribution[i % 2], distribution[(i + 1) % 2]);
@@ -223,10 +133,6 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
     );
   }
 
-  public void removeCache() {
-    wCache = null;
-  }
-
   public int stateCount() {
     return stateCount;
   }
@@ -238,6 +144,8 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
   public int alphabetSize() {
     return alphabetSize;
   }
+
+
 }
 
 

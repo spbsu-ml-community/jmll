@@ -1,9 +1,9 @@
 package com.expleague.ml.optimization;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.ml.func.ReguralizerFunc;
+import com.expleague.ml.func.RegularizerFunc;
 
-public class UniformReguralizer extends ReguralizerFunc.Stub {
+public class UniformReguralizer extends RegularizerFunc.Stub {
   private final int dim;
 
   public UniformReguralizer(int dim) {

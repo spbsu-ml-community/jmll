@@ -6,7 +6,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
-import com.expleague.ml.func.ReguralizerFunc;
+import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.*;
@@ -49,7 +49,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   }
 
   @Override
-  public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, ReguralizerFunc reg, Vec x0) {
+  public Vec optimize(FuncEnsemble<? extends FuncC1> sumFuncs, RegularizerFunc reg, Vec x0) {
     final long startTime = System.nanoTime();
 
     Vec x = VecTools.copy(x0);
@@ -108,7 +108,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         System.out.println("|x|=" + VecTools.norm(x));
         error = curError;
       } else if (epoch == epochCount - 1) {
-        final double curError = sumFuncs.value(x) / sumFuncs.size();
+        final double curError = getLoss(sumFuncs, x);
         System.out.printf("ADAM descent epoch %d: new=%.6f old=%.6f\n", epoch, curError, error);
       }
     }

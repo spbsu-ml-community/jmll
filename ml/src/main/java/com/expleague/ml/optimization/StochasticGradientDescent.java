@@ -3,9 +3,9 @@ package com.expleague.ml.optimization;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.commons.util.ArrayTools;
-import com.expleague.ml.func.ReguralizerFunc;
+import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.func.RegularizerFunc;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -43,7 +43,7 @@ public class StochasticGradientDescent implements Optimize<FuncEnsemble> {
   }
 
   @Override
-  public Vec optimize(FuncEnsemble sumFuncs, ReguralizerFunc reg, Vec x0) {
+  public Vec optimize(FuncEnsemble sumFuncs, RegularizerFunc reg, Vec x0) {
     if (sumFuncs.last().gradient() == null) {
       throw new IllegalArgumentException("Internal functions must implement not-null gradient()");
     }

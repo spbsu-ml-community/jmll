@@ -7,7 +7,7 @@ import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
-import com.expleague.ml.func.ReguralizerFunc;
+import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
 import java.io.PrintStream;
@@ -43,7 +43,7 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   }
 
   @Override
-  public Vec optimize(final FuncEnsemble<? extends FuncC1> ensemble, ReguralizerFunc reg, final Vec x0) {
+  public Vec optimize(final FuncEnsemble<? extends FuncC1> ensemble, RegularizerFunc reg, final Vec x0) {
     time = System.nanoTime();
     Vec x = VecTools.copy(x0);
 

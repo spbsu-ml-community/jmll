@@ -87,11 +87,9 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
     final Vec params = new ArrayVec(
         (2 * stateCount - 0) * alphabetSize + stateCount * stateDim
     );
-    for (int c = 0; c < alphabetSize; c++) {
 
-      for (int i = 0; i < (2 * stateCount - 0) * alphabetSize; i++) {
-        params.set(i, random.nextGaussian());
-      }
+    for (int i = 0; i < (2 * stateCount - 0) * alphabetSize; i++) {
+      params.set(i, random.nextGaussian());
     }
 
     final Mx values = getValues(params);
@@ -106,6 +104,7 @@ public class PNFA<Loss extends WeightedL2> implements SeqOptimization<Integer, L
       Collections.shuffle(medians, random);
       for (int i = 0; i < stateCount; i++) {
         values.set(i, col, medians.get(i));
+        if (i < stateDim) values.set(i, i, 1);
       }
     }
 
