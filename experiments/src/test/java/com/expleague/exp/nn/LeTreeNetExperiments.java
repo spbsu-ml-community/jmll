@@ -18,7 +18,7 @@ import org.junit.Test;
 import static com.expleague.nn.MNISTUtils.*;
 
 public class LeTreeNetExperiments {
-  private static final String PATH_TO_LENET_MODEL = "../experiments/src/main/resources/lenet.nn";
+  private static final String PATH_TO_LENET_MODEL = "/Users/solar/Downloads/lenet.nn";
   private static final FastRandom rng = new FastRandom();
   private static Mx trainSamples = new VecBasedMx(numTrainSamples, MNISTUtils.widthIn * MNISTUtils.heightIn);
   private static Mx testSamples = new VecBasedMx(numTestSamples, MNISTUtils.widthIn * MNISTUtils.heightIn);
@@ -80,8 +80,8 @@ public class LeTreeNetExperiments {
     nn.load(PATH_TO_LENET_MODEL, 4);
 
     NeuralTreesOptimization optimization =
-        new NeuralTreesOptimization(0, 4000, 500, 64, 1e-6,
-            15000, 0.6, nn, rng, System.out);
+        new NeuralTreesOptimization(100, 20000, 100, 64, 1e-3,
+            1000, 4, nn, rng, System.out);
     optimization.setTest(new VecDataSetImpl(testSamples, null), new IntSeq(testLabels));
     optimization.fit(learn, loss);
   }

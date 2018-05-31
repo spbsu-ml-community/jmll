@@ -1,5 +1,6 @@
 package com.expleague.ml;
 
+import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.util.logging.Logger;
@@ -40,7 +41,7 @@ public class OptimizersTest extends TestCase {
     public void testAllMethodsRandom() {
         final Vec x0 = new ArrayVec(N);
 
-        final List<Optimize<FuncConvex>> algs = new ArrayList<Optimize<FuncConvex>>();
+        final List<Optimize> algs = new ArrayList<>();
         algs.add(new Nesterov1(x0, EPS));
         algs.add(new Nesterov2(x0, EPS));
 //        algs.add(new CustomNesterov(x0));
@@ -49,8 +50,10 @@ public class OptimizersTest extends TestCase {
 
         for (int k = 0; k < TESTS_COUNT; k++) {
             final PDQuadraticFunction func = createRandomConvexFunc(new FastRandom(k));
-            for (final Optimize<FuncConvex> method : algs) {
-                assertTrue(method.getClass().toString(), VecTools.distance(func.getExactExtremum(), method.optimize(func)) < EPS);
+            for (final Optimize method : algs) {
+                //noinspection unchecked
+                Vec optimize = method.optimize(func);
+                assertTrue(method.getClass().toString(), VecTools.distance(func.getExactExtremum(), optimize) < EPS);
             }
         }
     }

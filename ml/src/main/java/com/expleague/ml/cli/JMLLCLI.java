@@ -50,7 +50,6 @@ public class JMLLCLI {
   public static final String RANDOM_SEED_OPTION = "seed";
 
   private static Options options = new Options();
-
   static {
     options.addOption(OptionBuilder.withLongOpt("learn").withDescription("features.txt format file used as learn").hasArg().create(LEARN_OPTION));
     options.addOption(OptionBuilder.withLongOpt("cd").withDescription("features.cd file (catboost pool format)").hasArg().create(CD_FILE));
