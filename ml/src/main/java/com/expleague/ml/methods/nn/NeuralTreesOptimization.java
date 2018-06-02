@@ -41,6 +41,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   private int sgdIterations;
   private int numTrees;
   private final int batchSize;
+  private final WeightDumper weightDumper;
   private final PrintStream debug;
   private double sgdStep;
   private double boostingStep;
@@ -49,7 +50,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
   public NeuralTreesOptimization(int numIterations, int nSampleBuildTree, int sgdIterations, int batchSize,
                                  double sgdStep, int numTrees, double boostingStep,
-                                 ConvNet nn, FastRandom rng, PrintStream debug) {
+                                 ConvNet nn, FastRandom rng, WeightDumper weightDumper, PrintStream debug) {
     this.numIterations = numIterations;
     this.nSampleBuildTree = nSampleBuildTree;
     this.sgdIterations = sgdIterations;
@@ -58,6 +59,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
     this.boostingStep = boostingStep;
     this.nn = nn;
     this.rng = rng;
+    this.weightDumper = weightDumper;
     this.debug = debug;
     this.sgdStep = sgdStep;
 
@@ -79,19 +81,17 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
   @Override
   public Function<Vec, Vec> fit(VecDataSet learn, BlockwiseMLLLogit loss) {
-    DataNormalizer normalizer;
-    {
-      Mx highData = new VecBasedMx(learn.length(), nn.ydim());
-      for (int i = 0; i < learn.length(); i++) {
-        VecTools.assign(highData.row(i), nn.apply(learn.data().row(i)));
-      }
-      normalizer = new DataNormalizer(highData, 0, 3.);
-    }
+    final HighLevelDataset allLearn = HighLevelDataset.createFromDs(learn, loss, nn);
+    final DataNormalizer normalizer = allLearn.normalizer;
+    final HighLevelDataset allTest = HighLevelDataset.createFromDs(test, normalizer, testLoss, nn);
 
     for (int iter = 0; iter < numIterations; iter++) {
-      final HighLevelDataset highLearn = HighLevelDataset.sampleFromDataset(learn, normalizer, loss, nn, nSampleBuildTree, rng);
-      final HighLevelDataset highTest = HighLevelDataset.sampleFromDataset(test, normalizer, testLoss, nn, nSampleBuildTree, rng);
-      final Ensemble ensemble = fitBoosting(highLearn, highTest);
+      if ((iter + 1) % 10 == 0) {
+        weightDumper.dump(iter);
+      }
+//      final HighLevelDataset highLearn = HighLevelDataset.sampleFromDataset(learn, normalizer, loss, nn, nSampleBuildTree, rng);
+//      final HighLevelDataset highTest = HighLevelDataset.sampleFromDataset(test, normalizer, testLoss, nn, nSampleBuildTree, rng);
+      final Ensemble ensemble = fitBoosting(allLearn, allTest);
 
       {
         Vec L = new ArrayVec(nn.wdim());
@@ -105,10 +105,14 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
         for (int sgdIter = 0; sgdIter < sgdIterations; sgdIter++) {
           VecTools.fill(grad, 0);
 
+          double batchLoss = 0.;
           for (int i = 0; i < batchSize; i++) {
             final int sampleIdx = rng.nextInt(learn.length());
             Vec apply = nn.apply(learn.data().row(sampleIdx));
             normalizer.transTo(apply, apply);
+
+            batchLoss += loss.value(ensemble.trans(apply), sampleIdx);
+
             final Vec treeGrad = ensembleGradient(ensemble, loss, apply, sampleIdx);
             final Vec baseVec = learn.data().row(sampleIdx);
             nn.gradientTo(baseVec, new TargetByTreeOut(treeGrad), partial);
@@ -116,12 +120,6 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
             VecTools.append(grad, partial);
           }
 
-          // FIXME
-          final int lastLayerWStart = nn.wdim() - 500 * 80;
-          for (int i = 0; i < lastLayerWStart; i++) {
-            grad.set(i, 0);
-          }
-          //
           VecTools.assign(step, grad);
           VecTools.scale(step, L);
           VecTools.incscale(nn.weights(), step, sgdStep);
@@ -129,27 +127,33 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
             L.set(i, Math.min(L.get(i) / 0.99, 1 / Math.abs(grad.get(i))));
           }
 
-          if (sgdIter % 20 == 0 && sgdIter != 0) {
-            highLearn.update();
-            highTest.update();
-
-            final Mx resultTrain = ensemble.transAll(highLearn.data());
-            final Mx resultTest = ensemble.transAll(highTest.data());
-            final double lTrain = highLearn.loss().value(resultTrain);
-            final double lTest = highTest.loss().value(resultTest);
-            final double accTest = accuracy(highTest.loss(), resultTest);
-            debug.println("sgd [" + (sgdIter) + "], loss(train): " + lTrain +
-                " loss(test): " + lTest + " acc(test): " + accTest);
+          if (sgdIter % 10 == 0) {
+            System.out.println("sgd [" + sgdIter + "] ll on batch: " + Math.exp(batchLoss / batchSize));
             debug.println("Grad alignment: " + VecTools.cosine(prevGrad, grad));
             VecTools.assign(prevGrad, grad);
           }
+
+        }
+//        if ((sgdIter + 1) % 100 == 0) {
+        {
+          allLearn.update();
+          allTest.update();
+
+          final Mx resultTrain = ensemble.transAll(allLearn.data());
+          final Mx resultTest = ensemble.transAll(allTest.data());
+          final double lTrain = allLearn.loss().value(resultTrain);
+          final double lTest = allTest.loss().value(resultTest);
+          final double accTest = accuracy(allTest.loss(), resultTest);
+          debug.println("after sgd: loss(train): " + lTrain +
+              " loss(test): " + lTest + " acc(test): " + accTest);
+
         }
       }
     }
 
     final Vec xOpt = nn.weights();
-    final HighLevelDataset allLearn = HighLevelDataset.createFromDs(learn, normalizer, loss, nn);
-    final HighLevelDataset allTest = HighLevelDataset.createFromDs(test, normalizer, testLoss, nn);
+    boostingStep /= 2.;
+    numTrees = 100000;
     final Ensemble ensemble = fitBoosting(allLearn, allTest);
 
     return argument -> {
@@ -203,7 +207,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
     final Consumer<Trans> counter = new ProgressHandler() {
       int index = 0;
       Mx currentLearn = new VecBasedMx(learn.data().rows(), learn.loss.blockSize());
-      Mx currentTest = new VecBasedMx(test.data().rows(), learn.loss.blockSize());;
+      Mx currentTest = new VecBasedMx(test.data().rows(), learn.loss.blockSize());
 
       @Override
       public void accept(Trans partial) {
@@ -228,8 +232,8 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
           final double lTrain = learn.loss().value(resultTrain);
           final double lTest = test.loss().value(resultTest);
           final double accTest = accuracy(test.loss(), resultTest);
-          debug.println("boost [" + (index) + "], loss(train): " + lTrain +
-              " loss(test): " + lTest + " acc(test): " + accTest);
+          debug.println("boost [" + (index) + "], ll(train): " + lTrain +
+              " ll(test): " + lTest + " acc(test): " + accTest);
         }
       }
     };
@@ -239,7 +243,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
     final Vec result = ensemble.transAll(learn.data()).vec();
     final double curLossValue = learn.loss().value(result);
-    debug.println("ensemble loss: " + curLossValue);
+    debug.println("ensemble ll: " + curLossValue);
 
     return ensemble;
   }
@@ -256,6 +260,20 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
       acc += predict.get(i) == labels.intAt(i) ? 1 : 0;
     }
     return ((double) acc) / results.rows();
+  }
+
+  public static class WeightDumper {
+    private final String path;
+    private final ConvNet nn;
+
+    public WeightDumper(ConvNet nn, String path) {
+      this.nn = nn;
+      this.path = path;
+    }
+
+    public void dump(int iter) {
+      nn.save(path + "_iter_" + iter + ".nn");
+    }
   }
 
   private static class HighLevelDataset {
