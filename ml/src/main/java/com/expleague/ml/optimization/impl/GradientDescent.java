@@ -4,8 +4,7 @@ import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.util.logging.Logger;
-import com.expleague.ml.func.ReguralizerFunc;
+import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.FuncConvex;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.PDQuadraticFunction;
@@ -26,7 +25,7 @@ public class GradientDescent implements Optimize<FuncC1> {
   }
 
   @Override
-  public Vec optimize(final FuncC1 func, ReguralizerFunc reg, Vec x0) {
+  public Vec optimize(final FuncC1 func, RegularizerFunc reg, Vec x0) {
     final boolean isQuadraticFunc = func instanceof PDQuadraticFunction;
 
     final double constStep = 1.0 / VecTools.max(func.L(x0));

@@ -144,11 +144,12 @@ public class PNFABasecall {
     final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(
         0.1, 100000, random, System.out);
     IntAlphabet intAlphabet = new IntAlphabet(ALPHABET_SIZE);
-    final PNFARegressor model = new PNFARegressor<>(stateCount,
-        1, intAlphabet, 0.0001, 0.001,
-        0,
-        random,
-        weightOptimizer);
+    final PNFARegressor model = null;
+//    new PNFARegressor<>(stateCount,
+//        1, intAlphabet, 0.0001, 0.001,
+//        0,
+//        random,
+//        weightOptimizer);
     final GradFacMulticlassSeq<Integer> multiClassModel = new GradFacMulticlassSeq<Integer>(
         model,
         new StochasticALS(random,100),
@@ -236,15 +237,16 @@ public class PNFABasecall {
 //    );
     final Optimize<FuncEnsemble<? extends FuncC1>> weightOptimizer = new SAGADescent(0.001, 1000000, random, System.out);
     IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
-    final SeqOptimization<Integer, L2> model = new BootstrapSeqOptimization<>(
-      new PNFARegressor<>(
-          stateCount,
-          CLASS_COUNT, alphabet,
-          1e-6, 1e-4,
-          10,
-          random,
-          weightOptimizer), random
-    );
+    final SeqOptimization<Integer, L2> model = null;
+//    new BootstrapSeqOptimization<>(
+//      new PNFARegressor<>(
+//          stateCount,
+//          CLASS_COUNT, alphabet,
+//          1e-6, 1e-4,
+//          10,
+//          random,
+//          weightOptimizer), random
+//    );
 
     fitBoostingForModel(model, globalLoss, false);
   }

@@ -35,7 +35,6 @@ import java.util.stream.IntStream;
 
 public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, VecDataSet, Vec> {
   private int numIterations;
-  private int nSampleBuildTree;
   private final ConvNet nn;
   private final FastRandom rng;
   private int sgdIterations;
@@ -48,11 +47,10 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
   private VecDataSet test;
   private BlockwiseMLLLogit testLoss;
 
-  public NeuralTreesOptimization(int numIterations, int nSampleBuildTree, int sgdIterations, int batchSize,
+  public NeuralTreesOptimization(int numIterations, int sgdIterations, int batchSize,
                                  double sgdStep, int numTrees, double boostingStep,
                                  ConvNet nn, FastRandom rng, WeightDumper weightDumper, PrintStream debug) {
     this.numIterations = numIterations;
-    this.nSampleBuildTree = nSampleBuildTree;
     this.sgdIterations = sgdIterations;
     this.batchSize = batchSize;
     this.numTrees = numTrees;
@@ -65,12 +63,11 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
     debug.printf("parameters:\n" +
         "    numIterations = %d;\n" +
-        "    nSampleBuildTree = %d;\n" +
         "    sgdIterations = %d;\n" +
         "    batchSize = %d;\n" +
         "    numTrees = %d;\n" +
         "    boostingStep = %f;\n" +
-        "    sgdStep = %f;\n", numIterations, nSampleBuildTree, sgdIterations,
+        "    sgdStep = %f;\n", numIterations, sgdIterations,
         batchSize, numTrees, boostingStep, sgdStep);
   }
 

@@ -84,7 +84,7 @@ public class LeTreeNetExperiments {
     final WeightDumper dumper = new WeightDumper(nn, DUMP_DIR + "letreenet_lenet_features");
 
     NeuralTreesOptimization optimization =
-        new NeuralTreesOptimization(100, 20000, 100, 64, 1e-3,
+        new NeuralTreesOptimization(100, 100, 64, 1e-3,
             1000, 4, nn, rng, dumper, System.out);
     optimization.setTest(new VecDataSetImpl(testSamples, null), new IntSeq(testLabels));
     optimization.fit(learn, loss);
@@ -97,7 +97,7 @@ public class LeTreeNetExperiments {
     nn.load(PATH_TO_LENET_MODEL, 4);
 
     NeuralTreesOptimization optimization =
-        new NeuralTreesOptimization(1000, 512, 500, 64, 1e-5,
+        new NeuralTreesOptimization(1000, 500, 64, 1e-5,
             15000, 0.8, nn, rng, dumper, System.out);
     optimization.setTest(new VecDataSetImpl(testSamples, null), new IntSeq(testLabels));
     optimization.fit(learn, loss);
@@ -109,7 +109,7 @@ public class LeTreeNetExperiments {
     final WeightDumper dumper = new WeightDumper(nn, DUMP_DIR + "letreenet_scratch_sgd");
 
     NeuralTreesOptimization optimization =
-        new NeuralTreesOptimization(20, 20000, 200, 64, 1e-3,
+        new NeuralTreesOptimization(50, 100, 64, 1e-3,
             1000, 4, nn, rng, dumper, System.out);
     optimization.setTest(new VecDataSetImpl(testSamples, null), new IntSeq(testLabels));
     optimization.fit(learn, loss);
@@ -122,7 +122,7 @@ public class LeTreeNetExperiments {
     final WeightDumper dumper = new WeightDumper(nn, DUMP_DIR + "mobiletreenet_scratch");
 
     NeuralTreesOptimization optimization =
-        new NeuralTreesOptimization(1000, 4000, 300, 64, 1e-8,
+        new NeuralTreesOptimization(1000, 300, 64, 1e-8,
             3000, 0.3, nn, rng, dumper, System.out);
     optimization.setTest(new VecDataSetImpl(testSamples, null), new IntSeq(testLabels));
     optimization.fit(learn, loss);
