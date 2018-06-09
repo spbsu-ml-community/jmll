@@ -4,6 +4,7 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 
 public class BettaMxParametrization implements BettaParametrization {
   private final double addToDiag;
@@ -20,7 +21,9 @@ public class BettaMxParametrization implements BettaParametrization {
   @Override
   public Mx getBettaMx(Vec params, int c, int stateCount) {
     int bettaSize = paramCount(stateCount);
-    Mx betta = new VecBasedMx(stateCount, VecTools.copy(params.sub(c * bettaSize, (c + 1) * bettaSize)));
+    Vec paramsSub = new ArrayVec(bettaSize);
+    VecTools.assign(paramsSub, params.sub(c * bettaSize, (c + 1) * bettaSize));
+    Mx betta = new VecBasedMx(stateCount, paramsSub);
     for (int i = 0; i < stateCount; i++) {
       betta.adjust(i, i, addToDiag);
     }

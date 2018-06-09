@@ -32,11 +32,8 @@ import java.util.function.Function;
 
 public class RunMnist {
   private static final int WEIGHT_EPOCH_COUNT = 15;
-  private static final int BATCH_SIZE = 16;
+  private static final int BATCH_SIZE = 6;
   private static final double WEIGHT_STEP = 0.0002;
-  private static final double VALUE_STEP = 1;
-  private static final int VALUE_EPOCH_COUNT = 15;
-  private static final int PNFA_ITER_COUNT = 5;
 
   private static Options options = new Options();
   private static List<IntSeq> trainData, testData;
@@ -45,8 +42,8 @@ public class RunMnist {
 
   static {
     options.addOption("stateCount", true, "stateCount");
-    options.addOption("lambda", true, "lambda");
-    options.addOption("addToDiag", true, "addToDiad");
+    options.addOption("alpha", true, "alpha");
+    options.addOption("addToDiag", true, "addToDiag");
     options.addOption("boostStep", true, "boostStep");
     options.addOption("dataset", true, "datasetPath");
     options.addOption("checkpointFolder", true, "checkpointFolder");
@@ -149,7 +146,7 @@ public class RunMnist {
         addToDiag,
         0.0,
         random,
-        new AdamDescent(random, WEIGHT_EPOCH_COUNT, BATCH_SIZE, WEIGHT_STEP),
+        new AdamDescent(random, 1, BATCH_SIZE, WEIGHT_STEP),
         bettaParametrization,
         weightParametrization
     );
@@ -176,7 +173,7 @@ public class RunMnist {
     };
 
     GradientSeqBoosting<Integer, L2> boosting =
-        new GradientSeqBoosting<>(new BootstrapSeqOptimization<>(pnfa, new FastRandom(123)), 30, 0.1);
+        new GradientSeqBoosting<>(new BootstrapSeqOptimization<>(pnfa, new FastRandom(123), 1), 30, 0.1);
     Consumer<Function<Seq<Integer>,Vec>> listener = model -> {
       System.out.println("Train accuracy: " + getAccuracy(model, trainData, trainLabels));
       System.out.println("Test accuracy: " + getAccuracy(model, testData, testLabels));

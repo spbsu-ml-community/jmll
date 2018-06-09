@@ -10,6 +10,7 @@ import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
@@ -20,6 +21,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   private final Random random;
   private final int epochCount;
   private final int batchSize;
+  private Consumer<Vec> listener;
 
   public AdamDescent(Random random, int epochCount, int batchSize) {
     this(random, epochCount, batchSize, 0.001, 0.9, 0.999, 1e-8);
@@ -84,7 +86,8 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         timeToGrad += System.nanoTime() - start;
         start = System.nanoTime();
 
-        final int threadCount = Runtime.getRuntime().availableProcessors();
+//        final int threadCount = Runtime.getRuntime().availableProcessors();
+        final int threadCount = batchSize;
         final int blockSize = (x.dim() + threadCount - 1) / threadCount;
         IntStream.range(0, threadCount).parallel().forEach(blockNum -> {
           for (int index = blockNum * blockSize; index < Math.min(finalX.dim(), (blockNum + 1) * blockSize); index++) {
@@ -96,6 +99,9 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         });
         x = reg.project(x);
         timeToSum += System.nanoTime() - start;
+      }
+      if (listener != null) {
+        listener.accept(x);
       }
       if ((epoch + 1) % 5 == 0) {
         final double curError = getLoss(sumFuncs, x);
@@ -115,6 +121,10 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     System.out.printf("Time to grad: %.3f, time to sum: %.3f\n", timeToGrad / 1e9, timeToSum / 1e9);
     System.out.printf("Adam Descent finished in %.2f seconds\n", (System.nanoTime() - startTime) / 1e9);
     return x;
+  }
+
+  public void setListener(Consumer<Vec> listener) {
+    this.listener = listener;
   }
 
   private double getLoss(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x) {

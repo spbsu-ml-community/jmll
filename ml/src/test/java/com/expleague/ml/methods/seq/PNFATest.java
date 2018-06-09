@@ -70,7 +70,7 @@ public class PNFATest {
     final double addToDiag = 10;
 
     BettaParametrization bettaParametrization = new BettaMxParametrization(addToDiag);
-    WeightParametrization weightParametrization = new WeightSquareParametrization(bettaParametrization);
+    WeightParametrization weightParametrization = new WeightExpParametrization(bettaParametrization);
 
     PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(
         stateCount, stateCount, stateDim, alphabet, 0.0001, 0.001, addToDiag, 0.1, random, weightOptimize, bettaParametrization, weightParametrization);

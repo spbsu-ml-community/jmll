@@ -99,6 +99,11 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
 
       params = weightsOptimize.optimize(func, regularizer, params);
 
+      double totalEntropy = 0;
+      for (int i =0 ; i < learn.length(); i++) {
+        totalEntropy += VecTools.entropy(funcs[i].distribution(params));
+      }
+      System.out.println("Entropy: " + (totalEntropy / learn.length()));
       if (stateCount == endStateCount) {
         break;
       }
@@ -173,10 +178,8 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
         paramCount * alphabetSize + stateCount * stateDim
     );
     { // u & v init
-      for (int c = 0; c < alphabetSize; c++) {
-        for (int i = 0; i < paramCount * alphabetSize; i++) {
-          params.set(i, W_SIGMA * Math.abs(random.nextGaussian()));
-        }
+      for (int i = 0; i < paramCount * alphabetSize; i++) {
+        params.set(i, W_SIGMA * Math.abs(random.nextGaussian()));
       }
     }
 

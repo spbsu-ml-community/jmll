@@ -70,9 +70,9 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         while (occupied[next]);
         component = next;
         occupied[component] = true;
-        ensemble.models[component].gradientTo(x, grad);
+        grad = ensemble.models[component].gradient(x);
         if (lastGrad[component] != null) {
-          step = VecTools.copy(grad);
+          step = new ArrayVec(grad.toArray());
           VecTools.incscale(step, lastGrad[component], -1);
           VecTools.incscale(step, totalGrad, 1. / components[0]);
           double max = VecTools.max(L);

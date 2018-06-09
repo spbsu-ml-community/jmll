@@ -7,9 +7,12 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.seq.IntSeq;
 import com.expleague.ml.methods.seq.param.BettaParametrization;
 import com.expleague.ml.methods.seq.param.WeightParametrization;
+
+import java.util.Arrays;
 
 public class PNFAItemVecRegression extends FuncC1.Stub {
   private final IntSeq seq;
@@ -50,8 +53,7 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
   }
 
   @Override
-  public Vec gradientTo(Vec x, Vec grad) {
-    VecTools.fill(grad, 0);
+  public Vec gradient(Vec x) {
     final Vec state = new ArrayVec(stateCount * (seq.length() + 1));
     VecTools.fill(state.sub(0, stateCount), 1.0 / stateCount);
     //System.out.println("CPU Distribution: " + Arrays.toString(distribution.toArray()));
@@ -66,14 +68,6 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
     Vec r = MxTools.multiply(V, lastLayerState);
     VecTools.incscale(r, y, -1);
 
-    final Mx vGrad = getValues(grad);
-    for (int s = 0; s < stateCount; s++) {
-      for (int i = 0; i < stateDim; i++) {
-        final int idx = s * stateDim + i;
-        vGrad.adjust(i, s, 2 * r.get(i) * lastLayerState.get(s));
-      }
-    }
-
     for (int s = 0; s < stateCount; s++) {
       double sum = 0;
       for (int d = 0; d < stateDim; d++) {
@@ -85,13 +79,23 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
     final Mx dW = new VecBasedMx(stateCount, stateCount);
     final int paramCount = bettaParametrization.paramCount(stateCount);
 
+    int[] chars = seq.stream().sorted().distinct().toArray();
+    int[] index = new int[chars.length * paramCount + stateDim * stateCount];
+    double[] values = new double[chars.length * paramCount + stateDim * stateCount];
+
     for (int i = seq.length() - 1; i >= 0; i--) {
       final int c = seq.intAt(i);
       Vec out = dS[(i + 1) % 2];
       Vec in = dS[i % 2];
 
       weightParametrization.gradientTo(x, state.sub(i * stateCount, stateCount), out, in, dW, c, stateCount);
-      bettaParametrization.gradientTo(x, dW, grad.sub(paramCount * c, paramCount), c, stateCount);
+      Vec grad = new ArrayVec(paramCount);
+      bettaParametrization.gradientTo(x, dW, grad, c, stateCount);
+      int pos = Arrays.binarySearch(chars, c);
+      for (int j = 0; j < paramCount; j++) {
+        index[pos * paramCount + j] = c * paramCount + j;
+        values[pos * paramCount + j] += grad.at(j);
+      }
     }
 //    final double betta = 0.1 * 2 / stateCount / (stateCount - 1) / stateDim;
 //    for (int i = 0; i < stateCount; i++) {
@@ -102,8 +106,17 @@ public class PNFAItemVecRegression extends FuncC1.Stub {
 //        }
 //      }
 //    }
-    return grad;
+
+    for (int s = 0; s < stateCount; s++) {
+      for (int i = 0; i < stateDim; i++) {
+        index[chars.length * paramCount + s * stateDim + i] = paramCount * alphabetSize + s * stateDim + i;
+        values[chars.length * paramCount + s * stateDim + i] = 2 * r.get(i) * lastLayerState.get(s);
+      }
+    }
+
+    return new SparseVec(alphabetSize * paramCount + stateCount * stateDim, index, values);
   }
+
 
   public Mx getValues(final Vec params) {
     return new VecBasedMx(

@@ -12,10 +12,7 @@ import com.expleague.commons.seq.IntSeq;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.LLLogit;
-import com.expleague.ml.methods.seq.param.BettaParametrization;
-import com.expleague.ml.methods.seq.param.BettaTwoVecParametrization;
-import com.expleague.ml.methods.seq.param.WeightParametrization;
-import com.expleague.ml.methods.seq.param.WeightSquareParametrization;
+import com.expleague.ml.methods.seq.param.*;
 import com.expleague.ml.optimization.impl.AdamDescent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.*;
@@ -34,15 +31,18 @@ public class RunImdb {
   private static final int TRAIN_SIZE = 25000;
   private static final FastRandom random = new FastRandom(239);
 
-  private static final int BOOST_ITERS = 1000;
-  private static final int WEIGHTS_EPOCH_COUNT = 3;
+  private static final int BOOST_ITERS = 4;
   private static final int VALUES_EPOCH_COUNT = 5;
   private static final double VALUE_GRAD_STEP = 0.3;
-  private static final double GRAD_STEP = 0.3;
   private final double alpha;
   private final double addToDiag;
   private final int stateCount;
   private final double boostStep;
+  private final int epochCount;
+  private final double gradientStep;
+  private final String wParam;
+  private final String bParam;
+  private final boolean validateEachEpoch;
 
   private List<Seq<Integer>> train;
   private Vec trainTarget;
@@ -57,16 +57,31 @@ public class RunImdb {
   private final BettaParametrization bettaParametrization;
   private final WeightParametrization weightParametrization;
 
-  public RunImdb(final int stateCount,
-                 final double alpha,
-                 final double addToDiag,
-                 final double boostStep) {
+  public RunImdb(final int stateCount, final double alpha, final double addToDiag, final double boostStep, int epochCount, double gradientStep, String wParam, String bParam, boolean validateEachEpoch) {
     this.stateCount = stateCount;
     this.alpha = alpha;
     this.addToDiag = addToDiag;
     this.boostStep = boostStep;
-    bettaParametrization = new BettaTwoVecParametrization(addToDiag);
-    weightParametrization = new WeightSquareParametrization(bettaParametrization);
+    this.epochCount = epochCount;
+    this.gradientStep = gradientStep;
+    this.wParam = wParam;
+    this.bParam = bParam;
+    this.validateEachEpoch = validateEachEpoch;
+    if (bParam.equals("mx")) {
+      bettaParametrization = new BettaMxParametrization(addToDiag);
+    } else if (bParam.equals("vec")) {
+      bettaParametrization = new BettaTwoVecParametrization(addToDiag);
+    } else {
+      throw new IllegalArgumentException(bParam);
+    }
+
+    if (wParam.equals("sqr")) {
+      weightParametrization = new WeightSquareParametrization(bettaParametrization);
+    } else if (wParam.equals("exp")) {
+      weightParametrization = new WeightExpParametrization(bettaParametrization);
+    } else {
+      throw new IllegalArgumentException(wParam);
+    }
   }
 
   public void loadWordData() throws IOException {
@@ -77,7 +92,7 @@ public class RunImdb {
 
     readWordData("src/train.txt", train, trainTarget);
     readWordData("src/test.txt", test, testTarget);
-//    loadData();
+    //    loadData();
   }
 
   public void loadData() throws IOException {
@@ -86,8 +101,8 @@ public class RunImdb {
     System.out.println("States count: " + stateCount);
     System.out.println("GradBoost step: " + boostStep);
     System.out.println("GradBoost iters: " + BOOST_ITERS);
-    System.out.println("GradDesc step: " + GRAD_STEP);
-    System.out.println("Grad iters: " + WEIGHTS_EPOCH_COUNT);
+    System.out.println("GradDesc step: " + gradientStep);
+    System.out.println("Grad iters: " + epochCount);
     System.out.println("Train size: " + TRAIN_SIZE);
 
 
@@ -175,11 +190,30 @@ public class RunImdb {
 
 
     IntAlphabet alphabet = new IntAlphabet(ALPHABET_SIZE);
+    AdamDescent adamDescent = new AdamDescent(random, epochCount, 4, gradientStep);
+    if (validateEachEpoch) {
+      adamDescent.setListener(x -> {
+        PNFAModel<Integer> model = new PNFAModel<>(
+            x,
+            stateCount,
+            1,
+            addToDiag,
+            alpha,
+            alphabet,
+            bettaParametrization,
+            weightParametrization
+        );
+        System.out.println("Train accuracy: " + (1 - getAccuracy(train, trainTarget, model)));
+        System.out.println("Test accuracy: " + (1 - getAccuracy(test, testTarget, model)));
+      });
+    }
     final GradientSeqBoosting<Integer, LLLogit> boosting = new GradientSeqBoosting<>(
         new BootstrapSeqOptimization<>(
-            new PNFARegressor<>(2, 5,1, alphabet, alpha, 0.001, addToDiag, 0.1, random,
-                new AdamDescent(random, WEIGHTS_EPOCH_COUNT, 4), bettaParametrization, weightParametrization), random
-        ),
+            new PNFARegressor<>(stateCount, stateCount,1, alphabet, alpha, 0.000, addToDiag, 0.1, random,
+               // new SAGADescent(0.002, WEIGHTS_EPOCH_COUNT * train.size(), random, System.out),
+                adamDescent,
+                bettaParametrization, weightParametrization),
+            random, 1),
         BOOST_ITERS, boostStep
     );
 
@@ -204,7 +238,7 @@ public class RunImdb {
     final Function<Seq<Integer>, Vec> classifier = boosting.fit(data, new LLLogit(trainTarget, null));
 
     System.out.println("Train accuracy: " + getAccuracy(train, trainTarget, classifier));
-    System.out.println("Test accuracy: " + getAccuracy(test, testTarget, classifier));
+    System.out.println("Test accuracy: " +  getAccuracy(test, testTarget, classifier));
   }
 
   private void readWordData(String path, List<Seq<Integer>> data, Vec target) throws IOException {
@@ -225,7 +259,7 @@ public class RunImdb {
         return  new CharSeqArray(Files.readAllLines(path)
             .stream()
             .map(String::toLowerCase)
-            .map(str -> str.replaceAll("[^\\x00-\\x7F]", "").replaceAll("\\s{2,}", " ").trim())
+            .map(str -> str.replaceAll("[^a-zA-Z]", ""))
             .collect(Collectors.joining("\n"))
             .toCharArray());
       } catch (IOException e) {
@@ -260,21 +294,36 @@ public class RunImdb {
   private static Options options = new Options();
   static {
     options.addOption("stateCount", true, "stateCount");
-    options.addOption("lambda", true, "lambda");
+    options.addOption("alpha", true, "alpha");
     options.addOption("addToDiag", true, "addToDiag");
     options.addOption("boostStep", true, "boostStep");
+    options.addOption("epochs", true, "epochs");
+    options.addOption("step", true, "step");
+    options.addOption("wParam", true, "wParam");
+    options.addOption("bParam", true, "bParam");
+    options.addOption("validateEpoch", true, "validateEpoch");
+    options.addOption("alphabet", true, "alphabet");
   }
   public static void main(String[] args) throws IOException, ParseException {
     final CommandLineParser parser = new GnuParser();
     final CommandLine command = parser.parse(options, args);
-
+    System.out.println(Arrays.toString(args));
     RunImdb test = new RunImdb(
         Integer.parseInt(command.getOptionValue("stateCount")),
-        Double.parseDouble(command.getOptionValue("lambda")),
+        Double.parseDouble(command.getOptionValue("alpha")),
         Double.parseDouble(command.getOptionValue("addToDiag")),
-        Double.parseDouble(command.getOptionValue("boostStep"))
-    );
-    test.loadWordData();
+        Double.parseDouble(command.getOptionValue("boostStep")),
+        Integer.parseInt(command.getOptionValue("epochs")),
+        Double.parseDouble(command.getOptionValue("step")),
+        command.getOptionValue("wParam"),
+        command.getOptionValue("bParam"),
+        Boolean.parseBoolean(command.getOptionValue("validateEpoch"))
+        );
+    if (command.getOptionValue("alphabet").equals("vgram")) {
+      test.loadData();
+    } else {
+      test.loadWordData();
+    }
     test.test();
   }
 
