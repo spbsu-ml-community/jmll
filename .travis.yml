@@ -3,3 +3,7 @@ jdk:
 - oraclejdk8
 sudo: required
 dist: trusty
+git:
+  submodules: false
+before_install:
+  - git submodule update --init --remote --recursive

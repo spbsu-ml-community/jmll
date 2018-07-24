@@ -6,6 +6,7 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.func.generic.Sum;
 import com.expleague.ml.models.nn.layers.*;
+import javafx.beans.binding.DoubleExpression;
 import org.junit.Test;
 
 import java.util.function.Consumer;
@@ -166,7 +167,7 @@ public class PoolTest {
   }
 
   private double pool(int x, int y, int c, Vec arg, int ksizeX, int ksizeY, int width, int channels) {
-    double result = 0.;
+    double result = Double.NEGATIVE_INFINITY;
     for (int i = 0; i < ksizeX; i++) {
       for (int j = 0; j < ksizeY; j++) {
         final int idx = ((x + i) * width + y + j) * channels + c;
@@ -250,10 +251,9 @@ public class PoolTest {
                 final int dstWidth = (curWidth - ksizeY) / strideY + 1;
                 final int channels = poolLayer.channels();
                 final int ydim = dstHeight * dstWidth * channels;
-                final int wdim = ydim;
 
                 assertEquals(ydim, poolLayer.ydim());
-                assertEquals(wdim, poolLayer.wdim());
+                assertEquals(0, poolLayer.wdim());
 
                 out[0] = pool(out[0], ksizeX, ksizeY,
                     strideX, strideY, dstWidth, dstHeight,
@@ -262,7 +262,7 @@ public class PoolTest {
                 curWidth = dstWidth;
                 curHeight = dstHeight;
                 prevChannels = channels;
-                wStart += wdim;
+                wStart += 0;
               } else {
                 final ConvLayerBuilder.ConvLayer convLayer = (ConvLayerBuilder.ConvLayer) layer;
                 final int ksizeX = convLayer.kSizeX();

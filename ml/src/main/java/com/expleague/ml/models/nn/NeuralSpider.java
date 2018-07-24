@@ -4,6 +4,7 @@ import com.expleague.commons.math.TransC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.expleague.commons.seq.Seq;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.ThreadTools;
 
 import java.util.concurrent.CountDownLatch;
@@ -65,14 +66,6 @@ public class NeuralSpider<In> {
     return network.outputFrom(state);
   }
 
-  private static void mirror(int[] arr) {
-    for(int i = 0; i < arr.length/2; ++i) {
-      int temp = arr[i];
-      arr[i] = arr[arr.length - i - 1];
-      arr[arr.length - i - 1] = temp;
-    }
-  }
-
   public synchronized Vec parametersGradient(final NetworkBuilder<In>.Network network, In argument,
                                 TransC1 target, Vec weights, Vec gradWeight) {
     final Vec state = stateCache.get(network.stateDim());
@@ -103,6 +96,7 @@ public class NeuralSpider<In> {
         final int thread = t;
         this.poolExecutor.execute(() -> {
           int i = steps;
+          int counter = 0;
           while (i >= 0) {
             final int nodeIdx = thread + i * parallelism;
             if (nodeIdx >= backwardNodes.length()) {
@@ -118,12 +112,20 @@ public class NeuralSpider<In> {
               gradState.set(nodeIdx, dTds_i);
               i--;
             } else {
-              final int result = stream(cursor, 1, cursor.length).sorted().max().getAsInt();
-              cursor[0] = result;
-
-              if (start < cursor[0]) {
-                Thread.yield();
+              int max = Integer.MIN_VALUE;
+              for (int k = 1; k < cursor.length; k++) {
+                max = Math.max(cursor[k], max);
               }
+              //noinspection StatementWithEmptyBody
+              while (ArrayTools.indexOf(--max, cursor) > 0);
+              cursor[0] = max + 1;
+              if (start < cursor[0]) {
+                if (counter++ > 1000000) {
+                  counter = 0;
+                  Thread.yield();
+                }
+              }
+              else counter = 0;
             }
           }
           cursor[thread + 1] = 0;
@@ -221,6 +223,7 @@ public class NeuralSpider<In> {
       this.poolExecutor.execute(() ->
           {
             int i = 0;
+            int counter = 0;
             while(i < steps) {
               final int nodeIdx = thread + i * parallelism;
               if (nodeIdx >= state.length())
@@ -237,11 +240,20 @@ public class NeuralSpider<In> {
                 i++;
               }
               else {
-                cursor[0] = stream(cursor, 1, cursor.length)
-                    .sorted().min().getAsInt();
-                if (cursor[0] < end) {
-                  Thread.yield();
+                int min = Integer.MAX_VALUE;
+                for (int k = 1; k < cursor.length; k++) {
+                  min = Math.min(cursor[k], min);
                 }
+                //noinspection StatementWithEmptyBody
+                while (ArrayTools.indexOf(++min, cursor) > 0);
+                cursor[0] = min - 1;
+                if (end > cursor[0]) {
+                  if (counter++ > 1000000) {
+                    counter = 0;
+                    Thread.yield();
+                  }
+                }
+                else counter = 0;
               }
             }
             cursor[thread + 1] = nodes.length();

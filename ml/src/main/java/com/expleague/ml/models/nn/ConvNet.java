@@ -6,9 +6,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.generic.Sum;
-import com.expleague.ml.models.nn.layers.InputLayerBuilder;
-import com.expleague.ml.models.nn.layers.Layer;
-import com.expleague.ml.models.nn.layers.LayerBuilder;
+import com.expleague.ml.models.nn.layers.*;
 
 import java.io.*;
 
@@ -39,6 +37,10 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
     return to;
   }
 
+  public Vec gradientTo(Vec x, TransC1 target, Vec to) {
+    return gradientTo(x, weights, target, to);
+  }
+
   @Override
   public Vec gradientTo(Vec x, Vec to) {
     neuralSpider.parametersGradient(network, x, target, weights, to);
@@ -62,8 +64,16 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
   }
 
   public void load(String path) {
+    load(path, (int) network.layers().count());
+  }
+
+  public void load(String path, int numLayers) {
+    final int wDimRead = network.layers()
+        .limit(numLayers)
+        .mapToInt(Layer::wdim).sum();
+
     try (DataInputStream dos = new DataInputStream(new FileInputStream(path))) {
-      for (int i = 0; i < wdim(); i++) {
+      for (int i = 0; i < wDimRead; i++) {
         weights.set(i, dos.readDouble());
       }
     }
@@ -72,18 +82,28 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
     }
   }
 
+  @Override
+  public String toString() {
+    return network.toString();
+  }
+
   public Vec weights() {
     return weights;
   }
 
   @Override
   public int xdim() {
-    return -1;
+    if (network.input() instanceof ConstSizeInput
+        || network.input() instanceof ConstSizeInput3D){
+      return network.input().getLayer().xdim();
+    }
+
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public int ydim() {
-    return -1;
+    return network.ydim();
   }
 
   public int wdim() {

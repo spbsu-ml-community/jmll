@@ -1,5 +1,6 @@
 package com.expleague.sbrealty.features;
 
+import com.expleague.commons.csv.CsvTools;
 import com.expleague.sbrealty.Deal;
 import com.expleague.commons.func.Evaluator;
 import com.expleague.commons.math.vectors.Mx;
@@ -33,7 +34,7 @@ public abstract class MarketCatFeature extends FeatureBuilder<Deal> implements E
     final TDoubleArrayList monthUsdWindow = new TDoubleArrayList(31);
     final double[] usdSum2 = {0};
     final double[] usdSum = {0};
-    DataTools.readCSVWithHeader("./experiments/data/sbrealty/macro.csv.gz", resolve -> {
+    CsvTools.readCSVWithHeader("./experiments/data/sbrealty/macro.csv.gz", resolve -> {
       final DateState.Builder builder = new DateState.Builder();
       try {
         builder.date(resolve.asDate("timestamp", "yyyy-MM-dd"));

@@ -103,19 +103,21 @@ public class GridTools {
       final TDoubleArrayList dborders = new TDoubleArrayList();
       final TIntArrayList sizes = new TIntArrayList();
       { // drop existing
-        final int[] crcs = new int[borders.size()];
+        int size = borders.size();
+        final int[] crcs = new int[size];
         for (int i = 0; i < ds.length(); i++) { // unordered index
           final int orderedIndex = reverse[i];
-          for (int b = 0; b < borders.size() && orderedIndex >= borders.get(b); b++) {
+          for (int b = 0; b < size && orderedIndex >= borders.get(b); b++) {
             crcs[b] = (crcs[b] * 31) + (i + 1);
           }
         }
-        for (int b = 0; b < borders.size() - 1; b++) {
+        for (int b = 0; b < size - 1; b++) {
           if (known.contains(crcs[b]))
             continue;
           known.add(crcs[b]);
-          dborders.add(feature[borders.get(b) - 1]);
-          sizes.add(borders.get(b));
+          int borderValue = borders.get(b);
+          dborders.add((feature[borderValue - 1] + feature[borderValue]) / 2.);
+          sizes.add(borderValue);
         }
       }
       rows[f] = new BFGrid.BFRow(bfCount, f, dborders.toArray(), sizes.toArray());

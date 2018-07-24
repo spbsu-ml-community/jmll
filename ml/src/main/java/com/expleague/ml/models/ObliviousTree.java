@@ -1,10 +1,13 @@
 package com.expleague.ml.models;
 
+import com.expleague.commons.math.DiscontinuousTrans;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.ml.BinOptimizedModel;
-import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.BinModelWithGrid;
+import com.expleague.ml.BinOptimizedModel;
+import com.expleague.ml.data.impl.BinarizedDataSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,6 +48,11 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
   public double value(final Vec x) {
     final int index = bin(x);
     return values[index];
+  }
+
+  @Override
+  public DiscontinuousTrans subgradient() {
+    return new ObliviousGrad();
   }
 
   @Override
@@ -193,5 +201,86 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     }
 
     return features.length > 0 ? new ObliviousTree(Arrays.asList(features), values, basedOn) : null;
+  }
+
+  private class ObliviousGrad extends DiscontinuousTrans.Stub {
+    @NotNull
+    @Override
+    public Vec leftTo(Vec x, Vec gradient) {
+      final int numFeatures = x.dim();
+      byte[] folds = new byte[numFeatures];
+      grid.binarize(x, folds);
+
+      final Vec x0 = VecTools.assign(new ArrayVec(numFeatures), x);
+      final double value = ObliviousTree.this.value(x);
+
+      for (int fIdx = 0; fIdx < numFeatures; fIdx++) {
+        final BFGrid.BFRow row = grid.row(fIdx);
+        final int leftIdx = folds[fIdx] - 1;
+
+        if (leftIdx == -1) {
+          gradient.adjust(fIdx, -1000);
+        } else {
+          final double leftBorder = row.borders[leftIdx];
+          x0.set(fIdx, leftBorder);
+          final double leftValue = ObliviousTree.this.value(x0);
+
+          if (Math.abs(x.get(fIdx) - leftBorder) > 1e-7)
+            gradient.adjust(fIdx, (value - leftValue) / (x.get(fIdx) - leftBorder));
+          else
+            gradient.adjust(fIdx, (value - leftValue));
+
+          assert(!Double.isNaN(gradient.get(fIdx)));
+
+          x0.set(fIdx, x.get(fIdx));
+        }
+      }
+
+      return gradient;
+    }
+
+    @NotNull
+    @Override
+    public Vec rightTo(Vec x, Vec gradient) {
+      final int numFeatures = x.dim();
+      byte[] folds = new byte[numFeatures];
+      grid.binarize(x, folds);
+
+      final Vec x0 = VecTools.assign(new ArrayVec(numFeatures), x);
+      final double value = ObliviousTree.this.value(x);
+
+      for (int fIdx = 0; fIdx < numFeatures; fIdx++) {
+        final BFGrid.BFRow row = grid.row(fIdx);
+        final int rightIdx = folds[fIdx] + 1;
+        if (rightIdx >= row.borders.length) {
+          gradient.adjust(fIdx, 1000);
+        } else {
+          final double rightBorder = (row.borders[rightIdx] + row.borders[rightIdx - 1]) / 2.;
+          x0.set(fIdx, rightBorder);
+
+          final double rightValue = ObliviousTree.this.value(x0);
+          if (Math.abs(x.get(fIdx) - rightBorder) > 1e-7)
+            gradient.adjust(fIdx, (rightValue - value) / (rightBorder - x.get(fIdx)));
+          else {
+            gradient.adjust(fIdx, (rightValue - value));
+          }
+          assert(!Double.isNaN(gradient.get(fIdx)));
+
+          x0.set(fIdx, x.get(fIdx));
+        }
+      }
+
+      return gradient;
+    }
+
+    @Override
+    public int xdim() {
+      return ObliviousTree.this.dim();
+    }
+
+    @Override
+    public int ydim() {
+      return xdim();
+    }
   }
 }

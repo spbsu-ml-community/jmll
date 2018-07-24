@@ -4,7 +4,7 @@
 
   <groupId>com.expleague</groupId>
   <artifactId>jmll</artifactId>
-  <version>1.4</version>
+  <version>1.4.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>SpbSU JMLL</name>
@@ -50,12 +50,12 @@
     <dependency>
       <groupId>com.expleague</groupId>
       <artifactId>commons</artifactId>
-      <version>1.4</version>
+      <version>1.4.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.expleague</groupId>
       <artifactId>commons</artifactId>
-      <version>1.4</version>
+      <version>1.4.2-SNAPSHOT</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

@@ -1,5 +1,6 @@
 package com.expleague.ml.func;
 
+import com.expleague.commons.math.DiscontinuousTrans;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -52,6 +53,11 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   @Override
   public Trans gradient() {
     return new Ensemble<>(ArrayTools.map(models, Trans.class, Trans::gradient), weights);
+  }
+
+  @Override
+  public DiscontinuousTrans subgradient() {
+    return new DiscontinuousEnsemble<>(ArrayTools.map(models, DiscontinuousTrans.class, Trans::subgradient), weights);
   }
 
   public Class<? extends Trans> componentType() {

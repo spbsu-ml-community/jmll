@@ -95,7 +95,7 @@ public class ConstSizeInput3D implements InputLayerBuilder<Vec> {
 
     @Override
     public String toString() {
-      return "Input [" + height + ", " + width + ", " + channels + "]\n";
+      return "Input [" + height + ", " + width + ", " + channels + "]";
     }
   }
 }

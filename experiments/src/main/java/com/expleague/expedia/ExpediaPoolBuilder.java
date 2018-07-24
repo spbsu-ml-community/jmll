@@ -1,13 +1,13 @@
 package com.expleague.expedia;
 
+import com.expleague.commons.csv.CsvRow;
+import com.expleague.commons.csv.CsvTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.commons.util.logging.Logger;
 import com.expleague.expedia.features.CTRBuilder;
 import com.expleague.expedia.utils.CheckPoint;
-import com.expleague.ml.data.tools.CsvRow;
-import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.data.tools.PoolBuilder;
 import com.expleague.ml.meta.FeatureMeta;
@@ -60,7 +60,7 @@ public class ExpediaPoolBuilder {
 
     LOG.debug("Process data...");
     final PoolBuilder builder = new PoolBuilder();
-    DataTools.readCSVWithHeader(trainPath, new Consumer<CsvRow>() {
+    CsvTools.readCSVWithHeader(trainPath, new Consumer<CsvRow>() {
       private CheckPoint checkPoint = new CheckPoint(DUMP_STEP);
       private int[] values = new int[COLUMNS.length];
 
@@ -117,7 +117,7 @@ public class ExpediaPoolBuilder {
 
     LOG.debug("Process data...");
     final PoolBuilder builder = new PoolBuilder();
-    DataTools.readCSVWithHeader(validatePath, new Consumer<CsvRow>() {
+    CsvTools.readCSVWithHeader(validatePath, new Consumer<CsvRow>() {
       private CheckPoint checkPoint = new CheckPoint(DUMP_STEP);
       private int[] values = new int[COLUMNS.length - 2 * isTest];
 
@@ -160,7 +160,7 @@ public class ExpediaPoolBuilder {
     return (Pool<EventItem>) builder.create();
   }
 
-  public static Pool<EventItem> addFeature(final Pool<EventItem> pool, final JsonFeatureMeta meta, final Vec values) throws IOException {
+  public static Pool<EventItem> addFeature(final Pool<EventItem> pool, final JsonFeatureMeta meta, final Vec values) {
     final PoolBuilder builder = new PoolBuilder();
 
     // set new meta

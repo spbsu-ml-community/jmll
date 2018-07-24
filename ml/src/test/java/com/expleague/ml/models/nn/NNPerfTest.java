@@ -32,18 +32,48 @@ public class NNPerfTest {
   @Test
   public void convTest() {
     System.out.println("conv test, forward pass");
-    convPerfTest(5);
-    convPerfTest(10);
-    convPerfTest(20);
+    perfNNCheck(createConvNet(5));
+    perfNNCheck(createConvNet(10));
+    perfNNCheck(createConvNet(20));
   }
 
   @Test
   public void alexNetTest() {
     System.out.println("alexnet test, forward pass");
-    alexNetPerfTest();
+    perfNNCheck(createAlexNet());
   }
 
-  private void alexNetPerfTest() {
+  @Test
+  public void perceptronMultiTest() {
+    System.out.println("perceptron test, forward pass");
+    perfNNCheck(createPerceptron(1024));
+    perfNNCheck(createPerceptron(2048));
+    perfNNCheck(createPerceptron(4096));
+  }
+
+  @Test
+  public void convGradTest() {
+    System.out.println("conv test, forward pass");
+    perfNNGradCheck(createConvNet(5));
+    perfNNGradCheck(createConvNet(10));
+    perfNNGradCheck(createConvNet(20));
+  }
+
+  @Test
+  public void alexNetGradTest() {
+    System.out.println("alexnet test, forward pass");
+    perfNNGradCheck(createAlexNet());
+  }
+
+  @Test
+  public void perceptronMultiGradTest() {
+    System.out.println("perceptron test, forward pass");
+    perfNNGradCheck(createPerceptron(1024));
+    perfNNGradCheck(createPerceptron(2048));
+    perfNNGradCheck(createPerceptron(4096));
+  }
+
+  private static ConvNet createAlexNet() {
     NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(
         new ConstSizeInput3D(224, 224, 3))
         .addSeq(
@@ -70,17 +100,12 @@ public class NNPerfTest {
         )
         .build(new OneOutLayer());
 
-    Vec input = new ArrayVec(224 * 224 * 3);
-    VecTools.fill(input, 1.);
-
-    perfNNCheck(input, new ConvNet(network));
+    return new ConvNet(network);
   }
 
-  public void convPerfTest(int channels) {
-    final int height = 70;
-    final int width = 70;
+  private static ConvNet createConvNet(int channels) {
     final NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(
-        new ConstSizeInput3D(height, width, channels))
+        new ConstSizeInput3D(70, 70, channels))
         .append(ConvLayerBuilder.create().ksize(30, 30).channels(channels))
         .append(ConvLayerBuilder.create().ksize(15, 15).channels(channels))
         .append(ConvLayerBuilder.create().ksize(7, 7).channels(channels))
@@ -90,23 +115,10 @@ public class NNPerfTest {
         .append(ConvLayerBuilder.create().ksize(1, 1).channels(1))
         .build(new OneOutLayer());
 
-    Vec input = new ArrayVec(height * width * channels);
-    VecTools.fill(input, 1.);
-
-    perfNNCheck(input, new ConvNet(network));
+    return new ConvNet(network);
   }
 
-  @Test
-  public void perceptronMultiTest() {
-    System.out.println("perceptron test, forward pass");
-    perceptronPerfTest(1024);
-    perceptronPerfTest(2048);
-    perceptronPerfTest(4096);
-  }
-
-  public void perceptronPerfTest(int n_hid) {
-    System.out.println("config: [" + n_hid + "]");
-
+  private static ConvNet createPerceptron(int n_hid) {
     NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(new ConstSizeInput(1))
         .append(FCLayerBuilder.create().nOut(n_hid))
         .append(FCLayerBuilder.create().nOut(n_hid))
@@ -116,10 +128,14 @@ public class NNPerfTest {
         .append(FCLayerBuilder.create().nOut(1))
         .build(new OneOutLayer());
 
-    perfNNCheck(new ArrayVec(1.), new ConvNet(network));
+    return new ConvNet(network);
   }
 
-  private void perfNNCheck(Vec input, ConvNet nn) {
+  private void perfNNCheck(ConvNet nn) {
+    System.out.println(nn);
+    Vec input = new ArrayVec(nn.xdim());
+    VecTools.fill(input, 1.);
+
     double[] times = new double[NUM_SHOTS];
     for (int i = 0; i < NUM_SHOTS; i++) {
       final long start = System.nanoTime();
@@ -131,12 +147,28 @@ public class NNPerfTest {
     System.out.println(stat(times));
   }
 
+  private void perfNNGradCheck(ConvNet nn) {
+    System.out.println(nn);
+    Vec input = new ArrayVec(nn.xdim());
+    VecTools.fill(input, 1.);
+
+    double[] times = new double[NUM_SHOTS];
+    Vec grad = new ArrayVec(nn.wdim());
+
+    for (int i = 0; i < NUM_SHOTS; i++) {
+      final long start = System.nanoTime();
+      grad = nn.gradientTo(input, grad);
+      final long finish = System.nanoTime();
+      times[i] = (finish - start) / 1_000_000.;
+    }
+
+    System.out.println(stat(times));
+  }
+
   @NotNull
   private static Stat stat(double[] array) {
     Arrays.sort(array);
-
     int median = (array.length + 1) / 2;
-
     return new Stat(array[median], array[median / 2], array[median + median / 2]);
   }
 

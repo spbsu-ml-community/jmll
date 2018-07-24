@@ -1,11 +1,12 @@
 package com.expleague.sbrealty;
 
+import com.expleague.commons.csv.CsvTools;
+import com.expleague.ml.data.tools.DataTools;
 import com.expleague.sbrealty.features.BuildingTypeFeature;
 import com.expleague.sbrealty.features.DistrictFeature;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
-import com.expleague.ml.data.tools.CsvRow;
-import com.expleague.ml.data.tools.DataTools;
+import com.expleague.commons.csv.CsvRow;
 import com.expleague.ml.data.tools.PoolBuilder;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.impl.JsonDataSetMeta;
@@ -38,7 +39,7 @@ public class SBRealty {
       final PoolBuilder learnBuilder = new PoolBuilder();
       final VecBuilder validatePrice = new VecBuilder();
       final PoolBuilder validateBuilder = new PoolBuilder();
-      DataTools.readCSVWithHeader("./experiments/data/sbrealty/train.csv.gz", (CsvRow resolve) -> {
+      CsvTools.readCSVWithHeader("./experiments/data/sbrealty/train.csv.gz", (CsvRow resolve) -> {
         final Deal.Builder builder = new Deal.Builder();
         double price_doc = resolve.asDouble("price_doc");
 

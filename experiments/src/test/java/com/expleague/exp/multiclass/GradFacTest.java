@@ -199,7 +199,7 @@ public class GradFacTest extends TestCase {
   public void testGradFacSALS() throws Exception {
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
         new GradFacMulticlass(
-            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+            new GreedyObliviousTree<>(GridTools.medianGrid(learn.vecData(), 32), 5),
             new StochasticALS(new FastRandom(0), 100),
             LogL2.class
         ),

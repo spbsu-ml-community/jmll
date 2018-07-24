@@ -99,7 +99,7 @@ public class BroadMatch {
       }
       case "-depends": {
         final double alpha = 0.5;
-        final TIntList freqsLA = new TIntArrayList();
+        final TIntArrayList freqsLA = new TIntArrayList();
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqsLA);
 
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqsLA);
@@ -122,7 +122,7 @@ public class BroadMatch {
                 return;
               final long ts = CharSeqTools.parseLong(parts[1]);
               final String query = normalizeQuery(parts[2].toString());
-              if (query == null || query.equals(this.query)) {
+              if (query.equals(this.query)) {
                 this.ts = ts;
                 return;
               }
@@ -159,7 +159,7 @@ public class BroadMatch {
       }
       case "-stats": {
         final Vec2CharSequenceConverter converter = new Vec2CharSequenceConverter();
-        final TIntList freqs = new TIntArrayList();
+        final TIntArrayList freqs = new TIntArrayList();
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqs);
         final SparseVec[] stats = new SparseVec[dict.size() + 1];
 
@@ -253,7 +253,7 @@ public class BroadMatch {
         }
       }
       case "-query": {
-        final TIntList freqs = new TIntArrayList();
+        final TIntArrayList freqs = new TIntArrayList();
         final ListDictionary<CharSeq> dict = loadDictionaryWithFreqs(args[1], freqs);
         final SimpleGenerativeModel model = new SimpleGenerativeModel(dict, freqs);
         model.load(args[2]);
@@ -266,7 +266,6 @@ public class BroadMatch {
     }
   }
 
-  @Nullable
   private static String normalizeQuery(String query) {
     query = query.replaceAll("[;,.:\\(\\)\"\'«»!\\]\\[\\{\\}<>]", "");
     query = query.replaceAll("\\s+", " ");

@@ -690,7 +690,7 @@ public void testElasticNetBenchmark() {
       for (int i = 0; i < _validate.size(); i++) {
         double f = 0;
         for (int j = 0; j < ans.models.length; j++)
-          f += ans.weights.get(j) * ((Func) ans.models[j]).value(((VecDataSet) _validate).data().row(i));
+          f += ans.weights.get(j) * ((Func) ans.models[j]).value(_validate.vecData().data().row(i));
         current.set(i, f);
       }
       System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
@@ -726,6 +726,11 @@ public void testElasticNetBenchmark() {
 
   public void testOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), L2Reg.class, 2000, 0.005);
+    new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
+  }
+
+  public void testProbRegionBoost() {
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyProbLinearRegion<>(GridTools.medianGrid(learn.vecData(), 32), 6), rng), L2Reg.class, 5000, 0.05);
     new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
   }
 

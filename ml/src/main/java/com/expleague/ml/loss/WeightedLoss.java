@@ -25,12 +25,7 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
 
   @Override
   public Factory<Stat> statsFactory() {
-    return new Factory<Stat>() {
-      @Override
-      public Stat create() {
-        return new Stat(weights, (AdditiveStatistics) metric.statsFactory().create());
-      }
-    };
+    return () -> new Stat(weights, (AdditiveStatistics) metric.statsFactory().create());
   }
 
   @Override
