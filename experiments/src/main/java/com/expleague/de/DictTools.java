@@ -70,7 +70,7 @@ public class DictTools {
           stream = dict.parse(seq, freqs, totalFreq).stream();
         }
         catch (RuntimeException re) {
-          if (!ListDictionary.DICTIONARY_INDEX_IS_CORRUPTED.equals(re.getMessage()))
+          if (ListDictionary.DICTIONARY_INDEX_IS_CORRUPTED.equals(re.getMessage()))
             stream = dict.parse(seq).stream().filter(idx -> idx >= 0);
           else throw re;
         }
