@@ -5,6 +5,7 @@ import com.expleague.commons.func.CacheHolder;
 import com.expleague.commons.func.ScopedCache;
 import com.expleague.commons.seq.ArraySeq;
 import com.expleague.commons.seq.Seq;
+import com.expleague.commons.seq.SeqTools;
 import com.expleague.ml.meta.DataSetMeta;
 
 import java.util.stream.BaseStream;
@@ -60,7 +61,13 @@ public interface DataSet<Item> extends Seq<Item>, CacheHolder {
 
     @Override
     public Seq<T> sub(int start, int end) {
-      return new ArraySeq<T>(this, start, end);
+      return new ArraySeq<>(this, start, end);
+    }
+
+    @Override
+    public Seq<T> sub(int[] indices) {
+      //noinspection unchecked
+      return IntStream.of(indices).mapToObj(this::at).collect(SeqTools.collect((Class<T>)elementType())).build();
     }
 
     @Override

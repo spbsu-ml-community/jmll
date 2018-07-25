@@ -2,9 +2,10 @@ package com.expleague.ml;
 
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.data.tools.SubPool;
 import com.expleague.ml.func.Linear;
 import com.expleague.ml.loss.*;
+import com.expleague.ml.meta.DSItem;
+import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.methods.*;
 import com.expleague.ml.methods.greedyRegion.*;
 import com.expleague.commons.math.Func;
@@ -206,8 +207,7 @@ public void testElasticNetBenchmark() {
       for (int i=0; i < target.dim();++i) {
         target.adjust(i, rng.nextGaussian()*0.005);
       }
-      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
-
+      Pool pool = new FeaturesTxtPool(new ArraySeq<>(new QURLItem[target.length()]), learn, target);
 
       final L2 loss = (L2) pool.target(L2.class);
       long start_time = System.currentTimeMillis();
@@ -266,7 +266,7 @@ public void testElasticNetBenchmark() {
           learn.set(i, j, rng.nextDouble());
       }
       Vec target = MxTools.multiply(learn, beta);
-      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
+      Pool pool = new FeaturesTxtPool(new ArraySeq<>(new QURLItem[target.length()]), learn, target);
       final L2 loss = (L2) pool.target(L2.class);
       Linear result = (Linear) net.fit(pool.vecData(), loss);
       assertTrue(VecTools.distance(MxTools.multiply(learn, result.weights), target) < 1e-4f);
@@ -301,7 +301,7 @@ public void testElasticNetBenchmark() {
       for (int i=0; i < target.dim();++i) {
         target.adjust(i, rng.nextGaussian()*0.001);
       }
-      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
+      Pool pool = new FeaturesTxtPool(new ArraySeq<>(new QURLItem[target.length()]), learn, target);
       final L2 loss = (L2) pool.target(L2.class);
       Linear result = (Linear) net.fit(pool.vecData(), loss);
       System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
@@ -344,7 +344,7 @@ public void testElasticNetBenchmark() {
       for (int i=0; i < target.dim();++i) {
         target.adjust(i, rng.nextGaussian() * 0.05);
       }
-      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
+      Pool pool = new FeaturesTxtPool(new ArraySeq<>(new QURLItem[target.length()]), learn, target);
       final L2 loss = (L2) pool.target(L2.class);
 
       double lambda = 0.01;
@@ -410,7 +410,7 @@ public void testElasticNetBenchmark() {
       for (int i=0; i < target.dim();++i) {
         target.adjust(i, rng.nextGaussian() * 0.05);
       }
-      Pool pool = new FeaturesTxtPool("fake", new ArraySeq<>(new QURLItem[target.length()]), learn, target);
+      Pool pool = new FeaturesTxtPool(new ArraySeq<>(new QURLItem[target.length()]), learn, target);
       final L2 loss = (L2) pool.target(L2.class);
 
       double lambda = 1;
@@ -469,36 +469,6 @@ public void testElasticNetBenchmark() {
 //    boosting.addListener(modelPrinter);
     boosting.fit(learn.vecData(), learn.target(L2.class));
   }
-
-  private static class MyTargetMeta implements TargetMeta {
-
-    private final Pool pool;
-
-    public MyTargetMeta(Pool pool) {
-      this.pool = pool;
-    }
-
-    @Override
-    public DataSet<?> associated() {
-      return pool.data();
-    }
-
-    @Override
-    public String id() {
-      return "Match";
-    }
-
-    @Override
-    public String description() {
-      return "";
-    }
-
-    @Override
-    public ValueType type() {
-      return ValueType.INTS;
-    }
-  }
-
 
   class LassoProgressPrinter implements Consumer<LassoGradientBoosting.LassoGBIterationResult> {
     private int iterations = 0;
@@ -748,10 +718,10 @@ public void testElasticNetBenchmark() {
       else
         classifyTarget.add(0);
     }
-    final TargetMeta meta = new MyTargetMeta(pool);
+    final TargetMeta meta = TargetMeta.create("Match", "",  FeatureMeta.ValueType.INTS);
     pool.addTarget(meta, classifyTarget.build());
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, 0.5, 0.5);
-    final Pair<? extends Pool, ? extends Pool> cv = Pair.create(new SubPool(pool, cvSplit[0]), new SubPool(pool, cvSplit[1]));
+    final Pair<? extends Pool, ? extends Pool> cv = Pair.create(pool.sub(cvSplit[0]), pool.sub(cvSplit[1]));
     final BFGrid grid = GridTools.medianGrid(cv.first.vecData(), 32);
     final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new BootstrapOptimization(new GreedyObliviousTree(grid, 6), rng), LOOL2.class, 2000, 0.02);
     final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", cv.first.vecData(), cv.first.target(LLLogit.class));

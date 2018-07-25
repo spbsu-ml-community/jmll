@@ -53,6 +53,11 @@ public class JsonDataSetMeta implements DataSetMeta {
   }
 
   @Override
+  public void setOwner(Pool pool) {
+    owner = pool;
+  }
+
+  @Override
   public Date created() {
     return created;
   }

@@ -1,6 +1,7 @@
 package com.expleague.ml.meta;
 
 import com.expleague.ml.data.set.DataSet;
+import com.expleague.ml.data.tools.Pool;
 
 /**
  * User: solar
@@ -8,5 +9,10 @@ import com.expleague.ml.data.set.DataSet;
  * Time: 15:13
  */
 public interface PoolFeatureMeta extends FeatureMeta {
-  DataSet<?> associated();
+  <T extends DSItem> Pool<T> owner();
+  void setOwner(Pool<? extends DSItem> owner);
+
+  default DataSet<?> associated() {
+    return owner().data();
+  }
 }

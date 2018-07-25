@@ -11,6 +11,7 @@ import com.expleague.expedia.utils.CheckPoint;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.data.tools.PoolBuilder;
 import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.impl.JsonDataSetMeta;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
@@ -92,7 +93,7 @@ public class ExpediaPoolBuilder {
     }
 
     // add booked feature
-    final JsonTargetMeta bookedMeta = getTargetMeta(META[2 * BUILDERS_COUNT], META[2 * BUILDERS_COUNT + 1]);
+    final TargetMeta bookedMeta = TargetMeta.create(META[2 * BUILDERS_COUNT], META[2 * BUILDERS_COUNT + 1], FeatureMeta.ValueType.VEC);
     builder.newTarget(bookedMeta, booked.build());
 
     // save builders
@@ -153,14 +154,14 @@ public class ExpediaPoolBuilder {
 
     if (isTest == 0) {
       // add booked feature
-      final JsonTargetMeta bookedMeta = getTargetMeta(META[2 * BUILDERS_COUNT], META[2 * BUILDERS_COUNT + 1]);
+      final TargetMeta bookedMeta = TargetMeta.create(META[2 * BUILDERS_COUNT], META[2 * BUILDERS_COUNT + 1], FeatureMeta.ValueType.VEC);
       builder.newTarget(bookedMeta, booked.build());
     }
 
     return (Pool<EventItem>) builder.create();
   }
 
-  public static Pool<EventItem> addFeature(final Pool<EventItem> pool, final JsonFeatureMeta meta, final Vec values) {
+  public static Pool<EventItem> addFeature(final Pool<EventItem> pool, final FeatureMeta meta, final Vec values) {
     final PoolBuilder builder = new PoolBuilder();
 
     // set new meta
@@ -182,7 +183,7 @@ public class ExpediaPoolBuilder {
     builder.newFeature(meta, values);
 
     // add target
-    final JsonTargetMeta targetMeta = getTargetMeta("booked", "If the user booked the hotel");
+    final TargetMeta targetMeta = TargetMeta.create("booked", "If the user booked the hotel", FeatureMeta.ValueType.VEC);
     builder.newTarget(targetMeta, pool.target(0));
 
     return (Pool<EventItem>) builder.create();
@@ -195,13 +196,5 @@ public class ExpediaPoolBuilder {
             EventItem.class,
             "expedia-" + DateFormat.getInstance().format(new Date())
     );
-  }
-
-  private static JsonTargetMeta getTargetMeta(final String id, final String description) {
-    final JsonTargetMeta meta = new JsonTargetMeta();
-    meta.id = id;
-    meta.description = description;
-    meta.type = FeatureMeta.ValueType.VEC;
-    return meta;
   }
 }

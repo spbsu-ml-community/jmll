@@ -172,7 +172,7 @@ public class ExpediaMain {
         System.out.println("Processed all samples!");
       }
 
-      final JsonFeatureMeta meta = getFeatureMeta("factor", "Our factor");
+      final FeatureMeta meta = FeatureMeta.create("factor", "Our factor", FeatureMeta.ValueType.VEC);
       final Pool<EventItem> newPool = ExpediaPoolBuilder.addFeature(pool, meta, factor.build());
 
       factor.stop();
@@ -270,14 +270,6 @@ public class ExpediaMain {
     try (final Writer out = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(poolPath)))) {
       DataTools.writePoolTo(pool, out);
     }
-  }
-
-  private static JsonFeatureMeta getFeatureMeta(final String id, final String description) {
-    final JsonFeatureMeta meta = new JsonFeatureMeta();
-    meta.id = id;
-    meta.description = description;
-    meta.type = FeatureMeta.ValueType.VEC;
-    return meta;
   }
 
   private static Map<Integer, int[]> readHotels(final String file) throws IOException {

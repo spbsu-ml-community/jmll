@@ -17,9 +17,11 @@ public interface DataSetMeta {
   String id();
   String source();
   String author();
-  Pool owner();
   Date created();
   Class<?> type();
+
+  Pool owner();
+  void setOwner(Pool pool);
 
   enum ItemType {
     FAKE(FakeItem.class),

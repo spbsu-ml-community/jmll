@@ -2,7 +2,6 @@ package com.expleague.ml.cli.cv;
 
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.data.tools.Pool;
-import com.expleague.ml.data.tools.SubPool;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
 import com.expleague.ml.data.tools.DataTools;
@@ -38,7 +37,7 @@ public class FoldsEnumerator {
     final int[] learnIndices = getLearnIndices();
     final int[] testIndices = foldIndices[currentFold];
     currentFold++;
-    return Pair.create(new SubPool(sourcePool, learnIndices), new SubPool(sourcePool, testIndices));
+    return Pair.create(sourcePool.sub(learnIndices), sourcePool.sub(testIndices));
   }
 
   private int[] getLearnIndices() {

@@ -21,6 +21,7 @@ import com.expleague.ml.loss.SatL2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.loss.multiclass.util.ConfusionMatrix;
 import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
 import com.expleague.ml.meta.items.QURLItem;
 import com.expleague.ml.methods.GradientBoosting;
@@ -64,12 +65,12 @@ public class SearchMCGreedyAllParams {
     final String learnPath = properties.getProperty("learn_path");
     final Pool<QURLItem> learn = DataTools.loadFromFeaturesTxt(learnPath);
     final IntSeq learnTarget = MCTools.transformRegressionToMC(learn.target(L2.class).target, borders.size(), borders);
-    learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), learnTarget);
+    learn.addTarget(TargetMeta.create("path", "", FeatureMeta.ValueType.INTS), learnTarget);
 
     final String testPath = properties.getProperty("test_path");
     final Pool<QURLItem> test = DataTools.loadFromFeaturesTxt(testPath);
     final IntSeq testTarget = MCTools.transformRegressionToMC(test.target(L2.class).target, borders.size(), borders);
-    test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), testTarget);
+    test.addTarget(TargetMeta.create("path", "", FeatureMeta.ValueType.INTS), testTarget);
 
     final String[] strBaselineScores = properties.getProperty("baseline_scores").split(";");
     final TDoubleList baselineScores = new TDoubleArrayList();

@@ -14,7 +14,7 @@ import com.expleague.ml.data.tools.Pool;
 
 public class FoldsEnumeratorTest extends GridTest {
   public void testEnumerate() throws Exception {
-    final FakePool pool = new FakePool(
+    final FakePool pool = FakePool.create(
         new VecBasedMx(1, new ArrayVec(1, 2, 3)),
         new IntSeq(1, 2, 3)
     );
@@ -42,8 +42,8 @@ public class FoldsEnumeratorTest extends GridTest {
     assertEquals(learnTargetValues.length, learnTarget.length());
     for (int learnTargetValue : learnTargetValues) {
       assertTrue(SeqTools.indexOf(learnTarget, learnTargetValue) != -1);
-    }
 
+    }
     final Seq testTarget = testPool.target(0);
     assertEquals(testTargetValues.length, testTarget.length());
     for (int testTargetValue : testTargetValues) {

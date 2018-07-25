@@ -7,7 +7,7 @@ import com.expleague.ml.meta.DSItem;
  * Date: 11.07.14
  * Time: 21:25
  */
-public class QURLItem implements DSItem {
+public class QURLItem extends FakeItem {
   public int queryId;
   public String url;
   public int groupId;
@@ -23,6 +23,6 @@ public class QURLItem implements DSItem {
 
   @Override
   public String id() {
-    return url;// + "@" + queryId;
+    return url + "@" + queryId;
   }
 }

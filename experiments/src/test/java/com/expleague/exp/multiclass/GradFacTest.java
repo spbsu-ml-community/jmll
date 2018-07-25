@@ -16,7 +16,6 @@ import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
-import com.expleague.ml.data.tools.SubPool;
 import com.expleague.ml.factorization.Factorization;
 import com.expleague.ml.factorization.impl.ALS;
 import com.expleague.ml.factorization.impl.ElasticNetFactorization;
@@ -30,6 +29,7 @@ import com.expleague.ml.loss.LogL2;
 import com.expleague.ml.loss.SatL2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
 import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.ml.methods.MultiClass;
@@ -55,12 +55,12 @@ public class GradFacTest extends TestCase {
   private synchronized static void init() throws IOException {
     if (learn == null || test == null) {
       final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv.gz");
-      pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS),
+      pool.addTarget(TargetMeta.create("letter", "", FeatureMeta.ValueType.INTS),
           VecTools.toIntSeq(pool.target(L2.class).target)
       );
       final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100500), 0.9, 0.1);
-      learn = new SubPool<>(pool, idxs[0]);
-      test = new SubPool<>(pool, idxs[1]);
+      learn = pool.sub(idxs[0]);
+      test = pool.sub(idxs[1]);
     }
   }
 

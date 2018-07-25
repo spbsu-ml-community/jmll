@@ -76,8 +76,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -120,10 +118,11 @@ public class DataTools {
         }
       }
     });
-    return new FeaturesTxtPool(fileName,
+    return new FeaturesTxtPool(
         new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
         new VecBasedMx(featuresCount[0], data.build()),
-        target.build());
+        target.build()
+    );
   }
 
 
@@ -234,7 +233,7 @@ public class DataTools {
     return readModel(modelInputStream, customizedRepository);
   }
 
-  public static void writeBinModel(final Function result, final File file) throws IOException {
+  public static void writeBinModel(final Function result, final File file) {
     if (result instanceof Ensemble) {
       //noinspection unchecked
       final Ensemble<Trans> ensemble = (Ensemble) result;
@@ -242,14 +241,14 @@ public class DataTools {
         return;
       if (ensemble.models[0] instanceof ObliviousTreeDynamicBin) {
         final DynamicGrid grid = dynamicGrid(ensemble);
-        final DynamicBinModelBuilder builder = new DynamicBinModelBuilder(grid);
+        final DynamicBinModelBuilder builder = new DynamicBinModelBuilder(Objects.requireNonNull(grid));
         for (int i = 0; i < ensemble.models.length; ++i) {
           builder.append((ObliviousTreeDynamicBin) ensemble.models[i], ensemble.weights.at(i));
         }
         builder.build().toFile(file);
       } else if (ensemble.models[0] instanceof ObliviousTree) {
         final BFGrid grid = grid(ensemble);
-        final BinModelBuilder builder = new BinModelBuilder(grid);
+        final BinModelBuilder builder = new BinModelBuilder(Objects.requireNonNull(grid));
         for (int i = 0; i < ensemble.models.length; ++i) {
           builder.append((ObliviousTree) ensemble.models[i], ensemble.weights.at(i));
         }
@@ -400,7 +399,7 @@ public class DataTools {
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rng, v);
     final List<Pool<D>> result = new ArrayList<>();
     for (int i = 0; i < v.length; i++) {
-      result.add(new SubPool<>(pool, cvSplit[i]));
+      result.add(pool.sub(cvSplit[i]));
     }
     return result;
   }
@@ -428,7 +427,7 @@ public class DataTools {
           indices.add(j);
       }
 
-      result.add(new SubPool<>(pool, indices.toArray()));
+      result.add(pool.sub(indices.toArray()));
     }
     return result;
   }
@@ -490,35 +489,35 @@ public class DataTools {
       out.append('\n');
     }
 
-    for (int i = 0; i < pool.features.length; i++) { // features
+    for (int i = 0; i < pool.fcount(); i++) { // features
       out.append("feature").append('\t');
-      writeFeature(out, jsonFactory, pool.features[i]);
+      writeFeature(out, jsonFactory, pool.fmeta(i), pool.fdata(i));
     }
 
-    for (int i = 0; i < pool.targets.size(); i++) { // targets
+    for (int i = 0; i < pool.tcount(); i++) { // targets
       out.append("target").append('\t');
-      writeFeature(out, jsonFactory, pool.targets.get(i));
+      writeFeature(out, jsonFactory, pool.tmeta(i), pool.tdata(i));
     }
     out.flush();
     generator.close();
   }
 
   private static void writeFeature(final Writer out, final JsonFactory jsonFactory,
-                                   final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature) throws IOException {
+                                   final PoolFeatureMeta meta, Seq<?> values) throws IOException {
     {
       final StringWriter writer = new StringWriter();
       final JsonGenerator generator = jsonFactory.createGenerator(writer);
       generator.writeStartObject();
-      generator.writeStringField("id", feature.first.id());
-      generator.writeStringField("description", feature.first.description());
-      generator.writeStringField("type", feature.first.type().name());
-      generator.writeStringField("associated", feature.first.associated().meta().id());
+      generator.writeStringField("id", meta.id());
+      generator.writeStringField("description", meta.description());
+      generator.writeStringField("type", meta.type().name());
+      generator.writeStringField("associated", meta.associated().meta().id());
       generator.writeEndObject();
       generator.close();
       out.append(writer.getBuffer());
     }
     out.append('\t');
-    out.append(SERIALIZATION.write(feature.getSecond()));
+    out.append(SERIALIZATION.write(values));
     out.append('\n');
   }
 
@@ -618,11 +617,11 @@ public class DataTools {
         .append("\n")
         .append("VecDS features count = ").append(vecDataSet.xdim())
         .append("\n");
-    for (int i = 0; i < pool.features.length; i++) {
+    for (int i = 0; i < pool.fcount(); i++) {
       builder
           .append("\n")
           .append("feature #").append(i)
-          .append(": type = ").append(pool.features[i].getFirst().type());
+          .append(": type = ").append(pool.fmeta(i).type());
     }
     return builder.toString();
   }
@@ -672,7 +671,7 @@ public class DataTools {
     }
     final Mx dataMx = mxBuilder.build();
 
-    return new FakePool(dataMx, targetBuilder.build());
+    return FakePool.create(dataMx, targetBuilder.build());
   }
 
   public static void writePoolInLibfmFormat(final Pool<?> pool, final Writer out) throws IOException {

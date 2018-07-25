@@ -1,6 +1,7 @@
 package com.expleague.ml.meta.impl;
 
 import com.expleague.ml.data.tools.Pool;
+import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.PoolFeatureMeta;
 import com.expleague.ml.data.set.DataSet;
@@ -11,11 +12,21 @@ import com.expleague.ml.data.set.DataSet;
  * Time: 13:44
  */
 public class JsonFeatureMeta extends FeatureMeta.Stub implements PoolFeatureMeta {
-  public String id;
-  public String description;
-  public ValueType type;
-  public String associated;
-  public Pool owner;
+  private String id;
+  private String description;
+  private ValueType type;
+  private String associated;
+  private transient Pool owner;
+
+  public JsonFeatureMeta(FeatureMeta meta, String associated) {
+    this.id = meta.id();
+    this.description = meta.description();
+    this.type = meta.type();
+    this.associated = associated;
+  }
+
+  public JsonFeatureMeta() {
+  }
 
   @Override
   public String id() {
@@ -30,6 +41,17 @@ public class JsonFeatureMeta extends FeatureMeta.Stub implements PoolFeatureMeta
   @Override
   public ValueType type() {
     return type;
+  }
+
+  @Override
+  public <T extends DSItem> Pool<T> owner() {
+    //noinspection unchecked
+    return (Pool<T>) owner;
+  }
+
+  @Override
+  public void setOwner(Pool<? extends DSItem> result) {
+    this.owner = result;
   }
 
   @Override

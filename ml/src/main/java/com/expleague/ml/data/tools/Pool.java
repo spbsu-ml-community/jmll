@@ -5,30 +5,27 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.ColsVecSeqMx;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.seq.ArraySeq;
 import com.expleague.commons.seq.IntSeq;
-import com.expleague.commons.system.RuntimeUtils;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.meta.*;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.VecSeq;
+import com.expleague.commons.system.RuntimeUtils;
 import com.expleague.commons.util.ArrayTools;
-import com.expleague.commons.util.Pair;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.Vectorization;
 import com.expleague.ml.data.set.DataSet;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
+import com.expleague.ml.meta.*;
+import com.expleague.ml.meta.impl.JsonDataSetMeta;
+import com.expleague.ml.meta.impl.JsonTargetMeta;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.BaseStream;
+import java.util.*;
 
 /**
  * User: solar
@@ -38,31 +35,51 @@ import java.util.stream.BaseStream;
  */
 public class Pool<I extends DSItem> {
   protected final DataSetMeta meta;
-  protected final List<Pair<? extends TargetMeta, ? extends Seq<?>>> targets;
   protected final Seq<I> items;
-  protected final Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] features;
+  protected final PoolFeatureMeta[] featuresMeta;
+  protected final Seq<?>[] featuresValues;
+  protected final List<PoolTargetMeta> targetsMeta;
+  protected final List<Seq<?>> targetsValues;
 
   protected DataSet<I> data;
   protected VecDataSet vecDataSet;
 
-  public Pool(final DataSetMeta meta,
-              final Seq<I> items,
-              final Pair<? extends PoolFeatureMeta, ? extends Seq<?>>[] features,
-              final Pair<? extends TargetMeta, ? extends Seq<?>>[] targets) {
+  public Pool(final DataSetMeta meta, final Seq<I> items, final LinkedHashMap<PoolFeatureMeta, Seq<?>> features) {
     this.meta = meta;
-    this.targets = new LinkedList<>(Arrays.asList(targets));
     this.items = items;
-    this.features = features;
+    final List<PoolFeatureMeta> featuresMetas = new ArrayList<>();
+    final List<Seq<?>> featuresValues = new ArrayList<>();
+    final List<PoolTargetMeta> targetsMetas = new ArrayList<>();
+    final List<Seq<?>> targetsValues = new ArrayList<>();
+    features.forEach((fmeta, fvalues) -> {
+      if (fvalues.length() != items.length())
+        throw new IllegalArgumentException("Feature " + fmeta.toString() + " has " + fvalues.length() + " entries expected " + items.length());
+      if (fmeta instanceof PoolTargetMeta) {
+        targetsMetas.add((PoolTargetMeta) fmeta);
+        targetsValues.add(fvalues);
+      }
+      else {
+        featuresMetas.add(fmeta);
+        featuresValues.add(fvalues);
+      }
+      fmeta.setOwner(this);
+    });
+    meta.setOwner(this);
+    this.featuresMeta = featuresMetas.toArray(new PoolFeatureMeta[featuresMetas.size()]);
+    //noinspection SuspiciousToArrayCall
+    this.featuresValues = (Seq<?>[])featuresValues.toArray(new Seq[featuresValues.size()]);
+    this.targetsMeta = targetsMetas;
+    //noinspection SuspiciousToArrayCall
+    this.targetsValues = targetsValues;
   }
 
   public DataSetMeta meta() {
     return meta;
   }
 
-
   public synchronized DataSet<I> data() {
     if (data == null) {
-      final TObjectIntHashMap<I> indices = new TObjectIntHashMap<>((int) (items.length() * 2), 0.7f);
+      final TObjectIntHashMap<I> indices = new TObjectIntHashMap<>(items.length() * 2, 0.7f);
       for (int i = 0; i < items.length(); i++) {
         indices.put(items.at(i), i);
       }
@@ -100,7 +117,7 @@ public class Pool<I extends DSItem> {
     final List<Seq<?>> cols = new ArrayList<>();
     boolean hasVecFeatures = false;
     for (int i = 0; i < indices.length; i++) {
-      final Seq<?> val = features[indices[i]].second;
+      final Seq<?> val = featuresValues[indices[i]];
       cols.add(val);
       if (!hasVecFeatures && (val instanceof VecSeq || val instanceof ArraySeq)) {
         hasVecFeatures = true;
@@ -118,7 +135,7 @@ public class Pool<I extends DSItem> {
         final int prevFeaturesLength = i > 0 ? cumulativeFeatureLengths[i - 1] : 0;
 
         if (col instanceof Vec) {
-          seqs.add(new VecSeq(new Vec[]{(Vec) col}));
+          seqs.add(new VecSeq((Vec) col));
           cumulativeFeatureLengths[i] = prevFeaturesLength + 1;
 
         } else if (col instanceof VecSeq) {
@@ -126,6 +143,7 @@ public class Pool<I extends DSItem> {
           cumulativeFeatureLengths[i] = prevFeaturesLength + col.length();
 
         } else if (col instanceof ArraySeq) {
+          //noinspection unchecked
           seqs.add(new VecSeq((ArraySeq) col));
           cumulativeFeatureLengths[i] = prevFeaturesLength + col.length();
 
@@ -134,8 +152,10 @@ public class Pool<I extends DSItem> {
         }
       }
 
+      //noinspection SuspiciousToArrayCall
       data = new ColsVecSeqMx(seqs.toArray(new VecSeq[seqs.size()]));
     } else {
+      //noinspection SuspiciousToArrayCall
       data = new ColsVecArrayMx(cols.toArray(new Vec[cols.size()]));
       cumulativeFeatureLengths = ArrayTools.sequence(0, cols.size());
     }
@@ -150,7 +170,7 @@ public class Pool<I extends DSItem> {
       public FeatureMeta meta(final int findex) {
         final int search = Arrays.binarySearch(cumulativeFeatureLengths, findex);
         final int sourceFeatureIdx = search >= 0 ? search : -search - 1;
-        return features[indices[sourceFeatureIdx]].first;
+        return featuresMeta[indices[sourceFeatureIdx]];
       }
 
       @Override
@@ -164,11 +184,11 @@ public class Pool<I extends DSItem> {
     if (vecDataSet == null) {
       final Class[] supportedFeatureTypes = new Class[]{Vec.class, VecSeq.class};
       final DataSet<I> ds = data();
-      final TIntArrayList toJoin = new TIntArrayList(features.length);
-      for (int i = 0; i < features.length; i++) {
-        final Pair<? extends PoolFeatureMeta, ? extends Seq<?>> feature = features[i];
+      final TIntArrayList toJoin = new TIntArrayList(featuresValues.length);
+      for (int i = 0; i < featuresValues.length; i++) {
         for (final Class clazz : supportedFeatureTypes) {
-          if (clazz.isAssignableFrom(feature.getFirst().type().clazz())) {
+          //noinspection unchecked
+          if (clazz.isAssignableFrom(featuresMeta[i].type().clazz())) {
             toJoin.add(i);
             break;
           }
@@ -179,13 +199,28 @@ public class Pool<I extends DSItem> {
     return vecDataSet;
   }
 
-  public void addTarget(final TargetMeta meta, final Seq<?> target) {
-    targets.add(Pair.create(meta, target));
+  public synchronized void addTarget(final TargetMeta meta, final Seq<?> target) {
+    JsonTargetMeta targetMeta = new JsonTargetMeta(meta, data().meta().id());
+    targetsMeta.add(targetMeta);
+    targetMeta.setOwner(this);
+    targetsValues.add(target);
+  }
+
+  public Pool<I> sub(int[] indices) {
+    final LinkedHashMap<PoolFeatureMeta, Seq<?>> features = new LinkedHashMap<>();
+    for (int f = 0; f < indices.length; f++) {
+      features.put(featuresMeta[indices[f]], featuresValues[indices[f]].sub(indices));
+    }
+    for (int t = 0; t < targetsValues.size(); t++) {
+      features.put(targetsMeta.get(t), targetsValues.get(t).sub(indices));
+    }
+    final JsonDataSetMeta meta = new JsonDataSetMeta(this.meta.source(), this.meta.author(), new Date(), this.meta.type(), this.meta.id() + "-sub-" + ArrayTools.sum(indices));
+    return new Pool<>(meta, items.sub(indices), features);
   }
 
   public <T extends TargetFunc> T target(final Class<T> targetClass) {
-    for (int i = targets.size() - 1; i >= 0; i--) {
-      final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targets.get(i).second, targets.get(i).getFirst().associated());
+    for (int i = targetsValues.size() - 1; i >= 0; i--) {
+      final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targetsValues.get(i), targetsMeta.get(i).associated());
       if (target != null)
         return target;
     }
@@ -197,21 +232,21 @@ public class Pool<I extends DSItem> {
   }
 
   public Seq<?> target(String name) {
-    for (int i = targets.size() - 1; i >= 0; i--) {
-      if (targets.get(i).first.id().equals(name))
-        return targets.get(i).second;
+    for (int i = targetsValues.size() - 1; i >= 0; i--) {
+      if (targetsMeta.get(i).id().equals(name))
+        return targetsValues.get(i);
     }
     throw new RuntimeException("No such target: " + name);
   }
 
   public Seq<?> target(int index) {
-    return targets.get(index).second;
+    return targetsValues.get(index);
   }
 
   public <T extends TargetFunc> T multiTarget(final Class<T> targetClass) {
-    final Mx targetsValues = new VecBasedMx(size(), targets.size());
-    for (int j = 0; j < targets.size(); j++) {
-      final Seq<?> target = targets.get(j).second;
+    final Mx targetsValues = new VecBasedMx(size(), targetsMeta.size());
+    for (int j = 0; j < this.targetsValues.size(); j++) {
+      final Seq<?> target = this.targetsValues.get(j);
       if (target instanceof Vec) {
         VecTools.assign(targetsValues.col(j), (Vec) target);
       }
@@ -254,35 +289,31 @@ public class Pool<I extends DSItem> {
 
     final Pool other = (Pool) obj;
     return new EqualsBuilder().append(meta, other.meta).
-        append(targets, other.targets).
         append(items, other.items).
-        append(features, other.features).
+        append(featuresMeta, other.featuresMeta).
+        append(targetsMeta, other.targetsMeta).
         isEquals();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder().append(meta).
-        append(targets).
         append(items).
-        append(features).
+        append(featuresMeta).
+        append(targetsMeta).
         toHashCode();
   }
 
   public PoolFeatureMeta[] features() {
-    final PoolFeatureMeta[] result = new PoolFeatureMeta[features.length];
-    for(int i = 0; i < result.length; i++) {
-      result[i] = features[i].first;
-    }
-    return result;
+    return featuresMeta;
   }
 
   public <T extends TargetFunc> T target(String name, Class<T> targetClass) {
-    for (int i = targets.size() - 1; i >= 0; i--) {
-      final Pair<? extends TargetMeta, ? extends Seq<?>> current = targets.get(i);
-      if (!current.first.id().equals(name))
+    for (int i = targetsMeta.size() - 1; i >= 0; i--) {
+      final PoolTargetMeta current = targetsMeta.get(i);
+      if (!current.id().equals(name))
         continue;
-      final T target = RuntimeUtils.newInstanceByAssignable(targetClass, current.second, current.getFirst().associated());
+      final T target = RuntimeUtils.newInstanceByAssignable(targetClass, targetsValues.get(i), current.associated());
       if (target != null)
         return target;
     }
@@ -292,7 +323,7 @@ public class Pool<I extends DSItem> {
 
   public <T> T feature(int findex, int iindex) {
     //noinspection unchecked
-    return (T)features[findex].second.at(iindex);
+    return (T)featuresValues[findex].at(iindex);
   }
 
   public TargetFunc targetByName(String metricName) {
@@ -308,5 +339,31 @@ public class Pool<I extends DSItem> {
     final Class<? extends TargetFunc> lossFunc = DataTools.targetByName(loss);
 
     return name != null ? target(name, lossFunc) : target(lossFunc);
+  }
+
+  public <T> Seq<T> fdata(int i) {
+    //noinspection unchecked
+    return (Seq<T>) featuresValues[i];
+  }
+
+  public PoolFeatureMeta fmeta(int i) {
+    return featuresMeta[i];
+  }
+
+  public int fcount() {
+    return featuresMeta.length;
+  }
+
+  public <T> Seq<T> tdata(int i) {
+    //noinspection unchecked
+    return (Seq<T>) targetsValues.get(i);
+  }
+
+  public PoolFeatureMeta tmeta(int i) {
+    return targetsMeta.get(i);
+  }
+
+  public int tcount() {
+    return targetsMeta.size();
   }
 }

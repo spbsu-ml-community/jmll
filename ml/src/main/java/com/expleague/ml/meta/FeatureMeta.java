@@ -6,6 +6,8 @@ import com.expleague.commons.seq.VecSeq;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.seq.Seq;
+import com.expleague.ml.data.tools.Pool;
+import com.expleague.ml.meta.impl.FeatureMetaImpl;
 
 /**
  * User: solar
@@ -14,10 +16,12 @@ import com.expleague.commons.seq.Seq;
  */
 public interface FeatureMeta {
   String id();
-
   String description();
-
   ValueType type();
+
+  static FeatureMeta create(String id, String description, ValueType vec) {
+    return new FeatureMetaImpl(id, description, vec);
+  }
 
   enum ValueType {
     VEC(Vec.class),
@@ -28,8 +32,22 @@ public interface FeatureMeta {
 
     private final Class<? extends Seq<?>> type;
 
-    private ValueType(final Class<? extends Seq<?>> type) {
+    ValueType(final Class<? extends Seq<?>> type) {
       this.type = type;
+    }
+
+    public static ValueType fit(Seq<?> target) {
+      if (target instanceof SparseVec)
+        return SPARSE_VEC;
+      else if (target instanceof Vec)
+        return VEC;
+      else if (target instanceof IntSeq)
+        return INTS;
+      else if (Vec.class.isAssignableFrom(target.elementType()))
+        return VEC_SEQ;
+      else if (CharSeq.class.isAssignableFrom(target.elementType()))
+        return CHAR_SEQ;
+      throw new IllegalArgumentException();
     }
 
     public Class<? extends Seq<?>> clazz() {
@@ -37,7 +55,7 @@ public interface FeatureMeta {
     }
   }
 
-  abstract class Stub implements FeatureMeta{
+  abstract class Stub implements FeatureMeta {
     @Override
     public final boolean equals(final Object o) {
       if (this == o)

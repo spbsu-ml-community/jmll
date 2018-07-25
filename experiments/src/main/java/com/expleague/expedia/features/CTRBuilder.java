@@ -19,7 +19,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class CTRBuilder<T> {
-  private JsonFeatureMeta meta = new JsonFeatureMeta();
+  private FeatureMeta meta;
   private TObjectIntHashMap<T> alpha = new TObjectIntHashMap<>();
   private TObjectIntHashMap<T> beta = new TObjectIntHashMap<>();
 
@@ -29,9 +29,7 @@ public class CTRBuilder<T> {
   }
 
   public CTRBuilder(final String id, final String description) {
-    meta.id = id;
-    meta.description = description;
-    meta.type = FeatureMeta.ValueType.VEC;
+    meta = FeatureMeta.create(id, description, FeatureMeta.ValueType.VEC);
   }
 
   public Vec build() {
@@ -46,14 +44,14 @@ public class CTRBuilder<T> {
     }
   }
 
-  public JsonFeatureMeta getMeta() {
+  public FeatureMeta getMeta() {
     return meta;
   }
 
   public void write(final String path) throws IOException {
-    writeMeta(this.meta, path + this.meta.id + ".meta.json");
-    writeHashMap(this.alpha, path + this.meta.id + ".alpha.gz");
-    writeHashMap(this.beta, path + this.meta.id + ".beta.gz");
+    writeMeta(this.meta, path + this.meta.id() + ".meta.json");
+    writeHashMap(this.alpha, path + this.meta.id() + ".alpha.gz");
+    writeHashMap(this.beta, path + this.meta.id() + ".beta.gz");
   }
 
   public static <T> CTRBuilder<T> load(final String path, final String id) throws IOException, ClassNotFoundException {
@@ -82,7 +80,7 @@ public class CTRBuilder<T> {
     beta.adjustOrPutValue(key, 1, 1);
   }
 
-  private static void writeMeta(final JsonFeatureMeta meta, final String fileName) throws IOException {
+  private static void writeMeta(final FeatureMeta meta, final String fileName) throws IOException {
     final OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(fileName));
 
     // configure json factory
@@ -103,7 +101,7 @@ public class CTRBuilder<T> {
     out.close();
   }
 
-  private static JsonFeatureMeta readMeta(final String fileName) throws IOException {
+  private static FeatureMeta readMeta(final String fileName) throws IOException {
     final InputStreamReader in = new InputStreamReader(new FileInputStream(fileName));
     String json = new BufferedReader(in).lines().parallel().collect(Collectors.joining("\n"));
 
@@ -116,12 +114,8 @@ public class CTRBuilder<T> {
     final ObjectReader reader = mapper.reader();
     final JsonNode node = reader.readTree(json);
 
-    final JsonFeatureMeta meta = new JsonFeatureMeta();
-    meta.id = node.get("meta").get("id").asText();
-    meta.description = node.get("meta").get("description").asText();
-    meta.type = FeatureMeta.ValueType.valueOf(node.get("meta").get("type").asText());
-
-    return meta;
+    final JsonNode meta = node.get("meta");
+    return FeatureMeta.create(meta.get("id").asText(), meta.get("description").asText(), FeatureMeta.ValueType.valueOf(meta.get("type").asText()));
   }
 
   private static <T> void writeHashMap(final TObjectIntHashMap<T> hashMap, final String fileName) throws IOException {

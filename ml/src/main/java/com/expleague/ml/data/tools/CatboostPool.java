@@ -15,7 +15,7 @@ public class CatboostPool extends FakePool {
   public CatboostPool(final Mx data,
                       final Seq<?> target,
                       final Set<Integer> catColumns) {
-    super(data, target);
+    super(data, target, FakePool::genItems);
     this.catColumns = catColumns;
   }
 

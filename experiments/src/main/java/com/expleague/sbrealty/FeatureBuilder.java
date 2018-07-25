@@ -16,23 +16,20 @@ import java.util.function.Consumer;
  * Created by solar on 10.06.17.
  */
 public class FeatureBuilder<T extends DSItem> implements Consumer<T> {
-  private final JsonFeatureMeta meta;
+  private final FeatureMeta meta;
   private final VecBuilder builder = new VecBuilder();
   protected Evaluator<T> calc;
 
   protected FeatureBuilder(String id, String description, Evaluator<T> calc) {
     this.calc = calc;
-    this.meta = new JsonFeatureMeta();
-    meta.id = id;
-    meta.description = description;
-    meta.type = FeatureMeta.ValueType.VEC;
+    this.meta = FeatureMeta.create(id, description, FeatureMeta.ValueType.VEC);
   }
 
   public void init(List<Deal> deals, Vec signal, Date start, Date end) {
     builder.clear();
   }
 
-  public JsonFeatureMeta meta() {
+  public FeatureMeta meta() {
     return meta;
   }
 

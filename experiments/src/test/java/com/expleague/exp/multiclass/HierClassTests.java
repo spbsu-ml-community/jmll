@@ -10,6 +10,7 @@ import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
 import com.expleague.ml.methods.multiclass.hierarchical.HierarchicalClassification;
 import com.expleague.ml.methods.multiclass.hierarchical.HierarchicalRefinedClassification;
@@ -48,8 +49,8 @@ public class HierClassTests extends TestCase {
       tree = treeBuilder.releaseTree();
       final TIntIntMap map = treeBuilder.releaseMapping();
 
-      learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), MCTools.mapTarget(learnTarget, map));
-      test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), MCTools.mapTarget(testTarget, map));
+      learn.addTarget(TargetMeta.create("hier", "", FeatureMeta.ValueType.INTS), MCTools.mapTarget(learnTarget, map));
+      test.addTarget(TargetMeta.create("hier", "", FeatureMeta.ValueType.INTS), MCTools.mapTarget(testTarget, map));
 
       iters = 200;
       step = 1.5;

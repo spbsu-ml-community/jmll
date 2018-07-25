@@ -1,24 +1,23 @@
 package com.expleague.ml;
 
-import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.data.tools.SubPool;
-import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.LOOL2;
-import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.Trans;
+import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.CharSeqReader;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.func.Ensemble;
+import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.LOOL2;
 import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.PoolFeatureMeta;
-import com.expleague.ml.meta.impl.JsonTargetMeta;
+import com.expleague.ml.meta.TargetMeta;
+import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -26,8 +25,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.function.Consumer;
-
-import static com.expleague.commons.math.vectors.VecTools.scale;
 
 /**
  * User: solar
@@ -42,8 +39,8 @@ public class TwoStepBlenderLearning {
 //    final Pool<? extends DSItem> pool = DataTools.loadFromFile(args[0]);
     final Pool<? extends DSItem> pool = DataTools.loadFromFile("/Users/solar/data/pools/blender/nov/pool-long-click-probability");
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, 0.2, 0.8);
-    Pool<? extends DSItem> learn = new SubPool<>(pool, cvSplit[0]);
-    Pool<? extends DSItem> test = new SubPool<>(pool, cvSplit[1]);
+    Pool<? extends DSItem> learn = pool.sub(cvSplit[0]);
+    Pool<? extends DSItem> test = pool.sub(cvSplit[1]);
 
     System.out.println("Phase 1");
     final File resFile = new File("phase-one.residual");
@@ -62,7 +59,7 @@ public class TwoStepBlenderLearning {
       final VecDataSet queryOnlyTest = test.joinFeatures(queryFeatures, test.data());
       final Consumer<Trans> learnTracker = new ScorePrinter("Learn", queryOnlyLearn, phaseOneTarget);
       final Consumer<Trans> testTracker = new ScorePrinter("Test", queryOnlyTest, test.target(L2.class));
-      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(GridTools.medianGrid(queryOnlyLearn, 32), 6), LOOL2.class, 2000, 0.005);
+      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<>(GridTools.medianGrid(queryOnlyLearn, 32), 6), LOOL2.class, 2000, 0.005);
       boosting.addListener(learnTracker);
       boosting.addListener(testTracker);
       final Ensemble phaseOneModel = boosting.fit(queryOnlyLearn, phaseOneTarget);
@@ -83,14 +80,9 @@ public class TwoStepBlenderLearning {
       residual = DataTools.SERIALIZATION.read(StreamTools.readFile(resFile), Mx.class);
     }
     {
-      JsonTargetMeta meta = new JsonTargetMeta();
-      meta.id = PHASE_TWO_TARGET;
-      meta.type = FeatureMeta.ValueType.VEC;
-      meta.owner = pool;
-      meta.associated = pool.data().meta().id();
-      pool.addTarget(meta, residual);
-      learn = new SubPool<>(pool, cvSplit[0]);
-      test = new SubPool<>(pool, cvSplit[1]);
+      pool.addTarget(TargetMeta.create(PHASE_TWO_TARGET, "", FeatureMeta.ValueType.VEC), residual);
+      learn = pool.sub(cvSplit[0]);
+      test = pool.sub(cvSplit[1]);
     }
 
     System.out.println("Phase 2");
@@ -110,7 +102,8 @@ public class TwoStepBlenderLearning {
 
       final Consumer<Trans> learnTracker = new ScorePrinter("Learn", learn.vecData(), phaseTwoLearn);
       final Consumer<Trans> testTracker = new ScorePrinter("Test", test.vecData(), phaseTwoTest);
-      final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GreedyObliviousTree<L2>(grid, 6), LOOL2.class, 3000, 0.005);
+      final GradientBoosting<TargetFunc> boosting;
+      boosting = new GradientBoosting<>(new GreedyObliviousTree<>(grid, 6), LOOL2.class, 3000, 0.005);
       boosting.addListener(learnTracker);
       boosting.addListener(testTracker);
       final Ensemble phaseTwoModel = boosting.fit(learn.vecData(), phaseTwoLearn);

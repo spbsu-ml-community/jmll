@@ -38,7 +38,7 @@ public class CustomWeakMultiClass extends VecOptimization.Stub<BlockwiseMLLLogit
     final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new MultiClass(new GreedyObliviousTree<L2>(grid, 5), SatL2.class), iters, step);
 
     final IntSeq intTarget = loss.labels();
-    final FakePool ds = new FakePool(learnData.data(), intTarget);
+    final FakePool ds = FakePool.create(learnData.data(), intTarget);
 
     System.out.println(prepareComment(intTarget));
     final ProgressHandler calcer = new ProgressHandler() {

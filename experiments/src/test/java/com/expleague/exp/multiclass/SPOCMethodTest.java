@@ -11,10 +11,10 @@ import com.expleague.commons.seq.IntSeq;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
-import com.expleague.ml.data.tools.SubPool;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
@@ -53,8 +53,8 @@ public class SPOCMethodTest extends TestCase {
       test = TestResourceLoader.loadPool("featuresTest.txt.gz");
       final IntSeq learnTarget = MCTools.transformRegressionToMC(learn.target(L2.class).target, borders.size(), borders);
       final IntSeq testTarget = MCTools.transformRegressionToMC(test.target(L2.class).target, borders.size(), borders);
-      learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), learnTarget);
-      test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), testTarget);
+      learn.addTarget(TargetMeta.create("spoc", "", FeatureMeta.ValueType.INTS), learnTarget);
+      test.addTarget(TargetMeta.create("spoc", "", FeatureMeta.ValueType.INTS), testTarget);
 
 //      final CharSequence mxStr = StreamTools.readStream(TestResourceLoader.loadResourceAsStream("multiclass/regression_based/features.txt.similarityMx"));
       final CharSequence mxStr = StreamTools.readStream(TestResourceLoader.loadResourceAsStream("multiclass/regression_based/features-simmatrix-classic.txt"));
@@ -110,12 +110,12 @@ public class SPOCMethodTest extends TestCase {
 
   public void _testBaselineBigDS() throws Exception {
     final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv.gz");
-    pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS),
+    pool.addTarget(TargetMeta.create("letter", "", FeatureMeta.ValueType.INTS),
         VecTools.toIntSeq(pool.target(L2.class).target));
 
     final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100501), 0.8, 0.2);
-    final SubPool<?> learn = new SubPool(pool, idxs[0]);
-    final SubPool<?> test = new SubPool(pool, idxs[1]);
+    final Pool<?> learn = pool.sub(idxs[0]);
+    final Pool<?> test = pool.sub(idxs[1]);
 
     final CustomWeakMultiClass customWeakMultiClass = new CustomWeakMultiClass(300, 0.7);
     final MCModel model = (MCModel) customWeakMultiClass.fit(learn.vecData(), learn.target(BlockwiseMLLLogit.class));
@@ -126,12 +126,11 @@ public class SPOCMethodTest extends TestCase {
 
   public void _testMathFitBigDS() throws Exception {
     final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv.gz");
-    pool.addTarget(new FakeTargetMeta(pool.vecData(), FeatureMeta.ValueType.INTS),
-        VecTools.toIntSeq(pool.target(L2.class).target));
+    pool.addTarget(TargetMeta.create("letter", "", FeatureMeta.ValueType.INTS), VecTools.toIntSeq(pool.target(L2.class).target));
 
     final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100500), 0.8, 0.2);
-    final SubPool<?> learn = new SubPool<>(pool, idxs[0]);
-    final SubPool<?> test = new SubPool<>(pool, idxs[1]);
+    final Pool<?> learn = pool.sub(idxs[0]);
+    final Pool<?> test = pool.sub(idxs[1]);
 
     final CharSequence mxStr = StreamTools.readStream(TestResourceLoader.loadResourceAsStream("multiclass/ds_letter/letter.similarityMx"));
     final Mx similarityMx = MathTools.CONVERSION.convert(mxStr, Mx.class);

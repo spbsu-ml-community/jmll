@@ -4,7 +4,6 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.cli.builders.data.DataBuilder;
 import com.expleague.ml.cli.builders.data.PoolReader;
 import com.expleague.ml.data.tools.Pool;
-import com.expleague.ml.data.tools.SubPool;
 import com.expleague.commons.util.Pair;
 import com.expleague.ml.data.tools.DataTools;
 
@@ -47,6 +46,6 @@ public class DataBuilderCrossValidation implements DataBuilder {
     final FastRandom rnd = new FastRandom(randomSeed);
 
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, partition, 1.0 - partition);
-    return Pair.create(new SubPool(pool, cvSplit[0]), new SubPool(pool, cvSplit[1]));
+    return Pair.create(pool.sub(cvSplit[0]), pool.sub(cvSplit[1]));
   }
 }

@@ -8,7 +8,9 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.seq.IntSeq;
 import com.expleague.commons.util.ArrayTools;
-import com.expleague.ml.*;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.Binarize;
+import com.expleague.ml.GridTools;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
@@ -21,7 +23,7 @@ import com.expleague.ml.loss.SatL2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.loss.multiclass.util.ConfusionMatrix;
 import com.expleague.ml.meta.FeatureMeta;
-import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
+import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.items.QURLItem;
 import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.ml.methods.VecOptimization;
@@ -30,7 +32,6 @@ import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.multiclass.MCModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
-import org.apache.commons.cli.MissingArgumentException;
 
 import java.io.*;
 import java.util.Properties;
@@ -43,7 +44,7 @@ import java.util.concurrent.*;
 public class SearchMCParams {
   private final static int UNITS = Runtime.getRuntime().availableProcessors();
 
-  public static void main(String[] args) throws MissingArgumentException, IOException {
+  public static void main(String[] args) throws IOException {
     final Properties properties = new Properties();
     properties.load(new FileInputStream(new File(args[0])));
 
@@ -60,12 +61,12 @@ public class SearchMCParams {
     final String learnPath = properties.getProperty("learn_path");
     final Pool<QURLItem> learn = DataTools.loadFromFeaturesTxt(learnPath);
     final IntSeq learnTarget = MCTools.transformRegressionToMC(learn.target(L2.class).target, borders.size(), borders);
-    learn.addTarget(new FakeTargetMeta(learn.vecData(), FeatureMeta.ValueType.INTS), learnTarget);
+    learn.addTarget(TargetMeta.create("path", "", FeatureMeta.ValueType.INTS), learnTarget);
 
     final String testPath = properties.getProperty("test_path");
     final Pool<QURLItem> test = DataTools.loadFromFeaturesTxt(testPath);
     final IntSeq testTarget = MCTools.transformRegressionToMC(test.target(L2.class).target, borders.size(), borders);
-    test.addTarget(new FakeTargetMeta(test.vecData(), FeatureMeta.ValueType.INTS), testTarget);
+    test.addTarget(TargetMeta.create("path", "", FeatureMeta.ValueType.INTS), testTarget);
 
     final String[] strBaselineScores = properties.getProperty("baseline_scores").split(";");
     final TDoubleList baselineScores = new TDoubleArrayList();
@@ -129,7 +130,7 @@ public class SearchMCParams {
     }
 
     @Override
-    public String call() throws Exception {
+    public String call() {
       final VecOptimization<LLLogit> weak = (learn, llLogit) -> {
         final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<>(grid, 5), SatL2.class, iters, step);
         final Ensemble ensemble = boosting.fit(learn, llLogit);

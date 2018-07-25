@@ -2,6 +2,7 @@ package com.expleague.sbrealty;
 
 import com.expleague.commons.csv.CsvTools;
 import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.meta.TargetMeta;
 import com.expleague.sbrealty.features.BuildingTypeFeature;
 import com.expleague.sbrealty.features.DistrictFeature;
 import com.expleague.commons.math.vectors.Vec;
@@ -115,22 +116,20 @@ public class SBRealty {
     }
     final Vec target = validatePrice.build();
     {
-      final JsonTargetMeta meta = new JsonTargetMeta();
-      meta.id = "price";
-      meta.description = "original price from data";
-      meta.type = FeatureMeta.ValueType.VEC;
-      validateBuilder.newTarget(meta, target);
+      validateBuilder.newTarget(
+          TargetMeta.create("price", "original price from data", FeatureMeta.ValueType.VEC),
+          target
+      );
     }
     {
       final VecBuilder logTargetBuilder = new VecBuilder();
       for (int i = 0; i < target.dim(); i++) {
         logTargetBuilder.append(log(target.get(i)));
       }
-      final JsonTargetMeta meta = new JsonTargetMeta();
-      meta.id = "log-price";
-      meta.description = "log price";
-      meta.type = FeatureMeta.ValueType.VEC;
-      validateBuilder.newTarget(meta, logTargetBuilder.build());
+      validateBuilder.newTarget(
+          TargetMeta.create("log-price", "log price", FeatureMeta.ValueType.VEC),
+          logTargetBuilder.build()
+      );
     }
 
     DataTools.writePoolTo(validateBuilder.create(Deal.class), new FileWriter("./experiments/data/sbrealty/" + id + ".pool"));
