@@ -22,6 +22,8 @@ import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntIntMap;
 import junit.framework.TestCase;
 
+import java.util.Map;
+
 /**
  * User: qdeee
  * Date: 28.07.14
