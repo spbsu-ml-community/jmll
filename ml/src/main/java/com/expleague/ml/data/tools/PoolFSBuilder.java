@@ -1,17 +1,17 @@
 package com.expleague.ml.data.tools;
 
-import com.expleague.commons.func.Factory;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.commons.seq.ArraySeq;
+import com.expleague.commons.seq.IntSeqBuilder;
 import com.expleague.commons.seq.Seq;
+import com.expleague.commons.seq.SeqBuilder;
 import com.expleague.ml.meta.*;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
 
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -23,15 +23,15 @@ import java.util.stream.Stream;
 public class PoolFSBuilder<T extends DSItem> implements Pool.Builder<T> {
   private final DataSetMeta meta;
   private final List<T> items = new ArrayList<>();
-  private final List<VecBuilder> builders = new ArrayList<>();
+  private final List<SeqBuilder<?>> builders = new ArrayList<>();
 
-  private final FeatureSet fs;
+  private final FeatureSet<T> fs;
 
   public PoolFSBuilder(DataSetMeta meta, FeatureSet<T> fs) {
     this.meta = meta;
     this.fs = fs;
     for (int f = 0; f < fs.dim(); f++) {
-      builders.add(new VecBuilder());
+      builders.add(fs.meta(f).type().builder());
     }
   }
 
@@ -78,7 +78,17 @@ public class PoolFSBuilder<T extends DSItem> implements Pool.Builder<T> {
   public void advance() {
     final Vec vec = fs.advance();
     for (int f = 0; f < fs.dim(); f++) {
-      builders.get(f).append(vec.get(f));
+      switch (fs.meta(f).type()) {
+        case VEC:
+        case SPARSE_VEC:
+          ((VecBuilder) builders.get(f)).append(vec.get(f));
+          break;
+        case INTS:
+          ((IntSeqBuilder) builders.get(f)).append((int)vec.get(f));
+          break;
+        default:
+          throw new UnsupportedOperationException("Not implemented yet");
+      }
     }
   }
 }

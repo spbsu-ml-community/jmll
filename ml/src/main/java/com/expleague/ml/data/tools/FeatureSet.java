@@ -78,7 +78,7 @@ public interface FeatureSet<T extends DSItem> extends Consumer<T> {
       if (assigned.cardinality() < metas.length)
         throw new IllegalStateException("Not all features are set " + assigned);
       assigned.clear();
-      VecTools.assign(current, to);
+      VecTools.assign(to, current);
       return to;
     }
 

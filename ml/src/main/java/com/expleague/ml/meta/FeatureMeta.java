@@ -1,11 +1,10 @@
 package com.expleague.ml.meta;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.seq.IntSeq;
-import com.expleague.commons.seq.VecSeq;
+import com.expleague.commons.math.vectors.impl.vectors.SparseVecBuilder;
+import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
+import com.expleague.commons.seq.*;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
-import com.expleague.commons.seq.CharSeq;
-import com.expleague.commons.seq.Seq;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.meta.impl.FeatureMetaImpl;
 
@@ -22,6 +21,7 @@ public interface FeatureMeta {
   static FeatureMeta create(String id, String description, ValueType vec) {
     return new FeatureMetaImpl(id, description, vec);
   }
+
 
   enum ValueType {
     VEC(Vec.class),
@@ -52,6 +52,21 @@ public interface FeatureMeta {
 
     public Class<? extends Seq<?>> clazz() {
       return type;
+    }
+
+    public SeqBuilder<?> builder() {
+      if (SparseVec.class.isAssignableFrom(type))
+        return new SparseVecBuilder();
+      else if (Vec.class.isAssignableFrom(type))
+        return new VecBuilder();
+      else if (IntSeq.class.isAssignableFrom(type))
+        return new IntSeqBuilder();
+      else if (CharSeq.class.isAssignableFrom(type))
+        return new CharSeqBuilder();
+      else if (VecSeq.class.isAssignableFrom(type))
+        return new ArraySeqBuilder<>(Vec.class);
+      else
+        return new ArraySeqBuilder<>(clazz());
     }
   }
 

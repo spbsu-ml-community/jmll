@@ -5,6 +5,7 @@ import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.PoolFeatureMeta;
 import com.expleague.ml.data.set.DataSet;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * User: solar
@@ -12,9 +13,13 @@ import com.expleague.ml.data.set.DataSet;
  * Time: 13:44
  */
 public class JsonFeatureMeta extends FeatureMeta.Stub implements PoolFeatureMeta {
+  @JsonProperty
   private String id;
+  @JsonProperty
   private String description;
+  @JsonProperty
   private ValueType type;
+  @JsonProperty
   private String associated;
   private transient Pool owner;
 

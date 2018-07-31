@@ -227,14 +227,14 @@ public class Pool<I extends DSItem> {
   }
 
   public Pool<I> sub(int[] indices) {
-    final LinkedHashMap<PoolFeatureMeta, Seq<?>> features = new LinkedHashMap<>();
-    for (int f = 0; f < indices.length; f++) {
-      features.put(featuresMeta[indices[f]], featuresValues[indices[f]].sub(indices));
-    }
-    for (int t = 0; t < targetsValues.size(); t++) {
-      features.put(targetsMeta.get(t), targetsValues.get(t).sub(indices));
-    }
     final JsonDataSetMeta meta = new JsonDataSetMeta(this.meta.source(), this.meta.author(), new Date(), this.meta.type(), this.meta.id() + "-sub-" + ArrayTools.sum(indices));
+    final LinkedHashMap<PoolFeatureMeta, Seq<?>> features = new LinkedHashMap<>();
+    for (int f = 0; f < featuresMeta.length; f++) {
+      features.put(new JsonFeatureMeta(featuresMeta[f], meta.id()), featuresValues[f].sub(indices));
+    }
+    for (int t = 0; t < targetsMeta.size(); t++) {
+      features.put(new JsonTargetMeta(targetsMeta.get(t), meta.id()), targetsValues.get(t).sub(indices));
+    }
     return new Pool<>(meta, items.sub(indices), features);
   }
 
