@@ -1,20 +1,21 @@
 package com.expleague.ml.data.tools.impl;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.data.tools.FeatureSet;
+import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class JoinedFeatureSet implements FeatureSet {
+public class JoinedFeatureSet<T extends DSItem> extends FeatureSet.Stub<T> {
   private final int dim;
   private final int[] index;
   private final int[] fsStart;
-  private final FeatureSet[] fs;
+  private final FeatureSet<? super T>[] fs;
 
-  public JoinedFeatureSet(FeatureSet... fs) {
+  @SafeVarargs
+  public JoinedFeatureSet(FeatureSet<? super T>... fs) {
     final int dim = Stream.of(fs).mapToInt(FeatureSet::dim).sum();
     final int[] index = new int[dim];
     final int[] fsStart = new int[fs.length];
@@ -33,21 +34,22 @@ public class JoinedFeatureSet implements FeatureSet {
   }
 
   @Override
-  public Vec advance() {
-    final Vec result = new ArrayVec(dim);
+  public void accept(T item) {
+    for (int i = 0; i < fs.length; i++) {
+      fs[i].accept(item);
+    }
+  }
+
+  @Override
+  public Vec advanceTo(Vec to) {
     int index = 0;
     for (int i = 0; i < fs.length; i++) {
       final int finalIndex = index;
       final Vec vec = fs[i].advance();
-      IntStream.range(0, fs[i].dim()).forEach(idx -> result.set(finalIndex + idx, vec.get(idx)));
+      IntStream.range(0, fs[i].dim()).forEach(idx -> to.set(finalIndex + idx, vec.get(idx)));
       index += fs[i].dim();
     }
-    return result;
-  }
-
-  @Override
-  public Vec advance(FeatureMeta... features) {
-    return null;
+    return to;
   }
 
   @Override
@@ -59,5 +61,10 @@ public class JoinedFeatureSet implements FeatureSet {
   public FeatureMeta meta(int idx) {
     int fsIndex = index[idx];
     return fs[fsIndex].meta(idx - fsStart[fsIndex]);
+  }
+
+  @Override
+  public Stream<FeatureSet<? super T>> components() {
+    return Stream.of(fs).flatMap(FeatureSet::components);
   }
 }

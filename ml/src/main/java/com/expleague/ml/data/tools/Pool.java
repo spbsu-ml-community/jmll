@@ -1,5 +1,6 @@
 package com.expleague.ml.data.tools;
 
+import com.expleague.commons.func.Factory;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -19,13 +20,18 @@ import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.meta.*;
 import com.expleague.ml.meta.impl.JsonDataSetMeta;
+import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * User: solar
@@ -43,6 +49,20 @@ public class Pool<I extends DSItem> {
 
   protected DataSet<I> data;
   protected VecDataSet vecDataSet;
+
+  public interface Builder<T extends DSItem> extends Factory<Pool<T>>, Consumer<T> {
+    Pool<T> create();
+
+    void accept(final T item);
+    void advance();
+
+    Stream<FeatureSet<? super T>> features();
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <I extends DSItem> Builder<I> builder(DataSetMeta meta, FeatureSet<? super I>... features) {
+    return new PoolFSBuilder<>(meta, FeatureSet.join(features));
+  }
 
   public Pool(final DataSetMeta meta, final Seq<I> items, final LinkedHashMap<PoolFeatureMeta, Seq<?>> features) {
     this.meta = meta;

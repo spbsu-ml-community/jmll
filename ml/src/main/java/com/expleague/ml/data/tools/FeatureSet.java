@@ -5,6 +5,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.ml.data.tools.impl.JoinedFeatureSet;
+import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
@@ -14,21 +15,28 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public interface FeatureSet {
+public interface FeatureSet<T extends DSItem> extends Consumer<T> {
+  void accept(T item);
   Vec advance();
   Vec advanceTo(Vec v);
   Vec advanceTo(Vec v, FeatureMeta... features);
   int dim();
   FeatureMeta meta(int index);
 
-  static FeatureSet join(FeatureSet... fs) {
-    return new JoinedFeatureSet(fs);
+  @SafeVarargs
+  static <T extends DSItem> FeatureSet<T> join(FeatureSet<? super T>... fs) {
+    return new JoinedFeatureSet<>(fs);
   }
 
-  abstract class Stub implements FeatureSet {
+  int index(FeatureMeta meta);
+
+  Stream<FeatureSet<? super T>> components();
+
+  abstract class Stub<T extends DSItem> implements FeatureSet<T> {
     private TObjectIntMap<FeatureMeta> metaIndex;
     private FeatureMeta[] metas;
     private BitSet assigned;
@@ -45,6 +53,10 @@ public interface FeatureSet {
 
     protected Stub(FeatureMeta... metas) {
       init(metas);
+    }
+
+    @Override
+    public void accept(T item) {
     }
 
     private void init(FeatureMeta[] metas) {
@@ -74,7 +86,7 @@ public interface FeatureSet {
     public Vec advanceTo(Vec to, FeatureMeta... features) {
       advanceTo(current);
       for (int i = 0; i < features.length; i++) {
-        to.set(i, current.get(metaIndex.get(features[i])));
+        to.set(i, current.get(index(features[i])));
       }
       return to;
     }
@@ -93,31 +105,15 @@ public interface FeatureSet {
     public FeatureMeta meta(int index) {
       return metas[index];
     }
-  }
 
-  class Accumulator {
-    private final FeatureSet fs;
-    private final List<VecBuilder> builders;
-
-    public Accumulator(FeatureSet fs) {
-      this.fs = fs;
-      this.builders = new ArrayList<>(fs.dim());
-      for (int i = 0; i < fs.dim(); i++) {
-        this.builders.add(new VecBuilder());
-      }
+    @Override
+    public int index(FeatureMeta meta) {
+      return this.metaIndex.get(meta);
     }
 
-    public void advance() {
-      final Vec vec = fs.advance();
-      for (int i = 0; i < fs.dim(); i++) {
-        builders.get(i).append(vec.get(i));
-      }
-    }
-
-    public void splashOut(PoolBuilder builder) {
-      for (int i = 0; i < fs.dim(); i++) {
-        builder.newFeature(fs.meta(i), builders.get(i).build());
-      }
+    @Override
+    public Stream<FeatureSet<? super T>> components() {
+      return Stream.of(this);
     }
   }
 }
