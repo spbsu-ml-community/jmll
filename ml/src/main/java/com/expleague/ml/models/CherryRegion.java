@@ -1,10 +1,10 @@
 package com.expleague.ml.models;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.BinModelWithGrid;
 import com.expleague.ml.BinOptimizedModel;
 import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.ml.BFGrid;
 
 import java.util.BitSet;
 
@@ -56,7 +56,7 @@ public class CherryRegion extends BinOptimizedModel.Stub implements BinModelWith
   @Override
   public double value(final Vec x) {
     final byte[] binarizied = new byte[grid.rows()];
-    grid.binarize(x, binarizied);
+    grid.binarizeTo(x, binarizied);
     return value(binarizied);
   }
 
@@ -67,7 +67,7 @@ public class CherryRegion extends BinOptimizedModel.Stub implements BinModelWith
 
   public boolean contains(final Vec x) {
     final byte[] binarizied = new byte[grid.rows()];
-    grid.binarize(x, binarizied);
+    grid.binarizeTo(x, binarizied);
     return contains(binarizied);
   }
 

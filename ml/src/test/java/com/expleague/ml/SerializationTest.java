@@ -7,6 +7,7 @@ import com.expleague.ml.dynamicGrid.impl.BFDynamicGrid;
 import com.expleague.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.func.FuncJoin;
+import com.expleague.ml.impl.BFGridImpl;
 import com.expleague.ml.io.ModelsSerializationRepository;
 import com.expleague.ml.models.FMModel;
 import com.expleague.ml.models.ObliviousTree;
@@ -89,8 +90,8 @@ public class SerializationTest extends GridTest {
 
   public void testGrid() {
     final ModelsSerializationRepository serialization = new ModelsSerializationRepository();
-    assertEquals(grid.toString(), serialization.read(serialization.write(grid), BFGrid.class).toString());
-    assertEquals(grid, serialization.read(serialization.write(grid), BFGrid.class));
+    assertEquals(grid.toString(), serialization.read(serialization.write(grid), BFGridImpl.class).toString());
+    assertEquals(grid, serialization.read(serialization.write(grid), BFGridImpl.class));
   }
 
   public void testAdditiveModel() {

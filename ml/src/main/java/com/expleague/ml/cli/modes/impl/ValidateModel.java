@@ -2,10 +2,10 @@ package com.expleague.ml.cli.modes.impl;
 
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.util.Pair;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import com.expleague.ml.cli.modes.AbstractMode;
 import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.io.ModelsSerializationRepository;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;

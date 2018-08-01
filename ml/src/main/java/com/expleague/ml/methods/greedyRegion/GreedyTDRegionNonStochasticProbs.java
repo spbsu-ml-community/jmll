@@ -1,6 +1,5 @@
 package com.expleague.ml.methods.greedyRegion;
 
-import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.random.FastRandom;
@@ -10,6 +9,7 @@ import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
@@ -43,7 +43,7 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     this.beta = beta;
   }
 
-  Pair<BFGrid.BinaryFeature[], boolean[]> initFit(final VecDataSet learn, final Loss loss) {
+  Pair<BFGrid.Feature[], boolean[]> initFit(final VecDataSet learn, final Loss loss) {
     final BFOptimizationSubset current;
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     current = new BFOptimizationSubset(bds, loss, ArrayTools.sequence(0, learn.length()));
@@ -51,34 +51,32 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     for (int i = 0; i < bestRowScores.length; ++i) {
       bestRowScores[i] = Double.POSITIVE_INFINITY;
     }
-    final BFGrid.BinaryFeature[] bestRowFeatures = new BFGrid.BinaryFeature[grid.rows()];
+    final BFGrid.Feature[] bestRowFeatures = new BFGrid.Feature[grid.rows()];
     final boolean[] masks = new boolean[grid.rows()];
 
-    current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
-      @Override
-      public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
-        final double leftScore = logScore(left);
-        final double rightScore = logScore(right);
-        final double bestScore = leftScore > rightScore ? rightScore : leftScore;
+    current.visitAllSplits((bf, left, right) -> {
+      final double leftScore = logScore(left);
+      final double rightScore = logScore(right);
+      final double bestScore = leftScore > rightScore ? rightScore : leftScore;
 
-        if (bestScore < bestRowScores[bf.findex]) {
-          bestRowScores[bf.findex] = bestScore;
-          masks[bf.findex] = leftScore > rightScore;
-          bestRowFeatures[bf.findex] = bf;
-        }
+      final int findex = bf.findex();
+      if (bestScore < bestRowScores[findex]) {
+        bestRowScores[findex] = bestScore;
+        masks[findex] = leftScore > rightScore;
+        bestRowFeatures[findex] = bf;
       }
     });
 
 
     final boolean[] resultMasks = new boolean[maxFailed];
-    final BFGrid.BinaryFeature[] resultFeatures = new BFGrid.BinaryFeature[maxFailed];
+    final BFGrid.Feature[] resultFeatures = new BFGrid.Feature[maxFailed];
 
     for (int i = 0; i < maxFailed; ) {
       final boolean[] used = new boolean[bestRowScores.length];
       final int index = rand.nextInt(bestRowScores.length);
       if (bestRowScores[index] < Double.POSITIVE_INFINITY && !used[index]) {
         used[index] = true;
-        final BFGrid.BinaryFeature feature = bestRowFeatures[index];
+        final BFGrid.Feature feature = bestRowFeatures[index];
         final boolean mask = masks[index];
         resultFeatures[i] = feature;
         resultMasks[i] = mask;
@@ -91,15 +89,15 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
   @Override
   public Region fit(final VecDataSet learn, final Loss loss) {
 //    maxFailed = rand.nextInt(4);
-    final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(32);
+    final List<BFGrid.Feature> conditions = new ArrayList<>(32);
     final boolean[] usedBF = new boolean[grid.size()];
     final List<Boolean> mask = new ArrayList<>();
     final TDoubleArrayList conditionSum = new TDoubleArrayList(32);
     final TDoubleArrayList conditionTotal = new TDoubleArrayList(32);
-    final Pair<BFGrid.BinaryFeature[], boolean[]> init = initFit(learn, loss);
+    final Pair<BFGrid.Feature[], boolean[]> init = initFit(learn, loss);
     for (int i = 0; i < init.first.length; ++i) {
       conditions.add(init.first[i]);
-      usedBF[init.first[i].bfIndex] = true;
+      usedBF[init.first[i].index()] = true;
       mask.add(init.second[i]);
     }
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
@@ -125,63 +123,57 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
         ctotal[i] = conditionTotal.get(i);
       }
 
-      determenisticCurrent.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
-        @Override
-        public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
-          final AdditiveStatistics leftIn = (AdditiveStatistics) loss.statsFactory().create();
-          final AdditiveStatistics rightIn = (AdditiveStatistics) loss.statsFactory().create();
-          leftIn.append(left);
-          leftIn.append(current.nonCriticalTotal);
-          rightIn.append(right);
-          rightIn.append(current.nonCriticalTotal);
-          final double leftWeight = weight(leftIn);
-          final double rightWeight = weight(rightIn);
-          weights[bf.bfIndex * 2] = leftWeight;
-          weights[bf.bfIndex * 2 + 1] = rightWeight;
-        }
+      determenisticCurrent.visitAllSplits((bf, left, right) -> {
+        final AdditiveStatistics leftIn = (AdditiveStatistics) loss.statsFactory().create();
+        final AdditiveStatistics rightIn = (AdditiveStatistics) loss.statsFactory().create();
+        leftIn.append(left);
+        leftIn.append(current.nonCriticalTotal);
+        rightIn.append(right);
+        rightIn.append(current.nonCriticalTotal);
+        final double leftWeight = weight(leftIn);
+        final double rightWeight = weight(rightIn);
+        weights[bf.index() * 2] = leftWeight;
+        weights[bf.index() * 2 + 1] = rightWeight;
       });
 
 
-      current.visitAllSplits(new Aggregate.SplitVisitor<AdditiveStatistics>() {
-        @Override
-        public void accept(final BFGrid.BinaryFeature bf, final AdditiveStatistics left, final AdditiveStatistics right) {
-          if (usedBF[bf.bfIndex]) {
-            scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
-          } else {
-            double leftScore = Double.POSITIVE_INFINITY;
-            {
-              csum[csum.length - 1] = weights[bf.bfIndex * 2];
-              ctotal[csum.length - 1] = total;
-              final double prob = estimate(csum, ctotal);
-              final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
-              final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
-              out.append(right);
-              out.append(current.excluded);
-              in.append(current.nonCriticalTotal);
-              in.append(left);
-              leftScore = (1 - prob) * outScore(out) + prob * inScore(in);// + 2 * ((1-prob) * Math.log(1-prob) + prob * Math.log(prob));
+      current.visitAllSplits((bf, left, right) -> {
+        if (usedBF[bf.index()]) {
+          scores[bf.index()] = Double.POSITIVE_INFINITY;
+        } else {
+          double leftScore;
+          {
+            csum[csum.length - 1] = weights[bf.index() * 2];
+            ctotal[csum.length - 1] = total;
+            final double prob = estimate(csum, ctotal);
+            final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            out.append(right);
+            out.append(current.excluded);
+            in.append(current.nonCriticalTotal);
+            in.append(left);
+            leftScore = (1 - prob) * outScore(out) + prob * inScore(in);// + 2 * ((1-prob) * Math.log(1-prob) + prob * Math.log(prob));
 //              leftScore = score(out) +  score(in);// + 2 * ((1-prob) * Math.log(1-prob) + prob * Math.log(prob));
 //              leftScore =inScore(in);
-            }
+          }
 
-            double rightScore = Double.POSITIVE_INFINITY;
-            {
-              csum[csum.length - 1] = weights[bf.bfIndex * 2 + 1];
-              ctotal[csum.length - 1] = total;
-              final double prob = estimate(csum, ctotal);
-              final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
-              final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
-              out.append(left);
-              out.append(current.excluded);
-              in.append(current.nonCriticalTotal);
-              in.append(right);
-              rightScore = (1 - prob) * outScore(out) + prob * inScore(in);// + 2 * ((1-prob) * Math.log(1-prob) + prob * Math.log(prob));
+          double rightScore;
+          {
+            csum[csum.length - 1] = weights[bf.index() * 2 + 1];
+            ctotal[csum.length - 1] = total;
+            final double prob = estimate(csum, ctotal);
+            final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            out.append(left);
+            out.append(current.excluded);
+            in.append(current.nonCriticalTotal);
+            in.append(right);
+            rightScore = (1 - prob) * outScore(out) + prob * inScore(in);// + 2 * ((1-prob) * Math.log(1-prob) + prob * Math.log(prob));
 //              rightScore = score(out) +  score(in);
 //              rightScore = inScore(in);
-            }
-            scores[bf.bfIndex] = leftScore > rightScore ? rightScore : leftScore;
-            isRight[bf.bfIndex] = leftScore > rightScore;
           }
+          scores[bf.index()] = leftScore > rightScore ? rightScore : leftScore;
+          isRight[bf.index()] = leftScore > rightScore;
         }
       });
 
@@ -195,8 +187,8 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
       if ((scores[bestSplit] + 1e-9 >= currentScore))
         break;
 
-      final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
-      final boolean bestSplitMask = isRight[bestSplitBF.bfIndex];
+      final BFGrid.Feature bestSplitBF = grid.bf(bestSplit);
+      final boolean bestSplitMask = isRight[bestSplitBF.index()];
 
       BFOptimizationSubset outRegion = current.split(bestSplitBF, bestSplitMask);
       if (outRegion == null) {
@@ -208,9 +200,9 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
       }
 
       conditions.add(bestSplitBF);
-      conditionSum.add(isRight[bestSplitBF.bfIndex] ? weights[bestSplitBF.bfIndex * 2 + 1] : weights[bestSplitBF.bfIndex * 2]);
+      conditionSum.add(isRight[bestSplitBF.index()] ? weights[bestSplitBF.index() * 2 + 1] : weights[bestSplitBF.index() * 2]);
       conditionTotal.add(total);
-      usedBF[bestSplitBF.bfIndex] = true;
+      usedBF[bestSplitBF.index()] = true;
       mask.add(bestSplitMask);
       currentScore = scores[bestSplit];
     }
@@ -227,7 +219,6 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
     double sum = 0;
     double outSum = 0;
     double weight = 0;
-    double outWeight = 0;
 
     for (int i = 0; i < bds.original().length(); ++i) {
       if (region.value(bds, i) == 1) {
@@ -236,7 +227,6 @@ public class GreedyTDRegionNonStochasticProbs<Loss extends StatBasedLoss> extend
         sum += target.get(i) * samplWeight;
       } else {
         outSum += target.get(i);
-        outWeight++;
       }
     }
 

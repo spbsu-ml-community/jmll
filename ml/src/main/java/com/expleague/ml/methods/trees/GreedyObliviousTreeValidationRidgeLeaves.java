@@ -2,14 +2,15 @@ package com.expleague.ml.methods.trees;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.methods.linearRegressionExperiments.MultipleValidationRidgeRegression;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.ThreadTools;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.commons.math.Trans;
 import com.expleague.ml.data.impl.BinarizedDataSet;
@@ -57,16 +58,16 @@ public class GreedyObliviousTreeValidationRidgeLeaves<Loss extends StatBasedLoss
   @Override
   public TransObliviousTree fit(final VecDataSet ds, final Loss loss) {
     final WeightedLoss<Loss> bsLoss = DataTools.bootstrap(loss, rand);
-    final Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> tree = base.findBestSubsets(ds, bsLoss);
-    final List<BFGrid.BinaryFeature> conditions = tree.getSecond();
+    final Pair<List<BFOptimizationSubset>, List<BFGrid.Feature>> tree = base.findBestSubsets(ds, bsLoss);
+    final List<BFGrid.Feature> conditions = tree.getSecond();
     final List<BFOptimizationSubset> subsets = tree.getFirst();
     final CountDownLatch latch = new CountDownLatch(subsets.size());
     final Trans[] leafTrans = new Trans[subsets.size()];
     //damn java 7 without unique, filters, etc and autoboxing overhead…
     Set<Integer> uniqueFeatures = new TreeSet<>();
-    for (BFGrid.BinaryFeature bf : conditions) {
+    for (BFGrid.Feature bf : conditions) {
       if (bf.row().size() > 2)
-        uniqueFeatures.add(bf.findex);
+        uniqueFeatures.add(bf.findex());
     }
 //    //prototype
     if (ds.data().rows() > 20) {
@@ -116,32 +117,29 @@ public class GreedyObliviousTreeValidationRidgeLeaves<Loss extends StatBasedLoss
 
       for (int i = 0; i < subsets.size(); ++i) {
         final int ind = i;
-        exec.submit(new Runnable() {
-          @Override
-          public void run() {
-            {
-              final BFOptimizationSubset subset = subsets.get(ind);
-              int[] points = subset.getPoints();
-              Mx subData = subMx(ds.data(), points, features);
-              Vec target = loss.target();
-              Vec localTarget = subVec(target, points);
-              final double bias = bsLoss.bestIncrement((WeightedLoss.Stat) subset.total());
-              adjust(localTarget, -bias);
-              VecDataSetImpl subDataSet = new VecDataSetImpl(subData, ds);
-              L2 localLoss = DataTools.newTarget(L2.class, localTarget, subDataSet);
-              datas[ind] = subDataSet;
-              losses[ind] = localLoss;
+        exec.submit(() -> {
+          {
+            final BFOptimizationSubset subset = subsets.get(ind);
+            int[] points = subset.getPoints();
+            Mx subData = subMx(ds.data(), points, features);
+            Vec target = loss.target();
+            Vec localTarget = subVec(target, points);
+            final double bias = bsLoss.bestIncrement((WeightedLoss.Stat) subset.total());
+            adjust(localTarget, -bias);
+            VecDataSetImpl subDataSet = new VecDataSetImpl(subData, ds);
+            L2 localLoss = DataTools.newTarget(L2.class, localTarget, subDataSet);
+            datas[ind] = subDataSet;
+            losses[ind] = localLoss;
 
-              final BFOptimizationSubset valSubset = oobSubsets.get(ind);
-              int[] valPoints = valSubset.getPoints();
-              Mx valData = subMx(ds.data(), valPoints, features);
-              Vec valTarget = subVec(target, valPoints);
-              adjust(valTarget, -bias);
-              valDatas[ind] = new VecDataSetImpl(valData, ds);
-              valLosses[ind] = DataTools.newTarget(L2.class, valTarget, valDatas[ind]);
-            }
-            latch.countDown();
+            final BFOptimizationSubset valSubset = oobSubsets.get(ind);
+            int[] valPoints = valSubset.getPoints();
+            Mx valData = subMx(ds.data(), valPoints, features);
+            Vec valTarget = subVec(target, valPoints);
+            adjust(valTarget, -bias);
+            valDatas[ind] = new VecDataSetImpl(valData, ds);
+            valLosses[ind] = DataTools.newTarget(L2.class, valTarget, valDatas[ind]);
           }
+          latch.countDown();
         });
       }
 

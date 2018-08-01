@@ -64,7 +64,7 @@ public class GridTest extends FileTestCase {
     point.set(0, 0.465441);
     point.set(17, 0);
 
-    grid.binarize(point, bins);
+    grid.binarizeTo(point, bins);
     assertEquals(28, bins[0]);
     assertEquals(0, bins[17]);
     assertFalse(grid.bf(28).value(bins));
@@ -78,7 +78,7 @@ public class GridTest extends FileTestCase {
     final Vec point = new ArrayVec(learn.vecData().xdim());
     point.set(0, 0.0);
 
-    grid.binarize(point, bins);
+    grid.binarizeTo(point, bins);
     assertEquals(0, bins[0]);
   }
 
@@ -88,8 +88,8 @@ public class GridTest extends FileTestCase {
     final byte[] bins = new byte[learn.vecData().xdim()];
     final Vec point = new ArrayVec(learn.vecData().xdim());
     point.set(3, 1.0);
-    grid.binarize(point, bins);
-    final BFGrid.BinaryFeature bf = grid.bf(96);
+    grid.binarizeTo(point, bins);
+    final BFGrid.Feature bf = grid.bf(96);
 
     assertEquals(true, bf.value(bins));
     assertEquals(true, bf.value(point));
@@ -100,9 +100,9 @@ public class GridTest extends FileTestCase {
     final VecDataSet ds = new VecDataSetImpl(data, null);
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(3, grid.size());
-    assertEquals(0.1, grid.bf(0).condition);
-    assertEquals(0.3, grid.bf(1).condition);
-    assertEquals(0.6, grid.bf(2).condition);
+    assertEquals(0.1, grid.bf(0).condition());
+    assertEquals(0.3, grid.bf(1).condition());
+    assertEquals(0.6, grid.bf(2).condition());
   }
 
   public void testSplitUniformUnsorted() {
@@ -110,9 +110,9 @@ public class GridTest extends FileTestCase {
     final VecDataSet ds = new VecDataSetImpl(data, null);
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(3, grid.size());
-    assertEquals(0.1, grid.bf(0).condition);
-    assertEquals(0.3, grid.bf(1).condition);
-    assertEquals(0.6, grid.bf(2).condition);
+    assertEquals(0.1, grid.bf(0).condition());
+    assertEquals(0.3, grid.bf(1).condition());
+    assertEquals(0.6, grid.bf(2).condition());
   }
 
   public void testSplitBinary() {
@@ -120,7 +120,7 @@ public class GridTest extends FileTestCase {
     final VecDataSet ds = new VecDataSetImpl(data, null);
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     assertEquals(1, grid.size());
-    assertEquals(0., grid.bf(0).condition);
+    assertEquals(0., grid.bf(0).condition());
   }
 
   public void testSplitBinaryIncorrect1() {
@@ -142,9 +142,9 @@ public class GridTest extends FileTestCase {
     final VecDataSet ds = new VecDataSetImpl(data, null);
     final BFGrid grid = GridTools.medianGrid(ds, 3);
     final byte[] bin = new byte[1];
-    grid.binarize(new ArrayVec(0.), bin);
+    grid.binarizeTo(new ArrayVec(0.), bin);
     assertEquals(0, bin[0]);
-    grid.binarize(new ArrayVec(1.), bin);
+    grid.binarizeTo(new ArrayVec(1.), bin);
     assertEquals(3, bin[0]);
   }
 

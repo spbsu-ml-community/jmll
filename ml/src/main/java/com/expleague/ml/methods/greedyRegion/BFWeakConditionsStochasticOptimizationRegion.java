@@ -6,6 +6,7 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
 import com.expleague.commons.util.ArrayTools;
@@ -24,21 +25,21 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
   double beta = 0.5;
 
   public BFWeakConditionsStochasticOptimizationRegion(
-      final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points, final BFGrid.BinaryFeature[] features, final boolean[] masks, final int maxFailed) {
+      final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points, final BFGrid.Feature[] features, final boolean[] masks, final int maxFailed) {
     super(bds, oracle, points, features, masks, maxFailed);
   }
 
   @Override
-  public BFOptimizationSubset split(final BFGrid.BinaryFeature feature, final boolean mask) {
+  public BFOptimizationSubset split(final BFGrid.Feature feature, final boolean mask) {
     final TIntArrayList out = new TIntArrayList(points.length);
-    final byte[] bins = bds.bins(feature.findex);
+    final byte[] bins = bds.bins(feature.findex());
     final TIntArrayList newCriticalPoints = new TIntArrayList();
     final AdditiveStatistics newCritical = oracle.statsFactory().create();
 
     final int nonCriticalEnd = maxFailed > 0 ? failedBorders[maxFailed - 1] : 0;
     for (int i = 0; i < nonCriticalEnd; ++i) {
       final int index = points[i];
-      if ((bins[index] > feature.binNo) != mask) {
+      if ((bins[index] > feature.bin()) != mask) {
         failedCount[i]++;
         if (failedCount[i] == maxFailed) {
           newCriticalPoints.add(index);
@@ -65,8 +66,7 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
     return outRegion;
   }
 
-  private boolean[] splitCritical(
-      final int[] points, final int left, final int right, final BFGrid.BinaryFeature feature, final boolean mask, final byte[] bins) {
+  private boolean[] splitCritical(final int[] points, final int left, final int right, final BFGrid.Feature feature, final boolean mask, final byte[] bins) {
     final boolean[] result = new boolean[right - left];
 //    for (int i = left; i < right;++i) {
 //      final int index = points[i];
@@ -75,7 +75,7 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
 //    }
 //    return result;
     final double[] values = new double[right - left];
-    final Vec featureValues = ((VecDataSet) bds.original()).data().col(feature.findex);
+    final Vec featureValues = ((VecDataSet) bds.original()).data().col(feature.findex());
     final int[] order = ArrayTools.sequence(0, values.length);
     for (int i = 0; i < values.length; ++i) {
       final int index = points[i + left];
@@ -83,9 +83,9 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
     }
     ArrayTools.parallelSort(values, order);
     final double[] ranks = rank(values);
-    final int split = upperBound(values, feature.condition);
+    final int split = upperBound(values, feature.condition());
     for (int i = 0; i < values.length; ++i) {
-      if ((values[i] > feature.condition) != mask) {
+      if ((values[i] > feature.condition()) != mask) {
         //if !mask, than diff = #points <= point - #points in left
         //if mask, than diff = #points in left - #points < point
         //points in left = split

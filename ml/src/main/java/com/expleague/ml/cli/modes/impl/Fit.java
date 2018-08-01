@@ -1,6 +1,5 @@
 package com.expleague.ml.cli.modes.impl;
 
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.ProgressHandler;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.cli.modes.CliPoolReaderHelper;
@@ -24,6 +23,7 @@ import com.expleague.ml.data.tools.CatboostPool;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.loss.blockwise.BlockwiseMultiLabelLogit;
 import com.expleague.ml.loss.multiclass.ClassicMulticlassLoss;

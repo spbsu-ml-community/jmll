@@ -1,16 +1,18 @@
 package com.expleague.ml.methods.greedyRegion;
 
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.Region;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.models.PolynomialExponentRegion;
 
 import java.io.File;
@@ -22,7 +24,7 @@ import java.io.PrintWriter;
  */
 public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
   private final GreedyTDRegion greedyTDRegion;
-  private BFGrid.BinaryFeature[] features;
+  private BFGrid.Feature[] features;
   private boolean[] mask;
   private final double distCoeffiecent, regulationCoeffiecent;
 
@@ -36,7 +38,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
     double distanse = 0;
     for (int i = 0; i < features.length; i++) {
       if (features[i].value(x) != mask[i])
-        distanse += Math.pow(features[i].condition - x.get(features[i].findex), 2);
+        distanse += MathTools.sqr(features[i].condition() - x.get(features[i].findex()));
     }
     return distanse;
   }
@@ -124,7 +126,7 @@ public class GreedyPolynomialExponentRegion extends VecOptimization.Stub<L2> {
       final double[] data = new double[numberOfFeatures];
       data[0] = 1;
       for (int j = 0; j < features.length; j++)
-        data[j + 1] = vec.get(features[j].findex);
+        data[j + 1] = vec.get(features[j].findex());
       final double f = loss.target.get(i);
       sum += f;
       countIn++;

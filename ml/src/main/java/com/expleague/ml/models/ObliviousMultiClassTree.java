@@ -17,7 +17,7 @@ public class ObliviousMultiClassTree extends Trans.Stub {
   private final ObliviousTree binaryClassifier;
   private final boolean[][] masks;
 
-  public ObliviousMultiClassTree(final List<BFGrid.BinaryFeature> features, final double[] values, final double[] basedOn, final boolean[][] masks) {
+  public ObliviousMultiClassTree(final List<BFGrid.Feature> features, final double[] values, final double[] basedOn, final boolean[][] masks) {
     binaryClassifier = new ObliviousTree(features, values, basedOn);
     this.masks = masks;
   }

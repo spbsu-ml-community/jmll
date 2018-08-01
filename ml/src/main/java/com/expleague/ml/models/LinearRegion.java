@@ -13,14 +13,14 @@ import java.util.List;
  */
 
 public class LinearRegion extends BinOptimizedModel.Stub {
-  private final BFGrid.BinaryFeature[] features;
+  private final BFGrid.Feature[] features;
   private final boolean[] mask;
   private final double bias;
   private final double[] values;
   private final BFGrid grid;
 
 
-  public BFGrid.BinaryFeature[] features() {
+  public BFGrid.Feature[] features() {
     return features.clone();
   }
 
@@ -28,12 +28,12 @@ public class LinearRegion extends BinOptimizedModel.Stub {
     return mask.clone();
   }
 
-  public LinearRegion(final List<BFGrid.BinaryFeature> conditions,
+  public LinearRegion(final List<BFGrid.Feature> conditions,
                       final boolean[] mask,
                       final double bias,
                       final double[] values) {
     this.grid = conditions.size() > 0 ? conditions.get(0).row().grid() : null;
-    this.features = conditions.toArray(new BFGrid.BinaryFeature[conditions.size()]);
+    this.features = conditions.toArray(new BFGrid.Feature[conditions.size()]);
     this.mask = mask;
     this.bias = bias;
     this.values = values;
@@ -45,7 +45,7 @@ public class LinearRegion extends BinOptimizedModel.Stub {
     double result = bias;
 
     for (int i = 0; i < features.length; i++) {
-      if (bds.bins(features[i].findex)[pindex] > features[i].binNo != mask[i]) {
+      if (bds.bins(features[i].findex())[pindex] > features[i].bin() != mask[i]) {
         break;
       } else {
         result += values[i];
@@ -75,9 +75,9 @@ public class LinearRegion extends BinOptimizedModel.Stub {
     builder.append(" ->");
     for (int i = 0; i < features.length; i++) {
       builder.append(" ")
-              .append(features[i].findex)
+              .append(features[i].findex())
               .append(mask[i] ? ">" : "<=")
-              .append(features[i].condition);
+              .append(features[i].condition());
     }
     builder.append("values: [");
     for (int i = 0; i < values.length; i++) {

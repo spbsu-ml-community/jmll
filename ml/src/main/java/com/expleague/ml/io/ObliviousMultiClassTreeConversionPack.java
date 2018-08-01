@@ -3,9 +3,10 @@ package com.expleague.ml.io;
 import com.expleague.commons.func.types.ConversionPack;
 import com.expleague.commons.seq.CharSeqReader;
 import com.expleague.commons.seq.CharSeqTools;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.models.ObliviousTree;
 import com.expleague.commons.func.types.TypeConverter;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.GridEnabled;
 import com.expleague.ml.models.ObliviousMultiClassTree;
 
@@ -18,6 +19,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * User: solar
@@ -45,8 +47,8 @@ public class ObliviousMultiClassTreeConversionPack implements ConversionPack<Obl
     public CharSequence convert(final ObliviousMultiClassTree ot) {
       final ObliviousTree bc = ot.binaryClassifier();
       StringBuilder result = new StringBuilder();
-      for (final BFGrid.BinaryFeature feature : bc.features()) {
-        result.append(FEATURE_LINE_PATTERN.format(new Object[]{feature.findex, feature.binNo, feature.condition}))
+      for (final BFGrid.Feature feature : bc.features()) {
+        result.append(FEATURE_LINE_PATTERN.format(new Object[]{feature.findex(), feature.bin(), feature.condition()}))
               .append("\n");
       }
       final int leafsCount = 1 << bc.features().size();
@@ -86,22 +88,22 @@ public class ObliviousMultiClassTreeConversionPack implements ConversionPack<Obl
         throw new RuntimeException("Grid must be setup for serialization of oblivious trees, use SerializationRepository.customize!");
       String line;
       final LineNumberReader lnr = new LineNumberReader(new CharSeqReader(source));
-      final List<BFGrid.BinaryFeature> splits = new ArrayList<BFGrid.BinaryFeature>(10);
+      final List<BFGrid.Feature> splits = new ArrayList<>(10);
       try {
         while ((line = lnr.readLine()) != null) {
           if (line.startsWith("feature")) {
             final Object[] parts = FEATURE_LINE_PATTERN.parse(line);
-            final BFGrid.BinaryFeature bf = grid.row(((Long)parts[0]).intValue()).bf(((Long)parts[1]).intValue());
+            final BFGrid.Feature bf = grid.row(((Long)parts[0]).intValue()).bf(((Long)parts[1]).intValue());
             splits.add(bf);
-            if (Math.abs(bf.condition - ((Number)parts[2]).doubleValue()) > 1e-4)
-              throw new RuntimeException("Inconsistent grid set, conditions do not match! Grid: " + bf.condition + " Found: " + parts[2]);
+            if (Math.abs(bf.condition() - ((Number)parts[2]).doubleValue()) > 1e-4)
+              throw new RuntimeException("Inconsistent grid set, conditions do not match! Grid: " + bf.condition() + " Found: " + parts[2]);
           }
           else break;
         }
         final double[] values = new double[1 << splits.size()];
         final double[] based = new double[1 << splits.size()];
         final boolean[][] masks = new boolean[1 << splits.size()][];
-        final CharSequence[] valuesStr = CharSeqTools.split(line, ' ');
+        final CharSequence[] valuesStr = CharSeqTools.split(Objects.requireNonNull(line), ' ');
         for (final CharSequence value : valuesStr) {
           final CharSequence[] pattern2ValueBased = CharSeqTools.split(value, ':');
           final int leafIndex = Integer.parseInt(pattern2ValueBased[0].toString(), 2);

@@ -8,12 +8,12 @@ import com.expleague.ml.BFGrid;
  * Created by towelenee on 20.02.14.
  */
 public class PolynomialExponentRegion extends Func.Stub {
-  private final BFGrid.BinaryFeature[] features;
+  private final BFGrid.Feature[] features;
   private final boolean[] mask;
   private final double[] value;
   private final double distCoeffiecent;
 
-  public PolynomialExponentRegion(final BFGrid.BinaryFeature[] features, final boolean[] mask, final double[] value, final double distCoeffiecent) {
+  public PolynomialExponentRegion(final BFGrid.Feature[] features, final boolean[] mask, final double[] value, final double distCoeffiecent) {
     this.features = features;
     this.mask = mask;
     this.value = value;
@@ -37,7 +37,7 @@ public class PolynomialExponentRegion extends Func.Stub {
     double ans = 0;
     data[0] = 1;
     for(int i = 0; i < features.length;i++)
-      data[i + 1] = x.get(features[i].findex);
+      data[i + 1] = x.get(features[i].findex());
     for(int i = 0; i <= features.length; i++)
       for(int j = 0; j <= features.length; j++)
         ans += data[i] * data[j] * value[i + j * (features.length + 1)];

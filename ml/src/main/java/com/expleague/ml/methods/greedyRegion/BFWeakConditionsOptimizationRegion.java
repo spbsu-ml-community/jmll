@@ -15,7 +15,7 @@ import gnu.trove.list.array.TIntArrayList;
  * Date: 10.09.13
  * Time: 12:16
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "unused"})
 
 public class BFWeakConditionsOptimizationRegion {
   protected final BinarizedDataSet bds;
@@ -28,14 +28,14 @@ public class BFWeakConditionsOptimizationRegion {
   public final AdditiveStatistics excluded;
   protected final int[] failedBorders;
 
-  public BFWeakConditionsOptimizationRegion(final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points, final BFGrid.BinaryFeature[] features, final boolean[] masks, final int maxFailed) {
+  public BFWeakConditionsOptimizationRegion(final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points, final BFGrid.Feature[] features, final boolean[] masks, final int maxFailed) {
     this.bds = bds;
     this.excluded = (AdditiveStatistics) oracle.statsFactory().create();
     this.points = points;
     this.failedCount = new int[points.length];
     final byte[][] bins = new byte[features.length][];
     for (int f = 0; f < features.length; ++f)
-      bins[f] = bds.bins(features[f].findex);
+      bins[f] = bds.bins(features[f].findex());
 
     this.nonCriticalTotal = (AdditiveStatistics) oracle.statsFactory().create();
     final TIntArrayList maxFailedPoints = new TIntArrayList();
@@ -43,7 +43,7 @@ public class BFWeakConditionsOptimizationRegion {
       final int index = points[i];
       int failed = 0;
       for (int f = 0; f < features.length; ++f) {
-        if (bins[f][index] > features[f].binNo != masks[f]) {
+        if (bins[f][index] > features[f].bin() != masks[f]) {
           ++failed;
         }
       }
@@ -93,16 +93,16 @@ public class BFWeakConditionsOptimizationRegion {
   }
 
 
-  public BFOptimizationSubset split(final BFGrid.BinaryFeature feature, final boolean mask) {
+  public BFOptimizationSubset split(final BFGrid.Feature feature, final boolean mask) {
     final TIntArrayList out = new TIntArrayList(points.length);
-    final byte[] bins = bds.bins(feature.findex);
+    final byte[] bins = bds.bins(feature.findex());
     final TIntArrayList newCriticalPoints = new TIntArrayList();
     final AdditiveStatistics newCritical = oracle.statsFactory().create();
     final AdditiveStatistics test = oracle.statsFactory().create();
 
     for (int i = 0; i < failedBorders[maxFailed]; ++i) {
       final int index = points[i];
-      if ((bins[index] > feature.binNo) != mask) {
+      if ((bins[index] > feature.bin()) != mask) {
         failedCount[i]++;
         if (failedCount[i] == maxFailed) {
           newCriticalPoints.add(index);
@@ -132,8 +132,8 @@ public class BFWeakConditionsOptimizationRegion {
     aggregate.visit(visitor);
   }
 
-  public <T extends AdditiveStatistics> void visitSplit(final BFGrid.BinaryFeature bf, final Aggregate.SplitVisitor<T> visitor) {
-    final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
+  public <T extends AdditiveStatistics> void visitSplit(final BFGrid.Feature bf, final Aggregate.SplitVisitor<T> visitor) {
+    final T left = (T) aggregate.combinatorForFeature(bf.index());
     final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
     visitor.accept(bf, left, right);
   }

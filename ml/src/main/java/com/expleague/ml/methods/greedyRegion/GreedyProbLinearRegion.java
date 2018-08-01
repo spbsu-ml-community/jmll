@@ -5,10 +5,11 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
@@ -51,7 +52,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     final double[] lambda1 = new double[depth];
     final double[] lambda2 = new double[depth];
     final boolean[] mask = new boolean[depth];
-    final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(depth);
+    final List<BFGrid.Feature> conditions = new ArrayList<>(depth);
 
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 
@@ -69,7 +70,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       current.visitAllSplits((bf, left, right) -> {
         final double leftScore = globalLoss.score((WeightedLoss.Stat) left);
         final double rightScore = globalLoss.score((WeightedLoss.Stat) right);
-        scores[bf.bfIndex] = Math.min(leftScore, rightScore);
+        scores[bf.index()] = Math.min(leftScore, rightScore);
       });
 
       int bestSplit = ArrayTools.min(scores);
@@ -77,7 +78,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
         break;
 
       final boolean[] isRight = new boolean[1];
-      BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
+      BFGrid.Feature bestSplitBF = grid.bf(bestSplit);
       current.visitSplit(bestSplitBF, (bf, left, right) -> {
         final double leftScore = globalLoss.score((WeightedLoss.Stat) left);
         final double rightScore = globalLoss.score((WeightedLoss.Stat) right);
@@ -113,12 +114,12 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   }
 
   @NotNull
-  private int[] sampleSubset(BinarizedDataSet bds, BFGrid.BinaryFeature bestSplitBF,
+  private int[] sampleSubset(BinarizedDataSet bds, BFGrid.Feature bestSplitBF,
                              int[] points, double lambda1, double lambda2, boolean isRight) {
     TIntArrayList newPoints = new TIntArrayList(points.length);
 
     for (int i = 0; i < points.length; i++) {
-      final double diffX = x_i(bds, points[i], bestSplitBF.findex) - bestSplitBF.condition;
+      final double diffX = x_i(bds, points[i], bestSplitBF.findex()) - bestSplitBF.condition();
       final double prob = isRight ? probRight(diffX, lambda1, lambda2) : 1. - probRight(diffX, lambda1, lambda2);
 
       if (rng.nextDouble() < prob) {
@@ -162,7 +163,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   }
 
   private double score(BinarizedDataSet bds, int[] points, WeightedLoss<? extends L2> loss,
-                       boolean isRight, double lambda1, double lambda2, BFGrid.BinaryFeature bf) {
+                       boolean isRight, double lambda1, double lambda2, BinaryFeatureImpl bf) {
     Lock lock = new ReentrantLock();
     L2.Stat updatedStat = new L2.Stat(loss.target());
     IntStream.of(points).parallel().forEach(idx -> {
@@ -187,7 +188,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   Vec[] lastLambda1;
 
   @NotNull
-  private Vec estimateLambda(int[] points, BFGrid.BinaryFeature bf, boolean isRight, WeightedLoss<? extends L2> loss, BinarizedDataSet bds) {
+  private Vec estimateLambda(int[] points, BFGrid.Feature bf, boolean isRight, WeightedLoss<? extends L2> loss, BinarizedDataSet bds) {
 //    final ScoreFromLambda sfl = new ScoreFromLambda(bds, points, loss, isRight, bf);
 //
 //    Vec cursor = lastLambda1[bf.bfIndex] != null ? lastLambda1[bf.bfIndex] : (lastLambda1[bf.bfIndex] = new ArrayVec(1, 1));
@@ -240,16 +241,16 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   }
 
   public class ProbRegion extends FuncC1.Stub {
-    private final BFGrid.BinaryFeature[] features;
+    private final BFGrid.Feature[] features;
     private final boolean[] mask;
     private final double[] mean;
     private final double[] lambda1;
     private final double[] lambda2;
     private final int depth;
 
-    public ProbRegion(List<BFGrid.BinaryFeature> conditions, boolean[] mask, double[] mean,
+    public ProbRegion(List<BFGrid.Feature> conditions, boolean[] mask, double[] mean,
                       double[] lambda1, double[] lambda2) {
-      this.features = conditions.toArray(new BFGrid.BinaryFeature[conditions.size()]);
+      this.features = conditions.toArray(new BFGrid.Feature[conditions.size()]);
       this.mask = mask;
       this.mean = mean;
       this.lambda1 = lambda1;
@@ -258,7 +259,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     }
 
     private double probLevel(int level, Vec x) {
-      final double diffX = x.get(features[level].findex) - features[level].condition;
+      final double diffX = x.get(features[level].findex()) - features[level].condition();
       return mask[level] ? probRight(diffX, lambda1[level], lambda2[level]) :
           (1. - probRight(diffX, lambda1[level], lambda2[level]));
     }
@@ -275,10 +276,10 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     }
 
     private double gradientByFeature(int level, int fIndex, Vec x) {
-      if (features[level].findex != fIndex)
+      if (features[level].findex() != fIndex)
         return 0.;
 
-      final double diffX = x.get(fIndex) - features[level].condition;
+      final double diffX = x.get(fIndex) - features[level].condition();
       final double v = gradProbRight(diffX, lambda1[level], lambda2[level]);
       return mask[level] ? v : -v;
     }
@@ -292,7 +293,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       }
 
       for (int i = 0; i < features.length; i++) {
-        final int fIndex = features[i].findex;
+        final int fIndex = features[i].findex();
         double grad = 0.;
         double prob = 1.;
         for (int level = 0; level < features.length; level++) {
@@ -316,9 +317,9 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
     private final int[] points;
     private final WeightedLoss<? extends L2> loss;
     private final boolean isRight;
-    private final BFGrid.BinaryFeature bf;
+    private final BFGrid.Feature bf;
 
-    public ScoreFromLambda(BinarizedDataSet bds, int[] points, WeightedLoss<? extends L2> loss, boolean isRight, BFGrid.BinaryFeature bf) {
+    public ScoreFromLambda(BinarizedDataSet bds, int[] points, WeightedLoss<? extends L2> loss, boolean isRight, BFGrid.Feature bf) {
       this.bds = bds;
       this.points = points;
       this.loss = loss;
@@ -333,7 +334,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       Lock lock = new ReentrantLock();
       L2.Stat updatedStat = new L2.Stat(loss.target());
       IntStream.of(points).parallel().forEach(idx -> {
-        double probRight = probRight(x_i(bds, idx, bf.findex) - bf.condition, lambda1, lambda2);
+        double probRight = probRight(x_i(bds, idx, bf.findex()) - bf.condition(), lambda1, lambda2);
         //noinspection StatementWithEmptyBody
         while (!lock.tryLock());
         updatedStat.append(idx, (isRight ? probRight : 1 - probRight) * loss.weight(idx));
@@ -350,7 +351,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       final double lambda2 = x.get(1);
 
       IntStream.of(points).parallel().forEach(idx -> {
-        final double diffX = x_i(bds, idx, bf.findex) - bf.condition;
+        final double diffX = x_i(bds, idx, bf.findex()) - bf.condition();
         final double probRight = probRight(diffX, lambda1, lambda2);
         final double w_i = probRight * loss.weight(idx);
         final double y_i = loss.target().get(idx);
@@ -364,7 +365,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       final DoubleAccumulator sumLambda1 = new DoubleAccumulator((left, right) -> left + right, 0);
       final DoubleAccumulator sumLambda2 = new DoubleAccumulator((left, right) -> left + right, 0);
       IntStream.of(points).parallel().forEach(idx -> {
-        final double diffX = x_i(bds, idx, bf.findex) - bf.condition;
+        final double diffX = x_i(bds, idx, bf.findex()) - bf.condition();
         final double probRight = probRight(diffX, lambda1, lambda2);
         final double y_i = loss.target().get(idx);
         double dTdw_i = - (sumY * sumY - 2 * y_i * sumW * sumY);

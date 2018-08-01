@@ -3,11 +3,13 @@ package com.expleague.ml.cli.modes.impl;
 import com.expleague.commons.math.MathTools;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BFRowImpl;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.meta.PoolFeatureMeta;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.util.ArrayTools;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import com.expleague.ml.cli.modes.AbstractMode;
@@ -76,11 +78,11 @@ public class InterpretModel extends AbstractMode {
             final String features  = opt.substring("histogram(".length(), opt.length() - 1);
             for (final String feature : features.split("/,/")) {
               for (int f = 0; f < grid.rows(); f++) {
-                final BFGrid.BFRow row = grid.row(f);
-                final String fname = pool.features()[row.origFIndex].id();
+                final BFGrid.Row row = grid.row(f);
+                final String fname = pool.features()[row.findex()].id();
                 if (feature.startsWith(fname)) {
                   final int bin = Integer.parseInt(feature.substring(fname.length() + 1, feature.length() - 1));
-                  histogramPath.add(row.bf(bin).bfIndex);
+                  histogramPath.add(row.bf(bin).index());
                   break;
                 }
               }
@@ -94,11 +96,11 @@ public class InterpretModel extends AbstractMode {
             final String features  = opt.substring("histogram(".length(), opt.length() - 1);
             for (final String feature : features.split("/,/")) {
               for (int f = 0; f < grid.rows(); f++) {
-                final BFGrid.BFRow row = grid.row(f);
-                final String fname = pool.features()[row.origFIndex].id();
+                final BFGrid.Row row = grid.row(f);
+                final String fname = pool.features()[row.findex()].id();
                 if (feature.startsWith(fname)) {
                   final int bin = Integer.parseInt(feature.substring(fname.length() + 1, feature.length() - 1));
-                  mhistogramPath.add(row.bf(bin).bfIndex);
+                  mhistogramPath.add(row.bf(bin).index());
                   break;
                 }
               }
@@ -188,8 +190,8 @@ public class InterpretModel extends AbstractMode {
       for (int i = 0; i < bfIndices.length; i++) {
         if (i > 0)
           builder.append(", ");
-        final BFGrid.BinaryFeature binaryFeature = grid.bf(bfIndices[i]);
-        builder.append(pool.features()[binaryFeature.findex].id()).append(" > ").append(ftoa(binaryFeature.condition));
+        final BFGrid.Feature binaryFeature = grid.bf(bfIndices[i]);
+        builder.append(pool.features()[binaryFeature.findex()].id()).append(" > ").append(ftoa(binaryFeature.condition()));
       }
       System.out.println(builder.toString());
     }
@@ -199,17 +201,17 @@ public class InterpretModel extends AbstractMode {
     final VecDataSet vds = pool.vecData();
     final BinarizedDataSet bds = vds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     for (int i = 0; i < grid.rows(); i++) {
-      final BFGrid.BFRow row = grid.row(i);
-      final PoolFeatureMeta meta = pool.features()[row.origFIndex];
+      final BFGrid.Row row = grid.row(i);
+      final PoolFeatureMeta meta = pool.features()[row.findex()];
       System.out.print(meta.id());
       double total = 0;
       final int[] path = histogramPath.toArray();
       for (int bin = 0; bin < row.size(); bin++) {
-        final BFGrid.BinaryFeature binaryFeature = row.bf(bin);
+        final BFGrid.Feature binaryFeature = row.bf(bin);
         final List<ModelTools.CompiledOTEnsemble.Entry> vfEntries =
             entries.parallelStream()
                 .filter(e -> ArrayTools.supset(e.getBfIndices(), path))
-                .filter(e -> ArrayTools.indexOf(binaryFeature.bfIndex, e.getBfIndices()) >= 0)
+                .filter(e -> ArrayTools.indexOf(binaryFeature.index(), e.getBfIndices()) >= 0)
                 .collect(Collectors.toList());
         final double weight = expectedWeight(grid, pool.vecData(), bds, vfEntries);
         total += weight;
@@ -224,16 +226,16 @@ public class InterpretModel extends AbstractMode {
     final VecDataSet vds = pool.vecData();
     final BinarizedDataSet bds = vds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     for (int i = 0; i < grid.rows(); i++) {
-      final BFGrid.BFRow row = grid.row(i);
-      final PoolFeatureMeta meta = pool.features()[row.origFIndex];
+      final BFGrid.Row row = grid.row(i);
+      final PoolFeatureMeta meta = pool.features()[row.findex()];
       System.out.print(meta.id());
       final int[] path = histogramPath.toArray();
       for (int bin = 0; bin < row.size(); bin++) {
-        final BFGrid.BinaryFeature binaryFeature = row.bf(bin);
+        final BFGrid.Feature binaryFeature = row.bf(bin);
         final List<ModelTools.CompiledOTEnsemble.Entry> vfEntries =
             entries.parallelStream()
                 .filter(e -> ArrayTools.supset(e.getBfIndices(), path))
-                .filter(e -> ArrayTools.indexOf(binaryFeature.bfIndex, e.getBfIndices()) >= 0)
+                .filter(e -> ArrayTools.indexOf(binaryFeature.index(), e.getBfIndices()) >= 0)
                 .collect(Collectors.toList());
         final double weight = maxWeight(grid, pool.vecData(), bds, vfEntries);
         if (Math.abs(weight) > MathTools.EPSILON)
@@ -296,8 +298,8 @@ public class InterpretModel extends AbstractMode {
       for (int i = 0; i < bfIndices.length; i++) {
         if (i > 0)
           builder.append(", ");
-        final BFGrid.BinaryFeature binaryFeature = grid.bf(bfIndices[i]);
-        builder.append(pool.features()[binaryFeature.findex].id()).append(" > ").append(ftoa(binaryFeature.condition));
+        final BFGrid.Feature binaryFeature = grid.bf(bfIndices[i]);
+        builder.append(pool.features()[binaryFeature.findex()].id()).append(" > ").append(ftoa(binaryFeature.condition()));
       }
       System.out.println(builder.toString());
     }

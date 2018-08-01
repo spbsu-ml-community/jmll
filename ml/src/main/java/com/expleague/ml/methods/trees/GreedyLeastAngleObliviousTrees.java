@@ -6,16 +6,16 @@ import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.random.FastRandom;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.loss.StatBasedLoss;
-import com.expleague.ml.loss.WeightedLoss;
-import com.expleague.ml.methods.VecOptimization;
-import com.expleague.ml.models.TransObliviousTree;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.ThreadTools;
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.WeightedLoss;
+import com.expleague.ml.methods.VecOptimization;
+import com.expleague.ml.models.TransObliviousTree;
 
 import java.util.List;
 import java.util.Set;
@@ -46,16 +46,16 @@ public class GreedyLeastAngleObliviousTrees<Loss extends StatBasedLoss> extends 
   @Override
   public Trans fit(final VecDataSet ds, final Loss loss) {
     final WeightedLoss<Loss> bsLoss = DataTools.bootstrap(loss, rand);
-    final Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> tree = base.findBestSubsets(ds, bsLoss);
-    final List<BFGrid.BinaryFeature> conditions = tree.getSecond();
+    final Pair<List<BFOptimizationSubset>, List<BFGrid.Feature>> tree = base.findBestSubsets(ds, bsLoss);
+    final List<BFGrid.Feature> conditions = tree.getSecond();
     final List<BFOptimizationSubset> subsets = tree.getFirst();
 
     //damn java 7 without unique, filters, etc and autoboxing overhead…
     Set<Integer> uniqueFeatures = new TreeSet<>();
-    for (BFGrid.BinaryFeature bf : conditions) {
+    for (BFGrid.Feature bf : conditions) {
       if (!bf.row().empty()
         )
-        uniqueFeatures.add(bf.findex);
+        uniqueFeatures.add(bf.findex());
     }
 //    //prototype
     while (uniqueFeatures.size() < 6) {
@@ -79,12 +79,9 @@ public class GreedyLeastAngleObliviousTrees<Loss extends StatBasedLoss> extends 
     final CountDownLatch latch = new CountDownLatch(subsets.size());
     for (int i = 0; i < subsets.size(); ++i) {
       final int ind = i;
-      exec.submit(new Runnable() {
-        @Override
-        public void run() {
-          linearSubsets[ind] = new Subsets(ds, bsLoss, subsets.get(ind), features);
-          latch.countDown();
-        }
+      exec.submit(() -> {
+        linearSubsets[ind] = new Subsets(ds, bsLoss, subsets.get(ind), features);
+        latch.countDown();
       });
     }
 
@@ -146,18 +143,15 @@ class Subsets {
     }
     for (int i = 0; i < features.length; ++i) {
       final int ind = i;
-      exec.submit(new Runnable() {
-        @Override
-        public void run() {
-          final Vec feature = data.col(features[ind]);
-          final double cov = multiply(feature, target, points);
-          final double featureNorm2 = multiply(feature, feature, points);
-          final double inc = points.length > 50 && featureNorm2 > 0 ? cov / featureNorm2 : 0;
-          localLinears[ind] = new LocalLinear(data.columns(), features[ind], inc, bias
-          );
-          scores[ind] = points.length > 50 && featureNorm2 > 0 ? -(cov * cov / featureNorm2) : 0;
-          latch.countDown();
-        }
+      exec.submit(() -> {
+        final Vec feature = data.col(features[ind]);
+        final double cov = multiply(feature, target, points);
+        final double featureNorm2 = multiply(feature, feature, points);
+        final double inc = points.length > 50 && featureNorm2 > 0 ? cov / featureNorm2 : 0;
+        localLinears[ind] = new LocalLinear(data.columns(), features[ind], inc, bias
+        );
+        scores[ind] = points.length > 50 && featureNorm2 > 0 ? -(cov * cov / featureNorm2) : 0;
+        latch.countDown();
       });
     }
     try {

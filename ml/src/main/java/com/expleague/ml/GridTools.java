@@ -5,6 +5,8 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.commons.math.vectors.impl.idxtrans.ArrayPermutation;
+import com.expleague.ml.impl.BFGridImpl;
+import com.expleague.ml.impl.BFRowImpl;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.WeightedLoss;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -82,7 +84,7 @@ public class GridTools {
 
   public static BFGrid medianGrid(final VecDataSet ds, final int binFactor) {
     final int dim = ds.xdim();
-    final BFGrid.BFRow[] rows = new BFGrid.BFRow[dim];
+    final BFRowImpl[] rows = new BFRowImpl[dim];
     final TIntHashSet known = new TIntHashSet();
     int bfCount = 0;
 
@@ -120,11 +122,11 @@ public class GridTools {
           sizes.add(borderValue);
         }
       }
-      rows[f] = new BFGrid.BFRow(bfCount, f, dborders.toArray(), sizes.toArray());
+      rows[f] = new BFRowImpl(bfCount, f, dborders.toArray(), sizes.toArray());
 
       bfCount += dborders.size();
     }
-    return new BFGrid(rows);
+    return new BFGridImpl(rows);
   }
 
   public static class PermutationWeightedFunc extends AnalyticFunc.Stub {

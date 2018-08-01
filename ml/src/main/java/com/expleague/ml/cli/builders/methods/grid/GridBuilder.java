@@ -2,9 +2,11 @@ package com.expleague.ml.cli.builders.methods.grid;
 
 import com.expleague.commons.func.Factory;
 import com.expleague.commons.math.vectors.impl.idxtrans.ArrayPermutation;
-import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BFGridImpl;
 import com.expleague.ml.GridTools;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BFRowImpl;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TIntHashSet;
@@ -21,7 +23,7 @@ public class GridBuilder implements Factory<BFGrid> {
   private final TIntHashSet known = new TIntHashSet();
   private int binsCount = 32;
   private int bfCount = 0;
-  private BFGrid.BFRow[] rows;
+  private BFRowImpl[] rows;
   private int oneHotLimit = 255;
   //temp
   private double[] feature;
@@ -38,7 +40,7 @@ public class GridBuilder implements Factory<BFGrid> {
   }
 
   public void setDataSet(final VecDataSet dataSet) {
-    this.rows = new BFGrid.BFRow[dataSet.xdim()];
+    this.rows = new BFRowImpl[dataSet.xdim()];
     this.ds = dataSet;
     this.feature = new double[dataSet.length()];
   }
@@ -78,7 +80,7 @@ public class GridBuilder implements Factory<BFGrid> {
         addFloatFeature(f);
       }
     }
-    return new BFGrid(rows);
+    return new BFGridImpl(rows);
   }
 
   private void addCatFeature(final int f) {
@@ -91,7 +93,7 @@ public class GridBuilder implements Factory<BFGrid> {
     if (!haveDiffrentElements) {
       return;
     }
-    rows[f] = new BFGrid.BFRow(null, bfCount, f, fakeBorders, new int[fakeBorders.length], true);
+    rows[f] = new BFRowImpl(null, bfCount, f, fakeBorders, new int[fakeBorders.length], true);
     bfCount += fakeBorders.length;
   }
 
@@ -128,7 +130,7 @@ public class GridBuilder implements Factory<BFGrid> {
         sizes.add(borders.get(b));
       }
     }
-    rows[f] = new BFGrid.BFRow(bfCount, f, dborders.toArray(), sizes.toArray());
+    rows[f] = new BFRowImpl(bfCount, f, dborders.toArray(), sizes.toArray());
     bfCount += dborders.size();
   }
 }

@@ -8,12 +8,12 @@ import com.expleague.ml.data.cherry.CherryLoss;
 import com.expleague.ml.data.cherry.CherrySubset;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.CNF;
 import com.expleague.commons.util.ArrayTools;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.cherry.CherryPick;
 

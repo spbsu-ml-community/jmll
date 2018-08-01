@@ -89,11 +89,11 @@ public class CherryStochasticSubset implements CherryPointsHolder {
   }
 
 
-  private void updateLogProbs(final BFGrid.BFRow row,
+  private void updateLogProbs(final BFGrid.Row row,
                               final int startBin, final int endBin) {
-    double leftRank = startBin > 0 ? row.bf(startBin - 1).size : 0;
-    double rightRank = endBin == row.size() ? bds.original().length() : row.bf(endBin).size;
-    float[] rank = ranksDs.feature(row.origFIndex);
+    double leftRank = startBin > 0 ? row.bf(startBin - 1).power() : 0;
+    double rightRank = endBin == row.size() ? bds.original().length() : row.bf(endBin).power();
+    float[] rank = ranksDs.feature(row.findex());
     for (int i = 0; i < points.length; ++i) {
       float rk = rank[points[i]];
       final double pLeft = leftProb(rk, leftRank);
@@ -103,7 +103,7 @@ public class CherryStochasticSubset implements CherryPointsHolder {
   }
 
   @Override
-  public AdditiveStatistics addCondition(final BFGrid.BFRow row,
+  public AdditiveStatistics addCondition(final BFGrid.Row row,
                                          final int startBin, final int endBin) {
     updateLogProbs(row, startBin, endBin);
     calcWeights();

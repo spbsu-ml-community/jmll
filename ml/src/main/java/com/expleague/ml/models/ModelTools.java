@@ -5,9 +5,10 @@ import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.util.Pair;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.Vectorization;
 import com.expleague.ml.func.Ensemble;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import gnu.trove.iterator.TIntIterator;
@@ -61,7 +62,7 @@ public final class ModelTools {
         return 0.;
 
       final byte[] binary = new byte[grid.rows()];
-      grid.binarize(x, binary);
+      grid.binarizeTo(x, binary);
       double result = 0.;
       for (final Entry entry : entries) {
         final int[] bfIndices = entry.getBfIndices();
@@ -120,11 +121,11 @@ public final class ModelTools {
     for (int treeIndex = 0; treeIndex < ensemble.size(); treeIndex++) {
       final ObliviousTree tree = ensemble.models[treeIndex];
 
-      final List<BFGrid.BinaryFeature> features = tree.features();
+      final List<BFGrid.Feature> features = tree.features();
       final double[] values = tree.values();
 
       for (int b = 0; b < tree.values().length; b++) {
-        final Set<BFGrid.BinaryFeature> currentSet = new HashSet<>();
+        final Set<BFGrid.Feature> currentSet = new HashSet<>();
 
         double value = 0;
         final int bitsB = MathTools.bits(b);
@@ -141,16 +142,16 @@ public final class ModelTools {
 
         if (value != 0.) {
           final TIntArrayList conditions = new TIntArrayList(currentSet.size());
-          for (BFGrid.BinaryFeature aCurrentSet : currentSet) {
-            conditions.add(aCurrentSet.bfIndex);
+          for (BFGrid.Feature aCurrentSet : currentSet) {
+            conditions.add(aCurrentSet.index());
           }
           conditions.sort();
           if (grid != null) { // minimize
             final TIntIterator iterator = conditions.iterator();
-            BFGrid.BinaryFeature prev = null;
+            BFGrid.Feature prev = null;
             while (iterator.hasNext()) {
-              final BFGrid.BinaryFeature next = grid.bf(iterator.next());
-              if (prev != null && prev.findex == next.findex) {
+              final BFGrid.Feature next = grid.bf(iterator.next());
+              if (prev != null && prev.findex() == next.findex()) {
                 iterator.remove();
               }
               prev = next;
@@ -201,13 +202,5 @@ public final class ModelTools {
       trees[i] = (ObliviousTree) model.models[i];
     }
     return new Ensemble<>(trees, model.weights);
-  }
-
-  public static <T extends DSItem> List<T> argmax(
-      CompiledOTEnsemble ensamble,
-      TObjectDoubleHashMap<FeatureMeta> context,
-      Vectorization<T> vec,
-      Function<BFGrid.BinaryFeature, Stream<T>> binProvider) {
-    return null;
   }
 }

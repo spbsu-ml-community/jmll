@@ -9,6 +9,7 @@ import com.expleague.ml.data.tools.FakePool;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.SatL2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;

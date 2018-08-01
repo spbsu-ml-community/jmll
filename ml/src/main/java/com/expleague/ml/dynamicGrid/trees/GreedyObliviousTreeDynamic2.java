@@ -189,7 +189,7 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
     for (int i = 0; i < values.length; i++) {
       values[i] = loss.bestIncrement(leaves.get(i).total());
     }
-//    for (BinaryFeature bf : conditions) {
+//    for (Feature bf : conditions) {
 //      bf.use();
 //    }
     return new ObliviousTreeDynamicBin(conditions, values);

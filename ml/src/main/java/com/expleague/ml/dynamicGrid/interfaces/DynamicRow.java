@@ -23,5 +23,5 @@ public interface DynamicRow {
   public short bin(double v);
 
   double regularize(BinaryFeature bf);
-//    void setActive(BinaryFeature feature);
+//    void setActive(Feature feature);
 }

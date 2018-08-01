@@ -3,6 +3,8 @@ package com.expleague.ml.methods.greedyRegion.cnfMergeOptimization;
 import com.expleague.commons.math.MathTools;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BFRowImpl;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
@@ -10,7 +12,6 @@ import com.expleague.ml.models.CNF;
 import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.ThreadTools;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.methods.greedyMergeOptimization.GreedyMergePick;
 import com.expleague.ml.methods.greedyMergeOptimization.RegularizedLoss;
@@ -107,21 +108,18 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
       if (grid.row(feature).size() <= 1)
         continue;
       for (int bin = 0; bin <= grid.row(feature).size(); ++bin) {
-        final BFGrid.BFRow row = grid.row(feature);
+        final BFGrid.Row row = grid.row(feature);
         final BitSet used = new BitSet(row.size() + 1);
         used.set(bin);
-        exec.submit(new Runnable() {
-          @Override
-          public void run() {
-            final CNF.Condition[] conditions = new CNF.Condition[1];
-            conditions[0] = new CNF.Condition(row, used);
-            final CNF.Clause clause = new CNF.Clause(grid, conditions);
-            final CherryOptimizationSubset subset = new CherryOptimizationSubset(bds, loss.statsFactory(), clause, points, cardinality);
-            synchronized (result) {
-              result.add(subset);
-            }
-            latch.countDown();
+        exec.submit(() -> {
+          final CNF.Condition[] conditions = new CNF.Condition[1];
+          conditions[0] = new CNF.Condition(row, used);
+          final CNF.Clause clause = new CNF.Clause(grid, conditions);
+          final CherryOptimizationSubset subset = new CherryOptimizationSubset(bds, loss.statsFactory(), clause, points, cardinality);
+          synchronized (result) {
+            result.add(subset);
           }
+          latch.countDown();
         });
       }
     }

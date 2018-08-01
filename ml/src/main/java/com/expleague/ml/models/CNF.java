@@ -2,9 +2,9 @@ package com.expleague.ml.models;
 
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.BinOptimizedModel;
 import com.expleague.ml.data.impl.BinarizedDataSet;
-import com.expleague.ml.BFGrid;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -113,11 +113,11 @@ public class CNF extends RegionBase {
 
   public static class Condition {
     public final int findex;
-    public final BFGrid.BFRow feature;
+    public final BFGrid.Row feature;
     public final BitSet used;
 
-    public Condition(final BFGrid.BFRow feature, final BitSet bins) {
-      this.findex = feature.origFIndex;
+    public Condition(final BFGrid.Row feature, final BitSet bins) {
+      this.findex = feature.findex();
       this.feature = feature;
       this.used = bins;
     }
@@ -142,7 +142,7 @@ public class CNF extends RegionBase {
     @Override
     public String toString() {
       final StringBuilder builder = new StringBuilder();
-      builder.append("f[").append(feature.origFIndex).append("] \\in ");
+      builder.append("f[").append(feature.findex()).append("] \\in ");
       final NumberFormat pp = MathTools.numberFormatter();
       int prev = -1;
       for (int next = used.nextSetBit(0); next >= 0; next = used.nextSetBit(next+1)) {

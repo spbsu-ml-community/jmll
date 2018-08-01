@@ -1,29 +1,28 @@
 package com.expleague.ml.methods.greedyRegion;
 
+import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.util.ArrayTools;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
 import com.expleague.ml.models.BumpyRegion;
-import com.expleague.commons.func.AdditiveStatistics;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.commons.util.ArrayTools;
-import com.expleague.ml.BFGrid;
-import com.expleague.ml.Binarize;
 import gnu.trove.list.array.TDoubleArrayList;
 import org.apache.commons.math3.util.FastMath;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.expleague.commons.math.MathTools.sqr;
 
 /**
  * User: noxoomo
@@ -196,13 +195,13 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
 
   @Override
   public BumpyRegion fit(final VecDataSet learn, final Loss loss) {
-    final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(100);
+    final List<BFGrid.Feature> conditions = new ArrayList<>(100);
     final boolean[] usedBF = new boolean[grid.size()];
 
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     double currentScore = 1.0;
     final BFWeakConditionsOptimizationRegion current =
-            new BFWeakConditionsOptimizationRegion(bds, loss, ((WeightedLoss) loss).points(), new BFGrid.BinaryFeature[0], new boolean[0], 0);
+            new BFWeakConditionsOptimizationRegion(bds, loss, ((WeightedLoss) loss).points(), new BinaryFeatureImpl[0], new boolean[0], 0);
     final double[] scores = new double[grid.size()];
     final AdditiveStatistics[] stats = new AdditiveStatistics[grid.size()];
 
@@ -210,13 +209,13 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
 
     while (conditions.size() < 6) {
       current.visitAllSplits((bf, left, right) -> {
-        if (usedBF[bf.bfIndex]) {
-          scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
+        if (usedBF[bf.index()]) {
+          scores[bf.index()] = Double.POSITIVE_INFINITY;
         } else {
           final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
           in.append(right);
-          stats[bf.bfIndex] = in;
-          scores[bf.bfIndex] = estimator.score(AdditiveStatisticsExtractors.sum(in), AdditiveStatisticsExtractors.weight(in));
+          stats[bf.index()] = in;
+          scores[bf.index()] = estimator.score(AdditiveStatisticsExtractors.sum(in), AdditiveStatisticsExtractors.weight(in));
         }
       });
 
@@ -228,18 +227,18 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
       if ((scores[bestSplit] + 1e-9 >= currentScore))
         break;
 
-      final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
+      final BFGrid.Feature bestSplitBF = grid.bf(bestSplit);
       final BFOptimizationSubset outRegion = current.split(bestSplitBF, true);
       if (outRegion == null) {
         break;
       }
 
       conditions.add(bestSplitBF);
-      usedBF[bestSplitBF.bfIndex] = true;
+      usedBF[bestSplitBF.index()] = true;
       currentScore = scores[bestSplit];
-      estimator.add(stats[bestSplitBF.bfIndex]);
+      estimator.add(stats[bestSplitBF.index()]);
     }
-    return new BumpyRegion(grid, conditions.toArray(new BFGrid.BinaryFeature[conditions.size()]), estimator.estimateWeights());
+    return new BumpyRegion(grid, conditions.toArray(new BFGrid.Feature[conditions.size()]), estimator.estimateWeights());
   }
 
 }

@@ -3,6 +3,8 @@ package com.expleague.ml;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.impl.BFGridImpl;
+import com.expleague.ml.impl.BFRowImpl;
 import com.expleague.ml.models.ModelTools;
 import com.expleague.ml.models.ObliviousTree;
 import junit.framework.TestCase;
@@ -16,9 +18,9 @@ import java.util.Arrays;
  */
 public class ModelsTest extends TestCase {
   public void testOTlvl2Compile() {
-    final BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
-            new BFGrid.BFRow(0, 0, new double[]{1, 2, 3, 4, 5}),
-            new BFGrid.BFRow(5, 1, new double[]{1, 2, 3, 4, 5}),
+    final BFGrid grid = new BFGridImpl(new BFRowImpl[]{
+            new BFRowImpl(0, 0, new double[]{1, 2, 3, 4, 5}),
+            new BFRowImpl(5, 1, new double[]{1, 2, 3, 4, 5}),
     });
     final FuncEnsemble<ObliviousTree> sample = new FuncEnsemble<ObliviousTree>(Arrays.asList(new ObliviousTree(
             Arrays.asList(grid.row(0).bf(0), grid.row(1).bf(0)),
@@ -39,10 +41,10 @@ public class ModelsTest extends TestCase {
   }
 
   public void testOTlvl3Compile() {
-    final BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
-            new BFGrid.BFRow(0, 0, new double[]{1}),
-            new BFGrid.BFRow(1, 1, new double[]{1}),
-            new BFGrid.BFRow(2, 2, new double[]{1}),
+    final BFGrid grid = new BFGridImpl(new BFRowImpl[]{
+            new BFRowImpl(0, 0, new double[]{1}),
+            new BFRowImpl(1, 1, new double[]{1}),
+            new BFRowImpl(2, 2, new double[]{1}),
     });
     final FuncEnsemble<ObliviousTree> sample = new FuncEnsemble<ObliviousTree>(Arrays.asList(new ObliviousTree(
             Arrays.asList(grid.row(0).bf(0), grid.row(1).bf(0), grid.row(2).bf(0)),
@@ -71,11 +73,11 @@ public class ModelsTest extends TestCase {
   }
 
   public void testOTlvl4Compile() {
-    final BFGrid grid = new BFGrid(new BFGrid.BFRow[]{
-            new BFGrid.BFRow(0, 0, new double[]{1}),
-            new BFGrid.BFRow(1, 1, new double[]{1}),
-            new BFGrid.BFRow(2, 2, new double[]{1}),
-            new BFGrid.BFRow(3, 3, new double[]{1}),
+    final BFGrid grid = new BFGridImpl(new BFRowImpl[]{
+            new BFRowImpl(0, 0, new double[]{1}),
+            new BFRowImpl(1, 1, new double[]{1}),
+            new BFRowImpl(2, 2, new double[]{1}),
+            new BFRowImpl(3, 3, new double[]{1}),
     });
     final FuncEnsemble<ObliviousTree> sample = new FuncEnsemble<ObliviousTree>(Arrays.asList(new ObliviousTree(
             Arrays.asList(

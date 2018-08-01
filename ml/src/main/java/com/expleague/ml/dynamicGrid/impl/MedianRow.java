@@ -227,7 +227,7 @@ public class MedianRow implements DynamicRow {
   }
 
 //    @Override
-//    public void setActive(BinaryFeature feature) {
+//    public void setActive(Feature feature) {
 //        feature.setActive(true);
 //    }
 }

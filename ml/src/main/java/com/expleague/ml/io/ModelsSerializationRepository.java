@@ -4,10 +4,10 @@ import com.expleague.commons.func.types.ConversionRepository;
 import com.expleague.commons.func.types.SerializationRepository;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.func.types.impl.TypeConvertersCollection;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.DynamicGridEnabled;
 import com.expleague.ml.GridEnabled;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.expleague.ml.BFGrid;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -31,8 +31,7 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
           new MultiLabelBinarizedModelConversionPack(),
           new ObliviousTreeDynamicBinConversionPack(),
           new HMMConversionPack(),
-          new AlphabetConversionPack(),
-          BFGrid.CONVERTER.getClass(),
+          new AlphabetConversionPack(), BFGrid.CONVERTER.getClass(),
           (new DynamicGridStringConverter()).getClass()
   );
   private BFGrid grid;

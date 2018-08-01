@@ -3,8 +3,8 @@ package com.expleague.ml;
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.Linear;
+import com.expleague.ml.impl.BFRowImpl;
 import com.expleague.ml.loss.*;
-import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.methods.*;
 import com.expleague.ml.methods.greedyRegion.*;
@@ -21,7 +21,6 @@ import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderCrossValidation;
-import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.data.tools.DataTools;
@@ -742,13 +741,13 @@ public void testElasticNetBenchmark() {
     final ModelTools.CompiledOTEnsemble compile = ModelTools.compile(ensemble);
     double[] scores = new double[grid.rows()];
     for (int f = 0; f < grid.rows(); f++) {
-      final BFGrid.BFRow row = grid.row(f);
+      final BFGrid.Row row = grid.row(f);
       final List<ModelTools.CompiledOTEnsemble.Entry> entries = compile.getEntries();
       for (int i = 0; i < entries.size(); i++) {
         ModelTools.CompiledOTEnsemble.Entry entry = entries.get(i);
         boolean isRelevant = false;
         for (int bfIndex : entry.getBfIndices()) {
-          if (bfIndex >= row.bfStart && bfIndex < row.bfEnd) {
+          if (bfIndex >= row.start() && bfIndex < row.end()) {
             isRelevant = true;
             break;
           }

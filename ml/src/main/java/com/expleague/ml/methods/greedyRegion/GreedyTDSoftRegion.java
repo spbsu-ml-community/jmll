@@ -10,7 +10,7 @@
 //import ArrayVec;
 //import FastRandom;
 //import ArrayTools;
-//import BFGrid;
+//import BFGridImpl;
 //import Binarize;
 //import BinarizedDataSet;
 //import VecDataSet;
@@ -28,12 +28,12 @@
 // * User: nooxoomo
 // */
 //public class GreedyTDSoftRegion<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
-//  protected final BFGrid grid;
+//  protected final BFGridImpl grid;
 //  private final int depth;
 //  private final FastRandom random = new FastRandom();
 //
 //
-//  public GreedyTDSoftRegion(final BFGrid grid,
+//  public GreedyTDSoftRegion(final BFGridImpl grid,
 //                            final int depth,
 //                            final double lambda) {
 //    this.grid = grid;
@@ -44,14 +44,14 @@
 //  @Override
 //  public LinearRegion fit(final VecDataSet learn,
 //                          final Loss loss) {
-//    final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(depth);
+//    final List<BFGridImpl.Feature> conditions = new ArrayList<>(depth);
 //
 //    final ArrayList<Vec> distributions = new ArrayList<>();
 //    final boolean[] usedBF = new boolean[grid.size()];
 //    final List<Boolean> mask = new ArrayList<>();
 //    final TDoubleArrayList values = new TDoubleArrayList();
 //
-//    final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+//    final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarizeTo(grid);
 //    double currentScore = Double.POSITIVE_INFINITY;
 //
 //
@@ -130,7 +130,7 @@
 //      if ((scores[bestSplit] >= currentScore))
 //        break;
 //
-//      final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
+//      final BFGridImpl.Feature bestSplitBF = grid.bf(bestSplit);
 //      final boolean bestSplitMask = isRight[bestSplitBF.bfIndex];
 //
 //

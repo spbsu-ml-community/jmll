@@ -2,10 +2,11 @@ package com.expleague.ml.methods.greedyRegion.cherry;
 
 import com.expleague.ml.data.cherry.CherryLoss;
 import com.expleague.ml.data.cherry.CherryPointsHolder;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BFRowImpl;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.methods.greedyRegion.AdditiveStatisticsExtractors;
 import com.expleague.commons.func.AdditiveStatistics;
-import com.expleague.ml.BFGrid;
 
 public class OutLoss2<Subset extends CherryPointsHolder, Loss extends StatBasedLoss<AdditiveStatistics>> extends CherryLoss {
   private Subset subset;
@@ -20,7 +21,7 @@ public class OutLoss2<Subset extends CherryPointsHolder, Loss extends StatBasedL
   }
 
   @Override
-  public double score(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out) {
+  public double score(BFGrid.Row feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out) {
     if (start == 0 && end == feature.size())
       return Double.NEGATIVE_INFINITY;
     AdditiveStatistics currentInside = subset.inside();
@@ -57,7 +58,7 @@ public class OutLoss2<Subset extends CherryPointsHolder, Loss extends StatBasedL
     }
   }
 
-  private int borders(BFGrid.BFRow feature, int start, int end) {
+  private int borders(BFGrid.Row feature, int start, int end) {
     return start != 0 && end != feature.size() ? 16 : 1;
   }
 
@@ -87,7 +88,7 @@ public class OutLoss2<Subset extends CherryPointsHolder, Loss extends StatBasedL
     subset.endClause();
   }
 
-  public void addCondition(BFGrid.BFRow feature, int start, int end) {
+  public void addCondition(BFRowImpl feature, int start, int end) {
     subset().addCondition(feature, start, end);
     complexity += borders(feature, start, end);
     complexity ++;

@@ -1,8 +1,8 @@
 package com.expleague.ml.models;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.data.impl.BinarizedDataSet;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,13 +13,13 @@ import java.util.List;
  * Time: 5:35
  */
 public class Region extends RegionBase {
-  public final BFGrid.BinaryFeature[] features;
+  public final BFGrid.Feature[] features;
   public final boolean[] mask;
   public final int maxFailed;
   public final int basedOn;
   public final double score;
 
-  public BFGrid.BinaryFeature[] features() {
+  public BFGrid.Feature[] features() {
     return features.clone();
   }
 
@@ -27,15 +27,15 @@ public class Region extends RegionBase {
     return mask.clone();
   }
 
-  public Region(final List<BFGrid.BinaryFeature> conditions, final boolean[] mask, final double inside, final int basedOn, final double score) {
+  public Region(final List<BFGrid.Feature> conditions, final boolean[] mask, final double inside, final int basedOn, final double score) {
     this(conditions, mask, inside, 0, basedOn, score, 0);
   }
 
-  public Region(final List<BFGrid.BinaryFeature> conditions, final boolean[] mask, final double inside, final double outside, final int basedOn, final double score, final int maxFailed) {
+  public Region(final List<BFGrid.Feature> conditions, final boolean[] mask, final double inside, final double outside, final int basedOn, final double score, final int maxFailed) {
     super(conditions.size() > 0 ? conditions.get(0).row().grid() : null, inside, outside);
     this.basedOn = basedOn;
     this.score = score;
-    this.features = conditions.toArray(new BFGrid.BinaryFeature[conditions.size()]);
+    this.features = conditions.toArray(new BFGrid.Feature[conditions.size()]);
     this.mask = mask;
     this.maxFailed = maxFailed;
   }
@@ -54,7 +54,7 @@ public class Region extends RegionBase {
   public boolean contains(final BinarizedDataSet bds, final int pindex) {
     int failed = 0;
     for (int i = 0; i < features.length; i++) {
-      if (bds.bins(features[i].findex)[pindex] > features[i].binNo != mask[i]) {
+      if (bds.bins(features[i].findex())[pindex] > features[i].bin() != mask[i]) {
         if (++failed > maxFailed) {
           return false;
         }
@@ -82,9 +82,9 @@ public class Region extends RegionBase {
     builder.append(" ->");
     for (int i = 0; i < features.length; i++) {
       builder.append(" ")
-              .append(features[i].findex)
+              .append(features[i].findex())
               .append(mask[i] ? ">" : "<=")
-              .append(features[i].condition);
+              .append(features[i].condition());
     }
     return builder.toString();
   }

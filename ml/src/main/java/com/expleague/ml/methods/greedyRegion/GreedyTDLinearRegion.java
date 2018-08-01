@@ -1,19 +1,19 @@
 package com.expleague.ml.methods.greedyRegion;
 
+import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
@@ -31,7 +31,6 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
   protected final BFGrid grid;
   private final int depth;
   private final double lambda;
-  private final FastRandom random = new FastRandom();
 
 
   public GreedyTDLinearRegion(final BFGrid grid,
@@ -46,7 +45,7 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
   @Override
   public LinearRegion fit(final VecDataSet learn,
                           final Loss loss) {
-    final List<BFGrid.BinaryFeature> conditions = new ArrayList<>(depth);
+    final List<BFGrid.Feature> conditions = new ArrayList<>(depth);
     final boolean[] usedBF = new boolean[grid.size()];
     final List<Boolean> mask = new ArrayList<>();
     Vec bestSolution = new ArrayVec(0);
@@ -73,9 +72,9 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
 
     for (int level = 0; level < depth; ++level) {
       current.visitAllSplits((bf, left, right) -> {
-        if (usedBF[bf.bfIndex]) {
-          scores[bf.bfIndex] = Double.POSITIVE_INFINITY;
-          solutions[bf.bfIndex] = null;
+        if (usedBF[bf.index()]) {
+          scores[bf.index()] = Double.POSITIVE_INFINITY;
+          solutions[bf.index()] = null;
         } else {
           final double leftScore;
 
@@ -114,9 +113,9 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
               rightScore = Double.POSITIVE_INFINITY;
             }
           }
-          scores[bf.bfIndex] = leftScore > rightScore ? rightScore : leftScore;
-          isRight[bf.bfIndex] = leftScore > rightScore;
-          solutions[bf.bfIndex] = leftScore > rightScore ? rightBetas : leftBetas;
+          scores[bf.index()] = leftScore > rightScore ? rightScore : leftScore;
+          isRight[bf.index()] = leftScore > rightScore;
+          solutions[bf.index()] = leftScore > rightScore ? rightBetas : leftBetas;
         }
       });
 
@@ -128,14 +127,14 @@ public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimiz
       if ((scores[bestSplit] >= currentScore))
         break;
 
-      final BFGrid.BinaryFeature bestSplitBF = grid.bf(bestSplit);
-      final boolean bestSplitMask = isRight[bestSplitBF.bfIndex];
+      final BFGrid.Feature bestSplitBF = grid.bf(bestSplit);
+      final boolean bestSplitMask = isRight[bestSplitBF.index()];
 
 
       conditions.add(bestSplitBF);
-      usedBF[bestSplitBF.bfIndex] = true;
+      usedBF[bestSplitBF.index()] = true;
       mask.add(bestSplitMask);
-      bestSolution = solutions[bestSplitBF.bfIndex];
+      bestSolution = solutions[bestSplitBF.index()];
       currentScore = scores[bestSplit];
       if (level < (depth - 1)) {
         current.split(bestSplitBF, bestSplitMask);

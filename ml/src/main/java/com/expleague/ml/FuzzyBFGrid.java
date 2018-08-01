@@ -21,14 +21,14 @@
 // * Date: 09.11.12
 // * Time: 17:56
 // */
-//public class FuzzyBFGrid extends BFGrid {
-//  public FuzzyBFGrid(BFGrid grid, VecDataSet ds, L2 loss) {
+//public class FuzzyBFGrid extends BFGridImpl {
+//  public FuzzyBFGrid(BFGridImpl grid, VecDataSet ds, L2 loss) {
 //    super(grid.allRows());
-//    final BinarizedDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+//    final BinarizedDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarizeTo(grid);
 //
 //    final OrderByFeature orderByFeature = ds.cache().cache(OrderByFeature.class, VecDataSet.class);
 //    for (int f = 0; f < grid.rows(); f++) {
-//      final BFRow row = grid.row(f);
+//      final Row row = grid.row(f);
 //      final ArrayPermutation order = orderByFeature.orderBy(f);
 //      final int[] direct = order.direct();
 //      final int[] idx = new int[direct.length];

@@ -2,6 +2,7 @@ package com.expleague.ml.data.cherry;
 
 import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BFRowImpl;
 
 /**
  * User: noxoomo
@@ -9,7 +10,7 @@ import com.expleague.ml.BFGrid;
  */
 
 public abstract class CherryLoss {
-  public abstract double score(BFGrid.BFRow feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out);
+  public abstract double score(BFGrid.Row feature, int start, int end, AdditiveStatistics added, AdditiveStatistics out);
 
   public abstract double score();
 
@@ -19,7 +20,7 @@ public abstract class CherryLoss {
     return 0;
   }
 
-  public void addCondition(BFGrid.BFRow feature, int start, int end) {
+  public void addCondition(BFGrid.Row feature, int start, int end) {
     subset().addCondition(feature,start,end);
   }
 

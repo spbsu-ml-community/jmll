@@ -1,8 +1,8 @@
 package com.expleague.ml.data.impl;
 
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.set.DataSet;
+import com.expleague.ml.BFGrid;
 
 /**
  * User: solar
@@ -23,7 +23,7 @@ public class BinarizedDataSet {
     }
     final byte[] binarization = new byte[grid.rows()];
     for (int t = 0; t < base.length(); t++) {
-      grid.binarize(((VecDataSet) base).data().row(t), binarization);
+      grid.binarizeTo(((VecDataSet) base).data().row(t), binarization);
       for (int f = 0; f < bins.length; f++) {
         bins[f][t] = binarization[f];
       }

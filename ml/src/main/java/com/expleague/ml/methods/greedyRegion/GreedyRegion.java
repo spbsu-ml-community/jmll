@@ -3,9 +3,10 @@ package com.expleague.ml.methods.greedyRegion;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.util.Holder;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.commons.util.ArrayTools;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.VecOptimization;
@@ -42,7 +43,7 @@ public class GreedyRegion extends VecOptimization.Stub<WeightedLoss<? extends L2
     binarization = new byte[total][];
     for (int i = 0; i < ds.length(); i++) {
       final byte[] folds = binarization[i] = new byte[((VecDataSet) ds).xdim()];
-      grid.binarize(((VecDataSet) ds).data().row(i), folds);
+      grid.binarizeTo(((VecDataSet) ds).data().row(i), folds);
     }
     nn = new int[total * NN_NEIGHBORHOOD];
     final int[] l1dist = new int[total];
@@ -189,7 +190,7 @@ public class GreedyRegion extends VecOptimization.Stub<WeightedLoss<? extends L2
         conditions.remove(worst);
       }
     }
-    final List<BFGrid.BinaryFeature> features = new ArrayList<>();
+    final List<BFGrid.Feature> features = new ArrayList<>();
     final boolean[] mask = new boolean[best.size()];
     for (int i = 0; i < best.size(); i++) {
       features.add(best.get(i).bf);
@@ -231,7 +232,7 @@ public class GreedyRegion extends VecOptimization.Stub<WeightedLoss<? extends L2
   }
 
   private static class BinaryCond {
-    BFGrid.BinaryFeature bf;
+    BFGrid.Feature bf;
     boolean mask;
 
     public boolean yes(final byte[] folds) {
@@ -240,7 +241,7 @@ public class GreedyRegion extends VecOptimization.Stub<WeightedLoss<? extends L2
 
     @Override
     public String toString() {
-      return " " + bf.findex + (mask ? ">=" : "<") + bf.condition;
+      return " " + bf.findex() + (mask ? ">=" : "<") + bf.condition();
     }
   }
 }

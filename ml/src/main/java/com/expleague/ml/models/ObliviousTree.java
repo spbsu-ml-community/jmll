@@ -9,7 +9,6 @@ import com.expleague.ml.BinModelWithGrid;
 import com.expleague.ml.BinOptimizedModel;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,21 +20,21 @@ import java.util.List;
  * Time: 5:35
  */
 public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWithGrid {
-  private final BFGrid.BinaryFeature[] features;
+  private final BFGrid.Feature[] features;
   private final double[] values;
   private final double[] basedOn;
   private final BFGrid grid;
 
-  public ObliviousTree(final List<BFGrid.BinaryFeature> features, final double[] values) {
+  public ObliviousTree(final List<BFGrid.Feature> features, final double[] values) {
     this(features, values, new double[values.length]);
   }
 
-  public ObliviousTree(final List<BFGrid.BinaryFeature> features, final double[] values, final double[] basedOn) {
+  public ObliviousTree(final List<BFGrid.Feature> features, final double[] values, final double[] basedOn) {
     if (features.size() == 0)
       throw new RuntimeException("Creating oblivious tree of zero depth");
     grid = features.get(0).row().grid();
     this.basedOn = basedOn;
-    this.features = features.toArray(new BFGrid.BinaryFeature[features.size()]);
+    this.features = features.toArray(new BFGrid.Feature[features.size()]);
     this.values = values;
   }
 
@@ -84,10 +83,8 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     return index;
   }
 
-  public List<BFGrid.BinaryFeature> features() {
-    final List<BFGrid.BinaryFeature> ret = new ArrayList<BFGrid.BinaryFeature>();
-    ret.addAll(Arrays.asList(features));
-    return ret;
+  public List<BFGrid.Feature> features() {
+    return new ArrayList<>(Arrays.asList(features));
   }
 
   public double[] values() {
@@ -106,9 +103,7 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     final ObliviousTree that = (ObliviousTree) o;
 
     if (!Arrays.equals(features, that.features)) return false;
-    if (!Arrays.equals(values, that.values)) return false;
-
-    return true;
+    return Arrays.equals(values, that.values);
   }
 
   @Override
@@ -128,7 +123,7 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;
-      if (features[i].value(bds.bins(features[i].findex)[pindex]))
+      if (features[i].value(bds.bins(features[i].findex())[pindex]))
         index++;
     }
     return values[index];
@@ -140,19 +135,19 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     public Vec leftTo(Vec x, Vec gradient) {
       final int numFeatures = x.dim();
       byte[] folds = new byte[numFeatures];
-      grid.binarize(x, folds);
+      grid.binarizeTo(x, folds);
 
       final Vec x0 = VecTools.assign(new ArrayVec(numFeatures), x);
       final double value = ObliviousTree.this.value(x);
 
       for (int fIdx = 0; fIdx < numFeatures; fIdx++) {
-        final BFGrid.BFRow row = grid.row(fIdx);
+        final BFGrid.Row row = grid.row(fIdx);
         final int leftIdx = folds[fIdx] - 1;
 
         if (leftIdx == -1) {
           gradient.adjust(fIdx, -1000);
         } else {
-          final double leftBorder = row.borders[leftIdx];
+          final double leftBorder = row.condition(leftIdx);
           x0.set(fIdx, leftBorder);
           final double leftValue = ObliviousTree.this.value(x0);
 
@@ -175,18 +170,18 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     public Vec rightTo(Vec x, Vec gradient) {
       final int numFeatures = x.dim();
       byte[] folds = new byte[numFeatures];
-      grid.binarize(x, folds);
+      grid.binarizeTo(x, folds);
 
       final Vec x0 = VecTools.assign(new ArrayVec(numFeatures), x);
       final double value = ObliviousTree.this.value(x);
 
       for (int fIdx = 0; fIdx < numFeatures; fIdx++) {
-        final BFGrid.BFRow row = grid.row(fIdx);
+        final BFGrid.Row row = grid.row(fIdx);
         final int rightIdx = folds[fIdx] + 1;
-        if (rightIdx >= row.borders.length) {
+        if (rightIdx >= row.size()) {
           gradient.adjust(fIdx, 1000);
         } else {
-          final double rightBorder = (row.borders[rightIdx] + row.borders[rightIdx - 1]) / 2.;
+          final double rightBorder = (row.condition(rightIdx) + row.condition(rightIdx - 1)) / 2.;
           x0.set(fIdx, rightBorder);
 
           final double rightValue = ObliviousTree.this.value(x0);

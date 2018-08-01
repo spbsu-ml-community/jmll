@@ -5,6 +5,7 @@ import com.expleague.commons.math.AnalyticFunc;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
@@ -33,15 +34,15 @@ public class BFOptimizationRegion {
   }
 
 
-  public void split(final BFGrid.BinaryFeature feature, final boolean mask) {
-    final byte[] bins = bds.bins(feature.findex);
+  public void split(final BFGrid.Feature feature, final boolean mask) {
+    final byte[] bins = bds.bins(feature.findex());
 
     final TIntArrayList newInside = new TIntArrayList();
     final TIntArrayList newOutside = new TIntArrayList();
 
 
     for (int index : pointsInside) {
-      if ((bins[index] > feature.binNo) != mask) {
+      if ((bins[index] > feature.bin()) != mask) {
         newOutside.add(index);
       } else {
         newInside.add(index);
@@ -63,7 +64,7 @@ public class BFOptimizationRegion {
     aggregate.visit(visitor);
   }
 
-  public <T extends AdditiveStatistics> void visitSplit(final BFGrid.BinaryFeature bf, final Aggregate.SplitVisitor<T> visitor) {
+  public <T extends AdditiveStatistics> void visitSplit(final BinaryFeatureImpl bf, final Aggregate.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
     final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
     visitor.accept(bf, left, right);

@@ -1,6 +1,8 @@
 package com.expleague.ml.data.tools;
 
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.models.ObliviousTree;
 
 /**
@@ -19,10 +21,10 @@ public class BinModelBuilder {
     int currentIndex = 0;
     for (int rowIndex = 0; rowIndex < grid.rows(); ++rowIndex) {
       rowStarts[rowIndex] = currentIndex;
-      final BFGrid.BFRow row = grid.row(rowIndex);
+      final BFGrid.Row row = grid.row(rowIndex);
       for (int bin = 0; bin < row.size(); ++bin) {
-        final BFGrid.BinaryFeature bf = row.bf(bin);
-        result.binFeatures[currentIndex] = new BinaryFeatureStat(rowIndex, bf.condition);
+        final BFGrid.Feature bf = row.bf(bin);
+        result.binFeatures[currentIndex] = new BinaryFeatureStat(rowIndex, bf.condition());
         ++currentIndex;
       }
     }
@@ -34,7 +36,7 @@ public class BinModelBuilder {
     final int[] conditions = new int[treeDepth];
     final double[][] values;
 
-    final BFGrid.BinaryFeature[] features = (BFGrid.BinaryFeature[]) tree.features().toArray();
+    final BinaryFeatureImpl[] features = (BinaryFeatureImpl[]) tree.features().toArray();
     for (int i = 0; i < treeDepth; ++i) {
       final int depth = treeDepth - i - 1;
       conditions[i] = rowStarts[features[depth].findex] + features[depth].binNo;
@@ -42,12 +44,8 @@ public class BinModelBuilder {
     values = new double[1][1 << conditions.length];
     final double[] leaveValues = tree.values();
 
-    for (int i = 0; i < (1 << conditions.length); ++i) {
-      values[0][i] = leaveValues[i];
-    }
-    for (int i = 0; i < values[0].length; ++i) {
-      values[0][i] *= weight;
-    }
+    System.arraycopy(leaveValues, 0, values[0], 0, (1 << conditions.length));
+    ArrayTools.mul(values[0], 0, values.length, weight);
     result.trees.add(new TreeStat(conditions, values));
   }
 

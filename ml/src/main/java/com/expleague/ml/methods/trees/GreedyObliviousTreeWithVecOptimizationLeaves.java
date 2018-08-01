@@ -1,16 +1,15 @@
 package com.expleague.ml.methods.trees;
 
+import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.models.TransObliviousTree;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.ThreadTools;
 import com.expleague.ml.BFGrid;
-import com.expleague.commons.math.Trans;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.loss.L2;
@@ -18,6 +17,7 @@ import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.MultipleVecOptimization;
 import com.expleague.ml.methods.VecOptimization;
+import com.expleague.ml.models.TransObliviousTree;
 
 import java.util.List;
 import java.util.Set;
@@ -50,16 +50,16 @@ public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBased
   @Override
   public TransObliviousTree fit(final VecDataSet ds, final Loss loss) {
     final WeightedLoss<Loss> bsLoss = DataTools.bootstrap(loss, rand);
-    final Pair<List<BFOptimizationSubset>, List<BFGrid.BinaryFeature>> tree = base.findBestSubsets(ds, bsLoss);
-    final List<BFGrid.BinaryFeature> conditions = tree.getSecond();
+    final Pair<List<BFOptimizationSubset>, List<BFGrid.Feature>> tree = base.findBestSubsets(ds, bsLoss);
+    final List<BFGrid.Feature> conditions = tree.getSecond();
     final List<BFOptimizationSubset> subsets = tree.getFirst();
     final CountDownLatch latch = new CountDownLatch(subsets.size());
     final Trans[] leafTrans = new Trans[subsets.size()];
     //damn java 7 without unique, filters, etc and autoboxing overhead…
     Set<Integer> uniqueFeatures = new TreeSet<>();
-    for (BFGrid.BinaryFeature bf : conditions) {
+    for (BFGrid.Feature bf : conditions) {
       if (!bf.row().empty())
-        uniqueFeatures.add(bf.findex);
+        uniqueFeatures.add(bf.findex());
     }
 //    //prototype
     while (uniqueFeatures.size() < 10) {
@@ -81,22 +81,19 @@ public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBased
 
       for (int i = 0; i < subsets.size(); ++i) {
         final int ind = i;
-        exec.submit(new Runnable() {
-          @Override
-          public void run() {
-            final BFOptimizationSubset subset = subsets.get(ind);
-            int[] points = subset.getPoints();
-            Mx subData = subMx(ds.data(), points, features);
-            Vec target = loss.target();
-            Vec localTarget = subVec(target, points);
-            final double bias = bsLoss.bestIncrement((WeightedLoss.Stat) subset.total());
-            adjust(localTarget, -bias);
-            VecDataSetImpl subDataSet = new VecDataSetImpl(subData, ds);
-            L2 localLoss = DataTools.newTarget(L2.class, localTarget, subDataSet);
-            datas[ind] = subDataSet;
-            losses[ind] = localLoss;
-            latch.countDown();
-          }
+        exec.submit(() -> {
+          final BFOptimizationSubset subset = subsets.get(ind);
+          int[] points = subset.getPoints();
+          Mx subData = subMx(ds.data(), points, features);
+          Vec target = loss.target();
+          Vec localTarget = subVec(target, points);
+          final double bias = bsLoss.bestIncrement((WeightedLoss.Stat) subset.total());
+          adjust(localTarget, -bias);
+          VecDataSetImpl subDataSet = new VecDataSetImpl(subData, ds);
+          L2 localLoss = DataTools.newTarget(L2.class, localTarget, subDataSet);
+          datas[ind] = subDataSet;
+          losses[ind] = localLoss;
+          latch.countDown();
         });
       }
 

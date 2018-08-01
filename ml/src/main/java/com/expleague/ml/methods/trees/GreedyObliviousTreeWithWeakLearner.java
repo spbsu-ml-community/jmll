@@ -5,16 +5,16 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.loss.StatBasedLoss;
-import com.expleague.ml.loss.WeightedLoss;
-import com.expleague.ml.methods.VecOptimization;
-import com.expleague.ml.models.ObliviousTree;
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.WeightedLoss;
+import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.linearRegressionExperiments.WeakLeastAngle;
+import com.expleague.ml.models.ObliviousTree;
 
 import java.util.List;
 import java.util.Set;
@@ -47,13 +47,13 @@ public class GreedyObliviousTreeWithWeakLearner<Loss extends StatBasedLoss> exte
     final Trans[] result = new Trans[2];
     result[0] = base.fit(ds, bsLoss);
 
-    final List<BFGrid.BinaryFeature> conditions = ((ObliviousTree)result[0]).features();
+    final List<BFGrid.Feature> conditions = ((ObliviousTree)result[0]).features();
     //damn java 7 without unique, filters, etc and autoboxing overhead…
     Set<Integer> uniqueFeatures = new TreeSet<>();
-    for (BFGrid.BinaryFeature bf : conditions) {
+    for (BFGrid.Feature bf : conditions) {
       if (!bf.row().empty()
         )
-        uniqueFeatures.add(bf.findex);
+        uniqueFeatures.add(bf.findex());
     }
 //    //prototype
     while (uniqueFeatures.size() < 10) {
@@ -84,8 +84,7 @@ public class GreedyObliviousTreeWithWeakLearner<Loss extends StatBasedLoss> exte
     Vec weights = new ArrayVec(2);
     VecTools.fill(weights,1.0);
 
-    Ensemble ensemble = new Ensemble(result, weights);
-    return ensemble;
+    return new Ensemble(result, weights);
 }
 
 }

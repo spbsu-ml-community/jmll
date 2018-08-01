@@ -1,9 +1,9 @@
 package com.expleague.ml.cli.output;
 
 import com.expleague.commons.io.StreamTools;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.expleague.ml.BFGrid;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;

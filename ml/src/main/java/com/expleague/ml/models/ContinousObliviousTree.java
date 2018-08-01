@@ -1,8 +1,8 @@
 package com.expleague.ml.models;
 
+import com.expleague.commons.math.Func;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.BFGrid;
-import com.expleague.commons.math.Func;
 
 import java.util.List;
 
@@ -14,18 +14,18 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public class ContinousObliviousTree extends Func.Stub {
-    protected final BFGrid.BinaryFeature[] features;
+    protected final BFGrid.Feature[] features;
     protected final double[][] values;
     //private final double[] basedOn;
     //private final double score;
 
-    public ContinousObliviousTree(final List<BFGrid.BinaryFeature> features, final double[][] values)/*, double[] basedOn, double bestScore)*/ {
+    public ContinousObliviousTree(final List<BFGrid.Feature> features, final double[][] values)/*, double[] basedOn, double bestScore)*/ {
         //For every leaf you must make pass 1 value for 0 degree coefficient, n - for 1 degree coefficient, n^2 for 2 degree, and so on
         assert values.length == 1 << features.size();
         for (int i = 0; i < values.length; i++)
             assert values[i].length == features.size() * features.size() + 2 * features.size() + 1;
         //this.basedOn = basedOn;
-        this.features = features.toArray(new BFGrid.BinaryFeature[features.size()]);
+        this.features = features.toArray(new BFGrid.Feature[features.size()]);
         this.values = values;
         //this.score = bestScore;
     }
@@ -41,7 +41,7 @@ public class ContinousObliviousTree extends Func.Stub {
         double sum = 0;
         final double[] x = new double[features.length + 1];
         for (int i = 0; i < features.length; i++)
-            x[i + 1] = _x.get(features[i].findex);
+            x[i + 1] = _x.get(features[i].findex());
         x[0] = 1;
         for (int i = 0; i <= features.length; i++)
             for (int j = 0; j <= i; j++)
@@ -53,7 +53,7 @@ public class ContinousObliviousTree extends Func.Stub {
         if (i == 0)
             return "1";
         else
-            return "x_{" + features[i - 1].findex + "}";
+            return "x_{" + features[i - 1].findex() + "}";
     }
 
     @Override
@@ -62,12 +62,16 @@ public class ContinousObliviousTree extends Func.Stub {
         for (int mask = 0; mask < 1 << features.length; mask++) {
 
             for (int i = 0; i < features.length; i++)
-                builder.append("$x_{" + (features[i].findex) + "}" + (((mask >> i) & 1) == 0 ? " < " : " > ") + features[i].condition + "$  ");
+                builder.append("$x_{").append(features[i].findex()).append("}")
+                    .append(((mask >> i) & 1) == 0 ? " < " : " > ")
+                    .append(features[i].condition()).append("$  ");
 
             builder.append("\n$");
             for (int i = 0; i <= features.length; i++)
                 for (int j = 0; j <= i; j++) {
-                    builder.append(values[mask][i * (i + 1) / 2 + j] + " * " + indexToTexLetteral(i) + " * " + indexToTexLetteral(j) + " + ");
+                    builder.append(values[mask][i * (i + 1) / 2 + j])
+                        .append(" * ").append(indexToTexLetteral(i)).append(" * ")
+                        .append(indexToTexLetteral(j)).append(" + ");
                 }
 
             builder.append("$\n");

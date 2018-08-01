@@ -51,9 +51,9 @@ public class CherrySubset implements CherryPointsHolder {
   }
 
   @Override
-  public AdditiveStatistics addCondition(final BFGrid.BFRow row,
+  public AdditiveStatistics addCondition(final BFGrid.Row row,
                                          final int startBin, final int endBin) {
-    final byte[] bins = bds.bins(row.origFIndex);
+    final byte[] bins = bds.bins(row.findex());
     AdditiveStatistics added = factory.create();
     int count = 0;
     for (int i = outsideStart; i < length; ++i) {
@@ -120,12 +120,10 @@ public class CherrySubset implements CherryPointsHolder {
   }
 
   public AdditiveStatistics inside() {
-    final AdditiveStatistics stat = factory.create().append(inside);
-    return stat;
+    return factory.create().append(inside);
   }
 
   public AdditiveStatistics outside() {
-    final AdditiveStatistics stat = outsideAggregate.total();
-    return stat;
+    return outsideAggregate.total();
   }
 }

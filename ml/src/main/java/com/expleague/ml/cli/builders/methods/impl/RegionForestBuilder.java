@@ -1,10 +1,10 @@
 package com.expleague.ml.cli.builders.methods.impl;
 
 import com.expleague.commons.random.FastRandom;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.greedyRegion.RegionForest;
 import com.expleague.commons.func.Factory;
-import com.expleague.ml.BFGrid;
 
 /**
  * User: noxoomo

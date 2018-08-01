@@ -1,10 +1,10 @@
 package com.expleague.ml.methods.trees;
 
+import com.expleague.commons.func.AdditiveStatistics;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.loss.StatBasedLoss;
-import com.expleague.commons.func.AdditiveStatistics;
-import com.expleague.ml.BFGrid;
 import gnu.trove.list.array.TIntArrayList;
 
 
@@ -27,10 +27,10 @@ public class BFOptimizationSubset {
     this.aggregate = new Aggregate(bds, oracle.statsFactory(), points);
   }
 
-  public BFOptimizationSubset split(final BFGrid.BinaryFeature feature) {
+  public BFOptimizationSubset split(final BFGrid.Feature feature) {
     final TIntArrayList left = new TIntArrayList(points.length);
     final TIntArrayList right = new TIntArrayList(points.length);
-    final byte[] bins = bds.bins(feature.findex);
+    final byte[] bins = bds.bins(feature.findex());
     for (final int i : points) {
       if (feature.value(bins[i])) {
         right.add(i);
@@ -53,8 +53,8 @@ public class BFOptimizationSubset {
     aggregate.visit(visitor);
   }
 
-  public <T extends AdditiveStatistics> void visitSplit(final BFGrid.BinaryFeature bf, final Aggregate.SplitVisitor<T> visitor) {
-    final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
+  public <T extends AdditiveStatistics> void visitSplit(final BFGrid.Feature bf, final Aggregate.SplitVisitor<T> visitor) {
+    final T left = (T) aggregate.combinatorForFeature(bf.index());
     final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
     visitor.accept(bf, left, right);
   }

@@ -4,16 +4,17 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.BinOptimizedModel;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 
 /**
  * User: noxoomo
  */
 public  class BumpyRegion extends BinOptimizedModel.Stub {
   public final Vec inside;
-  public final BFGrid.BinaryFeature[] features;
+  public final BFGrid.Feature[] features;
   public final BFGrid grid;
 
-  public BumpyRegion(final BFGrid grid, BFGrid.BinaryFeature[] features, final Vec inside) {
+  public BumpyRegion(final BFGrid grid, BFGrid.Feature[] features, final Vec inside) {
     this.grid = grid;
     this.features = features;
     this.inside = inside;
@@ -54,7 +55,7 @@ public  class BumpyRegion extends BinOptimizedModel.Stub {
 
   public int nonZero(BinarizedDataSet bds, int pindex) {
     for (int i = 0; i < features.length; i++) {
-      if (!(bds.bins(features[i].findex)[pindex] > features[i].binNo)) {
+      if (!(bds.bins(features[i].findex())[pindex] > features[i].bin())) {
         return i;
       }
     }

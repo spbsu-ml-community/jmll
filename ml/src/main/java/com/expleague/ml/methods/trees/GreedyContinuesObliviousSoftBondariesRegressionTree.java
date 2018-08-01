@@ -2,9 +2,9 @@ package com.expleague.ml.methods.trees;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.greedyRegion.GreedyTDRegion;
 import com.expleague.ml.models.ContinousObliviousTree;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyTDRegion {
   protected final int depth;
   protected final int numberOfVariables;
-  protected List<BFGrid.BinaryFeature> features;
+  protected List<BFGrid.Feature> features;
   protected final GreedyObliviousTree got;
   private ExecutorService executor;
   private final int numberOfVariablesByLeaf;
@@ -159,7 +159,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
       for (int _featureNum = 0; _featureNum < depth; _featureNum++) {
         if (((mask >> _featureNum) & 1) == 0) {
 
-          final double C = features.get(_featureNum).condition;
+          final double C = features.get(_featureNum).condition();
           final int neighbourMask = mask ^ (1 << _featureNum);
 /*
                     if((numberOfPointInLeaf[neighbourMask] == 0) && (numberOfPointInLeaf[mask] == 0)) //What the difference what happens in empty leaves
@@ -281,7 +281,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
     numberOfPointInLeaf = new int[1 << depth];
     for (int i = 0; i < ds.length(); i++) {
       int index = 0;
-      for (final BFGrid.BinaryFeature feature : features) {
+      for (final BFGrid.Feature feature : features) {
         index <<= 1;
         if (feature.value(((VecDataSet) ds).data().row(i)))
           index++;
@@ -289,7 +289,7 @@ public class GreedyContinuesObliviousSoftBondariesRegressionTree extends GreedyT
       final double[] data = new double[depth + 1];
       data[0] = 1;
       for (int s = 0; s < features.size(); s++) {
-        data[s + 1] = ((VecDataSet) ds).data().get(i, features.get(s).findex);
+        data[s + 1] = ((VecDataSet) ds).data().get(i, features.get(s).findex());
       }
       for (int s = 1; s <= depth; s++)
         coordinateSum[index][s - 1] += data[s];

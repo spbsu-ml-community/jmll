@@ -18,12 +18,14 @@ import com.expleague.commons.system.RuntimeUtils;
 import com.expleague.commons.text.StringUtils;
 import com.expleague.commons.util.JSONTools;
 import com.expleague.commons.util.logging.Logger;
+import com.expleague.ml.impl.BFGridImpl;
 import com.expleague.ml.CompositeTrans;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
 import com.expleague.ml.func.FuncJoin;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.io.ModelsSerializationRepository;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
@@ -49,7 +51,6 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.expleague.ml.func.Ensemble;
@@ -228,7 +229,7 @@ public class DataTools {
 
   public static <T extends Function> T readModel(final InputStream modelInputStream, final InputStream gridInputStream) throws IOException, ClassNotFoundException {
     final ModelsSerializationRepository repository = new ModelsSerializationRepository();
-    final BFGrid grid = repository.read(StreamTools.readStream(gridInputStream), BFGrid.class);
+    final BFGrid grid = repository.read(StreamTools.readStream(gridInputStream), BFGridImpl.class);
     final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
     return readModel(modelInputStream, customizedRepository);
   }

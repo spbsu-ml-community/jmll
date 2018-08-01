@@ -1,7 +1,6 @@
 package com.expleague.ml.methods.nn;
 
 import com.expleague.commons.math.FuncC1;
-import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
@@ -10,7 +9,6 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.IntSeq;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.GridTools;
 import com.expleague.ml.ProgressHandler;
 import com.expleague.ml.data.set.VecDataSet;
@@ -18,6 +16,7 @@ import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.ScaledVectorFunc;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.loss.L2Reg;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;

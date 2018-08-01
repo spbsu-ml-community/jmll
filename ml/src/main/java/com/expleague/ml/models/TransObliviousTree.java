@@ -1,12 +1,12 @@
 package com.expleague.ml.models;
 
-import com.expleague.ml.BinOptimizedModel;
-import com.expleague.ml.data.impl.BinarizedDataSet;
-import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.BinModelWithGrid;
-import com.expleague.commons.math.Trans;
+import com.expleague.ml.BinOptimizedModel;
+import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.ml.data.set.VecDataSet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,13 +19,13 @@ import java.util.List;
 
 public class TransObliviousTree extends BinOptimizedModel.Stub implements BinModelWithGrid {
 
-  private final BFGrid.BinaryFeature[] features;
+  private final BFGrid.Feature[] features;
   private final Trans[] values;
   private final BFGrid grid;
 
-  public TransObliviousTree(final List<BFGrid.BinaryFeature> features, final Trans[] values) {
+  public TransObliviousTree(final List<BFGrid.Feature> features, final Trans[] values) {
     grid = features.get(0).row().grid();
-    this.features = features.toArray(new BFGrid.BinaryFeature[features.size()]);
+    this.features = features.toArray(new BFGrid.Feature[features.size()]);
     this.values = values;
   }
 
@@ -69,8 +69,8 @@ public class TransObliviousTree extends BinOptimizedModel.Stub implements BinMod
     return index;
   }
 
-  public List<BFGrid.BinaryFeature> features() {
-    final List<BFGrid.BinaryFeature> ret = new ArrayList<BFGrid.BinaryFeature>();
+  public List<BFGrid.Feature> features() {
+    final List<BFGrid.Feature> ret = new ArrayList<BFGrid.Feature>();
     Collections.addAll(ret, features);
     return ret;
   }
@@ -103,7 +103,7 @@ public class TransObliviousTree extends BinOptimizedModel.Stub implements BinMod
     int index = 0;
     for (int i = 0; i < features.length; i++) {
       index <<= 1;
-      if (bds.bins(features[i].findex)[pindex] > features[i].binNo)
+      if (bds.bins(features[i].findex())[pindex] > features[i].bin())
         index++;
     }
     //dirty hack with cast

@@ -5,7 +5,6 @@ import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.text.StringUtils;
 import com.expleague.commons.util.Pair;
-import com.expleague.ml.BFGrid;
 import com.expleague.commons.math.Func;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.cli.builders.data.DataBuilder;
@@ -18,6 +17,7 @@ import com.expleague.ml.cli.modes.AbstractMode;
 import com.expleague.ml.cli.modes.CliPoolReaderHelper;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
+import com.expleague.ml.BFGrid;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
 

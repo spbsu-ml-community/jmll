@@ -3,9 +3,9 @@ package com.expleague.ml.methods.trees;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.greedyRegion.GreedyPolynomialExponentRegion;
@@ -26,7 +26,6 @@ import java.util.List;
 */
 
 public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
-
   private final int numberOfVariablesByLeaf;
   private final int numberOfVariables;
   private double[][][] quadraticMissCoefficient;
@@ -34,7 +33,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
   private final double DistCoef;
   private final int depth;
   private final GreedyObliviousTree<L2> got;
-  private List<BFGrid.BinaryFeature> features;
+  private List<BFGrid.Feature> features;
 
   public GreedyExponentialObliviousTree(final BFGrid grid, final int depth, final double distCoef) {
     got = new GreedyObliviousTree(grid, depth);
@@ -62,7 +61,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
     double ans = 0;
     for (int i = 0; i < features.size(); i++) {
       if (features.get(i).value(point) != ((index >> i) == 1)) {
-        ans += sqr(point.get(features.get(i).findex) - features.get(i).condition);//L2
+        ans += sqr(point.get(features.get(i).findex()) - features.get(i).condition());//L2
       }
     }
 
@@ -76,7 +75,7 @@ public class GreedyExponentialObliviousTree extends VecOptimization.Stub<L2> {
       final double[] data = new double[depth + 1];
       data[0] = 1;
       for (int s = 0; s < features.size(); s++) {
-        data[s + 1] = ((VecDataSet) ds).data().get(i, features.get(s).findex);
+        data[s + 1] = ((VecDataSet) ds).data().get(i, features.get(s).findex());
       }
       int index = 0;
       for (int j = 0; j < features.size(); j++) {

@@ -4,8 +4,9 @@ import com.expleague.commons.func.types.ConversionPack;
 import com.expleague.commons.func.types.TypeConverter;
 import com.expleague.commons.seq.CharSeqReader;
 import com.expleague.commons.seq.CharSeqTools;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.GridEnabled;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.models.Region;
 import gnu.trove.list.array.TLongArrayList;
 
@@ -44,10 +45,10 @@ public class RegionConversionPack implements ConversionPack<Region, CharSequence
     @Override
     public CharSequence convert(final Region region) {
       final StringBuilder result = new StringBuilder();
-      final BFGrid.BinaryFeature[] features = region.features();
+      final BFGrid.Feature[] features = region.features();
       final boolean[] masks = region.masks();
       for (int i = 0; i < features.length; ++i) {
-        result.append(FEATURE_LINE_PATTERN.format(new Object[]{features[i].findex, features[i].binNo, features[i].condition, masks[i] ? 1 : 0})).append("\n");
+        result.append(FEATURE_LINE_PATTERN.format(new Object[]{features[i].findex(), features[i].bin(), features[i].condition(), masks[i] ? 1 : 0})).append("\n");
       }
       result.append(region.inside)
               .append(":")
@@ -81,16 +82,16 @@ public class RegionConversionPack implements ConversionPack<Region, CharSequence
         throw new RuntimeException("Grid must be setup for serialization of oblivious trees, use SerializationRepository.customize!");
       String line;
       final LineNumberReader lnr = new LineNumberReader(new CharSeqReader(source));
-      final List<BFGrid.BinaryFeature> splits = new ArrayList<BFGrid.BinaryFeature>(10);
+      final List<BFGrid.Feature> splits = new ArrayList<BFGrid.Feature>(10);
       final TLongArrayList mask = new TLongArrayList();
       try {
         while ((line = lnr.readLine()) != null) {
           if (line.startsWith("feature")) {
             final Object[] parts = FEATURE_LINE_PATTERN.parse(line);
-            final BFGrid.BinaryFeature bf = grid.row(((Long) parts[0]).intValue()).bf(((Long) parts[1]).intValue());
+            final BFGrid.Feature bf = grid.row(((Long) parts[0]).intValue()).bf(((Long) parts[1]).intValue());
             splits.add(bf);
-            if (Math.abs(bf.condition - ((Number) parts[2]).doubleValue()) > 1e-4)
-              throw new RuntimeException("Inconsistent grid set, conditions do not match! Grid: " + bf.condition + " Found: " + parts[2]);
+            if (Math.abs(bf.condition() - ((Number) parts[2]).doubleValue()) > 1e-4)
+              throw new RuntimeException("Inconsistent grid set, conditions do not match! Grid: " + bf.condition() + " Found: " + parts[2]);
             mask.add((Long) parts[3]);
           } else break;
         }
