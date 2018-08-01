@@ -1,18 +1,12 @@
 package com.expleague.ml;
 
-import com.expleague.commons.math.vectors.*;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.func.Linear;
-import com.expleague.ml.impl.BFRowImpl;
-import com.expleague.ml.loss.*;
-import com.expleague.ml.meta.FeatureMeta;
-import com.expleague.ml.methods.*;
-import com.expleague.ml.methods.greedyRegion.*;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
+import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.mx.ColsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.ArraySeq;
@@ -27,9 +21,14 @@ import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.FeaturesTxtPool;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.func.Ensemble;
+import com.expleague.ml.func.Linear;
 import com.expleague.ml.func.NormalizedLinear;
+import com.expleague.ml.loss.*;
+import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.items.QURLItem;
+import com.expleague.ml.methods.*;
+import com.expleague.ml.methods.greedyRegion.*;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.ModelTools;
 import com.expleague.ml.models.ObliviousTree;
@@ -57,6 +56,7 @@ import static java.lang.Math.log;
  *
  * Time: 15:50
  */
+@SuppressWarnings("RedundantArrayCreation")
 public class MethodsTests extends GridTest {
   private FastRandom rng;
 
@@ -224,7 +224,7 @@ public void testElasticNetBenchmark() {
         System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
         System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
         System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
-        System.out.println("");
+        System.out.println();
         lambda *= 0.9;
       }
 
@@ -236,7 +236,7 @@ public void testElasticNetBenchmark() {
       System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
       System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
       System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
-      System.out.println("");
+      System.out.println();
 
       {
         System.out.println("Classic linear regression");
@@ -348,7 +348,7 @@ public void testElasticNetBenchmark() {
 
       double lambda = 0.01;
       Vec w = new ArrayVec(beta.dim());
-      Linear result = new Linear(w);
+      Linear result;
       while (lambda > 0.00000001) {
         final ElasticNetMethod net = new ElasticNetMethod(1e-5f, 0.95, lambda);
         result = (Linear) net.fit(pool.vecData(), loss,w);
@@ -423,7 +423,7 @@ public void testElasticNetBenchmark() {
         System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
         System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
         System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
-        System.out.println("");
+        System.out.println();
         lambda *= 0.85;
       }
 
@@ -433,7 +433,7 @@ public void testElasticNetBenchmark() {
       System.out.println("Learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), realTarget)) / target.dim());
       System.out.println("Noise learn error: " + sqr(VecTools.distance(MxTools.multiply(learn, result.weights), target)) / target.dim());
       System.out.println("Test error: " + sqr(VecTools.distance(MxTools.multiply(test, result.weights), testTarget)) / testTarget.dim());
-      System.out.println("");
+      System.out.println();
 
     {
       System.out.println("Classic linear regression");
@@ -458,8 +458,9 @@ public void testElasticNetBenchmark() {
   public void testGreedyTDRegionLassoBoost() {
     final int N = 1000;
     final LassoGradientBoosting<L2> boosting = new LassoGradientBoosting<>(
-            new BootstrapOptimization<L2>(
-                    new GreedyTDRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, N);
+            new BootstrapOptimization<>(new GreedyTDRegion<>(GridTools.medianGrid(learn.vecData(), 32)), rng),
+        L2GreedyTDRegion.class, N
+    );
 //                    new GreedyTDIterativeRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, N);
     boosting.setLambda(1e-4);
     final L2 target = learn.target(L2.class);
@@ -502,7 +503,7 @@ public void testElasticNetBenchmark() {
         testMin = Math.min(testLoss, testMin);
         System.out.print(" minimum = " + testMin);
       }
-      System.out.println("");
+      System.out.println();
     }
   }
 
@@ -510,9 +511,10 @@ public void testElasticNetBenchmark() {
 
 
   public void testGRBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting<L2>(
-            new BootstrapOptimization<L2>(
-                    new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn.vecData(), 32)), rng), L2.class, 10000, 0.02);
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+        new BootstrapOptimization<>(new GreedyRegion(new FastRandom(), GridTools.medianGrid(learn.vecData(), 32)), rng),
+        L2.class, 10000, 0.02
+    );
     final Consumer counter = new ProgressHandler() {
       int index = 0;
 
@@ -524,8 +526,8 @@ public void testElasticNetBenchmark() {
     final L2 target = learn.target(L2.class);
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), target);
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Consumer modelPrinter = new ModelPrinter();
-    final Consumer qualityCalcer = new QualityCalcer();
+    final Consumer<Trans> modelPrinter = new ModelPrinter();
+    final Consumer<Trans> qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -535,9 +537,11 @@ public void testElasticNetBenchmark() {
   }
 
   public void testGTDRForestBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting
-            (new RegionForest<>(GridTools.medianGrid(learn.vecData(), 32), rng, 5), L2GreedyTDRegion.class, 12000, 0.004);
-    final Consumer counter = new ProgressHandler() {
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+        new RegionForest<>(GridTools.medianGrid(learn.vecData(), 32), rng, 5),
+        L2GreedyTDRegion.class, 12000, 0.004
+    );
+    final Consumer<Trans> counter = new ProgressHandler() {
       int index = 0;
 
       @Override
@@ -547,8 +551,8 @@ public void testElasticNetBenchmark() {
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Consumer modelPrinter = new ModelPrinter();
-    final Consumer qualityCalcer = new QualityCalcer();
+    final Consumer<Trans> modelPrinter = new ModelPrinter();
+    final Consumer<Trans> qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -561,8 +565,10 @@ public void testElasticNetBenchmark() {
   public void testGTDRFLassoBoost() {
     double val = Double.valueOf("1.1754944e-38");
 
-    final GradientBoosting<L2> boosting = new GradientBoosting
-    (new LassoRegionsForest<L2>(new GreedyTDRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)),rng,5), L2GreedyTDRegion.class, 12000,0.01);
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+        new LassoRegionsForest<>(new GreedyTDRegion<>(GridTools.medianGrid(learn.vecData(), 32)), rng, 5),
+        L2GreedyTDRegion.class, 12000,0.01
+    );
 //    (new LassoRegionsForest<L2>(new GreedyTDIterativeRegion<WeightedLoss<? extends L2>>(GridTools.medianGrid(learn.vecData(), 32)), rng,1), L2GreedyTDRegion.class, 12000,1);
     final Consumer counter = new ProgressHandler() {
       int index = 0;
@@ -574,8 +580,8 @@ public void testElasticNetBenchmark() {
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Consumer modelPrinter = new ModelPrinter();
-    final Consumer qualityCalcer = new QualityCalcer();
+    final Consumer<Trans> modelPrinter = new ModelPrinter();
+    final Consumer<Trans> qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -588,9 +594,11 @@ public void testElasticNetBenchmark() {
 //    final GradientBoosting<L2> boosting = new GradientBoosting
 //            (new BootstrapOptimization<>(
 //                         new GreedyMergedRegion(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.07);
-    final GradientBoosting<L2> boosting = new GradientBoosting(
-          new GreedyTDLinearRegion(GridTools.medianGrid(learn.vecData(), 32), 6, 1e-4), L2GreedyTDRegion.class, 3000, 0.015);
-    final Consumer counter = new ProgressHandler() {
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+        new GreedyTDLinearRegion<>(GridTools.medianGrid(learn.vecData(), 32), 6, 1e-4),
+        L2GreedyTDRegion.class, 3000, 0.015
+    );
+    final Consumer<Trans> counter = new ProgressHandler() {
       int index = 0;
 
       @Override
@@ -600,8 +608,8 @@ public void testElasticNetBenchmark() {
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Consumer modelPrinter = new ModelPrinter();
-    final Consumer qualityCalcer = new QualityCalcer();
+    final Consumer<Trans> modelPrinter = new ModelPrinter();
+    final Consumer<Trans> qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -613,9 +621,11 @@ public void testElasticNetBenchmark() {
 
 
   public void testGreedyTDLinearRegionBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting(
-         new BootstrapOptimization<>(new GreedyTDLinearRegion(GridTools.medianGrid(learn.vecData(), 32), 6, 1e-3), rng), L2GreedyTDRegion.class, 1000, 0.015);
-    final Consumer counter = new ProgressHandler() {
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+         new BootstrapOptimization<>(new GreedyTDLinearRegion<>(GridTools.medianGrid(learn.vecData(), 32), 6, 1e-3), rng),
+        L2GreedyTDRegion.class, 1000, 0.015
+    );
+    final Consumer<Trans> counter = new ProgressHandler() {
       int index = 0;
 
       @Override
@@ -625,8 +635,8 @@ public void testElasticNetBenchmark() {
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Consumer modelPrinter = new ModelPrinter();
-    final Consumer qualityCalcer = new QualityCalcer();
+    final Consumer<Trans> modelPrinter = new ModelPrinter();
+    final Consumer<Trans> qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -647,8 +657,8 @@ public void testElasticNetBenchmark() {
       };
       final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", _learn.vecData(), _learn.target(L2.class));
       final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", _validate.vecData(), _validate.target(L2.class));
-      final Consumer modelPrinter = new ModelPrinter();
-      final Consumer qualityCalcer = new QualityCalcer();
+      final Consumer<Trans> modelPrinter = new ModelPrinter();
+      final Consumer<Trans> qualityCalcer = new QualityCalcer();
       boosting.addListener(counter);
       boosting.addListener(learnListener);
       boosting.addListener(validateListener);
@@ -669,9 +679,10 @@ public void testElasticNetBenchmark() {
 
 
   public void testGTDRIBoost() {
-    final GradientBoosting<L2> boosting = new GradientBoosting
-            (new BootstrapOptimization<>(
-                    new GreedyTDIterativeRegion<WeightedLoss<? extends StatBasedLoss>>(GridTools.medianGrid(learn.vecData(), 32)), rng), L2GreedyTDRegion.class, 12000, 0.002);
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+        new BootstrapOptimization<>(new GreedyTDIterativeRegion<>(GridTools.medianGrid(learn.vecData(), 32)), rng),
+        L2GreedyTDRegion.class, 12000, 0.002
+    );
     final Consumer counter = new ProgressHandler() {
       int index = 0;
 
@@ -682,8 +693,8 @@ public void testElasticNetBenchmark() {
     };
     final ScoreCalcer learnListener = new ScoreCalcer("\tlearn:\t", learn.vecData(), learn.target(L2.class));
     final ScoreCalcer validateListener = new ScoreCalcer("\ttest:\t", validate.vecData(), validate.target(L2.class));
-    final Consumer modelPrinter = new ModelPrinter();
-    final Consumer qualityCalcer = new QualityCalcer();
+    final Consumer<Trans> modelPrinter = new ModelPrinter();
+    final Consumer<Trans> qualityCalcer = new QualityCalcer();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
@@ -694,13 +705,16 @@ public void testElasticNetBenchmark() {
 
 
   public void testOTBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), L2Reg.class, 2000, 0.005);
-    new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
+        new BootstrapOptimization<>(new GreedyObliviousTree<>(GridTools.medianGrid(learn.vecData(), 32), 6), rng),
+        L2Reg.class, 2000, 0.005
+    );
+    new addBoostingListeners<>(boosting, learn.target(SatL2.class), learn, validate);
   }
 
   public void testProbRegionBoost() {
-    final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(new BootstrapOptimization(new GreedyProbLinearRegion<>(GridTools.medianGrid(learn.vecData(), 32), 6), rng), L2Reg.class, 5000, 0.05);
-    new addBoostingListeners<SatL2>(boosting, learn.target(SatL2.class), learn, validate);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<>(new BootstrapOptimization<>(new GreedyProbLinearRegion<>(GridTools.medianGrid(learn.vecData(), 32), 6), rng), L2Reg.class, 5000, 0.05);
+    new addBoostingListeners<>(boosting, learn.target(SatL2.class), learn, validate);
   }
 
   public void testOTBoost1() throws IOException {
@@ -708,7 +722,7 @@ public void testElasticNetBenchmark() {
     final DataBuilderCrossValidation cvBuilder = new DataBuilderCrossValidation();
     cvBuilder.setReader(createFeatureTxtReader());
     cvBuilder.setLearnPath(System.getenv("HOME") + "/data/pools/green/stylist-20140702.txt");
-    final Pool pool = DataTools.loadFromFeaturesTxt(System.getenv("HOME") + "/data/pools/green/stylist-20140702.txt");
+    final Pool<?> pool = DataTools.loadFromFeaturesTxt(System.getenv("HOME") + "/data/pools/green/stylist-20140702.txt");
     final IntSeqBuilder classifyTarget = new IntSeqBuilder();
     final Vec target = (Vec)pool.target(0);
     for (int i = 0; i < target.length(); i++) {
@@ -717,12 +731,14 @@ public void testElasticNetBenchmark() {
       else
         classifyTarget.add(0);
     }
-    final TargetMeta meta = TargetMeta.create("Match", "",  FeatureMeta.ValueType.INTS);
-    pool.addTarget(meta, classifyTarget.build());
+    pool.addTarget(TargetMeta.create("Match", "",  FeatureMeta.ValueType.INTS), classifyTarget.build());
     final int[][] cvSplit = DataTools.splitAtRandom(pool.size(), rnd, 0.5, 0.5);
     final Pair<? extends Pool, ? extends Pool> cv = Pair.create(pool.sub(cvSplit[0]), pool.sub(cvSplit[1]));
     final BFGrid grid = GridTools.medianGrid(cv.first.vecData(), 32);
-    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new BootstrapOptimization(new GreedyObliviousTree(grid, 6), rng), LOOL2.class, 2000, 0.02);
+    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
+        new BootstrapOptimization<>(new GreedyObliviousTree<>(grid, 6), rng),
+        LOOL2.class, 2000, 0.02
+    );
     final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", cv.first.vecData(), cv.first.target(LLLogit.class));
     final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.second.vecData(), cv.second.target(LLLogit.class));
     final ScoreCalcer validatePrec = new ScoreCalcer(/*"\ttest:\t"*/"\t", cv.second.vecData(), cv.second.target("Match", PLogit.class));
@@ -737,6 +753,7 @@ public void testElasticNetBenchmark() {
     boosting.addListener(learnPrec);
     boosting.addListener(learnRecall);
     boosting.addListener(newLine);
+    //noinspection unchecked
     final Ensemble<ObliviousTree> ensemble = boosting.fit(cv.first.vecData(), (LLLogit) cv.first.target(LLLogit.class));
     final ModelTools.CompiledOTEnsemble compile = ModelTools.compile(ensemble);
     double[] scores = new double[grid.rows()];
@@ -839,7 +856,10 @@ public void testElasticNetBenchmark() {
         System.out.println(index++);
       }
     };
-    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new BootstrapOptimization(new GreedyObliviousTree(GridTools.medianGrid(learn.vecData(), 32), 6), rng), LOOL2.class, 2000, 0.05);
+    final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(
+        new BootstrapOptimization<>(new GreedyObliviousTree<>(GridTools.medianGrid(learn.vecData(), 32), 6), rng),
+        LOOL2.class, 2000, 0.05
+    );
     boosting.addListener(iteration);
 //    boosting.addListener(pl);
 //    boosting.addListener(learnScore);
@@ -899,7 +919,7 @@ public void testElasticNetBenchmark() {
   }
 
   private class QualityCalcer implements ProgressHandler {
-    Vec residues = VecTools.copy(learn.<L2>target(L2.class).target);
+    Vec residues = VecTools.copy(learn.target(L2.class).target);
     double total = 0;
     int index = 0;
 
@@ -949,7 +969,7 @@ public void testElasticNetBenchmark() {
         double sum = 0;
         double sum2 = 0;
         for (int i = 0; i < n; i++) {
-          final double v = learn.<L2>target(L2.class).target.get(rng.nextInt(learn.size()));
+          final double v = learn.target(L2.class).target.get(rng.nextInt(learn.size()));
           sum += v;
           sum2 += v * v;
         }
@@ -961,7 +981,7 @@ public void testElasticNetBenchmark() {
 
   public void testFMRun() {
     final FMTrainingWorkaround fm = new FMTrainingWorkaround("r", "1,1,8", "10");
-    fm.fit(learn.vecData(), learn.<L2>target(L2.class));
+    fm.fit(learn.vecData(), learn.target(L2.class));
   }
 }
 
