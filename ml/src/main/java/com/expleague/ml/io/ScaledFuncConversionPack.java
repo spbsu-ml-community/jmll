@@ -55,7 +55,8 @@ public class ScaledFuncConversionPack implements ConversionPack<ScaledVectorFunc
       if (from.toString().indexOf('\r') >= 0)
         from = from.toString().replace("\r", ""); // fix windows newlines created by GIT
 
-      final CharSequence[] parts = CharSeqTools.split(from, "\n");
+      CharSequence[] parts = new CharSequence[3];
+      CharSeqTools.split(from, '\n', parts);
 
       try {
         final Vec weight = repository.convert(parts[0], Vec.class);

@@ -23,7 +23,6 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
   private final BFGrid.Feature[] features;
   private final double[] values;
   private final double[] basedOn;
-  private final BFGrid grid;
 
   public ObliviousTree(final List<BFGrid.Feature> features, final double[] values) {
     this(features, values, new double[values.length]);
@@ -32,7 +31,6 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
   public ObliviousTree(final List<BFGrid.Feature> features, final double[] values, final double[] basedOn) {
     if (features.size() == 0)
       throw new RuntimeException("Creating oblivious tree of zero depth");
-    grid = features.get(0).row().grid();
     this.basedOn = basedOn;
     this.features = features.toArray(new BFGrid.Feature[features.size()]);
     this.values = values;
@@ -40,7 +38,7 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
 
   @Override
   public int dim() {
-    return grid.rows();
+    return features[0].row().grid().size();
   }
 
   @Override
@@ -134,7 +132,8 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     @Override
     public Vec leftTo(Vec x, Vec gradient) {
       final int numFeatures = x.dim();
-      byte[] folds = new byte[numFeatures];
+      final byte[] folds = new byte[numFeatures];
+      final BFGrid grid = grid();
       grid.binarizeTo(x, folds);
 
       final Vec x0 = VecTools.assign(new ArrayVec(numFeatures), x);
@@ -169,7 +168,8 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     @Override
     public Vec rightTo(Vec x, Vec gradient) {
       final int numFeatures = x.dim();
-      byte[] folds = new byte[numFeatures];
+      final byte[] folds = new byte[numFeatures];
+      final BFGrid grid = grid();
       grid.binarizeTo(x, folds);
 
       final Vec x0 = VecTools.assign(new ArrayVec(numFeatures), x);

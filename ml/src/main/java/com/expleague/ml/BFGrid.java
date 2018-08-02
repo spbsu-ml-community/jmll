@@ -46,6 +46,5 @@ public interface BFGrid {
     double power();
 
     Row row();
-
   }
 }

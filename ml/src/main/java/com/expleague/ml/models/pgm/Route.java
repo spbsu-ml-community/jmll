@@ -1,5 +1,7 @@
 package com.expleague.ml.models.pgm;
 
+import java.util.stream.IntStream;
+
 /**
  * User: solar
  * Date: 07.04.14
@@ -12,4 +14,6 @@ public interface Route {
 
   ProbabilisticGraphicalModel dstOwner(int stepNo);
   int dst(int stepNo);
+
+  IntStream states();
 }

@@ -1,6 +1,7 @@
 package com.expleague.ml;
 
 import com.expleague.commons.math.Func;
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.mx.ColsVecArrayMx;
@@ -33,6 +34,7 @@ import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.ModelTools;
 import com.expleague.ml.models.ObliviousTree;
 import com.expleague.ml.models.pgm.ProbabilisticGraphicalModel;
+import com.expleague.ml.models.pgm.Route;
 import com.expleague.ml.models.pgm.SimplePGM;
 import gnu.trove.map.hash.TDoubleDoubleHashMap;
 import gnu.trove.map.hash.TDoubleIntHashMap;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static com.expleague.commons.math.MathTools.sqr;
 import static com.expleague.commons.math.vectors.VecTools.copy;
@@ -139,12 +142,14 @@ public class MethodsTests extends GridTest {
     final Vec[] ds = new Vec[100000];
     for (int i = 0; i < ds.length; i++) {
       //TODO: @solar, please, fix it
-      final Vec vec = null;
-//      do {
-//
-//      vec = breakV(original.next(rng), lossProbab);
-//      }
-//      while (VecTools.norm(vec) < MathTools.EPSILON);
+      Vec vec;
+      do {
+        Route route = original.next(rng);
+        Vec next = new ArrayVec(route.length());
+        IntStream.range(0, route.length()).forEach(idx -> next.set(idx, route.dst(idx)));
+        vec = breakV(next, lossProbab);
+      }
+      while (VecTools.norm(vec) < MathTools.EPSILON);
       ds[i] = vec;
     }
     final VecDataSet dataSet = new VecDataSetImpl(new RowsVecArrayMx(ds), null);

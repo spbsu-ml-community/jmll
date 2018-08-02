@@ -16,24 +16,12 @@ import org.jetbrains.annotations.Nullable;
  * Time: 13:01
  */
 public class ModelsSerializationRepository extends SerializationRepository<CharSequence> {
-  private static final ConversionRepository conversion = new TypeConvertersCollection(MathTools.CONVERSION, ModelsSerializationRepository.class,
-          new ObliviousTreeConversionPack(),
-          new RegionConversionPack(),
-          new ObliviousMultiClassTreeConversionPack(),
-          new EnsembleModelConversionPack(),
-          new FuncEnsembleConversionPack(),
-          new TransJoinConversionPack(),
-          new FuncJoinConversionPack(),
-          new JoinedProbsModelConversionPack(),
-          new FMModelConversionPack(),
-          new MultiClassModelConversionPack(),
-          new JoinedBinClassModelConversionPack(),
-          new MultiLabelBinarizedModelConversionPack(),
-          new ObliviousTreeDynamicBinConversionPack(),
-          new HMMConversionPack(),
-          new AlphabetConversionPack(), BFGrid.CONVERTER.getClass(),
-          (new DynamicGridStringConverter()).getClass()
+  private static final ConversionRepository conversion = new TypeConvertersCollection(
+      MathTools.CONVERSION,
+      ModelsSerializationRepository.class,
+      ModelsSerializationRepository.class.getPackage().getName()
   );
+
   private BFGrid grid;
   private DynamicGrid dynamicGrid;
 

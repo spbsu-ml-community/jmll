@@ -1,15 +1,13 @@
 package com.expleague.ml.meta.impl.fake;
 
-import com.expleague.ml.data.tools.Pool;
-import com.expleague.ml.meta.DSItem;
-import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.data.set.DataSet;
+import com.expleague.ml.meta.PoolTargetMeta;
 
 /**
  * User: qdeee
  * Date: 22.07.14
  */
-public class FakeTargetMeta extends FakeFeatureMeta implements TargetMeta {
+public class FakeTargetMeta extends FakeFeatureMeta implements PoolTargetMeta {
   public DataSet<?> ds;
 
   public FakeTargetMeta(final ValueType valueType, int id) {

@@ -12,6 +12,7 @@ import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 /**
  * User: solar
@@ -221,6 +222,11 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     public int dst(final int stepNo) {
       return nodes[stepNo + start];
     }
+
+    @Override
+    public IntStream states() {
+      return IntStream.range(0, length()).map(idx -> nodes[idx + start]);
+    }
   }
 
   public class MyRoute implements Route {
@@ -282,6 +288,11 @@ public class SimplePGM extends Func.Stub implements ProbabilisticGraphicalModel 
     @Override
     public int dst(final int stepNo) {
       return route[stepNo];
+    }
+
+    @Override
+    public IntStream states() {
+      return IntStream.range(0, length()).map(idx -> route[idx]);
     }
   }
 }

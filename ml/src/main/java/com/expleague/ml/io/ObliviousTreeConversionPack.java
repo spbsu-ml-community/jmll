@@ -6,6 +6,7 @@ import com.expleague.commons.seq.CharSeqReader;
 import com.expleague.commons.seq.CharSeqTools;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.GridEnabled;
+import com.expleague.ml.impl.BFGridConstructor;
 import com.expleague.ml.models.ObliviousTree;
 
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.Objects;
  * Time: 13:05
  */
 public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree, CharSequence> {
-  private static final MessageFormat FEATURE_LINE_PATTERN = new MessageFormat("feature: {0, number}, bin: {1, number}, ge: {2, number,#.#####}", Locale.US);
+  private static final MessageFormat FEATURE_LINE_PATTERN = new MessageFormat("feature: {0, number}, bin: {1, number}, ge: {2, number, ##0.####E0}", Locale.US);
 
   static {
     final DecimalFormat format = new DecimalFormat();
@@ -87,7 +88,14 @@ public class ObliviousTreeConversionPack implements ConversionPack<ObliviousTree
         while ((line = lnr.readLine()) != null) {
           if (line.startsWith("feature")) {
             final Object[] parts = FEATURE_LINE_PATTERN.parse(line);
-            final BFGrid.Feature bf = grid.row(((Long)parts[0]).intValue()).bf(((Long)parts[1]).intValue());
+            final BFGrid.Feature bf;
+            int findex = ((Long) parts[0]).intValue();
+            if (grid instanceof BFGridConstructor) {
+              bf = ((BFGridConstructor) grid).condition(findex, ((Number) parts[2]).doubleValue());
+            }
+            else {
+              bf = grid.row(findex).bf(((Number) parts[1]).intValue());
+            }
             splits.add(bf);
             if (Math.abs(bf.condition() - ((Number)parts[2]).doubleValue()) > 1e-4)
               throw new RuntimeException("Inconsistent grid set, conditions do not match! Grid: " + bf.condition() + " Found: " + parts[2]);

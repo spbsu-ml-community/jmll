@@ -18,6 +18,7 @@ import com.expleague.commons.system.RuntimeUtils;
 import com.expleague.commons.text.StringUtils;
 import com.expleague.commons.util.JSONTools;
 import com.expleague.commons.util.logging.Logger;
+import com.expleague.ml.impl.BFGridConstructor;
 import com.expleague.ml.impl.BFGridImpl;
 import com.expleague.ml.CompositeTrans;
 import com.expleague.ml.data.set.DataSet;
@@ -208,9 +209,12 @@ public class DataTools {
   }
 
   public static void writeModel(final Function result, final File to) throws IOException {
+    writeModel(result, new FileOutputStream(to));
+  }
+
+  public static void writeModel(final Function result, OutputStream to) {
     final BFGrid grid = grid(result);
-    StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n",
-        SERIALIZATION.write(result)), to);
+    StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n", SERIALIZATION.write(result)), to);
   }
 
   public static <T extends Function> T readModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
@@ -232,6 +236,15 @@ public class DataTools {
     final BFGrid grid = repository.read(StreamTools.readStream(gridInputStream), BFGridImpl.class);
     final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
     return readModel(modelInputStream, customizedRepository);
+  }
+
+  public static <T extends Function> T readModel(final InputStream modelInputStream) throws IOException, ClassNotFoundException {
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository();
+    final BFGridConstructor grid = new BFGridConstructor();
+    final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
+    T model = readModel(modelInputStream, customizedRepository);
+    grid.build();
+    return model;
   }
 
   public static void writeBinModel(final Function result, final File file) {
