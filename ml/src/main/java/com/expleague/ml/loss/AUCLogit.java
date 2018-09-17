@@ -51,7 +51,7 @@ public class AUCLogit extends Func.Stub implements TargetFunc {
     double max_accuracy = 0;
 
     while (curPos < order.length) {
-      if (target.get(order[curPos++]) == 1) {
+      if (target.get(order[curPos++]) > 0) {
         falseNegative += 1;
         continue;
       }
@@ -92,7 +92,7 @@ public class AUCLogit extends Func.Stub implements TargetFunc {
     double max_accuracy = 0;
 
     while (curPos < order.length) {
-      if (target.get(order[curPos++]) == 1) {
+      if (target.get(order[curPos++]) > 0) {
         falseNegative += 1;
         continue;
       }

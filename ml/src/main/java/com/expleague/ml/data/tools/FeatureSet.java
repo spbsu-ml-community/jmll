@@ -46,8 +46,16 @@ public interface FeatureSet<T extends DSItem> extends Consumer<T> {
     protected Stub() {
       init(Stream.of(getClass().getFields())
           .filter(fld -> (fld.getModifiers() & Modifier.STATIC) != 0)
-          .map(fld -> fld.getType().isAssignableFrom(FeatureMeta.class) ? fld : null)
+          .map(fld -> FeatureMeta.class.isAssignableFrom(fld.getType()) ? fld : null)
           .filter(Objects::nonNull)
+          .map(fld -> {
+            try {
+              return fld.get(null);
+            }
+            catch (IllegalAccessException e) {
+              throw new RuntimeException(e);
+            }
+          })
           .toArray(FeatureMeta[]::new));
     }
 
@@ -69,6 +77,9 @@ public interface FeatureSet<T extends DSItem> extends Consumer<T> {
 
     protected void set(FeatureMeta meta, double value) {
       final int idx = metaIndex.get(meta);
+      if (idx < 0)
+        return;
+
       assigned.set(idx);
       current.set(idx, value);
     }
