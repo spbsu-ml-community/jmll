@@ -174,8 +174,7 @@ public class CreateCharDict {
   }
 
   private static void imdb(int size) throws Exception {
-
-    DictExpansion<Character> expansion = new DictExpansion<>((Dictionary<Character>) Dictionary.EMPTY, size, System.out);
+    DictExpansion<Character> expansion = new DictExpansion<>(Collections.emptySet(), size, System.out);
 
     Consumer<File> processFolder = folder -> {
       try {
