@@ -56,7 +56,7 @@ public class ProductsSegmentation {
         List<CharSeq> input;
         {
           try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(productNamesArchivePath)))) {
-            input = CsvTools.csvLines(reader, new char[]{'\n', ',', '"'}).map(row -> CharSeq.intern(CharSeq.create(normalize(row.at("origName"))))).collect(Collectors.toList());
+            input = CsvTools.csvLines(reader, ',', '"', true).map(row -> CharSeq.intern(CharSeq.create(normalize(row.at("origName"))))).collect(Collectors.toList());
           }
         }
         for (int i = 0; i < 10; i++) {
@@ -88,14 +88,14 @@ public class ProductsSegmentation {
 
         final TIntArrayList freqs;
         try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(productNamesArchivePath)))) {
-          Stream<CharSeq> charStream = CsvTools.csvLines(reader, new char[]{'\n', ',', '"'}).map(row -> CharSeq.intern(CharSeq.create(normalize(row.at("origName")))));
+          Stream<CharSeq> charStream = CsvTools.csvLines(reader, ',', '"', true).map(row -> CharSeq.intern(CharSeq.create(normalize(row.at("origName")))));
           freqs = buildFreqs(charStream, dict);
         }
 
         final int totalFreq = freqs.sum();
         try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(productNamesArchivePath)))) {
           try (Writer writer = Files.newBufferedWriter(Paths.get("/Users/solar/data/joom/products/products.encoded"))) {
-            CsvTools.csvLines(reader, new char[]{'\n', ',', '"'})
+            CsvTools.csvLines(reader, ',', '"', true)
                 .map(row -> CharSeq.intern(CharSeq.create(normalize(row.at("origName")))))
                 .map(str -> dict.parse(str, freqs, totalFreq)).map(seq -> IntStream.of(seq.toArray()).mapToObj(Integer::toString).collect(Collectors.joining(" ")))
                 .forEach(str -> {
@@ -137,7 +137,7 @@ public class ProductsSegmentation {
         final TObjectIntMap<Pair<CharSeq, CharSeq>> codeFreqs = new TObjectIntHashMap<>();
         final Map<Pair<CharSeq, CharSeq>, CharSeq> examples = new HashMap<>();
         try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(productNamesArchivePath)))) {
-          CsvTools.csvLines(reader, new char[]{'\n', ',', '"'})
+          CsvTools.csvLines(reader, ',', '"', true)
               .map(row -> CharSeq.intern(CharSeq.create(row.at("origName"))))
               .forEach(str -> {
                 IntSeq parse = dict.parse(CharSeq.create(normalize(CharSeq.create(str))));//, freqs, totalFreq);
