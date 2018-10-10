@@ -1,31 +1,32 @@
 package com.expleague.ml.methods.multiclass.gradfac;
 
-import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.seq.VecSeq;
-import com.expleague.ml.data.impl.BinarizedDataSet;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.factorization.Factorization;
-import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.commons.func.impl.WeakListenerHolderImpl;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
+import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.util.Pair;
 import com.expleague.ml.Binarize;
+import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.factorization.Factorization;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.ScaledVectorFunc;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.SatL2;
+import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.ObliviousTree;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.lang.Math.exp;
 
@@ -71,21 +72,22 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     return new Ensemble<>(ensamble, -step);
   }
 
-  private class LazyGradientCursor extends VecSeq {
+  private class LazyGradientCursor extends Seq.Stub<Vec> {
     private final VecDataSet learn;
     private final List<Func> weakModels;
     private final BlockwiseMLLLogit target;
+    private final Vec[] b;
     private BinarizedDataSet bds;
 
     public LazyGradientCursor(VecDataSet learn, List<Func> weakModels, Vec[] b, BlockwiseMLLLogit target) {
-      super(b);
       this.learn = learn;
       this.weakModels = weakModels;
       this.target = target;
+      this.b = b;
     }
 
     @Override
-    public Vec at(int i) {
+    public Vec at(final int i) {
       final int classesCount = target.classesCount();
       final Vec H_t = new ArrayVec(classesCount - 1);
 
@@ -99,13 +101,13 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         final BinarizedDataSet bds = this.bds;
         for (int j = 0; j < size; j++) {
           final ObliviousTree tree = (ObliviousTree) weakModels.get(j);
-          VecTools.incscale(H_t, at(j), tree.value(bds, i) * step);
+          VecTools.incscale(H_t, b[j], tree.value(bds, i) * step);
         }
       }
       else {
         final Vec vec = learn.at(i);
         for (int j = 0; j < size; j++) {
-          VecTools.incscale(H_t, at(j), weakModels.get(j).value(vec) * step);
+          VecTools.incscale(H_t, b[j], weakModels.get(j).value(vec) * step);
         }
       }
       final Vec result = new ArrayVec(classesCount - 1);
@@ -122,6 +124,37 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           result.adjust(c, exp(H_t.get(c))/ (1. + sum));
       }
       return result;
+    }
+
+    @Override
+    public Seq<Vec> sub(int start, int end) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Seq<Vec> sub(int[] indices) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int length() {
+      return target.dim() / target.blockSize();
+    }
+
+    @Override
+    public boolean isImmutable() {
+      return true;
+    }
+
+    @Override
+    public Class<? extends Vec> elementType() {
+      return Vec.class;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Stream<Vec> stream() {
+      return IntStream.range(0, length()).mapToObj(this::at);
     }
   }
 }
