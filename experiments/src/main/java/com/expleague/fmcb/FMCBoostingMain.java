@@ -5,9 +5,10 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.GridTools;
-import com.expleague.ml.cli.output.printers.MulticlassProgressPrinter;
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.data.tools.*;
+import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.data.tools.MCTools;
+import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
@@ -18,7 +19,6 @@ import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.MultiClassModel;
 import org.apache.commons.cli.*;
 
-import javax.xml.crypto.Data;
 import java.io.*;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
@@ -47,7 +47,6 @@ public class FMCBoostingMain {
             .hasArg()
             .argName("MODEL")
             .type(String.class)
-            .required()
             .build());
     options.addOption(Option.builder()
             .longOpt("gamma")
@@ -83,7 +82,6 @@ public class FMCBoostingMain {
             .hasArg()
             .argName("N_ITER")
             .type(Integer.class)
-            .required()
             .type(Number.class)
             .build());
     options.addOption(Option.builder()
@@ -92,7 +90,6 @@ public class FMCBoostingMain {
             .hasArg()
             .argName("STEP")
             .type(Number.class)
-            .required()
             .build());
     options.addOption(Option.builder()
             .longOpt("train_pred")
@@ -154,8 +151,17 @@ public class FMCBoostingMain {
       final String model = cmd.getOptionValue("model", null);
       final String trainPath = cmd.getOptionValue("train", null);
       final String testPath = cmd.getOptionValue("test", null);
-      final int iterCount = Integer.parseInt(cmd.getOptionValue("n_iter"));
-      final double step = Double.parseDouble(cmd.getOptionValue("step"));
+
+      if (trainPath != null && !cmd.hasOption("n_iter")) {
+        throw new IllegalArgumentException("You should specify iterations count!");
+      }
+
+      if (trainPath != null && !cmd.hasOption("step")) {
+        throw new IllegalArgumentException("You should specify step!");
+      }
+
+      final int iterCount = Integer.parseInt(cmd.getOptionValue("n_iter", "0"));
+      final double step = Double.parseDouble(cmd.getOptionValue("step", "0"));
       final double gamma = Double.parseDouble(cmd.getOptionValue("gamma", "100"));
       final int maxIter = Integer.parseInt(cmd.getOptionValue("max_iter", "2000"));
       final int depth = Integer.parseInt(cmd.getOptionValue("depth", "5"));
