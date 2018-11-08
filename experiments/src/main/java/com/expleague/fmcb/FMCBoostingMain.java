@@ -168,7 +168,7 @@ public class FMCBoostingMain {
       Pool<?> train = null;
       if (trainPath != null) {
         final FileInputStream file = new FileInputStream(trainPath);
-        final InputStream in = testPath.endsWith("gz") ? new GZIPInputStream(file) : file;
+        final InputStream in = trainPath.endsWith("gz") ? new GZIPInputStream(file) : file;
         InputStreamReader trainReader = new InputStreamReader(in);
         train = DataTools.loadFromFeaturesTxt(trainPath, trainReader);
       }
