@@ -64,10 +64,10 @@ public class FMCBoostingMain {
             .type(Integer.class)
             .build());
     options.addOption(Option.builder()
-            .longOpt("bin_factor")
+            .longOpt("n_bins")
             .desc("Bin factor")
             .hasArg()
-            .argName("BIN_FACTOR")
+            .argName("N_BINS")
             .type(Integer.class)
             .build());
     options.addOption(Option.builder()
@@ -78,10 +78,10 @@ public class FMCBoostingMain {
             .type(Integer.class)
             .build());
     options.addOption(Option.builder()
-            .longOpt("iter_count")
+            .longOpt("n_iter")
             .desc("Number of weak learners")
             .hasArg()
-            .argName("ITER_COUNT")
+            .argName("N_ITER")
             .type(Integer.class)
             .required()
             .type(Number.class)
@@ -154,12 +154,12 @@ public class FMCBoostingMain {
       final String model = cmd.getOptionValue("model", null);
       final String trainPath = cmd.getOptionValue("train", null);
       final String testPath = cmd.getOptionValue("test", null);
-      final int iterCount = Integer.parseInt(cmd.getOptionValue("iter_count"));
+      final int iterCount = Integer.parseInt(cmd.getOptionValue("n_iter"));
       final double step = Double.parseDouble(cmd.getOptionValue("step"));
       final double gamma = Double.parseDouble(cmd.getOptionValue("gamma", "100"));
       final int maxIter = Integer.parseInt(cmd.getOptionValue("max_iter", "2000"));
       final int depth = Integer.parseInt(cmd.getOptionValue("depth", "5"));
-      final int binFactor = Integer.parseInt(cmd.getOptionValue("bin_factor", "32"));
+      final int binFactor = Integer.parseInt(cmd.getOptionValue("n_bins", "32"));
       final String trainPredPath = cmd.getOptionValue("train_pred", null);
       final String testPredPath = cmd.getOptionValue("test_pred", null);
 
@@ -167,13 +167,17 @@ public class FMCBoostingMain {
 
       Pool<?> train = null;
       if (trainPath != null) {
-        InputStreamReader trainReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(trainPath)));
+        final FileInputStream file = new FileInputStream(trainPath);
+        final InputStream in = testPath.endsWith("gz") ? new GZIPInputStream(file) : file;
+        InputStreamReader trainReader = new InputStreamReader(in);
         train = DataTools.loadFromFeaturesTxt(trainPath, trainReader);
       }
 
       Pool<?> test = null;
       if (testPath != null) {
-        final InputStreamReader testReader = new InputStreamReader(new GZIPInputStream(new FileInputStream(testPath)));
+        final FileInputStream file = new FileInputStream(testPath);
+        final InputStream in = testPath.endsWith("gz") ? new GZIPInputStream(file) : file;
+        final InputStreamReader testReader = new InputStreamReader(in);
         test = DataTools.loadFromFeaturesTxt(testPath, testReader);
       }
 
