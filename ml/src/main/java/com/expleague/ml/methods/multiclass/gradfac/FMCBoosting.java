@@ -105,24 +105,24 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       final int pointClass = target.label(i);
       final double scale = -step * weakModel.value(bds, i);
 
-      double sum = 0;
+      double S = 1;
       for (int c = 0; c < classesCount - 1; c++) {
         final double e = exp(b.get(c) * scale);
         final double v = vec.get(c);
         if (c == pointClass) {
-          sum += (v + 1) * e;
+          S += (v + 1) * (e - 1);
           vec.set(c, (v + 1) * e);
         } else {
-          sum += v * e;
+          S += v * (e - 1);
           vec.set(c, v * e);
         }
       }
 
       for (int c = 0; c < classesCount - 1; c++) {
         if (c == pointClass) {
-          vec.set(c, -1 + vec.get(c) / sum);
+          vec.set(c, -1 + vec.get(c) / S);
         } else {
-          vec.set(c, vec.get(c) / sum);
+          vec.set(c, vec.get(c) / S);
         }
       }
     };
