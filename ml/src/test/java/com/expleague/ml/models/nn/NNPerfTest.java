@@ -100,7 +100,10 @@ public class NNPerfTest {
         )
         .build(new OneOutLayer());
 
-    return new ConvNet(network);
+    final Vec weights = new ArrayVec(network.wdim());
+    network.initWeights(weights);
+
+    return new ConvNet(network, weights);
   }
 
   private static ConvNet createConvNet(int channels) {
@@ -115,7 +118,10 @@ public class NNPerfTest {
         .append(ConvLayerBuilder.create().ksize(1, 1).channels(1))
         .build(new OneOutLayer());
 
-    return new ConvNet(network);
+    final Vec weights = new ArrayVec(network.wdim());
+    network.initWeights(weights);
+
+    return new ConvNet(network, weights);
   }
 
   private static ConvNet createPerceptron(int n_hid) {
@@ -127,8 +133,9 @@ public class NNPerfTest {
         .append(FCLayerBuilder.create().nOut(n_hid))
         .append(FCLayerBuilder.create().nOut(1))
         .build(new OneOutLayer());
-
-    return new ConvNet(network);
+    final Vec weights = new ArrayVec(network.wdim());
+    network.initWeights(weights);
+    return new ConvNet(network, weights);
   }
 
   private void perfNNCheck(ConvNet nn) {

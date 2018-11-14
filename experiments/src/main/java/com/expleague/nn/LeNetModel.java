@@ -102,6 +102,8 @@ public class LeNetModel {
 
     System.out.println(network);
 
-    return new ConvNet(network);
+    Vec weights = new ArrayVec(network.wdim());
+    network.initWeights(weights);
+    return new ConvNet(network, weights);
   }
 }
