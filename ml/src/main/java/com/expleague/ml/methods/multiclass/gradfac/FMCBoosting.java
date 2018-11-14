@@ -46,19 +46,29 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   private final Factorization factorize;
   private final int iterationsCount;
   private final double step;
+  private final boolean lazyCursor;
 
   private BinarizedDataSet bds = null;
 
+  public FMCBoosting(Factorization factorize, VecOptimization<L2> weak, int iterationsCount, double step, boolean lazyCursor) {
+    this(factorize, weak, SatL2.class, iterationsCount, step, lazyCursor);
+  }
+
   public FMCBoosting(Factorization factorize, VecOptimization<L2> weak, int iterationsCount, double step) {
-    this(factorize, weak, SatL2.class, iterationsCount, step);
+    this(factorize, weak, SatL2.class, iterationsCount, step, false);
   }
 
   public FMCBoosting(Factorization factorize, final VecOptimization<L2> weak, final Class<? extends L2> factory, final int iterationsCount, final double step) {
+    this(factorize, weak, factory, iterationsCount, step, false);
+  }
+
+  public FMCBoosting(Factorization factorize, final VecOptimization<L2> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, boolean lazyCursor) {
     this.factorize = factorize;
     this.weak = weak;
     this.factory = factory;
     this.iterationsCount = iterationsCount;
     this.step = step;
+    this.lazyCursor = lazyCursor;
   }
 
   @Override
@@ -66,7 +76,12 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     final Vec[] B = new Vec[iterationsCount];
     final List<Func> weakModels = new ArrayList<>(iterationsCount);
     final List<ScaledVectorFunc> ensamble = new ArrayList<>(iterationsCount);
-    final Mx cursor = new RowsVecArrayMx(new LazyGradientCursor(learn, weakModels, B, globalLoss, bds));
+    final Mx cursor;
+    if (lazyCursor) {
+      cursor = new RowsVecArrayMx(new LazyGradientCursor(learn, weakModels, B, globalLoss, bds));
+    } else {
+      cursor = new RowsVecArrayMx(new GradientCursor(learn, weakModels, B, globalLoss, bds));
+    }
 
     for (int t = 0; t < iterationsCount; t++) {
       if (t == 1) {
@@ -145,21 +160,60 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       this.target = target;
       this.b = b;
       this.bds = bds;
+      initCursor();
+    }
+
+    private void initCursor() {
+      for (int i = 0; i < learn.data().rows(); i++) {
+        for (int j = 0; j < target.classesCount() - 1; j++) {
+          cursor.adjust(i, j, 1.0 / target.classesCount());
+          if (j == target.label(i)) {
+            cursor.adjust(i, j, -1);
+          }
+        }
+      }
     }
 
     public void updateCursor() {
       final int size = weakModels.size();
+      final int classesCount = target.classesCount();
+      final ObliviousTree weakModel = (ObliviousTree) weakModels.get(size - 1);
+      if (bds == null) {
+        bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weakModel.grid());
+      }
+      final BinarizedDataSet bds = this.bds;
+      final double step = FMCBoosting.this.step;
 
+      long timeStart = System.currentTimeMillis();
       IntStream.range(0, cursor.rows()).parallel().forEach(i -> {
-        final ObliviousTree weakModel = (ObliviousTree) weakModels.get(size - 1);
-        if (bds == null) {
-          bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weakModel.grid());
-        }
-        final BinarizedDataSet bds = this.bds;
-        final double step = -FMCBoosting.this.step;
         final Vec b = this.b[size - 1];
-        VecTools.incscale(cursor.row(i), b, weakModel.value(bds, i) * step);
+        final Vec vec = cursor.row(i);
+
+        final int pointClass = target.label(i);
+        final double scale = -step * weakModel.value(bds, i);
+
+        double S = 1;
+        for (int c = 0; c < classesCount - 1; c++) {
+          final double e = exp(b.get(c) * scale);
+          final double v = vec.get(c);
+          if (c == pointClass) {
+            S += (v + 1) * (e - 1);
+            vec.set(c, (v + 1) * e);
+          } else {
+            S += v * (e - 1);
+            vec.set(c, v * e);
+          }
+        }
+
+        for (int c = 0; c < classesCount - 1; c++) {
+          if (c == pointClass) {
+            vec.set(c, -1 + vec.get(c) / S);
+          } else {
+            vec.set(c, vec.get(c) / S);
+          }
+        }
       });
+      System.out.println("Cursor update: " + (System.currentTimeMillis() - timeStart) + " (ms)");
 
       this.size = size;
     }
@@ -169,24 +223,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       if (weakModels.size() != size) {
         updateCursor();
       }
-
-      final int classesCount = target.classesCount();
-      final Vec row = cursor.row(i);
-      final Vec result = new ArrayVec(classesCount - 1);
-
-      double sum = 0;
-      for (int c = 0; c < classesCount - 1; c++) {
-        final double expX = exp(row.get(c));
-        sum += expX;
-      }
-      final int pointClass = target.label(i);
-      for (int c = 0; c < classesCount - 1; c++) {
-        if (pointClass == c)
-          result.adjust(c, -1 + exp(row.get(c)) / (1. + sum));
-        else
-          result.adjust(c, exp(row.get(c)) / (1. + sum));
-      }
-      return result;
+      return cursor.row(i);
     }
 
     @Override

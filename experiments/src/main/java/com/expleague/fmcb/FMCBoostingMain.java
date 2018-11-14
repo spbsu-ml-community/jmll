@@ -202,7 +202,7 @@ public class FMCBoostingMain {
 
       if (train != null) {
         final FMCBoosting boosting = new FMCBoosting(
-                new StochasticALS(rng, gamma, maxIter, new StochasticALS.Cache(600, 0.01, rng)),
+                new StochasticALS(rng, gamma, maxIter/*, new StochasticALS.Cache(600, 0.01, rng)*/),
                 new GreedyObliviousTree<L2>(GridTools.medianGrid(train.vecData(), binFactor), depth),
                 L2.class,
                 iterCount,
