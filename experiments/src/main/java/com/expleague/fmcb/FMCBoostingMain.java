@@ -110,18 +110,17 @@ public class FMCBoostingMain {
   private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> test) {
     final VecDataSet vecDataSet = train.vecData();
     final BlockwiseMLLLogit globalLoss = train.target(BlockwiseMLLLogit.class);
-    // final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(train, test);
-    // boosting.addListener(multiclassProgressPrinter);
+//    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(train, test);
+//    boosting.addListener(multiclassProgressPrinter);
     long startTime = System.currentTimeMillis();
     final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
     Interval.setStart(startTime);
     Interval.stopAndPrint(" training");
 
     final Trans joined = ensemble.last() instanceof FuncJoin ? MCTools.joinBoostingResult(ensemble) : ensemble;
-    final MultiClassModel multiclassModel = new MultiClassModel(joined);
-
-    final String learnResult = MCTools.evalModel(multiclassModel, train, "[LEARN] ", false);
-    System.out.println(learnResult);
+//    final MultiClassModel multiclassModel = new MultiClassModel(joined);
+//    final String learnResult = MCTools.evalModel(multiclassModel, train, "[LEARN] ", false);
+//    System.out.println(learnResult);
 
     return joined;
   }
@@ -129,10 +128,10 @@ public class FMCBoostingMain {
   private static Vec eval(final Trans ensemble, final Pool<?> test, final String comment) {
     final MultiClassModel multiclassModel = new MultiClassModel(ensemble);
 
-    Interval.start();
-    final String testResult = MCTools.evalModel(multiclassModel, test, comment + " ", false);
-    System.out.println(testResult);
-    Interval.stopAndPrint(" evaluation on " + comment);
+//    Interval.start();
+//    final String testResult = MCTools.evalModel(multiclassModel, test, comment + " ", false);
+//    System.out.println(testResult);
+//    Interval.stopAndPrint(" evaluation on " + comment);
     return multiclassModel.bestClassAll(test.vecData().data());
   }
 

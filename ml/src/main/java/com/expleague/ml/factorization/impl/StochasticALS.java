@@ -6,9 +6,9 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.factorization.Factorization;
-import com.expleague.commons.util.Pair;
 
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
@@ -65,6 +65,9 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
       Interval.stopAndPrint("Cache update");
     }
 
+    // call cursor update
+    X.row(0);
+
     Interval.start();
     {
       double a;
@@ -73,18 +76,19 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
       do {
         iteration++;
         final int i = rng.nextInt(m);
+        final double denominator = Math.log(1 + iteration);
         final Vec row = cache != null ? cache.getAnyCached() : X.row(i);
         u_hat = VecTools.multiply(row, v);
         a = 0;
         for (int j = 0; j < n; j++) {
-          final double val = gamma * (u_hat * (v.get(j) * u_hat - row.get(j))) / Math.log(1 + iteration);
+          final double val = gamma * (u_hat * (v.get(j) * u_hat - row.get(j))) / denominator;
           v.adjust(j, -val);
           if (a < Math.abs(val))
             a = Math.abs(val);
         }
         VecTools.scale(v, 1 / VecTools.norm(v)); //TODO
       }
-      while (a > 0.2 * gamma * u_hat * u_hat && iteration < maxIterations);
+      while (/*a > 0.2 * gamma * u_hat * u_hat && */ iteration < maxIterations);
     }
     Interval.stopAndPrint(iteration + " SALS iterations");
 

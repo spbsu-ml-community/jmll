@@ -25,12 +25,11 @@ import com.expleague.ml.loss.SatL2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.ObliviousTree;
+import org.apache.commons.math3.util.FastMath;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -101,7 +100,25 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
       Interval.start();
       final Func weakModel = (Func) weak.fit(learn, localLoss);
+
       Interval.stopAndPrint("Fitting greedy oblivious tree");
+
+      /*
+      // Debug calculations
+      Vec u_pred = new ArrayVec(learn.length());
+      for (int i = 0; i < learn.length(); ++i) {
+        u_pred.set(i, weakModel.apply(learn.data().row(i)).get(0));
+      }
+
+      final Vec diff = VecTools.subtract(u_pred, factorize.first);
+      final double mae = VecTools.norm1(diff) / diff.dim();
+
+      for (int i = 0; i < diff.dim(); ++i) {
+        diff.set(i, diff.get(i) / factorize.first.get(i));
+      }
+      final double mape = Math.round(100.0 * VecTools.norm1(diff) / diff.dim());
+      System.out.println("Tree MAE: " + mae);
+      System.out.println("Tree MAPE: " + mape + "%");*/
 
       weakModels.add(weakModel);
       ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
@@ -174,7 +191,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       }
     }
 
-    public void updateCursor() {
+    private void updateCursor() {
       final int size = weakModels.size();
       final int classesCount = target.classesCount();
       final ObliviousTree weakModel = (ObliviousTree) weakModels.get(size - 1);
@@ -194,7 +211,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
         double S = 1;
         for (int c = 0; c < classesCount - 1; c++) {
-          final double e = exp(b.get(c) * scale);
+          final double e = FastMath.exp(b.get(c) * scale);
           final double v = vec.get(c);
           if (c == pointClass) {
             S += (v + 1) * (e - 1);
