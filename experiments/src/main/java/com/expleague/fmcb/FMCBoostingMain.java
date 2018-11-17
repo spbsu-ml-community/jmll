@@ -13,6 +13,7 @@ import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
 import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.methods.multiclass.gradfac.FMCBoosting;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
@@ -77,6 +78,13 @@ public class FMCBoostingMain {
             .type(Integer.class)
             .build());
     options.addOption(Option.builder()
+            .longOpt("ensemble_size")
+            .desc("Ensemble size")
+            .hasArg()
+            .argName("ENSEMBLE_SIZE")
+            .type(Integer.class)
+            .build());
+    options.addOption(Option.builder()
             .longOpt("n_iter")
             .desc("Number of weak learners")
             .hasArg()
@@ -109,11 +117,11 @@ public class FMCBoostingMain {
 
   private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> test) {
     final VecDataSet vecDataSet = train.vecData();
-    final BlockwiseMLLLogit globalLoss = train.target(BlockwiseMLLLogit.class);
+    final BlockwiseMLLLogit target = train.target(BlockwiseMLLLogit.class);
 //    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(train, test);
 //    boosting.addListener(multiclassProgressPrinter);
     long startTime = System.currentTimeMillis();
-    final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+    final Ensemble ensemble = boosting.fit(vecDataSet, target);
     Interval.setStart(startTime);
     Interval.stopAndPrint(" training");
 
@@ -167,7 +175,7 @@ public class FMCBoostingMain {
       final int binFactor = Integer.parseInt(cmd.getOptionValue("n_bins", "32"));
       final String trainPredPath = cmd.getOptionValue("train_pred", null);
       final String testPredPath = cmd.getOptionValue("test_pred", null);
-
+      final int ensembleSize = Integer.parseInt(cmd.getOptionValue("ensemble_size", "1"));
       final FastRandom rng = new FastRandom(0);
 
       Pool<?> train = null;
@@ -202,10 +210,11 @@ public class FMCBoostingMain {
       if (train != null) {
         final FMCBoosting boosting = new FMCBoosting(
                 new StochasticALS(rng, gamma, maxIter/*, new StochasticALS.Cache(600, 0.01, rng)*/),
-                new GreedyObliviousTree<L2>(GridTools.medianGrid(train.vecData(), binFactor), depth),
+                new GreedyObliviousTree<StatBasedLoss>(GridTools.medianGrid(train.vecData(), binFactor), depth),
                 L2.class,
                 iterCount,
-                step
+                step,
+                ensembleSize
         );
 
         ensemble = fit(boosting, train, test);

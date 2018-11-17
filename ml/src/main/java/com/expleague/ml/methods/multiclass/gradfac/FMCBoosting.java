@@ -9,6 +9,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Interval;
@@ -22,9 +23,11 @@ import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.ScaledVectorFunc;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.SatL2;
+import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.ObliviousTree;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import org.apache.commons.math3.util.FastMath;
 
 import java.util.ArrayList;
@@ -40,46 +43,56 @@ import static java.lang.Math.exp;
  * Created by solar on 05.05.17.
  */
 public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOptimization<BlockwiseMLLLogit> {
-  protected final VecOptimization<L2> weak;
+  protected final VecOptimization<StatBasedLoss> weak;
   private final Class<? extends L2> factory;
   private final Factorization factorize;
   private final int iterationsCount;
   private final double step;
   private final boolean lazyCursor;
-
+  private final int ensembleSize;
   private BinarizedDataSet bds = null;
+  private final FastRandom rnd = new FastRandom(13);
 
-  public FMCBoosting(Factorization factorize, VecOptimization<L2> weak, int iterationsCount, double step, boolean lazyCursor) {
-    this(factorize, weak, SatL2.class, iterationsCount, step, lazyCursor);
+  public FMCBoosting(Factorization factorize, VecOptimization<StatBasedLoss> weak, int iterationsCount, double step, boolean lazyCursor) {
+    this(factorize, weak, SatL2.class, iterationsCount, step, lazyCursor, 1);
   }
 
-  public FMCBoosting(Factorization factorize, VecOptimization<L2> weak, int iterationsCount, double step) {
-    this(factorize, weak, SatL2.class, iterationsCount, step, false);
+  public FMCBoosting(Factorization factorize, VecOptimization<StatBasedLoss> weak, int iterationsCount, double step) {
+    this(factorize, weak, SatL2.class, iterationsCount, step, false, 1);
   }
 
-  public FMCBoosting(Factorization factorize, final VecOptimization<L2> weak, final Class<? extends L2> factory, final int iterationsCount, final double step) {
-    this(factorize, weak, factory, iterationsCount, step, false);
+  public FMCBoosting(Factorization factorize, VecOptimization<StatBasedLoss> weak, int iterationsCount, double step, int ensembleSize) {
+    this(factorize, weak, SatL2.class, iterationsCount, step, false, ensembleSize);
   }
 
-  public FMCBoosting(Factorization factorize, final VecOptimization<L2> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, boolean lazyCursor) {
+  public FMCBoosting(Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, int ensembleSize) {
+    this(factorize, weak, factory, iterationsCount, step, false, ensembleSize);
+  }
+
+  public FMCBoosting(Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step) {
+    this(factorize, weak, factory, iterationsCount, step, false, 1);
+  }
+
+  public FMCBoosting(Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, boolean lazyCursor, int ensembleSize) {
     this.factorize = factorize;
     this.weak = weak;
     this.factory = factory;
     this.iterationsCount = iterationsCount;
     this.step = step;
     this.lazyCursor = lazyCursor;
+    this.ensembleSize = ensembleSize;
   }
 
   @Override
-  public Ensemble<ScaledVectorFunc> fit(final VecDataSet learn, final BlockwiseMLLLogit globalLoss) {
-    final Vec[] B = new Vec[iterationsCount];
-    final List<Func> weakModels = new ArrayList<>(iterationsCount);
-    final List<ScaledVectorFunc> ensamble = new ArrayList<>(iterationsCount);
+  public Ensemble<ScaledVectorFunc> fit(final VecDataSet learn, final BlockwiseMLLLogit target) {
+    final Vec[] B = new Vec[iterationsCount * ensembleSize];
+    final List<Func> weakModels = new ArrayList<>(iterationsCount * ensembleSize);
+    final List<ScaledVectorFunc> ensamble = new ArrayList<>(iterationsCount * ensembleSize);
     final Mx cursor;
     if (lazyCursor) {
-      cursor = new RowsVecArrayMx(new LazyGradientCursor(learn, weakModels, B, globalLoss, bds));
+      cursor = new RowsVecArrayMx(new LazyGradientCursor(learn, weakModels, B, target, bds));
     } else {
-      cursor = new RowsVecArrayMx(new GradientCursor(learn, weakModels, B, globalLoss, bds));
+      cursor = new RowsVecArrayMx(new GradientCursor(learn, weakModels, B, target, bds));
     }
 
     for (int t = 0; t < iterationsCount; t++) {
@@ -87,20 +100,22 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         initializeBinarizedDataSet(learn, (ObliviousTree) weakModels.get(0));
       }
 
-      final Pair<Vec, Vec> factorize;
-      if (this.factorize instanceof StochasticALS) {
-        factorize = ((StochasticALS) this.factorize).factorize(cursor,
-                t == 0 ? null : getLastWeakLearner(B[t - 1], (ObliviousTree) weakModels.get(t - 1), globalLoss));
-      } else {
-        factorize = this.factorize.factorize(cursor);
+      final Pair<Vec, Vec> factorize = this.factorize.factorize(cursor);
+
+      // Vec z = VecTools.copy(factorize.second);
+      // VecTools.scale(factorize.second, 1.0 / ensembleSize);
+      for (int i = 0; i < ensembleSize; ++i) {
+        B[t * ensembleSize + i] = factorize.second;
       }
 
-      B[t] = factorize.second;
-      final L2 localLoss = DataTools.newTarget(factory, factorize.first, learn);
+      final L2 globalLoss = DataTools.newTarget(factory, factorize.first, learn);
 
       Interval.start();
-      final Func weakModel = (Func) weak.fit(learn, localLoss);
-
+      for (int i = 0; i < ensembleSize; ++i) {
+        final Func weakModel = (Func) weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
+        weakModels.add(weakModel);
+        ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
+      }
       Interval.stopAndPrint("Fitting greedy oblivious tree");
 
       /*
@@ -120,8 +135,6 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       System.out.println("Tree MAE: " + mae);
       System.out.println("Tree MAPE: " + mape + "%");*/
 
-      weakModels.add(weakModel);
-      ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
       invoke(new Ensemble<>(ensamble, -step));
     }
     return new Ensemble<>(ensamble, -step);
@@ -195,9 +208,11 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       final int size = weakModels.size();
       final int classesCount = target.classesCount();
       final ObliviousTree weakModel = (ObliviousTree) weakModels.get(size - 1);
+
       if (bds == null) {
         bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weakModel.grid());
       }
+
       final BinarizedDataSet bds = this.bds;
       final double step = FMCBoosting.this.step;
 
@@ -207,7 +222,12 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         final Vec vec = cursor.row(i);
 
         final int pointClass = target.label(i);
-        final double scale = -step * weakModel.value(bds, i);
+
+        double scale = 0;
+        for (int t = 0; t < ensembleSize; ++t) {
+          scale += ((ObliviousTree) weakModels.get(size - ensembleSize + t)).value(bds, i);
+        }
+        scale *= -step;
 
         double S = 1;
         for (int c = 0; c < classesCount - 1; c++) {
