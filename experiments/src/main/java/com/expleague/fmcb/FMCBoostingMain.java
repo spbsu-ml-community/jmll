@@ -150,10 +150,10 @@ public class FMCBoostingMain {
   private static Vec eval(final Trans ensemble, final Pool<?> test, final String comment) {
     final MultiClassModel multiclassModel = new MultiClassModel(ensemble);
 
-    Interval.start();
-    final String testResult = MCTools.evalModel(multiclassModel, test, comment + " ", false);
-    System.out.println(testResult);
-    Interval.stopAndPrint(" evaluation on " + comment);
+//    Interval.start();
+//    final String testResult = MCTools.evalModel(multiclassModel, test, comment + " ", false);
+//    System.out.println(testResult);
+//    Interval.stopAndPrint(" evaluation on " + comment);
 
     return multiclassModel.bestClassAll(test.vecData().data());
   }
