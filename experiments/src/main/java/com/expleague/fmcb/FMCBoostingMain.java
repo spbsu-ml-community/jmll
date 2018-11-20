@@ -150,10 +150,11 @@ public class FMCBoostingMain {
   private static Vec eval(final Trans ensemble, final Pool<?> test, final String comment) {
     final MultiClassModel multiclassModel = new MultiClassModel(ensemble);
 
-//    Interval.start();
-//    final String testResult = MCTools.evalModel(multiclassModel, test, comment + " ", false);
-//    System.out.println(testResult);
-//    Interval.stopAndPrint(" evaluation on " + comment);
+    Interval.start();
+    final String testResult = MCTools.evalModel(multiclassModel, test, comment + " ", false);
+    System.out.println(testResult);
+    Interval.stopAndPrint(" evaluation on " + comment);
+
     return multiclassModel.bestClassAll(test.vecData().data());
   }
 
@@ -242,18 +243,14 @@ public class FMCBoostingMain {
         }
       }
 
-      if (test != null) {
+      if (test != null && testPredPath != null) {
         final Vec pred = eval(ensemble, test, "test");
-        if (testPredPath != null) {
-          saveIntVec(pred, testPredPath);
-        }
+        saveIntVec(pred, testPredPath);
       }
 
-      if (train != null) {
+      if (train != null && trainPredPath != null) {
         final Vec pred = eval(ensemble, train, "train");
-        if (trainPredPath != null) {
-          saveIntVec(pred, trainPredPath);
-        }
+        saveIntVec(pred, trainPredPath);
       }
     } catch (Exception e) {
       throw e;
