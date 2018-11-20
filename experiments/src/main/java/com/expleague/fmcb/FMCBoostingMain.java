@@ -113,6 +113,20 @@ public class FMCBoostingMain {
             .argName("TEST_PRED")
             .type(String.class)
             .build());
+    options.addOption(Option.builder()
+            .longOpt("is_gbdt")
+            .desc("Gradient boosting or random forest")
+            .hasArg()
+            .argName("IS_GBDT")
+            .type(Boolean.class)
+            .build());
+    options.addOption(Option.builder()
+            .longOpt("upd_prob")
+            .desc("Gradient row update probability")
+            .hasArg()
+            .argName("UPD_PROB")
+            .type(Double.class)
+            .build());
   }
 
   private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> test) {
@@ -176,6 +190,8 @@ public class FMCBoostingMain {
       final String trainPredPath = cmd.getOptionValue("train_pred", null);
       final String testPredPath = cmd.getOptionValue("test_pred", null);
       final int ensembleSize = Integer.parseInt(cmd.getOptionValue("ensemble_size", "1"));
+      final boolean isGbdt = Boolean.parseBoolean(cmd.getOptionValue("is_gbdt", "false"));
+      final double updProb = Double.parseDouble(cmd.getOptionValue("upd_prob", "1.0"));
       final FastRandom rng = new FastRandom(0);
 
       Pool<?> train = null;
@@ -214,7 +230,9 @@ public class FMCBoostingMain {
                 L2.class,
                 iterCount,
                 step,
-                ensembleSize
+                ensembleSize,
+                isGbdt,
+                updProb
         );
 
         ensemble = fit(boosting, train, test);
