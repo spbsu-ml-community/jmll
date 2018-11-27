@@ -50,33 +50,32 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   private final boolean lazyCursor;
   private final int ensembleSize;
   private final boolean isGbdt;
-  private final double updProb;
   private BinarizedDataSet bds = null;
   private final FastRandom rfRnd = new FastRandom(13);
   // private final FastRandom gradRnd = new FastRandom(17);
 
 
   public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step, final boolean lazyCursor) {
-    this(factorize, weak, SatL2.class, iterationsCount, step, lazyCursor, 1, false, 1.0);
+    this(factorize, weak, SatL2.class, iterationsCount, step, lazyCursor, 1, false);
   }
 
   public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step) {
-    this(factorize, weak, SatL2.class, iterationsCount, step, false, 1, false, 1.0);
+    this(factorize, weak, SatL2.class, iterationsCount, step, false, 1, false);
   }
 
   public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step, final int ensembleSize) {
-    this(factorize, weak, SatL2.class, iterationsCount, step, false, ensembleSize, false, 1.0);
+    this(factorize, weak, SatL2.class, iterationsCount, step, false, ensembleSize, false);
   }
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, final int ensembleSize, final boolean isGbdt, final double updProb) {
-    this(factorize, weak, factory, iterationsCount, step, false, ensembleSize, isGbdt, updProb);
+  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, final int ensembleSize, final boolean isGbdt) {
+    this(factorize, weak, factory, iterationsCount, step, false, ensembleSize, isGbdt);
   }
 
   public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step) {
-    this(factorize, weak, factory, iterationsCount, step, false, 1, false, 1.0);
+    this(factorize, weak, factory, iterationsCount, step, false, 1, false);
   }
 
-  public FMCBoosting(Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, final boolean lazyCursor, final int ensembleSize, final boolean isGbdt, final double updProb) {
+  public FMCBoosting(Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, final boolean lazyCursor, final int ensembleSize, final boolean isGbdt) {
     this.factorize = factorize;
     this.weak = weak;
     this.factory = factory;
@@ -85,7 +84,6 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     this.lazyCursor = lazyCursor;
     this.ensembleSize = ensembleSize;
     this.isGbdt = isGbdt;
-    this.updProb = updProb;
   }
 
   @Override
@@ -113,13 +111,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
       Interval.start();
       for (int i = 0; i < ensembleSize; ++i) {
-        ObliviousTree weakModel;
-
-        if (isBootstrapEnabled) {
-          weakModel = (ObliviousTree) weak.fit(learn, DataTools.bootstrap(globalLoss, rfRnd));
-        } else {
-          weakModel = (ObliviousTree) weak.fit(learn, globalLoss);
-        }
+        final ObliviousTree weakModel = (ObliviousTree) weak.fit(learn, DataTools.bootstrap(globalLoss, rfRnd));
 
         if (bds == null) {
           bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weakModel.grid());
