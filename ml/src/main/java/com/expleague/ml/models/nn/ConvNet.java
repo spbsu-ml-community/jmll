@@ -3,7 +3,6 @@ package com.expleague.ml.models.nn;
 import com.expleague.commons.math.TransC1;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.ThreadLocalArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.generic.Sum;
 import com.expleague.ml.models.nn.layers.*;
@@ -13,14 +12,12 @@ import java.io.*;
 public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
   private final NetworkBuilder<Vec>.Network network;
   private final NeuralSpider<Vec> neuralSpider = new NeuralSpider<>();
-  private final ThreadLocalArrayVec gradCache = new ThreadLocalArrayVec();
-  private Vec weights;
+  private final Vec weights;
   private TransC1 target = new Sum();
 
-  public ConvNet(NetworkBuilder<Vec>.Network network) {
+  public ConvNet(NetworkBuilder<Vec>.Network network, Vec weights) {
     this.network = network;
-    weights = new ArrayVec(network.wdim());
-    network.initWeights(weights);
+    this.weights = weights;
   }
 
   @Override
@@ -63,25 +60,6 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
     }
   }
 
-  public void load(String path) {
-    load(path, (int) network.layers().count());
-  }
-
-  public void load(String path, int numLayers) {
-    final int wDimRead = network.layers()
-        .limit(numLayers)
-        .mapToInt(Layer::wdim).sum();
-
-    try (DataInputStream dos = new DataInputStream(new FileInputStream(path))) {
-      for (int i = 0; i < wDimRead; i++) {
-        weights.set(i, dos.readDouble());
-      }
-    }
-    catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   @Override
   public String toString() {
     return network.toString();
@@ -110,8 +88,8 @@ public class ConvNet extends TransC1.Stub implements NeuralNetwork<Vec, Vec> {
     return network.wdim();
   }
 
-  public void setWeights(Vec weights) {
-    this.weights = weights;
+  void setWeights(Vec weights) {
+    VecTools.assign(this.weights, weights);
   }
 
   public void setTarget(TransC1 target) {

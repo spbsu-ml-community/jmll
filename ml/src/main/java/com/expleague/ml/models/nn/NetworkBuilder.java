@@ -1,6 +1,8 @@
 package com.expleague.ml.models.nn;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.ArraySeqBuilder;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.SeqBuilder;
@@ -10,6 +12,10 @@ import com.expleague.ml.models.nn.layers.*;
 import com.expleague.ml.models.nn.layers.InputLayerBuilder.InputLayer;
 import com.expleague.ml.models.nn.layers.OutputLayerBuilder.OutputLayer;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -153,11 +159,40 @@ public class NetworkBuilder<InType> {
       return NetworkBuilder.this.input();
     }
 
-    void initWeights(Vec weights) {
-      for (Layer layer: layers) {
-        layer.initWeights(weights);
+    Vec initWeights;
+    public void initWeights(Vec weights) {
+      if (initWeights == null) {
+        for (Layer layer : layers) {
+          layer.initWeights(weights);
+        }
+      }
+      else VecTools.assign(weights, initWeights);
+    }
+
+    public void loadInitWeights(Path path) {
+      loadInitWeights(path, (int) layers().count());
+    }
+
+    public void loadInitWeights(Path path, int numLayers) {
+      if (initWeights == null) {
+        final ArrayVec initWeights = new ArrayVec(wdim);
+        initWeights(initWeights);
+        this.initWeights = initWeights;
+      }
+      final int wDimRead = layers()
+          .limit(numLayers)
+          .mapToInt(Layer::wdim).sum();
+
+      try (DataInputStream dos = new DataInputStream(Files.newInputStream(path))) {
+        for (int i = 0; i < wDimRead; i++) {
+          initWeights.set(i, dos.readDouble());
+        }
+      }
+      catch (IOException e) {
+        throw new RuntimeException(e);
       }
     }
+
 
     void setInput(InType input, Vec state) {
       inputLayerBuilder.setInput(input);

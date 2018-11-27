@@ -15,10 +15,10 @@ import org.junit.Test;
 import static junit.framework.TestCase.assertEquals;
 
 public class AlexNetTest {
-  private static final ConvNet alexNet = createNet();
-  private static final ConvNet leNet = createLeNet();
+  private static final NetworkBuilder<Vec>.Network alexNet = createNet();
+  private static final NetworkBuilder<Vec>.Network leNet = createLeNet();
 
-  private static ConvNet createLeNet() {
+  private static NetworkBuilder<Vec>.Network createLeNet() {
     NetworkBuilder<Vec>.Network network =
         new NetworkBuilder<>(new ConstSizeInput3D(28, 28, 1))
             .append(ConvLayerBuilder.create()
@@ -37,11 +37,11 @@ public class AlexNetTest {
 
     System.out.println(network);
 
-    return new ConvNet(network);
+    return network;
   }
 
   @NotNull
-  private static ConvNet createNet() {
+  private static NetworkBuilder<Vec>.Network createNet() {
     NetworkBuilder<Vec>.Network network = new NetworkBuilder<>(
         new ConstSizeInput3D(224, 224, 3))
         .addSeq(
@@ -67,7 +67,9 @@ public class AlexNetTest {
                 .nOut(1000))
         .build(new OneOutLayer());
 
-    return new ConvNet(network);
+    System.out.println(network);
+
+    return network;
   }
 
   public void inceptionTest() {
@@ -91,27 +93,36 @@ public class AlexNetTest {
   public void forwardTest() {
     Vec sample = new ArrayVec(224 * 224 * 3);
     VecTools.fill(sample, 1.);
-    alexNet.apply(sample);
+    final Vec weights = new ArrayVec(alexNet.wdim());
+    alexNet.initWeights(weights);
+    new ConvNet(alexNet, weights).apply(sample);
   }
 
   @Test
   public void forwardLeNetTest() {
     Vec sample = new ArrayVec(28 * 28);
     FastRandom rng = new FastRandom();
+    final Vec weights = new ArrayVec(leNet.wdim());
+    leNet.initWeights(weights);
+    final ConvNet net = new ConvNet(leNet, weights);
     for (int i = 0; i < 30; i++) {
       VecTools.fillUniform(sample, rng);
-      leNet.apply(sample);
+      net.apply(sample);
     }
   }
 
   @Test
   public void backwardLeNetTest() {
-    backwardTest(leNet, 1, 28, 28);
+    final Vec weights = new ArrayVec(leNet.wdim());
+    leNet.initWeights(weights);
+    backwardTest(new ConvNet(leNet, weights), 1, 28, 28);
   }
 
   @Test
   public void backwardAlexNetTest() {
-    backwardTest(alexNet, 3, 224, 224);
+    final Vec weights = new ArrayVec(alexNet.wdim());
+    alexNet.initWeights(weights);
+    backwardTest(new ConvNet(alexNet, weights), 3, 224, 224);
   }
 
   private static final double EPS = 1e-6;
