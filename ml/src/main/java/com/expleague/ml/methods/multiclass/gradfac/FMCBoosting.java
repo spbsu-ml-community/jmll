@@ -13,6 +13,7 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Interval;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
@@ -52,7 +53,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   private final double updProb;
   private BinarizedDataSet bds = null;
   private final FastRandom rfRnd = new FastRandom(13);
-  private final FastRandom gradRnd = new FastRandom(17);
+  // private final FastRandom gradRnd = new FastRandom(17);
 
 
   public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step, final boolean lazyCursor) {
@@ -108,10 +109,17 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       }
 
       final L2 globalLoss = DataTools.newTarget(factory, factorize.first, learn);
+      final boolean isBootstrapEnabled = ensembleSize > 1;
 
       Interval.start();
       for (int i = 0; i < ensembleSize; ++i) {
-        final ObliviousTree weakModel = (ObliviousTree) weak.fit(learn, DataTools.bootstrap(globalLoss, rfRnd));
+        ObliviousTree weakModel;
+
+        if (isBootstrapEnabled) {
+          weakModel = (ObliviousTree) weak.fit(learn, DataTools.bootstrap(globalLoss, rfRnd));
+        } else {
+          weakModel = (ObliviousTree) weak.fit(learn, globalLoss);
+        }
 
         if (bds == null) {
           bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weakModel.grid());
@@ -122,6 +130,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
             factorize.first.adjust(j, -weakModel.value(this.bds, j));
           }
         }
+
+        // System.out.println(String.format("Vector norm: %.3f", VecTools.norm(factorize.first)));
 
         weakModels.add(weakModel);
         ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
@@ -185,6 +195,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     private final List<Func> weakModels;
     private final BlockwiseMLLLogit target;
     private final Vec[] b;
+    private final int[][] leafIndex;
+    private final double[][][] buffer;
 
     private BinarizedDataSet bds;
     private int size = 0;
@@ -196,6 +208,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       this.target = target;
       this.b = b;
       this.bds = bds;
+      this.leafIndex = new int[ensembleSize][learn.length()];
+      this.buffer = new double[ensembleSize][][];
       initCursor();
     }
 
@@ -210,40 +224,63 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       }
     }
 
+    private void updateBuffer() {
+      final int size = weakModels.size();
+      final Vec b = this.b[size - 1];
+      final double step = FMCBoosting.this.step;
+
+      for (int tree = 0; tree < ensembleSize; ++tree) {
+        ObliviousTree weakModel = (ObliviousTree) weakModels.get(size - ensembleSize + tree);
+        List<BFGrid.Feature> features = weakModel.features();
+
+        for (int index = 0; index < learn.length(); ++index) {
+          int leaf = 0;
+          for (int depth = 0; depth < features.size(); depth++) {
+            leaf <<= 1;
+            if (features.get(depth).value(bds.bins(features.get(depth).findex())[index]))
+              leaf++;
+          }
+          leafIndex[tree][index] = leaf;
+        }
+
+        final double[] values = weakModel.values();
+
+        if (buffer[tree] == null) {
+          buffer[tree] = new double[values.length][target.classesCount() - 1];
+        }
+
+        for (int i = 0; i < values.length; ++i) {
+          for (int j = 0; j < target.classesCount() - 1; ++j) {
+            buffer[tree][i][j] = FastMath.exp(-step * b.get(j) * values[i]);
+          }
+        }
+      }
+    }
+
     private void updateCursor() {
       final int size = weakModels.size();
       final int classesCount = target.classesCount();
-      final ObliviousTree weakModel = (ObliviousTree) weakModels.get(size - 1);
 
       if (bds == null) {
-        bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weakModel.grid());
+        bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(((ObliviousTree) weakModels.get(size - 1)).grid());
       }
 
-      final BinarizedDataSet bds = this.bds;
-      final double step = FMCBoosting.this.step;
-
       long timeStart = System.currentTimeMillis();
+      updateBuffer();
+      System.out.println("updateBuffer: " + (System.currentTimeMillis() - timeStart) + " (ms)");
 
+      timeStart = System.currentTimeMillis();
       IntStream.range(0, cursor.rows()).parallel().forEach(i -> {
-        // skip some iterations
-        if (updProb < 1.0 && gradRnd.nextDouble() > updProb) {
-          return;
-        }
-
-        final Vec b = this.b[size - 1];
         final Vec vec = cursor.row(i);
-
         final int pointClass = target.label(i);
-
-        double scale = 0;
-        for (int t = 0; t < ensembleSize; ++t) {
-          scale += ((ObliviousTree) weakModels.get(size - ensembleSize + t)).value(bds, i);
-        }
-        scale *= -step;
 
         double S = 1;
         for (int c = 0; c < classesCount - 1; c++) {
-          final double e = FastMath.exp(b.get(c) * scale);
+          double e = 1;
+          for (int t = 0; t < ensembleSize; ++t) {
+            e *= buffer[t][leafIndex[t][i]][c];
+          }
+
           final double v = vec.get(c);
           if (c == pointClass) {
             S += (v + 1) * (e - 1);
