@@ -58,7 +58,7 @@ public class SAGADescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
     VecTools.fill(L, 1./MathTools.EPSILON);
     final ReadWriteLock xLock = new ReentrantReadWriteLock();
     IntStream.range(0, maxIter).parallel().forEach(idx -> {
-      Vec grad = new ArrayVec(x.dim());
+      Vec grad;
       Vec step = null;
       final int component;
       xLock.readLock().lock();
