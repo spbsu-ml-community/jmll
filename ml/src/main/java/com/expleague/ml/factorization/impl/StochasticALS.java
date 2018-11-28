@@ -91,7 +91,7 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
         }
         VecTools.scale(v, 1 / VecTools.norm(v)); //TODO
       }
-      while (a > 0.2 * gamma * u_hat * u_hat && iteration < maxIterations);
+      while (/*a > 0.2 * gamma * u_hat * u_hat &&*/ iteration < maxIterations);
     }
     Interval.stopAndPrint(iteration + " SALS iterations");
 
