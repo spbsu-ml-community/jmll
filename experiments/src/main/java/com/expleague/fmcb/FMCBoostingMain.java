@@ -129,8 +129,7 @@ public class FMCBoostingMain {
 //    boosting.addListener(multiclassProgressPrinter);
     long startTime = System.currentTimeMillis();
     final Ensemble ensemble = boosting.fit(vecDataSet, target);
-    Interval.setStart(startTime);
-    Interval.stopAndPrint(" training");
+    System.out.println(" training: " + (System.currentTimeMillis() - startTime) + "(ms)");
 
     final Trans joined = ensemble.last() instanceof FuncJoin ? MCTools.joinBoostingResult(ensemble) : ensemble;
 //    final MultiClassModel multiclassModel = new MultiClassModel(joined);

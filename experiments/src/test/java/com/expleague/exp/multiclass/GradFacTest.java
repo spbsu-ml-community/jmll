@@ -233,9 +233,16 @@ public class GradFacTest extends TestCase {
   }
 
   public void testFMCBoostSALS() throws Exception {
+//    final FMCBoosting boosting = new FMCBoosting(
+//            new StochasticALS(new FastRandom(0), 100),
+//            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+//            L2.class,
+//            2500,
+//            5
+//    );
     final FMCBoosting boosting = new FMCBoosting(
             new StochasticALS(new FastRandom(0), 100),
-            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+            new GreedyObliviousTree<>(GridTools.medianGrid(learn.vecData(), 32), 5),
             L2.class,
             2500,
             5
