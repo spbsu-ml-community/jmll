@@ -84,6 +84,13 @@ public class FMCBoostingMain {
             .type(Integer.class)
             .build());
     options.addOption(Option.builder()
+            .longOpt("early_stopping_rounds")
+            .desc("Early stopping rounds")
+            .hasArg()
+            .argName("EARLY_STOPPING_ROUNDS")
+            .type(Integer.class)
+            .build());
+    options.addOption(Option.builder()
             .longOpt("ensemble_size")
             .desc("Ensemble size")
             .hasArg()
@@ -128,12 +135,12 @@ public class FMCBoostingMain {
             .build());
   }
 
-  private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> valid, final Pool<?> test) {
+  private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> valid, final Pool<?> test, final int earlyStoppingRounds) {
     final VecDataSet trainVecDataSet = train.vecData();
     final BlockwiseMLLLogit trainTarget = train.target(BlockwiseMLLLogit.class);
     final VecDataSet validVecDataSet = valid != null ? valid.vecData() : null;
     final BlockwiseMLLLogit validTarget = valid != null ? valid.target(BlockwiseMLLLogit.class) : null;
-    boosting.setValid(validVecDataSet, validTarget);
+    boosting.setEarlyStopping(validVecDataSet, validTarget, earlyStoppingRounds);
 
 //    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(train, test);
 //    boosting.addListener(multiclassProgressPrinter);
@@ -191,6 +198,7 @@ public class FMCBoostingMain {
       final double gamma = Double.parseDouble(cmd.getOptionValue("gamma", "100"));
       final int maxIter = Integer.parseInt(cmd.getOptionValue("max_iter", "2000"));
       final int depth = Integer.parseInt(cmd.getOptionValue("depth", "5"));
+      final int earlyStoppingRounds = Integer.parseInt(cmd.getOptionValue("early_stopping_rounds", "0"));
       final int binFactor = Integer.parseInt(cmd.getOptionValue("n_bins", "32"));
       final String trainPredPath = cmd.getOptionValue("train_pred", null);
       final String testPredPath = cmd.getOptionValue("test_pred", null);
@@ -246,7 +254,7 @@ public class FMCBoostingMain {
                 isGbdt
         );
 
-        ensemble = fit(boosting, train, valid, test);
+        ensemble = fit(boosting, train, valid, test, earlyStoppingRounds);
 
         if (model != null) {
           DataTools.writeModel(ensemble, new FileOutputStream(new File(model)));

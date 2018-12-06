@@ -58,6 +58,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   private BlockwiseMLLLogit validTarget;
   private int bestIterCount = 0;
   private double bestAccuracy;
+  private int earlyStoppingRounds = 0;
 
   public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step, final boolean lazyCursor) {
     this(factorize, weak, SatL2.class, iterationsCount, step, lazyCursor, 1, false);
@@ -171,6 +172,11 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
         Interval.stopAndPrint("Evaluate valid accuracy");
         System.out.println(String.format("Valid accuracy: %.4f", accuracy));
+
+        if (earlyStoppingRounds > 0 && t + 1 - bestIterCount == earlyStoppingRounds) {
+          // Early stopping
+          break;
+        }
       }
 
       /*
@@ -202,9 +208,10 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     return new Ensemble<>(ensamble, -step);
   }
 
-  public void setValid(final VecDataSet valid, final BlockwiseMLLLogit validTarget) {
+  public void setEarlyStopping(final VecDataSet valid, final BlockwiseMLLLogit validTarget, final int earlyStoppingRounds) {
     this.valid = valid;
     this.validTarget = validTarget;
+    this.earlyStoppingRounds = earlyStoppingRounds;
   }
 
   private BiConsumer<Integer, Vec> getLastWeakLearner(final Vec b, final ObliviousTree weakModel, BlockwiseMLLLogit target) {
