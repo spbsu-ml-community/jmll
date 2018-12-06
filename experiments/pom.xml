@@ -18,12 +18,12 @@
         <dependency>
             <groupId>com.expleague</groupId>
             <artifactId>commons</artifactId>
-            <version>1.4.5-SNAPSHOT</version>
+            <version>1.4.5</version>
         </dependency>
         <dependency>
             <groupId>com.expleague</groupId>
             <artifactId>commons</artifactId>
-            <version>1.4.5-SNAPSHOT</version>
+            <version>1.4.5</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>

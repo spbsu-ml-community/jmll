@@ -79,6 +79,9 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
         final double denominator = Math.log(1 + iteration);
         final Vec row = cache != null ? cache.getAnyCached() : X.row(i);
         u_hat = VecTools.multiply(row, v);
+        if (Double.isNaN(u_hat)) {
+          break;
+        }
         a = 0;
         for (int j = 0; j < n; j++) {
           final double val = gamma * (u_hat * (v.get(j) * u_hat - row.get(j))) / denominator;
@@ -88,7 +91,7 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
         }
         VecTools.scale(v, 1 / VecTools.norm(v)); //TODO
       }
-      while (/*a > 0.2 * gamma * u_hat * u_hat && */ iteration < maxIterations);
+      while (/*a > 0.2 * gamma * u_hat * u_hat &&*/ iteration < maxIterations);
     }
     Interval.stopAndPrint(iteration + " SALS iterations");
 
@@ -97,7 +100,8 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
     final Vec u = new ArrayVec(m);
     IntStream.range(0, m).parallel().forEach(i -> {
       final Vec row = cache != null && cache.containsRow(i) ? cache.getRowFromCache(i) : X.row(i);
-      u.set(i, VecTools.multiply(row, v));
+      double u_val = VecTools.multiply(row, v);
+      u.set(i, Double.isNaN(u_val) ? 0 : u_val);
     });
     Interval.stopAndPrint("Decomposition calculation");
 
