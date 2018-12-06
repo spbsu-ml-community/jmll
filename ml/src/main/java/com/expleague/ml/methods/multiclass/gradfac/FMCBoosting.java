@@ -199,7 +199,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     if (valid != null) {
       System.out.println(String.format(String.format("Best iterations count: %d", bestIterCount)));
       System.out.println(String.format(String.format("Best valid accuracy: %.4f", bestAccuracy)));
-      return new Ensemble<>(ensamble.subList(0, bestIterCount), -step);
+      return new Ensemble<>(ensamble.subList(0, ensembleSize * bestIterCount), -step);
     }
 
     return new Ensemble<>(ensamble, -step);
