@@ -109,6 +109,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     }
 
     for (int t = 0; t < iterationsCount; t++) {
+      System.out.println("Iteration " + t);
       final Pair<Vec, Vec> factorize = this.factorize.factorize(cursor);
 
       // TODO: remove extra parameters
@@ -175,6 +176,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
         if (earlyStoppingRounds > 0 && t + 1 - bestIterCount == earlyStoppingRounds) {
           // Early stopping
+          System.out.println("Early stopping!");
           break;
         }
       }
