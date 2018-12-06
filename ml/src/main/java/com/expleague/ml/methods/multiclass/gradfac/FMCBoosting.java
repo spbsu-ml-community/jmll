@@ -11,6 +11,7 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.Seq;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.BFGrid;
@@ -52,8 +53,11 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   private final boolean isGbdt;
   private BinarizedDataSet bds = null;
   private final FastRandom rfRnd = new FastRandom(13);
-  // private final FastRandom gradRnd = new FastRandom(17);
 
+  private VecDataSet valid;
+  private BlockwiseMLLLogit validTarget;
+  private int bestIterCount = 0;
+  private double bestAccuracy;
 
   public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step, final boolean lazyCursor) {
     this(factorize, weak, SatL2.class, iterationsCount, step, lazyCursor, 1, false);
@@ -98,6 +102,11 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       cursor = new RowsVecArrayMx(new GradientCursor(learn, weakModels, B, target, bds));
     }
 
+    VecBasedMx validScore = null;
+    if (valid != null) {
+      validScore = new VecBasedMx(valid.length(), target.classesCount());
+    }
+
     for (int t = 0; t < iterationsCount; t++) {
       final Pair<Vec, Vec> factorize = this.factorize.factorize(cursor);
 
@@ -107,7 +116,6 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       }
 
       final L2 globalLoss = DataTools.newTarget(factory, factorize.first, learn);
-      final boolean isBootstrapEnabled = ensembleSize > 1;
 
       Interval.start();
       for (int i = 0; i < ensembleSize; ++i) {
@@ -124,11 +132,46 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         }
 
         // System.out.println(String.format("Vector norm: %.3f", VecTools.norm(factorize.first)));
-
         weakModels.add(weakModel);
         ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
       }
       Interval.stopAndPrint("Fitting greedy oblivious tree");
+
+      // Update valid score
+      if (valid != null) {
+        Interval.start();
+
+        for (int i = 0; i < ensembleSize; ++i) {
+          final int index = weakModels.size() - ensembleSize + i;
+          final Func weakModel = weakModels.get(index);
+          final Vec b = B[index];
+
+          for (int j = 0; j < valid.length(); ++j) {
+            final double value = weakModel.value(valid.at(j));
+            for (int k = 0; k < factorize.second.dim(); ++k) {
+              validScore.adjust(j, k, -step * value * b.get(k));
+            }
+          }
+        }
+
+        double matches = 0;
+        for (int i = 0; i < valid.length(); ++i) {
+          double[] score = validScore.row(i).toArray();
+          int clazz = ArrayTools.max(score);
+          clazz = score[clazz] > 0 ? clazz : target.classesCount();
+          matches += (clazz == validTarget.label(i) ? 1 : 0);
+        }
+
+        final double accuracy = matches / valid.length();
+
+        if (bestIterCount == 0 || accuracy > bestAccuracy) {
+          bestIterCount = t + 1;
+          bestAccuracy = accuracy;
+        }
+
+        Interval.stopAndPrint("Evaluate valid accuracy");
+        System.out.println(String.format("Valid accuracy: %.4f", accuracy));
+      }
 
       /*
       // Debug calculations
@@ -149,7 +192,19 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
       invoke(new Ensemble<>(ensamble, -step));
     }
+
+    if (valid != null) {
+      System.out.println(String.format(String.format("Best iterations count: %d", bestIterCount)));
+      System.out.println(String.format(String.format("Best valid accuracy: %.4f", bestAccuracy)));
+      return new Ensemble<>(ensamble.subList(0, bestIterCount), -step);
+    }
+
     return new Ensemble<>(ensamble, -step);
+  }
+
+  public void setValid(final VecDataSet valid, final BlockwiseMLLLogit validTarget) {
+    this.valid = valid;
+    this.validTarget = validTarget;
   }
 
   private BiConsumer<Integer, Vec> getLastWeakLearner(final Vec b, final ObliviousTree weakModel, BlockwiseMLLLogit target) {

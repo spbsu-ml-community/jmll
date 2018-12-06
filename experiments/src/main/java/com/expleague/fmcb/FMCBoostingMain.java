@@ -3,7 +3,6 @@ package com.expleague.fmcb;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.random.FastRandom;
-import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.GridTools;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
@@ -33,6 +32,13 @@ public class FMCBoostingMain {
             .desc("Path to the train dataset")
             .hasArg()
             .argName("TRAIN")
+            .type(String.class)
+            .build());
+    options.addOption(Option.builder()
+            .longOpt("valid")
+            .desc("Path to the valid dataset")
+            .hasArg()
+            .argName("VALID")
             .type(String.class)
             .build());
     options.addOption(Option.builder()
@@ -122,15 +128,19 @@ public class FMCBoostingMain {
             .build());
   }
 
-  private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> test) {
-    final VecDataSet vecDataSet = train.vecData();
-    final BlockwiseMLLLogit target = train.target(BlockwiseMLLLogit.class);
+  private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> valid, final Pool<?> test) {
+    final VecDataSet trainVecDataSet = train.vecData();
+    final BlockwiseMLLLogit trainTarget = train.target(BlockwiseMLLLogit.class);
+    final VecDataSet validVecDataSet = valid != null ? valid.vecData() : null;
+    final BlockwiseMLLLogit validTarget = valid != null ? valid.target(BlockwiseMLLLogit.class) : null;
+    boosting.setValid(validVecDataSet, validTarget);
+
 //    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(train, test);
 //    boosting.addListener(multiclassProgressPrinter);
+
     long startTime = System.currentTimeMillis();
-    final Ensemble ensemble = boosting.fit(vecDataSet, target);
-    Interval.setStart(startTime);
-    Interval.stopAndPrint(" training");
+    final Ensemble ensemble = boosting.fit(trainVecDataSet, trainTarget);
+    System.out.println(" training: " + (System.currentTimeMillis() - startTime) + "(ms)");
 
     final Trans joined = ensemble.last() instanceof FuncJoin ? MCTools.joinBoostingResult(ensemble) : ensemble;
 //    final MultiClassModel multiclassModel = new MultiClassModel(joined);
@@ -165,6 +175,7 @@ public class FMCBoostingMain {
 
       final String model = cmd.getOptionValue("model", null);
       final String trainPath = cmd.getOptionValue("train", null);
+      final String validPath = cmd.getOptionValue("valid", null);
       final String testPath = cmd.getOptionValue("test", null);
 
       if (trainPath != null && !cmd.hasOption("n_iter")) {
@@ -193,6 +204,14 @@ public class FMCBoostingMain {
         final InputStream in = trainPath.endsWith("gz") ? new GZIPInputStream(file) : file;
         InputStreamReader trainReader = new InputStreamReader(in);
         train = DataTools.loadFromFeaturesTxt(trainPath, trainReader);
+      }
+
+      Pool<?> valid = null;
+      if (validPath != null) {
+        final FileInputStream file = new FileInputStream(validPath);
+        final InputStream in = trainPath.endsWith("gz") ? new GZIPInputStream(file) : file;
+        InputStreamReader validReader = new InputStreamReader(in);
+        valid = DataTools.loadFromFeaturesTxt(validPath, validReader);
       }
 
       Pool<?> test = null;
@@ -227,7 +246,7 @@ public class FMCBoostingMain {
                 isGbdt
         );
 
-        ensemble = fit(boosting, train, test);
+        ensemble = fit(boosting, train, valid, test);
 
         if (model != null) {
           DataTools.writeModel(ensemble, new FileOutputStream(new File(model)));
