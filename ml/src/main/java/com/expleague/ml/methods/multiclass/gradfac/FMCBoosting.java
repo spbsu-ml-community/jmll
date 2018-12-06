@@ -105,11 +105,11 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
     VecBasedMx validScore = null;
     if (valid != null) {
-      validScore = new VecBasedMx(valid.length(), target.classesCount());
+      validScore = new VecBasedMx(valid.length(), target.classesCount() - 1);
     }
 
     for (int t = 0; t < iterationsCount; t++) {
-      System.out.println("Iteration " + t);
+      System.out.println("Iteration " + (t + 1));
       final Pair<Vec, Vec> factorize = this.factorize.factorize(cursor);
 
       // TODO: remove extra parameters
@@ -144,15 +144,10 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         Interval.start();
 
         for (int i = 0; i < ensembleSize; ++i) {
-          final int index = weakModels.size() - ensembleSize + i;
-          final Func weakModel = weakModels.get(index);
-          final Vec b = B[index];
-
+          final int index = ensamble.size() - ensembleSize + i;
+          final ScaledVectorFunc func = ensamble.get(index);
           for (int j = 0; j < valid.length(); ++j) {
-            final double value = weakModel.value(valid.at(j));
-            for (int k = 0; k < factorize.second.dim(); ++k) {
-              validScore.adjust(j, k, -step * value * b.get(k));
-            }
+            VecTools.append(validScore.row(j), VecTools.scale(func.trans(valid.at(j)), -step));
           }
         }
 
@@ -160,7 +155,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         for (int i = 0; i < valid.length(); ++i) {
           double[] score = validScore.row(i).toArray();
           int clazz = ArrayTools.max(score);
-          clazz = score[clazz] > 0 ? clazz : target.classesCount();
+          clazz = score[clazz] > 0 ? clazz : target.classesCount() - 1;
           matches += (clazz == validTarget.label(i) ? 1 : 0);
         }
 
