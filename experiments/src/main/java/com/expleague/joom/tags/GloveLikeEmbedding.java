@@ -1,6 +1,8 @@
 package com.expleague.joom.tags;
 
+import com.expleague.commons.csv.CsvRow;
 import com.expleague.commons.csv.CsvTools;
+import com.expleague.commons.csv.WritableCsvRow;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
@@ -15,6 +17,9 @@ import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Holder;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Interval;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.linked.TIntLinkedList;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
@@ -28,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
@@ -35,7 +41,8 @@ public class GloveLikeEmbedding {
   private static final int TRAINING_ITERS = 100;
   private static final double TRAINING_STEP_COEFF = 1e-2;
   private static final FastRandom rng = new FastRandom();
-  public static final int DIM = 50;
+  public static final int DIM = 30;
+  public static final int MAX_COUNT = 10;
 
   private double train(Map<int[], TIntIntHashMap> cooccurrences, Mx leftVectors, Mx rightVectors) {
     final Vec biases = new ArrayVec(rightVectors.rows() + leftVectors.rows());
@@ -123,26 +130,31 @@ public class GloveLikeEmbedding {
   }
 
   private double weightingFunc(double x) {
-    return x < 100 ? Math.pow((x / 100), 0.75) : 1;
+    return x < MAX_COUNT ? Math.pow((x / MAX_COUNT), 0.75) : 1;
   }
 
   public static void main(String[] args) throws Exception {
-    final Map<int[], TIntIntHashMap> cooccurrences = new HashMap<>();
+    final Map<int[], TIntArrayList> cooccurrences = new HashMap<>();
     final List<CharSeq> tags = new ArrayList<>();
     final List<CharSeq> subs = new ArrayList<>();
     final TIntIntHashMap tagsFreq = new TIntIntHashMap();
     final TObjectIntHashMap<CharSeq> invTags = new TObjectIntHashMap<>(100000, 0.8f, -1);
     final TObjectIntHashMap<CharSeq> invSubs = new TObjectIntHashMap<>(100000, 0.8f, -1);
 
-
     try (final InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get("/Users/solar/data/joom/searches/search_sessions_tags.csv.gz"))),
         StandardCharsets.UTF_8)) {
       final List<Pair<int[], Long>> currentQuery = new ArrayList<>();
       final Holder<CharSeq> currentUser = new Holder<>();
       final long[] counter = new long[]{0};
-      CsvTools.csvLines(reader, ',', '"', '\\', true).limit(200_000_000).forEach(row -> {
-        if (++counter[0] % 1000000 == 0)
-          System.out.print("\r" + counter[0] + " lines processed");
+      Interval.start();
+      TDoubleArrayList times = new TDoubleArrayList();
+      CsvTools.csvLines(reader, ',', '"', '\\', true).limit(1_000_000_000).forEach(row -> {
+        if (++counter[0] % 1000000 == 0) {
+          times.add(Interval.time());
+          times.sort();
+          System.out.print("\r" + counter[0] + " lines processed for: " + Interval.time() + " median: " + times.get(times.size() / 2));
+          Interval.start();
+        }
         final CharSeq user = row.at("user");
         if (!user.equals(currentUser.getValue())) {
           currentQuery.clear();
@@ -178,8 +190,9 @@ public class GloveLikeEmbedding {
               it.remove();
               continue;
             }
-            final TIntIntHashMap map = cooccurrences.computeIfAbsent(next.first, (key) -> new TIntIntHashMap(1, 0.9f));
-            map.adjustOrPutValue(tagIdx, 1, 1);
+            final TIntArrayList map = cooccurrences.computeIfAbsent(next.first, (key) -> new TIntArrayList(1));
+            map.add(tagIdx);
+            map.trimToSize();
           }
         }
       });
@@ -198,18 +211,22 @@ public class GloveLikeEmbedding {
     tags.clear();
     System.gc();
 
-    for (int[] query : new ArrayList<>(cooccurrences.keySet())) {
-      final TIntIntHashMap substitutedFreqs = new TIntIntHashMap(1, 0.9f);
-      final TIntIntHashMap origFreqs = cooccurrences.get(query);
-      origFreqs.forEachEntry((tag, freq) -> {
-        final int subst = substitution[tag];
-        if (subst > 0)
-          substitutedFreqs.put(subst, freq);
-        return true;
-      });
-      origFreqs.clear();
-      origFreqs.compact();
-      cooccurrences.put(query, substitutedFreqs);
+    final Map<int[], TIntIntHashMap> cooc = new HashMap<>();
+    try (final BufferedWriter writer = Files.newBufferedWriter(Paths.get("/Users/solar/data/joom/searches/cooc.txt"))) {
+      final Supplier<WritableCsvRow> factory = CsvRow.factory("generator", "result");
+      for (int[] query : new ArrayList<>(cooccurrences.keySet())) {
+        final TIntIntHashMap substitutedFreqs = new TIntIntHashMap(1, 0.9f);
+        final TIntArrayList origFreqs = cooccurrences.get(query);
+        origFreqs.forEach((tag) -> {
+          final int subst = substitution[tag];
+          if (subst > 0)
+            substitutedFreqs.adjustOrPutValue(subst, 1, 1);
+          return true;
+        });
+        origFreqs.clear();
+        cooccurrences.remove(query);
+        cooc.put(query, substitutedFreqs);
+      }
     }
 
     final GloveLikeEmbedding embedding = new GloveLikeEmbedding();
@@ -221,7 +238,7 @@ public class GloveLikeEmbedding {
 
     System.out.println("Starting optimization of " + reducedTags.size() + " tags for " + subs.size() + " words");
 
-    embedding.train(cooccurrences, subsVec, tagsVec);
+    embedding.train(cooc, subsVec, tagsVec);
     embedding.saveModel(reducedTags, tagsVec, Paths.get("/Users/solar/data/joom/searches/tags-vec-" + DIM + ".txt"));
     embedding.saveModel(subs, subsVec, Paths.get("/Users/solar/data/joom/searches/subs-vec-" + DIM + ".txt"));
   }
