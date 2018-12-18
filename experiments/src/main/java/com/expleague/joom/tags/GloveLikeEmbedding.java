@@ -2,7 +2,6 @@ package com.expleague.joom.tags;
 
 import com.expleague.commons.csv.CsvRow;
 import com.expleague.commons.csv.CsvTools;
-import com.expleague.commons.csv.WritableCsvRow;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
@@ -18,14 +17,11 @@ import com.expleague.commons.util.Holder;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Interval;
 import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.list.linked.TIntLinkedList;
+import gnu.trove.map.hash.TIntFloatHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,18 +29,19 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
 public class GloveLikeEmbedding {
-  private static final int TRAINING_ITERS = 100;
-  private static final double TRAINING_STEP_COEFF = 1e-2;
+  private static final int TRAINING_ITERS = 50;
+  private static final double TRAINING_STEP_COEFF = 5e-2;
+  private static final double G_DISCOUNT = 1;
   private static final FastRandom rng = new FastRandom();
-  public static final int DIM = 30;
+  public static final int DIM = 50;
   public static final int MAX_COUNT = 10;
+  public static final String WD = ".";
 
-  private double train(Map<int[], TIntIntHashMap> cooccurrences, Mx leftVectors, Mx rightVectors) {
+  private double train(Map<Generator, TIntFloatHashMap> cooccurrences, Mx leftVectors, Mx rightVectors) {
     final Vec biases = new ArrayVec(rightVectors.rows() + leftVectors.rows());
     VecTools.fillUniformPlus(biases, rng, 1e-3);
 
@@ -61,16 +58,16 @@ public class GloveLikeEmbedding {
       Interval.start();
       final double[] scoreArr = new double[]{0, 0, 0};
       cooccurrences.entrySet().parallelStream().forEach(entry -> {
-        final int[] generators = entry.getKey();
-        final TIntIntHashMap freqs = entry.getValue();
+        final Generator generators = entry.getKey();
+        final TIntFloatHashMap freqs = entry.getValue();
         final Vec totalLeft = new ArrayVec(leftVectors.columns());
         final double[] scoreLocal = new double[]{0, 0, 0};
         freqs.forEachEntry((j, X_ij) -> {
           final Vec right = rightVectors.row(j);
-          final double asum = IntStream.of(generators).mapToDouble(i -> VecTools.multiply(leftVectors.row(i), right)).sum();
-          final double bias = IntStream.of(generators).mapToDouble(biases::get).sum() + biases.get(j + leftVectors.rows());
-          final double diff = bias + asum - Math.log(1 + X_ij);
-          final double weight = weightingFunc(1 + X_ij);
+          final double asum = generators.stream().mapToDouble(i -> VecTools.multiply(leftVectors.row(i), right)).sum();
+          final double bias = generators.stream().mapToDouble(biases::get).sum() + biases.get(j + leftVectors.rows());
+          final double diff = bias + asum - Math.log(X_ij);
+          final double weight = weightingFunc(X_ij);
           final double v = weight * diff * diff;
           scoreLocal[0] += v;
           scoreLocal[1] += weight;
@@ -78,31 +75,31 @@ public class GloveLikeEmbedding {
           if (Double.isNaN(v))
             System.out.println();
           VecTools.fill(totalLeft, 0.);
-          IntStream.of(generators).forEach(i -> { // generators update
+          generators.stream().forEach(i -> { // generators update
             final Vec left = leftVectors.row(i);
             VecTools.append(totalLeft, left);
             final Vec softMax = softMaxLeft.row(i);
             IntStream.range(0, left.dim()).forEach(id -> {
-              final double d = TRAINING_STEP_COEFF * weight * diff * right.get(id);
-              left.adjust(id, -d / Math.sqrt(softMax.get(id)));
-              softMax.adjust(id, d * d);
+              final double d = weight * diff * right.get(id);
+              left.adjust(id, - TRAINING_STEP_COEFF * d / Math.sqrt(softMax.get(id)));
+              softMax.set(id, softMax.get(id) * G_DISCOUNT + d * d);
             });
-            final double biasStep = TRAINING_STEP_COEFF * weight * diff;// * biases.get(i);
-            biases.adjust(i, -biasStep / Math.sqrt(softMaxBias.get(i)));
-            softMaxBias.adjust(i, MathTools.sqr(biasStep));
+            final double biasStep = weight * diff;// * biases.get(i);
+            biases.adjust(i, -TRAINING_STEP_COEFF * biasStep / Math.sqrt(softMaxBias.get(i)));
+            softMaxBias.set(i, softMaxBias.get(i) * G_DISCOUNT + MathTools.sqr(biasStep));
           });
 
           { // generated update
             final Vec softMax = softMaxRight.row(j);
             IntStream.range(0, right.dim()).forEach(id -> {
-              final double d = TRAINING_STEP_COEFF * weight * diff * totalLeft.get(id);
-              right.adjust(id, -d / Math.sqrt(softMax.get(id)));
-              softMax.adjust(id, d * d);
+              final double d = weight * diff * totalLeft.get(id);
+              right.adjust(id, -TRAINING_STEP_COEFF * d / Math.sqrt(softMax.get(id)));
+              softMax.set(id, softMax.get(id) * G_DISCOUNT + d * d);
             });
 
-            final double biasStep = TRAINING_STEP_COEFF * weight * diff;// * biases.get(j);
-            biases.adjust(j + leftVectors.rows(), -biasStep / Math.sqrt(softMaxBias.get(j + leftVectors.rows())));
-            softMaxBias.adjust(j + leftVectors.rows(), MathTools.sqr(biasStep));
+            final double biasStep = weight * diff;// * biases.get(j);
+            biases.adjust(j + leftVectors.rows(), -TRAINING_STEP_COEFF * biasStep / Math.sqrt(softMaxBias.get(j + leftVectors.rows())));
+            softMaxBias.set(j + leftVectors.rows(), softMaxBias.get(j + leftVectors.rows()) * G_DISCOUNT + MathTools.sqr(biasStep));
           }
           return true;
         });
@@ -134,21 +131,31 @@ public class GloveLikeEmbedding {
   }
 
   public static void main(String[] args) throws Exception {
-    final Map<int[], TIntArrayList> cooccurrences = new HashMap<>();
+    final Map<Generator, TIntFloatHashMap> cooccurrences = new HashMap<>();
     final List<CharSeq> tags = new ArrayList<>();
     final List<CharSeq> subs = new ArrayList<>();
     final TIntIntHashMap tagsFreq = new TIntIntHashMap();
     final TObjectIntHashMap<CharSeq> invTags = new TObjectIntHashMap<>(100000, 0.8f, -1);
     final TObjectIntHashMap<CharSeq> invSubs = new TObjectIntHashMap<>(100000, 0.8f, -1);
 
-    try (final InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get("/Users/solar/data/joom/searches/search_sessions_tags.csv.gz"))),
+    try (Reader freqRd = Files.newBufferedReader(Paths.get(WD + "/tag-freqs.txt"))) {
+      CsvRow.read(freqRd).forEach(row -> {
+        if (tags.size() >= 200000)
+          return;
+        final CharSeq tag = CharSeq.intern(row.at("tag"));
+        invTags.put(tag, tags.size());
+        tags.add(tag);
+      });
+    }
+
+    try (final InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(WD + "/search_sessions_tags.csv.gz"))),
         StandardCharsets.UTF_8)) {
-      final List<Pair<int[], Long>> currentQuery = new ArrayList<>();
+      final List<Pair<Generator, Long>> currentQuery = new ArrayList<>();
       final Holder<CharSeq> currentUser = new Holder<>();
       final long[] counter = new long[]{0};
       Interval.start();
       TDoubleArrayList times = new TDoubleArrayList();
-      CsvTools.csvLines(reader, ',', '"', '\\', true).limit(1_000_000_000).forEach(row -> {
+      CsvTools.csvLines(reader, ',', '"', '\\', true).forEach(row -> {
         if (++counter[0] % 1000000 == 0) {
           times.add(Interval.time());
           times.sort();
@@ -163,84 +170,78 @@ public class GloveLikeEmbedding {
         final CharSeq query = row.at("query");
         final CharSeq tag = row.at("tag");
         if (query != null) {
-          currentQuery.add(Pair.create(CharSeqTools.split(query, " ", false).map(CharSeqTools::toLowerCase).mapToInt(part -> {
-            int subIdx = invSubs.get(part);
+          currentQuery.add(Pair.create(new Generator(CharSeqTools.split(query, " ", false).map(CharSeqTools::toLowerCase).mapToInt(part -> {
+            final CharSequence trim = CharSeqTools.trim(part);
+            int subIdx = invSubs.get(trim);
             if (subIdx > 0)
               return subIdx;
-            final CharSeq partIntern = CharSeq.intern(part);
+            final CharSeq partIntern = CharSeq.intern(trim);
             invSubs.put(partIntern, subIdx = subs.size());
             subs.add(partIntern);
             return subIdx;
-          }).toArray(), row.asLong("ts")));
+          }).toArray(), subs), row.asLong("ts")));
         }
         else if (tag != null) {
           final long time = row.asLong("ts");
           int tagIdx = invTags.get(tag);
-          if (tagIdx < 0) {
-            final CharSeq tagIntern = CharSeq.intern(tag);
-            invTags.put(tagIntern, tagIdx = tags.size());
-            tags.add(tagIntern);
-          }
+          if (tagIdx < 0)
+            return;
           tagsFreq.adjustOrPutValue(tagIdx, 1, 1);
 
-          final Iterator<Pair<int[], Long>> it = currentQuery.iterator();
+          final Iterator<Pair<Generator, Long>> it = currentQuery.iterator();
           while (it.hasNext()) {
-            Pair<int[], Long> next = it.next();
-            if (TimeUnit.MILLISECONDS.toMinutes(time - next.second) > 30) {
+            Pair<Generator, Long> next = it.next();
+            final long minutes = TimeUnit.MILLISECONDS.toMinutes(time - next.second);
+            if (minutes > 30) {
               it.remove();
               continue;
             }
-            final TIntArrayList map = cooccurrences.computeIfAbsent(next.first, (key) -> new TIntArrayList(1));
-            map.add(tagIdx);
-            map.trimToSize();
+            final TIntFloatHashMap map = cooccurrences.computeIfAbsent(next.first, (key) -> new TIntFloatHashMap(1, 0.9f));
+            map.adjustOrPutValue(tagIdx, 1.f/(1.f + minutes), 1.f/(1.f + minutes));
+//            map.trimToSize();
           }
         }
       });
     }
     System.out.println();
 
-    final List<CharSeq> reducedTags = new ArrayList<>();
-    final int[] substitution = new int[tags.size()];
-    for (int i = 0; i < tags.size(); i++) {
-      if (tagsFreq.get(i) > 50) {
-        substitution[i] = reducedTags.size();
-        reducedTags.add(tags.get(i));
-      }
-      else substitution[i] = -1;
-    }
-    tags.clear();
-    System.gc();
+    try(Writer coocWr = Files.newBufferedWriter(Paths.get(WD + "/cooccurrences.txt"))) {
+      final List<Generator> entries = new ArrayList<>(cooccurrences.keySet());
+      entries.sort(Comparator.comparingInt(e -> -cooccurrences.get(e).size()));
+      for (Generator entry : entries) {
+        coocWr.append('[');
+        for (int i = 0; i < entry.length(); i++) {
+          if (i > 0)
+            coocWr.append(", ");
+          coocWr.append(entry.word(i));
+        }
+        coocWr.append("]: ");
 
-    final Map<int[], TIntIntHashMap> cooc = new HashMap<>();
-    try (final BufferedWriter writer = Files.newBufferedWriter(Paths.get("/Users/solar/data/joom/searches/cooc.txt"))) {
-      final Supplier<WritableCsvRow> factory = CsvRow.factory("generator", "result");
-      for (int[] query : new ArrayList<>(cooccurrences.keySet())) {
-        final TIntIntHashMap substitutedFreqs = new TIntIntHashMap(1, 0.9f);
-        final TIntArrayList origFreqs = cooccurrences.get(query);
-        origFreqs.forEach((tag) -> {
-          final int subst = substitution[tag];
-          if (subst > 0)
-            substitutedFreqs.adjustOrPutValue(subst, 1, 1);
-          return true;
-        });
-        origFreqs.clear();
-        cooccurrences.remove(query);
-        cooc.put(query, substitutedFreqs);
+        final TIntFloatHashMap map = cooccurrences.get(entry);
+        final int[] keys = map.keys();
+        final float[] values = map.values();
+        ArrayTools.parallelSort(values, keys, 0, keys.length);
+        for (int i = 0; i < keys.length; i++) {
+          if (i > 0)
+            coocWr.append(", ");
+          coocWr.append('[').append(tags.get(keys[keys.length - i - 1])).append(']').append('@').append(Float.toString(values[values.length - i - 1]));
+        }
+        coocWr.append('\n');
       }
     }
 
     final GloveLikeEmbedding embedding = new GloveLikeEmbedding();
     Mx subsVec = new VecBasedMx(subs.size(), GloveLikeEmbedding.DIM);
-    Mx tagsVec = new VecBasedMx(reducedTags.size(), GloveLikeEmbedding.DIM);
+    Mx tagsVec = new VecBasedMx(tags.size(), GloveLikeEmbedding.DIM);
 
     VecTools.fillUniformPlus(subsVec, rng, 1e-3);
     VecTools.fillUniformPlus(tagsVec, rng, 1e-3);
 
-    System.out.println("Starting optimization of " + reducedTags.size() + " tags for " + subs.size() + " words");
+    System.out.println("Starting optimization of " + tags.size() + " tags for " + subs.size() + " words");
 
-    embedding.train(cooc, subsVec, tagsVec);
-    embedding.saveModel(reducedTags, tagsVec, Paths.get("/Users/solar/data/joom/searches/tags-vec-" + DIM + ".txt"));
-    embedding.saveModel(subs, subsVec, Paths.get("/Users/solar/data/joom/searches/subs-vec-" + DIM + ".txt"));
+    embedding.train(cooccurrences, subsVec, tagsVec);
+    embedding.saveModel(tags, tagsVec, Paths.get(WD + "/tags-vec-" + DIM + ".txt"));
+    embedding.saveModel(subs, subsVec, Paths.get(WD + "/subs-vec-" + DIM + ".txt"));
   }
 
   private static void visitVariants(CharSeq query, Consumer<CharSeq> variantConsumer) {
@@ -253,6 +254,60 @@ public class GloveLikeEmbedding {
           builder.append(parts[j]);
       }
       variantConsumer.accept(builder.build());
+    }
+  }
+
+  static class Generator{
+    private final int[] words;
+    private final List<CharSeq> subs;
+
+    Generator(int[] words, List<CharSeq> subs) {
+      this.words = words;
+      this.subs = subs;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (!(o instanceof Generator))
+        return false;
+      Generator generator = (Generator) o;
+      return Arrays.equals(words, generator.words);
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(words);
+    }
+
+    public int length() {
+      return words.length;
+    }
+
+    public int get(int i) {
+      return words[i];
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder builder = new StringBuilder();
+      builder.append("[");
+      for (int i = 0; i < words.length; i++) {
+        if (i > 0)
+          builder.append(',');
+        builder.append(subs.get(words[i]));
+      }
+      builder.append(']');
+      return builder.toString();
+    }
+
+    public CharSequence word(int i) {
+      return subs.get(words[i]);
+    }
+
+    public IntStream stream() {
+      return IntStream.of(words);
     }
   }
 }
