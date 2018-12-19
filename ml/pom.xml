@@ -59,7 +59,7 @@
     <dependency>
       <groupId>com.expleague</groupId>
       <artifactId>commons</artifactId>
-      <version>1.4.6</version>
+      <version>1.4.7-SNAPSHOT</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

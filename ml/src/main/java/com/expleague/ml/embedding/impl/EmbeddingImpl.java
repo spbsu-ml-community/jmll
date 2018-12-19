@@ -1,6 +1,5 @@
 package com.expleague.ml.embedding.impl;
 
-import com.expleague.commons.func.types.SerializationRepository;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.ml.data.tools.DataTools;

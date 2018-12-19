@@ -33,12 +33,12 @@ import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
 public class GloveLikeEmbedding {
-  private static final int TRAINING_ITERS = 50;
-  private static final double TRAINING_STEP_COEFF = 5e-2;
+  private static final int TRAINING_ITERS = 25;
+  private static final double TRAINING_STEP_COEFF = 2e-2;
   private static final double G_DISCOUNT = 1;
   private static final FastRandom rng = new FastRandom();
-  public static final int DIM = 50;
-  public static final int MAX_COUNT = 10;
+  public static final int DIM = 100;
+  public static final int MAX_COUNT = 100;
   public static final String WD = ".";
 
   private double train(Map<Generator, TIntFloatHashMap> cooccurrences, Mx leftVectors, Mx rightVectors) {
@@ -140,7 +140,7 @@ public class GloveLikeEmbedding {
 
     try (Reader freqRd = Files.newBufferedReader(Paths.get(WD + "/tag-freqs.txt"))) {
       CsvRow.read(freqRd).forEach(row -> {
-        if (tags.size() >= 200000)
+        if (tags.size() >= 300000)
           return;
         final CharSeq tag = CharSeq.intern(row.at("tag"));
         invTags.put(tag, tags.size());
