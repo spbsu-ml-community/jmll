@@ -28,7 +28,6 @@ import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.ObliviousTree;
-import org.apache.commons.math3.util.FastMath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -302,7 +301,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
         for (int i = 0; i < values.length; ++i) {
           for (int j = 0; j < target.classesCount() - 1; ++j) {
-            buffer[tree][i][j] = FastMath.exp(-step * b.get(j) * values[i]);
+            buffer[tree][i][j] = Math.exp(-step * b.get(j) * values[i]);
           }
         }
       }

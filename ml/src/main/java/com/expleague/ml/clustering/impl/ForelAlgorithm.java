@@ -3,9 +3,9 @@ package com.expleague.ml.clustering.impl;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.ml.clustering.ClusterizationAlgorithm;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.function.Function;
@@ -18,7 +18,6 @@ import static com.expleague.commons.math.vectors.VecTools.scale;
  * Time: 20:32:44
  */
 public class ForelAlgorithm<T> implements ClusterizationAlgorithm<T> {
-  Logger LOG = Logger.create(ForelAlgorithm.class);
   private final double maxDist0;
 
   public ForelAlgorithm(final double maxDist0) {

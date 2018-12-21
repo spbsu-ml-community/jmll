@@ -24,13 +24,8 @@ import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -301,27 +296,21 @@ public class Pool<I extends DSItem> {
 
 
   @Override
-  public boolean equals(final Object obj) {
-    if (obj == this)
+  public boolean equals(Object o) {
+    if (this == o)
       return true;
-    if (obj == null || obj.getClass() != getClass())
+    if (!(o instanceof Pool))
       return false;
-
-    final Pool other = (Pool) obj;
-    return new EqualsBuilder().append(meta, other.meta).
-        append(items, other.items).
-        append(featuresMeta, other.featuresMeta).
-        append(targetsMeta, other.targetsMeta).
-        isEquals();
+    Pool<?> pool = (Pool<?>) o;
+    return meta.equals(pool.meta) && items.equals(pool.items) && Arrays.equals(featuresMeta, pool.featuresMeta) && Arrays.equals(featuresValues, pool.featuresValues) && targetsMeta.equals(pool.targetsMeta) && targetsValues.equals(pool.targetsValues);
   }
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().append(meta).
-        append(items).
-        append(featuresMeta).
-        append(targetsMeta).
-        toHashCode();
+    int result = Objects.hash(meta, items, targetsMeta, targetsValues);
+    result = 31 * result + Arrays.hashCode(featuresMeta);
+    result = 31 * result + Arrays.hashCode(featuresValues);
+    return result;
   }
 
   public PoolFeatureMeta[] features() {

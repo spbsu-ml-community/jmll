@@ -11,7 +11,6 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
 import gnu.trove.iterator.TIntIterator;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * Created by noxoomo on 01/06/15.
@@ -212,7 +211,7 @@ class RVMCache {
         diffs[i] = Double.POSITIVE_INFINITY;
         return Result.Add;
       } else {
-        diffs[i] = FastMath.abs(Math.log(oldAlpha) - Math.log(alpha[i]));
+        diffs[i] = Math.abs(Math.log(oldAlpha) - Math.log(alpha[i]));
         return Result.Updated;
       }
     } else if (theta[i] < 0 && Math.abs(alpha[i]) <= Double.MAX_VALUE) {

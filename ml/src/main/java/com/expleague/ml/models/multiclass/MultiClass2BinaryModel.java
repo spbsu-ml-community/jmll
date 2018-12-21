@@ -4,8 +4,9 @@ import com.expleague.commons.math.Func;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.ml.models.MultiClassModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * User: solar
@@ -14,14 +15,15 @@ import com.expleague.ml.models.MultiClassModel;
  */
 @Deprecated
 public class MultiClass2BinaryModel extends MultiClassModel {
-  public static final Logger LOG = Logger.create(MultiClass2BinaryModel.class);
+  public static final Logger LOG = LoggerFactory.getLogger(MultiClass2BinaryModel.class);
   private final Mx codingMatrix;
   private final Func[] binaryClassifiers;
   private final int dim;
 
   public MultiClass2BinaryModel(final Mx codingMatrix, final Func[] binaryClassifiers) {
     super(createStub(codingMatrix.rows(), binaryClassifiers[0].dim()));
-    LOG.assertTrue(codingMatrix.columns() == binaryClassifiers.length, "Coding matrix columns count must match binary classifiers.");
+    if (codingMatrix.columns() != binaryClassifiers.length)
+      throw new IllegalArgumentException("Coding matrix columns count must match binary classifiers.");
 //    final MxIterator mxIterator = codeMatrix.nonZeroes();
 //    while (mxIterator.advance()) {
 //      LOG.assertTrue(Math.abs(mxIterator.value()) < MathTools.EPSILON

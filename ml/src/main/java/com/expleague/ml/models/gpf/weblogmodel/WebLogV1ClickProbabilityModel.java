@@ -9,7 +9,6 @@ import java.util.List;
 import com.expleague.ml.models.gpf.ClickProbabilityModel;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.ml.models.gpf.Session;
-import org.apache.commons.lang3.NotImplementedException;
 
 /**
  * Created by irlab on 03.10.2014.
@@ -68,11 +67,11 @@ public class WebLogV1ClickProbabilityModel implements ClickProbabilityModel<Bloc
 
   @Override
   public void save(final OutputStream os) throws IOException {
-    throw new NotImplementedException("not implemented");
+    throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
   public void load(final InputStream is) throws IOException {
-    throw new NotImplementedException("not implemented");
+    throw new UnsupportedOperationException("not implemented");
   }
 }

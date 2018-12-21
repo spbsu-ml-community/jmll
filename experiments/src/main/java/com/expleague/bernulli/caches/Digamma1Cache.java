@@ -1,6 +1,6 @@
 package com.expleague.bernulli.caches;
 
-import org.apache.commons.math3.special.Gamma;
+import com.expleague.commons.math.MathTools;
 
 import java.util.Arrays;
 
@@ -48,7 +48,7 @@ public class Digamma1Cache {
         cached[offset] = true;
       } else if (offset == (maxOffset + 1)) {
         cached[offset] = true;
-        values[offset] = Gamma.trigamma(base + offset);
+        values[offset] = MathTools.trigamma(base + offset);
       } else {
         values[offset] = calculate(offset + 1) + 1 / (x * x);
         cached[offset] = true;

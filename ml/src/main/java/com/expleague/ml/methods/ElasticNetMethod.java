@@ -9,7 +9,6 @@ import com.expleague.commons.math.Trans;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.models.ShifftedTrans;
-import org.apache.commons.math3.util.FastMath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +58,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
     final ElasticNetCache cache = new ElasticNetCache(data, target, alpha, lambda);
     double lambdaMax = Double.NEGATIVE_INFINITY;
     for (int i=0; i < data.columns();++i) {
-      lambdaMax = FastMath.max(FastMath.abs(cache.targetProduct(i)), lambdaMax);
+      lambdaMax = Math.max(Math.abs(cache.targetProduct(i)), lambdaMax);
     }
     lambdaMax *= 1.0  / (alpha *  data.rows());
     double lambdaMin = 0.0; //lambdaMax * lambdaEps;

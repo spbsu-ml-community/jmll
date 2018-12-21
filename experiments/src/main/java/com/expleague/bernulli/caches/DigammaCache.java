@@ -1,7 +1,6 @@
 package com.expleague.bernulli.caches;
 
-import org.apache.commons.math3.special.Gamma;
-import org.apache.commons.math3.util.FastMath;
+import com.expleague.commons.math.MathTools;
 
 import java.util.Arrays;
 
@@ -38,7 +37,7 @@ public class DigammaCache {
       if (x > 0 && x <= S_LIMIT) {
         // use method 5 from Bernardo AS103
         // accurate to O(x)
-        values[offset] = -Gamma.GAMMA - 1 / x;
+        values[offset] = -MathTools.GAMMA - 1 / x;
         cached[offset] = true;
       } else if (x >= C_LIMIT) {
         // use method 4 (accurate to O(1/x^8)
@@ -46,11 +45,11 @@ public class DigammaCache {
         //            1       1        1         1
         // log(x) -  --- - ------ + ------- - -------
         //           2 x   12 x^2   120 x^4   252 x^6
-        values[offset] = FastMath.log(x) - 0.5 / x - inv * ((1.0 / 12) + inv * (1.0 / 120 - inv / 252));
+        values[offset] = Math.log(x) - 0.5 / x - inv * ((1.0 / 12) + inv * (1.0 / 120 - inv / 252));
         cached[offset] = true;
       } else if (offset == (maxOffset + 1)) {
         cached[offset] = true;
-        values[offset] = Gamma.digamma(base + offset);
+        values[offset] = MathTools.digamma(base + offset);
       } else {
         values[offset] = calculate(offset + 1) - 1.0 / x;
         cached[offset] = true;

@@ -5,7 +5,6 @@ import com.expleague.commons.csv.CsvTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.expedia.features.CTRBuilder;
 import com.expleague.expedia.utils.CheckPoint;
 import com.expleague.ml.data.tools.Pool;
@@ -14,7 +13,8 @@ import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.meta.impl.JsonDataSetMeta;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
-import com.expleague.ml.meta.impl.JsonTargetMeta;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 
 public class ExpediaPoolBuilder {
   private static final int DUMP_STEP = 100_000;
-  private static final Logger LOG = Logger.create(ExpediaPoolBuilder.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ExpediaPoolBuilder.class);
 
   private static final String[] COLUMNS = new String[]{
           "date_time",

@@ -4,11 +4,12 @@ import com.expleague.commons.func.types.TypeConverter;
 import com.expleague.commons.math.io.Mx2CharSequenceConversionPack;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.util.ArrayTools;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.ml.methods.multiclass.spoc.AbstractCodingMatrixLearning;
 import com.expleague.ml.methods.multiclass.spoc.CMLHelper;
 import com.expleague.ml.methods.multiclass.spoc.impl.CodingMatrixLearning;
 import org.apache.commons.cli.MissingArgumentException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,6 +25,8 @@ import java.util.concurrent.TimeUnit;
  * Date: 22.05.14
  */
 public class SearchAvaliableMxMath {
+  private static final Logger log = LoggerFactory.getLogger(SearchAvaliableMxMath.class);
+
   public static void main(String[] args) throws Exception {
     if (args.length < 1) {
       throw new MissingArgumentException("Enter the path to mx S");
@@ -38,13 +41,11 @@ public class SearchAvaliableMxMath {
   }
 
   public static void findParameters(final Mx S, final int l, Double[] steps) throws Exception{
-    final Logger logger = Logger.create(SearchAvaliableMxMath.class);
-
     final int k = S.rows();
 //    final CodingMatrixLearning codingMatrixLearning = new CodingMatrixLearning(k, l, 0.5);
 
     final int units = Runtime.getRuntime().availableProcessors() - 2;
-    logger.info("Units: " + units);
+    log.info("Units: " + units);
     final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(units, units, 30, TimeUnit.MINUTES, new LinkedBlockingDeque<>());
     for (double step : steps) {
       final double stepCopy = step;
@@ -56,13 +57,13 @@ public class SearchAvaliableMxMath {
               final AbstractCodingMatrixLearning cml = new CodingMatrixLearning(k, l, 0.5, lambdaCCopy, lambdaR, lambda1);
               final Mx matrixB = cml.trainCodingMatrix(S);
               if (CMLHelper.checkConstraints(matrixB)) {
-                synchronized (logger) {
-                  logger.info(stepCopy + " " + lambdaCCopy + " " + lambdaR + " " + lambda1 + "\n" + matrixB.toString() + "\n");
+                synchronized (log) {
+                  log.info(stepCopy + " " + lambdaCCopy + " " + lambdaR + " " + lambda1 + "\n" + matrixB.toString() + "\n");
                 }
               }
             }
           }
-          logger.info("step" + stepCopy + " is finished");
+          log.info("step" + stepCopy + " is finished");
         });
       }
     }
