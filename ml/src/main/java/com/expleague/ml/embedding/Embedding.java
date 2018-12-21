@@ -6,6 +6,7 @@ import com.expleague.ml.embedding.decomp.DecompBuilder;
 import com.expleague.ml.embedding.glove.GloVeBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import org.jetbrains.annotations.Nullable;
+import sun.security.krb5.internal.SeqNumber;
 
 import java.io.Writer;
 import java.nio.file.Path;
@@ -22,6 +23,8 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
     Builder<T> file(Path path);
     Builder<T> minWordCount(int count);
     Builder<T> window(WindowType type, int left, int right);
+    Builder<T> iterations(int count);
+    Builder<T> step(double step);
 
     Embedding<T> build();
   }

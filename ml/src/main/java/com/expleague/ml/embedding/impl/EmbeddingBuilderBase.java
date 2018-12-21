@@ -83,6 +83,18 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     return this;
   }
 
+  @Override
+  public Embedding.Builder<CharSeq> step(double step) {
+    this.step = step;
+    return this;
+  }
+
+  @Override
+  public Embedding.Builder<CharSeq> iterations(int count) {
+    iterations = count;
+    return this;
+  }
+
   @Nullable
   private Reader readExisting(Path path) throws IOException {
     if (Files.exists(path))
