@@ -255,6 +255,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
       catch (IOException ioe) {
         log.warn("Unable to write dictionary to " + coocOut, ioe);
       }
+      coocReady = true;
     }
   }
 
@@ -365,7 +366,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
           wordsList.add(it.key());
         }
       }
-      coocReady = true;
+      dictReady = true;
     }
   }
 
