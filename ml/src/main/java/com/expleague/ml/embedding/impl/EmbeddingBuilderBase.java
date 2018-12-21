@@ -2,7 +2,6 @@ package com.expleague.ml.embedding.impl;
 
 import com.expleague.commons.csv.CsvRow;
 import com.expleague.commons.csv.WritableCsvRow;
-import com.expleague.commons.func.Functions;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
@@ -54,6 +53,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   private int minCount = 5;
   private int windowLeft = 15;
   private int windowRight = 15;
+  private Embedding.WindowType windowType = Embedding.WindowType.LINEAR;
   private int iterations = 25;
   private double step = 0.01;
 
@@ -76,14 +76,10 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   }
 
   @Override
-  public Embedding.Builder<CharSeq> leftWindow(int wnd) {
-    this.windowLeft = wnd;
-    return this;
-  }
-
-  @Override
-  public Embedding.Builder<CharSeq> rightWindow(int wnd) {
-    this.windowRight = wnd;
+  public Embedding.Builder<CharSeq> window(Embedding.WindowType type, int left, int right) {
+    this.windowLeft = left;
+    this.windowRight = right;
+    this.windowType = type;
     return this;
   }
 
@@ -141,7 +137,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
 
   private void acquireCooccurrences() throws IOException {
     cooc = new SparseMx(wordsList.size(), wordsList.size());
-    final Path coocPath = Paths.get(this.path.getParent().toString(), strip(this.path.getFileName()) + ".cooc-" + windowLeft + "-" + windowRight + "-" + minCount);
+    final Path coocPath = Paths.get(this.path.getParent().toString(), strip(this.path.getFileName()) + "." + windowType.name().toLowerCase() + "-" + windowLeft + "-" + windowRight + "-" + minCount + ".cooc");
     try {
       Reader coocReader = readExisting(coocPath);
       if (coocReader != null) {
@@ -276,7 +272,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
         }
         prev = a;
       }
-      row.adjust(unpackB(next), 1. / (unpackFreq(next)));
+      row.adjust(unpackB(next), windowType.weight(unpackDist(next)));
       last = !last && !iterator.hasNext();
     }
   }
@@ -289,7 +285,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     return ((int)(next >>> 8)) & 0x0FFFFFFF;
   }
 
-  private int unpackFreq(long next) {
+  private int unpackDist(long next) {
     return (int)(0xFF & next);
   }
 
@@ -363,7 +359,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
 
   protected Stream<CharSeq> source() throws IOException {
     if (path.getFileName().toString().endsWith(".gz"))
-      return CharSeqTools.lines(new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(path.toString() + ".gz"))), StandardCharsets.UTF_8));
+      return CharSeqTools.lines(new InputStreamReader(new GZIPInputStream(Files.newInputStream(path)), StandardCharsets.UTF_8));
     return CharSeqTools.lines(Files.newBufferedReader(path));
   }
 

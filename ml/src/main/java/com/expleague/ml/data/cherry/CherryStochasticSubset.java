@@ -6,7 +6,6 @@ import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.impl.RankedDataSet;
-import org.apache.commons.math3.util.FastMath;
 
 import java.util.Arrays;
 
@@ -54,8 +53,8 @@ public class CherryStochasticSubset implements CherryPointsHolder {
     inside = factory.create();
     {
       for (int i = 0; i < weights.length; ++i) {
-        logInside[i] += Math.log(1 - FastMath.exp(currentLogOutside[i]));
-        weights[i] = FastMath.exp(logInside[i]);
+        logInside[i] += Math.log(1 - Math.exp(currentLogOutside[i]));
+        weights[i] = Math.exp(logInside[i]);
         currentLogOutside[i] = 0;
       }
     }
@@ -64,7 +63,7 @@ public class CherryStochasticSubset implements CherryPointsHolder {
 
   private void calcWeights() {
     for (int i = 0; i < weights.length; ++i) {
-      weights[i]  = 1-FastMath.exp(logInside[i]) * (1 - FastMath.exp(currentLogOutside[i]));
+      weights[i]  = 1-Math.exp(logInside[i]) * (1 - Math.exp(currentLogOutside[i]));
     }
   }
 
@@ -81,11 +80,11 @@ public class CherryStochasticSubset implements CherryPointsHolder {
   final double beta =   10;
 
   private double leftProb(double rk, double border)  {
-    return FastMath.exp(FastMath.min(alpha * (rk - border- beta) , 0));
+    return Math.exp(Math.min(alpha * (rk - border- beta) , 0));
   }
 
   private double rightProb(double rk, double border) {
-    return FastMath.exp(FastMath.min(alpha * (border - rk- beta) , 0));
+    return Math.exp(Math.min(alpha * (border - rk- beta) , 0));
   }
 
 

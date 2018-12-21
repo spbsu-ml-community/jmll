@@ -4,7 +4,6 @@ import com.expleague.commons.func.Factory;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.factorization.Factorization;
 import com.expleague.ml.factorization.impl.ALS;
-import com.expleague.ml.factorization.impl.SVDAdapterEjml;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacBootstrapMulticlass;
@@ -56,7 +55,7 @@ public class MultiClassSplitGradFacBootstrapBuilder implements Factory<GradFacBo
     if (method.equals("als")) {
       factorization = new ALS(alsIters, alsLambda);
     } else {
-      factorization = new SVDAdapterEjml();
+      throw new UnsupportedOperationException();
     }
     return new GradFacBootstrapMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);
   }}

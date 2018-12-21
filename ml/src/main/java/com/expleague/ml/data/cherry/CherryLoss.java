@@ -2,7 +2,6 @@ package com.expleague.ml.data.cherry;
 
 import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.ml.BFGrid;
-import com.expleague.ml.impl.BFRowImpl;
 
 /**
  * User: noxoomo

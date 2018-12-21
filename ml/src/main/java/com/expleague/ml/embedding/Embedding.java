@@ -7,10 +7,12 @@ import com.expleague.ml.embedding.glove.GloVeBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedWriter;
 import java.io.Writer;
 import java.nio.file.Path;
 import java.util.function.Function;
+import java.util.function.IntToDoubleFunction;
+
+import static java.lang.Math.exp;
 
 public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
   @Nullable
@@ -19,8 +21,7 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
   interface Builder<T> {
     Builder<T> file(Path path);
     Builder<T> minWordCount(int count);
-    Builder<T> leftWindow(int wnd);
-    Builder<T> rightWindow(int wnd);
+    Builder<T> window(WindowType type, int left, int right);
 
     Embedding<T> build();
   }
@@ -34,6 +35,22 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
 
     Type(Class<? extends Builder> builderClass) {
       this.builderClass = builderClass;
+    }
+  }
+
+  enum WindowType {
+    LINEAR(d -> 1./d),
+    FIXED(d -> 1.),
+    EXP(d -> exp(-1e-1 * d)),
+    ;
+    private final IntToDoubleFunction weight;
+
+    WindowType(IntToDoubleFunction weight) {
+      this.weight = weight;
+    }
+
+    public double weight(int dist) {
+      return weight.applyAsDouble(dist);
     }
   }
 

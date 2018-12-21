@@ -5,6 +5,7 @@ import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.decomp.DecompBuilder;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -13,10 +14,13 @@ public class BuildEmbedding {
     DecompBuilder builder = (DecompBuilder)Embedding.builder(Embedding.Type.DECOMP);
     String file = args[0];
     final Embedding result = builder
-        .dimSym(150)
-        .dimSkew(20)
+        .dimSym(100)
+        .dimSkew(10)
+        .window(Embedding.WindowType.FIXED, 3, 5)
         .file(Paths.get(file))
         .build();
-    Embedding.write(result, Files.newBufferedWriter(Paths.get(StreamTools.stripExtension(file) + ".decomp")));
+    try (Writer to = Files.newBufferedWriter(Paths.get(StreamTools.stripExtension(file) + ".decomp"))) {
+      Embedding.write(result, to);
+    }
   }
 }

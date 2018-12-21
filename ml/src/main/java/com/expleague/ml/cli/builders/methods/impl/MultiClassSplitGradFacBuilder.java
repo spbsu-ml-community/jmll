@@ -5,7 +5,6 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.factorization.Factorization;
 import com.expleague.ml.factorization.impl.ALS;
 import com.expleague.ml.factorization.impl.ElasticNetFactorization;
-import com.expleague.ml.factorization.impl.SVDAdapterEjml;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlass;
 import com.expleague.ml.methods.multiclass.gradfac.MultiClassColumnBootstrapOptimization;
@@ -76,8 +75,7 @@ public class MultiClassSplitGradFacBuilder implements Factory<VecOptimization> {
         factorization = new ElasticNetFactorization(iters, 1e-2, alpha, lambda);
         break;
       default:
-        factorization = new SVDAdapterEjml();
-        break;
+        throw new UnsupportedOperationException();
     }
 
     final GradFacMulticlass gradFacMulticlass = new GradFacMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);

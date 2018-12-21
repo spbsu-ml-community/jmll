@@ -9,7 +9,6 @@ import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.factorization.impl.ElasticNetFactorization;
-import com.expleague.ml.factorization.impl.SVDAdapterEjml;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
 import com.expleague.ml.loss.L2;
@@ -53,27 +52,6 @@ public class DiplomaGradFacTest extends TestCase{
         LogL2.class
     );
     fitModel(learner, 400, 0.3);
-  }
-
-  public void testGradFacBaseline() throws Exception {
-    final GradFacMulticlass learner = new GradFacMulticlass(
-        new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-        new SVDAdapterEjml(1),
-        LogL2.class
-    );
-    fitModel(learner, 400, 7.);
-  }
-
-  public void testGradFacColumnsBootstrap() throws Exception {
-    final MultiClassColumnBootstrapOptimization learner = new MultiClassColumnBootstrapOptimization(
-        new GradFacMulticlass(
-            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-            new SVDAdapterEjml(1),
-            LogL2.class
-        ), new FastRandom(100500),
-        1.
-    );
-    fitModel(learner, 7500, 1.5);
   }
 
   public void testGradFacElasticNet() throws Exception {
