@@ -313,7 +313,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
       if (dictReader != null) {
         log.info("Reading existing dictionary");
         try (Stream<CsvRow> dictStream = CsvRow.read(dictReader)) {
-          dictStream.filter(row -> row.asInt("freq") > minCount).map(row -> CharSeq.intern(row.at("word"))).forEach(word -> {
+          dictStream.filter(row -> row.asInt("freq") >= minCount).map(row -> CharSeq.intern(row.at("word"))).forEach(word -> {
             wordsIndex.put(word, wordsList.size());
             wordsList.add(word);
           });
@@ -349,7 +349,6 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
       try (Writer dictWriter = new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(dictOut)))) {
         log.info("Writing dictionary to: " + dictOut);
         dictWriter.append(factory.get().names().toString()).append('\n');
-        dictWriter.append(Integer.toString(wordsList.size()));
         wordsCount.forEachEntry((word, freq) -> {
           factory.get().set("word", word).set("freq", freq).writeln(dictWriter);
           return true;
