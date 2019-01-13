@@ -2,10 +2,11 @@ package com.expleague.ml.optimization.impl;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.FuncConvex;
 import com.expleague.ml.optimization.Optimize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,7 +16,7 @@ import com.expleague.ml.optimization.Optimize;
  * Idea please stop making my code yellow
  */
 public class FlexStepDescent implements Optimize<FuncConvex> {
-    private static final Logger LOG = Logger.create(FlexStepDescent.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FlexStepDescent.class);
     private final Vec x0;
     private final double eps;
 

@@ -12,11 +12,10 @@ import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.meta.*;
 import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
 import com.expleague.ml.meta.items.FakeItem;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Objects;
 import java.util.function.IntFunction;
 
 /**
@@ -72,22 +71,20 @@ public class FakePool<T extends FakeItem> extends Pool<T> {
   }
 
   @Override
-  public boolean equals(final Object obj) {
-    if (obj == this)
+  public boolean equals(Object o) {
+    if (this == o)
       return true;
-    if (obj == null || obj.getClass() != getClass())
+    if (!(o instanceof FakePool))
       return false;
-
-    final FakePool other = (FakePool) obj;
-    return new EqualsBuilder()
-        .appendSuper(super.equals(obj))
-        .append(data, other.data)
-        .isEquals();
+    if (!super.equals(o))
+      return false;
+    FakePool<?> fakePool = (FakePool<?>) o;
+    return data.equals(fakePool.data);
   }
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().appendSuper(super.hashCode()).append(data).toHashCode();
+    return Objects.hash(super.hashCode(), data);
   }
 
   private static class FakeFeatureMeta implements PoolFeatureMeta {

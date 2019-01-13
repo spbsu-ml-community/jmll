@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * User: irlab

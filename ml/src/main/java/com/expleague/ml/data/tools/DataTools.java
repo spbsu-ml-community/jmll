@@ -17,7 +17,6 @@ import com.expleague.commons.seq.*;
 import com.expleague.commons.system.RuntimeUtils;
 import com.expleague.commons.text.StringUtils;
 import com.expleague.commons.util.JSONTools;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.ml.impl.BFGridConstructor;
 import com.expleague.ml.impl.BFGridImpl;
 import com.expleague.ml.CompositeTrans;
@@ -69,7 +68,8 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
-import org.apache.commons.lang3.mutable.MutableInt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.text.DecimalFormat;
@@ -87,7 +87,7 @@ import java.util.zip.GZIPInputStream;
  */
 @SuppressWarnings("unused")
 public class DataTools {
-  public static Logger log = Logger.create(DataTools.class);
+  public static Logger log = LoggerFactory.getLogger(DataTools.class);
 
   public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
       new TypeConvertersCollection(MathTools.CONVERSION, DataTools.class, "com.expleague.ml.io"), CharSequence.class);
@@ -641,7 +641,7 @@ public class DataTools {
   }
 
   public static Pool<FakeItem> loadFromLibSvmFormat(final Reader in) throws IOException {
-    final MutableInt poolFeaturesCount = new MutableInt(-1);
+    final int[] poolFeaturesCount = new int[]{-1};
 
     final VecBuilder targetBuilder = new VecBuilder();
     final List<Pair<TIntList, TDoubleList>> features = new ArrayList<>();
@@ -670,8 +670,8 @@ public class DataTools {
           rowIndices.add(index);
           rowValues.add(value);
 
-          if (poolFeaturesCount.intValue() < index + 1) {
-            poolFeaturesCount.setValue(index + 1);
+          if (poolFeaturesCount[0] < index + 1) {
+            poolFeaturesCount[0] = index + 1;
           }
         }
         features.add(Pair.create(rowIndices, rowValues));
@@ -681,7 +681,7 @@ public class DataTools {
 
     final MxBuilder mxBuilder = new MxByRowsBuilder();
     for (Pair<TIntList, TDoubleList> pair : features) {
-      mxBuilder.add(new SparseVec(poolFeaturesCount.intValue(), pair.getFirst().toArray(), pair.getSecond().toArray()));
+      mxBuilder.add(new SparseVec(poolFeaturesCount[0], pair.getFirst().toArray(), pair.getSecond().toArray()));
     }
     final Mx dataMx = mxBuilder.build();
 

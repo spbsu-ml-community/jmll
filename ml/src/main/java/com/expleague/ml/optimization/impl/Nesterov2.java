@@ -2,10 +2,11 @@ package com.expleague.ml.optimization.impl;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.FuncConvex;
 import com.expleague.ml.optimization.Optimize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * User: qde
@@ -14,7 +15,7 @@ import com.expleague.ml.optimization.Optimize;
  */
 
 public class Nesterov2 implements Optimize<FuncConvex> {
-  private static final Logger LOG = Logger.create(Nesterov2.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Nesterov2.class);
   private final Vec x0;
   private final double eps;
 
@@ -74,7 +75,7 @@ public class Nesterov2 implements Optimize<FuncConvex> {
       iter++;
     }
 
-    LOG.message("N2 iterations = " + iter);
+    LOG.info("N2 iterations = " + iter);
     return x2;
   }
 

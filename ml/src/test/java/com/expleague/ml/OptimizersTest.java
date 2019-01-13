@@ -1,9 +1,7 @@
 package com.expleague.ml;
 
-import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -18,6 +16,8 @@ import com.expleague.ml.optimization.impl.GradientDescent;
 import com.expleague.ml.optimization.impl.Nesterov1;
 import com.expleague.ml.optimization.impl.Nesterov2;
 import junit.framework.TestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,11 +32,12 @@ import static com.expleague.commons.math.vectors.VecTools.distance;
  */
 
 public class OptimizersTest extends TestCase {
+    private static final Logger LOG = LoggerFactory.getLogger(OptimizersTest.class);
+
     private static final double EPS = 1e-6;
     private static final int N = 6;
     private static final int TESTS_COUNT = 15;
 
-    private static final Logger LOG = Logger.create(OptimizersTest.class);
 
     public void testAllMethodsRandom() {
         final Vec x0 = new ArrayVec(N);
@@ -120,7 +121,7 @@ public class OptimizersTest extends TestCase {
         final Vec expected = func.getExactExtremum();
         final Vec actual = nesterov2.optimize(func);
 
-        LOG.message("|X| = " + VecTools.norm(actual));
+        LOG.info("|X| = " + VecTools.norm(actual));
         assertTrue(VecTools.distance(expected, actual) < EPS);
     }
 

@@ -6,7 +6,6 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.func.generic.Sum;
 import com.expleague.ml.models.nn.layers.*;
-import javafx.beans.binding.DoubleExpression;
 import org.junit.Test;
 
 import java.util.function.Consumer;

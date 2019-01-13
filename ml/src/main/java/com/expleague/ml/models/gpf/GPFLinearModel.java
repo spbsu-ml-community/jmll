@@ -7,7 +7,6 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import gnu.trove.list.array.TIntArrayList;
-import org.apache.commons.lang3.NotImplementedException;
 
 
 import java.io.IOException;
@@ -469,11 +468,11 @@ public class GPFLinearModel extends GPFModel.Stub<BlockV1> implements GPFModel<B
 
   @Override
   public void save(final OutputStream os) throws IOException {
-    throw new NotImplementedException("not implemented");
+    throw new UnsupportedOperationException("not implemented");
   }
 
   @Override
   public void load(final InputStream is) throws IOException {
-    throw new NotImplementedException("not implemented");
+    throw new UnsupportedOperationException("not implemented");
   }
 }

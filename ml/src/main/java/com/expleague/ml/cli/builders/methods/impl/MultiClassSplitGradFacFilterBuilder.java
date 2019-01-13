@@ -5,7 +5,6 @@ import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.factorization.Factorization;
 import com.expleague.ml.factorization.impl.ALS;
 import com.expleague.ml.factorization.impl.ElasticNetFactorization;
-import com.expleague.ml.factorization.impl.SVDAdapterEjml;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacFilterMulticlass;
@@ -65,8 +64,7 @@ public class MultiClassSplitGradFacFilterBuilder implements Factory<GradFacFilte
         factorization = new ElasticNetFactorization(iters, 1e-4, alpha, lambda);
         break;
       default:
-        factorization = new SVDAdapterEjml();
-        break;
+        throw new UnsupportedOperationException();
     }
 
     return new GradFacFilterMulticlass(weak, factorization, (Class<? extends L2>) DataTools.targetByName(localName), printErr);

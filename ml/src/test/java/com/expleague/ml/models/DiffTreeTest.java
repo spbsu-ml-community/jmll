@@ -19,9 +19,6 @@ import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.optimization.FuncConvex;
 import com.expleague.ml.optimization.impl.GradientDescent;
-import com.xeiam.xchart.Chart;
-import com.xeiam.xchart.QuickChart;
-import com.xeiam.xchart.SwingWrapper;
 import org.junit.Test;
 
 import java.util.function.Consumer;
@@ -83,9 +80,6 @@ public class DiffTreeTest {
     for (int i = 0; i < x.length; i++) {
       result[i] = ensemble.trans(new SingleValueVec(x[i])).get(0);
     }
-
-    Chart chart = QuickChart.getChart("Sample Chart", "X", "Y", "y(x)", x, result);
-    new SwingWrapper(chart).displayChart();
 
     final GradientDescent optimizer = new GradientDescent(new ArrayVec(0.1), 1e-3);
     double xo = optimizer.optimize(new FuncConvex.Stub() {

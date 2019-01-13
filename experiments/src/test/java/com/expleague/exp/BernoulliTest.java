@@ -18,14 +18,13 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ThreadTools;
 import junit.framework.TestCase;
-import org.apache.commons.math3.special.Gamma;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.expleague.bernulli.betaBinomialMixture.BetaBinomialMixtureEM.Type;
-import static com.expleague.commons.math.MathTools.sqr;
+import static com.expleague.commons.math.MathTools.*;
 import static com.expleague.commons.math.vectors.VecTools.*;
 
 /**
@@ -227,9 +226,9 @@ public class BernoulliTest extends TestCase {
     assertTrue(Math.abs(prop.calculate(10, 10) - 0.0909091) < 1e-7);
 
     for (int i = 0; i < 10; ++i) {
-      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - Gamma.digamma(1 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - Gamma.digamma(1 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - Gamma.digamma(2 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - digamma(1 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - digamma(1 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - digamma(2 + i)) < 1e-12);
     }
 
     prop.update(102.5, 10.11);
@@ -238,15 +237,15 @@ public class BernoulliTest extends TestCase {
     assertTrue(Math.abs(prop.calculate(8, 10) - 0.00369375) < 1e-8);
 
     for (int i = 0; i < 10; ++i) {
-      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - Gamma.digamma(102.5 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - Gamma.digamma(10.11 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - Gamma.digamma(102.5 + 10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - digamma(102.5 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - digamma(10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - digamma(102.5 + 10.11 + i)) < 1e-12);
     }
 
     for (int i = 0; i < 10; ++i) {
-      assertTrue(Math.abs(prop.digamma1(Type.Alpha, i) - Gamma.trigamma(102.5 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma1(Type.Beta, i) - Gamma.trigamma(10.11 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma1(Type.AlphaBeta, i) - Gamma.trigamma(102.5 + 10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma1(Type.Alpha, i) - trigamma(102.5 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma1(Type.Beta, i) - trigamma(10.11 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma1(Type.AlphaBeta, i) - trigamma(102.5 + 10.11 + i)) < 1e-12);
     }
 
     prop = new BetaBinomialMixtureEM.SpecialFunctionCache(12.2, 55.1, 100);
@@ -258,9 +257,9 @@ public class BernoulliTest extends TestCase {
 
 
     for (int i = 0; i < 100; ++i) {
-      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - Gamma.digamma(12.2 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - Gamma.digamma(55.1 + i)) < 1e-12);
-      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - Gamma.digamma(12.2 + 55.1 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Alpha, i) - digamma(12.2 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.Beta, i) - digamma(55.1 + i)) < 1e-12);
+      assertTrue(Math.abs(prop.digamma(Type.AlphaBeta, i) - digamma(12.2 + 55.1 + i)) < 1e-12);
     }
   }
 

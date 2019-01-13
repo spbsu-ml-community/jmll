@@ -2,10 +2,11 @@ package com.expleague.ml.optimization.impl;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.FuncConvex;
 import com.expleague.ml.optimization.Optimize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.expleague.commons.math.vectors.VecTools.copy;
 
@@ -18,7 +19,7 @@ import static com.expleague.commons.math.vectors.VecTools.copy;
  */
 @Deprecated
 public class MagicDescent implements Optimize<FuncConvex> {
-    private static final Logger LOG = Logger.create(GradientDescent.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GradientDescent.class);
     private final Vec x0;
     private final double eps;
 

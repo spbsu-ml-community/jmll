@@ -5,17 +5,12 @@ import com.expleague.bernulli.MixtureObservations;
 import com.expleague.bernulli.Multinomial;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
-import org.apache.commons.math3.distribution.BetaDistribution;
-import org.apache.commons.math3.distribution.BinomialDistribution;
-import org.apache.commons.math3.random.MersenneTwister;
-import org.apache.commons.math3.random.RandomGenerator;
 
 public class BetaBinomialMixture extends Mixture {
   public final double alphas[];
   public final double betas[];
-  final RandomGenerator apacheRandom;
-  final BetaDistribution[] samplers;
   final Multinomial multinomialSampler;
+  private final FastRandom rng = new FastRandom();
   private int count;
 
 
@@ -32,11 +27,6 @@ public class BetaBinomialMixture extends Mixture {
     this.alphas = alphas;
     this.betas = betas;
     ArrayTools.parallelSort(q, alphas, betas);
-    this.apacheRandom = new MersenneTwister(random.nextInt());
-    this.samplers = new BetaDistribution[q.length];
-    for (int i = 0; i < samplers.length; ++i) {
-      samplers[i] = new BetaDistribution(apacheRandom, alphas[i], betas[i], BetaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
-    }
     multinomialSampler = new Multinomial(random, q);
     this.count = count;
   }
@@ -54,19 +44,15 @@ public class BetaBinomialMixture extends Mixture {
     }
     this.alphas = alphas;
     this.betas = betas;
-    this.apacheRandom = new MersenneTwister(random.nextInt());
-    this.samplers = new BetaDistribution[q.length];
-    for (int i = 0; i < samplers.length; ++i) {
-      samplers[i] = new BetaDistribution(apacheRandom, alphas[i], betas[i], BetaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
-    }
     multinomialSampler = new Multinomial(random, q);
     this.count = count;
   }
 
 
   public int sample() {
-    BinomialDistribution sampler = new BinomialDistribution(apacheRandom, count, samplers[multinomialSampler.next()].sample());
-    return sampler.sample();
+    int index = multinomialSampler.next();
+    double q = rng.nextBeta(alphas[index], betas[index]);
+    return rng.nextBinomial(count, q);
   }
 
   @Override
@@ -76,9 +62,9 @@ public class BetaBinomialMixture extends Mixture {
     final int sums[] = new int[n];
     for (int i = 0; i < n; ++i) {
       components[i] = multinomialSampler.next();
-      thetas[i] = samplers[components[i]].sample();
-      BinomialDistribution sampler = new BinomialDistribution(apacheRandom, count, thetas[i]);
-      sums[i] = sampler.sample();
+      int index = components[i];
+      thetas[i] = rng.nextBeta(alphas[index], betas[index]);
+      sums[i] = rng.nextDouble() < thetas[i] ? 1 : 0;
     }
     return new MixtureObservations<>(this, components, thetas, sums, count);
   }

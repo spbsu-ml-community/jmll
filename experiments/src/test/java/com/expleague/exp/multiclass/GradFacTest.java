@@ -19,7 +19,6 @@ import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.factorization.Factorization;
 import com.expleague.ml.factorization.impl.ALS;
 import com.expleague.ml.factorization.impl.ElasticNetFactorization;
-import com.expleague.ml.factorization.impl.SVDAdapterEjml;
 import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
@@ -30,12 +29,10 @@ import com.expleague.ml.loss.SatL2;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.TargetMeta;
-import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
 import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.ml.methods.MultiClass;
 import com.expleague.ml.methods.multiclass.gradfac.FMCBoosting;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlass;
-import com.expleague.ml.methods.multiclass.gradfac.GradFacSvdNMulticlass;
 import com.expleague.ml.methods.multiclass.gradfac.MultiClassColumnBootstrapOptimization;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.MultiClassModel;
@@ -70,23 +67,6 @@ public class GradFacTest extends TestCase {
   }
 
 
-  public void testGradMxApproxSVDN() throws Exception {
-    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
-    final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
-    double time = System.currentTimeMillis();
-    int factorDim = 1;
-//    for (int factorDim = gradient.columns(); factorDim >= 1; factorDim--)
-    {
-      final Pair<Vec, Vec> pair = new SVDAdapterEjml(factorDim).factorize(gradient);
-      final Mx h = (Mx) pair.getFirst();
-      final Mx b = (Mx) pair.getSecond();
-      System.out.println("factor dim: " + factorDim);
-      System.out.println("time: " + ((System.currentTimeMillis() - time) / 1000));
-      final Mx afterFactor = MxTools.multiply(h, MxTools.transpose(b));
-      System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
-      System.out.println();
-    }
-  }
   public void testElasticNetGradFac() throws Exception {
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
     final Mx gradient = (Mx) globalLoss.gradient(new ArrayVec(globalLoss.dim()));
@@ -177,7 +157,6 @@ public class GradFacTest extends TestCase {
     final Mx mx = genUniformRandMx(500, 300, 100500);
 
     applyFactorMethod(mx, new ALS(15));
-    applyFactorMethod(mx, new SVDAdapterEjml());
     final double lambda = 0.0015;
     applyFactorMethod(mx, new ElasticNetFactorization(20, 1e-4, 0.5, lambda));
   }
@@ -259,41 +238,6 @@ public class GradFacTest extends TestCase {
         ),
         L2.class,
         20000,
-        7
-    );
-    fitModel(boosting);
-  }
-
-  public void testGradFacSVDNColumnsBootstrap() throws Exception {
-    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
-        new MultiClassColumnBootstrapOptimization(
-            new GradFacSvdNMulticlass(
-                new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-                LogL2.class,
-                2
-            ),
-            new FastRandom(100500),
-            1.
-        ),
-        L2.class,
-        5000,
-        5
-    );
-    fitModel(boosting);
-  }
-
-  public void testGradFacColumnsBootstrap() throws Exception {
-    final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
-        new MultiClassColumnBootstrapOptimization(
-            new GradFacMulticlass(
-                new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-                new SVDAdapterEjml(1),
-                SatL2.class
-            ), new FastRandom(),
-            1.
-        ),
-        L2.class,
-        7500,
         7
     );
     fitModel(boosting);

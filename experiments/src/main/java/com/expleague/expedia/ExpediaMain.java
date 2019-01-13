@@ -42,22 +42,22 @@ public class ExpediaMain {
   private static Options options = new Options();
 
   static {
-    options.addOption(OptionBuilder.withLongOpt("data").withDescription("path to data.csv").hasArg().create(DATA_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("output").withDescription("output file name").hasArg().create(OUTPUT_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("builder").withDescription("path to directory with builders").hasArg().create(BUILDER_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("train").withDescription("create new builders").hasArg(false).create(TRAIN_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("test").withDescription("build test pool").hasArg(false).create(TEST_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("pool").withDescription("path to pool").hasArg().create(POOL_OPTION));
+    options.addOption(Option.builder(DATA_OPTION).longOpt("data").desc("path to data.csv").hasArg().build());
+    options.addOption(Option.builder(OUTPUT_OPTION).longOpt("output").desc("output file name").hasArg().build());
+    options.addOption(Option.builder(BUILDER_OPTION).longOpt("builder").desc("path to directory with builders").hasArg().build());
+    options.addOption(Option.builder(TRAIN_OPTION).longOpt("train").desc("create new builders").hasArg(false).build());
+    options.addOption(Option.builder(TEST_OPTION).longOpt("test").desc("build test pool").hasArg(false).build());
+    options.addOption(Option.builder(POOL_OPTION).longOpt("pool").desc("path to pool").hasArg().build());
 
-    options.addOption(OptionBuilder.withLongOpt("model").withDescription("path to model").hasArg().create(MODEL_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("grid").withDescription("path to grid").hasArg().create(GRID_OPTION));
-    options.addOption(OptionBuilder.withLongOpt("hotel").withDescription("path to file with hotels").hasArg().create(HOTELS_OPTION));
+    options.addOption(Option.builder(MODEL_OPTION).longOpt("model").desc("path to model").hasArg().build());
+    options.addOption(Option.builder(GRID_OPTION).longOpt("grid").desc("path to grid").hasArg().build());
+    options.addOption(Option.builder(HOTELS_OPTION).longOpt("hotel").desc("path to file with hotels").hasArg().build());
   }
 
   public static void main(String[] args) throws IOException {
     Interval.start();
 
-    final CommandLineParser parser = new GnuParser();
+    final CommandLineParser parser = new DefaultParser();
 
     try {
       final CommandLine command = parser.parse(options, args);

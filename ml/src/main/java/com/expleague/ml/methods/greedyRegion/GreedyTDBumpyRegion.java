@@ -19,7 +19,6 @@ import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
 import com.expleague.ml.models.BumpyRegion;
 import gnu.trove.list.array.TDoubleArrayList;
-import org.apache.commons.math3.util.FastMath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,13 +57,13 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
       final double sum = AdditiveStatisticsExtractors.sum(targetStat);
       final double sum2 = AdditiveStatisticsExtractors.sum2(targetStat);
       this.bias = sum / w;
-      this.targetSd = FastMath.sqrt(sum2 / w - MathTools.sqr(sum / w));
+      this.targetSd = Math.sqrt(sum2 / w - MathTools.sqr(sum / w));
     }
 
 
     double score(final double sum, final double weight) {
       final double factorBias = weight / AdditiveStatisticsExtractors.weight(targetStat);
-      final double factorSd = FastMath.sqrt(factorBias * (1 - factorBias));
+      final double factorSd = Math.sqrt(factorBias * (1 - factorBias));
 
       if (weight < 5 || weight > (AdditiveStatisticsExtractors.weight(targetStat) - 5)) {
         return Double.POSITIVE_INFINITY;
@@ -136,7 +135,7 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
       prior.add(calcRegularization(factorWeight));
       sums.add(AdditiveStatisticsExtractors.sum(inside));
       final double factorBias = factorWeight / AdditiveStatisticsExtractors.weight(targetStat);
-      final double factorSd = FastMath.sqrt(factorBias * (1 - factorBias));
+      final double factorSd = Math.sqrt(factorBias * (1 - factorBias));
       means.add(factorBias);
       weights.add(factorWeight);
       sd.add(factorSd);

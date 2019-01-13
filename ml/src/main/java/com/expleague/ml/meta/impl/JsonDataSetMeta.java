@@ -1,12 +1,11 @@
 package com.expleague.ml.meta.impl;
 
 import java.util.Date;
+import java.util.Objects;
 
 
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.meta.DataSetMeta;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
  * User: solar
@@ -68,30 +67,17 @@ public class JsonDataSetMeta implements DataSetMeta {
   }
 
   @Override
-  public boolean equals(final Object obj) {
-    if (obj == this)
+  public boolean equals(Object o) {
+    if (this == o)
       return true;
-    if (obj == null || obj.getClass() != getClass())
+    if (!(o instanceof JsonDataSetMeta))
       return false;
-
-    final JsonDataSetMeta other = (JsonDataSetMeta)obj;
-    return new EqualsBuilder().
-        append(id, other.id).
-        append(source, other.source).
-        append(author, other.author).
-        append(created, other.created).
-        append(type, other.type).
-        isEquals();
+    JsonDataSetMeta that = (JsonDataSetMeta) o;
+    return id.equals(that.id) && owner.equals(that.owner) && source.equals(that.source) && author.equals(that.author) && created.equals(that.created) && type.equals(that.type);
   }
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().
-        append(id).
-        append(source).
-        append(author).
-        append(created).
-        append(type).
-        toHashCode();
+    return Objects.hash(id, owner, source, author, created, type);
   }
 }

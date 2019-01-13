@@ -1,6 +1,7 @@
 package com.expleague.ml.models.gpf.weblogmodel;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -8,7 +9,7 @@ import java.util.zip.GZIPInputStream;
 import com.expleague.ml.models.gpf.GPFLinearModel;
 import com.expleague.ml.models.gpf.GPFModel;
 import com.expleague.ml.models.gpf.Session;
-import com.google.gson.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * User: irlab
@@ -18,9 +19,8 @@ public class WebLogV1GPFSession {
   public static List<Session<BlockV1>> loadDatasetFromJSON(final InputStream is, final GPFModel model, final int rows_limit) throws IOException {
     final List<Session<BlockV1>> dataset = new ArrayList<>();
 
-    final LineNumberReader lnr = new LineNumberReader(new InputStreamReader(is, "UTF8"));
-    final Gson gson = new Gson();
-    final Gson gson_prettyprint = new GsonBuilder().setPrettyPrinting().create();
+    final LineNumberReader lnr = new LineNumberReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+    final ObjectMapper mapper = new ObjectMapper();
     for (String line = lnr.readLine(); line != null; line = lnr.readLine()) {
       if (rows_limit > 0 && dataset.size() >= rows_limit)
         break;
@@ -28,7 +28,7 @@ public class WebLogV1GPFSession {
       final String[] split = line.split("\t");
       final String json_ses_str = split[2];
 
-      final JsonSes ses = gson.fromJson(json_ses_str, JsonSes.class);
+      final JsonSes ses = mapper.readValue(json_ses_str, JsonSes.class);
 
       final BlockV1[] blocks = new BlockV1[ses.sntypes.length];
       for (int i = 0; i < blocks.length; i++) {
@@ -39,8 +39,7 @@ public class WebLogV1GPFSession {
                 BlockV1.ResultGrade.valueOf(ses.rel[i]));
       }
 
-      final String source_string = gson_prettyprint.toJson(ses);
-      final Session<BlockV1> session = new Session<BlockV1>(ses.uid, ses.reqid, ses.user_region, ses.query, source_string);
+      final Session<BlockV1> session = new Session<BlockV1>(ses.uid, ses.reqid, ses.user_region, ses.query, json_ses_str);
       setSessionData(session, blocks, ses.clicks);
       dataset.add(session);
     }

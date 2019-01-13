@@ -2,7 +2,6 @@ package com.expleague.ml.cli.modes.impl;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.util.BestHolder;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.expleague.ml.cli.cv.KFoldCrossValidation;
 import com.expleague.ml.cli.gridsearch.ParametersExtractor;
@@ -17,6 +16,8 @@ import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.BFGrid;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Arrays;
@@ -40,7 +41,7 @@ import static com.expleague.ml.cli.JMLLCLI.*;
  *    2. Одиночный запуск для фиксированных значений параметров. В этом случае передавать RANGES не нужно, а параметры указываются как обычно.
  */
 public class CrossValidation extends AbstractMode {
-  private static final Logger LOG = Logger.create(CrossValidation.class);
+  private static final Logger LOG = LoggerFactory.getLogger(CrossValidation.class);
 
   public void run(final CommandLine command) throws MissingArgumentException, IOException {
 

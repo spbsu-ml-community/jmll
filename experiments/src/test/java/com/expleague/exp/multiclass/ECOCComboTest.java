@@ -25,7 +25,6 @@ import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.factorization.Factorization;
 import com.expleague.ml.factorization.impl.ALS;
-import com.expleague.ml.factorization.impl.SVDAdapterEjml;
 import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
@@ -37,7 +36,6 @@ import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.TargetMeta;
 import com.expleague.ml.methods.GradientBoosting;
 import com.expleague.ml.methods.multiclass.gradfac.GradFacMulticlass;
-import com.expleague.ml.methods.multiclass.gradfac.GradFacSvdNMulticlass;
 import com.expleague.ml.methods.multiclass.spoc.ECOCCombo;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.MultiClassModel;
@@ -218,25 +216,6 @@ public class ECOCComboTest extends TestCase {
 
   }
 
-  public void testGradFacSvdN() throws Exception {
-    final VecDataSet vecDataSet = learn.vecData();
-    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
-    final BFGrid bfGrid = GridTools.medianGrid(vecDataSet, 32);
-    final GradientBoosting<TargetFunc> boosting = new GradientBoosting<>(new GradFacSvdNMulticlass(new GreedyObliviousTree<L2>(bfGrid, 5),
-        SatL2.class, 2), 500, 0.7);
-    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(learn, test);
-    boosting.addListener(multiclassProgressPrinter);
-
-    final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
-
-    final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
-    final MultiClassModel multiclassModel = new MultiClassModel(joined);
-    final String learnResult = MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false);
-    final String testResult = MCTools.evalModel(multiclassModel, test, "[TEST] ", false);
-    System.out.println(learnResult);
-    System.out.println(testResult);
-  }
-
   public void testBaseline() throws Exception {
     final VecDataSet vecDataSet = learn.vecData();
     final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
@@ -263,25 +242,6 @@ public class ECOCComboTest extends TestCase {
 
   public void testGradMxApproxSVD() throws Exception {
     applyFactorMethod(new ALS(15));
-    applyFactorMethod(new SVDAdapterEjml());
-  }
-
-  public void testGradMxApproxSVDN() throws Exception {
-    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
-    final Mx gradient = globalLoss.gradient(new ArrayVec(globalLoss.dim()));
-    double time = System.currentTimeMillis();
-
-    for (int factorDim = gradient.columns(); factorDim >= 1; factorDim--)
-    {
-      final Pair<Vec, Vec> pair = new SVDAdapterEjml(factorDim).factorize(gradient);
-      final Mx h = (Mx) pair.getFirst();
-      final Mx b = (Mx) pair.getSecond();
-      System.out.println("factor dim: " + factorDim);
-      System.out.println("time: " + ((System.currentTimeMillis() - time) / 1000));
-      final Mx afterFactor = MxTools.multiply(h, MxTools.transpose(b));
-//      System.out.println("||h|| = " + VecTools.norm(h) + ", ||b|| = " + VecTools.norm(b) + ", l2 = " + VecTools.distance(gradient, afterFactor) + ", l1 = " + VecTools.distanceL1(gradient, afterFactor));
-      System.out.println();
-    }
   }
 
   public void testStochasticALS() {

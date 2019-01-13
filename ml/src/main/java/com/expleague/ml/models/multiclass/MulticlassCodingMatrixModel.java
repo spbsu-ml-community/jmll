@@ -7,10 +7,11 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.math.Func;
 import com.expleague.ml.func.FuncJoin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -21,14 +22,15 @@ import static java.lang.Math.log;
  * Time: 10:59
  */
 public class MulticlassCodingMatrixModel extends MCModel.Stub {
-  public static final Logger LOG = Logger.create(MulticlassCodingMatrixModel.class);
+  public static final Logger LOG = LoggerFactory.getLogger(MulticlassCodingMatrixModel.class);
   protected final FuncJoin binaryClassifiers;
   protected final Mx codingMatrix;
   protected final double ignoreThreshold;
   protected final Metric<Vec> metric;
 
   public MulticlassCodingMatrixModel(final Mx codingMatrix, final Func[] binaryClassifiers, final double ignoreTreshold) {
-    LOG.assertTrue(codingMatrix.columns() == binaryClassifiers.length, "Coding matrix columns count must match binary classifiers.");
+    if (codingMatrix.columns() != binaryClassifiers.length)
+      throw new IllegalArgumentException("Coding matrix columns count must match binary classifiers.");
     this.binaryClassifiers = new FuncJoin(binaryClassifiers);
     this.codingMatrix = codingMatrix;
     this.ignoreThreshold = ignoreTreshold;

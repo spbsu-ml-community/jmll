@@ -1,7 +1,6 @@
 package com.expleague.ml.cli.cv;
 
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.util.logging.Logger;
 import com.expleague.commons.math.stat.WXTest;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
@@ -17,6 +16,8 @@ import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.methods.VecOptimization;
 import gnu.trove.list.array.TDoubleArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +30,7 @@ import java.util.stream.Stream;
  * Date: 16.09.15
  */
 public class KFoldCrossValidation {
-  private static final Logger LOG = Logger.create(KFoldCrossValidation.class);
+  private static final Logger LOG = LoggerFactory.getLogger(KFoldCrossValidation.class);
 
   private static final int THREADS_COUNT = Runtime.getRuntime().availableProcessors();
 
