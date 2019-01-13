@@ -30,9 +30,14 @@ import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.ObliviousTree;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -47,7 +52,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   private final Class<? extends L2> factory;
   private final Factorization factorize;
   private final int iterationsCount;
-  private final double step;
+  private double step;
   private final boolean lazyCursor;
   private final int ensembleSize;
   private final boolean isGbdt;
@@ -93,6 +98,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
   @Override
   public Ensemble<ScaledVectorFunc> fit(final VecDataSet learn, final BlockwiseMLLLogit target) {
+    final double[] validScores = new double[iterationsCount];
+
     final Vec[] B = new Vec[iterationsCount * ensembleSize];
     final List<Func> weakModels = new ArrayList<>(iterationsCount * ensembleSize);
     final List<ScaledVectorFunc> ensamble = new ArrayList<>(iterationsCount * ensembleSize);
@@ -160,6 +167,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         }
 
         final double accuracy = matches / valid.length();
+        validScores[t] = accuracy;
 
         if (bestIterCount == 0 || accuracy > bestAccuracy) {
           bestIterCount = t + 1;
@@ -197,6 +205,15 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     }
 
     if (valid != null) {
+      try {
+        final String result = DoubleStream.of(validScores).mapToObj(Double::toString).collect(Collectors.joining(","));
+        final PrintStream out = new PrintStream(new FileOutputStream(new File("valid_scores.txt")));
+        out.println(result);
+        out.close();
+      } catch (Exception e) {
+        // pass
+      }
+
       System.out.println(String.format(String.format("Best iterations count: %d", bestIterCount)));
       System.out.println(String.format(String.format("Best valid accuracy: %.4f", bestAccuracy)));
       return new Ensemble<>(ensamble.subList(0, ensembleSize * bestIterCount), -step);
