@@ -12,6 +12,8 @@ import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.impl.EmbeddingBuilderBase;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
+import gnu.trove.iterator.TIntDoubleIterator;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -67,27 +69,18 @@ public class GloVeBuilder extends EmbeddingBuilderBase {
 
     for (int iter = 0; iter < T(); iter++) {
       Interval.start();
-      double[] counter = new double[]{0, 0};
-      double score = IntStream.range(0, vocab_size).parallel().mapToDouble(i -> {
-        final VecIterator nz = cooc().row(i).nonZeroes();
+      final ScoreCalculator scoreCalculator = new ScoreCalculator(dim);
+      IntStream.range(0, vocab_size).parallel().forEach(i -> {
         final Vec left = leftVectors.row(i);
         final Vec softMaxL = softMaxLeft.row(i);
-        double totalScore = 0;
-        double totalCount = 0;
-        double totalWeight = 0;
-        while (nz.advance()) {
-          final int j = nz.index();
+        cooc(i, (j, X_ij) -> {
           final Vec right = rightVectors.row(j);
           final Vec softMaxR = softMaxRight.row(j);
-          final double X_ij = nz.value();
           final double asum = VecTools.multiply(left, right);
           final double diff = biasLeft.get(i) + biasRight.get(j) + asum - Math.log(X_ij);
           final double weight = weightingFunc(X_ij);
           final double fdiff = step() * diff * weight;
-
-          totalWeight += weight;
-          totalScore += 0.5 * weight * MathTools.sqr(diff);
-
+          scoreCalculator.adjust(i, j, weight, 0.5 * weight * MathTools.sqr(diff));
           IntStream.range(0, dim).forEach(id -> {
             final double dL = fdiff * right.get(id);
             final double dR = fdiff * left.get(id);
@@ -101,16 +94,10 @@ public class GloVeBuilder extends EmbeddingBuilderBase {
           biasRight.adjust(j, -fdiff / Math.sqrt(softBiasRight.get(j)));
           softBiasLeft.adjust(i, MathTools.sqr(fdiff));
           softBiasRight.adjust(j, MathTools.sqr(fdiff));
-          totalCount++;
-        }
-        synchronized (counter) {
-          counter[0] += totalWeight;
-          counter[1] += totalCount;
-        }
-        return totalScore;
-      }).sum();
+        });
+      });
 
-      Interval.stopAndPrint("Iteration " + iter + ", Score " + score / counter[1] + ", Total Score " + score + ", Count " + counter[1]);
+      Interval.stopAndPrint("Iteration " + iter + ", score: " + scoreCalculator.gloveScore() + ", count: " + scoreCalculator.count());
     }
 
     final Map<CharSeq, Vec> mapping = new HashMap<>();

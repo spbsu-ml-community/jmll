@@ -3,6 +3,7 @@ package com.expleague.ml.embedding;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.Metric;
 import com.expleague.ml.embedding.decomp.DecompBuilder;
+import com.expleague.ml.embedding.decomp.MultiDecompBuilder;
 import com.expleague.ml.embedding.glove.GloVeBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +32,8 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
 
   enum Type {
     GLOVE(GloVeBuilder.class),
-    DECOMP(DecompBuilder.class)
+    DECOMP(DecompBuilder.class),
+    MULTI_DECOMP(MultiDecompBuilder.class),
     ;
 
     private final Class<? extends Builder> builderClass;
