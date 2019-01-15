@@ -3,6 +3,7 @@ package com.expleague.ml.embedding.impl;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.seq.CharSeq;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.embedding.Embedding;
 
@@ -52,7 +53,14 @@ public class EmbeddingImpl<T> implements Embedding<T> {
     Map<T, Vec> mapping = new HashMap<>();
     bufferedReader.lines().forEach(line -> {
       int partitionIdx = line.lastIndexOf('\t');
-      T word = DataTools.SERIALIZATION.read(line.substring(0, partitionIdx), clazz);
+      T word;
+      if (clazz.equals(CharSeq.class)) {
+        //noinspection unchecked
+        word = (T) CharSeq.intern(DataTools.SERIALIZATION.read(line.substring(0, partitionIdx), CharSequence.class));
+      } else {
+        word = DataTools.SERIALIZATION.read(line.substring(0, partitionIdx), clazz);
+      }
+
       Vec vec = DataTools.SERIALIZATION.read(line.substring(partitionIdx + 1), ArrayVec.class);
       mapping.put(word, vec);
     });
