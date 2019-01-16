@@ -26,6 +26,7 @@ import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.SatL2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.expleague.ml.loss.multiclass.MCMacroF1Score;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.ObliviousTree;
 
@@ -98,7 +99,6 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   @Override
   public Ensemble<ScaledVectorFunc> fit(final VecDataSet learn, final BlockwiseMLLLogit target) {
     final double[] validScores = new double[iterationsCount];
-
     final Vec[] B = new Vec[iterationsCount * ensembleSize];
     final List<Func> weakModels = new ArrayList<>(iterationsCount * ensembleSize);
     final List<ScaledVectorFunc> ensamble = new ArrayList<>(iterationsCount * ensembleSize);
@@ -108,6 +108,9 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     } else {
       cursor = new RowsVecArrayMx(new GradientCursor(learn, weakModels, B, target, bds));
     }
+
+    Vec validClass = null;
+    final MCMacroF1Score f1MacroScore = valid != null ? new MCMacroF1Score(validTarget.labels(), valid) : null;
 
     VecBasedMx validScore = null;
     if (valid != null) {
@@ -128,6 +131,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       Interval.start();
       for (int i = 0; i < ensembleSize; ++i) {
         final ObliviousTree weakModel = (ObliviousTree) weak.fit(learn, DataTools.bootstrap(globalLoss, rfRnd));
+        // final ObliviousTree weakModel = (ObliviousTree) weak.fit(learn, globalLoss);
 
         if (bds == null) {
           bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weakModel.grid());
@@ -149,6 +153,10 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       if (valid != null) {
         Interval.start();
 
+        if (validClass == null) {
+          validClass = new ArrayVec(valid.length());
+        }
+
         for (int i = 0; i < ensembleSize; ++i) {
           final int index = ensamble.size() - ensembleSize + i;
           final ScaledVectorFunc func = ensamble.get(index);
@@ -163,18 +171,24 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           int clazz = ArrayTools.max(score);
           clazz = score[clazz] > 0 ? clazz : target.classesCount() - 1;
           matches += (clazz == validTarget.label(i) ? 1 : 0);
+
+          // save class for i-th sample
+          validClass.set(i, clazz);
         }
 
         final double accuracy = matches / valid.length();
-        validScores[t] = accuracy;
+        final double f1Score = f1MacroScore.value(validClass);
+
+        validScores[t] = f1Score;
 
         if (bestIterCount == 0 || accuracy > bestAccuracy) {
           bestIterCount = t + 1;
           bestAccuracy = accuracy;
         }
 
-        Interval.stopAndPrint("Evaluate valid accuracy");
+        Interval.stopAndPrint("Evaluate valid accuracy & f1 score");
         System.out.println(String.format("Valid accuracy: %.4f", accuracy));
+        System.out.println(String.format("Valid f1 macro: %.4f", f1Score));
 
         if (earlyStoppingRounds > 0 && t + 1 - bestIterCount == earlyStoppingRounds) {
           // Early stopping
