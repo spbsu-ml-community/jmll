@@ -3,7 +3,6 @@ package com.expleague.ml.embedding.decomp;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
@@ -57,11 +56,11 @@ public class DecompBuilder extends EmbeddingBuilderBase {
 
   @Override
   public Embedding<CharSeq> fit() {
-    final int vocab_size = dict().size();
-    final Mx symDecomp = new VecBasedMx(vocab_size, symDim);
-    final Mx skewsymDecomp = new VecBasedMx(vocab_size, skewDim);
-    final Vec bias = new ArrayVec(vocab_size);
-    for (int i = 0; i < vocab_size; i++) {
+    final int size = dict().size();
+    final Mx symDecomp = new VecBasedMx(size, symDim);
+    final Mx skewsymDecomp = new VecBasedMx(size, skewDim);
+    final Vec bias = new ArrayVec(size);
+    for (int i = 0; i < size; i++) {
       bias.set(i, initializeValue(symDim));
       for (int j = 0; j < symDim; j++) {
         symDecomp.set(i, j, initializeValue(symDim));
@@ -78,23 +77,18 @@ public class DecompBuilder extends EmbeddingBuilderBase {
     VecTools.fill(softMaxSkewsym, 1);
     VecTools.fill(softMaxBias, 1);
 
-    final TIntArrayList order = new TIntArrayList(IntStream.range(0, cooc().rows()).toArray());
+    final TIntArrayList order = new TIntArrayList(IntStream.range(0, size).toArray());
     rng = new FastRandom();
     for (int iter = 0; iter < T(); iter++) {
       Interval.start();
       order.shuffle(rng);
-      final double[] counter = new double[]{0, 0};
-      double score = IntStream.range(0, cooc().rows()).parallel().map(order::get).mapToDouble(i -> {
-        final VecIterator nz = cooc().row(i).nonZeroes();
+      final ScoreCalculator scoreCalculator = new ScoreCalculator(size);
+      IntStream.range(0, size).parallel().map(order::get).forEach(i -> {
         final Vec sym_i = symDecomp.row(i);
         final Vec skew_i = skewsymDecomp.row(i);
         final Vec softMaxSym_i = softMaxSym.row(i);
         final Vec softMaxSkew_i = softMaxSkewsym.row(i);
-        double totalScore = 0;
-        double totalWeight = 0;
-        double totalCount = 0;
-        while (nz.advance()) {
-          int j = nz.index();
+        cooc(i, (j, X_ij) -> {
           final Vec sym_j = symDecomp.row(j);
           final Vec skew_j = skewsymDecomp.row(j);
           final Vec softMaxSym_j = softMaxSym.row(j);
@@ -104,12 +98,12 @@ public class DecompBuilder extends EmbeddingBuilderBase {
 
           double asum = VecTools.multiply(sym_i, sym_j);
           double bsum = VecTools.multiply(skew_i, skew_j);
-          final double X_ij = nz.value();
           final int sign = i > j ? -1 : 1;
           final double minfo = Math.log(X_ij);
           final double diff = b_i + b_j + asum + sign * bsum - minfo;
           final double weight = weightingFunc(X_ij);
           final double biasStep = weight * diff;
+          scoreCalculator.adjust(i, j, weight, 0.5 * weight * MathTools.sqr(diff));
 
           update(sym_i, softMaxSym_i, sym_j, softMaxSym_j, diff * weight);
           update(skew_i, softMaxSkew_i, skew_j, softMaxSkew_j, diff * weight * sign);
@@ -117,20 +111,10 @@ public class DecompBuilder extends EmbeddingBuilderBase {
           softMaxBias.adjust(i, biasStep * biasStep);
           bias.adjust(j, -step() * biasStep / Math.sqrt(softMaxBias.get(j)));
           softMaxBias.adjust(j, biasStep * biasStep);
+        });
+      });
 
-          totalWeight += weight;
-          totalCount ++;
-          totalScore += 0.5 * weight * diff * diff;
-        }
-
-        synchronized (counter) {
-          counter[0] += totalWeight;
-          counter[1] += totalCount;
-        }
-        return totalScore;
-      }).sum();
-
-      Interval.stopAndPrint("Iteration: " + iter + " Score: " + (score / counter[1]));
+      Interval.stopAndPrint("Iteration: " + iter + ", score: " + scoreCalculator.gloveScore());
     }
 
     final Map<CharSeq, Vec> mapping = new HashMap<>();

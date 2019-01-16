@@ -2,21 +2,13 @@ package com.expleague.ml.embedding.impl;
 
 import com.expleague.commons.csv.CsvRow;
 import com.expleague.commons.csv.WritableCsvRow;
-import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.VecIterator;
-import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.mx.SparseMx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
+import com.expleague.commons.func.IntDoubleConsumer;
 import com.expleague.commons.seq.CharSeq;
-import com.expleague.commons.seq.CharSeqArray;
-import com.expleague.commons.seq.CharSeqComposite;
 import com.expleague.commons.seq.CharSeqTools;
+import com.expleague.commons.seq.LongSeq;
+import com.expleague.commons.seq.LongSeqBuilder;
 import com.expleague.ml.embedding.Embedding;
-import gnu.trove.iterator.TLongIterator;
-import gnu.trove.iterator.TObjectIntIterator;
 import gnu.trove.list.TLongList;
-import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.TObjectIntMap;
@@ -30,15 +22,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.BreakIterator;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.LongFunction;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -47,7 +39,7 @@ import java.util.zip.GZIPOutputStream;
 
 public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq> {
   private static final Logger log = LoggerFactory.getLogger(EmbeddingBuilderBase.class.getName());
-  public static final int CAPACITY = 10_000_000;
+  public static final int CAPACITY = 50_000_000;
   private Path path;
 
   private int minCount = 5;
@@ -60,7 +52,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   private List<CharSeq> wordsList = new ArrayList<>();
   private TObjectIntMap<CharSeq> wordsIndex = new TObjectIntHashMap<>(50_000, 0.6f, -1);
   private boolean dictReady;
-  private SparseMx cooc;
+  private List<LongSeq> cooc;
   private boolean coocReady = false;
 
   @Override
@@ -110,8 +102,23 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     return wordsList;
   }
 
-  protected SparseMx cooc() {
-    return cooc;
+  protected void cooc(int i, IntDoubleConsumer consumer) {
+    cooc.get(i).stream().forEach(packed ->
+        consumer.accept((int)(packed >>> 32), Float.intBitsToFloat((int)(packed & 0xFFFFFFFFL)))
+    );
+  }
+
+  protected LongSeq cooc(int i) {
+    return cooc.get(i);
+  }
+
+  protected synchronized void cooc(int i, LongSeq set) {
+    if (i > cooc.size()) {
+      for (int k = cooc.size(); k <= i; k++) {
+        cooc.add(new LongSeq());
+      }
+    }
+    cooc.set(i, set);
   }
 
   protected int T() {
@@ -148,23 +155,21 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   }
 
   private void acquireCooccurrences() throws IOException {
-    cooc = new SparseMx(wordsList.size(), wordsList.size());
     final Path coocPath = Paths.get(this.path.getParent().toString(), strip(this.path.getFileName()) + "." + windowType.name().toLowerCase() + "-" + windowLeft + "-" + windowRight + "-" + minCount + ".cooc");
     try {
+      final LongSeq[] cooc = new LongSeq[wordsList.size()];
       Reader coocReader = readExisting(coocPath);
       if (coocReader != null) {
         log.info("Reading existing cooccurrences");
         CharSeqTools.llines(coocReader, true).forEach(line -> {
-          final TIntArrayList indices = new TIntArrayList();
-          final TDoubleArrayList values = new TDoubleArrayList();
+          final LongSeqBuilder values = new LongSeqBuilder(wordsList.size());
           final CharSeq[] wordWeightPair = new CharSeq[2];
-          CharSeqTools.split(line.line, " ", false).forEach(part -> {
-            CharSequence[] split = CharSeqTools.split(part, ':', wordWeightPair);
-            indices.add(CharSeqTools.parseInt(split[0]));
-            values.add(CharSeqTools.parseDouble(split[1]));
-          });
-          cooc.setRow(line.number, new SparseVec(wordsList.size(), indices.toArray(), values.toArray()));
+          CharSeqTools.split(line.line, " ", false)
+              .map(part -> CharSeqTools.split(part, ':', wordWeightPair))
+              .forEach(split -> values.add(((long)CharSeqTools.parseInt(split[0])) << 32 | Float.floatToIntBits(CharSeqTools.parseFloat(split[1]))));
+          cooc[line.number] = values.build();
         });
+        this.cooc = new ArrayList<>(Arrays.asList(cooc));
         coocReady = true;
       }
     }
@@ -174,82 +179,78 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
 
     if (!coocReady) {
       log.info("Generating cooccurrences for " + this.path);
+      final long startTime = System.nanoTime();
       final Lock[] rowLocks = IntStream.range(0, wordsList.size()).mapToObj(i -> new ReentrantLock()).toArray(Lock[]::new);
-
       final List<TLongList> accumulators = new ArrayList<>();
-      long[] counters = new long[]{0};
-      source().parallel().map(line -> {
-        if (line instanceof CharSeqComposite)
-          line = new CharSeqArray(line.toCharArray());
-        synchronized (counters) {
-          if (++counters[0] % 10000 == 0)
-            log.info(counters[0] + " lines processed");
+      cooc = IntStream.range(0, wordsList.size()).mapToObj(i -> LongSeq.empty()).collect(Collectors.toList());
+      source().peek(new Consumer<CharSeq>() {
+        long line = 0;
+        long time = System.nanoTime();
+        @Override
+        public synchronized void accept(CharSeq l) {
+          if ((++line) % 10000 == 0) {
+            log.info(line + " lines processed for " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time) + "s");
+            time = System.nanoTime();
+          }
         }
-        BreakIterator breakIterator = BreakIterator.getWordInstance();
-        breakIterator.setText(line.it());
-        int lastIndex = breakIterator.first();
+      }).flatMap(CharSeqTools::words).mapToInt(wordsIndex::get).filter(idx -> idx >= 0).mapToObj(new IntFunction<LongStream>() {
         final TIntArrayList queue = new TIntArrayList(1000);
-
-        while (BreakIterator.DONE != lastIndex) {
-          int firstIndex = lastIndex;
-          lastIndex = breakIterator.next();
-          if (lastIndex != BreakIterator.DONE && Character.isLetterOrDigit(line.charAt(firstIndex))) {
-            final CharSeq word = line.sub(firstIndex, lastIndex);
-            int wordId = wordsIndex.get(word);
-            if (wordId != wordsIndex.getNoEntryValue())
-              queue.add(wordId);
+        final Lock lock = new ReentrantLock();
+        int offset = 0;
+        @Override
+        public LongStream apply(int idx) {
+          lock.lock();
+          int pos = queue.size();
+          final long[] out = new long[windowLeft + windowRight];
+          int outIndex = 0;
+          for (int i = offset; i < pos; i++) {
+            byte distance = (byte)(pos - i);
+            if (distance <= windowLeft)
+              out[outIndex++] = pack(idx, queue.getQuick(i), distance);
+            if (distance <= windowRight)
+              out[outIndex++] = pack(queue.getQuick(i), idx, distance);
           }
-        }
-        return queue;
-      }).map(queue -> {
-        TLongList result = new TLongArrayList(queue.size() * (windowLeft + windowRight));
-        for (int i = 0; i < queue.size(); i++) {
-          final int indexedId = queue.getQuick(i);
-          final int rightLimit = Math.min(queue.size(), i + windowRight + 1);
-          final int leftLimit = Math.max(0, i - windowLeft);
-          for (int idx = leftLimit; idx < rightLimit; idx++) {
-            if (idx == i)
-              continue;
-            result.add(pack(indexedId, queue.getQuick(idx), (byte) Math.abs(i - idx)));
+          queue.add(idx);
+          if (queue.size() > Math.max(windowLeft, windowRight)) {
+            offset++;
+            if (offset > 1000 - Math.max(windowLeft, windowRight)) {
+              queue.remove(0, offset);
+              offset = 0;
+            }
           }
+          lock.unlock();
+          return Arrays.stream(out, 0, outIndex);
         }
-        return result;
-      }).flatMapToLong(entries -> LongStream.of(entries.toArray())).mapToObj(new LongFunction<TLongList>() {
+      }).flatMapToLong(entries -> entries).parallel().mapToObj(new LongFunction<TLongList>() {
         volatile TLongList accumulator;
         @Override
         public TLongList apply(long value) {
           if (accumulator == null || accumulator.size() >= CAPACITY) {
             synchronized (this) {
-              final TLongList accumulator = this.accumulator;
-              accumulators.add(this.accumulator = new TLongArrayList(CAPACITY));
-              return accumulator;
+              if (accumulator == null || accumulator.size() >= CAPACITY) {
+                final TLongList accumulator = this.accumulator;
+                accumulators.add(this.accumulator = new TLongArrayList(CAPACITY));
+                return accumulator;
+              }
             }
           }
           accumulator.add(value);
           return null;
         }
-      }).filter(Objects::nonNull).peek(accumulators::remove).peek(TLongList::sort).forEach(acc -> merge(rowLocks, acc));
-      accumulators.parallelStream().forEach(acc -> merge(rowLocks, acc));
+      }).filter(Objects::nonNull).peek(accumulators::remove).peek(TLongList::sort).forEach(acc -> merge(rowLocks, (TLongArrayList)acc));
+      accumulators.parallelStream().peek(TLongList::sort).forEach(acc -> merge(rowLocks, (TLongArrayList)acc));
+      log.info("Generated for " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime) + "s");
 
       final Path coocOut = Paths.get(coocPath.toString() + ".gz");
       try (Writer coocWriter = new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(coocOut)))) {
         log.info("Writing cooccurrences to: " + coocOut);
-        for (int i = 0; i < cooc.rows(); i++) {
-          final Vec row = cooc.getRow(i);
-          if (row != null) {
-            final VecIterator nz = row.nonZeroes();
-            boolean started = false;
-            while (nz.advance()) {
-              if (started)
-                coocWriter.append(' ');
-              else
-                started = true;
-              coocWriter.append(Integer.toString(nz.index()))
-                  .append(':')
-                  .append(CharSeqTools.ppDouble(nz.value()));
-            }
-          }
-          coocWriter.append('\n');
+        for (int i = 0; i < this.cooc.size(); i++) {
+          final LongSeq row = this.cooc.get(i);
+          final StringBuilder builder = new StringBuilder();
+          row.stream().forEach(packed ->
+              builder.append(packed >>> 32).append(':').append(CharSeqTools.ppDouble(Float.intBitsToFloat(((int) (packed & 0xFFFFFFFFL))))).append(' ')
+          );
+          coocWriter.append(builder, 0, builder.length() - 1).append('\n');
         }
       }
       catch (IOException ioe) {
@@ -259,34 +260,65 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     }
   }
 
-  private void merge(Lock[] rowLocks, TLongList acc) {
-    final TLongIterator iterator = acc.iterator();
-    int prev = -1;
-    boolean last = false;
-    SparseVec row = new SparseVec(wordsList.size());
-    while (iterator.hasNext() || last) {
-      final long next = !last ? iterator.next() : -1;
-      final int a = unpackA(next);
-      if (a != prev || last) {
-        if (prev >= 0 && row.size() > 0) {
-          rowLocks[prev].lock();
-          final Vec updateRow = cooc.row(prev);
-          VecTools.append(updateRow, row);
-          if (updateRow instanceof SparseVec) {
-            if (((SparseVec) updateRow).size() / (double)updateRow.dim() > 0.3) {
-              Vec dense = new ArrayVec(updateRow.dim());
-              VecTools.assign(dense, updateRow);
-//              log.info("Converting word " + wordsList.get(prev) + " to dense");
-              cooc.setRow(prev, dense);
-            }
-          }
-          rowLocks[prev].unlock();
-          VecTools.scale(row, 0.);
+  private void merge(Lock[] rowLocks, TLongArrayList acc) {
+    final int size = acc.size();
+    final float[] weights = new float[127];
+    IntStream.range(0, 127).forEach(i -> weights[i] = (float)windowType.weight(i));
+
+    LongSeq prevRow = null;
+    final LongSeqBuilder updatedRow = new LongSeqBuilder(wordsList.size());
+    int prevA = -1;
+    int pos = 0; // insertion point
+    int prevLength = 0;
+    try {
+      for (int i = 0; i < size; i++) {
+        long next = acc.getQuick(i);
+        final int a = unpackA(next);
+        final int b = unpackB(next);
+        float weight = weights[unpackDist(next)];
+        while (++i < size && unpackB(next = acc.getQuick(i)) == b) {
+          weight += weights[unpackDist(next)];
         }
-        prev = a;
+        if (i < size)
+          i--;
+
+        if (a != prevA) {
+          if (prevA >= 0) {
+            updatedRow.addAll(prevRow.sub(pos, prevLength));
+            cooc.set(prevA, updatedRow.build(prevRow.data(), 0.2, 100));
+            rowLocks[prevA].unlock();
+          }
+          prevA = a;
+          prevRow = cooc.get(a);
+          prevLength = prevRow.length();
+          pos = 0;
+          rowLocks[a].lock();
+        }
+        long prevPacked = -1;
+        final long limit = (long) b << 32;
+        while (pos < prevLength) {
+          prevPacked = prevRow.longAt(pos);
+          if (prevPacked >= limit)
+            break;
+
+          updatedRow.append(prevPacked);
+          pos++;
+        }
+        if (pos < prevLength) {
+          if (prevPacked >>> 32 == b) { // second entry matches with the merged one
+            weight += Float.intBitsToFloat((int) (prevPacked & 0xFFFFFFFFL));
+            pos++;
+          }
+        }
+        final long repacked = ((long) b << 32) | Float.floatToIntBits(weight);
+        updatedRow.append(repacked);
       }
-      row.adjust(unpackB(next), windowType.weight(unpackDist(next)));
-      last = !last && !iterator.hasNext();
+      //noinspection ConstantConditions
+      updatedRow.addAll(prevRow.sub(pos, prevLength));
+      cooc.set(prevA, updatedRow.build(prevRow.data(), 0.2, 100));
+    }
+    finally {
+      rowLocks[prevA].unlock();
     }
   }
 
@@ -303,7 +335,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   }
 
   private long pack(long a, long b, byte dist) {
-    return (a << 36) | (b << 8) | ((long)dist);
+    return (a << 36) | (b << 8) | ((long) dist);
   }
 
   private void acquireDictionary() throws IOException {
@@ -328,43 +360,31 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     if (!dictReady) {
       log.info("Generating dictionary for " + this.path);
       TObjectIntMap<CharSeq> wordsCount = new TObjectIntHashMap<>();
-      source().forEach(line -> {
-        BreakIterator breakIterator = BreakIterator.getWordInstance();
-        breakIterator.setText(line.it());
-        int lastIndex = breakIterator.first();
-        while (BreakIterator.DONE != lastIndex) {
-          int firstIndex = lastIndex;
-          lastIndex = breakIterator.next();
-          if (lastIndex != BreakIterator.DONE && Character.isLetterOrDigit(line.charAt(firstIndex))) {
-            final CharSeq word = CharSeq.create(CharSeqTools.toLowerCase(line.sub(firstIndex, lastIndex)));
-            if (word.length() != 1 && word.stream().anyMatch(Character::isLetter)) {
-              wordsCount.adjustOrPutValue(word, 1, 1);
-            }
-          }
-        }
-      });
+      source().flatMap(CharSeqTools::words).filter(word -> word.stream().anyMatch(Character::isLetter)).forEach(w ->
+          wordsCount.adjustOrPutValue(w, 1, 1)
+      );
 
       final Path dictOut = Paths.get(dictPath.toString() + ".gz");
       final Supplier<WritableCsvRow> factory = CsvRow.factory("word", "freq");
+      final List<CharSeq> words = new ArrayList<>(wordsCount.keySet());
+      words.sort(Comparator.comparingInt(wordsCount::get).reversed());
       try (Writer dictWriter = new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(dictOut)))) {
         log.info("Writing dictionary to: " + dictOut);
         dictWriter.append(factory.get().names().toString()).append('\n');
-        wordsCount.forEachEntry((word, freq) -> {
-          factory.get().set("word", word).set("freq", freq).writeln(dictWriter);
-          return true;
-        });
+        words.forEach(word ->
+          factory.get().set("word", word).set("freq", wordsCount.get(word)).writeln(dictWriter)
+        );
       }
       catch (IOException ioe) {
         log.warn("Unable to write dictionary to " + dictOut, ioe);
       }
 
-      for (TObjectIntIterator<CharSeq> it = wordsCount.iterator(); it.hasNext();) {
-        it.advance();
-        if (it.value() >= minCount) {
-          wordsIndex.put(it.key(), wordsList.size());
-          wordsList.add(it.key());
+      words.forEach(word -> {
+        if (wordsCount.get(word) >= minCount) {
+          wordsIndex.put(word, wordsList.size());
+          wordsList.add(word);
         }
-      }
+      });
       dictReady = true;
     }
   }
@@ -380,5 +400,39 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     if (name.endsWith(".gz"))
       return name.substring(0, name.length() - ".gz".length());
     return name;
+  }
+
+  protected float unpackWeight(LongSeq cooc, int v) {
+    return Float.intBitsToFloat((int) (cooc.longAt(v) & 0xFFFFFFFFL));
+  }
+
+  protected int unpackB(LongSeq cooc, int v) {
+    return (int) (cooc.longAt(v) >>> 32);
+  }
+
+  protected class ScoreCalculator {
+    private final double[] scores;
+    private final double[] weights;
+    private final long[] counts;
+
+    public ScoreCalculator(int dim) {
+      counts = new long[dim];
+      scores = new double[dim];
+      weights = new double[dim];
+    }
+
+    public void adjust(int i, int j, double weight, double value) {
+      weights[i] += weight;
+      scores[i] += value;
+      counts[i] ++;
+    }
+
+    public double gloveScore() {
+      return Arrays.stream(scores).sum() / Arrays.stream(counts).sum();
+    }
+
+    public long count() {
+      return Arrays.stream(counts).sum();
+    }
   }
 }
