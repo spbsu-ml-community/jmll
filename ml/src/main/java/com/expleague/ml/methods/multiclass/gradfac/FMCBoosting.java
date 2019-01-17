@@ -98,6 +98,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
   @Override
   public Ensemble<ScaledVectorFunc> fit(final VecDataSet learn, final BlockwiseMLLLogit target) {
+    final boolean silent = valid == null;
+
     final double[] validScores = new double[iterationsCount];
     final Vec[] B = new Vec[iterationsCount * ensembleSize];
     final List<Func> weakModels = new ArrayList<>(iterationsCount * ensembleSize);
@@ -119,6 +121,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
     for (int t = 0; t < iterationsCount; t++) {
       System.out.println("Iteration " + (t + 1));
+
       final Pair<Vec, Vec> factorize = this.factorize.factorize(cursor);
 
       // TODO: remove extra parameters
@@ -128,7 +131,10 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
 
       final L2 globalLoss = DataTools.newTarget(factory, factorize.first, learn);
 
-      Interval.start();
+      if (!silent) {
+        Interval.start();
+      }
+
       for (int i = 0; i < ensembleSize; ++i) {
         final ObliviousTree weakModel = (ObliviousTree) weak.fit(learn, DataTools.bootstrap(globalLoss, rfRnd));
         // final ObliviousTree weakModel = (ObliviousTree) weak.fit(learn, globalLoss);
@@ -138,16 +144,23 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         }
 
         if (this.isGbdt) {
-          for (int j = 0; j < learn.length(); ++j) {
+          IntStream.range(0, learn.length()).parallel().forEach(j -> {
             factorize.first.adjust(j, -weakModel.value(this.bds, j));
-          }
+          });
+
+//          for (int j = 0; j < learn.length(); ++j) {
+//            factorize.first.adjust(j, -weakModel.value(this.bds, j));
+//          }
         }
 
         // System.out.println(String.format("Vector norm: %.3f", VecTools.norm(factorize.first)));
         weakModels.add(weakModel);
         ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
       }
-      Interval.stopAndPrint("Fitting greedy oblivious tree");
+
+      if (!silent) {
+        Interval.stopAndPrint("Fitting greedy oblivious tree");
+      }
 
       // Update valid score
       if (valid != null) {
@@ -346,11 +359,11 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(((ObliviousTree) weakModels.get(size - 1)).grid());
       }
 
-      long timeStart = System.currentTimeMillis();
+      // long timeStart = System.currentTimeMillis();
       updateBuffer();
-      System.out.println("updateBuffer: " + (System.currentTimeMillis() - timeStart) + " (ms)");
+      // System.out.println("updateBuffer: " + (System.currentTimeMillis() - timeStart) + " (ms)");
 
-      timeStart = System.currentTimeMillis();
+      // timeStart = System.currentTimeMillis();
       IntStream.range(0, cursor.rows()).parallel().forEach(i -> {
         final Vec vec = cursor.row(i);
         final int pointClass = target.label(i);
@@ -380,7 +393,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           }
         }
       });
-      System.out.println("Cursor update: " + (System.currentTimeMillis() - timeStart) + " (ms)");
+      // System.out.println("Cursor update: " + (System.currentTimeMillis() - timeStart) + " (ms)");
 
       this.size = size;
     }

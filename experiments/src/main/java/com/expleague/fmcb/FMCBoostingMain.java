@@ -178,6 +178,8 @@ public class FMCBoostingMain {
   public static void main(String[] args) throws Exception {
     CommandLineParser parser = new DefaultParser();
     try {
+      System.out.println("CPU count: " + Runtime.getRuntime().availableProcessors());
+
       CommandLine cmd = parser.parse(options, args);
 
       final String model = cmd.getOptionValue("model", null);
