@@ -268,8 +268,8 @@ public class MCTools {
     return S;
   }
 
-  public static String evalModel(final MCModel model, final Pool<?> ds, final String prefixComment, final boolean oneLine) {
-    final Vec predict = model.bestClassAll(ds.vecData().data());
+  public static String evalModel(final MCModel model, final Pool<?> ds, final String prefixComment, final boolean oneLine, boolean parallel) {
+    final Vec predict = model.bestClassAll(ds.vecData().data(), parallel);
     final TIntIntMap labelsMap = new TIntIntHashMap();
     final ConfusionMatrix confusionMatrix = new ConfusionMatrix(
         normalizeTarget(ds.target(BlockwiseMLLLogit.class).labels(), labelsMap),
@@ -284,6 +284,10 @@ public class MCTools {
           confusionMatrix.toClassDetailsString() +
           StringUtils.repeatWithDelimeter("", "=", 100);
     }
+  }
+
+  public static String evalModel(final MCModel model, final Pool<?> ds, final String prefixComment, final boolean oneLine) {
+    return evalModel(model, ds, prefixComment, oneLine, false);
   }
 
   //only for FuncJoin models
