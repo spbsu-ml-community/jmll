@@ -165,7 +165,7 @@ public class FMCBoostingMain {
 //    System.out.println(testResult);
 //    Interval.stopAndPrint(" evaluation on " + comment);
 
-    return multiclassModel.bestClassAll(test.vecData().data());
+    return multiclassModel.bestClassAll(test.vecData().data(), true);
   }
 
   private static void saveIntVec(final Vec data, final String path) throws Exception {

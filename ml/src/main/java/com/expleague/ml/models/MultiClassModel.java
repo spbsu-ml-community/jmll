@@ -2,11 +2,15 @@ package com.expleague.ml.models;
 
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
+import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.func.FuncJoin;
 import com.expleague.ml.models.multiclass.MCModel;
 import com.expleague.commons.util.ArrayTools;
+
+import java.util.stream.IntStream;
 
 /**
  * User: solar
@@ -61,6 +65,19 @@ public class MultiClassModel extends MCModel.Stub {
     final double[] trans = model.trans(x).toArray();
     final int bestClass = ArrayTools.max(trans);
     return trans[bestClass] > 0 ? bestClass : model.ydim();
+  }
+
+  @Override
+  public Vec bestClassAll(final Mx x, final boolean parallel) {
+    if (!parallel) {
+      return bestClassAll(x);
+    }
+
+    System.err.println("MultiClassModel.bestClassAll called");
+    Mx result = new VecBasedMx(1, new ArrayVec(x.rows()));
+    System.err.println("Parallel loop started");
+    IntStream.range(0, x.rows()).parallel().forEach(i -> result.set(i, this.value(x.row(i))));
+    return result;
   }
 
   @Override
