@@ -1,5 +1,6 @@
 package com.expleague.ml.factorization.impl;
 
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.func.impl.WeakListenerHolderImpl;
 import com.expleague.commons.math.vectors.Mx;
@@ -46,23 +47,16 @@ public class ALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implements Facto
 
     int iter = 0;
     while (iter++ < iterCount) {
-      double squareNormV = Math.pow(VecTools.norm(v), 2);
       for (int i = 0; i < m; i++) {
-        double sum = 0;
-        for (int j = 0; j < n; j++) {
-          sum += v.get(j) * X.get(i, j);
-        }
-        u.set(i, sum / (squareNormV + lambda));
+        double sum = VecTools.multiply(v, X.row(i));
+        u.set(i, sum / (1 + lambda));
       }
-      double squareNormU = Math.pow(VecTools.norm(u), 2);
+      double squareNormU = VecTools.sum2(u);
       for (int j = 0; j < n; j++) {
-        double sum = 0;
-        for (int i = 0; i < m; i++) {
-          sum += u.get(i) * X.get(i, j);
-        }
+        double sum = VecTools.multiply(u, X.col(j));
         v.set(j, sum / (squareNormU + lambda));
       }
-
+      VecTools.scale(v, 1/VecTools.norm(v));
       invoke(Pair.create(u, v));
     }
 

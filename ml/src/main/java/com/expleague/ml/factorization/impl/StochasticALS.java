@@ -26,12 +26,20 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
   private final double gamma;
   private final int maxIterations;
   private final Cache cache;
+  private final double lambda_1;
+  private final double lambda_2;
 
   public StochasticALS(FastRandom rng, double gamma, int maxIterations, Cache cache) {
+    this(rng, gamma, maxIterations, 0., 0., cache);
+  }
+
+  public StochasticALS(FastRandom rng, double gamma, int maxIterations, double lambda_1, double lambda_2, Cache cache) {
     this.rng = rng;
     this.gamma = gamma;
     this.maxIterations = maxIterations;
     this.cache = cache;
+    this.lambda_1 = lambda_1;
+    this.lambda_2 = lambda_2;
   }
 
   public StochasticALS(FastRandom rng, double gamma, int maxIterations) {
@@ -60,9 +68,9 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
     int iteration = 0;
 
     if (cache != null) {
-      Interval.start();
+//      Interval.start();
       cache.update(X, scaledWeakLearner);
-      Interval.stopAndPrint("Cache update");
+//      Interval.stopAndPrint("Cache update");
     }
 
     // call cursor update
@@ -70,7 +78,7 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
 
     // Interval.start();
     {
-      double a;
+      double max_dv_j;
       double u_hat;
 
       do {
@@ -78,20 +86,38 @@ public class StochasticALS extends WeakListenerHolderImpl<Pair<Vec, Vec>> implem
         final int i = rng.nextInt(m);
         final double denominator = Math.log(1 + iteration);
         final Vec row = cache != null ? cache.getAnyCached() : X.row(i);
-        u_hat = VecTools.multiply(row, v);
-        if (Double.isNaN(u_hat)) {
+        u_hat = VecTools.multiply(row, v) / (1 + this.lambda_2);
+        if (Double.isNaN(u_hat))
           break;
-        }
-        a = 0;
+        max_dv_j = 0;
+        double v_norm = 0;
         for (int j = 0; j < n; j++) {
-          final double val = gamma * (u_hat * (v.get(j) * u_hat - row.get(j))) / denominator;
-          v.adjust(j, -val);
-          if (a < Math.abs(val))
-            a = Math.abs(val);
+          double v_j = v.get(j);
+          double dv_j = u_hat * (v_j * u_hat - row.get(j)) / denominator;
+          v_j = v_j - gamma * dv_j;
+          v_norm += v_j * v_j;
+          v.set(j, v_j);
+          if (max_dv_j < Math.abs(dv_j))
+            max_dv_j = Math.abs(dv_j);
         }
-        VecTools.scale(v, 1 / VecTools.norm(v)); //TODO
+        if (lambda_1 > 0) {
+          v_norm = 0;
+          double scaled_lambda_1 = lambda_1 / m;
+          for (int j = 0; j < n; j++) {
+            double v_j = v.get(j);
+            if (v_j < -scaled_lambda_1)
+              v_j += scaled_lambda_1;
+            else if (v_j < scaled_lambda_1)
+              v_j = 0;
+            else
+              v_j -= scaled_lambda_1;
+            v_norm += v_j * v_j;
+            v.set(j, v_j);
+          }
+        }
+        VecTools.scale(v, 1 / Math.sqrt(v_norm));
       }
-      while (/*a > 0.2 * gamma * u_hat * u_hat &&*/ iteration < maxIterations);
+      while (/*max_dv_j > 0.03 * u_hat * u_hat && */iteration < maxIterations);
     }
     // Interval.stopAndPrint(iteration + " SALS iterations");
 

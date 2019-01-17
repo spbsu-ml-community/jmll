@@ -264,10 +264,36 @@ public class ECOCComboTest extends TestCase {
     final VecBasedMx v1 = new VecBasedMx(1, reference.second);
     Mx mx1 = VecTools.outer(u1, v1);
 
+    System.out.println(VecTools.norm(X));
     System.out.println(VecTools.distance(mx, X));
     System.out.println(VecTools.distance(mx1, X));
-    assertEquals(VecTools.distance(pair.first, reference.first), 0.001);
-    assertEquals(VecTools.distance(pair.second, reference.second), 0.001);
+    assertTrue(VecTools.distance(mx, X) < VecTools.distance(mx1, X) + MathTools.EPSILON);
+  }
+
+  public void testStochasticALSElastic() {
+    final FastRandom rng = new FastRandom(0);
+    final Mx X = new VecBasedMx(100000, 100);
+    VecTools.fillGaussian(X, rng);
+    final StochasticALS sals = new StochasticALS(rng, 1000, 100000, 0.2, 0.1, null);
+    final ALS als = new ALS(10);
+    Interval.start();
+    final Pair<Vec, Vec> pair = sals.factorize(X);
+    Interval.stopAndPrint("SALS");
+    Interval.start();
+    final Pair<Vec, Vec> reference = als.factorize(X);
+    Interval.stopAndPrint("ALS");
+    final VecBasedMx u = new VecBasedMx(pair.first.dim(), pair.first);
+    final VecBasedMx v = new VecBasedMx(1, pair.second);
+    Mx mx = VecTools.outer(u, v);
+
+    final VecBasedMx u1 = new VecBasedMx(reference.first.dim(), reference.first);
+    final VecBasedMx v1 = new VecBasedMx(1, reference.second);
+    Mx mx1 = VecTools.outer(u1, v1);
+
+    System.out.println(VecTools.norm(X));
+    System.out.println(VecTools.distance(mx, X));
+    System.out.println(VecTools.distance(mx1, X));
+    assertTrue(VecTools.distance(mx, X) < VecTools.distance(mx1, X) + MathTools.EPSILON);
   }
 
   private static void applyFactorMethod(final Factorization method) {
