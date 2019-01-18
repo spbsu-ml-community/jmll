@@ -113,6 +113,13 @@ public class FMCBoostingMain {
             .type(Number.class)
             .build());
     options.addOption(Option.builder()
+            .longOpt("lambda")
+            .desc("L1 loss coefficient")
+            .hasArg()
+            .argName("LAMBDA")
+            .type(Number.class)
+            .build());
+    options.addOption(Option.builder()
             .longOpt("train_pred")
             .desc("Path to the file with predictions on training dataset")
             .hasArg()
@@ -198,6 +205,7 @@ public class FMCBoostingMain {
       final int iterCount = Integer.parseInt(cmd.getOptionValue("n_iter", "0"));
       final double step = Double.parseDouble(cmd.getOptionValue("step", "0"));
       final double gamma = Double.parseDouble(cmd.getOptionValue("gamma", "100"));
+      final double lambda = Double.parseDouble(cmd.getOptionValue("lambda", "0"));
       final int maxIter = Integer.parseInt(cmd.getOptionValue("max_iter", "2000"));
       final int depth = Integer.parseInt(cmd.getOptionValue("depth", "5"));
       final int earlyStoppingRounds = Integer.parseInt(cmd.getOptionValue("early_stopping_rounds", "0"));
@@ -247,7 +255,7 @@ public class FMCBoostingMain {
 
       if (train != null) {
         final FMCBoosting boosting = new FMCBoosting(
-                new StochasticALS(rng, gamma, maxIter/*, new StochasticALS.Cache(600, 0.01, rng)*/),
+                new StochasticALS(rng, gamma, maxIter, lambda, 0.0, null),
                 new GreedyObliviousTree<StatBasedLoss>(GridTools.medianGrid(train.vecData(), binFactor), depth),
                 L2.class,
                 iterCount,
