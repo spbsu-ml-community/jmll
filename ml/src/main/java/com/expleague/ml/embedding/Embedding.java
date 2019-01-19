@@ -44,9 +44,9 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
   }
 
   enum WindowType {
-    LINEAR(d -> 1./d),
+    LINEAR(d -> 1./Math.abs(d)),
     FIXED(d -> 1.),
-    EXP(d -> exp(-1e-1 * d)),
+    EXP(d -> exp(-1e-1 * Math.abs(d))),
     ;
     private final IntToDoubleFunction weight;
 

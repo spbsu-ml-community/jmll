@@ -87,15 +87,6 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     return this;
   }
 
-  @Nullable
-  private Reader readExisting(Path path) throws IOException {
-    if (Files.exists(path))
-      return Files.newBufferedReader(path);
-    else if (Files.exists(Paths.get(path.toString() + ".gz")))
-      return new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(path.toString() + ".gz"))), StandardCharsets.UTF_8);
-    return null;
-  }
-
   protected abstract Embedding<CharSeq> fit();
 
   protected List<CharSeq> dict() {
@@ -106,6 +97,10 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     cooc.get(i).stream().forEach(packed ->
         consumer.accept((int)(packed >>> 32), Float.intBitsToFloat((int)(packed & 0xFFFFFFFFL)))
     );
+  }
+
+  protected int index(CharSequence word) {
+    return wordsIndex.get(CharSeq.create(word));
   }
 
   protected LongSeq cooc(int i) {
@@ -183,6 +178,8 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
       final Lock[] rowLocks = IntStream.range(0, wordsList.size()).mapToObj(i -> new ReentrantLock()).toArray(Lock[]::new);
       final List<TLongList> accumulators = new ArrayList<>();
       cooc = IntStream.range(0, wordsList.size()).mapToObj(i -> LongSeq.empty()).collect(Collectors.toList());
+      final CharSeq newLine = CharSeq.create("777newline777");
+      wordsIndex.put(newLine, Integer.MAX_VALUE);
       source().peek(new Consumer<CharSeq>() {
         long line = 0;
         long time = System.nanoTime();
@@ -193,22 +190,27 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
             time = System.nanoTime();
           }
         }
-      }).flatMap(CharSeqTools::words).mapToInt(wordsIndex::get).filter(idx -> idx >= 0).mapToObj(new IntFunction<LongStream>() {
+      }).map(line -> (CharSeq)CharSeqTools.concat(line, " ", newLine)).flatMap(CharSeqTools::words).map(this::normalize).mapToInt(wordsIndex::get).filter(idx -> idx >= 0).mapToObj(new IntFunction<LongStream>() {
         final TIntArrayList queue = new TIntArrayList(1000);
         final Lock lock = new ReentrantLock();
         int offset = 0;
         @Override
         public LongStream apply(int idx) {
+          if (idx == Integer.MAX_VALUE) { // new line
+            queue.resetQuick();
+            offset = 0;
+            return LongStream.empty();
+          }
           lock.lock();
           int pos = queue.size();
           final long[] out = new long[windowLeft + windowRight];
           int outIndex = 0;
           for (int i = offset; i < pos; i++) {
             byte distance = (byte)(pos - i);
-            if (distance <= windowLeft)
-              out[outIndex++] = pack(idx, queue.getQuick(i), distance);
             if (distance <= windowRight)
               out[outIndex++] = pack(queue.getQuick(i), idx, distance);
+            if (distance <= windowLeft)
+              out[outIndex++] = pack(idx, queue.getQuick(i), (byte)-distance);
           }
           queue.add(idx);
           if (queue.size() > Math.max(windowLeft, windowRight)) {
@@ -221,7 +223,9 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
           lock.unlock();
           return Arrays.stream(out, 0, outIndex);
         }
-      }).flatMapToLong(entries -> entries).parallel().mapToObj(new LongFunction<TLongList>() {
+      }).flatMapToLong(entries -> entries).parallel()/*.peek(p -> {
+        System.out.println(dict().get(unpackA(p)) + "->" + dict().get(unpackB(p)) + "=" + unpackDist(p));
+      })*/.mapToObj(new LongFunction<TLongList>() {
         volatile TLongList accumulator;
         @Override
         public TLongList apply(long value) {
@@ -240,6 +244,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
       }).filter(Objects::nonNull).peek(accumulators::remove).peek(TLongList::sort).forEach(acc -> merge(rowLocks, (TLongArrayList)acc));
       accumulators.parallelStream().peek(TLongList::sort).forEach(acc -> merge(rowLocks, (TLongArrayList)acc));
       log.info("Generated for " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime) + "s");
+      wordsIndex.remove(newLine);
 
       final Path coocOut = Paths.get(coocPath.toString() + ".gz");
       try (Writer coocWriter = new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(coocOut)))) {
@@ -262,8 +267,8 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
 
   private void merge(Lock[] rowLocks, TLongArrayList acc) {
     final int size = acc.size();
-    final float[] weights = new float[127];
-    IntStream.range(0, 127).forEach(i -> weights[i] = (float)windowType.weight(i));
+    final float[] weights = new float[256];
+    IntStream.range(0, 256).forEach(i -> weights[i] = (float)windowType.weight(i > 126 ? -256 + i : i));
 
     LongSeq prevRow = null;
     final LongSeqBuilder updatedRow = new LongSeqBuilder(wordsList.size());
@@ -273,10 +278,11 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     try {
       for (int i = 0; i < size; i++) {
         long next = acc.getQuick(i);
+        final long currentPairMasked = next & 0xFFFFFFFFFFFFFF00L;
         final int a = unpackA(next);
         final int b = unpackB(next);
         float weight = weights[unpackDist(next)];
-        while (++i < size && unpackB(next = acc.getQuick(i)) == b) {
+        while (++i < size && ((next = acc.getQuick(i)) & 0xFFFFFFFFFFFFFF00L) == currentPairMasked) {
           weight += weights[unpackDist(next)];
         }
         if (i < size)
@@ -296,21 +302,20 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
         }
         long prevPacked = -1;
         final long limit = (long) b << 32;
-        while (pos < prevLength) {
+        while (pos < prevLength) { // merging previous version of the cooc row with current data
           prevPacked = prevRow.longAt(pos);
-          if (prevPacked >= limit)
+          if (prevPacked >= limit) {
+            if (prevPacked == limit) { // second entry matches with the merged one
+              weight += Float.intBitsToFloat((int) (prevPacked & 0xFFFFFFFFL));
+              pos++;
+            }
             break;
+          }
 
           updatedRow.append(prevPacked);
           pos++;
         }
-        if (pos < prevLength) {
-          if (prevPacked >>> 32 == b) { // second entry matches with the merged one
-            weight += Float.intBitsToFloat((int) (prevPacked & 0xFFFFFFFFL));
-            pos++;
-          }
-        }
-        final long repacked = ((long) b << 32) | Float.floatToIntBits(weight);
+        final long repacked = limit | Float.floatToIntBits(weight);
         updatedRow.append(repacked);
       }
       //noinspection ConstantConditions
@@ -335,7 +340,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   }
 
   private long pack(long a, long b, byte dist) {
-    return (a << 36) | (b << 8) | ((long) dist);
+    return (a << 36) | (b << 8) | ((long) dist & 0xFF);
   }
 
   private void acquireDictionary() throws IOException {
@@ -360,7 +365,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     if (!dictReady) {
       log.info("Generating dictionary for " + this.path);
       TObjectIntMap<CharSeq> wordsCount = new TObjectIntHashMap<>();
-      source().flatMap(CharSeqTools::words).filter(word -> word.stream().anyMatch(Character::isLetter)).forEach(w ->
+      source().flatMap(CharSeqTools::words).filter(word -> word.stream().anyMatch(Character::isLetter)).map(this::normalize).forEach(w ->
           wordsCount.adjustOrPutValue(w, 1, 1)
       );
 
@@ -389,6 +394,22 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     }
   }
 
+  private CharSeq normalize(CharSeq word) {
+    final int initialLength = word.length();
+    int len = initialLength;
+    int st = 0;
+
+    while ((st < len) && !Character.isLetterOrDigit(word.charAt(st))) {
+      st++;
+    }
+    while ((st < len) && !Character.isLetterOrDigit(word.charAt(len - 1))) {
+      len--;
+    }
+    word = ((st > 0) || (len < initialLength)) ? word.subSequence(st, len) : word;
+
+    return (CharSeq)CharSeqTools.toLowerCase(word);
+  }
+
   protected Stream<CharSeq> source() throws IOException {
     if (path.getFileName().toString().endsWith(".gz"))
       return CharSeqTools.lines(new InputStreamReader(new GZIPInputStream(Files.newInputStream(path)), StandardCharsets.UTF_8));
@@ -408,6 +429,15 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
 
   protected int unpackB(LongSeq cooc, int v) {
     return (int) (cooc.longAt(v) >>> 32);
+  }
+
+  @Nullable
+  private Reader readExisting(Path path) throws IOException {
+    if (Files.exists(path))
+      return Files.newBufferedReader(path);
+    else if (Files.exists(Paths.get(path.toString() + ".gz")))
+      return new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(path.toString() + ".gz"))), StandardCharsets.UTF_8);
+    return null;
   }
 
   protected class ScoreCalculator {
