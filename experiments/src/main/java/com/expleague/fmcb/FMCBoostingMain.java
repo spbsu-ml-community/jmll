@@ -185,7 +185,7 @@ public class FMCBoostingMain {
   public static void main(String[] args) throws Exception {
     CommandLineParser parser = new DefaultParser();
     try {
-      System.out.println("CPU count: " + Runtime.getRuntime().availableProcessors());
+      // System.out.println("CPU count: " + Runtime.getRuntime().availableProcessors());
 
       CommandLine cmd = parser.parse(options, args);
 
@@ -202,18 +202,18 @@ public class FMCBoostingMain {
         throw new IllegalArgumentException("You should specify step!");
       }
 
-      final int iterCount = Integer.parseInt(cmd.getOptionValue("n_iter", "0"));
-      final double step = Double.parseDouble(cmd.getOptionValue("step", "0"));
+      final int iterCount = Integer.parseInt(cmd.getOptionValue("n_iter", "1000"));
+      final double step = Double.parseDouble(cmd.getOptionValue("step", "1"));
       final double gamma = Double.parseDouble(cmd.getOptionValue("gamma", "100"));
       final double lambda = Double.parseDouble(cmd.getOptionValue("lambda", "0"));
-      final int maxIter = Integer.parseInt(cmd.getOptionValue("max_iter", "2000"));
+      final int maxIter = Integer.parseInt(cmd.getOptionValue("max_iter", "1000"));
       final int depth = Integer.parseInt(cmd.getOptionValue("depth", "5"));
       final int earlyStoppingRounds = Integer.parseInt(cmd.getOptionValue("early_stopping_rounds", "0"));
       final int binFactor = Integer.parseInt(cmd.getOptionValue("n_bins", "32"));
       final String trainPredPath = cmd.getOptionValue("train_pred", null);
       final String testPredPath = cmd.getOptionValue("test_pred", null);
-      final int ensembleSize = Integer.parseInt(cmd.getOptionValue("ensemble_size", "1"));
-      final boolean isGbdt = Boolean.parseBoolean(cmd.getOptionValue("is_gbdt", "false"));
+      final int ensembleSize = Integer.parseInt(cmd.getOptionValue("ensemble_size", "5"));
+      final boolean isGbdt = Boolean.parseBoolean(cmd.getOptionValue("is_gbdt", "true"));
       final FastRandom rng = new FastRandom(0);
 
       Pool<?> train = null;
