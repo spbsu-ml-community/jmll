@@ -73,9 +73,7 @@ public class MultiClassModel extends MCModel.Stub {
       return bestClassAll(x);
     }
 
-    System.err.println("MultiClassModel.bestClassAll called");
     Mx result = new VecBasedMx(1, new ArrayVec(x.rows()));
-    System.err.println("Parallel loop started");
     IntStream.range(0, x.rows()).parallel().forEach(i -> result.set(i, this.value(x.row(i))));
     return result;
   }
