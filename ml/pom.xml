@@ -54,7 +54,7 @@
     <dependency>
       <groupId>com.expleague</groupId>
       <artifactId>commons</artifactId>
-      <version>1.4.8</version>
+      <version>1.4.9-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.expleague</groupId>

@@ -22,6 +22,7 @@ public class Aggregate {
   private final AdditiveStatistics[] bins;
   private final int[] starts;
   private final Factory<AdditiveStatistics> factory;
+  private final BFGrid.Row nonEmptyRow;
 
   public Aggregate(final BinarizedDataSet bds, final Factory<AdditiveStatistics> factory, final int[] points) {
     this(bds, factory);
@@ -38,14 +39,21 @@ public class Aggregate {
     this.grid = bds.grid();
     this.starts = new int[grid.rows()];
     int binsSize = 0;
+    BFGrid.Row neRow = null;
     for (int i = 0; i < grid.rows(); ++i) {
       starts[i] = binsSize;
       binsSize += grid.row(i).size() + 1;
+      if (grid.row(i).size() != 0)
+        neRow = grid.row(i);
     }
+    if (neRow == null)
+      throw new IllegalArgumentException("All rows of the given grid are empty!");
+    nonEmptyRow = neRow;
     this.bins = new AdditiveStatistics[binsSize];
     for (int i = 0; i < bins.length; i++) {
       bins[i] = factory.create();
     }
+
     this.factory = factory;
   }
 
@@ -62,9 +70,8 @@ public class Aggregate {
 
   public AdditiveStatistics total() {
     final AdditiveStatistics myTotal = factory.create();
-    final BFGrid.Row row = grid.row(0);
-    final int offset = starts[row.findex()];
-    for (int b = 0; b <= row.size(); b++) {
+    final int offset = starts[nonEmptyRow.findex()];
+    for (int b = 0; b <= nonEmptyRow.size(); b++) {
       myTotal.append(bins[offset + b]);
     }
     return myTotal;
