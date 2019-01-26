@@ -64,6 +64,18 @@ public class JoinedFeatureSet<T extends DSItem> extends FeatureSet.Stub<T> {
   }
 
   @Override
+  public int index(FeatureMeta meta) {
+    int index = 0;
+    for (int i = 0; i < fs.length; i++) {
+      final int currentIndex = fs[i].index(meta);
+      if (currentIndex >= 0)
+        return index + currentIndex;
+      index += fs[i].dim();
+    }
+    return super.index(meta);
+  }
+
+  @Override
   public Stream<FeatureSet<? super T>> components() {
     return Stream.of(fs).flatMap(FeatureSet::components);
   }
