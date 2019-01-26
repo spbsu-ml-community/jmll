@@ -24,7 +24,7 @@ public class LASSOMethod extends VecOptimization.Stub<L2> {
   }
 
   @Override
-  public Trans fit(final VecDataSet ds, final L2 loss) {
+  public Linear fit(final VecDataSet ds, final L2 loss) {
     final Mx learn = ds.data();
     final Vec betas = new ArrayVec(learn.columns());
     final Vec values = VecTools.copy(loss.target);

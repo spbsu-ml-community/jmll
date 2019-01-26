@@ -300,7 +300,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
           pos = 0;
           rowLocks[a].lock();
         }
-        long prevPacked = -1;
+        long prevPacked;
         final long limit = (long) b << 32;
         while (pos < prevLength) { // merging previous version of the cooc row with current data
           prevPacked = prevRow.longAt(pos);

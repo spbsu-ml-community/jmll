@@ -30,6 +30,7 @@ import com.expleague.ml.io.ModelsSerializationRepository;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
+import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.GroupedDSItem;
 import com.expleague.ml.meta.PoolFeatureMeta;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
@@ -44,6 +45,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import com.expleague.commons.math.vectors.impl.idxtrans.RowsPermutation;
@@ -72,6 +74,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
@@ -208,13 +213,75 @@ public class DataTools {
     return new CatboostPool(vecData, targetVec, catFeatureIds);
   }
 
+  /**
+   * @deprecated Use DataTools.writeModel(Function result, FeatureMeta[] features, OutputStream to) instead
+   */
+  @Deprecated
   public static void writeModel(final Function result, final File to) throws IOException {
     writeModel(result, new FileOutputStream(to));
   }
 
+  @Deprecated
   public static void writeModel(final Function result, OutputStream to) {
     final BFGrid grid = grid(result);
     StreamTools.writeChars(CharSeqTools.concat(result.getClass().getCanonicalName(), "\t", Boolean.toString(grid != null), "\n", SERIALIZATION.write(result)), to);
+  }
+
+  public static void writeModel(final Function<?, Vec> result, FeatureMeta[] features, Path to) {
+    try (BufferedWriter writer = Files.newBufferedWriter(to)){
+      writeModel(result, features, writer);
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static void writeModel(final Function<?, Vec> result, FeatureMeta[] features, Writer writer) {
+    final BFGrid grid = grid(result);
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.configure(SerializationFeature.INDENT_OUTPUT, false);
+    try {
+      writer.append("Model 2.0\n");
+      mapper.writeValue(writer, features);
+      writer.append('\n');
+      writer.append(result.getClass().getCanonicalName()).append("\t").append(Boolean.toString(grid != null)).append("\n");
+      writer.append(SERIALIZATION.write(result));
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static <T extends Function> Pair<T, FeatureMeta[]> readModel(Reader from) {
+    final ReaderChopper chopper = new ReaderChopper(from);
+    try {
+      {
+        final CharSeq header = chopper.chop('\n');
+        if (!header.equals("Model 2.0"))
+          throw new RuntimeException("File format not supported: before 2.0 there is no feature information");
+      }
+      FeatureMeta[] meta;
+      {
+        ObjectMapper mapper = new ObjectMapper();
+        meta = mapper.readValue(new CharSeqReader(Objects.requireNonNull(chopper.chop('\n'))), JsonFeatureMeta[].class);
+      }
+      T model;
+      {
+        final ModelsSerializationRepository repository = new ModelsSerializationRepository();
+        final BFGridConstructor grid = new BFGridConstructor();
+        final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
+        final CharSequence[] properties = CharSeqTools.split(Objects.requireNonNull(chopper.chop('\n')), '\t');
+        //noinspection unchecked
+        final Class<? extends Function> modelClazz = (Class<? extends Function>) Class.forName(properties[0].toString());
+        //noinspection unchecked
+        model = (T)repository.read(chopper.rest(), modelClazz);
+        grid.build();
+      }
+      return Pair.create(model, meta);
+    }
+    catch (IOException | ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static <T extends Function> T readModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {

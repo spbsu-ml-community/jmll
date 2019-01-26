@@ -105,7 +105,7 @@ public class MultiDecompBuilder extends EmbeddingBuilderBase {
         if (cooc.length() < 10000 && cooc.length() > 1000 && finalIter > 0 && VecTools.norm(sym_i) > minimumNorm) {
           final TLongArrayList validPairs = validPairsHolder.get();
           validPairs.reset();
-          double qualityThreshold = 0.5;//Math.cos(Math.PI / 2.5);
+          double qualityThreshold = 0.7;//Math.cos(Math.PI / 2.5);
 
 //          for (int u = 0; u < cooc.length(); u++) {
 //            Vec vecA = symDecomp.get(u);

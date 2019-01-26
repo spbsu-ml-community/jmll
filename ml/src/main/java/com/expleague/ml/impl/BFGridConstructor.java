@@ -3,10 +3,10 @@ package com.expleague.ml.impl;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.impl.BinarizedDataSet;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
 public class BFGridConstructor implements BFGrid {
   private BFGridImpl delegate;
@@ -31,8 +31,9 @@ public class BFGridConstructor implements BFGrid {
     return build().rows();
   }
 
+  @Nullable
   public BFGrid build() {
-    if (delegate == null) {
+    if (delegate == null && features.size() > 0) {
       BFRowImpl[] rows = new BFRowImpl[features.size()];
       int bfindex = 0;
       for (int f = 0; f < rows.length; f++) {
