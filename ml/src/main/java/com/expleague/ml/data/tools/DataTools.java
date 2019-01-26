@@ -240,9 +240,10 @@ public class DataTools {
     final BFGrid grid = grid(result);
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(SerializationFeature.INDENT_OUTPUT, false);
+//    mapper.configure(SerializationFeature.CLOSE_CLOSEABLE, false);
     try {
       writer.append("Model 2.0\n");
-      mapper.writeValue(writer, features);
+      writer.append(mapper.writeValueAsString(features));
       writer.append('\n');
       writer.append(result.getClass().getCanonicalName()).append("\t").append(Boolean.toString(grid != null)).append("\n");
       writer.append(SERIALIZATION.write(result));
@@ -274,7 +275,7 @@ public class DataTools {
         //noinspection unchecked
         final Class<? extends Function> modelClazz = (Class<? extends Function>) Class.forName(properties[0].toString());
         //noinspection unchecked
-        model = (T)repository.read(chopper.rest(), modelClazz);
+        model = (T)customizedRepository.read(chopper.rest(), modelClazz);
         grid.build();
       }
       return Pair.create(model, meta);
@@ -285,7 +286,16 @@ public class DataTools {
   }
 
   public static <T extends Function> T readModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
-    final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(inputStream));
+    CharSequence modelCS = StreamTools.readStream(inputStream);
+    try {
+      Pair<Function, FeatureMeta[]> pair = readModel(new CharSeqReader(CharSeq.create(modelCS)));
+      //noinspection unchecked
+      return (T)pair.getFirst();
+    }
+    catch (RuntimeException ignored) { // trying modern deserialization first
+      ignored.printStackTrace();
+    }
+    final LineNumberReader modelReader = new LineNumberReader(new CharSeqReader(modelCS));
     final String line = modelReader.readLine();
     final CharSequence[] parts = CharSeqTools.split(line, '\t');
     //noinspection unchecked

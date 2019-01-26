@@ -120,7 +120,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     }
 
     for (int t = 0; t < iterationsCount; t++) {
-      System.out.println("Iteration " + (t + 1));
+      if ((t + 1) % 100 == 0)
+        System.out.println("Iteration " + (t + 1));
 
       final Pair<Vec, Vec> factorize = this.factorize.factorize(cursor);
 
@@ -158,9 +159,9 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
       }
 
-      if (!silent) {
-        Interval.stopAndPrint("Fitting greedy oblivious tree");
-      }
+//      if (!silent) {
+//        Interval.stopAndPrint("Fitting greedy oblivious tree");
+//      }
 
       // Update valid score
       if (valid != null) {
@@ -178,30 +179,30 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           }
         }
 
-        double matches = 0;
-        for (int i = 0; i < valid.length(); ++i) {
-          double[] score = validScore.row(i).toArray();
-          int clazz = ArrayTools.max(score);
-          clazz = score[clazz] > 0 ? clazz : target.classesCount() - 1;
-          matches += (clazz == validTarget.label(i) ? 1 : 0);
+        if ((t + 1) % 100 == 0) {
+          double matches = 0;
+          for (int i = 0; i < valid.length(); ++i) {
+            double[] score = validScore.row(i).toArray();
+            int clazz = ArrayTools.max(score);
+            clazz = score[clazz] > 0 ? clazz : target.classesCount() - 1;
+            matches += (clazz == validTarget.label(i) ? 1 : 0);
 
-          // save class for i-th sample
-          validClass.set(i, clazz);
+            // save class for i-th sample
+            validClass.set(i, clazz);
+          }
+
+          final double accuracy = matches / valid.length();
+          final double f1Score = f1MacroScore.value(validClass);
+
+          validScores[t] = f1Score;
+
+          if (bestIterCount == 0 || accuracy > bestAccuracy) {
+            bestIterCount = t + 1;
+            bestAccuracy = accuracy;
+          }
+          System.out.println(String.format("Valid accuracy: %.4f", accuracy));
+          System.out.println(String.format("Valid f1 macro: %.4f", f1Score));
         }
-
-        final double accuracy = matches / valid.length();
-        final double f1Score = f1MacroScore.value(validClass);
-
-        validScores[t] = f1Score;
-
-        if (bestIterCount == 0 || accuracy > bestAccuracy) {
-          bestIterCount = t + 1;
-          bestAccuracy = accuracy;
-        }
-
-        Interval.stopAndPrint("Evaluate valid accuracy & f1 score");
-        System.out.println(String.format("Valid accuracy: %.4f", accuracy));
-        System.out.println(String.format("Valid f1 macro: %.4f", f1Score));
 
         if (earlyStoppingRounds > 0 && t + 1 - bestIterCount == earlyStoppingRounds) {
           // Early stopping

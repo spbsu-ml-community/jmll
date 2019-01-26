@@ -2,12 +2,14 @@ package com.expleague.ml.cli.output;
 
 import com.expleague.commons.io.StreamTools;
 import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.expleague.ml.BFGrid;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.function.Function;
 
 /**
@@ -37,6 +39,10 @@ public class ModelWriter {
     if (dynamicGrid != null) {
       StreamTools.writeChars(DataTools.SERIALIZATION.write(dynamicGrid), new File(outName + ".dgrid"));
     }
+  }
+
+  public void writeModel(final Function result, Pool pool) {
+    DataTools.writeModel(result, pool.features(), Paths.get(outName + ".model"));
   }
 
   public void writeModel(final Function result) throws IOException {

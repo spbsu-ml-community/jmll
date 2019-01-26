@@ -1,9 +1,5 @@
 package com.expleague.ml.cli.modes.impl;
 
-import com.expleague.ml.ProgressHandler;
-import com.expleague.ml.TargetFunc;
-import com.expleague.ml.cli.modes.CliPoolReaderHelper;
-import com.expleague.ml.cli.output.ModelWriter;
 import com.expleague.commons.func.WeakListenerHolder;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.Func;
@@ -12,26 +8,30 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.text.StringUtils;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.logging.Interval;
-import com.expleague.ml.cli.output.printers.*;
+import com.expleague.ml.BFGrid;
+import com.expleague.ml.ProgressHandler;
+import com.expleague.ml.TargetFunc;
 import com.expleague.ml.cli.builders.data.DataBuilder;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderClassic;
 import com.expleague.ml.cli.builders.data.impl.DataBuilderCrossValidation;
 import com.expleague.ml.cli.builders.methods.MethodsBuilder;
 import com.expleague.ml.cli.builders.methods.grid.DynamicGridBuilder;
+import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import com.expleague.ml.cli.modes.AbstractMode;
+import com.expleague.ml.cli.modes.CliPoolReaderHelper;
+import com.expleague.ml.cli.output.ModelWriter;
+import com.expleague.ml.cli.output.printers.*;
 import com.expleague.ml.data.tools.CatboostPool;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
-import com.expleague.ml.BFGrid;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.loss.blockwise.BlockwiseMultiLabelLogit;
 import com.expleague.ml.loss.multiclass.ClassicMulticlassLoss;
 import com.expleague.ml.loss.multilabel.ClassicMultiLabelLoss;
 import com.expleague.ml.loss.multilabel.MultiLabelOVRLogit;
-import com.expleague.ml.methods.VecOptimization;
+import com.expleague.ml.methods.Optimization;
 import com.expleague.ml.models.multiclass.JoinedBinClassModel;
-import com.expleague.ml.cli.builders.methods.grid.GridBuilder;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
 
@@ -93,7 +93,7 @@ public class Fit extends AbstractMode {
     methodsBuilder.setRandom(new FastRandom());
     methodsBuilder.setGridBuilder(gridBuilder);
     methodsBuilder.setDynamicGridBuilder(dynamicGridBuilder);
-    final VecOptimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
+    final Optimization method = methodsBuilder.create(command.getOptionValue(OPTIMIZATION_OPTION, DEFAULT_OPTIMIZATION_SCHEME));
 
     //set target
     final String target = command.getOptionValue(TARGET_OPTION, DEFAULT_TARGET);
@@ -137,7 +137,7 @@ public class Fit extends AbstractMode {
     //fitting
     Interval.start();
     Interval.suspend();
-    final Trans result = method.fit(learn.vecData(), loss);
+    final Trans result = (Trans)method.fit(learn.vecData(), loss);
     Interval.stopAndPrint("Total fit time:");
 
 
@@ -166,7 +166,7 @@ public class Fit extends AbstractMode {
         modelWriter.tryWriteGrid(result);
       }
       modelWriter.tryWriteDynamicGrid(result);
-      modelWriter.writeModel(result);
+      modelWriter.writeModel(result, learn);
     }
   }
 

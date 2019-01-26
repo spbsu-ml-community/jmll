@@ -1,11 +1,14 @@
 package com.expleague.ml.cli.modes.impl;
 
 import com.expleague.commons.math.MathTools;
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.util.Pair;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.impl.BFRowImpl;
 import com.expleague.ml.impl.BinaryFeatureImpl;
+import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.PoolFeatureMeta;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.Trans;
@@ -29,6 +32,8 @@ import org.apache.commons.cli.MissingArgumentException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
@@ -44,8 +49,6 @@ public class InterpretModel extends AbstractMode {
   public void run(final CommandLine command) throws MissingArgumentException, IOException {
     if (!command.hasOption(MODEL_OPTION))
       throw new MissingArgumentException("Please provide 'MODEL_OPTION'");
-    if (!command.hasOption(GRID_OPTION))
-      throw new MissingArgumentException("Please provide 'GRID_OPTION'");
     if (!command.hasOption(LEARN_OPTION))
       throw new MissingArgumentException("Please provide 'LEARN_OPTION'");
     final Pool<?> pool;
@@ -54,7 +57,22 @@ public class InterpretModel extends AbstractMode {
     else
       pool = DataTools.loadFromFeaturesTxt(command.getOptionValue(LEARN_OPTION));
 
-    final BFGrid grid = BFGrid.CONVERTER.convertFrom(StreamTools.readFile(new File(command.getOptionValue(GRID_OPTION))));
+    Function<?, Vec> model;
+    try {
+      final Pair<Function, FeatureMeta[]> load = DataTools.readModel(Files.newBufferedReader(Paths.get(command.getOptionValue(MODEL_OPTION))));
+      //noinspection unchecked
+      model = (Function<?, Vec>)load.getFirst();
+    }
+    catch (RuntimeException re) { // moderb load failed
+      try {
+        model = DataTools.readModel(Files.newInputStream(Paths.get(command.getOptionValue(MODEL_OPTION))));
+      }
+      catch (ClassNotFoundException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    BFGrid grid = DataTools.grid(model);
 
     boolean splits = false;
     int topSplits = 100;
@@ -114,68 +132,57 @@ public class InterpretModel extends AbstractMode {
       }
     }
 
-    final ModelsSerializationRepository serializationRepository;
-    final GridBuilder gridBuilder = new GridBuilder();
-    gridBuilder.setGrid(grid);
-    serializationRepository = new ModelsSerializationRepository(gridBuilder.create());
-    try {
-      final Function model = DataTools.readModel(command.getOptionValue(MODEL_OPTION), serializationRepository);
-      if (!(model instanceof Ensemble))
-        throw new IllegalArgumentException("Provided model is not ensemble");
-      final Ensemble ensemble = (Ensemble) model;
-      if (ensemble.size() == 0 )
-        throw new IllegalArgumentException("Provided ensemble is empty");
+    if (!(model instanceof Ensemble))
+      throw new IllegalArgumentException("Provided model is not ensemble");
+    final Ensemble ensemble = (Ensemble) model;
+    if (ensemble.size() == 0 )
+      throw new IllegalArgumentException("Provided ensemble is empty");
 
-      final ArrayList<ObliviousTree> trees = new ArrayList<>();
-      for(final Trans component: ensemble.models) {
-        if (!(component instanceof ObliviousTree))
-          throw new IllegalArgumentException("This component type is not supported: " + component.getClass());
-        trees.add((ObliviousTree) component);
-      }
-      final Ensemble<ObliviousTree> otEnsamble = new Ensemble<>(trees.toArray(new ObliviousTree[trees.size()]), ensemble.weights);
-      @SuppressWarnings("unchecked")
-      final ModelTools.CompiledOTEnsemble compile = ModelTools.compile(otEnsamble);
-      final List<ModelTools.CompiledOTEnsemble.Entry> entries = new ArrayList<>(compile.getEntries());
-      TObjectIntMap<ModelTools.CompiledOTEnsemble.Entry> entryCount = new TObjectIntHashMap<>();
-      {
-        final VecDataSet vds = pool.vecData();
-        final BinarizedDataSet bds = vds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
-        for (ModelTools.CompiledOTEnsemble.Entry entry : entries) {
-          int weight = 0;
-          for (int i = 0; i < vds.length(); i++) {
-            final int[] bfIndices = entry.getBfIndices();
-            final int length = bfIndices.length;
-            boolean fit = true;
-            for (int j = 0; j < length; j++) {
-              if (!grid.bf(bfIndices[j]).value(i, bds))
-                fit = false;
-            }
-            if (fit)
-              weight++;
+    final ArrayList<ObliviousTree> trees = new ArrayList<>();
+    for(final Trans component: ensemble.models) {
+      if (!(component instanceof ObliviousTree))
+        throw new IllegalArgumentException("This component type is not supported: " + component.getClass());
+      trees.add((ObliviousTree) component);
+    }
+    final Ensemble<ObliviousTree> otEnsamble = new Ensemble<>(trees.toArray(new ObliviousTree[trees.size()]), ensemble.weights);
+    final ModelTools.CompiledOTEnsemble compile = ModelTools.compile(otEnsamble);
+    final List<ModelTools.CompiledOTEnsemble.Entry> entries = new ArrayList<>(compile.getEntries());
+    TObjectIntMap<ModelTools.CompiledOTEnsemble.Entry> entryCount = new TObjectIntHashMap<>();
+    {
+      final VecDataSet vds = pool.vecData();
+      final BinarizedDataSet bds = vds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
+      for (ModelTools.CompiledOTEnsemble.Entry entry : entries) {
+        int weight = 0;
+        for (int i = 0; i < vds.length(); i++) {
+          final int[] bfIndices = entry.getBfIndices();
+          final int length = bfIndices.length;
+          boolean fit = true;
+          for (int j = 0; j < length; j++) {
+            if (!grid.bf(bfIndices[j]).value(i, bds))
+              fit = false;
           }
-          entryCount.put(entry, weight);
+          if (fit)
+            weight++;
         }
+        entryCount.put(entry, weight);
       }
-      entries.sort((a, b) -> Double.compare(Math.abs(b.getValue() * entryCount.get(b)), Math.abs(a.getValue() * entryCount.get(a))));
-      final int[] vfeatures;
-      {
-        final TIntHashSet valuableFeaturesSet = new TIntHashSet();
-        entries.stream().flatMapToInt(s -> Arrays.stream(s.getBfIndices())).forEach(valuableFeaturesSet::add);
-        vfeatures = valuableFeaturesSet.toArray();
-      }
+    }
+    entries.sort((a, b) -> Double.compare(Math.abs(b.getValue() * entryCount.get(b)), Math.abs(a.getValue() * entryCount.get(a))));
+    final int[] vfeatures;
+    {
+      final TIntHashSet valuableFeaturesSet = new TIntHashSet();
+      entries.stream().flatMapToInt(s -> Arrays.stream(s.getBfIndices())).forEach(valuableFeaturesSet::add);
+      vfeatures = valuableFeaturesSet.toArray();
+    }
 
-      if (splits)
-        topSplits(pool, grid, entries, vfeatures, topSplits);
-      if (histogram)
-        histograms(pool, grid, entries, histogramPath);
-      if (mhistogram)
-        mhistograms(pool, grid, entries, mhistogramPath);
-      if (linear || !(splits || histogram || mhistogram))
-        linearComponents(pool, grid, entries, entryCount);
-    }
-    catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
+    if (splits)
+      topSplits(pool, grid, entries, vfeatures, topSplits);
+    if (histogram)
+      histograms(pool, grid, entries, histogramPath);
+    if (mhistogram)
+      mhistograms(pool, grid, entries, mhistogramPath);
+    if (linear || !(splits || histogram || mhistogram))
+      linearComponents(pool, grid, entries, entryCount);
   }
 
   private void linearComponents(Pool<?> pool, BFGrid grid, List<ModelTools.CompiledOTEnsemble.Entry> entries, TObjectIntMap<ModelTools.CompiledOTEnsemble.Entry> entryCount) {
