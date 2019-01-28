@@ -44,8 +44,9 @@ public interface FeatureSet<T extends DSItem> extends Consumer<T> {
     private Vec current;
 
     protected Stub() {
-      init(Stream.of(getClass().getFields())
+      init(Stream.of(getClass().getDeclaredFields())
           .filter(fld -> (fld.getModifiers() & Modifier.STATIC) != 0)
+          .peek(fld -> fld.setAccessible(true))
           .map(fld -> FeatureMeta.class.isAssignableFrom(fld.getType()) ? fld : null)
           .filter(Objects::nonNull)
           .map(fld -> {
