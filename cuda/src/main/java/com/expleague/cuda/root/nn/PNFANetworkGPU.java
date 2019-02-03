@@ -169,7 +169,7 @@ public class PNFANetworkGPU<T, Loss extends L2> implements SeqOptimization<T, Lo
     for (int i = 0; i < alphabet.size(); i++) {
       for (int j = 0; j < stateCount; j++) {
         int id = ArrayTools.max(params.getW()[i].row(j).toArray());
-        result.addTransition(j, id, alphabet.getT(alphabet.get(i)));
+        //result.addTransition(j, id, alphabet.getT(alphabet.get(i)));
       }
     }
 //    return (seq) -> new SingleValueVec(params.getValues().get(result.run(seq))); //new SingleValueVec(params.getSeqValue(seq));

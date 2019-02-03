@@ -15,7 +15,7 @@ import jcuda.jcurand.curandRngType;
 public class JCurandHelper {
 
   static {
-    JCudaHelper.hook();
+    JCudaHelper.getInstanse();
   }
 
   public static curandGenerator createDefault() {

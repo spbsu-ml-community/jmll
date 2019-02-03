@@ -15,7 +15,7 @@ public class KernelOperations {
   private static final String CU_FILE_PATH = "array/Kernels.cu";
 
   private static final CUfunction F_MATRIXEXP =
-      JCudaHelper.getFunction(CU_FILE_PATH, "fMatrixExp");
+      JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fMatrixExp");
 
   public static void fMatrixExp(final GPUMx matrix, final GPUMx result) {
     final int rows = result.rows();
@@ -30,7 +30,7 @@ public class KernelOperations {
   }
 
   private static final CUfunction F_MATRIX_REDUCE =
-      JCudaHelper.getFunction(CU_FILE_PATH, "fMatrixReduce");
+      JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fMatrixReduce");
 
   public static void fMatrixReduce(final GPUMx matrix, final GPUMx result) {
 
@@ -51,7 +51,7 @@ public class KernelOperations {
 
 
   private static final CUfunction REDUCE5 =
-      JCudaHelper.getFunction(CU_FILE_PATH, "reduce5");
+      JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "reduce5");
 
   public static void reduce5(GPUVec args, GPUVec result) {
 
@@ -73,7 +73,7 @@ public class KernelOperations {
   }
 
   private static final CUfunction F_FILL =
-      JCudaHelper.getFunction(CU_FILE_PATH, "fFill");
+      JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fFill");
 
   public static void dFill(final GPUVec vec, final float value) {
     final int length = vec.length;
@@ -93,7 +93,7 @@ public class KernelOperations {
   }
 
   private static final CUfunction F_MATRIX_KERNEL_1 =
-      JCudaHelper.getFunction(CU_FILE_PATH, "fMatrixKernel1");
+      JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fMatrixKernel1");
 
   public static void fMatrixKernel1(final float weight, final float diff,
                                     final GPUVec distribution, final GPUVec expectedValue,
@@ -123,7 +123,7 @@ public class KernelOperations {
   }
 
   private static final CUfunction F_MATRIX_KERNEL_2 =
-      JCudaHelper.getFunction(CU_FILE_PATH, "fMatrixKernel2");
+      JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fMatrixKernel2");
 
   public static void fMatrixKernel2(final float lambda, final GPUMx betaGrad, final int to,
                                     final GPUMx weights) {
@@ -148,7 +148,7 @@ public class KernelOperations {
   }
 
   private static final CUfunction F_VECTOR_KERNEL_1 =
-      JCudaHelper.getFunction(CU_FILE_PATH, "fVectorKernel1");
+      JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fVectorKernel1");
 
   public static void fVectorKernel1(final GPUVec lastGrad, final GPUVec gradCoordinate,
                                     final GPUVec totalGrad, final float step,

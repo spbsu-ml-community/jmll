@@ -9,6 +9,7 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.cuda.KernelOperations;
 import com.expleague.cuda.data.GPUVec;
 import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.optimization.Optimize;
 
 import java.util.Random;
@@ -28,6 +29,11 @@ public class SAGADescentGPU implements Optimize<FuncEnsemble<? extends FuncC1>> 
     this.maxIter = maxIter;
     this.random = random;
     this.threadCount = threadCount;
+  }
+
+  @Override
+  public Vec optimize(FuncEnsemble<? extends FuncC1> func, RegularizerFunc reg, Vec x0) {
+    return null;
   }
 
   @Override

@@ -1,9 +1,7 @@
 package com.expleague.cuda.data.impl;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
-import org.junit.Assert;
+import com.expleague.cuda.JCudaHelper;
+import org.junit.*;
 
 import java.util.Random;
 
@@ -19,6 +17,11 @@ public class FloatMatrixTest extends Assert {
   private static final float DELTA = 1e-9f;
 
   private static final Random RANDOM = new Random();
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testCreate() throws Exception {

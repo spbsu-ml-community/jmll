@@ -15,13 +15,13 @@ import jcuda.driver.*;
 public class VectorScale {
 
   static {
-    JCudaHelper.hook();
+    JCudaHelper.getInstanse();
   }
 
 
   private static final String CU_FILE_PATH = "array/VectorScale.cu";
 
-  private static final CUfunction F_SIGMOID = JCudaHelper.getFunction(CU_FILE_PATH, "fSigmoid");
+  private static final CUfunction F_SIGMOID = JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fSigmoid");
 
   public static void fSigmoid(
       final @NotNull FloatVector input,
@@ -37,7 +37,7 @@ public class VectorScale {
     callFunction(kernelParameters, F_SIGMOID, length);
   }
 
-  private static final CUfunction F_DER_SIGMOID = JCudaHelper.getFunction(CU_FILE_PATH, "fDerSigmoid");
+  private static final CUfunction F_DER_SIGMOID = JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fDerSigmoid");
 
   public static void fDerSigmoid(
       final @NotNull FloatVector input,
@@ -53,7 +53,7 @@ public class VectorScale {
     callFunction(kernelParameters, F_DER_SIGMOID, length);
   }
 
-  private static final CUfunction F_EXP = JCudaHelper.getFunction(CU_FILE_PATH, "fExp");
+  private static final CUfunction F_EXP = JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fExp");
 
   public static void fExp(final @NotNull FloatVector input, final @NotNull FloatVector output) {
     final int length = input.length;
@@ -66,7 +66,7 @@ public class VectorScale {
     callFunction(kernelParameters, F_EXP, length);
   }
 
-  private static final CUfunction F_TANH = JCudaHelper.getFunction(CU_FILE_PATH, "fTanh");
+  private static final CUfunction F_TANH = JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fTanh");
 
   public static void fTanh(final @NotNull FloatVector input, final @NotNull FloatVector output) {
     final int length = input.length;
@@ -79,7 +79,7 @@ public class VectorScale {
     callFunction(kernelParameters, F_TANH, length);
   }
 
-  private static final CUfunction F_NEGATION = JCudaHelper.getFunction(CU_FILE_PATH, "fNegation");
+  private static final CUfunction F_NEGATION = JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fNegation");
 
   public static void fNegation(final @NotNull FloatVector input, final @NotNull FloatVector output) {
     final int length = input.length;
@@ -92,7 +92,7 @@ public class VectorScale {
     callFunction(kernelParameters, F_NEGATION, length);
   }
 
-  private static final CUfunction F_HADAMARD = JCudaHelper.getFunction(CU_FILE_PATH, "fHadamard");
+  private static final CUfunction F_HADAMARD = JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "fHadamard");
 
   public static void fHadamard(
       final @NotNull FloatVector left,

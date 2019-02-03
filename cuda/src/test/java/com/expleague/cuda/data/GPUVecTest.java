@@ -2,6 +2,9 @@ package com.expleague.cuda.data;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.cuda.JCudaHelper;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Random;
@@ -18,6 +21,11 @@ public class GPUVecTest {
   private static final float DELTA = 1e-9f;
 
   private static final Random RANDOM = new Random();
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testCreate() {

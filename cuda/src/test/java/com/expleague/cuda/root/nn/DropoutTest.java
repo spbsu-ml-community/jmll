@@ -1,12 +1,11 @@
 package com.expleague.cuda.root.nn;
 
+import com.expleague.cuda.JCudaHelper;
 import com.expleague.cuda.JCurandHelper;
 import com.expleague.cuda.data.impl.FloatVector;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import jcuda.jcurand.curandGenerator;
-import org.junit.Assert;
 
 import java.util.Random;
 
@@ -22,6 +21,11 @@ public class DropoutTest extends Assert {
   private static final float DELTA = 1e-9f;
 
   private static final Random RANDOM = new Random();
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testDropoutTrain() throws Exception {

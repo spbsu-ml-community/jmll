@@ -8,7 +8,7 @@ import com.expleague.ml.methods.seq.param.WeightParametrization;
 
 import java.util.function.Function;
 
-class PNFAModel<Type> implements Function<Seq<Type>, Vec> {
+public class PNFAModel<Type> implements Function<Seq<Type>, Vec> {
   private Vec params;
   private int stateCount;
   private int stateDim;

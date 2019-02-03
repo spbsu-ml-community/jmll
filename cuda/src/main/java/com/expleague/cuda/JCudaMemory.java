@@ -16,7 +16,7 @@ import jcuda.driver.JCudaDriver;
 public class JCudaMemory {
 
   static {
-    JCudaHelper.hook();
+    JCudaHelper.getInstanse();
   }
 
 

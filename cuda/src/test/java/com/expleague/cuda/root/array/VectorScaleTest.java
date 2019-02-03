@@ -1,10 +1,8 @@
 package com.expleague.cuda.root.array;
 
+import com.expleague.cuda.JCudaHelper;
 import com.expleague.cuda.data.impl.FloatVector;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import org.junit.Assert;
+import org.junit.*;
 
 import java.util.Random;
 
@@ -18,6 +16,11 @@ public class VectorScaleTest extends Assert {
   private static final int LENGTH = 10;
 
   private static final float DELTA = 1e-6f; // (CUDA version) > 6.0 -> EPS = 1e-9
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testExp() throws Exception {

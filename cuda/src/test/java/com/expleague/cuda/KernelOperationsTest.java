@@ -8,7 +8,8 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.cuda.data.GPUMx;
 import com.expleague.cuda.data.GPUVec;
-import org.apache.commons.math3.util.FastMath;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -24,6 +25,11 @@ public class KernelOperationsTest {
   private static final int LENGTH = 10000;
 
   private static final float DELTA = 1e-4f; // (CUDA version) > 6.0 -> EPS = 1e-9
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testMatrixReduce() {
@@ -311,7 +317,7 @@ public class KernelOperationsTest {
     for (int i = 0; i < stateCount; i++) {
       double sum = 0;
       for (int j = 0; j < stateCount - 1; j++) {
-        final double e = FastMath.exp(beta.get(i, j));
+        final double e = Math.exp(beta.get(i, j));
         sum += e;
         w.set(i, j, e);
       }

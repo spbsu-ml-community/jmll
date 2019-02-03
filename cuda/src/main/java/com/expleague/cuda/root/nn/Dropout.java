@@ -18,13 +18,13 @@ import jcuda.jcurand.curandGenerator;
 public class Dropout {
 
   static {
-    JCudaHelper.hook();
+    JCudaHelper.getInstanse();
   }
 
 
   private static final String CU_FILE_PATH = "nn/Dropout.cu";
 
-  private static final CUfunction DROPOUT_TRAIN = JCudaHelper.getFunction(CU_FILE_PATH, "dropoutTrain");
+  private static final CUfunction DROPOUT_TRAIN = JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "dropoutTrain");
 
   public static void dropoutTrain(
       final @NotNull FloatVector input,
@@ -58,7 +58,7 @@ public class Dropout {
     JCudaDriver.cuCtxSynchronize();
   }
 
-  private static final CUfunction DROPOUT_TEST = JCudaHelper.getFunction(CU_FILE_PATH, "dropoutTest");
+  private static final CUfunction DROPOUT_TEST = JCudaHelper.getInstanse().getFunction(CU_FILE_PATH, "dropoutTest");
 
   public static void dropoutTest(
       final @NotNull FloatVector input,

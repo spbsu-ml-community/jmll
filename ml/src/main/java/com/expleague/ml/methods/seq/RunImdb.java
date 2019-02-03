@@ -27,8 +27,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class RunImdb {
-  private static final int ALPHABET_SIZE = 10000;
-  private static final int TRAIN_SIZE = 25000;
+  private static final int ALPHABET_SIZE = 100;
+  private static final int TRAIN_SIZE = 250;
   private static final FastRandom random = new FastRandom(239);
 
   private static final int BOOST_ITERS = 4;

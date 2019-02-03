@@ -35,10 +35,10 @@ public class NeuralSpiderGPU {
   }
 
 
-  public GPUVec compute2(GPUVec args) {
-    NetworkOperations.produceState2(args, argsSize, weights, topology, topSize, outStates);
-    return outStates;
-  }
+//  public GPUVec compute2(GPUVec args) {
+//    NetworkOperations.produceState2(args, argsSize, weights, topology, topSize, outStates);
+//    return outStates;
+//  }
 
   public GPUVec compute3(GPUVec args) {
     NetworkOperations.produceState3(args, argsSize, weights, topology, topSize, outStates);

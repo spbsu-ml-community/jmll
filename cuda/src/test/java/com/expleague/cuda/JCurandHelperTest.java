@@ -1,11 +1,9 @@
 package com.expleague.cuda;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import com.xeiam.xchart.Histogram;
 import jcuda.jcurand.curandGenerator;
-import org.junit.Assert;
 
 import java.util.*;
 
@@ -15,6 +13,11 @@ import java.util.*;
  * @author Ksen
  */
 public class JCurandHelperTest extends Assert {
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testGetDefaultFloatUniform() throws Exception {

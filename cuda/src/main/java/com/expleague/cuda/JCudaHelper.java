@@ -1,6 +1,5 @@
 package com.expleague.cuda;
 
-import com.expleague.commons.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import com.expleague.commons.util.cache.Cache;
@@ -9,6 +8,8 @@ import com.expleague.commons.util.cache.impl.FixedSizeCache;
 import com.expleague.commons.io.StreamTools;
 import jcuda.driver.*;
 import com.expleague.commons.system.RuntimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -29,23 +30,51 @@ import java.util.*;
 //todo(ksen): handle several devices
 public class JCudaHelper {
 
-  private static final Logger LOG = Logger.create(JCudaHelper.class);
+  private static final Logger LOG = LoggerFactory.getLogger(JCudaHelper.class);
 
-  static {
-    initJCuda();
+  private static volatile JCudaHelper instanse;
+
+  private final Cache<String, CUfunction> CACHE = new FixedSizeCache<>(100, CacheStrategy.Type.LFU);
+
+  private File LOCAL_PTX_DIRECTORY;
+
+  private CUcontext CONTEXT;
+
+  private Exception exception;
+
+  public static JCudaHelper getInstanse() {
+    loadInstance();
+    if (instanse.exception != null)
+      throw new RuntimeException(instanse.exception);
+    return instanse;
   }
 
-  private static final Cache<String, CUfunction> CACHE = new FixedSizeCache<>(100, CacheStrategy.Type.LFU);
-
-  private static File LOCAL_PTX_DIRECTORY;
-
-  private static CUcontext CONTEXT;
-
-  public static void hook() {
-    // outside init
+  public static Exception checkInstance() {
+    loadInstance();
+    return instanse.exception;
   }
 
-  public static void init() {
+  private static void loadInstance() {
+    if (instanse == null) {
+      synchronized (JCudaHelper.class) {
+        if (instanse == null) {
+          instanse = new JCudaHelper();
+        }
+      }
+    }
+  }
+
+  private JCudaHelper() {
+    try {
+      initJCuda();
+    } catch (Exception e) {
+      e.printStackTrace();
+      this.exception = e;
+    }
+  }
+
+
+  public void init() {
     JCudaDriver.setExceptionsEnabled(true);
 
     JCudaDriver.cuInit(0);
@@ -56,12 +85,12 @@ public class JCudaHelper {
     JCudaDriver.cuCtxCreate(CONTEXT, 0, device);
   }
 
-  public static void destroy() {
+  public void destroy() {
     JCudaDriver.cuCtxDestroy(CONTEXT);
   }
 
   @NotNull
-  public static CUfunction getFunction(final @NotNull String fileName, final @NotNull String functionName) {
+  public CUfunction getFunction(final @NotNull String fileName, final @NotNull String functionName) {
     final String key = fileName + '.' + functionName;
 
     CUfunction function = CACHE.get(key);
@@ -89,7 +118,7 @@ public class JCudaHelper {
   }
 
   @SuppressWarnings("StringBufferReplaceableByString")
-  public static void compilePtx(final @NotNull File cuFile, final @NotNull File ptxFile) {
+  private static void compilePtx(final @NotNull File cuFile, final @NotNull File ptxFile) {
     final String command = new StringBuilder()
         .append("nvcc ")
         .append("-m ").append(RuntimeUtils.getArchDataModel()).append(' ')
@@ -100,7 +129,7 @@ public class JCudaHelper {
     execNvcc(command);
   }
 
-  public static void execNvcc(final String command) {
+  private static void execNvcc(final String command) {
     int exitCode;
     String stdErr = "";
     String stdOut = "";
@@ -140,7 +169,7 @@ public class JCudaHelper {
 
   // Static-magic stuff
 
-  private static void initJCuda() {
+  private void initJCuda() {
     final ClassLoader classLoader = JCudaHelper.class.getClassLoader();
     try {
       final File tempDirectory = Files.createTempDirectory(JCudaConstants.JCUDA_TMP_DIRECTORY_NAME).toFile();
@@ -202,7 +231,7 @@ public class JCudaHelper {
     }
   }
 
-  private static void extractAndCompileCuFiles(final ClassLoader classLoader, final File tempDirectory) {
+  private void extractAndCompileCuFiles(final ClassLoader classLoader, final File tempDirectory) {
     final URL resource = classLoader.getResource(JCudaConstants.CU_CLASS_PATH.substring(1));
     if (resource == null) {
       throw new RuntimeException("Can't find *.cu directory in class path.");

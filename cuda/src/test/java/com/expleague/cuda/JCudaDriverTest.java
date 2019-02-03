@@ -4,6 +4,8 @@ import jcuda.driver.CUdevice;
 import jcuda.driver.CUdevice_attribute;
 import jcuda.driver.CUdevprop;
 import jcuda.driver.JCudaDriver;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,6 +19,11 @@ import static jcuda.driver.JCudaDriver.*;
  * Created by hrundelb on 08.10.17.
  */
 public class JCudaDriverTest {
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testDevice() {

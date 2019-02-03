@@ -1,5 +1,8 @@
 package com.expleague.cuda.data.impl;
 
+import com.expleague.cuda.JCudaHelper;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -17,6 +20,11 @@ public class DoubleVectorTest {
   private static final float DELTA = 1e-9f;
 
   private static final Random RANDOM = new Random();
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testCreate() throws Exception {

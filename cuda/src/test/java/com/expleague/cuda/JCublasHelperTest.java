@@ -3,11 +3,7 @@ package com.expleague.cuda;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.cuda.data.impl.FloatMatrix;
-import org.junit.AfterClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import org.junit.Assert;
+import org.junit.*;
 
 
 /**
@@ -20,9 +16,9 @@ public class JCublasHelperTest extends Assert {
   private final static double DELTA = 1e-9;
   private final static float EPS = 1e-9f;
 
-  @AfterClass
-  public static void shutdown() {
-    JCublasHelper.shutdown();
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
   }
 
   @Test

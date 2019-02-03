@@ -13,6 +13,8 @@ import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.func.FuncEnsemble;
 import com.expleague.ml.func.RegularizerFunc;
 import com.expleague.ml.loss.WeightedL2;
+import com.expleague.ml.methods.seq.framework.DFAModel;
+import com.expleague.ml.methods.seq.framework.PNFAFramework;
 import com.expleague.ml.methods.seq.param.*;
 import com.expleague.ml.optimization.Optimize;
 import com.expleague.ml.optimization.impl.SAGADescent;
@@ -256,6 +258,116 @@ public class PNFATest {
     printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 2, stateCount));
 //    System.out.println("=========");
 //    printMx(PNFAItemVecRegression.weightMx(((PNFARegressor.PNFAModel) model).getParams(), 3, stateCount, diag));
+  }
+
+
+  @Test
+  public void testPNFAAlphabet() {
+    final int stateCount = 3;
+    final IntAlphabet alphabet = new IntAlphabet(5);
+    int diag = 10;
+
+    BettaParametrization bettaParametrization = new BettaTwoVecParametrization(diag);
+    WeightParametrization weightParametrization = new WeightSquareParametrization(bettaParametrization);
+
+    final PNFARegressorAlphabet<Integer, WeightedL2> pnfaRegressor = new PNFARegressorAlphabet<>(
+        3, alphabet.size(), stateCount, 2, alphabet, 1e-5, 1e-3, diag, random,
+        new SAGADescent(0.001, 1000000, random, System.out),
+        bettaParametrization, weightParametrization);
+
+    final int TRAIN_SIZE = 10000;
+    List<IntSeq> train = new ArrayList<>();
+    int[] labels = new int[TRAIN_SIZE];
+
+    for (int i = 0; i < TRAIN_SIZE; i++) {
+      int len = 2;//random.nextInt(80) + 10;
+      IntSeqBuilder builder = new IntSeqBuilder();
+      for (int j = 0; j < len; j++) {
+        builder.append(random.nextInt(j == len - 1 ? 2 : 3));
+      }
+      IntSeq seq = builder.build();
+      train.add(seq);
+
+      int s = 2 * seq.intAt(seq.length() - 1) - 1;
+      if (seq.intAt(seq.length() - 2) == 2) {
+        s = -s;
+      }
+      labels[i] = (s + 1) / 2;
+    }
+
+    final Vec target = new ArrayVec(TRAIN_SIZE * 2);
+    for (int i = 0; i < TRAIN_SIZE; i++) {
+      target.set(i * 2 + labels[i], 1);
+    }
+
+    Function<Seq<Integer>, Vec> model = pnfaRegressor.fit(new DataSet.Stub<Seq<Integer>>(null) {
+      @Override
+      public Seq<Integer> at(int i) {
+        return train.get(i);
+      }
+
+      @Override
+      public int length() {
+        return TRAIN_SIZE;
+      }
+
+      @Override
+      public Class<Seq<Integer>> elementType() {
+        return null;
+      }
+    }, new WeightedL2(target, null));
+
+    int acc = 0;
+    for (int i = 0; i < TRAIN_SIZE; i++) {
+
+      int z = VecTools.argmax(model.apply(train.get(i)));
+      if (z == labels[i]) acc++;
+      else {
+        int keke = 2;
+      }
+    }
+    System.out.println(acc + " " + 1.0 * acc / TRAIN_SIZE);
+
+
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 0, stateCount));
+    System.out.println("=========");
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 1, stateCount));
+    System.out.println("=========");
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 2, stateCount));
+    System.out.println("=========");
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 3, stateCount));
+    System.out.println("=========");
+    printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), 4, stateCount));
+  }
+
+
+  @Test
+  public void testPNFAFramework() {
+    int states = 3;
+    IntAlphabet alphabet = new IntAlphabet(5);
+    int trainSize = 10;
+    int trainDim = 4;
+    int diag = 10;
+
+    PNFAFramework framework = new PNFAFramework(states, states, alphabet, trainSize, trainDim, random);
+
+    BettaParametrization bettaParametrization = new BettaTwoVecParametrization(diag);
+    WeightParametrization weightParametrization = new WeightSquareParametrization(bettaParametrization);
+
+    final PNFARegressor<Integer, WeightedL2> pnfaRegressor = new PNFARegressor<>(states, states, states,
+        alphabet,1e-5, 1e-3, diag, 0.5, random,
+        new SAGADescent(0.001, 1000000, random, System.out),
+        bettaParametrization, weightParametrization);
+
+    Function<Seq<Integer>, Vec> model = framework.test(pnfaRegressor);
+
+    for (int i = 0; i < alphabet.size(); i++) {
+      Integer t = alphabet.getT(alphabet.condition(i));
+      System.out.println("============ alphabet: " + t + "==============");
+      System.out.println("target MX \n" + framework.getTargetModel().getWeightsMx(t));
+      System.out.println("actual MX \n");
+      printMx(weightParametrization.getMx(((PNFAModel) model).getParams(), i, states));
+    }
   }
 
   @Test

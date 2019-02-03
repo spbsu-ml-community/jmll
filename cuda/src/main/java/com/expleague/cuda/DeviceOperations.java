@@ -11,7 +11,7 @@ import jcuda.jcublas.JCublas;
 public class DeviceOperations {
 
   static {
-    JCudaHelper.hook();
+    JCudaHelper.getInstanse();
     JCublas.cublasInit();
   }
 

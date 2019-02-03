@@ -1,11 +1,9 @@
 package com.expleague.cuda;
 
 import com.expleague.cuda.data.impl.FloatVector;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import jcuda.driver.CUdeviceptr;
-import org.junit.Assert;
 
 import java.util.Random;
 
@@ -22,6 +20,11 @@ public class JCudaMemoryTest extends Assert {
   private static final double EPS = 1e-12;
 
   private static final Random RANDOM = new Random();
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testFloatAlloCopyDestr() throws Exception {

@@ -13,6 +13,6 @@
     <!--<module>commons</module>-->
     <module>ml</module>
     <module>experiments</module>
-    <!--<module>cuda</module>-->
+    <module>cuda</module>
   </modules>
 </project>

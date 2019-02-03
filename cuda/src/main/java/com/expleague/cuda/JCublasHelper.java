@@ -17,7 +17,7 @@ import jcuda.jcublas.JCublas;
 public class JCublasHelper { //todo(ksen): row-major support
 
   static {
-    JCudaHelper.hook();
+    JCudaHelper.getInstanse();
     JCublas.cublasInit();
   }
 

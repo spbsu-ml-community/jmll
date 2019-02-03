@@ -8,9 +8,7 @@ import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.cuda.data.GPUMx;
 import com.expleague.cuda.data.GPUVec;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Random;
 
@@ -31,6 +29,11 @@ public class DeviceOperationsTest {
   public static final int SIZE = 10000;
   public static final int COUNT = 10;
 
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
+
   @Before
   public void init() {
     vectors = new GPUVec[COUNT];
@@ -44,11 +47,6 @@ public class DeviceOperationsTest {
       vectors[j] = new GPUVec(doubles);
       vecs[j] = new ArrayVec(doubles);
     }
-  }
-
-  @AfterClass
-  public static void shutdown() {
-    JCublasHelper.shutdown();
   }
 
   @Test

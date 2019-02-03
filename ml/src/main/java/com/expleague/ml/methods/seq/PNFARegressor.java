@@ -94,7 +94,7 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
         );
       }
 
-      final RegularizerFunc regularizer = new MyRegularizer(funcs, null, stateCount, alpha, betta);
+      final RegularizerFunc regularizer = new MyRegularizer(funcs, null, stateCount, alpha, betta, bettaParametrization, alphabetSize, stateDim);
       final FuncEnsemble<FuncC1> func = new FuncEnsemble<>(funcs, loss.getWeights());
 
       params = weightsOptimize.optimize(func, regularizer, params);
@@ -203,52 +203,4 @@ public class PNFARegressor<Type, Loss extends WeightedL2> implements SeqOptimiza
     return params;
   }
 
-  private class MyRegularizer extends RegularizerFunc.Stub {
-    private final PNFAItemVecRegression[] funcs;
-    private final int stateCount;
-    private final double alpha;
-    private final double betta;
-    private final Vec wCacheVec;
-    Vec prev;
-
-    public MyRegularizer(PNFAItemVecRegression[] funcs, Vec wCacheVec, int stateCount, double alpha, double betta) {
-      this.funcs = funcs;
-      this.wCacheVec = wCacheVec;
-      this.stateCount = stateCount;
-      this.alpha = alpha;
-      this.betta = betta;
-      prev = null;
-      prev = new ArrayVec(funcs[0].dim());
-    }
-
-    @Override
-    public double value(Vec x) {
-      int paramCount = bettaParametrization.paramCount(stateCount);
-      return alpha * VecTools.l1(x.sub(0, paramCount * alphabetSize))
-          + betta * VecTools.l2(x.sub(paramCount * alphabetSize, stateCount * stateDim));
-    }
-
-    @Override
-    public int dim() {
-      return bettaParametrization.paramCount(stateCount) * alphabetSize + stateCount * stateDim;
-    }
-
-    @Override
-    public Vec project(Vec x) {
-      Mx values = funcs[0].getValues(x);
-      IntStream.range(0, x.length() - values.dim()).filter(idx -> prev.get(idx) != x.get(idx)).forEach(idx -> {
-        final double val = x.get(idx);
-        if (Math.abs(val) > alpha)
-          x.adjust(idx, val > alpha ? -alpha : alpha);
-        else
-          x.set(idx, 0);
-      });
-      VecTools.assign(prev, x);
-      VecTools.scale(values, values.dim() / (betta + values.dim()));
-      if (wCacheVec != null) {
-        VecTools.fill(wCacheVec, -1);
-      }
-      return x;
-    }
-  }
 }

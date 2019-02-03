@@ -4,9 +4,12 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.IntSeq;
+import com.expleague.cuda.JCudaHelper;
 import com.expleague.cuda.data.GPUVec;
 import com.expleague.ml.loss.WeightedL2;
 import com.expleague.ml.methods.seq.PNFA;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -20,6 +23,11 @@ import static org.junit.Assert.assertEquals;
 public class PNFAonGPUTest {
 
   private final static float DELTA = 1e-3f;
+
+  @BeforeClass
+  public static void initCuda() {
+    Assume.assumeNoException(JCudaHelper.checkInstance());
+  }
 
   @Test
   public void testLoss() {
