@@ -16,10 +16,10 @@ public class BuildEmbedding {
     DecompBuilder builder = (DecompBuilder) Embedding.builder(Embedding.Type.DECOMP);
     String file = args[0];
     final Embedding result = builder
-        .dimSym(90)
+        .dimSym(50)
         .dimSkew(10)
         .iterations(25)
-        .step(0.05)
+        .step(0.1)
 //        .minWordCount(1)
         .window(Embedding.WindowType.LINEAR, 15, 15)
         .file(Paths.get(file))

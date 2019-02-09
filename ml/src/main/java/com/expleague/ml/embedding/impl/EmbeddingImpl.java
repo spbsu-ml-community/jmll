@@ -6,6 +6,8 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.embedding.Embedding;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,10 +21,14 @@ import java.util.Map;
 public class EmbeddingImpl<T> implements Embedding<T> {
   private final Map<T, Vec> mapping;
   private final List<T> vocab;
+  private final TObjectIntMap<T> invVocab = new TObjectIntHashMap<>();
 
   public EmbeddingImpl(Map<T, Vec> mapping) {
     this.mapping = mapping;
     this.vocab = new ArrayList<>(mapping.keySet());
+    for (int i = 0; i < vocab.size(); i++) {
+      invVocab.put(vocab.get(i), i);
+    }
   }
 
   public boolean inVocab(T obj) {
@@ -34,11 +40,7 @@ public class EmbeddingImpl<T> implements Embedding<T> {
   }
 
   public int getIndex(T obj) {
-    for (int i = 0; i < vocabSize(); i++) {
-      if (obj.equals(vocab.get(i)))
-        return i;
-    }
-    return -1;
+    return invVocab.get(obj);
   }
 
   public T getObj(int i) {

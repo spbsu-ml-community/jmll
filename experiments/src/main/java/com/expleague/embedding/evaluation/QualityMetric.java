@@ -5,6 +5,8 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -56,7 +58,7 @@ public abstract class QualityMetric {
     try {
       fin = new BufferedReader(new FileReader(file));
     } catch (IOException e) {
-      throw new IOException("Couldn't find the file to readMetricsFile words from.");
+      throw new IOException("Couldn't find the file to readMetricsFile words from: " + file);
     }
     try {
       words_size = Integer.parseInt(fin.readLine());
@@ -86,7 +88,7 @@ public abstract class QualityMetric {
 
   protected List<CharSeq> getClosestWordsExcept(Vec vector, int top, List<CharSeq> exceptWords) {
     int[] order = ArrayTools.sequence(0, embedding.vocabSize());
-    List<Integer> exceptIds = new ArrayList<>();
+    TIntSet exceptIds = new TIntHashSet();
     exceptWords.forEach(word -> exceptIds.add(embedding.getIndex(word)));
     double[] weights = IntStream.of(order).mapToDouble(idx -> {
       if (exceptIds.contains(idx))

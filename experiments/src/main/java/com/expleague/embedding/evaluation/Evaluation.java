@@ -13,10 +13,13 @@ import java.nio.file.Paths;
 
 public class Evaluation {
   public static void main(String[] args) throws IOException {
-    String file = args[0];
+    String file = "/Users/solar/tree/proj6_spbau/data/corpuses/text8.ss_decomp";
+//    String file = args[0];
     String mode = "-a";
-    String metricsNames = "/home/katyakos/diploma/proj6_spbau/data/tests/text8/all_metrics_files.txt";
-    String target = "/home/katyakos/diploma/proj6_spbau/data/tests/text8/results_decomp_5";
+    String metricsNames = "/Users/solar/tree/proj6_spbau/data/tests/all_metrics_files.txt";
+    String target = "/Users/solar/tree/proj6_spbau/data/tests/text8/results_decomp_5";
+    if (!Files.exists(Paths.get(target)))
+      Files.createDirectory(Paths.get(target));
     try (Reader from = Files.newBufferedReader(Paths.get(file))) {
       final EmbeddingImpl embedding = EmbeddingImpl.read(from, CharSeq.class);
       if (mode.equals("-a")) {

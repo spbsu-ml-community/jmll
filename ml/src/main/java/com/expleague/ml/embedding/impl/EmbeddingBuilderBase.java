@@ -158,10 +158,11 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
         log.info("Reading existing cooccurrences");
         CharSeqTools.llines(coocReader, true).forEach(line -> {
           final LongSeqBuilder values = new LongSeqBuilder(wordsList.size());
-          final CharSeq[] wordWeightPair = new CharSeq[2];
+          final CharSeq[] wordWeightPair = new CharSeq[3];
           CharSeqTools.split(line.line, " ", false)
+              .skip(1)
               .map(part -> CharSeqTools.split(part, ':', wordWeightPair))
-              .forEach(split -> values.add(((long)CharSeqTools.parseInt(split[0])) << 32 | Float.floatToIntBits(CharSeqTools.parseFloat(split[1]))));
+              .forEach(split -> values.add(((long)CharSeqTools.parseInt(split[0])) << 32 | Float.floatToIntBits(CharSeqTools.parseFloat(split[2]))));
           cooc[line.number] = values.build();
         });
         this.cooc = new ArrayList<>(Arrays.asList(cooc));
@@ -252,9 +253,11 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
         for (int i = 0; i < this.cooc.size(); i++) {
           final LongSeq row = this.cooc.get(i);
           final StringBuilder builder = new StringBuilder();
-          row.stream().forEach(packed ->
-              builder.append(packed >>> 32).append(':').append(CharSeqTools.ppDouble(Float.intBitsToFloat(((int) (packed & 0xFFFFFFFFL))))).append(' ')
-          );
+          builder.append(dict().get(i)).append('\t');
+          row.stream().forEach(packed -> {
+            final int wordId = (int)(packed >>> 32);
+            builder.append(wordId).append(':').append(dict().get(wordId)).append(':').append(CharSeqTools.ppDouble(Float.intBitsToFloat(((int)(packed & 0xFFFFFFFFL))))).append(' ');
+          });
           coocWriter.append(builder, 0, builder.length() - 1).append('\n');
         }
       }
@@ -301,11 +304,11 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
           rowLocks[a].lock();
         }
         long prevPacked;
-        final long limit = (long) b << 32;
         while (pos < prevLength) { // merging previous version of the cooc row with current data
           prevPacked = prevRow.longAt(pos);
-          if (prevPacked >= limit) {
-            if (prevPacked == limit) { // second entry matches with the merged one
+          int prevB = (int)(prevPacked >>> 32);
+          if (prevB >= b) {
+            if (prevB == b) { // second entry matches with the merged one
               weight += Float.intBitsToFloat((int) (prevPacked & 0xFFFFFFFFL));
               pos++;
             }
@@ -315,7 +318,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
           updatedRow.append(prevPacked);
           pos++;
         }
-        final long repacked = limit | Float.floatToIntBits(weight);
+        final long repacked = (((long)b) << 32) | Float.floatToIntBits(weight);
         updatedRow.append(repacked);
       }
       //noinspection ConstantConditions
