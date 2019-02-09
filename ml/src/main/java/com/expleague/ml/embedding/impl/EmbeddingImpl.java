@@ -11,14 +11,38 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class EmbeddingImpl<T> implements Embedding<T> {
   private final Map<T, Vec> mapping;
+  private final List<T> vocab;
 
   public EmbeddingImpl(Map<T, Vec> mapping) {
     this.mapping = mapping;
+    this.vocab = new ArrayList<>(mapping.keySet());
+  }
+
+  public boolean inVocab(T obj) {
+    return vocab.contains(obj);
+  }
+
+  public int vocabSize() {
+    return vocab.size();
+  }
+
+  public int getIndex(T obj) {
+    for (int i = 0; i < vocabSize(); i++) {
+      if (obj.equals(vocab.get(i)))
+        return i;
+    }
+    return -1;
+  }
+
+  public T getObj(int i) {
+    return vocab.get(i);
   }
 
   @Override

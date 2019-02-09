@@ -69,7 +69,7 @@ public class GloVeBuilder extends EmbeddingBuilderBase {
 
     for (int iter = 0; iter < T(); iter++) {
       Interval.start();
-      final ScoreCalculator scoreCalculator = new ScoreCalculator(dim);
+      final ScoreCalculator scoreCalculator = new ScoreCalculator(vocab_size);
       IntStream.range(0, vocab_size).parallel().forEach(i -> {
         final Vec left = leftVectors.row(i);
         final Vec softMaxL = softMaxLeft.row(i);

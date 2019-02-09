@@ -1,0 +1,31 @@
+package com.expleague.embedding.evaluation;
+
+import com.expleague.commons.io.StreamTools;
+import com.expleague.commons.seq.CharSeq;
+import com.expleague.embedding.evaluation.metrics.CloserFurtherMetric;
+import com.expleague.embedding.evaluation.metrics.WordAnalogiesMetric;
+import com.expleague.ml.embedding.impl.EmbeddingImpl;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+public class Evaluation {
+  public static void main(String[] args) throws IOException {
+    String file = args[0];
+    String mode = "-a";
+    String metricsNames = "/home/katyakos/diploma/proj6_spbau/data/tests/text8/all_metrics_files.txt";
+    String target = "/home/katyakos/diploma/proj6_spbau/data/tests/text8/results_decomp_5";
+    try (Reader from = Files.newBufferedReader(Paths.get(file))) {
+      final EmbeddingImpl embedding = EmbeddingImpl.read(from, CharSeq.class);
+      if (mode.equals("-a")) {
+        WordAnalogiesMetric metric = new WordAnalogiesMetric(embedding);
+        metric.measure(metricsNames, target);
+      } else if (mode.equals("-cf")) {
+        CloserFurtherMetric metric = new CloserFurtherMetric(embedding);
+        metric.measure(metricsNames, target);
+      }
+    }
+  }
+}
