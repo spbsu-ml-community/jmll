@@ -193,16 +193,14 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
         }
       }).map(line -> (CharSeq)CharSeqTools.concat(line, " ", newLine)).flatMap(CharSeqTools::words).map(this::normalize).mapToInt(wordsIndex::get).filter(idx -> idx >= 0).mapToObj(new IntFunction<LongStream>() {
         final TIntArrayList queue = new TIntArrayList(1000);
-        final Lock lock = new ReentrantLock();
         int offset = 0;
         @Override
-        public LongStream apply(int idx) {
+        public synchronized LongStream apply(int idx) {
           if (idx == Integer.MAX_VALUE) { // new line
             queue.resetQuick();
             offset = 0;
             return LongStream.empty();
           }
-          lock.lock();
           int pos = queue.size();
           final long[] out = new long[windowLeft + windowRight];
           int outIndex = 0;
@@ -221,7 +219,6 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
               offset = 0;
             }
           }
-          lock.unlock();
           return Arrays.stream(out, 0, outIndex);
         }
       }).flatMapToLong(entries -> entries).parallel()/*.peek(p -> {
