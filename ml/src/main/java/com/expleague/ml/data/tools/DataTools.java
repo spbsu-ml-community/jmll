@@ -64,6 +64,7 @@ import com.expleague.ml.models.ObliviousMultiClassTree;
 import com.expleague.ml.models.multilabel.MultiLabelBinarizedModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.list.linked.TIntLinkedList;
@@ -805,40 +806,41 @@ public class DataTools {
   }
 
   private static class kMeansState {
-    public static final int BUFFER_SIZE = 1000;
-    public static final double G = 0.99;
+    public static final int BUFFER_SIZE = 100;
+    public static final double G = 0.999;
     public static double[] G_SUM;
-    public static final int M = 5;
     private final int maxK;
     private final List<Vec> buffer = new ArrayList<>(BUFFER_SIZE);
     private final Vec bDist = new ArrayVec(BUFFER_SIZE);
     private final FastRandom rng;
-    int k = 0;
-    private final ModifiableNeighbourhoodGraph centroids = new ModifiableNeighbourhoodGraph(5);
+    private final ModifiableNeighbourhoodGraph centroids;
     private final int[] centroidsCount;
     private double distancesSum = 1e6;
     private int noUpdates;
 
-    private kMeansState(int k, FastRandom rng) {
+    private kMeansState(int k, int m, FastRandom rng) {
       centroidsCount = new int[k];
       this.maxK = k;
       this.rng = rng;
 
       synchronized (kMeansState.class) {
         if (G_SUM == null) {
-          G_SUM = new double[10000];
+          TDoubleList lst = new TDoubleArrayList();
           double sum = 1;
           double pow = 1;
-          for (int i = 0; i < G_SUM.length; i++) {
-            pow *= G;
+          while (pow > 1e-3) {
             sum += pow;
+            lst.add(sum);
+            pow *= G;
           }
+          G_SUM = lst.toArray();
         }
       }
+      centroids = new ModifiableNeighbourhoodGraph(m);
     }
 
     public void accept(Vec vec) {
-      if (k == 0) {
+      if (centroids.size() == 0) {
         centroids.append(vec);
         centroidsCount[0] = 1;
         return;
@@ -846,24 +848,25 @@ public class DataTools {
 
       final int[] result = new int[1];
       final double[] distances = new double[1];
-      final int nearest = result[0];
       centroids.nearest(vec, result, distances);
-      if (k < maxK) {
+      final int nearest = result[0];
+      if (centroids.size() < maxK) {
         bDist.set(buffer.size(), MathTools.sqr(distances[0]));
         buffer.add(vec);
         if (buffer.size() == BUFFER_SIZE) { // add cluster like k-means++
           final int nextCentroid = rng.nextSimple(bDist);
           centroids.append(buffer.get(nextCentroid));
+//          Arrays.fill(centroidsCount, 0);
           buffer.clear();
         }
+        return;
       }
       // update centroid
       Vec centroid = centroids.get(nearest);
       VecTools.scale(centroid, G * G_SUM[Math.min(G_SUM.length - 1, centroidsCount[nearest])]); // unpack and scale
       VecTools.append(centroid, vec); // update
       VecTools.scale(centroid, 1. / G_SUM[Math.min(G_SUM.length - 1, ++centroidsCount[nearest])]); // pack back
-      noUpdates = centroids.update(nearest, vec) ? 0 : noUpdates + 1;
-      centroidsCount[nearest]++;
+      noUpdates = centroids.update(nearest, centroid) ? 0 : noUpdates + 1;
     }
 
     public int noUpdates() {
@@ -876,11 +879,19 @@ public class DataTools {
   }
 
   public static Vec[] kMeans(int k, Stream<Vec> vecStream) {
+    return kMeans(k, 5, new FastRandom(), vecStream);
+  }
+
+  public static Vec[] kMeans(int k, int m, Stream<Vec> vecStream) {
+    return kMeans(k, m, new FastRandom(), vecStream);
+  }
+
+  public static Vec[] kMeans(int k, int m, FastRandom rng, Stream<Vec> vecStream) {
     final Spliterator<Vec> spliterator = vecStream.spliterator();
-    final kMeansState state = new kMeansState(k, new FastRandom());
-    while (state.noUpdates < 10000) {
-      spliterator.tryAdvance(state::accept);
-    }
+    final kMeansState state = new kMeansState(k, m, rng);
+    int index = 0;
+    //noinspection StatementWithEmptyBody
+    while (state.noUpdates < 200000 && spliterator.tryAdvance(state::accept));
     return state.centroids();
   }
 }
