@@ -17,7 +17,6 @@ import com.expleague.commons.seq.*;
 import com.expleague.commons.system.RuntimeUtils;
 import com.expleague.commons.text.StringUtils;
 import com.expleague.commons.util.JSONTools;
-import com.expleague.ml.clustering.ModifiableNeighbourhoodGraph;
 import com.expleague.ml.impl.BFGridConstructor;
 import com.expleague.ml.impl.BFGridImpl;
 import com.expleague.ml.CompositeTrans;
