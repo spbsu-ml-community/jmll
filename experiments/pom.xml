@@ -225,7 +225,7 @@
             <configuration>
               <archive>
                 <manifest>
-                  <mainClass>com.expleague.embedding.BuildEmbedding</mainClass>
+                  <mainClass>com.expleague.embedding.Glove</mainClass>
                 </manifest>
               </archive>
               <descriptorRefs>
