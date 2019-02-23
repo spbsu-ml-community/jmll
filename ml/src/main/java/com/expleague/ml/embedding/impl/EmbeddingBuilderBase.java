@@ -206,6 +206,10 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
           int outIndex = 0;
           for (int i = offset; i < pos; i++) {
             byte distance = (byte)(pos - i);
+            if (distance == 0) {
+              log.warn("Zero distance occured! pos: " + pos + " i: " + i);
+              System.err.println("Zero distance occured! pos: " + pos + " i: " + i);
+            }
             if (distance <= windowRight)
               out[outIndex++] = pack(queue.getQuick(i), idx, distance);
             if (distance <= windowLeft)

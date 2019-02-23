@@ -44,7 +44,7 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
   }
 
   enum WindowType {
-    LINEAR(d -> 1./Math.abs(d)),
+    LINEAR(d -> d == 0 ? 0 : 1./Math.abs(d)),
     FIXED(d -> 1.),
     EXP(d -> exp(-1e-1 * Math.abs(d))),
     ;
