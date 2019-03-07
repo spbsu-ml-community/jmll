@@ -4,7 +4,7 @@
 
   <groupId>com.expleague</groupId>
   <artifactId>jmll</artifactId>
-  <version>1.4.9-SNAPSHOT</version>
+  <version>1.4.9</version>
   <packaging>jar</packaging>
 
   <name>SpbSU JMLL</name>
@@ -29,6 +29,7 @@
     <developer>
       <name>Igor E. Kuralenok</name>
       <email>ikuralenok@gmail.com</email>
+
     </developer>
   </developers>
 
@@ -46,7 +47,7 @@
     </snapshotRepository>
     <repository>
       <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/releases</url>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
     </repository>
   </distributionManagement>
 
@@ -54,12 +55,12 @@
     <dependency>
       <groupId>com.expleague</groupId>
       <artifactId>commons</artifactId>
-      <version>1.4.9-SNAPSHOT</version>
+      <version>1.4.9</version>
     </dependency>
     <dependency>
       <groupId>com.expleague</groupId>
       <artifactId>commons</artifactId>
-      <version>1.4.8</version>
+      <version>1.4.9</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

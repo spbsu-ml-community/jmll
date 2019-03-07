@@ -13,12 +13,15 @@ import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.impl.EmbeddingBuilderBase;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import gnu.trove.list.array.TIntArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
 public class DecompBuilder extends EmbeddingBuilderBase {
+  private static final Logger log = LoggerFactory.getLogger(DecompBuilder.class.getName());
   private double xMax = 10;
   private double alpha = 0.75;
   private int symDim = 50;
@@ -114,7 +117,9 @@ public class DecompBuilder extends EmbeddingBuilderBase {
         });
       });
 
-      Interval.stopAndPrint("Iteration: " + iter + ", score: " + scoreCalculator.gloveScore());
+      project(skewsymDecomp);
+      log.info("Iteration: " + iter + ", score: " + scoreCalculator.gloveScore() + ", time: " + Interval.time());
+//      Interval.stopAndPrint("Iteration: " + iter + ", score: " + scoreCalculator.gloveScore());
     }
 
     final Map<CharSeq, Vec> mapping = new HashMap<>();
@@ -123,7 +128,36 @@ public class DecompBuilder extends EmbeddingBuilderBase {
       mapping.put(word, symDecomp.row(i));
     }
 
+//    try (final BufferedWriter writer = Files.newBufferedWriter(Paths.get("/Users/solar/temp/skewsym.txt"))) {
+//      for (int i = 0; i < dict().size(); i++) {
+//        writer.write(dict().get(i).toString());
+//        writer.write('\t');
+//        writer.write(MathTools.CONVERSION.convert(skewsymDecomp.row(i), CharSequence.class).toString());
+//        writer.write('\n');
+//      }
+//    }
+//    catch (IOException e) {
+//      throw new RuntimeException(e);
+//    }
+
     return new EmbeddingImpl<>(mapping);
+  }
+
+  private void project(Vec vec) {
+    final int dim = vec.dim();
+    for (int i = 0; i < dim; i++) {
+      final double v = vec.get(i);
+      double lambda = 1e-2;
+      if (v < -lambda) {
+        vec.set(i, v + lambda);
+      }
+      else if (v > lambda) {
+        vec.set(i, v - lambda);
+      }
+      else {
+        vec.set(i, 0.);
+      }
+    }
   }
 
   private void update(Vec x_i, Vec softMaxD_i, Vec x_j, Vec softMaxD_j, double step) {
