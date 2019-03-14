@@ -229,4 +229,47 @@ public class Model {
             }
         }
     }
+
+    public class Applicable {
+        private final LambdaStrategy lambdaStrategy;
+
+        private Applicable() {
+            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
+        }
+
+        public void accept(Event event) {
+            lambdaStrategy.accept(event);
+        }
+
+        public double getLambda(String userId, String itemId) {
+            return lambdaTransform.applyAsDouble(lambdaStrategy.getLambda(userId, itemId));
+        }
+
+        public double timeDelta(String userId, String itemId) {
+            return 1 / getLambda(userId, itemId);
+        }
+
+        public Applicable fit(List<Event> history) {
+            for (Event event: history) {
+                accept(event);
+            }
+            return this;
+        }
+
+        public Map<String, ArrayVec> getUserEmbeddings() {
+            return userEmbeddings;
+        }
+
+        public Map<String, ArrayVec> getItemEmbeddings() {
+            return itemEmbeddings;
+        }
+    }
+
+    public Applicable getApplicable(List<Event> data) {
+        Applicable applicable = new Applicable();
+        if (data != null) {
+            applicable.fit(data);
+        }
+        return applicable;
+    }
 }

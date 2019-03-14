@@ -23,7 +23,7 @@ public class Event {
         return ts;
     }
 
-    public Integer getPrDelta() {
+    public Double getPrDelta() {
         throw new UnsupportedOperationException();
     }
 
