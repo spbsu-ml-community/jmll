@@ -68,8 +68,8 @@ private final Map<String, ArrayVec> userEmbeddings;
 
     @Override
     public void accept(Event event) {
-        String userId = event.getUid();
-        String itemId = event.getPid();
+        String userId = event.userId();
+        String itemId = event.itemId();
         double timeDelta = 0.;
         if (prevUserActionTime.containsKey(userId)) {
             timeDelta = event.getTs() - prevUserActionTime.get(userId);

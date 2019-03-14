@@ -60,8 +60,8 @@ public class Model {
             return;
         }
         dataSize = history.size();
-        userIds = history.stream().map(Event::getUid).collect(Collectors.toSet());
-        itemIds = history.stream().map(Event::getPid).collect(Collectors.toSet());
+        userIds = history.stream().map(Event::userId).collect(Collectors.toSet());
+        itemIds = history.stream().map(Event::itemId).collect(Collectors.toSet());
 
         double itemDeltaMean = history.stream()
                 .filter(event -> event.getPrDelta() != null)
@@ -94,13 +94,13 @@ public class Model {
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
         List<Event> lastTimeEvents = new ArrayList<>();
         for (Event event: history) {
-            if (!done_projects.get(event.getUid()).contains(event.getPid())) {
-                done_projects.get(event.getUid()).add(event.getPid());
+            if (!done_projects.get(event.userId()).contains(event.itemId())) {
+                done_projects.get(event.userId()).add(event.itemId());
                 lambdasByProject.accept(event);
                 continue;
             }
             if (event.getNTasks() != 0) {
-                double lambda = lambdasByProject.getLambda(event.getUid(), event.getPid());
+                double lambda = lambdasByProject.getLambda(event.userId(), event.itemId());
                 double transformedLambda = lambdaTransform.applyAsDouble(lambda);
                 double logLikelihoodDelta = Math.log(-Math.exp(-transformedLambda * (event.getPrDelta() + eps)) +
                         Math.exp(-transformedLambda * Math.max(0, event.getPrDelta() - eps)));
@@ -112,7 +112,7 @@ public class Model {
             }
         }
         for (Event event: lastTimeEvents) {
-            double lambda = lambdasByProject.getLambda(event.getUid(), event.getPid());
+            double lambda = lambdasByProject.getLambda(event.userId(), event.itemId());
             double transformedLambda = lambdaTransform.applyAsDouble(lambda);
             logLikelihood += -transformedLambda * event.getPrDelta();
         }
@@ -157,17 +157,17 @@ public class Model {
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
         List<Event> lastTimeEvents = new ArrayList<>();
         for (Event event: history) {
-            if (!done_projects.get(event.getUid()).contains(event.getPid())) {
-                done_projects.get(event.getUid()).add(event.getPid());
+            if (!done_projects.get(event.userId()).contains(event.itemId())) {
+                done_projects.get(event.userId()).add(event.itemId());
                 lambdasByProject.accept(event);
                 continue;
             }
             if (event.getNTasks() != 0) {
-                double lambda = lambdasByProject.getLambda(event.getUid(), event.getPid());
+                double lambda = lambdasByProject.getLambda(event.userId(), event.itemId());
                 ArrayVec lambdaDerivativeUser =
-                        lambdasByProject.getLambdaUserDerivative(event.getUid(), event.getPid());
+                        lambdasByProject.getLambdaUserDerivative(event.userId(), event.itemId());
                 Map <String, ArrayVec> lambdaDerivativeProjects =
-                        lambdasByProject.getLambdaProjectDerivative(event.getUid(), event.getPid());
+                        lambdasByProject.getLambdaProjectDerivative(event.userId(), event.itemId());
                 double transformedLambda = lambdaTransform.applyAsDouble(lambda);
                 double tau = event.getPrDelta();
                 double exp_plus = Math.exp(-transformedLambda * (tau + eps));
@@ -176,7 +176,7 @@ public class Model {
                         ((tau + eps) * exp_plus - Math.max(0, tau - eps) * exp_minus) / (-exp_plus + exp_minus);
 //                TODO: check for overflow
                 lambdaDerivativeUser.scale(commonPart);
-                userDerivatives.get(event.getUid()).add(lambdaDerivativeUser);
+                userDerivatives.get(event.userId()).add(lambdaDerivativeUser);
                 lambdaDerivativeProjects.forEach((itemId, derivative) -> {
                     derivative.scale(commonPart);
                     itemDerivatives.get(itemId).add(derivative);
@@ -187,14 +187,14 @@ public class Model {
             }
         }
         for (Event event: lastTimeEvents) {
-            double lambda = lambdasByProject.getLambda(event.getUid(), event.getPid());
+            double lambda = lambdasByProject.getLambda(event.userId(), event.itemId());
             ArrayVec lambdaDerivativeUser =
-                    lambdasByProject.getLambdaUserDerivative(event.getUid(), event.getPid());
+                    lambdasByProject.getLambdaUserDerivative(event.userId(), event.itemId());
             Map <String, ArrayVec> lambdaDerivativeProjects =
-                    lambdasByProject.getLambdaProjectDerivative(event.getUid(), event.getPid());
+                    lambdasByProject.getLambdaProjectDerivative(event.userId(), event.itemId());
             double commonPart = lambdaDerivativeTransform.applyAsDouble(lambda) * event.getPrDelta();
             lambdaDerivativeUser.scale(-commonPart);
-            userDerivatives.get(event.getUid()).add(lambdaDerivativeUser);
+            userDerivatives.get(event.userId()).add(lambdaDerivativeUser);
             lambdaDerivativeProjects.forEach((itemId, derivative) -> {
                 derivative.scale(-commonPart);
                 itemDerivatives.get(itemId).add(derivative);

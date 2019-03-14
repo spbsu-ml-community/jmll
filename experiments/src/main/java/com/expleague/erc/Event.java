@@ -1,22 +1,22 @@
 package com.expleague.erc;
 
 public class Event {
-    private final String uid;
-    private final String pid;
+    private final String userId;
+    private final String itemId;
     private final double ts;
 
     public Event(String uid, String pid, double ts) {
-        this.uid = uid;
-        this.pid = pid;
+        this.userId = uid;
+        this.itemId = pid;
         this.ts = ts;
     }
 
-    public String getUid() {
-        return uid;
+    public String userId() {
+        return userId;
     }
 
-    public String getPid() {
-        return pid;
+    public String itemId() {
+        return itemId;
     }
 
     public double getTs() {

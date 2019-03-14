@@ -45,10 +45,10 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
     @Override
     public void accept(Event event) {
         double timeDelta = 0;
-        if (prevUserActionTime.containsKey(event.getUid())) {
-            timeDelta = event.getTs() - prevUserActionTime.get(event.getUid());
+        if (prevUserActionTime.containsKey(event.userId())) {
+            timeDelta = event.getTs() - prevUserActionTime.get(event.userId());
         }
-        userLambdas.get(event.getUid()).update(event.getPid(), timeDelta);
-        prevUserActionTime.put(event.getUid(), event.getTs());
+        userLambdas.get(event.userId()).update(event.itemId(), timeDelta);
+        prevUserActionTime.put(event.userId(), event.getTs());
     }
 }
