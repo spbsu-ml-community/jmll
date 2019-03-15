@@ -12,7 +12,7 @@ public abstract class Metrics {
         for (Event event: data) {
             if (event.getPrDelta() != null && !event.getPrDelta().isNaN() && event.getNTasks() > 0) {
                 ++count;
-                double expectedReturnTime = model.timeDelta(event.getUid(), event.getPid());
+                double expectedReturnTime = model.timeDelta(event.userId(), event.itemId());
                 errors += Math.abs(event.getPrDelta() - expectedReturnTime);
                 model.accept(event);
             }
@@ -25,7 +25,7 @@ public abstract class Metrics {
         long count = 0;
         for (Event event: data) {
             if (event.getNTasks() > 0) {
-                String userId = event.getUid();
+                String userId = event.userId();
                 List<String> projectsByLambda = new ArrayList<>(model.getUserEmbeddings().keySet());
                 projectsByLambda.sort((projectA, projectB) -> {
                     if (model.getLambda(userId, projectA) == model.getLambda(userId, projectB)) {
@@ -33,7 +33,7 @@ public abstract class Metrics {
                     }
                     return model.getLambda(userId, projectA) > model.getLambda(userId, projectB) ? -1 : 1;
                 });
-                errors += projectsByLambda.indexOf(event.getPid());
+                errors += projectsByLambda.indexOf(event.itemId());
                 ++count;
                 model.accept(event);
             }

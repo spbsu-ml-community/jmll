@@ -12,19 +12,19 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
 private final Map<String, ArrayVec> userEmbeddings;
     private final Map<String, ArrayVec> itemEmbeddings;
     private final double beta;
-    private final double otherProjectImportance;
+    private final double otherItemsImportance;
     private final Map<String, Double> prevUserActionTime;
     private final Map<String, UserLambda> userLambdas;
     private final Map<String, Map<String, Double>> savedLambdas;
     private final Map<String, Map<String, ArrayVec>> savedLambdasUserDerivative;
-    private final Map<String, Map<String, Map<String, ArrayVec>>> savedLambdasProjectDerivative;
+    private final Map<String, Map<String, Map<String, ArrayVec>>> savedLambdasItemDerivative;
 
     public NotLookAheadLambdaStrategy(Map<String, ArrayVec> userEmbeddings, Map<String, ArrayVec> itemEmbeddings,
                                       double beta, double otherProjectImportance) {
         this.userEmbeddings = userEmbeddings;
         this.itemEmbeddings = itemEmbeddings;
         this.beta = beta;
-        this.otherProjectImportance = otherProjectImportance;
+        this.otherItemsImportance = otherProjectImportance;
         prevUserActionTime = new HashMap<>();
         userLambdas = userEmbeddings.keySet().stream().collect(Collectors.toMap(Function.identity(),
                 userId -> new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance)));
@@ -32,7 +32,7 @@ private final Map<String, ArrayVec> userEmbeddings;
                 .collect(Collectors.toMap(Function.identity(), userId -> new HashMap<>()));
         savedLambdasUserDerivative = userEmbeddings.keySet().stream()
                 .collect(Collectors.toMap(Function.identity(), userId -> new HashMap<>()));
-        savedLambdasProjectDerivative = userEmbeddings.keySet().stream()
+        savedLambdasItemDerivative = userEmbeddings.keySet().stream()
                 .collect(Collectors.toMap(Function.identity(), userId -> new HashMap<>()));
     }
 
@@ -58,11 +58,11 @@ private final Map<String, ArrayVec> userEmbeddings;
 
     @Override
     public Map<String, ArrayVec> getLambdaProjectDerivative(String userId, String itemId) {
-        if (savedLambdasProjectDerivative.get(userId).containsKey(itemId)) {
-            return savedLambdasProjectDerivative.get(userId).get(itemId);
+        if (savedLambdasItemDerivative.get(userId).containsKey(itemId)) {
+            return savedLambdasItemDerivative.get(userId).get(itemId);
         }
-        Map<String, ArrayVec> derivatives = userLambdas.get(userId).getLambdaProjectDerivative(itemId);
-        savedLambdasProjectDerivative.get(userId).put(itemId, derivatives);
+        Map<String, ArrayVec> derivatives = userLambdas.get(userId).getLambdaItemsDerivative(itemId);
+        savedLambdasItemDerivative.get(userId).put(itemId, derivatives);
         return derivatives;
     }
 
@@ -77,6 +77,6 @@ private final Map<String, ArrayVec> userEmbeddings;
         userLambdas.get(userId).update(itemId, timeDelta);
         savedLambdas.get(userId).put(itemId, userLambdas.get(userId).getLambda(itemId));
         savedLambdasUserDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaUserDerivative(itemId));
-        savedLambdasProjectDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaProjectDerivative(itemId));
+        savedLambdasItemDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaItemsDerivative(itemId));
     }
 }

@@ -9,129 +9,129 @@ import java.lang.Math;
 
 public final class UserLambda {
     private final ArrayVec userEmbedding;
-    private final Map<String, ArrayVec> projectEmbeddings;
+    private final Map<String, ArrayVec> itemEmbeddings;
     private final double beta;
-    private final double otherProjectImportance;
+    private final double otherItemsImportance;
     private double currentTime;
-    private final Map<String, Double> lastTimeOfProjects;
+    private final Map<String, Double> lastTimeOfItems;
     private double commonSum;
-    private final Map<String, Double> additionalSumByProject;
+    private final Map<String, Double> additionalSumByItems;
     private final ArrayVec commonUserDerivative;
-    private final Map<String, ArrayVec> userDerivativeByProject;
-    private final ArrayVec commonProjectDerivative;
-    private final Map<String, ArrayVec> projectDerivativeByProject;
-    private final int dimensionality;
+    private final Map<String, ArrayVec> userDerivativeByItems;
+    private final ArrayVec commonItemsDerivative;
+    private final Map<String, ArrayVec> itemsDerivativeByItems;
+    private final int dim;
 
-    public UserLambda(ArrayVec userEmbedding, Map<String, ArrayVec> projectEmbeddings, double beta, double otherProjectImportance) {
+    public UserLambda(ArrayVec userEmbedding, Map<String, ArrayVec> ItemsEmbeddings, double beta, double otherItemsImportance) {
         this.userEmbedding = userEmbedding;
-        this.projectEmbeddings = projectEmbeddings;
+        this.itemEmbeddings = ItemsEmbeddings;
         this.beta = beta;
-        this.otherProjectImportance = otherProjectImportance;
-        dimensionality = userEmbedding.dim();
+        this.otherItemsImportance = otherItemsImportance;
+        dim = userEmbedding.dim();
 
         currentTime = 0.;
-        lastTimeOfProjects = new HashMap<>();
+        lastTimeOfItems = new HashMap<>();
 
         commonSum = 0;
-        additionalSumByProject = new HashMap<>();
+        additionalSumByItems = new HashMap<>();
 
-        commonUserDerivative = new ArrayVec(dimensionality);
+        commonUserDerivative = new ArrayVec(dim);
         VecTools.fill(commonUserDerivative, 0.);
-        userDerivativeByProject = new HashMap<>();
+        userDerivativeByItems = new HashMap<>();
 
-        commonProjectDerivative = new ArrayVec(dimensionality);
-        VecTools.fill(commonProjectDerivative, 0);
-        projectDerivativeByProject = new HashMap<>();
+        commonItemsDerivative = new ArrayVec(dim);
+        VecTools.fill(commonItemsDerivative, 0);
+        itemsDerivativeByItems = new HashMap<>();
     }
 
-    public final void update(String projectId, double timeDelta) {
+    public final void update(String ItemsId, double timeDelta) {
         timeDelta = 1.;
-        if (!lastTimeOfProjects.containsKey(projectId)) {
-            lastTimeOfProjects.put(projectId, currentTime);
+        if (!lastTimeOfItems.containsKey(ItemsId)) {
+            lastTimeOfItems.put(ItemsId, currentTime);
         }
         double e = Math.exp(-beta * timeDelta);
-        double decay = Math.exp(-beta * (currentTime - lastTimeOfProjects.get(projectId)));
-        double scalarProduct = VecTools.multiply(userEmbedding, projectEmbeddings.get(projectId));
+        double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(ItemsId)));
+        double scalarProduct = VecTools.multiply(userEmbedding, itemEmbeddings.get(ItemsId));
 
-        if (!additionalSumByProject.containsKey(projectId)) {
-            additionalSumByProject.put(projectId, 0.);
-            ArrayVec projectSpecificProjectDerivative = new ArrayVec(dimensionality);
-            VecTools.fill(projectSpecificProjectDerivative, 0.);
-            userDerivativeByProject.put(projectId, projectSpecificProjectDerivative);
-            ArrayVec projectSpecificUserDerivative = new ArrayVec(dimensionality);
-            VecTools.fill(projectSpecificUserDerivative, 0.);
-            projectDerivativeByProject.put(projectId, projectSpecificUserDerivative);
+        if (!additionalSumByItems.containsKey(ItemsId)) {
+            additionalSumByItems.put(ItemsId, 0.);
+            ArrayVec ItemsSpecificItemsDerivative = new ArrayVec(dim);
+            VecTools.fill(ItemsSpecificItemsDerivative, 0.);
+            userDerivativeByItems.put(ItemsId, ItemsSpecificItemsDerivative);
+            ArrayVec ItemsSpecificUserDerivative = new ArrayVec(dim);
+            VecTools.fill(ItemsSpecificUserDerivative, 0.);
+            itemsDerivativeByItems.put(ItemsId, ItemsSpecificUserDerivative);
         }
 
         // Updating lambda
-        commonSum = e * commonSum + otherProjectImportance * scalarProduct;
-        additionalSumByProject.put(projectId,
-                decay * additionalSumByProject.get(projectId) + (1 - otherProjectImportance) * scalarProduct);
+        commonSum = e * commonSum + otherItemsImportance * scalarProduct;
+        additionalSumByItems.put(ItemsId,
+                decay * additionalSumByItems.get(ItemsId) + (1 - otherItemsImportance) * scalarProduct);
 
         // Updating user derivative
         ArrayVec commonUserDerivativeAdd = new ArrayVec();
-        commonUserDerivativeAdd.assign(projectEmbeddings.get(projectId));
-        commonUserDerivativeAdd.scale(otherProjectImportance);
+        commonUserDerivativeAdd.assign(itemEmbeddings.get(ItemsId));
+        commonUserDerivativeAdd.scale(otherItemsImportance);
         commonUserDerivative.scale(e);
         commonUserDerivative.add(commonUserDerivativeAdd);
-        ArrayVec projectUserDerivativeAdd = new ArrayVec();
-        projectUserDerivativeAdd.assign(projectEmbeddings.get(projectId));
-        projectUserDerivativeAdd.scale(1 - otherProjectImportance);
-        userDerivativeByProject.get(projectId).scale(decay);
-        userDerivativeByProject.get(projectId).add(projectUserDerivativeAdd);
+        ArrayVec ItemsUserDerivativeAdd = new ArrayVec();
+        ItemsUserDerivativeAdd.assign(itemEmbeddings.get(ItemsId));
+        ItemsUserDerivativeAdd.scale(1 - otherItemsImportance);
+        userDerivativeByItems.get(ItemsId).scale(decay);
+        userDerivativeByItems.get(ItemsId).add(ItemsUserDerivativeAdd);
 
-        // Updating project derivative
-        ArrayVec commonProjectDerivativeAdd = new ArrayVec(dimensionality);
-        commonProjectDerivativeAdd.assign(userEmbedding);
-        commonProjectDerivativeAdd.scale(otherProjectImportance);
-        commonProjectDerivative.scale(e);
-        commonProjectDerivative.add(commonProjectDerivativeAdd);
-        ArrayVec projectDerivativeByProjectAdd = new ArrayVec();
-        projectDerivativeByProjectAdd.assign(userEmbedding);
-        projectDerivativeByProjectAdd.scale(1 - otherProjectImportance);
-        projectDerivativeByProject.get(projectId).scale(decay);
-        projectDerivativeByProject.get(projectId).add(projectDerivativeByProjectAdd);
+        // Updating Items derivative
+        ArrayVec commonItemsDerivativeAdd = new ArrayVec(dim);
+        commonItemsDerivativeAdd.assign(userEmbedding);
+        commonItemsDerivativeAdd.scale(otherItemsImportance);
+        commonItemsDerivative.scale(e);
+        commonItemsDerivative.add(commonItemsDerivativeAdd);
+        ArrayVec ItemsDerivativeByItemsAdd = new ArrayVec();
+        ItemsDerivativeByItemsAdd.assign(userEmbedding);
+        ItemsDerivativeByItemsAdd.scale(1 - otherItemsImportance);
+        itemsDerivativeByItems.get(ItemsId).scale(decay);
+        itemsDerivativeByItems.get(ItemsId).add(ItemsDerivativeByItemsAdd);
 
-        lastTimeOfProjects.put(projectId, currentTime);
+        lastTimeOfItems.put(ItemsId, currentTime);
         currentTime += timeDelta;
     }
 
-    public final double getLambda(String projectId) {
-        if (!additionalSumByProject.containsKey(projectId)) {
-            return commonSum + VecTools.multiply(userEmbedding, projectEmbeddings.get(projectId));
+    public final double getLambda(String ItemsId) {
+        if (!additionalSumByItems.containsKey(ItemsId)) {
+            return commonSum + VecTools.multiply(userEmbedding, itemEmbeddings.get(ItemsId));
         }
-        return commonSum + VecTools.multiply(userEmbedding, projectEmbeddings.get(projectId)) +
-                additionalSumByProject.get(projectId);
+        return commonSum + VecTools.multiply(userEmbedding, itemEmbeddings.get(ItemsId)) +
+                additionalSumByItems.get(ItemsId);
     }
 
-    public final ArrayVec getLambdaUserDerivative(String projectId) {
-        ArrayVec completeDerivative = new ArrayVec(dimensionality);
+    public final ArrayVec getLambdaUserDerivative(String ItemsId) {
+        ArrayVec completeDerivative = new ArrayVec(dim);
         completeDerivative.assign(commonUserDerivative);
-        completeDerivative.add(projectEmbeddings.get(projectId));
-        if (userDerivativeByProject.containsKey(projectId)) {
-            ArrayVec completeDerivativeAdd = new ArrayVec(dimensionality);
-            completeDerivativeAdd.assign(userDerivativeByProject.get(projectId));
-            double decay = currentTime - lastTimeOfProjects.get(projectId);
+        completeDerivative.add(itemEmbeddings.get(ItemsId));
+        if (userDerivativeByItems.containsKey(ItemsId)) {
+            ArrayVec completeDerivativeAdd = new ArrayVec(dim);
+            completeDerivativeAdd.assign(userDerivativeByItems.get(ItemsId));
+            double decay = currentTime - lastTimeOfItems.get(ItemsId);
             completeDerivative.scale(decay);
             completeDerivative.add(completeDerivativeAdd);
         }
         return completeDerivative;
     }
 
-    public final Map<String, ArrayVec> getLambdaProjectDerivative(String projectId) {
+    public final Map<String, ArrayVec> getLambdaItemsDerivative(String ItemsId) {
         Map<String, ArrayVec> derivative = new HashMap<>();
-        for (String p: lastTimeOfProjects.keySet()) {
-            ArrayVec initialDerivative = new ArrayVec(dimensionality);
-            initialDerivative.assign(commonProjectDerivative);
+        for (String p : lastTimeOfItems.keySet()) {
+            ArrayVec initialDerivative = new ArrayVec(dim);
+            initialDerivative.assign(commonItemsDerivative);
             derivative.put(p, initialDerivative);
         }
-        if (projectDerivativeByProject.containsKey(projectId)) {
-            double decay = currentTime - lastTimeOfProjects.get(projectId);
-            ArrayVec derivativeAdd = new ArrayVec(dimensionality);
-            derivativeAdd.assign(projectDerivativeByProject.get(projectId));
+        if (itemsDerivativeByItems.containsKey(ItemsId)) {
+            double decay = currentTime - lastTimeOfItems.get(ItemsId);
+            ArrayVec derivativeAdd = new ArrayVec(dim);
+            derivativeAdd.assign(itemsDerivativeByItems.get(ItemsId));
             derivativeAdd.scale(decay);
             derivativeAdd.add(userEmbedding);
-            derivative.get(projectId).add(derivativeAdd);
+            derivative.get(ItemsId).add(derivativeAdd);
         }
         return derivative;
     }

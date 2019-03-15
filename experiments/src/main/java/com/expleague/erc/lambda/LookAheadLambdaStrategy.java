@@ -12,7 +12,7 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
     private final Map<String, ArrayVec> userEmbeddings;
     private final Map<String, ArrayVec> itemEmbeddings;
     private final double beta;
-    private final double otherProjectImportance;
+    private final double otherItemsImportance;
     private final Map<String, Double> prevUserActionTime;
     private final Map<String, UserLambda> userLambdas;
 
@@ -21,7 +21,7 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
         this.userEmbeddings = userEmbeddings;
         this.itemEmbeddings = itemEmbeddings;
         this.beta = beta;
-        this.otherProjectImportance = otherProjectImportance;
+        this.otherItemsImportance = otherProjectImportance;
         prevUserActionTime = new HashMap<>();
         userLambdas = userEmbeddings.keySet().stream().collect(Collectors.toMap(Function.identity(),
                 userId -> new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance)));
@@ -39,7 +39,7 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
 
     @Override
     public Map<String, ArrayVec> getLambdaProjectDerivative(String userId, String itemId) {
-        return userLambdas.get(userId).getLambdaProjectDerivative(itemId);
+        return userLambdas.get(userId).getLambdaItemsDerivative(itemId);
     }
 
     @Override
