@@ -5,9 +5,9 @@ public class Event {
     private final String itemId;
     private final double ts;
 
-    public Event(String uid, String pid, double ts) {
-        this.userId = uid;
-        this.itemId = pid;
+    public Event(String userId, String itemId, double ts) {
+        this.userId = userId;
+        this.itemId = itemId;
         this.ts = ts;
     }
 
