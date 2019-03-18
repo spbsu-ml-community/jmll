@@ -39,7 +39,7 @@ public class ModelEvaluation {
         double trainRatio = Double.parseDouble(cliOptions.getOptionValue("tr", "0.75"));
         boolean isTop = Boolean.parseBoolean(cliOptions.getOptionValue("t", "true"));
         int iterations = Integer.parseInt(cliOptions.getOptionValue("i", "15"));
-        double lr = Double.parseDouble(cliOptions.getOptionValue("n", "1e-3"));
+        double lr = Double.parseDouble(cliOptions.getOptionValue("lr", "1e-3"));
 
         List<Event> data = new LastFmDataReader().readData(dataPath, size);
         runModel(data, iterations, lr, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop);

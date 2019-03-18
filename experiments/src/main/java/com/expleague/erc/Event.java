@@ -28,6 +28,6 @@ public class Event {
     }
 
     public boolean isFinish() {
-        return true;
+        return false;
     }
 }

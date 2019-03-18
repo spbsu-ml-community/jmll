@@ -229,7 +229,7 @@ public class Model {
             if (verbose) {
                 System.out.println(i + "{}-th iter, ll = {}" + logLikelihood(events));
                 if (evaluationEvents != null) {
-                    // TODO: print metrics
+                    Metrics.printMetrics(this, events, evaluationEvents);
                 }
                 System.out.println();
             }
