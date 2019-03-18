@@ -72,4 +72,11 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
         savedLambdasItemDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaItemsDerivative(itemId));
         prevUserActionTime.put(userId, event.getTs());
     }
+
+    public static class NotLookAheadLambdaStrategyFactory implements LambdaStrategyFactory {
+        @Override
+        public LambdaStrategy get(Map<String, Vec> userEmbeddings, Map<String, Vec> itemEmbeddings, double beta, double otherProjectImportance) {
+            return new NotLookAheadLambdaStrategy(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
+        }
+    }
 }

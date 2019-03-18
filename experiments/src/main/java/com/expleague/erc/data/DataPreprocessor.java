@@ -64,6 +64,8 @@ public class DataPreprocessor {
         }
         trainTest.setTrain(train);
         trainTest.setTest(test);
+        System.out.println("|Train| = " + train.size() + ", |Test| = " + test.size());
+        System.out.println("|Users| = " + users.size() + ", |Items| = " + items.size());
         return trainTest;
     }
 
@@ -85,14 +87,14 @@ public class DataPreprocessor {
     private Set<String> selectRandomFields(final List<Event> events, final int size, final Function<Event, String> field) {
         List<String> fields = events.stream().map(field).distinct().collect(Collectors.toList());
         Collections.shuffle(fields);
-        return new HashSet<>(fields.subList(0, size));
+        return new HashSet<>(fields.subList(0, Math.min(fields.size(), size)));
     }
 
     private Set<String> selectTopFields(final List<Event> events, final int size, final Function<Event, String> field) {
         Map<String, Integer> counts = new HashMap<>();
         events.stream().map(field).forEach(x -> counts.put(x, counts.getOrDefault(x, 0) + 1));
         List<Map.Entry<String, Integer>> entries = new ArrayList<>(counts.entrySet());
-        entries.sort(Comparator.comparingInt(Map.Entry::getValue));
+        entries.sort(Comparator.comparingInt(x -> -x.getValue()));
         return entries.stream().limit(size).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 

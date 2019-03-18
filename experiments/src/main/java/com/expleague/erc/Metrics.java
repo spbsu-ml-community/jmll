@@ -26,14 +26,14 @@ public abstract class Metrics {
         for (Event event: data) {
 //            if (!event.isFinish()) {
             String userId = event.userId();
-            List<String> projectsByLambda = new ArrayList<>(model.getUserEmbeddings().keySet());
-            projectsByLambda.sort((projectA, projectB) -> {
-                if (model.getLambda(userId, projectA) == model.getLambda(userId, projectB)) {
+            List<String> itemsByLambda = new ArrayList<>(model.getItemEmbeddings().keySet());
+            itemsByLambda.sort((item1, item2) -> {
+                if (model.getLambda(userId, item1) == model.getLambda(userId, item2)) {
                     return 0;
                 }
-                return model.getLambda(userId, projectA) > model.getLambda(userId, projectB) ? -1 : 1;
+                return model.getLambda(userId, item1) > model.getLambda(userId, item2) ? -1 : 1;
             });
-            errors += projectsByLambda.indexOf(event.itemId());
+            errors += itemsByLambda.indexOf(event.itemId());
             count++;
             model.accept(event);
 //            }
@@ -42,10 +42,8 @@ public abstract class Metrics {
     }
 
     public static double constantPredictionTimeMae(List<Event> trainData, List<Event> testData) {
-        List<Event> relevantEvents = trainData.stream()
-                .filter(event -> !event.isFinish() && event.getPrDelta() != null)
-                .collect(Collectors.toList());
-        double meanItemDelta = relevantEvents.stream().collect(Collectors.averagingDouble(Event::getPrDelta));
+        double meanItemDelta = trainData.stream()
+                .filter(event -> !event.isFinish() && event.getPrDelta() >= 0).collect(Collectors.averagingDouble(Event::getPrDelta));
         return testData.stream()
                 .collect(Collectors.averagingDouble(event -> Math.abs(event.getPrDelta() - meanItemDelta)));
     }

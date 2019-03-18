@@ -31,10 +31,26 @@ public class Model {
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                 final LambdaStrategyFactory lambdaStrategyFactory) {
+        this.dim = dim;
+        decayRate = 1;
+        this.beta = beta;
+        this.eps = eps;
+        this.otherItemImportance = otherItemImportance;
+        this.lambdaTransform = lambdaTransform;
+        this.lambdaDerivativeTransform = lambdaDerivativeTransform;
+        this.lambdaStrategyFactory = lambdaStrategyFactory;
+        dataInitialized = false;
+        zeroVec = new ArrayVec(dim);
+        VecTools.fill(zeroVec, 0);
+    }
+
+    public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
+                 final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory, final Map<String, Vec> usersEmbeddingsPrior,
                  final Map<String, Vec> itemsEmbeddingsPrior) {
         this.dim = dim;
-        decayRate = 1;
+        decayRate = 0.97;
         this.beta = beta;
         this.eps = eps;
         this.otherItemImportance = otherItemImportance;
@@ -68,13 +84,13 @@ public class Model {
         itemIds = events.stream().map(Event::itemId).collect(Collectors.toSet());
 
         double itemDeltaMean = events.stream()
-                .filter(event -> event.getPrDelta() != null)
+                .filter(event -> event.getPrDelta() >= 0)
                 .collect(Collectors.averagingDouble(Event::getPrDelta));
         double embMean = Math.sqrt(1 / itemDeltaMean) / dim;
-        System.out.println("Embedding mean =" + embMean);
+        System.out.println("Embedding mean = " + embMean);
         FastRandom randomGenerator = new FastRandom();
         if (userEmbeddings == null) {
-            itemEmbeddings = userIds.stream().collect(Collectors.toMap(id -> id,
+            userEmbeddings = userIds.stream().collect(Collectors.toMap(id -> id,
                     id -> makeEmbedding(randomGenerator, embMean)));
         }
         if (itemEmbeddings == null) {
@@ -85,7 +101,6 @@ public class Model {
     }
 
     private double logLikelihood(final List<Event> events) {
-        initializeEmbeddings(events);
         double logLikelihood = 0.;
         final Map<String, Set<String>> seenItems = userIds.stream()
                 .collect(Collectors.toMap(Function.identity(), (userId) -> new HashSet<>()));
@@ -106,8 +121,11 @@ public class Model {
                 final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
                 final double logLikelihoodDelta = Math.log(-Math.exp(-transformedLambda * (event.getPrDelta() + eps)) +
                         Math.exp(-transformedLambda * Math.max(0, event.getPrDelta() - eps)));
-//                TODO: check for overflow
-                logLikelihood += logLikelihoodDelta;
+                if (!Double.isNaN(logLikelihoodDelta)) {
+                    logLikelihood += logLikelihoodDelta;
+                } else {
+//                    System.out.println("overflow");
+                }
                 lambdasByItem.accept(event);
             }
 //            } else {
@@ -141,7 +159,6 @@ public class Model {
     }
 
     private Derivative logLikelihoodDerivative(final List<Event> events) {
-        initializeEmbeddings(events);
         final Map<String, Vec> userDerivatives = userIds.stream()
                 .collect(Collectors.toMap(Function.identity(), userId -> VecTools.copy(zeroVec)));
         final Map<String, Vec> itemDerivatives = itemIds.stream()
@@ -195,42 +212,53 @@ public class Model {
         final double exp_minus = Math.exp(-transformedLambda * Math.max(0, tau - eps));
         final double commonPart = lambdaDerivativeTransform.applyAsDouble(lambda) *
                 ((tau + eps) * exp_plus - Math.max(0, tau - eps) * exp_minus) / (-exp_plus + exp_minus);
-//                TODO: check for overflow
-        VecTools.scale(lambdaDerivativeUser, commonPart);
-        VecTools.append(userDerivatives.get(event.userId()), lambdaDerivativeUser);
-        lambdaDerivativeItems.forEach((itemId, derivative) -> {
-            VecTools.scale(derivative, commonPart);
-            VecTools.append(itemDerivatives.get(itemId), derivative);
-        });
+        if (!Double.isNaN(commonPart)) {
+            VecTools.scale(lambdaDerivativeUser, commonPart);
+            VecTools.append(userDerivatives.get(event.userId()), lambdaDerivativeUser);
+            lambdaDerivativeItems.forEach((itemId, derivative) -> {
+                VecTools.scale(derivative, commonPart);
+                VecTools.append(itemDerivatives.get(itemId), derivative);
+            });
+        } else {
+//            System.out.println("overflow");
+        }
     }
 
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
                     final List<Event> evaluationEvents, final boolean verbose) {
+        initializeEmbeddings(events);
         optimizeSGD(events, learningRate, iterationsNumber, evaluationEvents, verbose);
     }
 
     private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
                      final List<Event> evaluationEvents, final boolean verbose) {
-        initializeEmbeddings(events);
         double lr = learningRate / dataSize;
+        Map<String, List<Event>> eventsByUser = new HashMap<>(userIds.size());
+        userIds.forEach(uid -> eventsByUser.put(uid, new ArrayList<>()));
+        for (final Event event : events) {
+            eventsByUser.get(event.userId()).add(event);
+        }
         for (int i = 0; i < iterationsNumber; ++i) {
-            Derivative derivative = logLikelihoodDerivative(events);
-            for (String userId : userIds) {
-                Vec userDerivative = derivative.getUserDerivatives().get(userId);
-                VecTools.scale(userDerivative, lr);
-                VecTools.append(userEmbeddings.get(userId), userDerivative);
-            }
-            for (String itemId : itemIds) {
-                Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
-                VecTools.scale(itemDerivative, lr);
-                VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
+            for (final List<Event> userEvents : eventsByUser.values()) {
+                Derivative derivative = logLikelihoodDerivative(userEvents);
+                for (String userId : userIds) {
+                    Vec userDerivative = derivative.getUserDerivatives().get(userId);
+                    VecTools.scale(userDerivative, lr);
+                    VecTools.append(userEmbeddings.get(userId), userDerivative);
+                }
+                for (String itemId : itemIds) {
+                    Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
+                    VecTools.scale(itemDerivative, lr);
+                    VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
+                }
             }
             lr *= decayRate;
             if (verbose) {
-                System.out.println(i + "{}-th iter, ll = {}" + logLikelihood(events));
+                System.out.println(i + "-th iter, ll = " + logLikelihood(events));
                 if (evaluationEvents != null) {
                     Metrics.printMetrics(this, events, evaluationEvents);
                 }
+                System.out.println();
                 System.out.println();
             }
         }
