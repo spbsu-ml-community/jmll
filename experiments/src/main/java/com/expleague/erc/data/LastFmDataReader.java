@@ -26,7 +26,7 @@ public class LastFmDataReader {
     private Event makeEvent(final String line) {
         String[] words = line.split("\t");
         try {
-            return new Event(words[1], words[4], toTimestamp(words[2]), isFinish);
+            return new Event(words[1], words[4], toTimestamp(words[2]));
         } catch (ParseException e) {
             return null;
         }
