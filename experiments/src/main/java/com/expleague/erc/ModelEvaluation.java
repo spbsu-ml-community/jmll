@@ -52,5 +52,6 @@ public class ModelEvaluation {
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
         Model model = new Model(dim, beta, eps, otherItemImportance, x -> x, x -> 1, null, null, null);
+        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), true);
     }
 }

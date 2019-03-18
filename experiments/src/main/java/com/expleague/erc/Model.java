@@ -1,6 +1,7 @@
 package com.expleague.erc;
 
 import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.lambda.LambdaStrategy;
@@ -12,217 +13,222 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Model {
-    private final int dimensionality;
+    private final int dim;
     private final double decayRate;
     private final double beta;
     private final double eps;
-    private final double otherProjectImportance;
+    private final double otherItemImportance;
     private final DoubleUnaryOperator lambdaTransform;
     private final DoubleUnaryOperator lambdaDerivativeTransform;
     private final LambdaStrategyFactory lambdaStrategyFactory;
-    private Map<String, ArrayVec> userEmbeddings;
-    private Map<String, ArrayVec> itemEmbeddings;
+    private Map<String, Vec> userEmbeddings;
+    private Map<String, Vec> itemEmbeddings;
     private boolean dataInitialized;
     private int dataSize;
     private Set<String> userIds;
     private Set<String> itemIds;
+    private Vec zeroVec;
 
-    public Model(int dimensionality, double beta, double eps, double otherItemImportance,
-                 DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
-                 LambdaStrategyFactory lambdaStrategyFactory, Map<String, ArrayVec> usersEmbeddingsPrior,
-                 Map<String, ArrayVec> projectsEmbeddingsPrior) {
-        this.dimensionality = dimensionality;
+    public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
+                 final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                 final LambdaStrategyFactory lambdaStrategyFactory, final Map<String, Vec> usersEmbeddingsPrior,
+                 final Map<String, Vec> itemsEmbeddingsPrior) {
+        this.dim = dim;
         decayRate = 1;
         this.beta = beta;
         this.eps = eps;
-        this.otherProjectImportance = otherItemImportance;
+        this.otherItemImportance = otherItemImportance;
         this.lambdaTransform = lambdaTransform;
         this.lambdaDerivativeTransform = lambdaDerivativeTransform;
         this.lambdaStrategyFactory = lambdaStrategyFactory;
         this.userEmbeddings = usersEmbeddingsPrior;
-        this.itemEmbeddings = projectsEmbeddingsPrior;
+        this.itemEmbeddings = itemsEmbeddingsPrior;
         dataInitialized = false;
+        zeroVec = new ArrayVec(dim);
+        VecTools.fill(zeroVec, 0);
     }
 
-    private ArrayVec makeEmbedding(FastRandom randomGenerator, double embMean) {
-        ArrayVec embedding = new ArrayVec(dimensionality);
+    private Vec makeEmbedding(final FastRandom randomGenerator, final double embMean) {
+        Vec embedding = VecTools.copy(zeroVec);
         VecTools.fillGaussian(embedding, randomGenerator);
-        embedding.scale(embMean / 2);
+        VecTools.scale(embedding, embMean / 2);
         VecTools.adjust(embedding, embMean);
-        for (int i = 0; i < dimensionality; ++i) {
+        for (int i = 0; i < dim; ++i) {
             embedding.set(i, Math.abs(embedding.get(i)));
         }
         return embedding;
     }
 
-    private void initializeData(List<Event> history) {
+    private void initializeEmbeddings(final List<Event> events) {
         if (dataInitialized) {
             return;
         }
-        dataSize = history.size();
-        userIds = history.stream().map(Event::userId).collect(Collectors.toSet());
-        itemIds = history.stream().map(Event::itemId).collect(Collectors.toSet());
+        dataSize = events.size();
+        userIds = events.stream().map(Event::userId).collect(Collectors.toSet());
+        itemIds = events.stream().map(Event::itemId).collect(Collectors.toSet());
 
-        double itemDeltaMean = history.stream()
+        double itemDeltaMean = events.stream()
                 .filter(event -> event.getPrDelta() != null)
                 .collect(Collectors.averagingDouble(Event::getPrDelta));
-        double embMean = Math.sqrt(1 / itemDeltaMean) / dimensionality;
+        double embMean = Math.sqrt(1 / itemDeltaMean) / dim;
         System.out.println("Embedding mean =" + embMean);
+        FastRandom randomGenerator = new FastRandom();
         if (userEmbeddings == null) {
-            FastRandom randomGenerator = new FastRandom();
-            userEmbeddings = new HashMap<>();
-            for (String user: userIds) {
-                userEmbeddings.put(user, makeEmbedding(randomGenerator, embMean));
-            }
+            itemEmbeddings = userIds.stream().collect(Collectors.toMap(id -> id,
+                    id -> makeEmbedding(randomGenerator, embMean)));
         }
         if (itemEmbeddings == null) {
-            FastRandom randomGenerator = new FastRandom();
-            itemEmbeddings = new HashMap<>();
-            for (String item: itemIds) {
-                itemEmbeddings.put(item, makeEmbedding(randomGenerator, embMean));
-            }
+            itemEmbeddings = itemIds.stream().collect(Collectors.toMap(id -> id,
+                    id -> makeEmbedding(randomGenerator, embMean)));
         }
         dataInitialized = true;
     }
 
-    private double logLikelihood(List<Event> history) {
-        initializeData(history);
+    private double logLikelihood(final List<Event> events) {
+        initializeEmbeddings(events);
         double logLikelihood = 0.;
-        Map<String, Set<String>> done_projects = userIds.stream()
+        final Map<String, Set<String>> seenItems = userIds.stream()
                 .collect(Collectors.toMap(Function.identity(), (userId) -> new HashSet<>()));
-        LambdaStrategy lambdasByProject =
-                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
-        List<Event> lastTimeEvents = new ArrayList<>();
-        for (Event event: history) {
-            if (!done_projects.get(event.userId()).contains(event.itemId())) {
-                done_projects.get(event.userId()).add(event.itemId());
-                lambdasByProject.accept(event);
+        final LambdaStrategy lambdasByItem =
+                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+//        final List<Event> lastTimeEvents = new ArrayList<>();
+        for (final Event event : events) {
+            final String userId = event.userId();
+            final String itemId = event.itemId();
+            if (!seenItems.get(userId).contains(itemId)) {
+                seenItems.get(userId).add(itemId);
+                lambdasByItem.accept(event);
                 continue;
             }
-            if (event.getNTasks() != 0) {
-                double lambda = lambdasByProject.getLambda(event.userId(), event.itemId());
-                double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-                double logLikelihoodDelta = Math.log(-Math.exp(-transformedLambda * (event.getPrDelta() + eps)) +
+            // handle last events at another way
+            if (!event.isFinish()) {
+                final double lambda = lambdasByItem.getLambda(userId, itemId);
+                final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
+                final double logLikelihoodDelta = Math.log(-Math.exp(-transformedLambda * (event.getPrDelta() + eps)) +
                         Math.exp(-transformedLambda * Math.max(0, event.getPrDelta() - eps)));
 //                TODO: check for overflow
                 logLikelihood += logLikelihoodDelta;
-                lambdasByProject.accept(event);
-            } else {
-                lastTimeEvents.add(event);
+                lambdasByItem.accept(event);
             }
+//            } else {
+//                lastTimeEvents.add(event);
+//            }
         }
-        for (Event event: lastTimeEvents) {
-            double lambda = lambdasByProject.getLambda(event.userId(), event.itemId());
-            double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-            logLikelihood += -transformedLambda * event.getPrDelta();
-        }
+//        for (final Event event : lastTimeEvents) {
+//            final double lambda = lambdasByItem.getLambda(event.userId(), event.itemId());
+//            final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
+//            logLikelihood += -transformedLambda * event.getPrDelta();
+//        }
         return logLikelihood;
     }
 
     private class Derivative {
-        private final Map<String, ArrayVec> userDerivatives;
-        private final Map<String, ArrayVec> itemDerivatives;
+        private final Map<String, Vec> userDerivatives;
+        private final Map<String, Vec> itemDerivatives;
 
-        private Derivative(Map<String, ArrayVec> userDerivatives, Map<String, ArrayVec> itemDerivatives) {
+        private Derivative(final Map<String, Vec> userDerivatives, final Map<String, Vec> itemDerivatives) {
             this.userDerivatives = userDerivatives;
             this.itemDerivatives = itemDerivatives;
         }
 
-        private Map<String, ArrayVec> getUserDerivatives() {
+        private Map<String, Vec> getUserDerivatives() {
             return userDerivatives;
         }
 
-        private Map<String, ArrayVec> getItemDerivatives() {
+        private Map<String, Vec> getItemDerivatives() {
             return itemDerivatives;
         }
     }
 
-    private Derivative logLikelihoodDerivative(List<Event> history) {
-        initializeData(history);
-        Map<String, ArrayVec> userDerivatives = userIds.stream()
-                .collect(Collectors.toMap(Function.identity(), (userId) -> {
-                    ArrayVec derivative = new ArrayVec(dimensionality);
-                    derivative.fill(0.);
-                    return derivative;
-                }));
-        Map <String, ArrayVec> itemDerivatives = itemIds.stream()
-                .collect(Collectors.toMap(Function.identity(), (userId) -> {
-                    ArrayVec derivative = new ArrayVec(dimensionality);
-                    derivative.fill(0.);
-                    return derivative;
-                }));
-        Map<String, Set<String>> done_projects = userIds.stream()
-                .collect(Collectors.toMap(Function.identity(), (userId) -> new HashSet<>()));
-        LambdaStrategy lambdasByProject =
-                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
-        List<Event> lastTimeEvents = new ArrayList<>();
-        for (Event event: history) {
-            if (!done_projects.get(event.userId()).contains(event.itemId())) {
-                done_projects.get(event.userId()).add(event.itemId());
-                lambdasByProject.accept(event);
+    private Derivative logLikelihoodDerivative(final List<Event> events) {
+        initializeEmbeddings(events);
+        final Map<String, Vec> userDerivatives = userIds.stream()
+                .collect(Collectors.toMap(Function.identity(), userId -> VecTools.copy(zeroVec)));
+        final Map<String, Vec> itemDerivatives = itemIds.stream()
+                .collect(Collectors.toMap(Function.identity(), userId -> VecTools.copy(zeroVec)));
+        final Map<String, Set<String>> seenItems = userIds.stream()
+                .collect(Collectors.toMap(Function.identity(), userId -> new HashSet<>()));
+        final LambdaStrategy lambdasByItem =
+                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+//        final List<Event> lastTimeEvents = new ArrayList<>();
+        for (final Event event : events) {
+            if (!seenItems.get(event.userId()).contains(event.itemId())) {
+                seenItems.get(event.userId()).add(event.itemId());
+                lambdasByItem.accept(event);
                 continue;
             }
-            if (event.getNTasks() != 0) {
-                double lambda = lambdasByProject.getLambda(event.userId(), event.itemId());
-                ArrayVec lambdaDerivativeUser =
-                        lambdasByProject.getLambdaUserDerivative(event.userId(), event.itemId());
-                Map <String, ArrayVec> lambdaDerivativeProjects =
-                        lambdasByProject.getLambdaProjectDerivative(event.userId(), event.itemId());
-                double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-                double tau = event.getPrDelta();
-                double exp_plus = Math.exp(-transformedLambda * (tau + eps));
-                double exp_minus = Math.exp(-transformedLambda * Math.max(0, tau - eps));
-                double commonPart = lambdaDerivativeTransform.applyAsDouble(lambda) *
-                        ((tau + eps) * exp_plus - Math.max(0, tau - eps) * exp_minus) / (-exp_plus + exp_minus);
-//                TODO: check for overflow
-                lambdaDerivativeUser.scale(commonPart);
-                userDerivatives.get(event.userId()).add(lambdaDerivativeUser);
-                lambdaDerivativeProjects.forEach((itemId, derivative) -> {
-                    derivative.scale(commonPart);
-                    itemDerivatives.get(itemId).add(derivative);
-                });
-                lambdasByProject.accept(event);
-            } else {
-                lastTimeEvents.add(event);
+            if (!event.isFinish()) {
+                updateInnerEventDerivative(lambdasByItem, event, userDerivatives, itemDerivatives);
+                lambdasByItem.accept(event);
             }
+//            } else {
+//                lastTimeEvents.add(event);
+//            }
         }
-        for (Event event: lastTimeEvents) {
-            double lambda = lambdasByProject.getLambda(event.userId(), event.itemId());
-            ArrayVec lambdaDerivativeUser =
-                    lambdasByProject.getLambdaUserDerivative(event.userId(), event.itemId());
-            Map <String, ArrayVec> lambdaDerivativeProjects =
-                    lambdasByProject.getLambdaProjectDerivative(event.userId(), event.itemId());
-            double commonPart = lambdaDerivativeTransform.applyAsDouble(lambda) * event.getPrDelta();
-            lambdaDerivativeUser.scale(-commonPart);
-            userDerivatives.get(event.userId()).add(lambdaDerivativeUser);
-            lambdaDerivativeProjects.forEach((itemId, derivative) -> {
-                derivative.scale(-commonPart);
-                itemDerivatives.get(itemId).add(derivative);
-            });
-        }
+//        for (final Event event : lastTimeEvents) {
+//            final double lambda = lambdasByItem.getLambda(event.userId(), event.itemId());
+//            final Vec lambdaDerivativeUser =
+//                    lambdasByItem.getLambdaUserDerivative(event.userId(), event.itemId());
+//            final Map<String, Vec> lambdaDerivativeItems =
+//                    lambdasByItem.getLambdaItemDerivative(event.userId(), event.itemId());
+//            final double commonPart = lambdaDerivativeTransform.applyAsDouble(lambda) * event.getPrDelta();
+//            VecTools.scale(lambdaDerivativeUser, -commonPart);
+//            VecTools.append(userDerivatives.get(event.userId()), lambdaDerivativeUser);
+//            lambdaDerivativeItems.forEach((itemId, derivative) -> {
+//                VecTools.scale(derivative, -commonPart);
+//                VecTools.append(itemDerivatives.get(itemId), derivative);
+//            });
+//        }
         return new Derivative(userDerivatives, itemDerivatives);
     }
 
-    void optimizeSGD(List<Event> data, double learningRate, int iterationsNumber, List<Event> evaluationData,
-                     boolean verbose) {
-        initializeData(data);
-        learningRate /= dataSize;
+    private void updateInnerEventDerivative(LambdaStrategy lambdasByItem, final Event event,
+                                            Map<String, Vec> userDerivatives, Map<String, Vec> itemDerivatives) {
+        final double lambda = lambdasByItem.getLambda(event.userId(), event.itemId());
+        final Vec lambdaDerivativeUser =
+                lambdasByItem.getLambdaUserDerivative(event.userId(), event.itemId());
+        final Map<String, Vec> lambdaDerivativeItems =
+                lambdasByItem.getLambdaItemDerivative(event.userId(), event.itemId());
+        final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
+        final double tau = event.getPrDelta();
+        final double exp_plus = Math.exp(-transformedLambda * (tau + eps));
+        final double exp_minus = Math.exp(-transformedLambda * Math.max(0, tau - eps));
+        final double commonPart = lambdaDerivativeTransform.applyAsDouble(lambda) *
+                ((tau + eps) * exp_plus - Math.max(0, tau - eps) * exp_minus) / (-exp_plus + exp_minus);
+//                TODO: check for overflow
+        VecTools.scale(lambdaDerivativeUser, commonPart);
+        VecTools.append(userDerivatives.get(event.userId()), lambdaDerivativeUser);
+        lambdaDerivativeItems.forEach((itemId, derivative) -> {
+            VecTools.scale(derivative, commonPart);
+            VecTools.append(itemDerivatives.get(itemId), derivative);
+        });
+    }
+
+    public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
+                    final List<Event> evaluationEvents, final boolean verbose) {
+        optimizeSGD(events, learningRate, iterationsNumber, evaluationEvents, verbose);
+    }
+
+    private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
+                     final List<Event> evaluationEvents, final boolean verbose) {
+        initializeEmbeddings(events);
+        double lr = learningRate / dataSize;
         for (int i = 0; i < iterationsNumber; ++i) {
-            Derivative derivative = logLikelihoodDerivative(data);
-            for (String userId: userIds) {
-                ArrayVec userDerivative = derivative.getUserDerivatives().get(userId);
-                userDerivative.scale(learningRate);
-                userEmbeddings.get(userId).add(userDerivative);
+            Derivative derivative = logLikelihoodDerivative(events);
+            for (String userId : userIds) {
+                Vec userDerivative = derivative.getUserDerivatives().get(userId);
+                VecTools.scale(userDerivative, lr);
+                VecTools.append(userEmbeddings.get(userId), userDerivative);
             }
-            for (String itemId: itemIds) {
-                ArrayVec itemDerivative = derivative.getItemDerivatives().get(itemId);
-                itemDerivative.scale(learningRate);
-                itemEmbeddings.get(itemId).add(itemDerivative);
+            for (String itemId : itemIds) {
+                Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
+                VecTools.scale(itemDerivative, lr);
+                VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
             }
-            learningRate *= decayRate;
+            lr *= decayRate;
             if (verbose) {
-                System.out.println(i + "{}-th iter, ll = {}" + logLikelihood(data));
-                if (evaluationData != null) {
+                System.out.println(i + "{}-th iter, ll = {}" + logLikelihood(events));
+                if (evaluationEvents != null) {
                     // TODO: print metrics
                 }
                 System.out.println();
@@ -234,42 +240,46 @@ public class Model {
         private final LambdaStrategy lambdaStrategy;
 
         private Applicable() {
-            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
+            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         }
 
-        public void accept(Event event) {
+        public void accept(final Event event) {
             lambdaStrategy.accept(event);
         }
 
-        public double getLambda(String userId, String itemId) {
+        public double getLambda(final String userId, final String itemId) {
             return lambdaTransform.applyAsDouble(lambdaStrategy.getLambda(userId, itemId));
         }
 
-        public double timeDelta(String userId, String itemId) {
+        public double timeDelta(final String userId, final String itemId) {
             return 1 / getLambda(userId, itemId);
         }
 
-        public Applicable fit(List<Event> history) {
-            for (Event event: history) {
+        public Applicable fit(final List<Event> history) {
+            for (Event event : history) {
                 accept(event);
             }
             return this;
         }
 
-        public Map<String, ArrayVec> getUserEmbeddings() {
+        public Map<String, Vec> getUserEmbeddings() {
             return userEmbeddings;
         }
 
-        public Map<String, ArrayVec> getItemEmbeddings() {
+        public Map<String, Vec> getItemEmbeddings() {
             return itemEmbeddings;
         }
     }
 
-    public Applicable getApplicable(List<Event> data) {
+    public Applicable getApplicable(final List<Event> events) {
         Applicable applicable = new Applicable();
-        if (data != null) {
-            applicable.fit(data);
+        if (events != null) {
+            applicable.fit(events);
         }
         return applicable;
+    }
+
+    public Applicable getApplicable() {
+        return new Applicable();
     }
 }

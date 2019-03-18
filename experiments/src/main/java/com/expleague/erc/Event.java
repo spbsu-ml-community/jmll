@@ -27,7 +27,7 @@ public class Event {
         throw new UnsupportedOperationException();
     }
 
-    public int getNTasks() {
-        throw new UnsupportedOperationException();
+    public boolean isFinish() {
+        return true;
     }
 }

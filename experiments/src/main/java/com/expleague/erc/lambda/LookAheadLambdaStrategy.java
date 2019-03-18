@@ -1,6 +1,6 @@
 package com.expleague.erc.lambda;
 
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.Event;
 
 import java.util.HashMap;
@@ -9,41 +9,33 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class LookAheadLambdaStrategy implements LambdaStrategy {
-    private final Map<String, ArrayVec> userEmbeddings;
-    private final Map<String, ArrayVec> itemEmbeddings;
-    private final double beta;
-    private final double otherItemsImportance;
     private final Map<String, Double> prevUserActionTime;
     private final Map<String, UserLambda> userLambdas;
 
-    public LookAheadLambdaStrategy(Map<String, ArrayVec> userEmbeddings, Map<String, ArrayVec> itemEmbeddings,
-                                   double beta, double otherProjectImportance) {
-        this.userEmbeddings = userEmbeddings;
-        this.itemEmbeddings = itemEmbeddings;
-        this.beta = beta;
-        this.otherItemsImportance = otherProjectImportance;
+    public LookAheadLambdaStrategy(final Map<String, Vec> userEmbeddings, final Map<String, Vec> itemEmbeddings,
+                                   final double beta, final double otherProjectImportance) {
         prevUserActionTime = new HashMap<>();
         userLambdas = userEmbeddings.keySet().stream().collect(Collectors.toMap(Function.identity(),
                 userId -> new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance)));
     }
 
     @Override
-    public double getLambda(String userId, String itemId) {
+    public double getLambda(final String userId, final String itemId) {
         return userLambdas.get(userId).getLambda(itemId);
     }
 
     @Override
-    public ArrayVec getLambdaUserDerivative(String userId, String itemId) {
+    public Vec getLambdaUserDerivative(final String userId, final String itemId) {
         return userLambdas.get(userId).getLambdaUserDerivative(itemId);
     }
 
     @Override
-    public Map<String, ArrayVec> getLambdaProjectDerivative(String userId, String itemId) {
+    public Map<String, Vec> getLambdaItemDerivative(final String userId, final String itemId) {
         return userLambdas.get(userId).getLambdaItemsDerivative(itemId);
     }
 
     @Override
-    public void accept(Event event) {
+    public void accept(final Event event) {
         double timeDelta = 0;
         if (prevUserActionTime.containsKey(event.userId())) {
             timeDelta = event.getTs() - prevUserActionTime.get(event.userId());

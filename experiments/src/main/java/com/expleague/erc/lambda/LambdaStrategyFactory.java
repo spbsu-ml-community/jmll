@@ -1,10 +1,10 @@
 package com.expleague.erc.lambda;
 
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.math.vectors.Vec;
 
 import java.util.Map;
 
 public interface LambdaStrategyFactory {
-    LambdaStrategy get(Map<String, ArrayVec> userEmbeddings, Map<String, ArrayVec> itemEmbeddings, double beta,
-                       double otherProjectImportance);
+    LambdaStrategy get(final Map<String, Vec> userEmbeddings, final Map<String, Vec> itemEmbeddings,
+                       final double beta, final double otherProjectImportance);
 }
