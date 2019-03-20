@@ -66,6 +66,11 @@ public class MultiDecompBuilder extends EmbeddingBuilderBase {
   }
 
   @Override
+  protected boolean isCoocNecessery() {
+    return true;
+  }
+
+  @Override
   public Embedding<CharSeq> fit() {
     final int size = dict().size();
     final List<Vec> symDecomp = new ArrayList<>();

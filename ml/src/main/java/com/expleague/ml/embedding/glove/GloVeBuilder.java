@@ -43,6 +43,11 @@ public class GloVeBuilder extends EmbeddingBuilderBase {
   }
 
   @Override
+  protected boolean isCoocNecessery() {
+    return true;
+  }
+
+  @Override
   public Embedding<CharSeq> fit() {
     final int vocab_size = dict().size();
     final Mx leftVectors = new VecBasedMx(vocab_size, dim + 1);

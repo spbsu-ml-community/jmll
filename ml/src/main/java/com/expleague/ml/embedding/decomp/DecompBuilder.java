@@ -126,6 +126,11 @@ public class DecompBuilder extends EmbeddingBuilderBase {
     return new EmbeddingImpl<>(mapping);
   }
 
+  @Override
+  protected boolean isCoocNecessery() {
+    return true;
+  }
+
   private void update(Vec x_i, Vec softMaxD_i, Vec x_j, Vec softMaxD_j, double step) {
     IntStream.range(0, x_i.dim()).forEach(id -> {
       final double dx_i = x_j.get(id) * step;

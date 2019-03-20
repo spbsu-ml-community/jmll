@@ -38,19 +38,19 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq> {
-  private static final Logger log = LoggerFactory.getLogger(EmbeddingBuilderBase.class.getName());
+  protected static final Logger log = LoggerFactory.getLogger(EmbeddingBuilderBase.class.getName());
   public static final int CAPACITY = 50_000_000;
-  private Path path;
+  protected Path path;
 
   private int minCount = 5;
-  private int windowLeft = 15;
-  private int windowRight = 15;
-  private Embedding.WindowType windowType = Embedding.WindowType.LINEAR;
+  protected int windowLeft = 15;
+  protected int windowRight = 15;
+  protected Embedding.WindowType windowType = Embedding.WindowType.LINEAR;
   private int iterations = 25;
   private double step = 0.01;
 
-  private List<CharSeq> wordsList = new ArrayList<>();
-  private TObjectIntMap<CharSeq> wordsIndex = new TObjectIntHashMap<>(50_000, 0.6f, -1);
+  protected List<CharSeq> wordsList = new ArrayList<>();
+  protected TObjectIntMap<CharSeq> wordsIndex = new TObjectIntHashMap<>(50_000, 0.6f, -1);
   private boolean dictReady;
   private List<LongSeq> cooc;
   private boolean coocReady = false;
@@ -88,6 +88,8 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   }
 
   protected abstract Embedding<CharSeq> fit();
+
+  protected abstract boolean isCoocNecessery();
 
   protected List<CharSeq> dict() {
     return wordsList;
@@ -131,10 +133,12 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
       long time = System.nanoTime();
       acquireDictionary();
       log.info("==== " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time) + "s ====");
-      log.info("==== Cooccurrences phase ====");
-      time = System.nanoTime();
-      acquireCooccurrences();
-      log.info("==== " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time) + "s ====");
+      if (isCoocNecessery()) {
+        log.info("==== Cooccurrences phase ====");
+        time = System.nanoTime();
+        acquireCooccurrences();
+        log.info("==== " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time) + "s ====");
+      }
       log.info("==== Training phase ====");
       time = System.nanoTime();
       final Embedding<CharSeq> result = fit();
@@ -331,19 +335,19 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     }
   }
 
-  private int unpackA(long next) {
+  protected int unpackA(long next) {
     return (int)(next >>> 36);
   }
 
-  private int unpackB(long next) {
+  protected int unpackB(long next) {
     return ((int)(next >>> 8)) & 0x0FFFFFFF;
   }
 
-  private int unpackDist(long next) {
+  protected int unpackDist(long next) {
     return (int)(0xFF & next);
   }
 
-  private long pack(long a, long b, byte dist) {
+  protected long pack(long a, long b, byte dist) {
     return (a << 36) | (b << 8) | ((long) dist & 0xFF);
   }
 
@@ -398,7 +402,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     }
   }
 
-  private CharSeq normalize(CharSeq word) {
+  protected CharSeq normalize(CharSeq word) {
     final int initialLength = word.length();
     int len = initialLength;
     int st = 0;

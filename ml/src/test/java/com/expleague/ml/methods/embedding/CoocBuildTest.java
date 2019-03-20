@@ -67,6 +67,11 @@ public class CoocBuildTest {
     }
 
     @Override
+    protected boolean isCoocNecessery() {
+      return true;
+    }
+
+    @Override
     public LongSeq cooc(int i) {
       return super.cooc(i);
     }
