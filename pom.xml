@@ -4,7 +4,7 @@
 
   <groupId>com.expleague</groupId>
   <artifactId>all</artifactId>
-  <version>1.4.4-SNAPSHOT</version>
+  <version>1.4.10-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>SpbSU JMLL Parent</name>
