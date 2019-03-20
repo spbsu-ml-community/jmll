@@ -48,6 +48,7 @@ public class Pool<I extends DSItem> {
   public interface Builder<T extends DSItem> extends Factory<Pool<T>>, Consumer<T> {
     Pool<T> create();
 
+    void accept(T item, Vec values, FeatureMeta[] metas);
     void accept(final T item);
     void advance();
 
