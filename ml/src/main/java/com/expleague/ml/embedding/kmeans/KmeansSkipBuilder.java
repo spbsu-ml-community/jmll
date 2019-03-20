@@ -54,66 +54,12 @@ public class KmeansSkipBuilder extends EmbeddingBuilderBase {
   }
 
   @Override
-  protected boolean isCoocNecessery() {
-    return false;
-  }
-
-  @Override
   protected Embedding<CharSeq> fit() {
     initialize();
 
     log.info("Started scanning corpus." + this.path);
-    final long startTime = System.nanoTime();
-    final Lock[] rowLocks = IntStream.range(0, wordsList.size()).mapToObj(i -> new ReentrantLock()).toArray(Lock[]::new);
-    final List<TLongList> accumulators = new ArrayList<>();
-    final CharSeq newLine = CharSeq.create("777newline777");
-    wordsIndex.put(newLine, Integer.MAX_VALUE);
-    try {
-      source().peek(new Consumer<CharSeq>() {
-        long line = 0;
-        long time = System.nanoTime();
-        @Override
-        public synchronized void accept(CharSeq l) {
-          if ((++line) % 10000 == 0) {
-            log.info(line + " lines processed for " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time) + "s");
-            time = System.nanoTime();
-          }
-        }
-      }).map(line -> (CharSeq)CharSeqTools.concat(line, " ", newLine)).flatMap(CharSeqTools::words).map(this::normalize).mapToInt(wordsIndex::get).filter(idx -> idx >= 0).mapToObj(new IntFunction<LongStream>() {
-        final TIntArrayList queue = new TIntArrayList(1000);
-        int offset = 0;
-        @Override
-        public synchronized LongStream apply(int idx) {
-          if (idx == Integer.MAX_VALUE) { // new line
-            queue.resetQuick();
-            offset = 0;
-            return LongStream.empty();
-          }
-          int pos = queue.size();
-          final long[] out = new long[windowLeft + windowRight];
-          int outIndex = 0;
-          for (int i = offset; i < pos; i++) {
-            byte distance = (byte)(pos - i);
-            if (distance == 0) {
-              log.warn("Zero distance occured! pos: " + pos + " i: " + i);
-              System.err.println("Zero distance occured! pos: " + pos + " i: " + i);
-            }
-            if (distance <= windowRight)
-              out[outIndex++] = pack(queue.getQuick(i), idx, distance);
-            if (distance <= windowLeft)
-              out[outIndex++] = pack(idx, queue.getQuick(i), (byte)-distance);
-          }
-          queue.add(idx);
-          if (queue.size() > Math.max(windowLeft, windowRight)) {
-            offset++;
-            if (offset > 1000 - Math.max(windowLeft, windowRight)) {
-              queue.remove(0, offset);
-              offset = 0;
-            }
-          }
-          return Arrays.stream(out, 0, outIndex);
-        }
-      }).flatMapToLong(entries -> entries).forEach(tuple -> {
+    try (final LongStream stream = positionsStream()) {
+      stream.forEach(tuple -> {
         move(unpackA(tuple), unpackB(tuple), unpackDist(tuple));
       });
     }

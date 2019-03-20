@@ -3,22 +3,20 @@ package com.expleague.ml.embedding.glove;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.embedding.Embedding;
-import com.expleague.ml.embedding.impl.EmbeddingBuilderBase;
+import com.expleague.ml.embedding.impl.CoocBasedBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
-import gnu.trove.iterator.TIntDoubleIterator;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-public class GloVeBuilder extends EmbeddingBuilderBase {
+public class GloVeBuilder extends CoocBasedBuilder {
   private double xMax = 10;
   private double alpha = 0.75;
   private int dim = 50;
@@ -40,11 +38,6 @@ public class GloVeBuilder extends EmbeddingBuilderBase {
 
   private double weightingFunc(double x) {
     return x < xMax ? Math.pow((x / xMax), alpha) : 1;
-  }
-
-  @Override
-  protected boolean isCoocNecessery() {
-    return true;
   }
 
   @Override

@@ -10,7 +10,7 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.embedding.Embedding;
-import com.expleague.ml.embedding.impl.EmbeddingBuilderBase;
+import com.expleague.ml.embedding.impl.CoocBasedBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import gnu.trove.list.array.TIntArrayList;
 import org.slf4j.Logger;
@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-public class DecompBuilder extends EmbeddingBuilderBase {
+public class DecompBuilder extends CoocBasedBuilder {
   private static final Logger log = LoggerFactory.getLogger(DecompBuilder.class.getName());
   private double xMax = 10;
   private double alpha = 0.75;
@@ -177,7 +177,6 @@ public class DecompBuilder extends EmbeddingBuilderBase {
       softMaxD_j.set(id, maxL_j + MathTools.sqr(dx_j));
     });
   }
-
 
   private double initializeValue(int dim) {
     return (Math.random() - 0.5) / dim;

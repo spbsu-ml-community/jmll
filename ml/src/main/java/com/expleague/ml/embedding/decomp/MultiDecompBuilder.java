@@ -11,7 +11,7 @@ import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.MultiMap;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.embedding.Embedding;
-import com.expleague.ml.embedding.impl.EmbeddingBuilderBase;
+import com.expleague.ml.embedding.impl.CoocBasedBuilder;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class MultiDecompBuilder extends EmbeddingBuilderBase {
+public class MultiDecompBuilder extends CoocBasedBuilder {
   private static final Logger log = LoggerFactory.getLogger(MultiDecompBuilder.class);
   private double xMax = 10;
   private double alpha = 0.75;
@@ -36,26 +36,31 @@ public class MultiDecompBuilder extends EmbeddingBuilderBase {
 
   private FastRandom rng = new FastRandom();
 
+  @SuppressWarnings("unused")
   public MultiDecompBuilder xMax(int xMax) {
     this.xMax = xMax;
     return this;
   }
 
+  @SuppressWarnings("unused")
   public MultiDecompBuilder alpha(double alpha) {
     this.alpha = alpha;
     return this;
   }
 
+  @SuppressWarnings("unused")
   public MultiDecompBuilder dimSym(int dim) {
     this.symDim = dim;
     return this;
   }
 
+  @SuppressWarnings("unused")
   public MultiDecompBuilder dimSkew(int dim) {
     this.skewDim = dim;
     return this;
   }
 
+  @SuppressWarnings("unused")
   public MultiDecompBuilder seed(long seed) {
     rng = new FastRandom(seed);
     return this;
@@ -63,11 +68,6 @@ public class MultiDecompBuilder extends EmbeddingBuilderBase {
 
   private double weightingFunc(double x) {
     return x < xMax ? Math.pow((x / xMax), alpha) : 1;
-  }
-
-  @Override
-  protected boolean isCoocNecessery() {
-    return true;
   }
 
   @Override
@@ -192,9 +192,11 @@ public class MultiDecompBuilder extends EmbeddingBuilderBase {
             wordClusters.add(wordsCluster);
           }
           CharSeq word = dict().get(i);
+          //noinspection EqualsBetweenInconvertibleTypes
           if (word.equals("apple") || word.equals("lock")) {
             clusters.size();
           }
+          //noinspection EqualsBetweenInconvertibleTypes
           if (word.equals("apple") || wordClusters.size() > 1 && wordClusters.get(0).size() / (double)wordClusters.get(1).size() < 10 && wordClusters.get(1).size() > 10) {
             StringBuilder builder = new StringBuilder();
             builder.append(word).append('\n');
