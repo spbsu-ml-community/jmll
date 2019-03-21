@@ -3,7 +3,7 @@ package com.expleague.ml.methods.embedding;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.seq.LongSeq;
 import com.expleague.ml.embedding.Embedding;
-import com.expleague.ml.embedding.impl.EmbeddingBuilderBase;
+import com.expleague.ml.embedding.impl.CoocBasedBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -60,15 +60,10 @@ public class CoocBuildTest {
     return grayCooc.stream().mapToObj(l -> morozov.dict().get((int) (l >> 32)) + ":" + Float.intBitsToFloat((int) (l & 0xFFFFFFFFL))).collect(Collectors.joining(" "));
   }
 
-  private static class EmbeddingBuilderBasePublicMorozov extends EmbeddingBuilderBase {
+  private static class EmbeddingBuilderBasePublicMorozov extends CoocBasedBuilder {
     @Override
     protected Embedding<CharSeq> fit() {
       return null;
-    }
-
-    @Override
-    protected boolean isCoocNecessery() {
-      return true;
     }
 
     @Override
