@@ -143,11 +143,6 @@ public class DecompBuilder extends CoocBasedBuilder {
     return new EmbeddingImpl<>(mapping);
   }
 
-  @Override
-  protected boolean isCoocNecessery() {
-    return true;
-  }
-
   private void project(Vec vec) {
     final int dim = vec.dim();
     for (int i = 0; i < dim; i++) {
