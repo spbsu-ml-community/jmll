@@ -2,35 +2,36 @@ package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.Event;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
 public class LookAheadLambdaStrategy implements LambdaStrategy {
-    private final Map<String, Double> prevUserActionTime;
-    private final Map<String, UserLambda> userLambdas;
+    private final TIntDoubleMap prevUserActionTime;
+    private final TIntObjectMap<UserLambda> userLambdas;
 
-    public LookAheadLambdaStrategy(final Map<String, Vec> userEmbeddings, final Map<String, Vec> itemEmbeddings,
+    public LookAheadLambdaStrategy(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
                                    final double beta, final double otherProjectImportance) {
-        prevUserActionTime = new HashMap<>();
-        userLambdas = userEmbeddings.keySet().stream().collect(Collectors.toMap(Function.identity(),
-                userId -> new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance)));
+        prevUserActionTime = new TIntDoubleHashMap();
+        userLambdas = new TIntObjectHashMap<>();
+        for (final int userId : userEmbeddings.keys()) {
+            userLambdas.put(userId, new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
+        }
     }
 
     @Override
-    public double getLambda(final String userId, final String itemId) {
+    public double getLambda(final int userId, final int itemId) {
         return userLambdas.get(userId).getLambda(itemId);
     }
 
     @Override
-    public Vec getLambdaUserDerivative(final String userId, final String itemId) {
+    public Vec getLambdaUserDerivative(final int userId, final int itemId) {
         return userLambdas.get(userId).getLambdaUserDerivative(itemId);
     }
 
     @Override
-    public Map<String, Vec> getLambdaItemDerivative(final String userId, final String itemId) {
+    public TIntObjectMap<Vec> getLambdaItemDerivative(final int userId, final int itemId) {
         return userLambdas.get(userId).getLambdaItemsDerivative(itemId);
     }
 

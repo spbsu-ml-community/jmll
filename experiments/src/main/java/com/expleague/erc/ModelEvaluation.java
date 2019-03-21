@@ -2,10 +2,13 @@ package com.expleague.erc;
 
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.data.LastFmDataReader;
+import com.expleague.erc.data.OneTimeDataProcessor;
+import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.DoubleUnaryOperator;
 
 public class ModelEvaluation {
     private static Options options = new Options();
@@ -28,7 +31,7 @@ public class ModelEvaluation {
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cliOptions = parser.parse(options, args);
 
-        final String dataPath = cliOptions.getOptionValue("ds");
+        final String dataPath = cliOptions.getOptionValue("ds", "/Users/akhvorov/data/mlimlab/erc/datasets/lastfm-dataset-1K/userid-timestamp-artid-artname-traid-traname_1M.tsv");
         int dim = Integer.parseInt(cliOptions.getOptionValue("dm", "15"));
         double beta = Double.parseDouble(cliOptions.getOptionValue("b", "1e-1"));
         double otherItemImportance = Double.parseDouble(cliOptions.getOptionValue("o", "1e-1"));
@@ -38,7 +41,7 @@ public class ModelEvaluation {
         int itemsNum = Integer.parseInt(cliOptions.getOptionValue("in", "1000"));
         double trainRatio = Double.parseDouble(cliOptions.getOptionValue("tr", "0.75"));
         boolean isTop = Boolean.parseBoolean(cliOptions.getOptionValue("t", "true"));
-        int iterations = Integer.parseInt(cliOptions.getOptionValue("i", "15"));
+        int iterations = Integer.parseInt(cliOptions.getOptionValue("it", "15"));
         double lr = Double.parseDouble(cliOptions.getOptionValue("lr", "1e-3"));
 
         List<Event> data = new LastFmDataReader().readData(dataPath, size);
@@ -48,10 +51,16 @@ public class ModelEvaluation {
     private static void runModel(final List<Event> data, final int iterations, final double lr, final int dim,
                                  final double beta, final double otherItemImportance, final double eps,
                                  final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop) {
-        DataPreprocessor preprocessor = new DataPreprocessor();
+        DataPreprocessor preprocessor = new OneTimeDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
-        Model model = new Model(dim, beta, eps, otherItemImportance, x -> x, x -> 1, null, null, null);
+//        DoubleUnaryOperator lambdaTransform = Math::abs;
+//        DoubleUnaryOperator lambdaDerivative = Math::signum;
+        DoubleUnaryOperator lambdaTransform = x -> x;
+        DoubleUnaryOperator lambdaDerivative = x -> 1;
+        Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
+        System.out.println("Constant prediction: " + Metrics.constantPredictionTimeMae(dataset.getTrain(), dataset.getTest()));
+//        Metrics.printMetrics(model, dataset.getTrain(), dataset.getTest());
         model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), true);
     }
 }

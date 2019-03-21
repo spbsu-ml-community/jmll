@@ -3,27 +3,29 @@ package com.expleague.erc.lambda;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.lang.Math;
 
 public final class UserLambda {
     private final Vec userEmbedding;
-    private final Map<String, Vec> itemEmbeddings;
+    private final TIntObjectMap<Vec> itemEmbeddings;
     private final double beta;
     private final double otherItemsImportance;
     private double currentTime;
-    private final Map<String, Double> lastTimeOfItems;
+    private final TIntDoubleMap lastTimeOfItems;
     private double commonSum;
-    private final Map<String, Double> additionalSumByItems;
+    private final TIntDoubleMap additionalSumByItems;
     private final Vec commonUserDerivative;
-    private final Map<String, Vec> userDerivativeByItems;
+    private final TIntObjectMap<Vec> userDerivativeByItems;
     private final Vec commonItemsDerivative;
-    private final Map<String, Vec> itemsDerivativeByItems;
+    private final TIntObjectMap<Vec> itemsDerivativeByItems;
     private final Vec zeroVec;
 
-    public UserLambda(final Vec userEmbedding, final Map<String, Vec> itemsEmbeddings, final double beta,
+    public UserLambda(final Vec userEmbedding, final TIntObjectMap<Vec> itemsEmbeddings, final double beta,
                       final double otherItemsImportance) {
         this.userEmbedding = userEmbedding;
         this.itemEmbeddings = itemsEmbeddings;
@@ -33,21 +35,21 @@ public final class UserLambda {
         VecTools.fill(zeroVec, 0.);
 
         currentTime = 0.;
-        lastTimeOfItems = new HashMap<>();
+        lastTimeOfItems = new TIntDoubleHashMap();
 
         commonSum = 0;
-        additionalSumByItems = new HashMap<>();
+        additionalSumByItems = new TIntDoubleHashMap();
 
         commonUserDerivative = VecTools.copy(zeroVec);
         VecTools.fill(commonUserDerivative, 0.);
-        userDerivativeByItems = new HashMap<>();
+        userDerivativeByItems = new TIntObjectHashMap<>();
 
         commonItemsDerivative = VecTools.copy(zeroVec);
         VecTools.fill(commonItemsDerivative, 0);
-        itemsDerivativeByItems = new HashMap<>();
+        itemsDerivativeByItems = new TIntObjectHashMap<>();
     }
 
-    public final void update(final String itemId, double timeDelta) {
+    public final void update(final int itemId, double timeDelta) {
         timeDelta = 1.;
         if (!lastTimeOfItems.containsKey(itemId)) {
             lastTimeOfItems.put(itemId, currentTime);
@@ -93,7 +95,7 @@ public final class UserLambda {
         currentTime += timeDelta;
     }
 
-    public final double getLambda(final String itemId) {
+    public final double getLambda(final int itemId) {
         double baseLambda = commonSum + VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));
         if (!additionalSumByItems.containsKey(itemId)) {
             return baseLambda;
@@ -101,7 +103,7 @@ public final class UserLambda {
         return baseLambda + additionalSumByItems.get(itemId);
     }
 
-    public final Vec getLambdaUserDerivative(final String itemId) {
+    public final Vec getLambdaUserDerivative(final int itemId) {
         Vec completeDerivative = VecTools.copy(commonUserDerivative);
         VecTools.append(completeDerivative, itemEmbeddings.get(itemId));
         if (userDerivativeByItems.containsKey(itemId)) {
@@ -113,9 +115,10 @@ public final class UserLambda {
         return completeDerivative;
     }
 
-    public final Map<String, Vec> getLambdaItemsDerivative(final String itemId) {
-        Map<String, Vec> derivative = new HashMap<>();
-        for (String p : lastTimeOfItems.keySet()) {
+    public final TIntObjectMap<Vec> getLambdaItemsDerivative(final int itemId) {
+//        Map<String, Vec> derivative = new HashMap<>();
+        TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
+        for (int p : lastTimeOfItems.keys()) {
             Vec initialDerivative = VecTools.copy(commonItemsDerivative);
             derivative.put(p, initialDerivative);
         }

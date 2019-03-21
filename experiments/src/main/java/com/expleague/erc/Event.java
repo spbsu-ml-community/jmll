@@ -1,30 +1,30 @@
 package com.expleague.erc;
 
 public class Event {
-    private final String userId;
-    private final String itemId;
+    private final int userId;
+    private final int itemId;
     private final double ts;
     private double prDelta;
 
-    public Event(String userId, String itemId, double ts) {
+    public Event(int userId, int itemId, double ts) {
         this.userId = userId;
         this.itemId = itemId;
         this.ts = ts;
         prDelta = -1;
     }
 
-    public Event(String userId, String itemId, double ts, double prDelta) {
+    public Event(int userId, int itemId, double ts, double prDelta) {
         this.userId = userId;
         this.itemId = itemId;
         this.ts = ts;
         this.prDelta = prDelta;
     }
 
-    public String userId() {
+    public int userId() {
         return userId;
     }
 
-    public String itemId() {
+    public int itemId() {
         return itemId;
     }
 

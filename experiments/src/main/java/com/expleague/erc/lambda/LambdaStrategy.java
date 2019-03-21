@@ -2,15 +2,14 @@ package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.Event;
-
-import java.util.Map;
+import gnu.trove.map.TIntObjectMap;
 
 public interface LambdaStrategy {
-    double getLambda(final String userId, final String itemId);
+    double getLambda(final int userId, final int itemId);
 
-    Vec getLambdaUserDerivative(final String userId, final String itemId);
+    Vec getLambdaUserDerivative(final int userId, final int itemId);
 
-    Map<String, Vec> getLambdaItemDerivative(final String userId, final String itemId);
+    TIntObjectMap<Vec> getLambdaItemDerivative(final int userId, final int itemId);
 
     void accept(final Event event);
 }

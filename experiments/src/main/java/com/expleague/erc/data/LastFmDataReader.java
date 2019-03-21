@@ -11,6 +11,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class LastFmDataReader {
+    private Map<String, Integer> userMap = new HashMap<>();
+    private Map<String, Integer> itemMap = new HashMap<>();
+
     @NotNull
     public List<Event> readData(final String dataPath, final int size) throws IOException {
         List<Event> events = Files.lines(Paths.get(dataPath))
@@ -18,11 +21,11 @@ public class LastFmDataReader {
                 .map(this::makeEvent)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        Map<String, Map<String, Double>> lastTimeDone = new HashMap<>();
+        Map<Integer, Map<Integer, Double>> lastTimeDone = new HashMap<>();
         events.sort(Comparator.comparingDouble(Event::getTs));
         for (Event event : events) {
-            String uid = event.userId();
-            String iid = event.itemId();
+            int uid = event.userId();
+            int iid = event.itemId();
             if (!lastTimeDone.containsKey(uid)) {
                 lastTimeDone.put(uid, new HashMap<>());
             }
@@ -37,7 +40,7 @@ public class LastFmDataReader {
     private Event makeEvent(final String line) {
         String[] words = line.split("\t");
         try {
-            return new Event(words[1], words[4], toTimestamp(words[2]));
+            return new Event(toUserId(words[1]), toItemId(words[4]), toTimestamp(words[2]));
         } catch (ParseException e) {
             return null;
         }
@@ -47,5 +50,19 @@ public class LastFmDataReader {
         long time = javax.xml.bind.DatatypeConverter.parseDateTime(timeString).getTimeInMillis();
         double seconds = (double) time / 1000;
         return seconds / (60 * 60);
+    }
+
+    private int toUserId(final String userId) {
+        if (!userMap.containsKey(userId)) {
+            userMap.put(userId, userMap.size());
+        }
+        return userMap.get(userId);
+    }
+
+    private int toItemId(final String itemId) {
+        if (!itemMap.containsKey(itemId)) {
+            itemMap.put(itemId, itemMap.size());
+        }
+        return itemMap.get(itemId);
     }
 }

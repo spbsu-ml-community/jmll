@@ -1,10 +1,9 @@
 package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
-
-import java.util.Map;
+import gnu.trove.map.TIntObjectMap;
 
 public interface LambdaStrategyFactory {
-    LambdaStrategy get(final Map<String, Vec> userEmbeddings, final Map<String, Vec> itemEmbeddings,
+    LambdaStrategy get(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
                        final double beta, final double otherProjectImportance);
 }

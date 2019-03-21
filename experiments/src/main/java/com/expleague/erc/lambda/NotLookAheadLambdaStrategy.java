@@ -2,34 +2,36 @@ package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.Event;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class NotLookAheadLambdaStrategy implements LambdaStrategy {
-    private final Map<String, Double> prevUserActionTime;
-    private final Map<String, UserLambda> userLambdas;
-    private final Map<String, Map<String, Double>> savedLambdas;
-    private final Map<String, Map<String, Vec>> savedLambdasUserDerivative;
-    private final Map<String, Map<String, Map<String, Vec>>> savedLambdasItemDerivative;
+    private final TIntDoubleMap prevUserActionTime;
+    private final TIntObjectMap<UserLambda> userLambdas;
+    private final TIntObjectMap<TIntDoubleMap> savedLambdas;
+    private final TIntObjectMap<TIntObjectMap<Vec>> savedLambdasUserDerivative;
+    private final TIntObjectMap<TIntObjectMap<TIntObjectMap<Vec>>> savedLambdasItemDerivative;
 
-    public NotLookAheadLambdaStrategy(final Map<String, Vec> userEmbeddings, final Map<String, Vec> itemEmbeddings,
+    public NotLookAheadLambdaStrategy(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
                                       final double beta, final double otherProjectImportance) {
-        prevUserActionTime = new HashMap<>();
-        userLambdas = userEmbeddings.keySet().stream().collect(Collectors.toMap(Function.identity(),
-                userId -> new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance)));
-        savedLambdas = userEmbeddings.keySet().stream()
-                .collect(Collectors.toMap(Function.identity(), userId -> new HashMap<>()));
-        savedLambdasUserDerivative = userEmbeddings.keySet().stream()
-                .collect(Collectors.toMap(Function.identity(), userId -> new HashMap<>()));
-        savedLambdasItemDerivative = userEmbeddings.keySet().stream()
-                .collect(Collectors.toMap(Function.identity(), userId -> new HashMap<>()));
+        prevUserActionTime = new TIntDoubleHashMap();
+        userLambdas = new TIntObjectHashMap<>();
+        savedLambdas = new TIntObjectHashMap<>();
+        savedLambdasUserDerivative = new TIntObjectHashMap<>();
+        savedLambdasItemDerivative = new TIntObjectHashMap<>();
+        for (final int userId : userEmbeddings.keys()) {
+            userLambdas.put(userId, new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
+            savedLambdas.put(userId, new TIntDoubleHashMap());
+            savedLambdasUserDerivative.put(userId, new TIntObjectHashMap<>());
+            savedLambdasItemDerivative.put(userId, new TIntObjectHashMap<>());
+        }
     }
 
     @Override
-    public double getLambda(final String userId, final String itemId) {
+    public double getLambda(final int userId, final int itemId) {
         if (savedLambdas.get(userId).containsKey(itemId)) {
             return savedLambdas.get(userId).get(itemId);
         }
@@ -39,7 +41,7 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
-    public Vec getLambdaUserDerivative(final String userId, final String itemId) {
+    public Vec getLambdaUserDerivative(final int userId, final int itemId) {
         if (savedLambdasUserDerivative.get(userId).containsKey(itemId)) {
             return savedLambdasUserDerivative.get(userId).get(itemId);
         }
@@ -49,19 +51,19 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
-    public Map<String, Vec> getLambdaItemDerivative(final String userId, final String itemId) {
+    public TIntObjectMap<Vec> getLambdaItemDerivative(final int userId, final int itemId) {
         if (savedLambdasItemDerivative.get(userId).containsKey(itemId)) {
             return savedLambdasItemDerivative.get(userId).get(itemId);
         }
-        Map<String, Vec> derivatives = userLambdas.get(userId).getLambdaItemsDerivative(itemId);
+        TIntObjectMap<Vec> derivatives = userLambdas.get(userId).getLambdaItemsDerivative(itemId);
         savedLambdasItemDerivative.get(userId).put(itemId, derivatives);
         return derivatives;
     }
 
     @Override
     public void accept(final Event event) {
-        String userId = event.userId();
-        String itemId = event.itemId();
+        int userId = event.userId();
+        int itemId = event.itemId();
         double timeDelta = 0.;
         if (prevUserActionTime.containsKey(userId)) {
             timeDelta = event.getTs() - prevUserActionTime.get(userId);
@@ -75,7 +77,7 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
 
     public static class NotLookAheadLambdaStrategyFactory implements LambdaStrategyFactory {
         @Override
-        public LambdaStrategy get(Map<String, Vec> userEmbeddings, Map<String, Vec> itemEmbeddings, double beta, double otherProjectImportance) {
+        public LambdaStrategy get(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings, double beta, double otherProjectImportance) {
             return new NotLookAheadLambdaStrategy(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
         }
     }
