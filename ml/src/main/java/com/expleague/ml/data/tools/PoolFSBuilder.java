@@ -70,13 +70,33 @@ public class PoolFSBuilder<T extends DSItem> implements Pool.Builder<T> {
     return result;
   }
 
+  @Override
+  public void accept(final T item, Vec values, FeatureMeta[] metas) {
+    if (fs.dim() != metas.length) {
+      throw new UnsupportedOperationException("Wrong metas size! Expected: " + fs.dim() + " Actual: " + metas.length);
+    }
+    for (int f = 0; f < fs.dim(); f++) {
+      if (fs.meta(f) != metas[f]) {
+        throw new UnsupportedOperationException("Wrong meta index! Expected: " + fs.meta(f) + " Actual: " + metas[f]);
+      }
+    }
+    items.add(item);
+    advance(values);
+  }
+
+  @Override
   public void accept(final T item) {
     fs.accept(item);
     items.add(item);
   }
 
+  @Override
   public void advance() {
     final Vec vec = fs.advance();
+    advance(vec);
+  }
+
+  private void advance(Vec vec) {
     for (int f = 0; f < fs.dim(); f++) {
       switch (fs.meta(f).type()) {
         case VEC:
