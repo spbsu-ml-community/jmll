@@ -33,12 +33,12 @@ import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
 public class GloveLikeEmbedding {
-  private static final int TRAINING_ITERS = 25;
+  private static final int TRAINING_ITERS = 50;
   private static final double TRAINING_STEP_COEFF = 2e-2;
   private static final double G_DISCOUNT = 1;
   private static final FastRandom rng = new FastRandom();
-  public static final int DIM = 100;
-  public static final int MAX_COUNT = 100;
+  public static final int DIM = 300;
+  public static final int MAX_COUNT = 1000;
   public static final String WD = ".";
 
   private double train(Map<Generator, TIntFloatHashMap> cooccurrences, Mx leftVectors, Mx rightVectors) {
@@ -58,6 +58,9 @@ public class GloveLikeEmbedding {
       Interval.start();
       final double[] scoreArr = new double[]{0, 0, 0};
       cooccurrences.entrySet().parallelStream().forEach(entry -> {
+//        if (entry.getKey().words.length > 1)
+//          return;
+
         final Generator generators = entry.getKey();
         final TIntFloatHashMap freqs = entry.getValue();
         final Vec totalLeft = new ArrayVec(leftVectors.columns());
@@ -138,17 +141,17 @@ public class GloveLikeEmbedding {
     final TObjectIntHashMap<CharSeq> invTags = new TObjectIntHashMap<>(100000, 0.8f, -1);
     final TObjectIntHashMap<CharSeq> invSubs = new TObjectIntHashMap<>(100000, 0.8f, -1);
 
-    try (Reader freqRd = Files.newBufferedReader(Paths.get(WD + "/tag-freqs.txt"))) {
+    try (Reader freqRd = Files.newBufferedReader(Paths.get(WD + "/cat-freqs.txt"))) {
       CsvRow.read(freqRd).forEach(row -> {
         if (tags.size() >= 300000)
           return;
-        final CharSeq tag = CharSeq.intern(row.at("tag"));
+        final CharSeq tag = CharSeq.intern(row.at("cat"));
         invTags.put(tag, tags.size());
         tags.add(tag);
       });
     }
 
-    try (final InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(WD + "/search_sessions_tags.csv.gz"))),
+    try (final InputStreamReader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(WD + "/search_sessions_cats.csv.gz"))),
         StandardCharsets.UTF_8)) {
       final List<Pair<Generator, Long>> currentQuery = new ArrayList<>();
       final Holder<CharSeq> currentUser = new Holder<>();
@@ -168,7 +171,7 @@ public class GloveLikeEmbedding {
           currentUser.setValue(user);
         }
         final CharSeq query = row.at("query");
-        final CharSeq tag = row.at("tag");
+        final CharSeq tag = row.at("cat");
         if (query != null) {
           currentQuery.add(Pair.create(new Generator(CharSeqTools.split(query, " ", false).map(CharSeqTools::toLowerCase).mapToInt(part -> {
             final CharSequence trim = CharSeqTools.trim(part);
@@ -191,13 +194,13 @@ public class GloveLikeEmbedding {
           final Iterator<Pair<Generator, Long>> it = currentQuery.iterator();
           while (it.hasNext()) {
             Pair<Generator, Long> next = it.next();
-            final long minutes = TimeUnit.MILLISECONDS.toMinutes(time - next.second);
-            if (minutes > 30) {
+            final long seconds = TimeUnit.MILLISECONDS.toSeconds(time - next.second);
+            if (seconds > 30) {
               it.remove();
               continue;
             }
             final TIntFloatHashMap map = cooccurrences.computeIfAbsent(next.first, (key) -> new TIntFloatHashMap(1, 0.9f));
-            map.adjustOrPutValue(tagIdx, 1.f/(1.f + minutes), 1.f/(1.f + minutes));
+            map.adjustOrPutValue(tagIdx, 5.f/(5.f + seconds), 5.f/(5.f + seconds));
 //            map.trimToSize();
           }
         }
@@ -240,7 +243,7 @@ public class GloveLikeEmbedding {
     System.out.println("Starting optimization of " + tags.size() + " tags for " + subs.size() + " words");
 
     embedding.train(cooccurrences, subsVec, tagsVec);
-    embedding.saveModel(tags, tagsVec, Paths.get(WD + "/tags-vec-" + DIM + ".txt"));
+    embedding.saveModel(tags, tagsVec, Paths.get(WD + "/cats-vec-" + DIM + ".txt"));
     embedding.saveModel(subs, subsVec, Paths.get(WD + "/subs-vec-" + DIM + ".txt"));
   }
 

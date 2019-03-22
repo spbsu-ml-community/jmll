@@ -198,6 +198,11 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     return ((int)(next >>> 8)) & 0x0FFFFFFF;
   }
 
+  protected double unpackWeight(long next) {
+    int dist = (int) (0xFF & next);
+    return wtype().weight(dist > 126 ? -256 + dist : dist);
+  }
+
   protected int unpackDist(long next) {
     return (int)(0xFF & next);
   }

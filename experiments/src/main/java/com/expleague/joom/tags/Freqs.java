@@ -22,7 +22,7 @@ public class Freqs {
 
   public static void main(String[] args) throws IOException {
     TObjectIntHashMap<String> tagFreqs = new TObjectIntHashMap<>();
-    try (final Reader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(WD + "/search_sessions_tags.csv.gz"))), StandardCharsets.UTF_8)) {
+    try (final Reader reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(WD + "/search_sessions_cats.csv.gz"))), StandardCharsets.UTF_8)) {
       final long[] counter = new long[]{0};
       Interval.start();
       TDoubleArrayList times = new TDoubleArrayList();
@@ -33,12 +33,12 @@ public class Freqs {
           System.out.print("\r" + counter[0] + " lines processed for: " + Interval.time() + " median: " + times.get(times.size() / 2));
           Interval.start();
         }
-        final String tag = row.asString("tag");
+        final String tag = row.asString("cat");
         if (tag != null)
           tagFreqs.adjustOrPutValue(tag, 1, 1);
       });
     }
-    try (final Writer out = Files.newBufferedWriter(Paths.get(WD + "/tag-freqs.txt"))) {
+    try (final Writer out = Files.newBufferedWriter(Paths.get(WD + "/cat-freqs.txt"))) {
       out.append("tag,freq\n");
       final List<String> tagsLst = new ArrayList<>(tagFreqs.keySet());
       tagsLst.sort(Comparator.comparingLong(tag -> -tagFreqs.get(tag)));
