@@ -23,7 +23,7 @@ import static com.expleague.commons.math.vectors.VecTools.*;
 
 public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
   private int dim = 50;
-  private int clustersCount = 10;
+  private int clustersCount = 100;
   private Mx centroids;
   private Mx residuals; // смещение всех векторов относительно центроидов, для центроидов - нули.
   private TIntArrayList vec2centr = new TIntArrayList(); // принадлженость центроиду (по номеру центроида)
@@ -87,8 +87,6 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
     double denom = correctW;
 
     { // gradient for i
-      incscale(grad, v_j, correctW);
-
       for (int k = 0; k < clustersCount; k++) {
         final double w_k = clustersSize.get(k) * Math.exp(multiply(centroids.row(k), v_i));
         weights.set(k, w_k);
@@ -96,7 +94,8 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
         incscale(grad, centroids.row(k), w_k);
       }
       scale(grad, -1./denom);
-      append(grad, v_j);
+      if (Double.isFinite(correctW))
+        incscale(grad, v_j, 1 - correctW / denom);
       incscale(v_i, grad, step() * weight);
     }
     final double score = weight * Math.log(correctW / denom);
@@ -104,8 +103,8 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
 
     for (int k = 0; k < clustersCount; k++) { // gradient for cluster k
       final Vec centroid_k = centroids.row(k);
-      final double clusterGrad = -weights.get(k) / denom;
-      incscale(centroid_k, v_i, step() * weight * clusterGrad / clustersSize.get(k)); // centroid takes 1/|c_k| from each point in the cluster
+      final double clusterGrad = -weights.get(k) / denom / clustersSize.get(k); // centroid takes 1/|c_k| from each point in the cluster
+      incscale(centroid_k, v_i, step() * weight * clusterGrad);
     }
 
     { // gradient for j

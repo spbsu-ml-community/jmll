@@ -16,7 +16,7 @@ public class BuildEmbedding {
     final Embedding result = builder
         .dim(50)
         .iterations(25)
-        .step(1e-4)
+        .step(1e-2)
 //        .minWordCount(1)
         .window(Embedding.WindowType.FIXED, 15, 15)
         .file(Paths.get(file))
