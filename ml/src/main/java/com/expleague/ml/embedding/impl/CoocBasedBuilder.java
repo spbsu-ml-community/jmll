@@ -34,7 +34,6 @@ import java.util.zip.GZIPOutputStream;
 public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
   protected static final Logger log = LoggerFactory.getLogger(CoocBasedBuilder.class.getName());
   private static final int CAPACITY = 50_000_000;
-  protected Path path;
 
   private List<LongSeq> cooc;
   private boolean coocReady = false;
