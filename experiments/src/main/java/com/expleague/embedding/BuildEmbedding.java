@@ -11,10 +11,10 @@ import java.nio.file.Paths;
 
 public class BuildEmbedding {
   public static void main(String[] args) throws IOException {
-    ClusterBasedSymmetricBuilder builder = (ClusterBasedSymmetricBuilder) Embedding.builder(Embedding.Type.KMEANS_SKIP);
+    Embedding.Builder builder = Embedding.builder(Embedding.Type.KMEANS_SKIP);
     String file = args[0];
     final Embedding result = builder
-        .dim(50)
+//        .dim(50)
         .iterations(25)
         .step(1e-2)
 //        .minWordCount(1)
