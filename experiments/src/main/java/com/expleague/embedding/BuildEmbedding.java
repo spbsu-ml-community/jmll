@@ -18,7 +18,7 @@ public class BuildEmbedding {
         .iterations(25)
         .step(1e-2)
 //        .minWordCount(1)
-        .window(Embedding.WindowType.FIXED, 15, 15)
+        .window(Embedding.WindowType.LINEAR, 7, 7)
         .file(Paths.get(file))
         .build();
     /*GloVeBuilder builder = (GloVeBuilder) Embedding.builder(Embedding.Type.GLOVE);
