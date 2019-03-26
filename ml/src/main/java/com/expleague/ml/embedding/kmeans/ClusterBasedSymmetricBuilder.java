@@ -1,6 +1,7 @@
 package com.expleague.ml.embedding.kmeans;
 
 import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
@@ -28,6 +29,8 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
   private Mx residuals; // смещение всех векторов относительно центроидов, для центроидов - нули.
   private TIntArrayList vec2centr = new TIntArrayList(); // принадлженость центроиду (по номеру центроида)
   private TIntArrayList clustersSize = new TIntArrayList(); // размеры кластеров (по номеру центроида)
+
+  private FastRandom rng = new FastRandom(100500);
 
   public ClusterBasedSymmetricBuilder dim(int dim) {
     this.dim = dim;
@@ -67,11 +70,13 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
   }
 
   double score = 0;
-  double G = 0.9999;
+  double G = 0.99999;
   long idx = 0;
   int transfers = 0;
   int errors = 0;
   private void move(int i, int j, double weight) {
+    if ((-1 - 1000 * Math.log(rng.nextDouble())) > i || (-1 - 1000 * Math.log(rng.nextDouble())) > j)
+      return;
     final Vec v_i = symmetric(i, new ArrayVec(dim));
     final Vec v_j = symmetric(j, new ArrayVec(dim));
     final int cluster_i = vec2centr.get(i);
@@ -83,13 +88,14 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
 
     final double correctW = Math.exp(multiply(v_i, v_j));
     final Vec grad = new ArrayVec(dim);
-    final Vec weights = new ArrayVec(clustersCount);
+    final Vec weights = VecTools.exp(MxTools.multiply(centroids, v_i));
     double denom = correctW;
 
     { // gradient for i
       for (int k = 0; k < clustersCount; k++) {
-        final double w_k = clustersSize.get(k) * Math.exp(multiply(centroids.row(k), v_i));
-        weights.set(k, w_k);
+        if (clustersSize.get(k) == 0)
+          continue;
+        final double w_k = weights.get(k) * clustersSize.get(k);
         denom += w_k;
         incscale(grad, centroids.row(k), w_k);
       }
@@ -98,13 +104,20 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
         incscale(grad, v_j, 1 - correctW / denom);
       incscale(v_i, grad, step() * weight);
     }
-    final double score = weight * Math.log(correctW / denom);
+    final double score = Double.isFinite(correctW) ? weight * Math.log(correctW / denom) : 0;
     this.score = this.score * G + score;
 
     for (int k = 0; k < clustersCount; k++) { // gradient for cluster k
       final Vec centroid_k = centroids.row(k);
-      final double clusterGrad = -weights.get(k) / denom / clustersSize.get(k); // centroid takes 1/|c_k| from each point in the cluster
-      incscale(centroid_k, v_i, step() * weight * clusterGrad);
+      if (Double.isFinite(weights.get(k))) {
+        final double clusterGrad = -weights.get(k) / denom / clustersSize.get(k); // centroid takes 1/|c_k| from each point of the cluster
+        incscale(centroid_k, v_i, step() * weight * clusterGrad);
+      }
+      else {
+        final double clusterGrad = -1. / clustersSize.get(k);
+        incscale(centroid_k, v_i, step() * weight * clusterGrad);
+      }
+
     }
 
     { // gradient for j
@@ -112,17 +125,17 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
         incscale(v_j, v_i, step() * weight * (1 - correctW / denom));
     }
 
-    { // new score
-      final double new_correctW = Math.exp(multiply(v_i, v_j));
-      double newDenom = new_correctW;
-      for (int k = 0; k < clustersCount; k++) {
-        final double w_k = clustersSize.get(k) * Math.exp(multiply(centroids.row(k), v_i));
-        newDenom += w_k;
-      }
-      final double newScore = weight * Math.log(new_correctW / newDenom);
-      if (score > newScore)
-        errors++;
-    }
+//    { // new score
+//      final double new_correctW = Math.exp(multiply(v_i, v_j));
+//      double newDenom = new_correctW;
+//      for (int k = 0; k < clustersCount; k++) {
+//        final double w_k = clustersSize.get(k) * Math.exp(multiply(centroids.row(k), v_i));
+//        newDenom += w_k;
+//      }
+//      final double newScore = weight * Math.log(new_correctW / newDenom);
+//      if (score > newScore)
+//        errors++;
+//    }
 
     { // updating clusters alignment
       final int newCluster_i = nearestCluster(v_i);
@@ -182,7 +195,7 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
     residuals = new VecBasedMx(voc_size, dim);
     for (int k = 0; k < clustersCount; k++) {
       for (int j = 0; j < dim; j++) {
-        centroids.set(k, j, Math.log(10) * (rng.nextDouble() - 0.5) / dim);
+        centroids.set(k, j, 2 * (rng.nextDouble() - 0.5));
       }
       clustersSize.add(0);
     }
