@@ -13,13 +13,10 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Model {
     private final int dim;
-    private final double decayRate;
     private final double beta;
     private final double eps;
     private final double otherItemImportance;
@@ -45,7 +42,6 @@ public class Model {
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
                  final TIntObjectMap<Vec> itemsEmbeddingsPrior) {
         this.dim = dim;
-        decayRate = 0.97;
         this.beta = beta;
         this.eps = eps;
         this.otherItemImportance = otherItemImportance;
@@ -207,13 +203,13 @@ public class Model {
     }
 
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
-                    final List<Event> evaluationEvents, final boolean verbose) {
+                    final List<Event> evaluationEvents, final double decay, final boolean verbose) {
         initializeEmbeddings(events);
-        optimizeSGD(events, learningRate, iterationsNumber, evaluationEvents, verbose);
+        optimizeGD(events, learningRate, iterationsNumber, evaluationEvents, decay, verbose);
     }
 
     private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
-                             final List<Event> evaluationEvents, final boolean verbose) {
+                             final List<Event> evaluationEvents, final double decay, final boolean verbose) {
         double lr = learningRate / dataSize;
         Map<Integer, List<Event>> eventsByUser = new HashMap<>(userIds.size());
         for (final int userId : userIds.toArray()) {
@@ -236,15 +232,40 @@ public class Model {
                     VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
                 }
             }
-            lr *= decayRate;
-            if (verbose) {
-                System.out.println(i + "-th iter, ll = " + logLikelihood(events));
-                if (evaluationEvents != null) {
-                    Metrics.printMetrics(this, events, evaluationEvents);
-                }
-                System.out.println();
-                System.out.println();
+            lr *= decay;
+            printWhileOptimization(events, evaluationEvents, i, verbose);
+        }
+    }
+
+    private void optimizeGD(final List<Event> events, final double learningRate, final int iterationsNumber,
+                             final List<Event> evaluationEvents, final double decay, final boolean verbose) {
+        double lr = learningRate / dataSize;
+        for (int i = 0; i < iterationsNumber; ++i) {
+            Derivative derivative = logLikelihoodDerivative(events);
+            for (final int userId : userIds.toArray()) {
+                Vec userDerivative = derivative.getUserDerivatives().get(userId);
+                VecTools.scale(userDerivative, lr);
+                VecTools.append(userEmbeddings.get(userId), userDerivative);
             }
+            for (final int itemId : itemIds.toArray()) {
+                Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
+                VecTools.scale(itemDerivative, lr);
+                VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
+            }
+            lr *= decay;
+            printWhileOptimization(events, evaluationEvents, i, verbose);
+        }
+    }
+
+    private void printWhileOptimization(final List<Event> events, final List<Event> evaluationEvents,
+                                        final int iteration, final boolean verbose) {
+        if (verbose) {
+            System.out.println(iteration + "-th iter, ll = " + logLikelihood(events));
+            if (evaluationEvents != null) {
+                Metrics.printMetrics(this, events, evaluationEvents);
+            }
+            System.out.println();
+            System.out.println();
         }
     }
 

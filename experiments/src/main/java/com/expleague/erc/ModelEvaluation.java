@@ -16,6 +16,7 @@ public class ModelEvaluation {
         options.addOption(Option.builder("ds").longOpt("dataset").desc("Path to data").hasArg().build());
         options.addOption(Option.builder("it").longOpt("iter").desc("Num of iterations").hasArg().build());
         options.addOption(Option.builder("lr").longOpt("learning_rate").desc("Learning rate").hasArg().build());
+        options.addOption(Option.builder("lrd").longOpt("learning_rate_decay").desc("Learning rate decay").hasArg().build());
         options.addOption(Option.builder("dm").longOpt("dim").desc("Dimension of embeddings").hasArg().build());
         options.addOption(Option.builder("b").longOpt("beta").desc("Beta").hasArg().build());
         options.addOption(Option.builder("o").longOpt("other_items_importance").desc("Other items importance").hasArg().build());
@@ -31,7 +32,7 @@ public class ModelEvaluation {
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cliOptions = parser.parse(options, args);
 
-        final String dataPath = cliOptions.getOptionValue("ds", "/Users/akhvorov/data/mlimlab/erc/datasets/lastfm-dataset-1K/userid-timestamp-artid-artname-traid-traname_1M.tsv");
+        final String dataPath = cliOptions.getOptionValue("ds", "~/data/mlimlab/erc/datasets/lastfm-dataset-1K/userid-timestamp-artid-artname-traid-traname_1M.tsv");
         int dim = Integer.parseInt(cliOptions.getOptionValue("dm", "15"));
         double beta = Double.parseDouble(cliOptions.getOptionValue("b", "1e-1"));
         double otherItemImportance = Double.parseDouble(cliOptions.getOptionValue("o", "1e-1"));
@@ -43,13 +44,14 @@ public class ModelEvaluation {
         boolean isTop = Boolean.parseBoolean(cliOptions.getOptionValue("t", "true"));
         int iterations = Integer.parseInt(cliOptions.getOptionValue("it", "15"));
         double lr = Double.parseDouble(cliOptions.getOptionValue("lr", "1e-3"));
+        double lrd = Double.parseDouble(cliOptions.getOptionValue("lrd", "1"));
 
         List<Event> data = new LastFmDataReader().readData(dataPath, size);
-        runModel(data, iterations, lr, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop);
+        runModel(data, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop);
     }
 
-    private static void runModel(final List<Event> data, final int iterations, final double lr, final int dim,
-                                 final double beta, final double otherItemImportance, final double eps,
+    private static void runModel(final List<Event> data, final int iterations, final double lr, final double decay,
+                                 final int dim, final double beta, final double otherItemImportance, final double eps,
                                  final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop) {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
@@ -61,6 +63,6 @@ public class ModelEvaluation {
         Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
         System.out.println("Constant prediction: " + Metrics.constantPredictionTimeMae(dataset.getTrain(), dataset.getTest()));
 //        Metrics.printMetrics(model, dataset.getTrain(), dataset.getTest());
-        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), true);
+        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), decay, true);
     }
 }
