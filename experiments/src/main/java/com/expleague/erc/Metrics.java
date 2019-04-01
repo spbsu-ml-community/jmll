@@ -1,5 +1,10 @@
 package com.expleague.erc;
 
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -49,5 +54,43 @@ public abstract class Metrics {
         double recommendMae = itemRecommendationMae(model.getApplicable(trainData), testData);
         System.out.printf("test_return_time = %f, train_return_time = %f, recommendation_mae = %f",
                 testReturnTime, trainReturnTime, recommendMae);
+    }
+
+    public double spuOnData(final List<Event> events, final int itemId) {
+        final double maxTimeDiff = 30 * 60;
+        TIntDoubleMap lastTime = new TIntDoubleHashMap();
+        int sessions = 0;
+        final TIntSet users = new TIntHashSet();
+        for (final Event event : events) {
+            if (event.itemId() != itemId) {
+                continue;
+            }
+            users.add(event.userId());
+            if (lastTime.containsKey(event.userId())) {
+                lastTime.put(event.userId(), event.getTs());
+                sessions++;
+            }
+            if (event.getTs() - maxTimeDiff > lastTime.get(event.userId())) {
+                sessions++;
+                lastTime.put(event.userId(), event.getTs());
+            }
+        }
+        return (double) sessions / users.size();
+    }
+
+    public double spuOnModel(final double maxTime, final TIntSet users, final int itemId, final Model.Applicable model) {
+//        Optional<Double> maxTime = events.stream().filter(x -> x.itemId() == itemId).map(Event::getTs).max(Comparator.comparingDouble(x -> x));
+        final List<Event> generatedEvents = new ArrayList<>();
+        for (final int userId : users.toArray()) {
+            while (true) {
+                final Event event = new Event(userId, itemId, model.timeDelta(userId, itemId));
+                if (event.getTs() > maxTime) {
+                    break;
+                }
+                generatedEvents.add(event);
+                model.accept(event);
+            }
+        }
+        return spuOnData(generatedEvents, itemId);
     }
 }
