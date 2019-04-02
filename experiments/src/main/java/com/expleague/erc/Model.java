@@ -13,9 +13,7 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Model {
     private final int dim;
@@ -32,6 +30,8 @@ public class Model {
     private int dataSize;
     private TIntSet userIds;
     private TIntSet itemIds;
+    private int[] userIdsArray;
+    private int[] itemIdsArray;
     private Vec zeroVec;
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
@@ -89,6 +89,8 @@ public class Model {
         itemIds = new TIntHashSet();
         events.stream().map(Event::userId).forEach(userIds::add);
         events.stream().map(Event::itemId).forEach(itemIds::add);
+        userIdsArray = userIds.toArray();
+        itemIdsArray = itemIds.toArray();
 
         double itemDeltaMean = events.stream()
                 .filter(event -> event.getPrDelta() >= 0)
@@ -216,21 +218,24 @@ public class Model {
                              final List<Event> evaluationEvents, final boolean verbose) {
         double lr = learningRate / dataSize;
         Map<Integer, List<Event>> eventsByUser = new HashMap<>(userIds.size());
-        for (final int userId : userIds.toArray()) {
+        for (final int userId : userIdsArray) {
             eventsByUser.put(userId, new ArrayList<>());
         }
         for (final Event event : events) {
-            eventsByUser.get(event.userId()).add(event);
+            List<Event> events1 = eventsByUser.get(event.userId());
+            events1.add(event);
         }
+
+        MetricsCalculator metricsCalculator = new MetricsCalculator(events, evaluationEvents);
         for (int i = 0; i < iterationsNumber; ++i) {
             for (final List<Event> userEvents : eventsByUser.values()) {
                 Derivative derivative = logLikelihoodDerivative(userEvents);
-                for (final int userId : userIds.toArray()) {
+                for (final int userId : userIdsArray) {
                     Vec userDerivative = derivative.getUserDerivatives().get(userId);
                     VecTools.scale(userDerivative, lr);
                     VecTools.append(userEmbeddings.get(userId), userDerivative);
                 }
-                for (final int itemId : itemIds.toArray()) {
+                for (final int itemId : itemIdsArray) {
                     Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
                     VecTools.scale(itemDerivative, lr);
                     VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
@@ -239,8 +244,8 @@ public class Model {
             lr *= decayRate;
             if (verbose) {
                 System.out.println(i + "-th iter, ll = " + logLikelihood(events));
-                if (evaluationEvents != null) {
-                    Metrics.printMetrics(this, events, evaluationEvents);
+                if (!evaluationEvents.isEmpty()) {
+                    metricsCalculator.printMetrics(this);
                 }
                 System.out.println();
                 System.out.println();

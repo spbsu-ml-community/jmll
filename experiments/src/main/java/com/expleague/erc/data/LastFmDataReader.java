@@ -43,6 +43,8 @@ public class LastFmDataReader {
             return new Event(toUserId(words[1]), toItemId(words[4]), toTimestamp(words[2]));
         } catch (ParseException e) {
             return null;
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 
