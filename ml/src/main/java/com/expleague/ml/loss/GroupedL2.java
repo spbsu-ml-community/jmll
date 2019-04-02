@@ -11,12 +11,13 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.BiFunction;
 import org.jetbrains.annotations.NotNull;
 
 public class GroupedL2 extends L2 {
 
-  private final Vec groupsOffsets;
+  private final Vec groupOffsets;
   public GroupedL2(final Vec target, final DataSet<? extends GroupedDSItem> owner) {
     this(target, owner, groupMeansOffsets());
   }
@@ -25,13 +26,41 @@ public class GroupedL2 extends L2 {
   public GroupedL2(final Vec target, final DataSet<? extends GroupedDSItem> owner,
       BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec> offsetFunction) {
     super(target, owner);
-    groupsOffsets = offsetFunction.apply(target, owner);
+    groupOffsets = offsetFunction.apply(target, owner);
+    VecTools.scale(groupOffsets, -1);
   }
 
   public static BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec> randomOffsets(
       final double lowerBound, final double upperBound, final int seed) {
-    return (vec, ds) -> {
+    return new BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec>() {
+      private final double scale = upperBound - lowerBound;
+      private final double offset = lowerBound;
 
+      private Vec randomOffsets;
+      private Vec lastTarget;
+      private DataSet<? extends GroupedDSItem> lastDataSet;
+      @Override
+      public Vec apply(Vec target, DataSet<? extends GroupedDSItem> dataSet) {
+        if (lastDataSet == dataSet && target == lastTarget) {
+          return randomOffsets;
+        }
+
+        lastTarget = target;
+        lastDataSet = dataSet;
+        randomOffsets = new ArrayVec(lastTarget.dim());
+        TObjectDoubleMap<String> groupOffsets = new TObjectDoubleHashMap<>();
+        Random random = new Random();
+        int idx = 0;
+        for (GroupedDSItem item : lastDataSet) {
+          String groupId = item.groupId();
+          if (!groupOffsets.containsKey(groupId)) {
+            groupOffsets.put(groupId, scale * random.nextDouble() + offset);
+          }
+          randomOffsets.set(idx++, groupOffsets.get(groupId));
+        }
+
+        return VecTools.copy(randomOffsets);
+      }
     };
   }
 
@@ -82,8 +111,20 @@ public class GroupedL2 extends L2 {
 
   public static BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec> constantOffsets(
       final Vec offsets) {
-    final Vec safeCopy = VecTools.copy(offsets);
-    return (v, ds) -> VecTools.copy(safeCopy);
+    return new BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec>() {
+      private final Vec offsetsSafeCopy = VecTools.copy(offsets);
+      @Override
+      public Vec apply(Vec target, DataSet<? extends GroupedDSItem> dataSet) {
+        if (offsetsSafeCopy.dim() != target.dim()) {
+          throw new IllegalArgumentException(String.format(
+              "[ConstantOffsetsFunction] Dimensions of the target vector and offsets vector must be equal!\n"
+                  + "Target  dim: %d\n"
+                  + "Offsets dim: %d", target.dim(), offsets.dim()));
+        }
+        // TODO: do we need to copy?
+        return VecTools.copy(offsetsSafeCopy);
+      }
+    };
   }
   @NotNull
   @Override
@@ -91,28 +132,21 @@ public class GroupedL2 extends L2 {
     Vec gradient = VecTools.copy(x);
     VecTools.scale(gradient, -1);
     VecTools.append(gradient, target);
+    VecTools.append(gradient, groupOffsets);
     VecTools.scale(gradient, -2);
     return gradient;
   }
 
-  /**
-   * We assume that elements of 'x' form group, which were determined by the 'owner' dataset
-   * Method subtracts from each element of 'x' its group mean.
-   * @param x vector to be modified
-   */
-  private void offsetByGroupMeans(Vec x) {
-    for (TIntSet group : groups) {
-      double negativeGroupMean = -groupMean(x, group);
-      group.forEach(i -> {
-            x.adjust(i, negativeGroupMean);
-            return true;
-          }
-      );
-    }
+  @Override
+  public double value(final Vec point) {
+    final Vec temp = VecTools.copy(point);
+    VecTools.scale(temp, -1);
+    VecTools.append(temp, target);
+    VecTools.append(groupOffsets);
+    return Math.sqrt(VecTools.sum2(temp) / temp.dim());
   }
 
-  @Override
-  public double value(Vec point) {
-    return super.value(point);
+  public Vec groupOffsets() {
+    return VecTools.copy(groupOffsets);
   }
 }
