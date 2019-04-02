@@ -61,8 +61,10 @@ public class ModelEvaluation {
         DoubleUnaryOperator lambdaTransform = x -> x;
         DoubleUnaryOperator lambdaDerivative = x -> 1;
         Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
-//        System.out.println("Constant prediction: " + MetricsCalculator.constantPredictionTimeMae(dataset.getTrain(), dataset.getTest()));
-//        MetricsCalculator.printMetrics(model, dataset.getTrain(), dataset.getTest());
-        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), true);
+        model.initializeEmbeddings(dataset.getTrain());
+        MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest());
+        System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
+        metricsCalculator.printMetrics(model);
+        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), .98, true);
     }
 }

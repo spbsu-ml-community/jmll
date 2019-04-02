@@ -78,7 +78,7 @@ public class Model {
         return embeddings;
     }
 
-    private void initializeEmbeddings(final List<Event> events) {
+    public void initializeEmbeddings(final List<Event> events) {
         if (dataInitialized) {
             return;
         }
@@ -273,7 +273,6 @@ public class Model {
             if (evaluationEvents != null) {
                 metricsCalculator.printMetrics(this);
             }
-            System.out.println();
             System.out.println();
         }
     }

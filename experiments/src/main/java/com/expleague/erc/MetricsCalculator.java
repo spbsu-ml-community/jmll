@@ -11,6 +11,9 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.*;
 import java.lang.Math;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.stream.Collectors;
 
 public class MetricsCalculator {
@@ -25,6 +28,7 @@ public class MetricsCalculator {
     private final TIntObjectMap<TIntSet> itemsUsers;
     private final TIntObjectMap<int[]> itemsUsersArrays;
     private final TIntDoubleMap lastTrainEvents;
+    private final ForkJoinPool pool;
 
     public MetricsCalculator(List<Event> trainData, List<Event> testData) {
         this.trainData = trainData;
@@ -40,6 +44,7 @@ public class MetricsCalculator {
         for (Event event: trainData) {
             lastTrainEvents.put(event.userId(), event.getTs());
         }
+        pool = new ForkJoinPool();
     }
 
     private TIntObjectMap<TIntSet> selectUsers() {
@@ -47,7 +52,7 @@ public class MetricsCalculator {
                 .collect(Collectors.groupingBy(Event::itemId, Collectors.mapping(Event::userId, Collectors.toSet())));
         final Map<Integer, Set<Integer>> itemsTestUsers = testData.stream()
                 .collect(Collectors.groupingBy(Event::itemId, Collectors.mapping(Event::userId, Collectors.toSet())));
-        TIntObjectMap<TIntSet> itemsUsers = new TIntObjectHashMap<>();
+        final TIntObjectMap<TIntSet> itemsUsers = new TIntObjectHashMap<>();
         for (int itemId: itemsTrainUsers.keySet()) {
             if (itemsTestUsers.containsKey(itemId)) {
                 final TIntSet curItemUsers = new TIntHashSet(itemsTrainUsers.get(itemId));
@@ -137,11 +142,11 @@ public class MetricsCalculator {
 //    }
 
     public TIntDoubleMap spusOnHistory(List <Event> history) {
-        TIntObjectMap<TIntIntMap> itemUserSessions = new TIntObjectHashMap<>();
-        TIntObjectMap<TIntDoubleMap> itemUserLifetimes = new TIntObjectHashMap<>();
+        final TIntObjectMap<TIntIntMap> itemUserSessions = new TIntObjectHashMap<>();
+        final TIntObjectMap<TIntDoubleMap> itemUserLifetimes = new TIntObjectHashMap<>();
         for (int itemId: itemIds) {
-            TIntIntHashMap curItemSessionsMap = new TIntIntHashMap();
-            TIntDoubleHashMap curItemLifetimesMap = new TIntDoubleHashMap();
+            final TIntIntHashMap curItemSessionsMap = new TIntIntHashMap();
+            final TIntDoubleHashMap curItemLifetimesMap = new TIntDoubleHashMap();
             for (int userId: itemsUsersArrays.get(itemId)) {
                 curItemSessionsMap.put(userId, 0);
                 curItemLifetimesMap.put(userId, 0.0);
@@ -155,19 +160,18 @@ public class MetricsCalculator {
             if (!itemsUsers.containsKey(itemId) || !itemsUsers.get(itemId).contains(userId)) {
                 continue;
             }
-            TIntIntMap curItemSessions = itemUserSessions.get(itemId);
+            final TIntIntMap curItemSessions = itemUserSessions.get(itemId);
             curItemSessions.put(userId, curItemSessions.get(userId) + 1);
-            TIntDoubleMap curItemLifetimes = itemUserLifetimes.get(itemId);
-            curItemLifetimes.put(userId, event.getTs() - splitTime + LIFE_DELAY);
+            itemUserLifetimes.get(itemId).put(userId, event.getTs() - splitTime + LIFE_DELAY);
         }
 
-        TIntDoubleMap spus = new TIntDoubleHashMap();
+        final TIntDoubleMap spus = new TIntDoubleHashMap();
         for (int itemId: itemIds) {
-            TIntIntMap curItemSessions = itemUserSessions.get(itemId);
-            TIntDoubleMap curItemLifetimes = itemUserLifetimes.get(itemId);
+            final TIntIntMap curItemSessions = itemUserSessions.get(itemId);
+            final TIntDoubleMap curItemLifetimes = itemUserLifetimes.get(itemId);
             double curItemSpu = 0.;
             for (int userId: itemsUsersArrays.get(itemId)) {
-                curItemSpu += curItemSessions.get(userId) / curItemLifetimes.get(userId);
+                curItemSpu += curItemLifetimes.get(userId) != 0. ? curItemSessions.get(userId) / curItemLifetimes.get(userId) : 0.;
             }
             curItemSpu /= itemsUsers.get(itemId).size();
             spus.put(itemId, curItemSpu);
@@ -208,10 +212,10 @@ public class MetricsCalculator {
         final Queue<Event> followingEvents = new ArrayDeque<>();
         for (int itemId: itemIds) {
             for (int userId: itemsUsersArrays.get(itemId)) {
-                double newEventTime = lastTrainEvents.get(userId) + model.timeDelta(userId, itemId);
-                final Event event = new Event(userId, itemId, newEventTime);
+                final double newEventTime = lastTrainEvents.get(userId) + model.timeDelta(userId, itemId);
                 if (newEventTime <= endTime) {
-                    followingEvents.add(event);
+                    final Event newEvent = new Event(userId, itemId, newEventTime);
+                    followingEvents.add(newEvent);
                 }
             }
         }
@@ -222,9 +226,9 @@ public class MetricsCalculator {
             }
             model.accept(curEvent);
 
-            double newEventTime = curEvent.getTs() + model.timeDelta(curEvent.userId(), curEvent.itemId());
-            final Event nextEvent = new Event(curEvent.userId(), curEvent.itemId(), newEventTime);
+            final double newEventTime = curEvent.getTs() + model.timeDelta(curEvent.userId(), curEvent.itemId());
             if (newEventTime <= endTime) {
+                final Event nextEvent = new Event(curEvent.userId(), curEvent.itemId(), newEventTime);
                 followingEvents.add(nextEvent);
             }
         }
@@ -246,14 +250,19 @@ public class MetricsCalculator {
     }
 
     public void printMetrics(Model model) {
-        final double testReturnTime = returnTimeMae(model.getApplicable(trainData));
-        final double trainReturnTime = returnTimeMae(model.getApplicable());
-        final double recommendMae = itemRecommendationMae(model.getApplicable(trainData));
-        final List<Event> prediction = predictTest(model.getApplicable(trainData));
-        final TIntDoubleMap SPUsFromModel = spusOnHistory(prediction);
-        final double SPUsDiff = compareSPUs(targetSPU, SPUsFromModel);
-
-        System.out.printf("test_return_time = %f, train_return_time = %f, recommendation_mae = %f, SPU error = %f",
-                testReturnTime, trainReturnTime, recommendMae, SPUsDiff);
+        final ForkJoinTask<Double> testReturnTime = pool.submit(() -> returnTimeMae(model.getApplicable(trainData)));
+        final ForkJoinTask<Double> trainReturnTime = pool.submit(() -> returnTimeMae(model.getApplicable()));
+        final ForkJoinTask<Double> recommendMae = pool.submit(() -> itemRecommendationMae(model.getApplicable(trainData)));
+        final ForkJoinTask<Double> spusDiff = pool.submit(() -> {
+            final List<Event> prediction = predictTest(model.getApplicable(trainData));
+            final TIntDoubleMap SPUsFromModel = spusOnHistory(prediction);
+            return compareSPUs(targetSPU, SPUsFromModel);
+        });
+        try {
+            System.out.printf("test_return_time = %f, train_return_time = %f, recommendation_mae = %f, SPU error = %f\n",
+                    testReturnTime.get(), trainReturnTime.get(), recommendMae.get(), spusDiff.get());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 }
