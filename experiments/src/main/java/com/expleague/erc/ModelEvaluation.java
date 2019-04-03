@@ -7,8 +7,13 @@ import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ModelEvaluation {
     private static Options options = new Options();
@@ -26,6 +31,7 @@ public class ModelEvaluation {
         options.addOption(Option.builder("un").longOpt("user_num").desc("Num of users").hasArg().build());
         options.addOption(Option.builder("in").longOpt("item_num").desc("Num of items").hasArg().build());
         options.addOption(Option.builder("t").longOpt("top").desc("Is filter on top items").hasArg().build());
+        options.addOption(Option.builder("spup").longOpt("spupath").desc("Path to save item SPUs").hasArg().build());
     }
 
     public static void main(String... args) throws ParseException, IOException {
@@ -45,14 +51,21 @@ public class ModelEvaluation {
         int iterations = Integer.parseInt(cliOptions.getOptionValue("it", "15"));
         double lr = Double.parseDouble(cliOptions.getOptionValue("lr", "1e-3"));
         double lrd = Double.parseDouble(cliOptions.getOptionValue("lrd", "1"));
+        String spuLogPath = cliOptions.getOptionValue("spup", null);
 
-        List<Event> data = new LastFmDataReader().readData(dataPath, size);
-        runModel(data, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop);
+        LastFmDataReader lastFmDataReader = new LastFmDataReader();
+        List<Event> data = lastFmDataReader.readData(dataPath, size);
+        Map<String, Integer> itemNameToId = lastFmDataReader.getItemMap();
+        Map<Integer, String> itemIdToName = itemNameToId.keySet().stream()
+                .collect(Collectors.toMap(itemNameToId::get, Function.identity()));
+        runModel(data, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop,
+                spuLogPath, itemIdToName);
     }
 
     private static void runModel(final List<Event> data, final int iterations, final double lr, final double decay,
                                  final int dim, final double beta, final double otherItemImportance, final double eps,
-                                 final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop) {
+                                 final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop,
+                                 final String spuLogFilePath, final Map<Integer, String> itemIdToName) {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
@@ -62,9 +75,16 @@ public class ModelEvaluation {
         DoubleUnaryOperator lambdaDerivative = x -> 1;
         Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
         model.initializeEmbeddings(dataset.getTrain());
-        MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest());
+        MetricsCalculator metricsCalculator = null;
+        final Path spuLogPath = spuLogFilePath != null ? Paths.get(spuLogFilePath) : null;
+        try {
+            metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), spuLogPath, itemIdToName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
+        System.out.println("Target mean SPU: " + metricsCalculator.getMeanSpuTarget());
         metricsCalculator.printMetrics(model);
-        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), .98, true);
+        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), decay, true, metricsCalculator);
     }
 }

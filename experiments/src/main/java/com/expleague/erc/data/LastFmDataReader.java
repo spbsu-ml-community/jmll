@@ -67,4 +67,12 @@ public class LastFmDataReader {
         }
         return itemMap.get(itemId);
     }
+
+    public Map<String, Integer> getUserMap() {
+        return userMap;
+    }
+
+    public Map<String, Integer> getItemMap() {
+        return itemMap;
+    }
 }

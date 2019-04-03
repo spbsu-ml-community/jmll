@@ -207,13 +207,15 @@ public class Model {
     }
 
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
-                    final List<Event> evaluationEvents, final double decay, final boolean verbose) {
+                    final List<Event> evaluationEvents, final double decay, final boolean verbose,
+                    MetricsCalculator metricsCalculator) {
         initializeEmbeddings(events);
-        optimizeGD(events, learningRate, iterationsNumber, evaluationEvents, decay, verbose);
+        optimizeGD(events, learningRate, iterationsNumber, evaluationEvents, decay, verbose, metricsCalculator);
     }
 
     private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
-                             final List<Event> evaluationEvents, final double decay, final boolean verbose) {
+                             final List<Event> evaluationEvents, final double decay, final boolean verbose,
+                             MetricsCalculator metricsCalculator) {
         double lr = learningRate / dataSize;
         Map<Integer, List<Event>> eventsByUser = new HashMap<>(userIds.size());
         for (final int userId : userIdsArray) {
@@ -224,7 +226,6 @@ public class Model {
             events1.add(event);
         }
 
-        MetricsCalculator metricsCalculator = new MetricsCalculator(events, evaluationEvents);
         for (int i = 0; i < iterationsNumber; ++i) {
             for (final List<Event> userEvents : eventsByUser.values()) {
                 Derivative derivative = logLikelihoodDerivative(userEvents);
@@ -245,9 +246,9 @@ public class Model {
     }
 
     private void optimizeGD(final List<Event> events, final double learningRate, final int iterationsNumber,
-                             final List<Event> evaluationEvents, final double decay, final boolean verbose) {
+                            final List<Event> evaluationEvents, final double decay, final boolean verbose,
+                            MetricsCalculator metricsCalculator) {
         double lr = learningRate / dataSize;
-        MetricsCalculator metricsCalculator = new MetricsCalculator(events, evaluationEvents);
         for (int i = 0; i < iterationsNumber; ++i) {
             Derivative derivative = logLikelihoodDerivative(events);
             for (final int userId : userIds.toArray()) {
