@@ -12,6 +12,7 @@ import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.impl.CoocBasedBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
+import com.expleague.ml.embedding.impl.ScoreCalculator;
 import gnu.trove.list.array.TIntArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
