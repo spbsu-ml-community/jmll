@@ -23,7 +23,7 @@ import java.util.stream.LongStream;
 import static com.expleague.commons.math.vectors.VecTools.*;
 
 public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
-  private int dim = 50;
+  private int dim = 5;
   private int clustersCount = 100;
   private Mx centroids;
   private Mx residuals; // смещение всех векторов относительно центроидов, для центроидов - нули.
@@ -48,14 +48,17 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
     initialize();
 
     log.info("Started scanning corpus." + this.path);
-    System.out.println();
-    try (final LongStream stream = positionsStream()) {
-      stream.forEach(tuple -> {
-        move(unpackA(tuple), unpackB(tuple), unpackWeight(tuple));
-      });
-    }
-    catch (IOException e) {
-      throw new RuntimeException("Error in source function occured\n" + e.getMessage());
+    for (int t = 0; t < T(); t++) {
+      System.out.println();
+      log.info("\nEpoch " + t);
+      try (final LongStream stream = positionsStream()) {
+        stream.forEach(tuple -> {
+          move(unpackA(tuple), unpackB(tuple), unpackWeight(tuple));
+        });
+      }
+      catch (IOException e) {
+        throw new RuntimeException("Error in source function occured\n" + e.getMessage());
+      }
     }
     System.out.println();
     final Map<CharSeq, Vec> result = new HashMap<>();
@@ -69,21 +72,23 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
     return VecTools.append(VecTools.assign(to, centroids.row(vec2centr.get(i))), residuals.row(i));
   }
 
-  double score = 0;
-  double G = 0.99999;
-  long idx = 0;
-  int transfers = 0;
-  int errors = 0;
+  private double score = 0;
+  private static double G = 0.99999;
+  private long idx = 0;
+  private int transfers = 0;
+  private int errors = 0;
   private void move(int i, int j, double weight) {
     if ((-1 - 1000 * Math.log(rng.nextDouble())) > i || (-1 - 1000 * Math.log(rng.nextDouble())) > j)
+      return;
+    if (i == j)
       return;
     final Vec v_i = symmetric(i, new ArrayVec(dim));
     final Vec v_j = symmetric(j, new ArrayVec(dim));
     final int cluster_i = vec2centr.get(i);
     final int cluster_j = vec2centr.get(j);
     { // removing i and j from their clusters
-      removeFromCluster(v_i, cluster_i);
-      removeFromCluster(v_j, cluster_j);
+      removeFromCluster(i, v_i, cluster_i);
+      removeFromCluster(j, v_j, cluster_j);
     }
 
     final double correctW = Math.exp(multiply(v_i, v_j));
@@ -109,15 +114,8 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
 
     for (int k = 0; k < clustersCount; k++) { // gradient for cluster k
       final Vec centroid_k = centroids.row(k);
-      if (Double.isFinite(weights.get(k))) {
-        final double clusterGrad = -weights.get(k) / denom / clustersSize.get(k); // centroid takes 1/|c_k| from each point of the cluster
-        incscale(centroid_k, v_i, step() * weight * clusterGrad);
-      }
-      else {
-        final double clusterGrad = -1. / clustersSize.get(k);
-        incscale(centroid_k, v_i, step() * weight * clusterGrad);
-      }
-
+      final double clusterGrad = Double.isFinite(weights.get(k)) ? -weights.get(k) / denom : -1.;
+      incscale(centroid_k, v_i, step() * weight * clusterGrad);
     }
 
     { // gradient for j
@@ -136,7 +134,7 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
 //      if (score > newScore)
 //        errors++;
 //    }
-
+//
     { // updating clusters alignment
       final int newCluster_i = nearestCluster(v_i);
       if (newCluster_i != cluster_i)
@@ -154,12 +152,14 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
     }
   }
 
-  private void removeFromCluster(Vec v, int cluster) {
+  private void removeFromCluster(int index, Vec v, int cluster) {
+    vec2centr.set(index, -1);
     final Vec centroid = centroids.row(cluster);
     scale(centroid, clustersSize.get(cluster));
     incscale(centroid, v, -1);
     clustersSize.set(cluster, clustersSize.get(cluster) - 1);
-    scale(centroid, 1. / clustersSize.get(cluster));
+    if (clustersSize.get(cluster) > 0)
+      scale(centroid, 1. / clustersSize.get(cluster));
   }
 
   private void appendToCluster(int index, Vec v, int cluster) {
