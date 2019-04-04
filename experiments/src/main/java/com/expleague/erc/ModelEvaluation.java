@@ -4,9 +4,11 @@ import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
 import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
+import com.expleague.erc.lambda.UserLambda;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -32,9 +34,11 @@ public class ModelEvaluation {
         options.addOption(Option.builder("in").longOpt("item_num").desc("Num of items").hasArg().build());
         options.addOption(Option.builder("t").longOpt("top").desc("Is filter on top items").hasArg().build());
         options.addOption(Option.builder("spup").longOpt("spupath").desc("Path to save item SPUs").hasArg().build());
+        options.addOption(Option.builder("ml").longOpt("model_load").desc("Path to load model from").hasArg().build());
+        options.addOption(Option.builder("ms").longOpt("model_save").desc("Path to save model").hasArg().build());
     }
 
-    public static void main(String... args) throws ParseException, IOException {
+    public static void main(String... args) throws ParseException, IOException, ClassNotFoundException {
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cliOptions = parser.parse(options, args);
 
@@ -52,6 +56,8 @@ public class ModelEvaluation {
         double lr = Double.parseDouble(cliOptions.getOptionValue("lr", "1e-3"));
         double lrd = Double.parseDouble(cliOptions.getOptionValue("lrd", "1"));
         String spuLogPath = cliOptions.getOptionValue("spup", null);
+        String modelLoadPath = cliOptions.getOptionValue("ml", null);
+        String modelSavePath = cliOptions.getOptionValue("ms", null);
 
         LastFmDataReader lastFmDataReader = new LastFmDataReader();
         List<Event> data = lastFmDataReader.readData(dataPath, size);
@@ -59,32 +65,39 @@ public class ModelEvaluation {
         Map<Integer, String> itemIdToName = itemNameToId.keySet().stream()
                 .collect(Collectors.toMap(itemNameToId::get, Function.identity()));
         runModel(data, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop,
-                spuLogPath, itemIdToName);
+                spuLogPath, itemIdToName, modelLoadPath, modelSavePath);
     }
 
     private static void runModel(final List<Event> data, final int iterations, final double lr, final double decay,
                                  final int dim, final double beta, final double otherItemImportance, final double eps,
                                  final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop,
-                                 final String spuLogFilePath, final Map<Integer, String> itemIdToName) {
+                                 final String spuLogFilePath, final Map<Integer, String> itemIdToName,
+                                 final String modelLoadPath, final String modelSavePath) throws IOException, ClassNotFoundException {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
-//        DoubleUnaryOperator lambdaTransform = Math::abs;
-//        DoubleUnaryOperator lambdaDerivative = Math::signum;
-        DoubleUnaryOperator lambdaTransform = x -> x;
-        DoubleUnaryOperator lambdaDerivative = x -> 1;
-        Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
-        model.initializeEmbeddings(dataset.getTrain());
-        MetricsCalculator metricsCalculator = null;
-        final Path spuLogPath = spuLogFilePath != null ? Paths.get(spuLogFilePath) : null;
-        try {
-            metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), spuLogPath, itemIdToName);
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        Model model;
+        if (modelLoadPath == null) {
+            DoubleUnaryOperator lambdaTransform = new UserLambda.IdentityTransform();
+            DoubleUnaryOperator lambdaDerivative = new UserLambda.IdentityDerivativeTransform();
+            model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
+        } else {
+            model = Model.load(Files.newInputStream(Paths.get(modelLoadPath)));
         }
+
+        model.initializeEmbeddings(dataset.getTrain());
+        final Path spuLogPath = spuLogFilePath != null ? Paths.get(spuLogFilePath) : null;
+        MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), spuLogPath,
+                itemIdToName,modelLoadPath == null);
         System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
         System.out.println("Target mean SPU: " + metricsCalculator.getMeanSpuTarget());
-        metricsCalculator.printMetrics(model);
+        metricsCalculator.printMetrics(model, modelLoadPath == null);
         model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), decay, true, metricsCalculator);
+
+        if (modelSavePath != null) {
+            model.write(Files.newOutputStream(Paths.get(modelSavePath)));
+        }
     }
 }

@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,14 +40,12 @@ public class LastFmDataReader {
         String[] words = line.split("\t");
         try {
             return new Event(toUserId(words[1]), toItemId(words[4]), toTimestamp(words[2]));
-        } catch (ParseException e) {
-            return null;
         } catch (IllegalArgumentException e) {
             return null;
         }
     }
 
-    private double toTimestamp(final String timeString) throws ParseException {
+    private double toTimestamp(final String timeString) {
         long time = javax.xml.bind.DatatypeConverter.parseDateTime(timeString).getTimeInMillis();
         double seconds = (double) time / 1000;
         return seconds / (60 * 60);

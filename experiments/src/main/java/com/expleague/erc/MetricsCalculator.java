@@ -35,7 +35,8 @@ public class MetricsCalculator {
     private final ForkJoinPool pool;
     private final Path spuLogPath;
 
-    public MetricsCalculator(List<Event> trainData, List<Event> testData, Path spuLogPath, Map<Integer, String> itemIdToName)
+    public MetricsCalculator(List<Event> trainData, List<Event> testData, Path spuLogPath,
+                             Map<Integer, String> itemIdToName, boolean verbose)
             throws IOException {
         this.trainData = trainData;
         this.testData = testData;
@@ -45,8 +46,10 @@ public class MetricsCalculator {
         this.itemIds = itemsUsers.keys();
         itemsUsersArrays = toArrays(itemsUsers);
         targetSPU = spusOnHistory(testData);
-        writeItemNames(spuLogPath, itemIds, itemIdToName);
-        writeSpus(spuLogPath, targetSPU);
+        if (verbose) {
+            writeItemNames(spuLogPath, itemIds, itemIdToName);
+            writeSpus(spuLogPath, targetSPU);
+        }
         targetSPUMean = Arrays.stream(targetSPU.values()).average().getAsDouble();
         this.spuLogPath = spuLogPath;
 
@@ -239,7 +242,7 @@ public class MetricsCalculator {
             model.accept(curEvent);
 
             final double newEventTime = curEvent.getTs() + model.timeDelta(curEvent.userId(), curEvent.itemId());
-            if (newEventTime <= endTime) {
+            if (curEvent.getTs() <= newEventTime && newEventTime <= endTime) {
                 final Event nextEvent = new Event(curEvent.userId(), curEvent.itemId(), newEventTime);
                 followingEvents.add(nextEvent);
             }
@@ -287,7 +290,7 @@ public class MetricsCalculator {
 
     }
 
-    public void printMetrics(Model model) {
+    public void printMetrics(Model model, boolean writeSpus) {
         try {
             final double[] returnTimeMaes = new double[2];
             final ForkJoinTask returnTimeTask = pool.submit(() -> {
@@ -310,7 +313,9 @@ public class MetricsCalculator {
             final double spusMeanDiff = Math.abs(targetSPUMean - spusMean);
             final double spusDiffByItem = spuDiffByItem(targetSPU, spus);
 
-            writeSpus(spuLogPath, spus);
+            if (writeSpus) {
+                writeSpus(spuLogPath, spus);
+            }
             System.out.printf("test_return_time = %f, train_return_time = %f, recommendation_mae = %f, SPU error = %f, " +
                             "mean SPU = %f, mean SPU error = %f\n",
                     testReturnTime, trainReturnTime, recommendMae.get(), spusDiffByItem, spusMean, spusMeanDiff);
