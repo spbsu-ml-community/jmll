@@ -7,10 +7,13 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.TLongDoubleMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TLongDoubleHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
+import java.io.*;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
@@ -105,6 +108,7 @@ public class Model {
     }
 
     private double logLikelihood(final List<Event> events) {
+        final double observationEnd = events.get(events.size() - 1).getTs();
         double logLikelihood = 0.;
         final TIntObjectMap<TIntSet> seenItems = new TIntObjectHashMap<>();
         for (final int userId : userIds.toArray()) {
@@ -112,6 +116,7 @@ public class Model {
         }
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+        final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         for (final Event event : events) {
             final int userId = event.userId();
             final int itemId = event.itemId();
@@ -126,12 +131,23 @@ public class Model {
                 final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
                 final double logLikelihoodDelta = Math.log(-Math.exp(-transformedLambda * (event.getPrDelta() + eps)) +
                         Math.exp(-transformedLambda * Math.max(0, event.getPrDelta() - eps)));
-                if (!Double.isNaN(logLikelihoodDelta)) {
+                if (Double.isFinite(logLikelihoodDelta)) {
                     logLikelihood += logLikelihoodDelta;
                 }
                 lambdasByItem.accept(event);
+                lastVisitTimes.put(combineIds(userId, itemId), event.getTs());
             }
         }
+//        for (long pairId : lastVisitTimes.keys()) {
+//            final int userId = (int)(pairId >> 32);
+//            final int itemId = (int)pairId;
+//            final double lambda = lambdasByItem.getLambda(userId, itemId);
+//            final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
+//            final double logLikelihoodDelta = -transformedLambda * observationEnd - lastVisitTimes.get(pairId);
+//            if (Double.isFinite(logLikelihoodDelta)) {
+//                logLikelihood += logLikelihoodDelta;
+//            }
+//        }
         return logLikelihood;
     }
 
@@ -154,6 +170,7 @@ public class Model {
     }
 
     private Derivative logLikelihoodDerivative(final List<Event> events) {
+        final double observationEnd = events.get(events.size() - 1).getTs();
         final TIntObjectMap<Vec> userDerivatives = new TIntObjectHashMap<>();
         final TIntObjectMap<TIntSet> seenItems = new TIntObjectHashMap<>();
         for (final int userId : userIds.toArray()) {
@@ -166,6 +183,7 @@ public class Model {
         }
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+        final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         for (final Event event : events) {
             if (!seenItems.get(event.userId()).contains(event.itemId())) {
                 seenItems.get(event.userId()).add(event.itemId());
@@ -176,7 +194,14 @@ public class Model {
                 updateInnerEventDerivative(lambdasByItem, event, userDerivatives, itemDerivatives);
                 lambdasByItem.accept(event);
             }
+            lastVisitTimes.put(combineIds(event.userId(), event.itemId()), event.getTs());
         }
+//        for (long pairId: lastVisitTimes.keys()) {
+//            final int userId = extractUserId(pairId);
+//            final int itemId = extractItemId(pairId);
+//            updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
+//                    userDerivatives, itemDerivatives);
+//        }
         return new Derivative(userDerivatives, itemDerivatives);
     }
 
@@ -204,6 +229,21 @@ public class Model {
         } else {
 //            System.out.println("overflow");
         }
+    }
+
+    private void updateDerivativeLastEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double tau,
+                                           TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+        final Vec lambdaDerivativeUser =
+                lambdasByItem.getLambdaUserDerivative(userId, itemId);
+        final TIntObjectMap<Vec> lambdaDerivativeItems =
+                lambdasByItem.getLambdaItemDerivative(userId, itemId);
+
+        VecTools.scale(lambdaDerivativeUser, -tau);
+        VecTools.append(userDerivatives.get(userId), lambdaDerivativeUser);
+
+        Vec lambdaDerivativeItem = lambdaDerivativeItems.get(itemId);
+        VecTools.scale(lambdaDerivativeItem, -tau);
+        VecTools.append(itemDerivatives.get(itemId), lambdaDerivativeItem);
     }
 
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
@@ -272,7 +312,7 @@ public class Model {
         if (verbose) {
             System.out.println(iteration + "-th iter, ll = " + logLikelihood(events));
             if (evaluationEvents != null) {
-                metricsCalculator.printMetrics(this);
+                metricsCalculator.printMetrics(this, true);
             }
             System.out.println();
         }
@@ -323,5 +363,59 @@ public class Model {
 
     public Applicable getApplicable() {
         return new Applicable();
+    }
+
+    private static long combineIds(final int userId, final int itemId) {
+        return (long) userId << 32 | itemId;
+    }
+
+    private static int extractUserId(final long idPair) {
+        return (int)(idPair >> 32);
+    }
+
+    private static int extractItemId(final long idPair) {
+        return (int)idPair;
+    }
+
+    private static Map<Integer, double[]> embeddingsToSerializable(final TIntObjectMap<Vec> embeddings) {
+        return Arrays.stream(embeddings.keys())
+                .boxed()
+                .collect(Collectors.toMap(x -> x, x -> embeddings.get(x).toArray()));
+    }
+
+    private static TIntObjectMap<Vec> embeddingsFromSerializable(final Map<Integer, double[]> serMap) {
+        final TIntObjectMap<Vec> embeddings = new TIntObjectHashMap<>();
+        serMap.forEach((id, embedding) -> embeddings.put(id, new ArrayVec(embedding)));
+        return embeddings;
+    }
+
+    public void write(final OutputStream stream) throws IOException {
+        final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
+        objectOutputStream.writeInt(dim);
+        objectOutputStream.writeDouble(beta);
+        objectOutputStream.writeDouble(eps);
+        objectOutputStream.writeDouble(otherItemImportance);
+        objectOutputStream.writeObject(lambdaTransform);
+        objectOutputStream.writeObject(lambdaDerivativeTransform);
+        objectOutputStream.writeObject(lambdaStrategyFactory);
+        objectOutputStream.writeObject(embeddingsToSerializable(userEmbeddings));
+        objectOutputStream.writeObject(embeddingsToSerializable(itemEmbeddings));
+    }
+
+    public static Model load(final InputStream stream) throws IOException, ClassNotFoundException {
+        final ObjectInputStream objectInputStream = new ObjectInputStream(stream);
+        final int dim = objectInputStream.readInt();
+        final double beta = objectInputStream.readDouble();
+        final double eps = objectInputStream.readDouble();
+        final double otherItemImportance = objectInputStream.readDouble();
+        final DoubleUnaryOperator lambdaTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
+        final TIntObjectMap<Vec> userEmbeddings =
+                embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        final TIntObjectMap<Vec> itemEmbeddings =
+                embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        return new Model(dim, beta, eps, otherItemImportance, lambdaTransform,
+                lambdaDerivativeTransform, lambdaStrategyFactory, userEmbeddings, itemEmbeddings);
     }
 }

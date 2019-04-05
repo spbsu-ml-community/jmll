@@ -8,7 +8,9 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.io.Serializable;
 import java.lang.Math;
+import java.util.function.DoubleUnaryOperator;
 
 public final class UserLambda {
     private final Vec userEmbedding;
@@ -116,7 +118,6 @@ public final class UserLambda {
     }
 
     public final TIntObjectMap<Vec> getLambdaItemsDerivative(final int itemId) {
-//        Map<String, Vec> derivative = new HashMap<>();
         TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
         for (int p : lastTimeOfItems.keys()) {
             Vec initialDerivative = VecTools.copy(commonItemsDerivative);
@@ -130,5 +131,19 @@ public final class UserLambda {
             VecTools.append(derivative.get(itemId), derivativeAdd);
         }
         return derivative;
+    }
+
+    public static class IdentityTransform implements DoubleUnaryOperator, Serializable {
+        @Override
+        public double applyAsDouble(double v) {
+            return v;
+        }
+    }
+
+    public static class IdentityDerivativeTransform implements DoubleUnaryOperator, Serializable {
+        @Override
+        public double applyAsDouble(double v) {
+            return 1;
+        }
     }
 }
