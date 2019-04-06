@@ -5,8 +5,11 @@ import com.expleague.commons.csv.WritableCsvRow;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.seq.CharSeqTools;
 import com.expleague.ml.embedding.Embedding;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
@@ -43,6 +47,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   private double step = 0.01;
 
   protected List<CharSeq> wordsList = new ArrayList<>();
+  protected TDoubleArrayList wordsPrior = new TDoubleArrayList();
   protected TObjectIntMap<CharSeq> wordsIndex = new TObjectIntHashMap<>(50_000, 0.6f, -1);
   private boolean dictReady;
 
@@ -110,6 +115,10 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
 
   protected int wright() {
     return windowRight;
+  }
+
+  protected double p(int idx) {
+    return wordsPrior.get(idx);
   }
 
   @SuppressWarnings("Duplicates")
@@ -218,12 +227,18 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
       Reader dictReader = readExisting(dictPath);
       if (dictReader != null) {
         log.info("Reading existing dictionary");
+        double[] total = new double[]{0};
         try (Stream<CsvRow> dictStream = CsvRow.read(dictReader)) {
-          dictStream.filter(row -> row.asInt("freq") >= minCount).map(row -> CharSeq.intern(row.at("word"))).forEach(word -> {
-            wordsIndex.put(word, wordsList.size());
-            wordsList.add(word);
-          });
+          dictStream.peek(row -> total[0] += row.asInt("freq"))
+              .filter(row -> row.asInt("freq") >= minCount)
+              .forEach(row -> {
+                CharSeq word = CharSeq.intern(row.at("word"));
+                wordsPrior.add(row.asInt("freq"));
+                wordsIndex.put(word, wordsList.size());
+                wordsList.add(word);
+              });
         }
+        wordsPrior.transformValues(v -> v / total[0]);
         dictReady = true;
       }
     }
@@ -252,9 +267,10 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
       catch (IOException ioe) {
         log.warn("Unable to write dictionary to " + dictOut, ioe);
       }
-
+      final double total = IntStream.of(wordsCount.values()).mapToDouble(x -> x).sum();
       words.forEach(word -> {
         if (wordsCount.get(word) >= minCount) {
+          wordsPrior.add(wordsCount.get(word) / total);
           wordsIndex.put(word, wordsList.size());
           wordsList.add(word);
         }
@@ -300,31 +316,5 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     else if (Files.exists(Paths.get(path.toString() + ".gz")))
       return new InputStreamReader(new GZIPInputStream(Files.newInputStream(Paths.get(path.toString() + ".gz"))), StandardCharsets.UTF_8);
     return null;
-  }
-
-  protected class ScoreCalculator {
-    private final double[] scores;
-    private final double[] weights;
-    private final long[] counts;
-
-    public ScoreCalculator(int dim) {
-      counts = new long[dim];
-      scores = new double[dim];
-      weights = new double[dim];
-    }
-
-    public void adjust(int i, int j, double weight, double value) {
-      weights[i] += weight;
-      scores[i] += value;
-      counts[i] ++;
-    }
-
-    public double gloveScore() {
-      return Arrays.stream(scores).sum() / Arrays.stream(counts).sum();
-    }
-
-    public long count() {
-      return Arrays.stream(counts).sum();
-    }
   }
 }

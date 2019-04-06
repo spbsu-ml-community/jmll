@@ -7,19 +7,19 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.TLongDoubleMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TLongDoubleHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
+import java.io.*;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Model {
     private final int dim;
-    private final double decayRate;
     private final double beta;
     private final double eps;
     private final double otherItemImportance;
@@ -32,6 +32,8 @@ public class Model {
     private int dataSize;
     private TIntSet userIds;
     private TIntSet itemIds;
+    private int[] userIdsArray;
+    private int[] itemIdsArray;
     private Vec zeroVec;
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
@@ -45,7 +47,6 @@ public class Model {
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
                  final TIntObjectMap<Vec> itemsEmbeddingsPrior) {
         this.dim = dim;
-        decayRate = 0.97;
         this.beta = beta;
         this.eps = eps;
         this.otherItemImportance = otherItemImportance;
@@ -80,7 +81,7 @@ public class Model {
         return embeddings;
     }
 
-    private void initializeEmbeddings(final List<Event> events) {
+    public void initializeEmbeddings(final List<Event> events) {
         if (dataInitialized) {
             return;
         }
@@ -89,6 +90,8 @@ public class Model {
         itemIds = new TIntHashSet();
         events.stream().map(Event::userId).forEach(userIds::add);
         events.stream().map(Event::itemId).forEach(itemIds::add);
+        userIdsArray = userIds.toArray();
+        itemIdsArray = itemIds.toArray();
 
         double itemDeltaMean = events.stream()
                 .filter(event -> event.getPrDelta() >= 0)
@@ -105,6 +108,7 @@ public class Model {
     }
 
     private double logLikelihood(final List<Event> events) {
+        final double observationEnd = events.get(events.size() - 1).getTs();
         double logLikelihood = 0.;
         final TIntObjectMap<TIntSet> seenItems = new TIntObjectHashMap<>();
         for (final int userId : userIds.toArray()) {
@@ -112,6 +116,7 @@ public class Model {
         }
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+        final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         for (final Event event : events) {
             final int userId = event.userId();
             final int itemId = event.itemId();
@@ -126,12 +131,23 @@ public class Model {
                 final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
                 final double logLikelihoodDelta = Math.log(-Math.exp(-transformedLambda * (event.getPrDelta() + eps)) +
                         Math.exp(-transformedLambda * Math.max(0, event.getPrDelta() - eps)));
-                if (!Double.isNaN(logLikelihoodDelta)) {
+                if (Double.isFinite(logLikelihoodDelta)) {
                     logLikelihood += logLikelihoodDelta;
                 }
                 lambdasByItem.accept(event);
+                lastVisitTimes.put(combineIds(userId, itemId), event.getTs());
             }
         }
+//        for (long pairId : lastVisitTimes.keys()) {
+//            final int userId = (int)(pairId >> 32);
+//            final int itemId = (int)pairId;
+//            final double lambda = lambdasByItem.getLambda(userId, itemId);
+//            final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
+//            final double logLikelihoodDelta = -transformedLambda * observationEnd - lastVisitTimes.get(pairId);
+//            if (Double.isFinite(logLikelihoodDelta)) {
+//                logLikelihood += logLikelihoodDelta;
+//            }
+//        }
         return logLikelihood;
     }
 
@@ -154,6 +170,7 @@ public class Model {
     }
 
     private Derivative logLikelihoodDerivative(final List<Event> events) {
+        final double observationEnd = events.get(events.size() - 1).getTs();
         final TIntObjectMap<Vec> userDerivatives = new TIntObjectHashMap<>();
         final TIntObjectMap<TIntSet> seenItems = new TIntObjectHashMap<>();
         for (final int userId : userIds.toArray()) {
@@ -166,6 +183,7 @@ public class Model {
         }
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+        final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         for (final Event event : events) {
             if (!seenItems.get(event.userId()).contains(event.itemId())) {
                 seenItems.get(event.userId()).add(event.itemId());
@@ -176,7 +194,14 @@ public class Model {
                 updateInnerEventDerivative(lambdasByItem, event, userDerivatives, itemDerivatives);
                 lambdasByItem.accept(event);
             }
+            lastVisitTimes.put(combineIds(event.userId(), event.itemId()), event.getTs());
         }
+//        for (long pairId: lastVisitTimes.keys()) {
+//            final int userId = extractUserId(pairId);
+//            final int itemId = extractItemId(pairId);
+//            updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
+//                    userDerivatives, itemDerivatives);
+//        }
         return new Derivative(userDerivatives, itemDerivatives);
     }
 
@@ -206,45 +231,90 @@ public class Model {
         }
     }
 
+    private void updateDerivativeLastEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double tau,
+                                           TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+        final Vec lambdaDerivativeUser =
+                lambdasByItem.getLambdaUserDerivative(userId, itemId);
+        final TIntObjectMap<Vec> lambdaDerivativeItems =
+                lambdasByItem.getLambdaItemDerivative(userId, itemId);
+
+        VecTools.scale(lambdaDerivativeUser, -tau);
+        VecTools.append(userDerivatives.get(userId), lambdaDerivativeUser);
+
+        Vec lambdaDerivativeItem = lambdaDerivativeItems.get(itemId);
+        VecTools.scale(lambdaDerivativeItem, -tau);
+        VecTools.append(itemDerivatives.get(itemId), lambdaDerivativeItem);
+    }
+
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
-                    final List<Event> evaluationEvents, final boolean verbose) {
+                    final List<Event> evaluationEvents, final double decay, final boolean verbose,
+                    MetricsCalculator metricsCalculator) {
         initializeEmbeddings(events);
-        optimizeSGD(events, learningRate, iterationsNumber, evaluationEvents, verbose);
+        optimizeGD(events, learningRate, iterationsNumber, evaluationEvents, decay, verbose, metricsCalculator);
     }
 
     private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
-                             final List<Event> evaluationEvents, final boolean verbose) {
+                             final List<Event> evaluationEvents, final double decay, final boolean verbose,
+                             MetricsCalculator metricsCalculator) {
         double lr = learningRate / dataSize;
         Map<Integer, List<Event>> eventsByUser = new HashMap<>(userIds.size());
-        for (final int userId : userIds.toArray()) {
+        for (final int userId : userIdsArray) {
             eventsByUser.put(userId, new ArrayList<>());
         }
         for (final Event event : events) {
-            eventsByUser.get(event.userId()).add(event);
+            List<Event> events1 = eventsByUser.get(event.userId());
+            events1.add(event);
         }
+
         for (int i = 0; i < iterationsNumber; ++i) {
             for (final List<Event> userEvents : eventsByUser.values()) {
                 Derivative derivative = logLikelihoodDerivative(userEvents);
-                for (final int userId : userIds.toArray()) {
+                for (final int userId : userIdsArray) {
                     Vec userDerivative = derivative.getUserDerivatives().get(userId);
                     VecTools.scale(userDerivative, lr);
                     VecTools.append(userEmbeddings.get(userId), userDerivative);
                 }
-                for (final int itemId : itemIds.toArray()) {
+                for (final int itemId : itemIdsArray) {
                     Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
                     VecTools.scale(itemDerivative, lr);
                     VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
                 }
             }
-            lr *= decayRate;
-            if (verbose) {
-                System.out.println(i + "-th iter, ll = " + logLikelihood(events));
-                if (evaluationEvents != null) {
-                    Metrics.printMetrics(this, events, evaluationEvents);
-                }
-                System.out.println();
-                System.out.println();
+            lr *= decay;
+            printWhileOptimization(events, evaluationEvents, i, verbose, metricsCalculator);
+        }
+    }
+
+    private void optimizeGD(final List<Event> events, final double learningRate, final int iterationsNumber,
+                            final List<Event> evaluationEvents, final double decay, final boolean verbose,
+                            MetricsCalculator metricsCalculator) {
+        double lr = learningRate / dataSize;
+        for (int i = 0; i < iterationsNumber; ++i) {
+            Derivative derivative = logLikelihoodDerivative(events);
+            for (final int userId : userIds.toArray()) {
+                Vec userDerivative = derivative.getUserDerivatives().get(userId);
+                VecTools.scale(userDerivative, lr);
+                VecTools.append(userEmbeddings.get(userId), userDerivative);
             }
+            for (final int itemId : itemIds.toArray()) {
+                Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
+                VecTools.scale(itemDerivative, lr);
+                VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
+            }
+            lr *= decay;
+            printWhileOptimization(events, evaluationEvents, i, verbose, metricsCalculator);
+        }
+    }
+
+    private void printWhileOptimization(final List<Event> events, final List<Event> evaluationEvents,
+                                        final int iteration, final boolean verbose,
+                                        final MetricsCalculator metricsCalculator) {
+        if (verbose) {
+            System.out.println(iteration + "-th iter, ll = " + logLikelihood(events));
+            if (evaluationEvents != null) {
+                metricsCalculator.printMetrics(this, true);
+            }
+            System.out.println();
         }
     }
 
@@ -293,5 +363,59 @@ public class Model {
 
     public Applicable getApplicable() {
         return new Applicable();
+    }
+
+    private static long combineIds(final int userId, final int itemId) {
+        return (long) userId << 32 | itemId;
+    }
+
+    private static int extractUserId(final long idPair) {
+        return (int)(idPair >> 32);
+    }
+
+    private static int extractItemId(final long idPair) {
+        return (int)idPair;
+    }
+
+    private static Map<Integer, double[]> embeddingsToSerializable(final TIntObjectMap<Vec> embeddings) {
+        return Arrays.stream(embeddings.keys())
+                .boxed()
+                .collect(Collectors.toMap(x -> x, x -> embeddings.get(x).toArray()));
+    }
+
+    private static TIntObjectMap<Vec> embeddingsFromSerializable(final Map<Integer, double[]> serMap) {
+        final TIntObjectMap<Vec> embeddings = new TIntObjectHashMap<>();
+        serMap.forEach((id, embedding) -> embeddings.put(id, new ArrayVec(embedding)));
+        return embeddings;
+    }
+
+    public void write(final OutputStream stream) throws IOException {
+        final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
+        objectOutputStream.writeInt(dim);
+        objectOutputStream.writeDouble(beta);
+        objectOutputStream.writeDouble(eps);
+        objectOutputStream.writeDouble(otherItemImportance);
+        objectOutputStream.writeObject(lambdaTransform);
+        objectOutputStream.writeObject(lambdaDerivativeTransform);
+        objectOutputStream.writeObject(lambdaStrategyFactory);
+        objectOutputStream.writeObject(embeddingsToSerializable(userEmbeddings));
+        objectOutputStream.writeObject(embeddingsToSerializable(itemEmbeddings));
+    }
+
+    public static Model load(final InputStream stream) throws IOException, ClassNotFoundException {
+        final ObjectInputStream objectInputStream = new ObjectInputStream(stream);
+        final int dim = objectInputStream.readInt();
+        final double beta = objectInputStream.readDouble();
+        final double eps = objectInputStream.readDouble();
+        final double otherItemImportance = objectInputStream.readDouble();
+        final DoubleUnaryOperator lambdaTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
+        final TIntObjectMap<Vec> userEmbeddings =
+                embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        final TIntObjectMap<Vec> itemEmbeddings =
+                embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        return new Model(dim, beta, eps, otherItemImportance, lambdaTransform,
+                lambdaDerivativeTransform, lambdaStrategyFactory, userEmbeddings, itemEmbeddings);
     }
 }

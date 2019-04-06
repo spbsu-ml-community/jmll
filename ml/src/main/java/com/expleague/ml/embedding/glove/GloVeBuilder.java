@@ -11,6 +11,7 @@ import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.impl.CoocBasedBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
+import com.expleague.ml.embedding.impl.ScoreCalculator;
 
 import java.util.HashMap;
 import java.util.Map;

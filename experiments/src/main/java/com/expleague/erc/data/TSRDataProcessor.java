@@ -35,6 +35,4 @@ public class TSRDataProcessor extends DataPreprocessor {
         test.sort(Comparator.comparingDouble(Event::getTs));
         return new TrainTest(train, test);
     }
-
-
 }

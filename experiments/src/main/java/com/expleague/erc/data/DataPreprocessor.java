@@ -65,7 +65,7 @@ public abstract class DataPreprocessor {
     }
 
     private void preFilter(final TrainTest trainTest, final int usersNum, final int itemsNum, final boolean isTop) {
-        List<Event> events = trainTest.getTrain();
+        List<Event> events = new ArrayList<>(trainTest.getTrain());
         events.addAll(trainTest.getTest());
         Set<Integer> users, items;
         if (isTop) {
