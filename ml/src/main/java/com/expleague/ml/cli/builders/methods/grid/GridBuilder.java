@@ -102,7 +102,6 @@ public class GridBuilder implements Factory<BFGrid> {
     final int[] reverse = permutation.reverse();
 
 
-    // fixme: code duplication, it is the same as GridTools.medianGrid
     boolean haveDifferentElements = false;
     for (int i = 1; i < order.length; i++)
       if (order[i] != order[0])
@@ -116,7 +115,6 @@ public class GridBuilder implements Factory<BFGrid> {
     final TDoubleArrayList dborders = new TDoubleArrayList();
     final TIntArrayList sizes = new TIntArrayList();
     { // drop existing
-      // TODO: anyway I don't understand, why do we need crcs
       final int[] crcs = new int[borders.size()];
       for (int i = 0; i < ds.length(); i++) { // unordered index
         final int orderedIndex = reverse[i];
@@ -124,7 +122,6 @@ public class GridBuilder implements Factory<BFGrid> {
           crcs[b] = (crcs[b] * 31) + (i + 1);
         }
       }
-      // TODO: it's like we compute somewhat hash code to skip some borders but why?
       for (int b = 0; b < borders.size() - 1; b++) {
         if (known.contains(crcs[b]))
           continue;
@@ -133,7 +130,6 @@ public class GridBuilder implements Factory<BFGrid> {
         sizes.add(borders.get(b));
       }
     }
-    // TODO: for what bfCount is used?
     rows[f] = new BFRowImpl(bfCount, f, dborders.toArray(), sizes.toArray());
     bfCount += dborders.size();
   }
