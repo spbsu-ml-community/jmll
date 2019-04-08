@@ -24,6 +24,7 @@ import java.util.Arrays;
  */
 public class GridTools {
 
+  // TODO: ask questions
   public static TIntArrayList greedyLogSumBorders(final double[] sortedFeature,
                                                   final int binFactor) {
     final TIntArrayList borders = new TIntArrayList();
@@ -36,11 +37,15 @@ public class GridTools {
         final int start = i > 0 ? borders.get(i - 1) : 0;
         final int end = borders.get(i);
         final double median = sortedFeature[start + (end - start) / 2];
+        // fixme WHY? We already know the index of the median, don't we?
+        // should not be 'split = start + (end - start) / 2' ?
         int split = Math.abs(Arrays.binarySearch(sortedFeature, start, end, median));
 
+        // fixme should not be split more than start? 'split > start'
         while (split > 0 && Math.abs(sortedFeature[split] - median) < 1e-9) // look for first less then median value
           split--;
         if (Math.abs(sortedFeature[split] - median) > 1e-9) split++;
+        // fixme probably Math.log((end - split) * (split - start)) would be faster?
         final double scoreLeft = Math.log(end - split) + Math.log(split - start);
         if (split > 0 && scoreLeft > bestScore) {
           bestScore = scoreLeft;
@@ -48,6 +53,7 @@ public class GridTools {
         }
         while (++split < end && Math.abs(sortedFeature[split] - median) < 1e-9)
           ; // first after elements with such value
+        // fixme same as previous
         final double scoreRight = Math.log(end - split) + Math.log(split - start);
         if (split < end && scoreRight > bestScore) {
           bestScore = scoreRight;
@@ -93,11 +99,11 @@ public class GridTools {
       final ArrayPermutation permutation = new ArrayPermutation(ds.order(f));
       final int[] order = permutation.direct();
       final int[] reverse = permutation.reverse();
-      boolean haveDiffrentElements = false;
+      boolean haveDifferentElements = false;
       for (int i = 1; i < order.length; i++)
         if (order[i] != order[0])
-          haveDiffrentElements = true;
-      if (!haveDiffrentElements)
+          haveDifferentElements = true;
+      if (!haveDifferentElements)
         continue;
       for (int i = 0; i < feature.length; i++)
         feature[i] = ds.at(order[i]).get(f);
@@ -108,7 +114,7 @@ public class GridTools {
         int size = borders.size();
         final int[] crcs = new int[size];
         for (int i = 0; i < ds.length(); i++) { // unordered index
-          final int orderedIndex = reverse[i];
+          final int orderedIndex = reverse[i]; // TODO: why is it reversed?
           for (int b = 0; b < size && orderedIndex >= borders.get(b); b++) {
             crcs[b] = (crcs[b] * 31) + (i + 1);
           }
@@ -123,7 +129,6 @@ public class GridTools {
         }
       }
       rows[f] = new BFRowImpl(bfCount, f, dborders.toArray(), sizes.toArray());
-
       bfCount += dborders.size();
     }
     return new BFGridImpl(rows);

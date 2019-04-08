@@ -6,12 +6,14 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.ml.TargetFunc;
 import com.expleague.commons.math.Trans;
+import com.expleague.ml.cli.builders.methods.impl.GreedyObliviousTreeBuilder;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.SatL2;
 
+import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import java.util.ArrayList;
 import java.util.List;
 

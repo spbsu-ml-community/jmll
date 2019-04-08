@@ -1,6 +1,6 @@
 package com.expleague.erc;
 
-public class Event {
+public final class Event {
     private final int userId;
     private final int itemId;
     private final double ts;

@@ -35,9 +35,7 @@ public class MetricsCalculator {
     private final ForkJoinPool pool;
     private final Path spuLogPath;
 
-    public MetricsCalculator(List<Event> trainData, List<Event> testData, Path spuLogPath,
-                             Map<Integer, String> itemIdToName, boolean verbose)
-            throws IOException {
+    public MetricsCalculator(List<Event> trainData, List<Event> testData, Path spuLogPath) {
         this.trainData = trainData;
         this.testData = testData;
         splitTime = trainData.get(trainData.size() - 1).getTs();
@@ -45,11 +43,7 @@ public class MetricsCalculator {
         itemsUsers = selectUsers(trainData, testData);
         this.itemIds = itemsUsers.keys();
         itemsUsersArrays = toArrays(itemsUsers);
-        targetSPU = spusOnHistory(testData);
-        if (verbose) {
-            writeItemNames(spuLogPath, itemIds, itemIdToName);
-            writeSpus(spuLogPath, targetSPU);
-        }
+        targetSPU = spusOnHistory(testData, splitTime);
         targetSPUMean = Arrays.stream(targetSPU.values()).average().getAsDouble();
         this.spuLogPath = spuLogPath;
 
@@ -57,7 +51,7 @@ public class MetricsCalculator {
         for (Event event: trainData) {
             lastTrainEvents.put(event.userId(), event.getTs());
         }
-        pool = new ForkJoinPool();
+        pool = new ForkJoinPool(1);
     }
 
     private static TIntObjectMap<TIntSet> selectUsers(final List<Event> trainData, final List<Event> testData) {
@@ -155,9 +149,10 @@ public class MetricsCalculator {
 //        return (double) sessions / users.size() / timeSpan;
 //    }
 
-    public TIntDoubleMap spusOnHistory(List <Event> history) {
+    public TIntDoubleMap spusOnHistory(List <Event> history, double startTime) {
         final TIntObjectMap<TIntIntMap> itemUserSessions = new TIntObjectHashMap<>();
         final TIntObjectMap<TIntDoubleMap> itemUserLifetimes = new TIntObjectHashMap<>();
+        final TIntObjectMap<TIntDoubleMap> itemUserBirthTimes = new TIntObjectHashMap<>();
         for (int itemId: itemIds) {
             final TIntIntHashMap curItemSessionsMap = new TIntIntHashMap();
             final TIntDoubleHashMap curItemLifetimesMap = new TIntDoubleHashMap();
@@ -167,6 +162,7 @@ public class MetricsCalculator {
             }
             itemUserSessions.put(itemId, curItemSessionsMap);
             itemUserLifetimes.put(itemId, curItemLifetimesMap);
+            itemUserBirthTimes.put(itemId, new TIntDoubleHashMap());
         }
         for (Event event: history) {
             final int itemId = event.itemId();
@@ -174,9 +170,29 @@ public class MetricsCalculator {
             if (!itemsUsers.containsKey(itemId) || !itemsUsers.get(itemId).contains(userId)) {
                 continue;
             }
-            final TIntIntMap curItemSessions = itemUserSessions.get(itemId);
-            curItemSessions.put(userId, curItemSessions.get(userId) + 1);
-            itemUserLifetimes.get(itemId).put(userId, event.getTs() - splitTime);
+            itemUserLifetimes.get(itemId).put(userId, event.getTs() - startTime);
+            final TIntDoubleMap curItemBirthTimes = itemUserBirthTimes.get(itemId);
+            if (!curItemBirthTimes.containsKey(userId)) {
+                curItemBirthTimes.put(userId, event.getTs() - startTime);
+            }
+        }
+//        for (int itemId : itemIds) {
+//            final TIntDoubleMap curItemLifetimes = itemUserLifetimes.get(itemId);
+//            for (int userId: itemsUsersArrays.get(itemId)) {
+//                curItemLifetimes.put(userId, curItemLifetimes.get(userId) / 2);
+//            }
+//        }
+        for (Event event: history) {
+            final int itemId = event.itemId();
+            final int userId = event.userId();
+            if (!itemsUsers.containsKey(itemId) || !itemsUsers.get(itemId).contains(userId)) {
+                continue;
+            }
+            if (event.getTs() - startTime >=
+                    (itemUserLifetimes.get(itemId).get(userId) + itemUserBirthTimes.get(itemId).get(userId)) / 2) {
+                final TIntIntMap curItemSessions = itemUserSessions.get(itemId);
+                curItemSessions.put(userId, curItemSessions.get(userId) + 1);
+            }
         }
 
         final TIntDoubleMap spus = new TIntDoubleHashMap();
@@ -185,7 +201,7 @@ public class MetricsCalculator {
             final TIntDoubleMap curItemLifetimes = itemUserLifetimes.get(itemId);
             double curItemSpu = 0.;
             for (int userId: itemsUsersArrays.get(itemId)) {
-                double lifetime = (curItemLifetimes.get(userId) + DAY - EPS) / DAY;
+                double lifetime = (curItemLifetimes.get(userId) - itemUserBirthTimes.get(itemId).get(userId) + DAY - EPS) / DAY;
                 curItemSpu += lifetime != 0. ? curItemSessions.get(userId) / lifetime : 0.;
             }
             curItemSpu /= itemsUsers.get(itemId).size();
@@ -270,7 +286,7 @@ public class MetricsCalculator {
 
     private static void writeSpus(Path logPath, TIntDoubleMap spus) throws IOException {
         if (logPath != null) {
-            String spusStr = Arrays.stream(spus.keys())
+            final String spusStr = Arrays.stream(spus.keys())
                     .sorted()
                     .mapToDouble(spus::get)
                     .mapToObj(String::valueOf)
@@ -279,7 +295,15 @@ public class MetricsCalculator {
         }
     }
 
-    private static void writeItemNames(Path logPath, int[] itemIds, Map<Integer, String> idToName) throws IOException {
+    public void writeTargetSpus() throws IOException {
+        writeSpus(spuLogPath, targetSPU);
+    }
+
+    public void writeTrainSpus() throws IOException {
+        writeSpus(spuLogPath, spusOnHistory(trainData, trainData.get(0).getTs()));
+    }
+
+    public void writeItemNames(Path logPath, Map<Integer, String> idToName) throws IOException {
         if (logPath != null) {
             String spusStr = Arrays.stream(itemIds)
                     .sorted()
@@ -287,40 +311,98 @@ public class MetricsCalculator {
                     .collect(Collectors.joining("\t"));
             Files.write(logPath, (spusStr + '\n').getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         }
-
     }
 
-    public void printMetrics(Model model, boolean writeSpus) {
-        try {
-            final double[] returnTimeMaes = new double[2];
-            final ForkJoinTask returnTimeTask = pool.submit(() -> {
-                Model.Applicable applicable = model.getApplicable();
-                returnTimeMaes[0] = returnTimeMae(applicable, trainData);
-                returnTimeMaes[1] = returnTimeMae(applicable, testData);
-            });
-            final ForkJoinTask<Double> recommendMae = pool.submit(
-                    () -> itemRecommendationMae(model.getApplicable(trainData)));
-            final ForkJoinTask<TIntDoubleMap> spusTask = pool.submit(() -> {
-                final List<Event> prediction = predictTest(model.getApplicable(trainData));
-                return spusOnHistory(prediction);
-            });
+    public class Summary {
+        private final double testReturnTime;
+        private final double trainReturnTime;
+        private final double recommendMae;
+        private final double spusDiffByItem;
+        private final double spusMean;
+        private final double spusMeanDiff;
+        private final TIntDoubleMap spus;
 
-            returnTimeTask.join();
-            final double trainReturnTime = returnTimeMaes[0];
-            final double testReturnTime = returnTimeMaes[1];
-            final TIntDoubleMap spus = spusTask.get();
-            final double spusMean = Arrays.stream(spus.values()).average().getAsDouble();
-            final double spusMeanDiff = Math.abs(targetSPUMean - spusMean);
-            final double spusDiffByItem = spuDiffByItem(targetSPU, spus);
-
-            if (writeSpus) {
-                writeSpus(spuLogPath, spus);
-            }
-            System.out.printf("test_return_time = %f, train_return_time = %f, recommendation_mae = %f, SPU error = %f, " +
-                            "mean SPU = %f, mean SPU error = %f\n",
-                    testReturnTime, trainReturnTime, recommendMae.get(), spusDiffByItem, spusMean, spusMeanDiff);
-        } catch (InterruptedException | ExecutionException | IOException e) {
-            e.printStackTrace();
+        public Summary(double testReturnTime, double trainReturnTime, double recommendMae, double spusDiffByItem,
+                       double spusMean, double spusMeanDiff, TIntDoubleMap spus) {
+            this.testReturnTime = testReturnTime;
+            this.trainReturnTime = trainReturnTime;
+            this.recommendMae = recommendMae;
+            this.spusDiffByItem = spusDiffByItem;
+            this.spusMean = spusMean;
+            this.spusMeanDiff = spusMeanDiff;
+            this.spus = spus;
         }
+
+        @Override
+        public String toString() {
+            return String.format("test_return_time = %f, train_return_time = %f, recommendation_mae = %f, " +
+                            "SPU error = %f, mean SPU = %f, mean SPU error = %f",
+                    testReturnTime, trainReturnTime, recommendMae, spusDiffByItem, spusMean, spusMeanDiff);
+        }
+
+        public void writeSpus() throws IOException {
+            if (spuLogPath != null) {
+                MetricsCalculator.writeSpus(spuLogPath, spus);
+            }
+        }
+    }
+
+//    public void printMetrics(Model model, boolean writeSpus) {
+//        try {
+//            final double[] returnTimeMaes = new double[2];
+//            final ForkJoinTask returnTimeTask = pool.submit(() -> {
+//                Model.Applicable applicable = model.getApplicable();
+//                returnTimeMaes[0] = returnTimeMae(applicable, trainData);
+//                returnTimeMaes[1] = returnTimeMae(applicable, testData);
+//            });
+//            final ForkJoinTask<Double> recommendMae = pool.submit(
+//                    () -> itemRecommendationMae(model.getApplicable(trainData)));
+//            final ForkJoinTask<TIntDoubleMap> spusTask = pool.submit(() -> {
+//                final List<Event> prediction = predictTest(model.getApplicable(trainData));
+//                return spusOnHistory(prediction);
+//            });
+//
+//            returnTimeTask.join();
+//            final double trainReturnTime = returnTimeMaes[0];
+//            final double testReturnTime = returnTimeMaes[1];
+//            final TIntDoubleMap spus = spusTask.get();
+//            final double spusMean = Arrays.stream(spus.values()).average().getAsDouble();
+//            final double spusMeanDiff = Math.abs(targetSPUMean - spusMean);
+//            final double spusDiffByItem = spuDiffByItem(targetSPU, spus);
+//
+//            if (writeSpus) {
+//                writeSpus(spuLogPath, spus);
+//            }
+//            System.out.printf("test_return_time = %f, train_return_time = %f, recommendation_mae = %f, SPU error = %f, " +
+//                            "mean SPU = %f, mean SPU error = %f\n",
+//                    testReturnTime, trainReturnTime, recommendMae.get(), spusDiffByItem, spusMean, spusMeanDiff);
+//        } catch (InterruptedException | ExecutionException | IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    public Summary calculateSummary(Model model) throws ExecutionException, InterruptedException {
+        final double[] returnTimeMaes = new double[2];
+        final ForkJoinTask returnTimeTask = pool.submit(() -> {
+            Model.Applicable applicable = model.getApplicable();
+            returnTimeMaes[0] = returnTimeMae(applicable, trainData);
+            returnTimeMaes[1] = returnTimeMae(applicable, testData);
+        });
+        final ForkJoinTask<Double> recommendMaeTask = pool.submit(
+                () -> itemRecommendationMae(model.getApplicable(trainData)));
+        final ForkJoinTask<TIntDoubleMap> spusTask = pool.submit(() -> {
+            final List<Event> prediction = predictTest(model.getApplicable(trainData));
+            return spusOnHistory(prediction, splitTime);
+        });
+
+        returnTimeTask.join();
+        final double trainReturnTime = returnTimeMaes[0];
+        final double testReturnTime = returnTimeMaes[1];
+        final TIntDoubleMap spus = spusTask.get();
+        final double spusMean = Arrays.stream(spus.values()).average().getAsDouble();
+        final double spusMeanDiff = Math.abs(targetSPUMean - spusMean);
+        final double spusDiffByItem = spuDiffByItem(targetSPU, spus);
+        final double recommendMae = recommendMaeTask.get();
+        return new Summary(testReturnTime, trainReturnTime, recommendMae, spusDiffByItem, spusMean, spusMeanDiff, spus);
     }
 }

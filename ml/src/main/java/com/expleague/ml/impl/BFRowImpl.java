@@ -16,6 +16,7 @@ public class BFRowImpl implements BFGrid.Row {
   public BFRowImpl(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders) {
     this(owner,bfStart,origFIndex,borders,new int[borders.length], false);
   }
+  // TODO: why do we need bsStart?
   public BFRowImpl(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders, final int[] sizes, final boolean isOneHot) {
     this.owner = owner;
     this.bfStart = bfStart;

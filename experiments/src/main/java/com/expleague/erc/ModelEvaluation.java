@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -89,12 +90,24 @@ public class ModelEvaluation {
 
         model.initializeEmbeddings(dataset.getTrain());
         final Path spuLogPath = spuLogFilePath != null ? Paths.get(spuLogFilePath) : null;
-        MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), spuLogPath,
-                itemIdToName,modelLoadPath == null);
+        final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), spuLogPath);
+        if (modelLoadPath == null) {
+            metricsCalculator.writeItemNames(spuLogPath, itemIdToName);
+            metricsCalculator.writeTargetSpus();
+        }
         System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
         System.out.println("Target mean SPU: " + metricsCalculator.getMeanSpuTarget());
-        metricsCalculator.printMetrics(model, modelLoadPath == null);
-        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), decay, true, metricsCalculator);
+        try {
+            final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(model);
+            System.out.println(summary);
+            if (modelLoadPath == null) {
+                summary.writeSpus();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), decay, true, metricsCalculator, modelSavePath);
 
         if (modelSavePath != null) {
             model.write(Files.newOutputStream(Paths.get(modelSavePath)));
