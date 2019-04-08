@@ -11,12 +11,12 @@ import java.nio.file.Paths;
 
 public class BuildEmbedding {
   public static void main(String[] args) throws IOException {
-    Embedding.Builder builder = Embedding.builder(Embedding.Type.KMEANS_SKIP);
+    Embedding.Builder builder = Embedding.builder(Embedding.Type.HIERARCH_CLUSTER);
     String file = args[0];
     final Embedding result = builder
 //        .dim(50)
         .iterations(25)
-        .step(5e-2)
+        .step(1e-1)
 //        .minWordCount(1)
         .window(Embedding.WindowType.LINEAR, 7, 7)
         .file(Paths.get(file))
