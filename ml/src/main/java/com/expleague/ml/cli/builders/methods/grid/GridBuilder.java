@@ -96,17 +96,17 @@ public class GridBuilder implements Factory<BFGrid> {
     rows[f] = new BFRowImpl(null, bfCount, f, fakeBorders, new int[fakeBorders.length], true);
     bfCount += fakeBorders.length;
   }
-
   private void addFloatFeature(final int f) {
     final ArrayPermutation permutation = new ArrayPermutation(ds.order(f));
     final int[] order = permutation.direct();
     final int[] reverse = permutation.reverse();
 
-    boolean haveDiffrentElements = false;
+
+    boolean haveDifferentElements = false;
     for (int i = 1; i < order.length; i++)
       if (order[i] != order[0])
-        haveDiffrentElements = true;
-    if (!haveDiffrentElements) {
+        haveDifferentElements = true;
+    if (!haveDifferentElements) {
       return;
     }
     for (int i = 0; i < feature.length; i++)

@@ -93,7 +93,8 @@ public class ClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
 
     final double correctW = Math.exp(multiply(v_i, v_j));
     final Vec grad = new ArrayVec(dim);
-    final Vec weights = VecTools.exp(MxTools.multiply(centroids, v_i));
+    final Vec weights = MxTools.multiply(centroids, v_i);
+    VecTools.exp(weights);
     double denom = correctW;
 
     { // gradient for i
