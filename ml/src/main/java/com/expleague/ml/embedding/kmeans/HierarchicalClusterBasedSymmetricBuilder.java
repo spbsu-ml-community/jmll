@@ -1,5 +1,6 @@
 package com.expleague.ml.embedding.kmeans;
 
+import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
@@ -18,13 +19,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import static com.expleague.commons.math.vectors.VecTools.*;
+import com.expleague.commons.math.vectors.VecTools;
 
 public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
-  private int dim = 10;
-  private int clustersCount = 100;
+  private int dim = 15;
+  private int clustersCount = 300;
   private Mx residuals; // from the top level cluster
   private ClustersHierarcy clusters;
 
@@ -92,14 +94,14 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
     final Mx centroids = clusters.getClusters(i);
     final TIntArrayList sizes = clusters.getClustersSizes(i);
 
-    TIntArrayList oldPath_i = clusters.getPath(i);
-    TIntArrayList oldPath_j = clusters.getPath(j);
+    TIntArrayList oldPath_i = clusters.getPath(i, new TIntArrayList());
+    TIntArrayList oldPath_j = clusters.getPath(j, new TIntArrayList());
     { // removing i and j from their clusters
       clusters.remove(i, v_i);
       clusters.remove(j, v_j);
     }
 
-    final double correctW = Math.exp(multiply(v_i, v_j));
+    final double correctW = Math.exp(VecTools.multiply(v_i, v_j));
     final Vec weights = MxTools.multiply(centroids, v_i);
     VecTools.exp(weights);
     double denom = correctW;
@@ -111,25 +113,24 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
           continue;
         final double w_k = weights.get(k) * sizes.get(k);
         denom += w_k;
-        incscale(grad, centroids.row(k), w_k);
+        VecTools.incscale(grad, centroids.row(k), w_k);
       }
-      scale(grad, -1./denom);
+      VecTools.scale(grad, -1./denom);
       if (Double.isFinite(correctW))
-        incscale(grad, v_j, 1 - correctW / denom);
-      incscale(v_i, grad, step() * weight);
+        VecTools.incscale(grad, v_j, 1 - correctW / denom);
+      adaStep(i, v_i, grad, step(), weight);
     }
     final double score = Double.isFinite(correctW) ? weight * Math.log(correctW / denom) : 0;
     this.score = this.score * G + score;
 
     for (int k = 0; k < centroids.rows(); k++) { // gradient for cluster_i
-      Vec centroid = centroids.row(k);
       final double clusterGrad = Double.isFinite(weights.get(k)) ? -weights.get(k) * sizes.get(k) / denom : -1.;
-      incscale(centroid, v_i, step() * weight * clusterGrad);
+      clusters.incscale(oldPath_i, k, v_i, step(), weight * clusterGrad);
     }
 
     { // gradient for j
       if (!Double.isInfinite(correctW))
-        incscale(v_j, v_i, step() * weight * (1 - correctW / denom));
+        adaStep(j, v_j, v_i, step(), weight * (1 - correctW / denom));
     }
 
     //    { // new score
@@ -146,9 +147,14 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
     //
     { // updating clusters alignment
       TIntArrayList newPath_i = clusters.append(i, v_i);
+      VecTools.incscale(v_i, clusters.getClusters(i).row(0), -1);
+      VecTools.assign(residuals.row(i), v_i);
       if (!newPath_i.equals(oldPath_i))
         transfers++;
+
       TIntArrayList newPath_j = clusters.append(j, v_j);
+      VecTools.incscale(v_j, clusters.getClusters(j).row(0), -1);
+      VecTools.assign(residuals.row(j), v_j);
       if (!newPath_j.equals(oldPath_j))
         transfers++;
     }
@@ -157,6 +163,25 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
       transfers = 0;
       errors = 0;
     }
+  }
+
+  private List<Vec> accum = new ArrayList<>();
+  private void adaStep(int index, Vec x, Vec grad, double step, double scale) {
+    if (scale < 1e-8)
+      return;
+
+    while (accum.size() <= index) {
+      accum.add(VecTools.fill(new ArrayVec(x.dim()), 1));
+    }
+    final Vec accum = this.accum.get(index);
+    double len = IntStream.range(0, x.dim()).mapToDouble(i -> {
+      final double increment = step * scale * grad.get(i) / Math.sqrt(accum.get(i));
+      x.adjust(i, increment);
+      accum.adjust(i, MathTools.sqr(scale * grad.get(i)));
+      return increment * increment;
+    }).sum();
+    if (Math.sqrt(len) > 10)
+      System.out.println();
   }
 
   private class ClustersHierarcy {
@@ -193,13 +218,28 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
         }
         paths.add(path);
       }
+      int y = 1;
     }
 
     public int getLevelsNum() {
       return levelsNum;
     }
 
-    public TIntArrayList getPath(int index) { return paths.get(index); }
+    public TIntArrayList getPath(int index, TIntArrayList to) {
+      to.addAll(paths.get(index));
+      return to;
+    }
+
+    public void incscale(TIntArrayList path, int level, Vec grad, double step, double scale) {
+      int adaId = 0;
+      for (int i = 0; i < level; i++) {
+        adaId += levels.get(i).size();
+      }
+      int cluster = path.get(level);
+      int offset = getOffset(path, level);
+      adaId += cluster;
+      levels.get(level).get(offset).incscale(adaId, cluster, grad, step, scale);
+    }
 
     public TIntArrayList append(int index, Vec v) {
       TIntArrayList path = new TIntArrayList(levelsNum);
@@ -273,6 +313,11 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
         clustersSize.set(cluster, clustersSize.get(cluster) + 1);
       }
 
+      protected void incscale(int adaId, int cluster, Vec grad, double step, double scale) {
+        Vec centroid = centroids.row(cluster);
+        adaStep(adaId, centroid, grad, step, scale);
+      }
+
       protected int append(Vec v) {
         final int newCluster = nearestCluster(v);
         appendToCluster(v, newCluster);
@@ -294,19 +339,19 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
 
       private void removeFromCluster(Vec v, int cluster) {
         final Vec centroid = centroids.row(cluster);
-        scale(centroid, clustersSize.get(cluster));
-        incscale(centroid, v, -1);
+        VecTools.scale(centroid, clustersSize.get(cluster));
+        VecTools.incscale(centroid, v, -1);
         clustersSize.set(cluster, clustersSize.get(cluster) - 1);
         if (clustersSize.get(cluster) > 0)
-          scale(centroid, 1. / clustersSize.get(cluster));
+          VecTools.scale(centroid, 1. / clustersSize.get(cluster));
       }
 
       private void appendToCluster(Vec v, int cluster) {
         final Vec centroid = centroids.row(cluster);
-        scale(centroid, clustersSize.get(cluster));
+        VecTools.scale(centroid, clustersSize.get(cluster));
         VecTools.append(centroid, v);
         clustersSize.set(cluster, clustersSize.get(cluster) + 1);
-        scale(centroid, 1. / clustersSize.get(cluster));
+        VecTools.scale(centroid, 1. / clustersSize.get(cluster));
       }
 
       private int nearestCluster(Vec v) {
@@ -314,7 +359,7 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
         int result = -1;
         for (int i = 0; i < centroids.rows(); i++) {
           final Vec c_i =  centroids.row(i);
-          final double distance = distance(c_i, v);
+          final double distance = VecTools.distance(c_i, v);
           if (minDistance > distance) {
             minDistance = distance;
             result = i;

@@ -31,7 +31,7 @@ public class CloserFurtherMetric extends QualityMetric {
     for (String fileName : files) {
       String short_name = readMetricsFile(fileName);
       System.out.println("Started working with " + short_name);
-      File file = new File(output + "/" + short_name);
+      File file = new File(output + "/eval_result_" + short_name);
       PrintStream fout;
       try {
         fout = new PrintStream(file);

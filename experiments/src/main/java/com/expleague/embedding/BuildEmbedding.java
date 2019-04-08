@@ -15,7 +15,7 @@ public class BuildEmbedding {
     String file = args[0];
     final Embedding result = builder
 //        .dim(50)
-        .iterations(25)
+        .iterations(50)
         .step(1e-1)
 //        .minWordCount(1)
         .window(Embedding.WindowType.LINEAR, 7, 7)
