@@ -25,7 +25,7 @@ import java.util.stream.LongStream;
 import com.expleague.commons.math.vectors.VecTools;
 
 public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBase {
-  private int dim = 15;
+  private int dim = 50;
   private int clustersCount = 300;
   private Mx residuals; // from the top level cluster
   private ClustersHierarcy clusters;
@@ -231,7 +231,7 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
     }
 
     public void incscale(TIntArrayList path, int level, Vec grad, double step, double scale) {
-      int adaId = 0;
+      int adaId = voc_size;
       for (int i = 0; i < level; i++) {
         adaId += levels.get(i).size();
       }
