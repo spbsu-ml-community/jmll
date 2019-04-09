@@ -3,13 +3,19 @@ package com.expleague.erc;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
+import gnu.trove.map.TLongDoubleMap;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.LongFunction;
+import java.util.stream.Collectors;
 
 public class DataMetrics {
     private static final Options options = new Options();
@@ -53,17 +59,34 @@ public class DataMetrics {
         final LastFmDataReader lastFmDataReader = new LastFmDataReader();
         final List<Event> data = lastFmDataReader.readData(dataPath, dataSize);
         final DataPreprocessor preprocessor = new OneTimeDataProcessor();
+//        final DataPreprocessor preprocessor = new TSRDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
 
-        final double startTime = dataset.getTrain().get(0).getTs();
         final double splitTime = dataset.getTest().get(0).getTs();
-        final double endTime = dataset.getTest().get(dataset.getTest().size() - 1).getTs();
-        System.out.println((endTime - splitTime) / (splitTime - startTime));
+        System.out.println(splitTime);
 
         Files.deleteIfExists(outPath);
         final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), outPath);
-        metricsCalculator.writeTrainSpus();
-        metricsCalculator.writeTargetSpus();
+        final TLongDoubleMap trainPairSpus = metricsCalculator.pairwiseHistorySpu(dataset.getTrain());
+        final TLongDoubleMap testPairSpus = metricsCalculator.pairwiseHistorySpu(dataset.getTest());
+        final long [] keys = Arrays.stream(trainPairSpus.keys())
+                .boxed()
+                .sorted(Comparator.comparingInt(Util::extractItemId).thenComparingInt(Util::extractUserId))
+                .mapToLong(Long::longValue)
+                .toArray();
+        writeSeq(outPath, keys, String::valueOf);
+        writeSeq(outPath, keys, key -> String.valueOf(trainPairSpus.get(key)));
+        writeSeq(outPath, keys, key -> String.valueOf(testPairSpus.get(key)));
+
+        Util.writeMap(Paths.get("items.txt"), lastFmDataReader.getReversedItemMap());
+        Util.writeMap(Paths.get("users.txt"), lastFmDataReader.getReversedUserMap());
+    }
+
+    private static void writeSeq(Path filePath, long[] keys, LongFunction<String> keyToValue) throws IOException {
+        final String strRep = Arrays.stream(keys)
+                .mapToObj(keyToValue)
+                .collect(Collectors.joining(" \t")) + '\n';
+        Files.write(filePath, strRep.getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
     }
 }

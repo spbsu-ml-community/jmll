@@ -140,7 +140,7 @@ public class Model {
                     logLikelihood += logLikelihoodDelta;
                 }
                 lambdasByItem.accept(event);
-                lastVisitTimes.put(combineIds(userId, itemId), event.getTs());
+                lastVisitTimes.put(Util.combineIds(userId, itemId), event.getTs());
             }
         }
         for (long pairId : lastVisitTimes.keys()) {
@@ -199,11 +199,11 @@ public class Model {
                 updateInnerEventDerivative(lambdasByItem, event, userDerivatives, itemDerivatives);
                 lambdasByItem.accept(event);
             }
-            lastVisitTimes.put(combineIds(event.userId(), event.itemId()), event.getTs());
+            lastVisitTimes.put(Util.combineIds(event.userId(), event.itemId()), event.getTs());
         }
         for (long pairId: lastVisitTimes.keys()) {
-            final int userId = extractUserId(pairId);
-            final int itemId = extractItemId(pairId);
+            final int userId = Util.extractUserId(pairId);
+            final int itemId = Util.extractItemId(pairId);
             updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
                     userDerivatives, itemDerivatives);
         }
@@ -385,18 +385,6 @@ public class Model {
 
     public Applicable getApplicable() {
         return new Applicable();
-    }
-
-    private static long combineIds(final int userId, final int itemId) {
-        return (long) userId << 32 | itemId;
-    }
-
-    private static int extractUserId(final long idPair) {
-        return (int)(idPair >> 32);
-    }
-
-    private static int extractItemId(final long idPair) {
-        return (int)idPair;
     }
 
     private static Map<Integer, double[]> embeddingsToSerializable(final TIntObjectMap<Vec> embeddings) {

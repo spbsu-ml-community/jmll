@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ModelEvaluation {
     private static Options options = new Options();
@@ -37,6 +35,9 @@ public class ModelEvaluation {
         options.addOption(Option.builder("spup").longOpt("spupath").desc("Path to save item SPUs").hasArg().build());
         options.addOption(Option.builder("ml").longOpt("model_load").desc("Path to load model from").hasArg().build());
         options.addOption(Option.builder("ms").longOpt("model_save").desc("Path to save model").hasArg().build());
+        options.addOption(Option.builder("ump").longOpt("user_map_path").desc("Path to save users map").hasArg().build());
+        options.addOption(Option.builder("imp").longOpt("item_map_path").desc("Path to save items map").hasArg().build());
+        options.addOption(Option.builder("lp").longOpt("lambdas_path").desc("Path to save lambdas").hasArg().build());
     }
 
     public static void main(String... args) throws ParseException, IOException, ClassNotFoundException {
@@ -59,24 +60,37 @@ public class ModelEvaluation {
         String spuLogPath = cliOptions.getOptionValue("spup", null);
         String modelLoadPath = cliOptions.getOptionValue("ml", null);
         String modelSavePath = cliOptions.getOptionValue("ms", null);
+        String usersMapPath = cliOptions.getOptionValue("ump", null);
+        String itemsMapPath = cliOptions.getOptionValue("imp", null);
+        String lambdasPath = cliOptions.getOptionValue("lp", null);
 
         LastFmDataReader lastFmDataReader = new LastFmDataReader();
         List<Event> data = lastFmDataReader.readData(dataPath, size);
-        Map<String, Integer> itemNameToId = lastFmDataReader.getItemMap();
-        Map<Integer, String> itemIdToName = itemNameToId.keySet().stream()
-                .collect(Collectors.toMap(itemNameToId::get, Function.identity()));
+        Map<Integer, String> itemIdToName = lastFmDataReader.getReversedItemMap();
+        Map<Integer, String> userIdToName = lastFmDataReader.getReversedUserMap();
         runModel(data, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop,
-                spuLogPath, itemIdToName, modelLoadPath, modelSavePath);
+                spuLogPath, itemIdToName, userIdToName, modelLoadPath, modelSavePath, usersMapPath, itemsMapPath,
+                lambdasPath);
     }
 
     private static void runModel(final List<Event> data, final int iterations, final double lr, final double decay,
                                  final int dim, final double beta, final double otherItemImportance, final double eps,
                                  final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop,
                                  final String spuLogFilePath, final Map<Integer, String> itemIdToName,
-                                 final String modelLoadPath, final String modelSavePath) throws IOException, ClassNotFoundException {
+                                 final Map<Integer, String> userIdToName, final String modelLoadPath,
+                                 final String modelSavePath, final String usersMapPath, final String itemsMapPath,
+                                 final String lambdasPath) throws IOException, ClassNotFoundException {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
-        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
+        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(preprocessor.filterSessions(data), trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
+        dataset = preprocessor.filterComparable(dataset);
+
+        if (usersMapPath != null) {
+            Util.writeMap(Paths.get(usersMapPath), userIdToName);
+        }
+        if (itemsMapPath != null) {
+            Util.writeMap(Paths.get(itemsMapPath), itemIdToName);
+        }
 
         Model model;
         if (modelLoadPath == null) {
@@ -92,7 +106,7 @@ public class ModelEvaluation {
         final Path spuLogPath = spuLogFilePath != null ? Paths.get(spuLogFilePath) : null;
         final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), spuLogPath);
         if (modelLoadPath == null) {
-            metricsCalculator.writeItemNames(spuLogPath, itemIdToName);
+            metricsCalculator.writePairNames(spuLogPath, itemIdToName, userIdToName);
             metricsCalculator.writeTargetSpus();
         }
         System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
@@ -111,6 +125,9 @@ public class ModelEvaluation {
 
         if (modelSavePath != null) {
             model.write(Files.newOutputStream(Paths.get(modelSavePath)));
+        }
+        if (lambdasPath != null) {
+            metricsCalculator.writeLambdas(Paths.get(lambdasPath), itemIdToName, userIdToName, model);
         }
     }
 }

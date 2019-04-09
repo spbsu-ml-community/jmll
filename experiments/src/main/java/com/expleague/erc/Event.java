@@ -43,4 +43,8 @@ public final class Event {
     public boolean isFinish() {
         return false;
     }
+
+    public long getPair() {
+        return Util.combineIds(userId, itemId);
+    }
 }
