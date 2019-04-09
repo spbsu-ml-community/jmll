@@ -7,6 +7,7 @@ import com.expleague.ml.embedding.decomp.MultiDecompBuilder;
 import com.expleague.ml.embedding.glove.GloVeBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import com.expleague.ml.embedding.kmeans.ClusterBasedSymmetricBuilder;
+import com.expleague.ml.embedding.kmeans.HierarchicalClusterBasedSymmetricBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Writer;
@@ -35,6 +36,7 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
     DECOMP(DecompBuilder.class),
     MULTI_DECOMP(MultiDecompBuilder.class),
     KMEANS_SKIP(ClusterBasedSymmetricBuilder.class),
+    HIERARCH_CLUSTER(HierarchicalClusterBasedSymmetricBuilder.class),
     ;
 
     private final Class<? extends Builder> builderClass;
