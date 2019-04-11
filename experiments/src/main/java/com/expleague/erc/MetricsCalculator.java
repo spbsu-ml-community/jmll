@@ -25,22 +25,25 @@ public class MetricsCalculator {
     private final List<Event> trainData;
     private final List<Event> testData;
     private final int[] itemIds;
+    private final double startTime;
     private final double splitTime;
     private final double endTime;
-    private final TIntDoubleMap targetSPU;
     private final TLongDoubleMap targetPairwiseSPU;
     private final double targetPairwiseSPUMean;
     private final TIntObjectMap<TIntSet> itemsUsers;
     private final TLongSet relevantPairs;
     private final long[] relevantPairsArray;
     private final TIntObjectMap<int[]> itemsUsersArrays;
-    private final TIntDoubleMap lastTrainEvents;
+    private final TLongDoubleMap lastTrainEvents;
+    private final TLongDoubleMap beginningTimes;
     private final ForkJoinPool pool;
-    private final Path spuLogPath;
+    private final Path spuTestLogPath;
+    private final Path spuTrainLogPath;
 
-    public MetricsCalculator(List<Event> trainData, List<Event> testData, Path spuLogPath) {
+    public MetricsCalculator(List<Event> trainData, List<Event> testData, Path spuTestLogPath, Path spuTrainLogPath) {
         this.trainData = trainData;
         this.testData = testData;
+        startTime = trainData.get(0).getTs();
         splitTime = trainData.get(trainData.size() - 1).getTs();
         endTime = testData.get(testData.size() - 1).getTs();
         itemsUsers = selectUsers(trainData, testData);
@@ -48,14 +51,17 @@ public class MetricsCalculator {
         relevantPairsArray = pairsToArray(relevantPairs);
         this.itemIds = itemsUsers.keys();
         itemsUsersArrays = toArrays(itemsUsers);
-        targetSPU = spusOnHistory(testData, splitTime);
         targetPairwiseSPU = pairwiseHistorySpu(testData);
         targetPairwiseSPUMean = Arrays.stream(targetPairwiseSPU.values()).average().orElse(-1);
-        this.spuLogPath = spuLogPath;
+        this.spuTestLogPath = spuTestLogPath;
+        this.spuTrainLogPath = spuTrainLogPath;
 
-        lastTrainEvents = new TIntDoubleHashMap();
+        lastTrainEvents = new TLongDoubleHashMap();
+        beginningTimes = new TLongDoubleHashMap();
         for (Event event: trainData) {
-            lastTrainEvents.put(event.userId(), event.getTs());
+            long pair = event.getPair();
+            lastTrainEvents.put(pair, event.getTs());
+            beginningTimes.put(pair, startTime);
         }
         pool = new ForkJoinPool();
     }
@@ -169,80 +175,20 @@ public class MetricsCalculator {
             it.advance();
             final long pair = it.key();
             final int sessions = it.value();
-            pairSpus.put(pair, sessions / (pairDeathTimes.get(pair) - pairBirthTimes.get(pair)));
+            pairSpus.put(pair, sessions / ((pairDeathTimes.get(pair) - pairBirthTimes.get(pair)) + DAY - EPS) / DAY);
         }
         return pairSpus;
     }
 
-    public TIntDoubleMap spusOnHistory(List <Event> history, double startTime) {
-        final TIntObjectMap<TIntIntMap> itemUserSessions = new TIntObjectHashMap<>();
-        final TIntObjectMap<TIntDoubleMap> itemUserLifetimes = new TIntObjectHashMap<>();
-        final TIntObjectMap<TIntDoubleMap> itemUserBirthTimes = new TIntObjectHashMap<>();
-        for (int itemId: itemIds) {
-            final TIntIntHashMap curItemSessionsMap = new TIntIntHashMap();
-            final TIntDoubleHashMap curItemLifetimesMap = new TIntDoubleHashMap();
-            for (int userId: itemsUsersArrays.get(itemId)) {
-                curItemSessionsMap.put(userId, 0);
-                curItemLifetimesMap.put(userId, 0.0);
-            }
-            itemUserSessions.put(itemId, curItemSessionsMap);
-            itemUserLifetimes.put(itemId, curItemLifetimesMap);
-            itemUserBirthTimes.put(itemId, new TIntDoubleHashMap());
-        }
-        for (Event event: history) {
-            final int itemId = event.itemId();
-            final int userId = event.userId();
-            if (!itemsUsers.containsKey(itemId) || !itemsUsers.get(itemId).contains(userId)) {
-                continue;
-            }
-            itemUserLifetimes.get(itemId).put(userId, event.getTs() - startTime);
-            final TIntDoubleMap curItemBirthTimes = itemUserBirthTimes.get(itemId);
-            if (!curItemBirthTimes.containsKey(userId)) {
-//                curItemBirthTimes.put(userId, 0);
-                curItemBirthTimes.put(userId, event.getTs() - startTime);
-            }
-        }
-//        for (int itemId : itemIds) {
-//            final TIntDoubleMap curItemLifetimes = itemUserLifetimes.get(itemId);
-//            for (int userId: itemsUsersArrays.get(itemId)) {
-//                curItemLifetimes.put(userId, curItemLifetimes.get(userId) / 2);
-//            }
-//        }
-        for (Event event: history) {
-            final int itemId = event.itemId();
-            final int userId = event.userId();
-            if (!itemsUsers.containsKey(itemId) || !itemsUsers.get(itemId).contains(userId)) {
-                continue;
-            }
-//            if (event.getTs() - startTime >=
-//                    (itemUserLifetimes.get(itemId).get(userId) + itemUserBirthTimes.get(itemId).get(userId)) / 2) {
-                final TIntIntMap curItemSessions = itemUserSessions.get(itemId);
-                curItemSessions.put(userId, curItemSessions.get(userId) + 1);
-//            }
-        }
-
-        final TIntDoubleMap spus = new TIntDoubleHashMap();
-        for (int itemId: itemIds) {
-            final TIntIntMap curItemSessions = itemUserSessions.get(itemId);
-            final TIntDoubleMap curItemLifetimes = itemUserLifetimes.get(itemId);
-            double curItemSpu = 0.;
-            for (int userId: itemsUsersArrays.get(itemId)) {
-                double lifetime = (curItemLifetimes.get(userId) - itemUserBirthTimes.get(itemId).get(userId) + DAY - EPS) / DAY;
-                curItemSpu += lifetime != 0. ? curItemSessions.get(userId) / lifetime : 0.;
-            }
-            curItemSpu /= itemsUsers.get(itemId).size();
-            spus.put(itemId, curItemSpu);
-        }
-        return spus;
-    }
-
-    private List<Event> predictTest(Model.Applicable model) {
+    public List<Event> predictSpan(Model.Applicable model, TLongDoubleMap previousActivityTimes,
+                                   double spanStartTime, double spanEndTime) {
         final List<Event> generatedEvents = new ArrayList<>();
         final Queue<Event> followingEvents = new ArrayDeque<>();
         for (int itemId: itemIds) {
             for (int userId: itemsUsersArrays.get(itemId)) {
-                final double newEventTime = lastTrainEvents.get(userId) + model.timeDelta(userId, itemId);
-                if (newEventTime <= endTime) {
+                final double newEventTime = previousActivityTimes.get(Util.combineIds(userId, itemId)) +
+                        model.timeDelta(userId, itemId);
+                if (newEventTime <= spanEndTime) {
                     final Event newEvent = new Event(userId, itemId, newEventTime);
                     followingEvents.add(newEvent);
                 }
@@ -250,18 +196,25 @@ public class MetricsCalculator {
         }
         while (!followingEvents.isEmpty()) {
             final Event curEvent = followingEvents.poll();
-            if (curEvent.getTs() >= splitTime) {
+            if (curEvent.getTs() >= spanStartTime) {
                 generatedEvents.add(curEvent);
             }
             model.accept(curEvent);
 
             final double newEventTime = curEvent.getTs() + model.timeDelta(curEvent.userId(), curEvent.itemId());
-            if (curEvent.getTs() <= newEventTime && newEventTime <= endTime) {
+            if (curEvent.getTs() <= newEventTime && newEventTime <= spanEndTime) {
                 final Event nextEvent = new Event(curEvent.userId(), curEvent.itemId(), newEventTime);
                 followingEvents.add(nextEvent);
             }
         }
         return generatedEvents;
+    }
+
+    public void writeHistory(Path path, List<Event> history) throws IOException {
+        final String historyStr = history.stream()
+                .map(event -> event.getTs() + " \t" + event.getPair())
+                .collect(Collectors.joining("\n", "", "\n"));
+        Files.write(path, historyStr.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 
     public double spuDiffByPair(TLongDoubleMap firstSPUs, TLongDoubleMap secondSPUs) {
@@ -274,17 +227,6 @@ public class MetricsCalculator {
         return targetPairwiseSPUMean;
     }
 
-//    private static void writeSpus(Path logPath, TIntDoubleMap spus) throws IOException {
-//        if (logPath != null) {
-//            final String spusStr = Arrays.stream(spus.keys())
-//                    .sorted()
-//                    .mapToDouble(spus::get)
-//                    .mapToObj(String::valueOf)
-//                    .collect(Collectors.joining("\t"));
-//            Files.write(logPath, (spusStr + '\n').getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-//        }
-//    }
-
     private static void writePairwiseSpus(Path logPath, TLongDoubleMap spus, long[] keys) throws IOException {
         if (logPath != null) {
             final String spusStr = Arrays.stream(keys)
@@ -296,8 +238,8 @@ public class MetricsCalculator {
     }
 
     public void writeTargetSpus() throws IOException {
-        writePairwiseSpus(spuLogPath, pairwiseHistorySpu(trainData), relevantPairsArray);
-        writePairwiseSpus(spuLogPath, targetPairwiseSPU, relevantPairsArray);
+        writePairwiseSpus(spuTrainLogPath, pairwiseHistorySpu(trainData), relevantPairsArray);
+        writePairwiseSpus(spuTestLogPath, targetPairwiseSPU, relevantPairsArray);
     }
 
     public void writePairNames(Path path, Map <Integer, String> itemIdToName, Map<Integer, String> userIdToName)
@@ -316,12 +258,11 @@ public class MetricsCalculator {
     }
 
     public void writeLambdas(Path outPath, Map <Integer, String> itemIdToName, Map<Integer, String> userIdToName,
-                             Model model) throws IOException {
+                             Model.Applicable applicable) throws IOException {
         if (outPath == null) {
             return;
         }
         writePairNames(outPath, itemIdToName, userIdToName);
-        Model.Applicable applicable = model.getApplicable(trainData);
         final String lambdasStr = Arrays.stream(relevantPairsArray)
                 .mapToDouble(pair -> applicable.getLambda(Util.extractUserId(pair), Util.extractItemId(pair)))
                 .mapToObj(String::valueOf)
@@ -336,17 +277,19 @@ public class MetricsCalculator {
         private final double spusDiffByItem;
         private final double spusMean;
         private final double spusMeanDiff;
-        private final TLongDoubleMap spus;
+        private final TLongDoubleMap spusTest;
+        private final TLongDoubleMap spusTrain;
 
         public Summary(double testReturnTime, double trainReturnTime, double recommendMae, double spusDiffByItem,
-                       double spusMean, double spusMeanDiff, TLongDoubleMap spus) {
+                       double spusMean, double spusMeanDiff, TLongDoubleMap spusTest, TLongDoubleMap spusTrain) {
             this.testReturnTime = testReturnTime;
             this.trainReturnTime = trainReturnTime;
             this.recommendMae = recommendMae;
             this.spusDiffByItem = spusDiffByItem;
             this.spusMean = spusMean;
             this.spusMeanDiff = spusMeanDiff;
-            this.spus = spus;
+            this.spusTest = spusTest;
+            this.spusTrain = spusTrain;
         }
 
         @Override
@@ -356,35 +299,45 @@ public class MetricsCalculator {
                     testReturnTime, trainReturnTime, recommendMae, spusDiffByItem, spusMean, spusMeanDiff);
         }
 
-        public void writeSpus() throws IOException {
-            if (spuLogPath != null) {
-                MetricsCalculator.writePairwiseSpus(spuLogPath, spus, relevantPairsArray);
-            }
+        public void writeTestSpus() throws IOException {
+            MetricsCalculator.writePairwiseSpus(spuTestLogPath, spusTest, relevantPairsArray);
+        }
+
+        public void writeTrainSpus() throws IOException {
+            MetricsCalculator.writePairwiseSpus(spuTrainLogPath, spusTrain, relevantPairsArray);
         }
     }
 
     public Summary calculateSummary(Model model) throws ExecutionException, InterruptedException {
         final double[] returnTimeMaes = new double[2];
         final ForkJoinTask returnTimeTask = pool.submit(() -> {
-            Model.Applicable applicable = model.getApplicable();
+            final Model.Applicable applicable = model.getApplicable();
             returnTimeMaes[0] = returnTimeMae(applicable, trainData);
             returnTimeMaes[1] = returnTimeMae(applicable, testData);
         });
         final ForkJoinTask<Double> recommendMaeTask = pool.submit(
                 () -> itemRecommendationMae(model.getApplicable(trainData)));
-        final ForkJoinTask<TLongDoubleMap> spusTask = pool.submit(() -> {
-            final List<Event> prediction = predictTest(model.getApplicable(trainData));
+        final ForkJoinTask<TLongDoubleMap> spusTestTask = pool.submit(() -> {
+            final List<Event> prediction =
+                    predictSpan(model.getApplicable(trainData), lastTrainEvents, splitTime, endTime);
+            return pairwiseHistorySpu(prediction);
+        });
+        final ForkJoinTask<TLongDoubleMap> spusTrainTask = pool.submit(() -> {
+            final List<Event> prediction =
+                    predictSpan(model.getApplicable(), beginningTimes, startTime, splitTime);
             return pairwiseHistorySpu(prediction);
         });
 
         returnTimeTask.join();
         final double trainReturnTime = returnTimeMaes[0];
         final double testReturnTime = returnTimeMaes[1];
-        final TLongDoubleMap spus = spusTask.get();
-        final double spusMean = Arrays.stream(spus.values()).average().orElse(-1);
+        final TLongDoubleMap spusTest = spusTestTask.get();
+        final TLongDoubleMap spusTrain = spusTrainTask.get();
+        final double spusMean = Arrays.stream(spusTest.values()).average().orElse(-1);
         final double spusMeanDiff = Math.abs(targetPairwiseSPUMean - spusMean);
-        final double spusDiffByItem = spuDiffByPair(targetPairwiseSPU, spus);
+        final double spusDiffByItem = spuDiffByPair(targetPairwiseSPU, spusTest);
         final double recommendMae = recommendMaeTask.get();
-        return new Summary(testReturnTime, trainReturnTime, recommendMae, spusDiffByItem, spusMean, spusMeanDiff, spus);
+        return new Summary(testReturnTime, trainReturnTime, recommendMae, spusDiffByItem, spusMean, spusMeanDiff,
+                spusTest, spusTrain);
     }
 }

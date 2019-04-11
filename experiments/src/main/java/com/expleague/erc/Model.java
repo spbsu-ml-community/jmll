@@ -321,7 +321,8 @@ public class Model {
                 try {
                     final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(this);
                     System.out.println(summary);
-                    summary.writeSpus();
+                    summary.writeTestSpus();
+                    summary.writeTrainSpus();
                 } catch (ExecutionException | InterruptedException | IOException e) {
                     e.printStackTrace();
                 }

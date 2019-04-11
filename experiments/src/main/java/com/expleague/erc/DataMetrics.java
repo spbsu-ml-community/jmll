@@ -31,8 +31,10 @@ public class DataMetrics {
     private static final String OPT_ITEM_NUM_SHORT = "in";
     private static final String OPT_TOP_LONG = "top";
     private static final String OPT_TOP_SHORT = "t";
-    private static final String OPT_OUT_SHORT = "o";
-    private static final String OPT_OUT_LONG = "out";
+    private static final String OPT_OUT_DIR_SHORT = "o";
+    private static final String OPT_OUT_DIR_LONG = "out";
+    private static final String FILE_TRAIN = "train.txt";
+    private static final String FILE_TEST = "test.txt";
 
     static {
         options.addOption(Option.builder(OPT_DATA_PATH_SHORT).longOpt(OPT_DATA_PATH_LONG).desc("Path to data").hasArg().build());
@@ -41,7 +43,7 @@ public class DataMetrics {
         options.addOption(Option.builder(OPT_USER_NUM_SHORT).longOpt(OPT_USER_NUM_LONG).desc("Num of users").hasArg().build());
         options.addOption(Option.builder(OPT_ITEM_NUM_SHORT).longOpt(OPT_ITEM_NUM_LONG).desc("Num of items").hasArg().build());
         options.addOption(Option.builder(OPT_TOP_SHORT).longOpt(OPT_TOP_LONG).desc("Is filter on top items").hasArg().build());
-        options.addOption(Option.builder(OPT_OUT_SHORT).longOpt(OPT_OUT_LONG).desc("Output path").hasArg().build());
+        options.addOption(Option.builder(OPT_OUT_DIR_SHORT).longOpt(OPT_OUT_DIR_LONG).desc("Output path").hasArg().build());
     }
 
     public static void main(String[] args) throws ParseException, IOException {
@@ -54,20 +56,28 @@ public class DataMetrics {
         final int itemsNum = Integer.parseInt(cliOptions.getOptionValue(OPT_ITEM_NUM_SHORT));
         final boolean isTop = Boolean.parseBoolean(cliOptions.getOptionValue(OPT_TOP_SHORT));
         final double trainRatio = Double.parseDouble(cliOptions.getOptionValue(OPT_TRAIN_RATIO_SHORT));
-        final Path outPath = Paths.get(cliOptions.getOptionValue(OPT_OUT_SHORT));
+        final Path outDirPath = Paths.get(cliOptions.getOptionValue(OPT_OUT_DIR_SHORT));
 
         final LastFmDataReader lastFmDataReader = new LastFmDataReader();
         final List<Event> data = lastFmDataReader.readData(dataPath, dataSize);
         final DataPreprocessor preprocessor = new OneTimeDataProcessor();
 //        final DataPreprocessor preprocessor = new TSRDataProcessor();
-        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
+        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(preprocessor.filterSessions(data), trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
 
         final double splitTime = dataset.getTest().get(0).getTs();
         System.out.println(splitTime);
 
-        Files.deleteIfExists(outPath);
-        final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), outPath);
+        final Path trainPath = outDirPath.resolve(FILE_TRAIN);
+        final Path testPath = outDirPath.resolve(FILE_TEST);
+        if (Files.isDirectory(outDirPath)) {
+            Files.deleteIfExists(trainPath);
+            Files.deleteIfExists(testPath);
+        } else {
+            Files.createDirectory(outDirPath);
+        }
+        final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(),
+                trainPath, testPath);
         final TLongDoubleMap trainPairSpus = metricsCalculator.pairwiseHistorySpu(dataset.getTrain());
         final TLongDoubleMap testPairSpus = metricsCalculator.pairwiseHistorySpu(dataset.getTest());
         final long [] keys = Arrays.stream(trainPairSpus.keys())
@@ -75,9 +85,10 @@ public class DataMetrics {
                 .sorted(Comparator.comparingInt(Util::extractItemId).thenComparingInt(Util::extractUserId))
                 .mapToLong(Long::longValue)
                 .toArray();
-        writeSeq(outPath, keys, String::valueOf);
-        writeSeq(outPath, keys, key -> String.valueOf(trainPairSpus.get(key)));
-        writeSeq(outPath, keys, key -> String.valueOf(testPairSpus.get(key)));
+        writeSeq(trainPath, keys, String::valueOf);
+        writeSeq(testPath, keys, String::valueOf);
+        writeSeq(trainPath, keys, key -> String.valueOf(trainPairSpus.get(key)));
+        writeSeq(testPath, keys, key -> String.valueOf(testPairSpus.get(key)));
 
         Util.writeMap(Paths.get("items.txt"), lastFmDataReader.getReversedItemMap());
         Util.writeMap(Paths.get("users.txt"), lastFmDataReader.getReversedUserMap());
