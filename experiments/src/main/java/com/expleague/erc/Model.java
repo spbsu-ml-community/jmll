@@ -14,11 +14,16 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 
 public class Model {
+    private static final int SAVE_PERIOD = 20;
+
     private final int dim;
     private final double beta;
     private final double eps;
@@ -135,19 +140,19 @@ public class Model {
                     logLikelihood += logLikelihoodDelta;
                 }
                 lambdasByItem.accept(event);
-                lastVisitTimes.put(combineIds(userId, itemId), event.getTs());
+                lastVisitTimes.put(Util.combineIds(userId, itemId), event.getTs());
             }
         }
-//        for (long pairId : lastVisitTimes.keys()) {
-//            final int userId = (int)(pairId >> 32);
-//            final int itemId = (int)pairId;
-//            final double lambda = lambdasByItem.getLambda(userId, itemId);
-//            final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-//            final double logLikelihoodDelta = -transformedLambda * observationEnd - lastVisitTimes.get(pairId);
-//            if (Double.isFinite(logLikelihoodDelta)) {
-//                logLikelihood += logLikelihoodDelta;
-//            }
-//        }
+        for (long pairId : lastVisitTimes.keys()) {
+            final int userId = (int)(pairId >> 32);
+            final int itemId = (int)pairId;
+            final double lambda = lambdasByItem.getLambda(userId, itemId);
+            final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
+            final double logLikelihoodDelta = -transformedLambda * (observationEnd - lastVisitTimes.get(pairId));
+            if (Double.isFinite(logLikelihoodDelta)) {
+                logLikelihood += logLikelihoodDelta;
+            }
+        }
         return logLikelihood;
     }
 
@@ -194,14 +199,14 @@ public class Model {
                 updateInnerEventDerivative(lambdasByItem, event, userDerivatives, itemDerivatives);
                 lambdasByItem.accept(event);
             }
-            lastVisitTimes.put(combineIds(event.userId(), event.itemId()), event.getTs());
+            lastVisitTimes.put(Util.combineIds(event.userId(), event.itemId()), event.getTs());
         }
-//        for (long pairId: lastVisitTimes.keys()) {
-//            final int userId = extractUserId(pairId);
-//            final int itemId = extractItemId(pairId);
-//            updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
-//                    userDerivatives, itemDerivatives);
-//        }
+        for (long pairId: lastVisitTimes.keys()) {
+            final int userId = Util.extractUserId(pairId);
+            final int itemId = Util.extractItemId(pairId);
+            updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
+                    userDerivatives, itemDerivatives);
+        }
         return new Derivative(userDerivatives, itemDerivatives);
     }
 
@@ -248,9 +253,9 @@ public class Model {
 
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
                     final List<Event> evaluationEvents, final double decay, final boolean verbose,
-                    MetricsCalculator metricsCalculator) {
+                    MetricsCalculator metricsCalculator, String savePathPrev) {
         initializeEmbeddings(events);
-        optimizeGD(events, learningRate, iterationsNumber, evaluationEvents, decay, verbose, metricsCalculator);
+        optimizeGD(events, learningRate, iterationsNumber, evaluationEvents, decay, verbose, metricsCalculator, savePathPrev);
     }
 
     private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
@@ -287,7 +292,7 @@ public class Model {
 
     private void optimizeGD(final List<Event> events, final double learningRate, final int iterationsNumber,
                             final List<Event> evaluationEvents, final double decay, final boolean verbose,
-                            MetricsCalculator metricsCalculator) {
+                            MetricsCalculator metricsCalculator, String savePathPref) {
         double lr = learningRate / dataSize;
         for (int i = 0; i < iterationsNumber; ++i) {
             Derivative derivative = logLikelihoodDerivative(events);
@@ -303,6 +308,7 @@ public class Model {
             }
             lr *= decay;
             printWhileOptimization(events, evaluationEvents, i, verbose, metricsCalculator);
+            checkpoint(i + 1, savePathPref);
         }
     }
 
@@ -311,10 +317,27 @@ public class Model {
                                         final MetricsCalculator metricsCalculator) {
         if (verbose) {
             System.out.println(iteration + "-th iter, ll = " + logLikelihood(events));
-            if (evaluationEvents != null) {
-                metricsCalculator.printMetrics(this, true);
+            if (evaluationEvents != null && !evaluationEvents.isEmpty()) {
+                try {
+                    final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(this);
+                    System.out.println(summary);
+                    summary.writeTestSpus();
+                    summary.writeTrainSpus();
+                } catch (ExecutionException | InterruptedException | IOException e) {
+                    e.printStackTrace();
+                }
             }
             System.out.println();
+        }
+    }
+
+    private void checkpoint(int iterationsPassed, String savePathPref) {
+        if (savePathPref != null && iterationsPassed % SAVE_PERIOD == 0) {
+            try {
+                write(Files.newOutputStream(Paths.get(savePathPref + "_" + iterationsPassed)));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -363,18 +386,6 @@ public class Model {
 
     public Applicable getApplicable() {
         return new Applicable();
-    }
-
-    private static long combineIds(final int userId, final int itemId) {
-        return (long) userId << 32 | itemId;
-    }
-
-    private static int extractUserId(final long idPair) {
-        return (int)(idPair >> 32);
-    }
-
-    private static int extractItemId(final long idPair) {
-        return (int)idPair;
     }
 
     private static Map<Integer, double[]> embeddingsToSerializable(final TIntObjectMap<Vec> embeddings) {

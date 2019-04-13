@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class LastFmDataReader {
@@ -39,7 +40,7 @@ public class LastFmDataReader {
     private Event makeEvent(final String line) {
         String[] words = line.split("\t");
         try {
-            return new Event(toUserId(words[1]), toItemId(words[4]), toTimestamp(words[2]));
+            return new Event(toUserId(words[0]), toItemId(words[3]), toTimestamp(words[1]));
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -71,5 +72,17 @@ public class LastFmDataReader {
 
     public Map<String, Integer> getItemMap() {
         return itemMap;
+    }
+
+    private Map<Integer, String> reverseMap(Map<String, Integer> map) {
+        return map.keySet().stream().collect(Collectors.toMap(map::get, Function.identity()));
+    }
+
+    public Map<Integer, String> getReversedUserMap() {
+        return reverseMap(userMap);
+    }
+
+    public Map<Integer, String> getReversedItemMap() {
+        return reverseMap(itemMap);
     }
 }

@@ -86,7 +86,7 @@ public abstract class QualityMetric {
     return true;
   }
 
-  protected List<CharSeq> getClosestWordsExcept(Vec vector, int top, List<CharSeq> exceptWords) {
+  public List<CharSeq> getClosestWordsExcept(Vec vector, int top, List<CharSeq> exceptWords) {
     int[] order = ArrayTools.sequence(0, embedding.vocabSize());
     TIntSet exceptIds = new TIntHashSet();
     exceptWords.forEach(word -> exceptIds.add(embedding.getIndex(word)));
@@ -98,5 +98,19 @@ public abstract class QualityMetric {
     ArrayTools.parallelSort(weights, order);
     return IntStream.range(0, top).mapToObj(idx ->
         embedding.getObj(order[idx])).collect(Collectors.toList());
+  }
+
+  public int getIndex(CharSeq word) {
+    return embedding.getIndex(word);
+  }
+
+  public List<CharSeq> getClosestWords(CharSeq word, int top) {
+    if (embedding.inVocab(word)) {
+      final Vec vector = embedding.apply(word);
+      return getClosestWordsExcept(vector, top, new ArrayList<>());
+    } else {
+      return null;
+    }
+
   }
 }
