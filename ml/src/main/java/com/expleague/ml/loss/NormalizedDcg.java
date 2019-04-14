@@ -3,76 +3,67 @@ package com.expleague.ml.loss;
 
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.meta.GroupedDSItem;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
 public class NormalizedDcg extends Func.Stub implements TargetFunc {
     private static final double LOG_2 = Math.log(2.);
     private final DataSet<? extends GroupedDSItem> owner;
-
-    private final RankedLabel[] rankedLabels;
+    private final Vec target;
     private final Group[] groups;
 
     public NormalizedDcg(Vec target, DataSet<? extends GroupedDSItem> owner) {
         this.owner = owner;
+        this.target = target;
 
-        rankedLabels = new RankedLabel[target.dim()];
-        for (int i = 0; i < rankedLabels.length; ++i) {
-            rankedLabels[i] = new RankedLabel(target.get(i));
-        }
-
-        Map<String, TIntSet> groupsMap = new HashMap<>();
+        Map<String, TIntList> groupsMap = new HashMap<>();
         int idx = 0;
         for (GroupedDSItem item : owner) {
             String groupId = item.groupId();
             if (!groupId.contains(groupId)) {
-                groupsMap.put(groupId, new TIntHashSet());
+                groupsMap.put(groupId, new TIntArrayList());
             }
             groupsMap.get(groupId).add(idx++);
         }
 
         groups = new Group[groupsMap.size()];
         idx = 0;
-        for (TIntSet groupIds : groupsMap.values()) {
+        for (TIntList groupIds : groupsMap.values()) {
             int[] groupIdsArray = groupIds.toArray();
-            double groupDcg = groupDcg(rankedLabels, groupIdsArray);
+            double groupDcg = groupDcg(target, target, groupIdsArray);
             groups[idx++] = new Group(groupDcg, groupIdsArray);
         }
     }
 
-    private static double dcg(final RankedLabel[] rankedLabels) {
+    private static double dcg(final int[] labelsOrder, final Vec targetLavels) {
         double dcg = 0;
-        for (int i = 0; i < rankedLabels.length; ++i) {
-            dcg += (Math.pow(2., rankedLabels[i].label()) - 1) / Math.log(i + 1);
+        for (int i = 0; i < labelsOrder.length; ++i) {
+            double targetLabel = targetLavels.get(labelsOrder[i]);
+            dcg += (Math.pow(2., targetLabel) - 1) / Math.log(i + 1);
         }
         return dcg;
     }
 
-    private static double groupDcg(final RankedLabel[] rankedLabels, int[] group) {
-        RankedLabel[] groupRankedLabels = new RankedLabel[group.length];
+    private static double groupDcg(final Vec ranks, final Vec targetLabels, final int[] group) {
+        final double[] invertedGroupRanks = new double[group.length];
         for (int i = 0; i < group.length; ++i) {
-            groupRankedLabels[i] = rankedLabels[group[i]];
+            invertedGroupRanks[i] = -ranks.get(group[i]);
         }
-        Arrays.sort(groupRankedLabels, Comparator.<RankedLabel>comparingDouble(RankedLabel::rank).reversed());
-        return dcg(groupRankedLabels);
+
+        final int[] order = ArrayTools.sequence(0, group.length);
+        ArrayTools.parallelSort(invertedGroupRanks, order);
+        return dcg(order, targetLabels);
     }
 
-    private static double groupNormalizedDcg(final RankedLabel[] rankedLabels, Group group) {
-        int[] groupIds = group.groupIdx;
-        RankedLabel[] groupRankedLabels = new RankedLabel[groupIds.length];
-        for (int i = 0; i < groupIds.length; ++i) {
-            groupRankedLabels[i] = rankedLabels[groupIds[i]];
-        }
-        Arrays.sort(groupRankedLabels, Comparator.<RankedLabel>comparingDouble(RankedLabel::rank).reversed());
-        return dcg(groupRankedLabels) / group.groupDcg;
+    private static double groupNormalizedDcg(Vec ranks, Vec targetLabels, Group group) {
+        return groupDcg(ranks, targetLabels, group.groupIdx) / group.groupDcg;
     }
 
     @Override
@@ -90,15 +81,9 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
      */
     @Override
     public double value(Vec ranks) {
-        int dim = dim();
-        for (int i = 0; i < dim; ++i) {
-            RankedLabel rankedLabel = rankedLabels[i];
-            rankedLabel.rank(ranks.get(i));
-        }
-
         double summaryNdcg = 0;
         for (Group group : groups) {
-            summaryNdcg += groupNormalizedDcg(rankedLabels, group);
+            summaryNdcg += groupNormalizedDcg(ranks, target, group);
         }
 
         return summaryNdcg / groups.length;
@@ -106,7 +91,7 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
 
     @Override
     public int dim() {
-        return rankedLabels.length;
+        return target.dim();
     }
 
     private static class Group {
@@ -116,32 +101,6 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
         Group(double groupDcg, int[] groupIdx) {
             this.groupDcg = groupDcg;
             this.groupIdx = groupIdx;
-        }
-    }
-
-    private static class RankedLabel {
-        private final double label;
-        private double rank;
-
-        RankedLabel(double label) {
-            this(label, label);
-        }
-
-        RankedLabel(double rank, double label) {
-            this.rank = rank;
-            this.label = label;
-        }
-
-        double rank() {
-            return rank;
-        }
-
-        double label() {
-            return label;
-        }
-
-        void rank(double rank) {
-            this.rank = rank;
         }
     }
 }
