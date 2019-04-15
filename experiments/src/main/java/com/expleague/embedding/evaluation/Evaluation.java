@@ -18,7 +18,7 @@ public class Evaluation {
   public static void main(String[] args) throws IOException {
     //String file = "/Users/solar/tree/proj6_spbau/data/corpuses/text8.ss_decomp";
     String file = args[0];
-    String mode = "-n";
+    String mode = "-a";
     String metricsNames = "/home/katyakos/diploma/proj6_spbau/data/tests/text8/all_metrics_files.txt";
     String target = "/home/katyakos/diploma/proj6_spbau/data/tests/text8";
     if (!Files.exists(Paths.get(target)))

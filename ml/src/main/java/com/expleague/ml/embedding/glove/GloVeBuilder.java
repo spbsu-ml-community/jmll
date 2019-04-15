@@ -12,9 +12,11 @@ import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.impl.CoocBasedBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import com.expleague.ml.embedding.impl.ScoreCalculator;
+import gnu.trove.list.array.TDoubleArrayList;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 public class GloVeBuilder extends CoocBasedBuilder {
@@ -57,14 +59,18 @@ public class GloVeBuilder extends CoocBasedBuilder {
       }
     }
 
+    TDoubleArrayList wordsProbabsLeft = new TDoubleArrayList(vocab_size);
+    TDoubleArrayList wordsProbabsRight = new TDoubleArrayList(vocab_size);
+    final double X_sum = countWordsProbabs(wordsProbabsLeft, wordsProbabsRight);
+
     final Mx softMaxLeft = new VecBasedMx(leftVectors.rows(), leftVectors.columns());
     final Mx softMaxRight = new VecBasedMx(rightVectors.rows(), rightVectors.columns());
-    final Vec softBiasLeft = new ArrayVec(biasLeft.dim());
-    final Vec softBiasRight = new ArrayVec(biasRight.dim());
+    //final Vec softBiasLeft = new ArrayVec(biasLeft.dim());
+    //final Vec softBiasRight = new ArrayVec(biasRight.dim());
     VecTools.fill(softMaxLeft, 1.);
     VecTools.fill(softMaxRight, 1.);
-    VecTools.fill(softBiasLeft, 1.);
-    VecTools.fill(softBiasRight, 1.);
+    //VecTools.fill(softBiasLeft, 1.);
+    //VecTools.fill(softBiasRight, 1.);
 
     for (int iter = 0; iter < T(); iter++) {
       Interval.start();
@@ -76,7 +82,9 @@ public class GloVeBuilder extends CoocBasedBuilder {
           final Vec right = rightVectors.row(j);
           final Vec softMaxR = softMaxRight.row(j);
           final double asum = VecTools.multiply(left, right);
-          final double diff = biasLeft.get(i) + biasRight.get(j) + asum - Math.log(X_ij);
+          final double logMutualInfo = Math.log(X_ij) - Math.log(wordsProbabsLeft.get(i)) - Math.log(wordsProbabsRight.get(j)) + Math.log(X_sum);
+          //final double diff = biasLeft.get(i) + biasRight.get(j) + asum - Math.log(X_ij);
+          final double diff = asum - logMutualInfo;
           final double weight = weightingFunc(X_ij);
           final double fdiff = step() * diff * weight;
           scoreCalculator.adjust(i, j, weight, 0.5 * weight * MathTools.sqr(diff));
@@ -89,10 +97,10 @@ public class GloVeBuilder extends CoocBasedBuilder {
             softMaxR.adjust(id, dR * dR);
           });
 
-          biasLeft.adjust(i, -fdiff / Math.sqrt(softBiasLeft.get(i)));
-          biasRight.adjust(j, -fdiff / Math.sqrt(softBiasRight.get(j)));
-          softBiasLeft.adjust(i, MathTools.sqr(fdiff));
-          softBiasRight.adjust(j, MathTools.sqr(fdiff));
+          //biasLeft.adjust(i, -fdiff / Math.sqrt(softBiasLeft.get(i)));
+          //biasRight.adjust(j, -fdiff / Math.sqrt(softBiasRight.get(j)));
+          //softBiasLeft.adjust(i, MathTools.sqr(fdiff));
+          //softBiasRight.adjust(j, MathTools.sqr(fdiff));
         });
       });
 
