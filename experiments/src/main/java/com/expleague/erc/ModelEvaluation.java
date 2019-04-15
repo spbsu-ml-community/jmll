@@ -19,13 +19,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.DoubleUnaryOperator;
 
 public class ModelEvaluation {
-    private static final String FILE_SPU_TEST = "spu_test.txt";
-    private static final String FILE_SPU_TRAIN = "spu_train.txt";
     private static final String FILE_MODEL = "model";
     private static final String FILE_USER_MAP = "users_by_id.txt";
     private static final String FILE_ITEM_MAP = "items_by_id.txt";
-    private static final String FILE_LAMBDAS_INIT = "init_lambdas";
-    private static final String FILE_LAMBDAS_TRAINED = "trained_lambdas";
     private static final String FILE_PREDICTION = "prediction.txt";
     private static Options options = new Options();
 
@@ -86,10 +82,8 @@ public class ModelEvaluation {
         Path modelDirPath = Paths.get(modelName);
         boolean existingModel = Files.isDirectory(modelDirPath);
 
-        final Path spuTestLogPath = modelDirPath.resolve(FILE_SPU_TEST);
-        final Path spuTrainLogPath = modelDirPath.resolve(FILE_SPU_TRAIN);
         final MetricsCalculator metricsCalculator =
-                new MetricsCalculator(dataset.getTrain(), dataset.getTest(), spuTestLogPath, spuTrainLogPath);
+                new MetricsCalculator(dataset.getTrain(), dataset.getTest(), modelDirPath);
         final Model model;
 
         final Path modelPath = modelDirPath.resolve(FILE_MODEL);
@@ -105,8 +99,8 @@ public class ModelEvaluation {
             model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
 
-            metricsCalculator.writePairNames(spuTrainLogPath, itemIdToName, userIdToName);
-            metricsCalculator.writePairNames(spuTestLogPath, itemIdToName, userIdToName);
+            metricsCalculator.writeSpuPairNames(itemIdToName, userIdToName);
+            metricsCalculator.writeLambdaPairNames(itemIdToName, userIdToName);
             metricsCalculator.writeTargetSpus();
         }
 
@@ -118,8 +112,7 @@ public class ModelEvaluation {
             final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(model);
             System.out.println(summary);
             if (!existingModel) {
-                summary.writeTrainSpus();
-                summary.writeTestSpus();
+                summary.writeSpus();
             }
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -129,10 +122,6 @@ public class ModelEvaluation {
                 modelPath.toString());
 
         model.write(Files.newOutputStream(modelPath));
-        metricsCalculator.writeLambdas(modelDirPath.resolve(FILE_LAMBDAS_INIT), itemIdToName, userIdToName,
-                model.getApplicable());
-        metricsCalculator.writeLambdas(modelDirPath.resolve(FILE_LAMBDAS_TRAINED), itemIdToName, userIdToName,
-                model.getApplicable(dataset.getTrain()));
 
         double startTime = dataset.getTrain().get(0).getTs();
         double endTime = dataset.getTest().get(dataset.getTest().size() - 1).getTs();
@@ -143,7 +132,7 @@ public class ModelEvaluation {
                 firstEvents.put(pair, event.getTs());
             }
         }
-        metricsCalculator.writeHistory(modelDirPath.resolve(FILE_PREDICTION), metricsCalculator.predictSpan(
-                model.getApplicable(), firstEvents, startTime, endTime));
+        List<Event> predictedHistory = metricsCalculator.predictSpan(model.getApplicable(), firstEvents, startTime, endTime);
+        metricsCalculator.writeHistory(modelDirPath.resolve(FILE_PREDICTION), predictedHistory);
     }
 }

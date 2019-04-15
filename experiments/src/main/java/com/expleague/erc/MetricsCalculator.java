@@ -21,6 +21,10 @@ import java.util.stream.Collectors;
 public class MetricsCalculator {
     private static final double DAY = 24;
     private static final double EPS = .1;
+    private static final String FILE_SPU_TRAIN = "spu_train.txt";
+    private static final String FILE_SPU_TEST = "spu_test.txt";
+    private static final String FILE_LAMBDAS_INITIAL = "init_lambdas.txt";
+    private static final String FILE_LAMBDAS_TRAINED = "trained_lambdas.txt";
 
     private final List<Event> trainData;
     private final List<Event> testData;
@@ -37,10 +41,12 @@ public class MetricsCalculator {
     private final TLongDoubleMap lastTrainEvents;
     private final TLongDoubleMap beginningTimes;
     private final ForkJoinPool pool;
-    private final Path spuTestLogPath;
-    private final Path spuTrainLogPath;
+    private final Path spuTestPath;
+    private final Path spuTrainPath;
+    private final Path lambdaInitialPath;
+    private final Path lambdaTrainedPath;
 
-    public MetricsCalculator(List<Event> trainData, List<Event> testData, Path spuTestLogPath, Path spuTrainLogPath) {
+    public MetricsCalculator(List<Event> trainData, List<Event> testData, Path saveDir) {
         this.trainData = trainData;
         this.testData = testData;
         startTime = trainData.get(0).getTs();
@@ -53,8 +59,10 @@ public class MetricsCalculator {
         itemsUsersArrays = toArrays(itemsUsers);
         targetPairwiseSPU = pairwiseHistorySpu(testData);
         targetPairwiseSPUMean = Arrays.stream(targetPairwiseSPU.values()).average().orElse(-1);
-        this.spuTestLogPath = spuTestLogPath;
-        this.spuTrainLogPath = spuTrainLogPath;
+        spuTrainPath = saveDir.resolve(FILE_SPU_TRAIN);
+        spuTestPath = saveDir.resolve(FILE_SPU_TEST);
+        lambdaTrainedPath = saveDir.resolve(FILE_LAMBDAS_TRAINED);
+        lambdaInitialPath = saveDir.resolve(FILE_LAMBDAS_INITIAL);
 
         lastTrainEvents = new TLongDoubleHashMap();
         beginningTimes = new TLongDoubleHashMap();
@@ -123,6 +131,18 @@ public class MetricsCalculator {
         return errors / count;
     }
 
+//    public double returnTimeLogMae(Model.Applicable model, List<Event> data) {
+//        double errors = 0.;
+//        long count = 0;
+//        for (final Event event : data) {
+//            count++;
+//            final double expectedReturnTime = model.timeDeltaLog(event.userId(), event.itemId());
+//            errors += Math.abs(Math.log(event.getPrDelta()) - expectedReturnTime);
+//            model.accept(event);
+//        }
+//        return errors / count;
+//    }
+
     public double itemRecommendationMae(Model.Applicable model) {
         long errorsSum = 0;
         long count = 0;
@@ -148,6 +168,14 @@ public class MetricsCalculator {
         return testData.parallelStream()
                 .collect(Collectors.averagingDouble(event -> Math.abs(event.getPrDelta() - meanItemDelta)));
     }
+
+//    public double constantPredictionLogTimeMae() {
+//        final double meanItemDeltaLog = trainData.parallelStream()
+//                .filter(event -> !event.isFinish() && event.getPrDelta() >= 0)
+//                .collect(Collectors.averagingDouble(event -> Math.log(event.getPrDelta())));
+//        return testData.parallelStream()
+//                .collect(Collectors.averagingDouble(event -> Math.abs(Math.log(event.getPrDelta()) - meanItemDeltaLog)));
+//    }
 
     public TLongDoubleMap pairwiseHistorySpu(List<Event> history) {
         final double startTime = history.get(0).getTs();
@@ -180,6 +208,8 @@ public class MetricsCalculator {
         return pairSpus;
     }
 
+    private static final int MAX_PREDICTION_LEN = 10000;
+
     public List<Event> predictSpan(Model.Applicable model, TLongDoubleMap previousActivityTimes,
                                    double spanStartTime, double spanEndTime) {
         final List<Event> generatedEvents = new ArrayList<>();
@@ -189,12 +219,13 @@ public class MetricsCalculator {
                 final double newEventTime = previousActivityTimes.get(Util.combineIds(userId, itemId)) +
                         model.timeDelta(userId, itemId);
                 if (newEventTime <= spanEndTime) {
-                    final Event newEvent = new Event(userId, itemId, newEventTime);
-                    followingEvents.add(newEvent);
+                    followingEvents.add(new Event(userId, itemId, newEventTime));
                 }
             }
         }
-        while (!followingEvents.isEmpty()) {
+//        int predictionLen = 0;
+        while (!followingEvents.isEmpty() && generatedEvents.size() < MAX_PREDICTION_LEN) {
+//            ++predictionLen;
             final Event curEvent = followingEvents.poll();
             if (curEvent.getTs() >= spanStartTime) {
                 generatedEvents.add(curEvent);
@@ -202,11 +233,14 @@ public class MetricsCalculator {
             model.accept(curEvent);
 
             final double newEventTime = curEvent.getTs() + model.timeDelta(curEvent.userId(), curEvent.itemId());
+//            System.out.println(model.timeDelta(curEvent.userId(), curEvent.itemId()));
             if (curEvent.getTs() <= newEventTime && newEventTime <= spanEndTime) {
-                final Event nextEvent = new Event(curEvent.userId(), curEvent.itemId(), newEventTime);
-                followingEvents.add(nextEvent);
+                followingEvents.add(new Event(curEvent.userId(), curEvent.itemId(), newEventTime));
+            } else {
+                System.out.println(curEvent.getTs() + " " + spanEndTime + " " + newEventTime);
             }
         }
+//        System.out.println(generatedEvents.size());
         return generatedEvents;
     }
 
@@ -238,8 +272,8 @@ public class MetricsCalculator {
     }
 
     public void writeTargetSpus() throws IOException {
-        writePairwiseSpus(spuTrainLogPath, pairwiseHistorySpu(trainData), relevantPairsArray);
-        writePairwiseSpus(spuTestLogPath, targetPairwiseSPU, relevantPairsArray);
+        writePairwiseSpus(spuTrainPath, pairwiseHistorySpu(trainData), relevantPairsArray);
+        writePairwiseSpus(spuTestPath, targetPairwiseSPU, relevantPairsArray);
     }
 
     public void writePairNames(Path path, Map <Integer, String> itemIdToName, Map<Integer, String> userIdToName)
@@ -257,18 +291,45 @@ public class MetricsCalculator {
         }
     }
 
-    public void writeLambdas(Path outPath, Map <Integer, String> itemIdToName, Map<Integer, String> userIdToName,
-                             Model.Applicable applicable) throws IOException {
-        if (outPath == null) {
-            return;
-        }
-        writePairNames(outPath, itemIdToName, userIdToName);
-        final String lambdasStr = Arrays.stream(relevantPairsArray)
+    public void writeSpuPairNames(Map <Integer, String> itemIdToName, Map<Integer, String> userIdToName)
+            throws IOException {
+        writePairNames(spuTrainPath, itemIdToName, userIdToName);
+        writePairNames(spuTestPath, itemIdToName, userIdToName);
+    }
+
+    public void writeLambdaPairNames(Map <Integer, String> itemIdToName, Map<Integer, String> userIdToName)
+            throws IOException {
+        writePairNames(lambdaInitialPath, itemIdToName, userIdToName);
+        writePairNames(lambdaTrainedPath, itemIdToName, userIdToName);
+    }
+
+    private byte[] lambdasBytes(Model.Applicable applicable) {
+        return Arrays.stream(relevantPairsArray)
                 .mapToDouble(pair -> applicable.getLambda(Util.extractUserId(pair), Util.extractItemId(pair)))
                 .mapToObj(String::valueOf)
-                .collect(Collectors.joining("\t", "", "\n"));
-        Files.write(outPath, lambdasStr.getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+                .collect(Collectors.joining("\t", "", "\n"))
+                .getBytes();
     }
+
+    public void writeLambdas(Model model) throws IOException {
+        final Model.Applicable applicable = model.getApplicable();
+        Files.write(lambdaInitialPath, lambdasBytes(applicable), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        applicable.fit(trainData);
+        Files.write(lambdaTrainedPath, lambdasBytes(applicable), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+    }
+
+//    public void writeLambdas(Path outPath, Map <Integer, String> itemIdToName, Map<Integer, String> userIdToName,
+//                             Model.Applicable applicable) throws IOException {
+//        if (outPath == null) {
+//            return;
+//        }
+//        writePairNames(outPath, itemIdToName, userIdToName);
+//        final String lambdasStr = Arrays.stream(relevantPairsArray)
+//                .mapToDouble(pair -> applicable.getLambda(Util.extractUserId(pair), Util.extractItemId(pair)))
+//                .mapToObj(String::valueOf)
+//                .collect(Collectors.joining("\t", "", "\n"));
+//        Files.write(outPath, lambdasStr.getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+//    }
 
     public class Summary {
         private final double testReturnTime;
@@ -299,12 +360,9 @@ public class MetricsCalculator {
                     testReturnTime, trainReturnTime, recommendMae, spusDiffByItem, spusMean, spusMeanDiff);
         }
 
-        public void writeTestSpus() throws IOException {
-            MetricsCalculator.writePairwiseSpus(spuTestLogPath, spusTest, relevantPairsArray);
-        }
-
-        public void writeTrainSpus() throws IOException {
-            MetricsCalculator.writePairwiseSpus(spuTrainLogPath, spusTrain, relevantPairsArray);
+        public void writeSpus() throws IOException {
+            MetricsCalculator.writePairwiseSpus(spuTestPath, spusTest, relevantPairsArray);
+            MetricsCalculator.writePairwiseSpus(spuTrainPath, spusTrain, relevantPairsArray);
         }
     }
 
