@@ -1,5 +1,6 @@
 package com.expleague.erc;
 
+import com.expleague.erc.Metrics.MetricsWriter;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
@@ -82,8 +83,8 @@ public class ModelEvaluation {
         Path modelDirPath = Paths.get(modelName);
         boolean existingModel = Files.isDirectory(modelDirPath);
 
-        final MetricsCalculator metricsCalculator =
-                new MetricsCalculator(dataset.getTrain(), dataset.getTest(), modelDirPath);
+//        final MetricsCalculator metricsCalculator =
+//                new MetricsCalculator(dataset.getTrain(), dataset.getTest(), modelDirPath);
         final Model model;
 
         final Path modelPath = modelDirPath.resolve(FILE_MODEL);
@@ -99,40 +100,40 @@ public class ModelEvaluation {
             model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
 
-            metricsCalculator.writeSpuPairNames(itemIdToName, userIdToName);
-            metricsCalculator.writeLambdaPairNames(itemIdToName, userIdToName);
-            metricsCalculator.writeTargetSpus();
+//            metricsCalculator.writeSpuPairNames(itemIdToName, userIdToName);
+//            metricsCalculator.writeLambdaPairNames(itemIdToName, userIdToName);
+//            metricsCalculator.writeTargetSpus();
         }
 
         model.initializeEmbeddings(dataset.getTrain());
-        System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
-        System.out.println("Target mean SPU: " + metricsCalculator.getMeanSpuTarget());
+//        System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
+//        System.out.println("Target mean SPU: " + metricsCalculator.getMeanSpuTarget());
 
-        try {
-            final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(model);
-            System.out.println(summary);
-            if (!existingModel) {
-                summary.writeSpus();
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(model);
+//            System.out.println(summary);
+//            if (!existingModel) {
+//                summary.writeSpus();
+//            }
+//        } catch (InterruptedException | ExecutionException e) {
+//            e.printStackTrace();
+//        }
 
-        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), decay, true, metricsCalculator,
-                modelPath.toString());
+        final MetricsWriter metricsWriter = new MetricsWriter(dataset.getTrain(), dataset.getTest(), eps);
+        model.fit(dataset.getTrain(), lr, iterations, decay, metricsWriter);
 
         model.write(Files.newOutputStream(modelPath));
 
-        double startTime = dataset.getTrain().get(0).getTs();
-        double endTime = dataset.getTest().get(dataset.getTest().size() - 1).getTs();
-        final TLongDoubleMap firstEvents = new TLongDoubleHashMap();
-        for (Event event: dataset.getTrain()) {
-            final long pair = event.getPair();
-            if (!firstEvents.containsKey(pair)) {
-                firstEvents.put(pair, event.getTs());
-            }
-        }
-        List<Event> predictedHistory = metricsCalculator.predictSpan(model.getApplicable(), firstEvents, startTime, endTime);
-        metricsCalculator.writeHistory(modelDirPath.resolve(FILE_PREDICTION), predictedHistory);
+//        double startTime = dataset.getTrain().get(0).getTs();
+//        double endTime = dataset.getTest().get(dataset.getTest().size() - 1).getTs();
+//        final TLongDoubleMap firstEvents = new TLongDoubleHashMap();
+//        for (Event event: dataset.getTrain()) {
+//            final long pair = event.getPair();
+//            if (!firstEvents.containsKey(pair)) {
+//                firstEvents.put(pair, event.getTs());
+//            }
+//        }
+//        List<Event> predictedHistory = metricsCalculator.predictSpan(model.getApplicable(), firstEvents, startTime, endTime);
+//        metricsCalculator.writeHistory(modelDirPath.resolve(FILE_PREDICTION), predictedHistory);
     }
 }

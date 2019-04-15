@@ -14,10 +14,7 @@ import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 
@@ -258,15 +255,13 @@ public class Model {
     }
 
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
-                    final List<Event> evaluationEvents, final double decay, final boolean verbose,
-                    MetricsCalculator metricsCalculator, String savePathPrev) {
+                    final double decay, final FitListener listener) {
         initializeEmbeddings(events);
-        optimizeGD(events, learningRate, iterationsNumber, evaluationEvents, decay, verbose, metricsCalculator, savePathPrev);
+        optimizeGD(events, learningRate, iterationsNumber, decay, listener);
     }
 
     private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
-                             final List<Event> evaluationEvents, final double decay, final boolean verbose,
-                             MetricsCalculator metricsCalculator) {
+                             final double decay, final FitListener listener) {
         double lr = learningRate / dataSize;
         Map<Integer, List<Event>> eventsByUser = new HashMap<>(userIds.size());
         for (final int userId : userIdsArray) {
@@ -292,13 +287,14 @@ public class Model {
                 }
             }
             lr *= decay;
-            printWhileOptimization(events, evaluationEvents, i, verbose, metricsCalculator);
+            if (listener != null) {
+                listener.apply(this);
+            }
         }
     }
 
     private void optimizeGD(final List<Event> events, final double learningRate, final int iterationsNumber,
-                            final List<Event> evaluationEvents, final double decay, final boolean verbose,
-                            MetricsCalculator metricsCalculator, String savePathPref) {
+                            final double decay, final FitListener listener) {
         double lr = learningRate / dataSize;
         for (int i = 0; i < iterationsNumber; ++i) {
             Derivative derivative = logLikelihoodDerivative(events);
@@ -313,39 +309,40 @@ public class Model {
                 VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
             }
             lr *= decay;
-            printWhileOptimization(events, evaluationEvents, i, verbose, metricsCalculator);
-            checkpoint(i + 1, savePathPref);
-        }
-    }
-
-    private void printWhileOptimization(final List<Event> events, final List<Event> evaluationEvents,
-                                        final int iteration, final boolean verbose,
-                                        final MetricsCalculator metricsCalculator) {
-        if (verbose) {
-            System.out.println(iteration + "-th iter, ll = " + logLikelihood(events));
-            if (evaluationEvents != null && !evaluationEvents.isEmpty()) {
-                try {
-                    metricsCalculator.writeLambdas(this);
-                    final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(this);
-                    System.out.println(summary);
-                    summary.writeSpus();
-                } catch (ExecutionException | InterruptedException | IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println();
-        }
-    }
-
-    private void checkpoint(int iterationsPassed, String savePathPref) {
-        if (savePathPref != null && iterationsPassed % SAVE_PERIOD == 0) {
-            try {
-                write(Files.newOutputStream(Paths.get(savePathPref + "_" + iterationsPassed)));
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (listener != null) {
+                listener.apply(this);
             }
         }
     }
+
+//    private void printWhileOptimization(final List<Event> events, final List<Event> evaluationEvents,
+//                                        final int iteration, final boolean verbose,
+//                                        final MetricsCalculator metricsCalculator) {
+//        if (verbose) {
+//            System.out.println(iteration + "-th iter, ll = " + logLikelihood(events));
+//            if (evaluationEvents != null && !evaluationEvents.isEmpty()) {
+//                try {
+//                    metricsCalculator.writeLambdas(this);
+//                    final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(this);
+//                    System.out.println(summary);
+//                    summary.writeSpus();
+//                } catch (ExecutionException | InterruptedException | IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            System.out.println();
+//        }
+//    }
+//
+//    private void checkpoint(int iterationsPassed, String savePathPref) {
+//        if (savePathPref != null && iterationsPassed % SAVE_PERIOD == 0) {
+//            try {
+//                write(Files.newOutputStream(Paths.get(savePathPref + "_" + iterationsPassed)));
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 
     public class Applicable {
         private final LambdaStrategy lambdaStrategy;
@@ -439,5 +436,9 @@ public class Model {
                 embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         return new Model(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory, userEmbeddings, itemEmbeddings);
+    }
+
+    public interface FitListener {
+        void apply(Model model);
     }
 }
