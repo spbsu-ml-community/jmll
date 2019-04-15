@@ -101,6 +101,7 @@ public class Model {
         double itemDeltaMean = events.stream()
                 .filter(event -> event.getPrDelta() >= 0)
                 .collect(Collectors.averagingDouble(Event::getPrDelta));
+//                .collect(Collectors.averagingDouble(event -> Math.log(event.getPrDelta())));
         double embMean = Math.sqrt(1 / itemDeltaMean) / dim;
         System.out.println("Embedding mean = " + embMean);
         if (userEmbeddings == null) {
@@ -134,13 +135,16 @@ public class Model {
             if (!event.isFinish()) {
                 final double lambda = lambdasByItem.getLambda(userId, itemId);
                 final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-                final double logLikelihoodDelta = Math.log(-Math.exp(-transformedLambda * (event.getPrDelta() + eps)) +
-                        Math.exp(-transformedLambda * Math.max(0, event.getPrDelta() - eps)));
+                double prDelta = event.getPrDelta();
+//                prDelta = Math.log(prDelta);
+                final double logLikelihoodDelta =
+                        Math.log(-Math.exp(-transformedLambda * (prDelta + eps)) +
+                        Math.exp(-transformedLambda * Math.max(0, prDelta - eps)));
                 if (Double.isFinite(logLikelihoodDelta)) {
                     logLikelihood += logLikelihoodDelta;
                 }
                 lambdasByItem.accept(event);
-                lastVisitTimes.put(combineIds(userId, itemId), event.getTs());
+                lastVisitTimes.put(Util.combineIds(userId, itemId), event.getTs());
             }
         }
         for (long pairId : lastVisitTimes.keys()) {
@@ -148,7 +152,8 @@ public class Model {
             final int itemId = (int)pairId;
             final double lambda = lambdasByItem.getLambda(userId, itemId);
             final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-            final double logLikelihoodDelta = -transformedLambda * (observationEnd - lastVisitTimes.get(pairId));
+            final double logLikelihoodDelta = -transformedLambda * observationEnd - lastVisitTimes.get(pairId);
+//            final double logLikelihoodDelta = -transformedLambda * Math.log(observationEnd - lastVisitTimes.get(pairId));
             if (Double.isFinite(logLikelihoodDelta)) {
                 logLikelihood += logLikelihoodDelta;
             }
@@ -199,11 +204,11 @@ public class Model {
                 updateInnerEventDerivative(lambdasByItem, event, userDerivatives, itemDerivatives);
                 lambdasByItem.accept(event);
             }
-            lastVisitTimes.put(combineIds(event.userId(), event.itemId()), event.getTs());
+            lastVisitTimes.put(Util.combineIds(event.userId(), event.itemId()), event.getTs());
         }
         for (long pairId: lastVisitTimes.keys()) {
-            final int userId = extractUserId(pairId);
-            final int itemId = extractItemId(pairId);
+            final int userId = Util.extractUserId(pairId);
+            final int itemId = Util.extractItemId(pairId);
             updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
                     userDerivatives, itemDerivatives);
         }
@@ -218,7 +223,8 @@ public class Model {
         final TIntObjectMap<Vec> lambdaDerivativeItems =
                 lambdasByItem.getLambdaItemDerivative(event.userId(), event.itemId());
         final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-        final double tau = event.getPrDelta();
+        double tau = event.getPrDelta();
+//        tau = Math.log(tau);
         final double exp_plus = Math.exp(-transformedLambda * (tau + eps));
         final double exp_minus = Math.exp(-transformedLambda * Math.max(0, tau - eps));
         final double commonPart = lambdaDerivativeTransform.applyAsDouble(lambda) *
@@ -319,6 +325,7 @@ public class Model {
             System.out.println(iteration + "-th iter, ll = " + logLikelihood(events));
             if (evaluationEvents != null && !evaluationEvents.isEmpty()) {
                 try {
+                    metricsCalculator.writeLambdas(this);
                     final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(this);
                     System.out.println(summary);
                     summary.writeSpus();
@@ -355,7 +362,12 @@ public class Model {
             return lambdaTransform.applyAsDouble(lambdaStrategy.getLambda(userId, itemId));
         }
 
+//        public double timeDeltaLog(final int userId, final int itemId) {
+//            return 1 / getLambda(userId, itemId);
+//        }
+
         public double timeDelta(final int userId, final int itemId) {
+//            return Math.exp(1 / getLambda(userId, itemId));
             return 1 / getLambda(userId, itemId);
         }
 
@@ -385,18 +397,6 @@ public class Model {
 
     public Applicable getApplicable() {
         return new Applicable();
-    }
-
-    private static long combineIds(final int userId, final int itemId) {
-        return (long) userId << 32 | itemId;
-    }
-
-    private static int extractUserId(final long idPair) {
-        return (int)(idPair >> 32);
-    }
-
-    private static int extractItemId(final long idPair) {
-        return (int)idPair;
     }
 
     private static Map<Integer, double[]> embeddingsToSerializable(final TIntObjectMap<Vec> embeddings) {

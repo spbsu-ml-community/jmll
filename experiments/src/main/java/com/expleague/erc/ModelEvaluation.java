@@ -5,6 +5,8 @@ import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
 import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
 import com.expleague.erc.lambda.UserLambda;
+import gnu.trove.map.TLongDoubleMap;
+import gnu.trove.map.hash.TLongDoubleHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -15,11 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ModelEvaluation {
+    private static final String FILE_MODEL = "model";
+    private static final String FILE_USER_MAP = "users_by_id.txt";
+    private static final String FILE_ITEM_MAP = "items_by_id.txt";
+    private static final String FILE_PREDICTION = "prediction.txt";
     private static Options options = new Options();
+
     static {
         options.addOption(Option.builder("ds").longOpt("dataset").desc("Path to data").hasArg().build());
         options.addOption(Option.builder("it").longOpt("iter").desc("Num of iterations").hasArg().build());
@@ -34,9 +39,7 @@ public class ModelEvaluation {
         options.addOption(Option.builder("un").longOpt("user_num").desc("Num of users").hasArg().build());
         options.addOption(Option.builder("in").longOpt("item_num").desc("Num of items").hasArg().build());
         options.addOption(Option.builder("t").longOpt("top").desc("Is filter on top items").hasArg().build());
-        options.addOption(Option.builder("spup").longOpt("spupath").desc("Path to save item SPUs").hasArg().build());
-        options.addOption(Option.builder("ml").longOpt("model_load").desc("Path to load model from").hasArg().build());
-        options.addOption(Option.builder("ms").longOpt("model_save").desc("Path to save model").hasArg().build());
+        options.addOption(Option.builder("mn").longOpt("model_name").desc("Name for statistics files").hasArg().build());
     }
 
     public static void main(String... args) throws ParseException, IOException, ClassNotFoundException {
@@ -56,61 +59,80 @@ public class ModelEvaluation {
         int iterations = Integer.parseInt(cliOptions.getOptionValue("it", "15"));
         double lr = Double.parseDouble(cliOptions.getOptionValue("lr", "1e-3"));
         double lrd = Double.parseDouble(cliOptions.getOptionValue("lrd", "1"));
-        String spuLogPath = cliOptions.getOptionValue("spup", null);
-        String modelLoadPath = cliOptions.getOptionValue("ml", null);
-        String modelSavePath = cliOptions.getOptionValue("ms", null);
+        String modelName = cliOptions.getOptionValue("mn", null);
 
         LastFmDataReader lastFmDataReader = new LastFmDataReader();
         List<Event> data = lastFmDataReader.readData(dataPath, size);
-        Map<String, Integer> itemNameToId = lastFmDataReader.getItemMap();
-        Map<Integer, String> itemIdToName = itemNameToId.keySet().stream()
-                .collect(Collectors.toMap(itemNameToId::get, Function.identity()));
+        Map<Integer, String> itemIdToName = lastFmDataReader.getReversedItemMap();
+        Map<Integer, String> userIdToName = lastFmDataReader.getReversedUserMap();
         runModel(data, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop,
-                spuLogPath, itemIdToName, modelLoadPath, modelSavePath);
+                modelName, itemIdToName, userIdToName);
     }
 
     private static void runModel(final List<Event> data, final int iterations, final double lr, final double decay,
                                  final int dim, final double beta, final double otherItemImportance, final double eps,
                                  final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop,
-                                 final String spuLogFilePath, final Map<Integer, String> itemIdToName,
-                                 final String modelLoadPath, final String modelSavePath) throws IOException, ClassNotFoundException {
+                                 final String modelName, final Map<Integer, String> itemIdToName,
+                                 final Map<Integer, String> userIdToName) throws IOException, ClassNotFoundException {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
-        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
+        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(preprocessor.filterSessions(data), trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
+        dataset = preprocessor.filterComparable(dataset);
 
-        Model model;
-        if (modelLoadPath == null) {
+        Path modelDirPath = Paths.get(modelName);
+        boolean existingModel = Files.isDirectory(modelDirPath);
+
+        final MetricsCalculator metricsCalculator =
+                new MetricsCalculator(dataset.getTrain(), dataset.getTest(), modelDirPath);
+        final Model model;
+
+        final Path modelPath = modelDirPath.resolve(FILE_MODEL);
+        if (existingModel) {
+            model = Model.load(Files.newInputStream(modelPath));
+        } else {
+            Files.createDirectory(modelDirPath);
+            Util.writeMap(modelDirPath.resolve(FILE_USER_MAP), userIdToName);
+            Util.writeMap(modelDirPath.resolve(FILE_ITEM_MAP), itemIdToName);
+
             DoubleUnaryOperator lambdaTransform = new UserLambda.IdentityTransform();
             DoubleUnaryOperator lambdaDerivative = new UserLambda.IdentityDerivativeTransform();
             model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
-        } else {
-            model = Model.load(Files.newInputStream(Paths.get(modelLoadPath)));
+
+            metricsCalculator.writeSpuPairNames(itemIdToName, userIdToName);
+            metricsCalculator.writeLambdaPairNames(itemIdToName, userIdToName);
+            metricsCalculator.writeTargetSpus();
         }
 
         model.initializeEmbeddings(dataset.getTrain());
-        final Path spuLogPath = spuLogFilePath != null ? Paths.get(spuLogFilePath) : null;
-        final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), spuLogPath);
-        if (modelLoadPath == null) {
-            metricsCalculator.writeItemNames(spuLogPath, itemIdToName);
-            metricsCalculator.writeTargetSpus();
-        }
         System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
         System.out.println("Target mean SPU: " + metricsCalculator.getMeanSpuTarget());
+
         try {
             final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(model);
             System.out.println(summary);
-            if (modelLoadPath == null) {
+            if (!existingModel) {
                 summary.writeSpus();
             }
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
 
-        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), decay, true, metricsCalculator, modelSavePath);
+        model.fit(dataset.getTrain(), lr, iterations, dataset.getTest(), decay, true, metricsCalculator,
+                modelPath.toString());
 
-        if (modelSavePath != null) {
-            model.write(Files.newOutputStream(Paths.get(modelSavePath)));
+        model.write(Files.newOutputStream(modelPath));
+
+        double startTime = dataset.getTrain().get(0).getTs();
+        double endTime = dataset.getTest().get(dataset.getTest().size() - 1).getTs();
+        final TLongDoubleMap firstEvents = new TLongDoubleHashMap();
+        for (Event event: dataset.getTrain()) {
+            final long pair = event.getPair();
+            if (!firstEvents.containsKey(pair)) {
+                firstEvents.put(pair, event.getTs());
+            }
         }
+        List<Event> predictedHistory = metricsCalculator.predictSpan(model.getApplicable(), firstEvents, startTime, endTime);
+        metricsCalculator.writeHistory(modelDirPath.resolve(FILE_PREDICTION), predictedHistory);
     }
 }

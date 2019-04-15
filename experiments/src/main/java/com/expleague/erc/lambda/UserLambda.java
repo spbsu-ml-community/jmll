@@ -63,13 +63,15 @@ public final class UserLambda {
             VecTools.fill(itemsSpecificUserDerivative, 0.);
             itemsDerivativeByItems.put(itemId, itemsSpecificUserDerivative);
         }
-        double e = Math.exp(-beta * timeDelta);
-        double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));
-        double interactionEffect = VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));
+        final double e = Math.exp(-beta * timeDelta);
+        final double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));
+        final double interactionEffect = VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));
 
         // Updating lambda
+//        commonSum = commonSum + otherItemsImportance * interactionEffect;
         commonSum = e * commonSum + otherItemsImportance * interactionEffect;
         additionalSumByItems.put(itemId,
+//                additionalSumByItems.get(itemId) + (1 - otherItemsImportance) * interactionEffect);
                 decay * additionalSumByItems.get(itemId) + (1 - otherItemsImportance) * interactionEffect);
 
         // Updating user derivative
@@ -78,7 +80,6 @@ public final class UserLambda {
         VecTools.scale(commonUserDerivative, e);
         VecTools.append(commonUserDerivative, commonUserDerivativeAdd);
         Vec itemsUserDerivativeAdd = VecTools.copy(itemEmbeddings.get(itemId));
-        VecTools.assign(itemsUserDerivativeAdd, itemEmbeddings.get(itemId));
         VecTools.scale(itemsUserDerivativeAdd, 1 - otherItemsImportance);
         VecTools.scale(userDerivativeByItems.get(itemId), decay);
         VecTools.append(userDerivativeByItems.get(itemId), itemsUserDerivativeAdd);
@@ -110,7 +111,8 @@ public final class UserLambda {
         VecTools.append(completeDerivative, itemEmbeddings.get(itemId));
         if (userDerivativeByItems.containsKey(itemId)) {
             Vec completeDerivativeAdd = VecTools.copy(userDerivativeByItems.get(itemId));
-            double decay = currentTime - lastTimeOfItems.get(itemId);  // why now exp?
+            double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));  // why now exp?
+//            double decay = currentTime - lastTimeOfItems.get(itemId);  // why now exp?
             VecTools.scale(completeDerivative, decay);
             VecTools.append(completeDerivative, completeDerivativeAdd);
         }
@@ -124,7 +126,8 @@ public final class UserLambda {
             derivative.put(p, initialDerivative);
         }
         if (itemsDerivativeByItems.containsKey(itemId)) {
-            double decay = currentTime - lastTimeOfItems.get(itemId);  // why now exp?
+            double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));  // why now exp?
+//            double decay = currentTime - lastTimeOfItems.get(itemId);  // why now exp?
             Vec derivativeAdd = VecTools.copy(itemsDerivativeByItems.get(itemId));
             VecTools.scale(derivativeAdd, decay);
             VecTools.append(derivativeAdd, userEmbedding);
@@ -144,6 +147,34 @@ public final class UserLambda {
         @Override
         public double applyAsDouble(double v) {
             return 1;
+        }
+    }
+
+    public static class AbsTransform implements DoubleUnaryOperator, Serializable {
+        @Override
+        public double applyAsDouble(double v) {
+            return Math.abs(v);
+        }
+    }
+
+    public static class AbsDerivativeTransform implements DoubleUnaryOperator, Serializable {
+        @Override
+        public double applyAsDouble(double v) {
+            return Math.signum(v);
+        }
+    }
+
+    public static class SqrTransform implements DoubleUnaryOperator, Serializable {
+        @Override
+        public double applyAsDouble(double v) {
+            return v * v;
+        }
+    }
+
+    public static class SqrDerivativeTransform implements DoubleUnaryOperator, Serializable {
+        @Override
+        public double applyAsDouble(double v) {
+            return 2 * v;
         }
     }
 }

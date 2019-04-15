@@ -3,13 +3,19 @@ package com.expleague.erc;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
+import gnu.trove.map.TLongDoubleMap;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.LongFunction;
+import java.util.stream.Collectors;
 
 public class DataMetrics {
     private static final Options options = new Options();
@@ -25,8 +31,10 @@ public class DataMetrics {
     private static final String OPT_ITEM_NUM_SHORT = "in";
     private static final String OPT_TOP_LONG = "top";
     private static final String OPT_TOP_SHORT = "t";
-    private static final String OPT_OUT_SHORT = "o";
-    private static final String OPT_OUT_LONG = "out";
+    private static final String OPT_OUT_DIR_SHORT = "o";
+    private static final String OPT_OUT_DIR_LONG = "out";
+    private static final String FILE_TRAIN = "train.txt";
+    private static final String FILE_TEST = "test.txt";
 
     static {
         options.addOption(Option.builder(OPT_DATA_PATH_SHORT).longOpt(OPT_DATA_PATH_LONG).desc("Path to data").hasArg().build());
@@ -35,7 +43,7 @@ public class DataMetrics {
         options.addOption(Option.builder(OPT_USER_NUM_SHORT).longOpt(OPT_USER_NUM_LONG).desc("Num of users").hasArg().build());
         options.addOption(Option.builder(OPT_ITEM_NUM_SHORT).longOpt(OPT_ITEM_NUM_LONG).desc("Num of items").hasArg().build());
         options.addOption(Option.builder(OPT_TOP_SHORT).longOpt(OPT_TOP_LONG).desc("Is filter on top items").hasArg().build());
-        options.addOption(Option.builder(OPT_OUT_SHORT).longOpt(OPT_OUT_LONG).desc("Output path").hasArg().build());
+        options.addOption(Option.builder(OPT_OUT_DIR_SHORT).longOpt(OPT_OUT_DIR_LONG).desc("Output path").hasArg().build());
     }
 
     public static void main(String[] args) throws ParseException, IOException {
@@ -48,22 +56,47 @@ public class DataMetrics {
         final int itemsNum = Integer.parseInt(cliOptions.getOptionValue(OPT_ITEM_NUM_SHORT));
         final boolean isTop = Boolean.parseBoolean(cliOptions.getOptionValue(OPT_TOP_SHORT));
         final double trainRatio = Double.parseDouble(cliOptions.getOptionValue(OPT_TRAIN_RATIO_SHORT));
-        final Path outPath = Paths.get(cliOptions.getOptionValue(OPT_OUT_SHORT));
+        final Path outDirPath = Paths.get(cliOptions.getOptionValue(OPT_OUT_DIR_SHORT));
 
         final LastFmDataReader lastFmDataReader = new LastFmDataReader();
         final List<Event> data = lastFmDataReader.readData(dataPath, dataSize);
         final DataPreprocessor preprocessor = new OneTimeDataProcessor();
-        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
+//        final DataPreprocessor preprocessor = new TSRDataProcessor();
+        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(preprocessor.filterSessions(data), trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
 
-        final double startTime = dataset.getTrain().get(0).getTs();
         final double splitTime = dataset.getTest().get(0).getTs();
-        final double endTime = dataset.getTest().get(dataset.getTest().size() - 1).getTs();
-        System.out.println((endTime - splitTime) / (splitTime - startTime));
+        System.out.println(splitTime);
 
-        Files.deleteIfExists(outPath);
-        final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), outPath);
-        metricsCalculator.writeTrainSpus();
-        metricsCalculator.writeTargetSpus();
+        final Path trainPath = outDirPath.resolve(FILE_TRAIN);
+        final Path testPath = outDirPath.resolve(FILE_TEST);
+        if (Files.isDirectory(outDirPath)) {
+            Files.deleteIfExists(trainPath);
+            Files.deleteIfExists(testPath);
+        } else {
+            Files.createDirectory(outDirPath);
+        }
+        final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), outDirPath);
+        final TLongDoubleMap trainPairSpus = metricsCalculator.pairwiseHistorySpu(dataset.getTrain());
+        final TLongDoubleMap testPairSpus = metricsCalculator.pairwiseHistorySpu(dataset.getTest());
+        final long [] keys = Arrays.stream(trainPairSpus.keys())
+                .boxed()
+                .sorted(Comparator.comparingInt(Util::extractItemId).thenComparingInt(Util::extractUserId))
+                .mapToLong(Long::longValue)
+                .toArray();
+        writeSeq(trainPath, keys, String::valueOf);
+        writeSeq(testPath, keys, String::valueOf);
+        writeSeq(trainPath, keys, key -> String.valueOf(trainPairSpus.get(key)));
+        writeSeq(testPath, keys, key -> String.valueOf(testPairSpus.get(key)));
+
+        Util.writeMap(Paths.get("items.txt"), lastFmDataReader.getReversedItemMap());
+        Util.writeMap(Paths.get("users.txt"), lastFmDataReader.getReversedUserMap());
+    }
+
+    private static void writeSeq(Path filePath, long[] keys, LongFunction<String> keyToValue) throws IOException {
+        final String strRep = Arrays.stream(keys)
+                .mapToObj(keyToValue)
+                .collect(Collectors.joining(" \t")) + '\n';
+        Files.write(filePath, strRep.getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
     }
 }
