@@ -13,6 +13,7 @@ import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.impl.CoocBasedBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import com.expleague.ml.embedding.impl.ScoreCalculator;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,12 +61,12 @@ public class DecompBuilder extends CoocBasedBuilder {
 
   @Override
   public Embedding<CharSeq> fit() {
-    final int size = dict().size();
-    final Mx symDecomp = new VecBasedMx(size, symDim);
-    final Mx skewsymDecomp = new VecBasedMx(size, skewDim);
-    final Vec bias = new ArrayVec(size);
-    for (int i = 0; i < size; i++) {
-      bias.set(i, initializeValue(symDim));
+    final int vocab_size = dict().size();
+    final Mx symDecomp = new VecBasedMx(vocab_size, symDim);
+    final Mx skewsymDecomp = new VecBasedMx(vocab_size, skewDim);
+    //final Vec bias = new ArrayVec(vocab_size);
+    for (int i = 0; i < vocab_size; i++) {
+      //bias.set(i, initializeValue(symDim));
       for (int j = 0; j < symDim; j++) {
         symDecomp.set(i, j, initializeValue(symDim));
       }
@@ -74,20 +75,24 @@ public class DecompBuilder extends CoocBasedBuilder {
       }
     }
 
+    TDoubleArrayList wordsProbabsLeft = new TDoubleArrayList();
+    TDoubleArrayList wordsProbabsRight = new TDoubleArrayList(vocab_size);
+    final double X_sum = countWordsProbabs(wordsProbabsLeft, wordsProbabsRight);
+
     final Mx softMaxSym = new VecBasedMx(symDecomp.rows(), symDecomp.columns());
     final Mx softMaxSkewsym = new VecBasedMx(skewsymDecomp.rows(), skewsymDecomp.columns());
-    final Vec softMaxBias = new ArrayVec(bias.dim());
+    //final Vec softMaxBias = new ArrayVec(bias.dim());
     VecTools.fill(softMaxSym, 1);
     VecTools.fill(softMaxSkewsym, 1);
-    VecTools.fill(softMaxBias, 1);
+    //VecTools.fill(softMaxBias, 1);
 
-    final TIntArrayList order = new TIntArrayList(IntStream.range(0, size).toArray());
+    final TIntArrayList order = new TIntArrayList(IntStream.range(0, vocab_size).toArray());
     rng = new FastRandom();
     for (int iter = 0; iter < T(); iter++) {
       Interval.start();
       order.shuffle(rng);
-      final ScoreCalculator scoreCalculator = new ScoreCalculator(size);
-      IntStream.range(0, size).parallel().map(order::get).forEach(i -> {
+      final ScoreCalculator scoreCalculator = new ScoreCalculator(vocab_size);
+      IntStream.range(0, vocab_size).parallel().map(order::get).forEach(i -> {
         final Vec sym_i = symDecomp.row(i);
         final Vec skew_i = skewsymDecomp.row(i);
         final Vec softMaxSym_i = softMaxSym.row(i);
@@ -97,24 +102,25 @@ public class DecompBuilder extends CoocBasedBuilder {
           final Vec skew_j = skewsymDecomp.row(j);
           final Vec softMaxSym_j = softMaxSym.row(j);
           final Vec softMaxSkew_j = softMaxSkewsym.row(j);
-          final double b_i = bias.get(i);
-          final double b_j = bias.get(j);
+          //final double b_i = bias.get(i);
+          //final double b_j = bias.get(j);
 
           double asum = VecTools.multiply(sym_i, sym_j);
           double bsum = VecTools.multiply(skew_i, skew_j);
           final int sign = i > j ? -1 : 1;
-          final double minfo = Math.log(X_ij);
-          final double diff = b_i + b_j + asum + sign * bsum - minfo;
+          //final double diff = b_i + b_j + asum + sign * bsum - minfo;
+          final double logMutualInfo = Math.log(X_ij) - Math.log(wordsProbabsLeft.get(i)) - Math.log(wordsProbabsRight.get(j)) + Math.log(X_sum);
+          final double diff = asum + sign * bsum - logMutualInfo;
           final double weight = weightingFunc(X_ij);
           final double biasStep = weight * diff;
           scoreCalculator.adjust(i, j, weight, 0.5 * weight * MathTools.sqr(diff));
 
           update(sym_i, softMaxSym_i, sym_j, softMaxSym_j, diff * weight);
           update(skew_i, softMaxSkew_i, skew_j, softMaxSkew_j, diff * weight * sign);
-          bias.adjust(i, -step() * biasStep / Math.sqrt(softMaxBias.get(i)));
-          softMaxBias.adjust(i, biasStep * biasStep);
-          bias.adjust(j, -step() * biasStep / Math.sqrt(softMaxBias.get(j)));
-          softMaxBias.adjust(j, biasStep * biasStep);
+          //bias.adjust(i, -step() * biasStep / Math.sqrt(softMaxBias.get(i)));
+          //softMaxBias.adjust(i, biasStep * biasStep);
+          //bias.adjust(j, -step() * biasStep / Math.sqrt(softMaxBias.get(j)));
+          //softMaxBias.adjust(j, biasStep * biasStep);
         });
       });
 
@@ -124,7 +130,7 @@ public class DecompBuilder extends CoocBasedBuilder {
     }
 
     final Map<CharSeq, Vec> mapping = new HashMap<>();
-    for (int i = 0; i < dict().size(); i++) {
+    for (int i = 0; i < vocab_size; i++) {
       final CharSeq word = dict().get(i);
       mapping.put(word, symDecomp.row(i));
     }

@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -41,7 +43,7 @@ public class WordAnalogiesMetric extends QualityMetric {
       try {
         fout = new PrintStream(file);
       } catch (FileNotFoundException e) {
-        throw new IOException("Couldn't find the file to write the closer-further metrics results to");
+        throw new IOException("Couldn't find the file to write the words analogies metrics results to");
       }
 
       List<String> results = new ArrayList<>();

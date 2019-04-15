@@ -7,6 +7,7 @@ import com.expleague.commons.seq.LongSeq;
 import com.expleague.commons.seq.LongSeqBuilder;
 import com.expleague.ml.embedding.Embedding;
 import gnu.trove.list.TLongList;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +75,23 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
   protected int unpackB(LongSeq cooc, int v) {
     return (int) (cooc.longAt(v) >>> 32);
   }
+
+  protected double countWordsProbabs(TDoubleArrayList wordsProbabsLeft, TDoubleArrayList wordsProbabsRight) {
+    double[] X_sum = new double[1];
+    X_sum[0] = 0d;
+    final int vocab_size = dict().size();
+    wordsProbabsLeft.fill(0, vocab_size, 0d);
+    wordsProbabsRight.fill(0, vocab_size, 0d);
+    IntStream.range(0, vocab_size).forEach(i -> {
+      cooc(i, (j, X_ij) -> {
+        wordsProbabsLeft.set(i, wordsProbabsLeft.get(i) + X_ij);
+        wordsProbabsRight.set(j, wordsProbabsRight.get(j) + X_ij);
+        X_sum[0] = X_sum[0] + X_ij;
+      });
+    });
+    return X_sum[0];
+  }
+
 
   @Override
   @SuppressWarnings("Duplicates")
