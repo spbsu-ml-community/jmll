@@ -11,9 +11,12 @@ public class MAE implements Metric {
         double errors = 0.;
         long count = 0;
         for (final Event event : events) {
-            count++;
             final double expectedReturnTime = applicable.timeDelta(event.userId(), event.itemId());
-            errors += Math.abs(event.getPrDelta() - expectedReturnTime);
+            final double actualReturnTime = event.getPrDelta();
+            if (actualReturnTime > 0) {
+                count++;
+                errors += Math.abs(actualReturnTime - expectedReturnTime);
+            }
             applicable.accept(event);
         }
         return errors / count;

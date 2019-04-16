@@ -29,7 +29,7 @@ public class MetricsWriter implements Model.FitListener {
         final ForkJoinTask maeTask = ForkJoinPool.commonPool().submit(() -> {
             final Model.Applicable applicable = model.getApplicable();
             maes[0] = mae.calculate(trainData, applicable);
-            maes[1] = mae.calculate(trainData, applicable);
+            maes[1] = mae.calculate(testData, applicable);
         });
         final ForkJoinTask llTask = ForkJoinPool.commonPool().submit(() -> {
             final Model.Applicable applicable = model.getApplicable();
@@ -47,7 +47,7 @@ public class MetricsWriter implements Model.FitListener {
             llTask.join();
             final double spusTrain = spusTrainTask.get();
             final double spusTest = spusTestTask.get();
-            System.out.printf("Train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, train_spu: %f, test_spu: %f\n",
+            System.out.printf("train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, train_spu: %f, test_spu: %f\n",
                     lls[0], lls[1], maes[0], maes[1], spusTrain, spusTest);
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();

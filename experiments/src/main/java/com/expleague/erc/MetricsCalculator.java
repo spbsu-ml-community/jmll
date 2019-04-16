@@ -143,20 +143,21 @@ public class MetricsCalculator {
 //        return errors / count;
 //    }
 
-    public double itemRecommendationMae(Model.Applicable model) {
+    public double itemRecommendationMae(Model model) {
         long errorsSum = 0;
         long count = 0;
         int[] allItemIds = model.getItemEmbeddings().keys();
+        Model.Applicable applicable = model.getApplicable(trainData);
         for (Event event: testData) {
             int userId = event.userId();
-            final double actualLambda = model.getLambda(userId, event.itemId());
+            final double actualLambda = applicable.getLambda(userId, event.itemId());
             for (int i: allItemIds) {
-                if (model.getLambda(userId, i) > actualLambda) {
+                if (applicable.getLambda(userId, i) > actualLambda) {
                     errorsSum++;
                 }
             }
             count++;
-            model.accept(event);
+            applicable.accept(event);
         }
         return (double) errorsSum / count;
     }
@@ -374,7 +375,7 @@ public class MetricsCalculator {
             returnTimeMaes[1] = returnTimeMae(applicable, testData);
         });
         final ForkJoinTask<Double> recommendMaeTask = pool.submit(
-                () -> itemRecommendationMae(model.getApplicable(trainData)));
+                () -> itemRecommendationMae(model));
         final ForkJoinTask<TLongDoubleMap> spusTestTask = pool.submit(() -> {
             final List<Event> prediction =
                     predictSpan(model.getApplicable(trainData), lastTrainEvents, splitTime, endTime);

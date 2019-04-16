@@ -19,7 +19,7 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 
 public class Model {
-    private static final int SAVE_PERIOD = 20;
+//    private static final int SAVE_PERIOD = 20;
 
     private final int dim;
     private final double beta;
@@ -31,7 +31,6 @@ public class Model {
     private TIntObjectMap<Vec> userEmbeddings;
     private TIntObjectMap<Vec> itemEmbeddings;
     private boolean dataInitialized;
-    private int dataSize;
     private TIntSet userIds;
     private TIntSet itemIds;
     private int[] userIdsArray;
@@ -60,6 +59,15 @@ public class Model {
         dataInitialized = false;
         zeroVec = new ArrayVec(dim);
         VecTools.fill(zeroVec, 0);
+
+//        if (userEmbeddings != null) {
+//            userIds = userEmbeddings.keySet();
+//            userIdsArray = userIds.toArray();
+//        }
+//        if (itemEmbeddings != null) {
+//            itemIds = itemEmbeddings.keySet();
+//            itemIdsArray = itemIds.toArray();
+//        }
     }
 
     private Vec makeEmbedding(final FastRandom randomGenerator, final double embMean) {
@@ -87,7 +95,6 @@ public class Model {
         if (dataInitialized) {
             return;
         }
-        dataSize = events.size();
         userIds = new TIntHashSet();
         itemIds = new TIntHashSet();
         events.stream().map(Event::userId).forEach(userIds::add);
@@ -110,7 +117,7 @@ public class Model {
         dataInitialized = true;
     }
 
-    private double logLikelihood(final List<Event> events) {
+    public double logLikelihood(final List<Event> events) {
         final double observationEnd = events.get(events.size() - 1).getTs();
         double logLikelihood = 0.;
         final TIntObjectMap<TIntSet> seenItems = new TIntObjectHashMap<>();
@@ -158,33 +165,15 @@ public class Model {
         return logLikelihood;
     }
 
-    private class Derivative {
-        private final TIntObjectMap<Vec> userDerivatives;
-        private final TIntObjectMap<Vec> itemDerivatives;
-
-        private Derivative(final TIntObjectMap<Vec> userDerivatives, final TIntObjectMap<Vec> itemDerivatives) {
-            this.userDerivatives = userDerivatives;
-            this.itemDerivatives = itemDerivatives;
-        }
-
-        private TIntObjectMap<Vec> getUserDerivatives() {
-            return userDerivatives;
-        }
-
-        private TIntObjectMap<Vec> getItemDerivatives() {
-            return itemDerivatives;
-        }
-    }
-
-    private Derivative logLikelihoodDerivative(final List<Event> events) {
+    public void logLikelihoodDerivative(final List<Event> events,
+                                        final TIntObjectMap<Vec> userDerivatives,
+                                        final TIntObjectMap<Vec> itemDerivatives) {
         final double observationEnd = events.get(events.size() - 1).getTs();
-        final TIntObjectMap<Vec> userDerivatives = new TIntObjectHashMap<>();
         final TIntObjectMap<TIntSet> seenItems = new TIntObjectHashMap<>();
         for (final int userId : userIds.toArray()) {
             userDerivatives.put(userId, VecTools.copy(zeroVec));
             seenItems.put(userId, new TIntHashSet());
         }
-        final TIntObjectMap<Vec> itemDerivatives = new TIntObjectHashMap<>();
         for (final int itemId : itemIds.toArray()) {
             itemDerivatives.put(itemId, VecTools.copy(zeroVec));
         }
@@ -209,7 +198,6 @@ public class Model {
             updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
                     userDerivatives, itemDerivatives);
         }
-        return new Derivative(userDerivatives, itemDerivatives);
     }
 
     private void updateInnerEventDerivative(LambdaStrategy lambdasByItem, final Event event,
@@ -262,7 +250,7 @@ public class Model {
 
     private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
                              final double decay, final FitListener listener) {
-        double lr = learningRate / dataSize;
+        double lr = learningRate / events.size();
         Map<Integer, List<Event>> eventsByUser = new HashMap<>(userIds.size());
         for (final int userId : userIdsArray) {
             eventsByUser.put(userId, new ArrayList<>());
@@ -274,14 +262,16 @@ public class Model {
 
         for (int i = 0; i < iterationsNumber; ++i) {
             for (final List<Event> userEvents : eventsByUser.values()) {
-                Derivative derivative = logLikelihoodDerivative(userEvents);
+                final TIntObjectMap<Vec> userDerivatives = new TIntObjectHashMap<>();
+                final TIntObjectMap<Vec> itemDerivatives = new TIntObjectHashMap<>();
+                logLikelihoodDerivative(userEvents, userDerivatives, itemDerivatives);
                 for (final int userId : userIdsArray) {
-                    Vec userDerivative = derivative.getUserDerivatives().get(userId);
+                    Vec userDerivative = userDerivatives.get(userId);
                     VecTools.scale(userDerivative, lr);
                     VecTools.append(userEmbeddings.get(userId), userDerivative);
                 }
                 for (final int itemId : itemIdsArray) {
-                    Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
+                    Vec itemDerivative = itemDerivatives.get(itemId);
                     VecTools.scale(itemDerivative, lr);
                     VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
                 }
@@ -295,16 +285,18 @@ public class Model {
 
     private void optimizeGD(final List<Event> events, final double learningRate, final int iterationsNumber,
                             final double decay, final FitListener listener) {
-        double lr = learningRate / dataSize;
+        double lr = learningRate / events.size();
         for (int i = 0; i < iterationsNumber; ++i) {
-            Derivative derivative = logLikelihoodDerivative(events);
+            final TIntObjectMap<Vec> userDerivatives = new TIntObjectHashMap<>();
+            final TIntObjectMap<Vec> itemDerivatives = new TIntObjectHashMap<>();
+            logLikelihoodDerivative(events, userDerivatives, itemDerivatives);
             for (final int userId : userIds.toArray()) {
-                Vec userDerivative = derivative.getUserDerivatives().get(userId);
+                Vec userDerivative = userDerivatives.get(userId);
                 VecTools.scale(userDerivative, lr);
                 VecTools.append(userEmbeddings.get(userId), userDerivative);
             }
             for (final int itemId : itemIds.toArray()) {
-                Vec itemDerivative = derivative.getItemDerivatives().get(itemId);
+                Vec itemDerivative = itemDerivatives.get(itemId);
                 VecTools.scale(itemDerivative, lr);
                 VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
             }
@@ -344,10 +336,25 @@ public class Model {
 //        }
 //    }
 
-    public class Applicable {
+    public interface Applicable {
+        void accept(final Event event);
+
+        double getLambda(final int userId, final int itemId);
+
+        double timeDelta(final int userId, final int itemId);
+
+        default Applicable fit(final List<Event> history) {
+            for (Event event : history) {
+                accept(event);
+            }
+            return this;
+        }
+    }
+
+    private class ApplicableImpl implements Applicable {
         private final LambdaStrategy lambdaStrategy;
 
-        private Applicable() {
+        private ApplicableImpl() {
             lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         }
 
@@ -359,33 +366,13 @@ public class Model {
             return lambdaTransform.applyAsDouble(lambdaStrategy.getLambda(userId, itemId));
         }
 
-//        public double timeDeltaLog(final int userId, final int itemId) {
-//            return 1 / getLambda(userId, itemId);
-//        }
-
         public double timeDelta(final int userId, final int itemId) {
-//            return Math.exp(1 / getLambda(userId, itemId));
             return 1 / getLambda(userId, itemId);
-        }
-
-        public Applicable fit(final List<Event> history) {
-            for (Event event : history) {
-                accept(event);
-            }
-            return this;
-        }
-
-        public TIntObjectMap<Vec> getUserEmbeddings() {
-            return userEmbeddings;
-        }
-
-        public TIntObjectMap<Vec> getItemEmbeddings() {
-            return itemEmbeddings;
         }
     }
 
     public Applicable getApplicable(final List<Event> events) {
-        Applicable applicable = new Applicable();
+        Applicable applicable = new ApplicableImpl();
         if (events != null) {
             applicable.fit(events);
         }
@@ -393,13 +380,25 @@ public class Model {
     }
 
     public Applicable getApplicable() {
-        return new Applicable();
+        return new ApplicableImpl();
     }
 
     private static Map<Integer, double[]> embeddingsToSerializable(final TIntObjectMap<Vec> embeddings) {
         return Arrays.stream(embeddings.keys())
                 .boxed()
                 .collect(Collectors.toMap(x -> x, x -> embeddings.get(x).toArray()));
+    }
+
+    public TIntObjectMap<Vec> getUserEmbeddings() {
+        return userEmbeddings;
+    }
+
+    public TIntObjectMap<Vec> getItemEmbeddings() {
+        return itemEmbeddings;
+    }
+
+    public int getDim() {
+        return dim;
     }
 
     private static TIntObjectMap<Vec> embeddingsFromSerializable(final Map<Integer, double[]> serMap) {
