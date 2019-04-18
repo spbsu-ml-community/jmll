@@ -77,15 +77,16 @@ public class LogLikelihood implements Metric {
 //            lastVisitTimes.put(pair, event.getTs());
 //            applicable.accept(event);
 //        }
-        for (long pairId : lastVisitTimes.keys()) {
-            final int userId = (int)(pairId >> 32);
-            final int itemId = (int)pairId;
-            final double lambda = applicable.getLambda(userId, itemId);
-            final double logLikelihoodDelta = -lambda * (observationEnd - lastVisitTimes.get(pairId));
-            if (Double.isFinite(logLikelihoodDelta)) {
-                logLikelihood += logLikelihoodDelta;
-            }
-        }
+
+//        for (long pairId : lastVisitTimes.keys()) {
+//            final int userId = Util.extractUserId(pairId);
+//            final int itemId = Util.extractItemId(pairId);
+//            final double lambda = applicable.getLambda(userId, itemId);
+//            final double logLikelihoodDelta = -lambda * (observationEnd - lastVisitTimes.get(pairId));
+//            if (Double.isFinite(logLikelihoodDelta)) {
+//                logLikelihood += logLikelihoodDelta;
+//            }
+//        }
         return logLikelihood;
     }
 

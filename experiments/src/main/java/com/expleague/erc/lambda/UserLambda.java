@@ -15,6 +15,8 @@ import java.util.function.DoubleUnaryOperator;
 public final class UserLambda {
     private final Vec userEmbedding;
     private final TIntObjectMap<Vec> itemEmbeddings;
+//    private final TIntDoubleMap userBiases;
+//    private final TIntDoubleMap itemBiases;
     private final double beta;
     private final double otherItemsImportance;
     private double currentTime;
@@ -28,9 +30,12 @@ public final class UserLambda {
     private final Vec zeroVec;
 
     public UserLambda(final Vec userEmbedding, final TIntObjectMap<Vec> itemsEmbeddings, final double beta,
+//                      final TIntDoubleMap userBiases, final TIntDoubleMap itemBiases,
                       final double otherItemsImportance) {
         this.userEmbedding = userEmbedding;
         this.itemEmbeddings = itemsEmbeddings;
+//        this.userBiases = userBiases;
+//        this.itemBiases = itemBiases;
         this.beta = beta;
         this.otherItemsImportance = otherItemsImportance;
         zeroVec = new ArrayVec(userEmbedding.dim());
@@ -99,11 +104,18 @@ public final class UserLambda {
     }
 
     public final double getLambda(final int itemId) {
+//        assert userEmbedding != null;
+//        assert itemEmbeddings != null;
+//        assert itemEmbeddings.get(itemId) != null;
+//        System.out.println(userEmbedding.dim());
+//        Vec itemEmbedding = itemEmbeddings.get(itemId);
+//        System.out.println(itemEmbedding.dim());
         double baseLambda = commonSum + VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));
         if (!additionalSumByItems.containsKey(itemId)) {
             return baseLambda;
         }
-        return 1 + baseLambda + additionalSumByItems.get(itemId);
+//        return  + baseLambda + additionalSumByItems.get(itemId);
+        return 1e-2 + baseLambda + additionalSumByItems.get(itemId);
     }
 
     public final Vec getLambdaUserDerivative(final int itemId) {

@@ -6,8 +6,6 @@ import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
 import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
 import com.expleague.erc.lambda.UserLambda;
-import gnu.trove.map.TLongDoubleMap;
-import gnu.trove.map.hash.TLongDoubleHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -16,7 +14,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.function.DoubleUnaryOperator;
 
 public class ModelEvaluation {
@@ -41,6 +38,7 @@ public class ModelEvaluation {
         options.addOption(Option.builder("in").longOpt("item_num").desc("Num of items").hasArg().build());
         options.addOption(Option.builder("t").longOpt("top").desc("Is filter on top items").hasArg().build());
         options.addOption(Option.builder("mn").longOpt("model_name").desc("Name for statistics files").hasArg().build());
+        options.addOption(Option.builder("r").longOpt("reset").desc("Wipe the model directory").hasArg(false).build());
     }
 
     public static void main(String... args) throws ParseException, IOException, ClassNotFoundException {
@@ -61,20 +59,21 @@ public class ModelEvaluation {
         double lr = Double.parseDouble(cliOptions.getOptionValue("lr", "1e-3"));
         double lrd = Double.parseDouble(cliOptions.getOptionValue("lrd", "1"));
         String modelName = cliOptions.getOptionValue("mn", null);
+        boolean reset = cliOptions.hasOption("r");
 
         LastFmDataReader lastFmDataReader = new LastFmDataReader();
         List<Event> data = lastFmDataReader.readData(dataPath, size);
         Map<Integer, String> itemIdToName = lastFmDataReader.getReversedItemMap();
         Map<Integer, String> userIdToName = lastFmDataReader.getReversedUserMap();
         runModel(data, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop,
-                modelName, itemIdToName, userIdToName);
+                modelName, itemIdToName, userIdToName, reset);
     }
 
     private static void runModel(final List<Event> data, final int iterations, final double lr, final double decay,
                                  final int dim, final double beta, final double otherItemImportance, final double eps,
                                  final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop,
                                  final String modelName, final Map<Integer, String> itemIdToName,
-                                 final Map<Integer, String> userIdToName) throws IOException, ClassNotFoundException {
+                                 final Map<Integer, String> userIdToName, boolean reset) throws IOException, ClassNotFoundException {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(preprocessor.filterSessions(data), trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
@@ -88,10 +87,21 @@ public class ModelEvaluation {
         final Model model;
 
         final Path modelPath = modelDirPath.resolve(FILE_MODEL);
-        if (existingModel) {
+        if (existingModel && !reset) {
             model = Model.load(Files.newInputStream(modelPath));
         } else {
-            Files.createDirectory(modelDirPath);
+            if (!existingModel) {
+                Files.createDirectory(modelDirPath);
+            }
+            if (reset) {
+                Files.list(modelDirPath).forEach(path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
             Util.writeMap(modelDirPath.resolve(FILE_USER_MAP), userIdToName);
             Util.writeMap(modelDirPath.resolve(FILE_ITEM_MAP), itemIdToName);
 
@@ -119,7 +129,8 @@ public class ModelEvaluation {
 //            e.printStackTrace();
 //        }
 
-        final MetricsWriter metricsWriter = new MetricsWriter(dataset.getTrain(), dataset.getTest(), eps);
+        final MetricsWriter metricsWriter =
+                new MetricsWriter(dataset.getTrain(), dataset.getTest(), eps, modelDirPath);
         model.fit(dataset.getTrain(), lr, iterations, decay, metricsWriter);
 
         model.write(Files.newOutputStream(modelPath));

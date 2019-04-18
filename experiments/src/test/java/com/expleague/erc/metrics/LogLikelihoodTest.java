@@ -7,7 +7,9 @@ import com.expleague.erc.Event;
 import com.expleague.erc.Metrics.LogLikelihood;
 import com.expleague.erc.Model;
 import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
+import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -54,13 +56,19 @@ public class LogLikelihoodTest {
         final TIntObjectMap<Vec> usersEmbeddings = new TIntObjectHashMap<>();
         usersEmbeddings.put(0, new ArrayVec(.16, .18, .2, .22, .24));
         usersEmbeddings.put(1, new ArrayVec(.18, .19, .2, .21, .22));
+        final TIntDoubleMap usersBiases = new TIntDoubleHashMap();
+        usersBiases.put(0, 0);
+        usersBiases.put(1, 0);
         final TIntObjectMap<Vec> itemsEmbeddings = new TIntObjectHashMap<>();
         itemsEmbeddings.put(0, new ArrayVec(.16, .18, .2, .22, .24));
         itemsEmbeddings.put(1, new ArrayVec(.15, .18, .2, .22, .25));
+        final TIntDoubleMap itemBiases = new TIntDoubleHashMap();
+        itemBiases.put(0, 0);
+        itemBiases.put(1, 0);
 
         final Model model = new Model(5, 0.1, 5, 0.1,
                 x -> x, x -> 1, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(),
-                usersEmbeddings, itemsEmbeddings);
+                usersEmbeddings, itemsEmbeddings, usersBiases, itemBiases);
         model.initializeEmbeddings(differentiationHistory);
 
         final LogLikelihood llCalculator = new LogLikelihood(5);
