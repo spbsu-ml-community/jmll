@@ -103,7 +103,7 @@ public final class UserLambda {
         if (!additionalSumByItems.containsKey(itemId)) {
             return baseLambda;
         }
-        return baseLambda + additionalSumByItems.get(itemId);
+        return 1 + baseLambda + additionalSumByItems.get(itemId);
     }
 
     public final Vec getLambdaUserDerivative(final int itemId) {

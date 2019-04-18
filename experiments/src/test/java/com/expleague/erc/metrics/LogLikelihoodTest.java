@@ -27,8 +27,8 @@ public class LogLikelihoodTest {
                 new Event(0, 0, (1 / actualLambda) * 2),
                 new Event(0, 1, (1 / actualLambda) * 2)
         );
-        final Model.Applicable possibleApplicable1 = new ApplicableMock(2);
-        final Model.Applicable possibleApplicable2 = new ApplicableMock(3);
+        final Model.Applicable possibleApplicable1 = new ApplicableMock(.1);
+        final Model.Applicable possibleApplicable2 = new ApplicableMock(.01);
         final LogLikelihood llCalculator = new LogLikelihood(5);
         final double calculatedLL1 = llCalculator.calculate(history, possibleApplicable1);
         final double calculatedLL2 = llCalculator.calculate(history, possibleApplicable2);
@@ -52,10 +52,10 @@ public class LogLikelihoodTest {
         final List<Event> preparationHistory = Collections.emptyList();
 
         final TIntObjectMap<Vec> usersEmbeddings = new TIntObjectHashMap<>();
-        usersEmbeddings.put(0, new ArrayVec(.15, .18, .2, .22, .25));
-        usersEmbeddings.put(1, new ArrayVec(.15, .18, .2, .22, .25));
+        usersEmbeddings.put(0, new ArrayVec(.16, .18, .2, .22, .24));
+        usersEmbeddings.put(1, new ArrayVec(.18, .19, .2, .21, .22));
         final TIntObjectMap<Vec> itemsEmbeddings = new TIntObjectHashMap<>();
-        itemsEmbeddings.put(0, new ArrayVec(.15, .18, .2, .22, .25));
+        itemsEmbeddings.put(0, new ArrayVec(.16, .18, .2, .22, .24));
         itemsEmbeddings.put(1, new ArrayVec(.15, .18, .2, .22, .25));
 
         final Model model = new Model(5, 0.1, 5, 0.1,
@@ -76,17 +76,22 @@ public class LogLikelihoodTest {
                 preparationHistory, differentiationHistory, step);
         model.logLikelihoodDerivative(differentiationHistory, usersAnalyticDerivative, itemsAnalyticDerivative);
 
+        final double maxDist = 1.;
         usersEmbeddings.forEachKey(userId -> {
             System.out.println(usersNumericDerivative.get(userId));
             System.out.println(usersAnalyticDerivative.get(userId));
-            System.out.println(VecTools.distance(usersNumericDerivative.get(userId), usersAnalyticDerivative.get(userId)));
+            final double dist = VecTools.distance(usersNumericDerivative.get(userId), usersAnalyticDerivative.get(userId));
+            System.out.println(dist);
+            Assert.assertTrue(dist < maxDist);
             return true;
         });
         System.out.println();
         itemsEmbeddings.forEachKey(itemId -> {
             System.out.println(itemsNumericDerivative.get(itemId));
             System.out.println(itemsAnalyticDerivative.get(itemId));
-            System.out.println(VecTools.distance(itemsNumericDerivative.get(itemId), itemsAnalyticDerivative.get(itemId)));
+            final double dist = VecTools.distance(itemsNumericDerivative.get(itemId), itemsAnalyticDerivative.get(itemId));
+            System.out.println(dist);
+            Assert.assertTrue(dist < maxDist);
             return true;
         });
     }

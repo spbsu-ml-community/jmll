@@ -71,8 +71,8 @@ public class Model {
     }
 
     private Vec makeEmbedding(final FastRandom randomGenerator, final double embMean) {
-        Vec embedding = VecTools.copy(zeroVec);
-        VecTools.fillGaussian(embedding, randomGenerator);
+        Vec embedding = new ArrayVec(dim);
+        VecTools.fillUniform(embedding, randomGenerator);
         VecTools.scale(embedding, embMean / 2);
         VecTools.adjust(embedding, embMean);
         for (int i = 0; i < dim; ++i) {
@@ -105,7 +105,6 @@ public class Model {
         double itemDeltaMean = events.stream()
                 .filter(event -> event.getPrDelta() >= 0)
                 .collect(Collectors.averagingDouble(Event::getPrDelta));
-//                .collect(Collectors.averagingDouble(event -> Math.log(event.getPrDelta())));
         double embMean = Math.sqrt(1 / itemDeltaMean) / dim;
         System.out.println("Embedding mean = " + embMean);
         if (userEmbeddings == null) {
@@ -140,7 +139,6 @@ public class Model {
                 final double lambda = lambdasByItem.getLambda(userId, itemId);
                 final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
                 double prDelta = event.getPrDelta();
-//                prDelta = Math.log(prDelta);
                 final double logLikelihoodDelta =
                         Math.log(-Math.exp(-transformedLambda * (prDelta + eps)) +
                         Math.exp(-transformedLambda * Math.max(0, prDelta - eps)));
@@ -156,8 +154,7 @@ public class Model {
             final int itemId = (int)pairId;
             final double lambda = lambdasByItem.getLambda(userId, itemId);
             final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-            final double logLikelihoodDelta = -transformedLambda * observationEnd - lastVisitTimes.get(pairId);
-//            final double logLikelihoodDelta = -transformedLambda * Math.log(observationEnd - lastVisitTimes.get(pairId));
+            final double logLikelihoodDelta = -transformedLambda * (observationEnd - lastVisitTimes.get(pairId));
             if (Double.isFinite(logLikelihoodDelta)) {
                 logLikelihood += logLikelihoodDelta;
             }
