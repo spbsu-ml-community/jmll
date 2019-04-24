@@ -1,11 +1,14 @@
-package com.expleague.erc;
+package com.expleague.erc.models;
 
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
+import com.expleague.erc.Event;
+import com.expleague.erc.Util;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
+import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TLongDoubleMap;
@@ -13,12 +16,15 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongDoubleHashMap;
 import gnu.trove.set.TIntSet;
+import gnu.trove.set.TLongSet;
 import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.set.hash.TLongHashSet;
 
 import java.io.*;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
+import static java.lang.Math.*;
 
 public class Model {
 //    private static final int SAVE_PERIOD = 20;
@@ -36,25 +42,15 @@ public class Model {
     private TIntDoubleMap userBiases;
     protected TIntObjectMap<Vec> itemEmbeddings;
     private TIntDoubleMap itemBiases;
-    private boolean dataInitialized;
     protected TIntSet userIds;
     protected TIntSet itemIds;
     private int[] userIdsArray;
     private int[] itemIdsArray;
-    private Vec zeroVec;
-
-    public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
-                 final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
-                 final LambdaStrategyFactory lambdaStrategyFactory) {
-        this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                null, null, null, null);
-    }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
-                 final TIntObjectMap<Vec> itemsEmbeddingsPrior,
-                 final TIntDoubleMap userBiases, final TIntDoubleMap itemBiases) {
+                 final TIntObjectMap<Vec> itemsEmbeddingsPrior) {
         this.dim = dim;
         this.beta = beta;
         this.eps = eps;
@@ -63,31 +59,23 @@ public class Model {
         this.lambdaDerivativeTransform = lambdaDerivativeTransform;
         this.lambdaStrategyFactory = lambdaStrategyFactory;
         this.userEmbeddings = usersEmbeddingsPrior;
-        this.userBiases = userBiases;
+//        this.userBiases = userBiases;
         this.itemEmbeddings = itemsEmbeddingsPrior;
-        this.itemBiases = itemBiases;
-        dataInitialized = false;
-        zeroVec = new ArrayVec(dim);
-        VecTools.fill(zeroVec, 0);
-
-//        if (userEmbeddings != null) {
-//            userIds = userEmbeddings.keySet();
-//            userIdsArray = userIds.toArray();
-//        }
-//        if (itemEmbeddings != null) {
-//            itemIds = itemEmbeddings.keySet();
-//            itemIdsArray = itemIds.toArray();
-//        }
+//        this.itemBiases = itemBiases;
+        userIds = userEmbeddings.keySet();
+        userIdsArray = userIds.toArray();
+        itemIds = itemEmbeddings.keySet();
+        itemIdsArray = itemIds.toArray();
     }
 
-    private Vec makeEmbedding(final FastRandom randomGenerator, final double embMean) {
+    protected static Vec makeEmbedding(final FastRandom randomGenerator, final double embMean, final int dim) {
         Vec embedding = new ArrayVec(dim);
 
         VecTools.fillGaussian(embedding, randomGenerator);
         VecTools.scale(embedding, embMean / 2);
         VecTools.adjust(embedding, embMean);
         for (int i = 0; i < dim; ++i) {
-            embedding.set(i, Math.abs(embedding.get(i)));
+            embedding.set(i, abs(embedding.get(i)));
         }
 
 //        VecTools.fillUniform(embedding, randomGenerator, embMean * SCALE_SHARE);
@@ -95,12 +83,12 @@ public class Model {
 
         return embedding;
     }
-
+/*
     private TIntObjectMap<Vec> initEmbeddings(final TIntSet ids, final double embMean) {
         final FastRandom randomGenerator = new FastRandom();
         final TIntObjectMap<Vec> embeddings = new TIntObjectHashMap<>();
         ids.forEach(itemId -> {
-            embeddings.put(itemId, makeEmbedding(randomGenerator, embMean));
+            embeddings.put(itemId, makeEmbedding(randomGenerator, embMean, dim));
             return true;
         });
         return embeddings;
@@ -112,15 +100,15 @@ public class Model {
         }
         userIds = new TIntHashSet();
         itemIds = new TIntHashSet();
-        userBiases = new TIntDoubleHashMap();
-        itemBiases = new TIntDoubleHashMap();
+//        userBiases = new TIntDoubleHashMap();
+//        itemBiases = new TIntDoubleHashMap();
         events.stream()
                 .mapToInt(Event::userId)
-                .peek(user -> userBiases.put(user, DEFAULT_BIAS))
+//                .peek(user -> userBiases.put(user, DEFAULT_BIAS))
                 .forEach(userIds::add);
         events.stream()
                 .mapToInt(Event::itemId)
-                .peek(item -> itemBiases.put(item, DEFAULT_BIAS))
+//                .peek(item -> itemBiases.put(item, DEFAULT_BIAS))
                 .forEach(itemIds::add);
         userIdsArray = userIds.toArray();
         itemIdsArray = itemIds.toArray();
@@ -128,7 +116,7 @@ public class Model {
         double itemDeltaMean = events.stream()
                 .filter(event -> event.getPrDelta() >= 0)
                 .collect(Collectors.averagingDouble(Event::getPrDelta));
-        double embMean = Math.sqrt(1 / itemDeltaMean) / dim;
+        double embMean = sqrt(1 / itemDeltaMean) / dim;
         System.out.println("Embedding mean = " + embMean);
         if (userEmbeddings == null) {
             userEmbeddings = initEmbeddings(userIds, embMean);
@@ -137,6 +125,31 @@ public class Model {
             itemEmbeddings = initEmbeddings(itemIds, embMean);
         }
         dataInitialized = true;
+    }
+*/
+    public static void makeInitialEmbeddings(int dim, List<Event> history,
+                                             TIntObjectMap<Vec> userEmbeddings, TIntObjectMap<Vec> itemEmbeddings) {
+        final TIntSet userIds = new TIntHashSet();
+        final TIntSet itemIds = new TIntHashSet();
+        for (Event event: history) {
+            userIds.add(event.userId());
+            itemIds.add(event.itemId());
+        }
+
+        final double itemDeltaMean = history.stream()
+                .mapToDouble(Event::getPrDelta)
+                .filter(delta -> delta >= 0)
+                .average().orElse(-1);
+        final double embeddingMean = sqrt(1 / itemDeltaMean) / dim;
+        final FastRandom randomGenerator = new FastRandom();
+        userIds.forEach(userId -> {
+            userEmbeddings.put(userId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            return true;
+        });
+        itemIds.forEach(itemId -> {
+            itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            return true;
+        });
     }
 
     public double logLikelihood(final List<Event> events) {
@@ -160,21 +173,19 @@ public class Model {
             // handle last events at another way
             if (!event.isFinish()) {
                 final double lambda = lambdasByItem.getLambda(userId, itemId);
-                final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-                double prDelta = event.getPrDelta();
-                final double logLikelihoodDelta =
-                        Math.log(-Math.exp(-transformedLambda * (prDelta + eps)) +
-                        Math.exp(-transformedLambda * Math.max(0, prDelta - eps)));
-                if (Double.isFinite(logLikelihoodDelta)) {
-                    logLikelihood += logLikelihoodDelta;
+                final double tLam = lambdaTransform.applyAsDouble(lambda);
+                final double prDelta = max(event.getPrDelta(), eps);
+                final double pDelta = log(-exp(-tLam * (prDelta + eps)) + exp(-tLam * (prDelta - eps)));
+                if (Double.isFinite(pDelta)) {
+                    logLikelihood += pDelta;
                 }
                 lambdasByItem.accept(event);
                 lastVisitTimes.put(Util.combineIds(userId, itemId), event.getTs());
             }
         }
         for (long pairId : lastVisitTimes.keys()) {
-            final int userId = (int)(pairId >> 32);
-            final int itemId = (int)pairId;
+            final int userId = Util.extractUserId(pairId);
+            final int itemId = Util.extractItemId(pairId);
             final double lambda = lambdasByItem.getLambda(userId, itemId);
             final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
             final double logLikelihoodDelta = -transformedLambda * (observationEnd - lastVisitTimes.get(pairId));
@@ -189,80 +200,80 @@ public class Model {
                                         final TIntObjectMap<Vec> userDerivatives,
                                         final TIntObjectMap<Vec> itemDerivatives) {
         final double observationEnd = events.get(events.size() - 1).getTs();
-        final TIntObjectMap<TIntSet> seenItems = new TIntObjectHashMap<>();
+        final TLongSet seenPairs = new TLongHashSet();
         for (final int userId : userIds.toArray()) {
-            userDerivatives.put(userId, VecTools.copy(zeroVec));
-            seenItems.put(userId, new TIntHashSet());
+            userDerivatives.put(userId, new ArrayVec(dim));
         }
         for (final int itemId : itemIds.toArray()) {
-            itemDerivatives.put(itemId, VecTools.copy(zeroVec));
+            itemDerivatives.put(itemId, new ArrayVec(dim));
         }
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         for (final Event event : events) {
-            if (!seenItems.get(event.userId()).contains(event.itemId())) {
-                seenItems.get(event.userId()).add(event.itemId());
+            final long pairId = event.getPair();
+            if (!seenPairs.contains(pairId)) {
+                seenPairs.add(pairId);
                 lambdasByItem.accept(event);
             } else {
-                updateInnerEventDerivative(lambdasByItem, event, userDerivatives, itemDerivatives);
+                updateDerivativeInnerEvent(lambdasByItem, event, userDerivatives, itemDerivatives);
                 lambdasByItem.accept(event);
-                lastVisitTimes.put(Util.combineIds(event.userId(), event.itemId()), event.getTs());
+                lastVisitTimes.put(pairId, event.getTs());
             }
         }
-//        for (long pairId: lastVisitTimes.keys()) {
-//            final int userId = Util.extractUserId(pairId);
-//            final int itemId = Util.extractItemId(pairId);
-//            updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
-//                    userDerivatives, itemDerivatives);
-//        }
+        for (long pairId: lastVisitTimes.keys()) {
+            final int userId = Util.extractUserId(pairId);
+            final int itemId = Util.extractItemId(pairId);
+            updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
+                    userDerivatives, itemDerivatives);
+        }
     }
 
-    protected void updateInnerEventDerivative(LambdaStrategy lambdasByItem, final Event event,
-                                            TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
-        final double lambda = lambdasByItem.getLambda(event.userId(), event.itemId());
-        final Vec lambdaDerivativeUser =
-                lambdasByItem.getLambdaUserDerivative(event.userId(), event.itemId());
-        final TIntObjectMap<Vec> lambdaDerivativeItems =
-                lambdasByItem.getLambdaItemDerivative(event.userId(), event.itemId());
-        final double transformedLambda = lambdaTransform.applyAsDouble(lambda);
-        double tau = event.getPrDelta();
-//        tau = Math.log(tau);
-        final double expPlus = Math.exp(-transformedLambda * (tau + eps));
-        final double expMinus = Math.exp(-transformedLambda * Math.max(0, tau - eps));
-        final double commonPart = lambdaDerivativeTransform.applyAsDouble(lambda) *
-                ((tau + eps) * expPlus - Math.max(0, tau - eps) * expMinus) / (-expPlus + expMinus);
+    protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, final Event event,
+                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+        final int userId = event.userId();
+        final int itemId = event.itemId();
+        final double lam = lambdasByItem.getLambda(userId, itemId);
+        final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
+        final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);
+        final double tLam = lambdaTransform.applyAsDouble(lam);
+        final double tau = max(event.getPrDelta(), eps);
+        final double expPlus = exp(-tLam * (tau + eps));
+        final double expMinus = exp(-tLam * (tau - eps));
+        final double lamDT = lambdaDerivativeTransform.applyAsDouble(lam);
+        final double commonPart = lamDT * ((tau + eps) * expPlus - (tau - eps) * expMinus) / (-expPlus + expMinus);
+
         if (!Double.isNaN(commonPart)) {
-            VecTools.scale(lambdaDerivativeUser, commonPart);
-            VecTools.append(userDerivatives.get(event.userId()), lambdaDerivativeUser);
-            for (final int itemId : lambdaDerivativeItems.keys()) {
-                final Vec derivative = lambdaDerivativeItems.get(itemId);
+            VecTools.scale(lamDU, commonPart);
+            VecTools.append(userDerivatives.get(userId), lamDU);
+            for (TIntObjectIterator<Vec> it = lamDI.iterator(); it.hasNext();) {
+                it.advance();
+                final Vec derivative = it.value();
                 VecTools.scale(derivative, commonPart);
-                VecTools.append(itemDerivatives.get(itemId), derivative);
+                VecTools.append(itemDerivatives.get(it.key()), derivative);
             }
-        } else {
-//            System.out.println("overflow");
         }
     }
 
     protected void updateDerivativeLastEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double tau,
                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
-        final Vec lambdaDerivativeUser =
-                lambdasByItem.getLambdaUserDerivative(userId, itemId);
-        final TIntObjectMap<Vec> lambdaDerivativeItems =
-                lambdasByItem.getLambdaItemDerivative(userId, itemId);
+        final double lam = lambdasByItem.getLambda(userId, itemId);
+        final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
+        final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);
+        final double commonPart = -lambdaDerivativeTransform.applyAsDouble(lam) * tau;
 
-        VecTools.scale(lambdaDerivativeUser, -tau);
-        VecTools.append(userDerivatives.get(userId), lambdaDerivativeUser);
-
-        Vec lambdaDerivativeItem = lambdaDerivativeItems.get(itemId);
-        VecTools.scale(lambdaDerivativeItem, -tau);
-        VecTools.append(itemDerivatives.get(itemId), lambdaDerivativeItem);
+        VecTools.scale(lamDU, commonPart);
+        VecTools.append(userDerivatives.get(userId), lamDU);
+        for (TIntObjectIterator<Vec> it = lamDI.iterator(); it.hasNext();) {
+            it.advance();
+            final Vec derivative = it.value();
+            VecTools.scale(derivative, commonPart);
+            VecTools.append(itemDerivatives.get(it.key()), derivative);
+        }
     }
 
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
                     final double decay, final FitListener listener) {
-        initializeEmbeddings(events);
         optimizeGD(events, learningRate, iterationsNumber, decay, listener);
     }
 
@@ -274,8 +285,7 @@ public class Model {
             eventsByUser.put(userId, new ArrayList<>());
         }
         for (final Event event : events) {
-            List<Event> events1 = eventsByUser.get(event.userId());
-            events1.add(event);
+            eventsByUser.get(event.userId()).add(event);
         }
 
         for (int i = 0; i < iterationsNumber; ++i) {
@@ -308,12 +318,12 @@ public class Model {
             final TIntObjectMap<Vec> userDerivatives = new TIntObjectHashMap<>();
             final TIntObjectMap<Vec> itemDerivatives = new TIntObjectHashMap<>();
             logLikelihoodDerivative(events, userDerivatives, itemDerivatives);
-            for (final int userId : userIds.toArray()) {
+            for (final int userId : userIdsArray) {
                 Vec userDerivative = userDerivatives.get(userId);
                 VecTools.scale(userDerivative, lr);
                 VecTools.append(userEmbeddings.get(userId), userDerivative);
             }
-            for (final int itemId : itemIds.toArray()) {
+            for (final int itemId : itemIdsArray) {
                 Vec itemDerivative = itemDerivatives.get(itemId);
                 VecTools.scale(itemDerivative, lr);
                 VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
@@ -325,41 +335,18 @@ public class Model {
         }
     }
 
-//    private void printWhileOptimization(final List<Event> events, final List<Event> evaluationEvents,
-//                                        final int iteration, final boolean verbose,
-//                                        final MetricsCalculator metricsCalculator) {
-//        if (verbose) {
-//            System.out.println(iteration + "-th iter, ll = " + logLikelihood(events));
-//            if (evaluationEvents != null && !evaluationEvents.isEmpty()) {
-//                try {
-//                    metricsCalculator.writeLambdas(this);
-//                    final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(this);
-//                    System.out.println(summary);
-//                    summary.writeSpus();
-//                } catch (ExecutionException | InterruptedException | IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            System.out.println();
-//        }
-//    }
-//
-//    private void checkpoint(int iterationsPassed, String savePathPref) {
-//        if (savePathPref != null && iterationsPassed % SAVE_PERIOD == 0) {
-//            try {
-//                write(Files.newOutputStream(Paths.get(savePathPref + "_" + iterationsPassed)));
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-
     public interface Applicable {
         void accept(final Event event);
 
         double getLambda(final int userId, final int itemId);
 
         double timeDelta(final int userId, final int itemId);
+
+        double probabilityBeforeX(final int userId, final int itemId, final double x);
+
+        default double probabilityInterval(final int userId, final int itemId, final double start, final double end) {
+            return probabilityBeforeX(userId, itemId, end) - probabilityBeforeX(userId, itemId, start);
+        }
 
         default Applicable fit(final List<Event> history) {
             for (Event event : history) {
@@ -376,16 +363,30 @@ public class Model {
             lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         }
 
+        @Override
         public void accept(final Event event) {
             lambdaStrategy.accept(event);
         }
 
+        @Override
         public double getLambda(final int userId, final int itemId) {
             return lambdaTransform.applyAsDouble(lambdaStrategy.getLambda(userId, itemId));
         }
 
+        @Override
         public double timeDelta(final int userId, final int itemId) {
             return 1 / getLambda(userId, itemId);
+        }
+
+        @Override
+        public double probabilityBeforeX(int userId, int itemId, double x) {
+            return exp(-getLambda(userId, itemId) * x);
+        }
+
+        @Override
+        public double probabilityInterval(int userId, int itemId, double start, double end) {
+            final double lambda = getLambda(userId, itemId);
+            return -exp(-lambda * end) + exp(-lambda * start);
         }
     }
 
@@ -447,8 +448,9 @@ public class Model {
         objectOutputStream.writeObject(lambdaDerivativeTransform);
         objectOutputStream.writeObject(lambdaStrategyFactory);
         objectOutputStream.writeObject(embeddingsToSerializable(userEmbeddings));
-        objectOutputStream.writeObject(biasesToSerializable(userBiases));
+//        objectOutputStream.writeObject(biasesToSerializable(userBiases));
         objectOutputStream.writeObject(embeddingsToSerializable(itemEmbeddings));
+//        objectOutputStream.writeObject(biasesToSerializable(itemEmbeddings));
     }
 
     public static Model load(final InputStream stream) throws IOException, ClassNotFoundException {
@@ -462,14 +464,14 @@ public class Model {
         final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
         final TIntObjectMap<Vec> userEmbeddings =
                 embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
-        final TIntDoubleMap userBiases =
-                biasesFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+//        final TIntDoubleMap userBiases =
+//                biasesFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         final TIntObjectMap<Vec> itemEmbeddings =
                 embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
-        final TIntDoubleMap itemBiases =
-                biasesFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+//        final TIntDoubleMap itemBiases =
+//                biasesFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         return new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
-                lambdaStrategyFactory, userEmbeddings, itemEmbeddings, userBiases, itemBiases);
+                lambdaStrategyFactory, userEmbeddings, itemEmbeddings);
 //                lambdaStrategyFactory, userEmbeddings, itemEmbeddings);
     }
 

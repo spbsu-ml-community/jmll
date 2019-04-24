@@ -1,7 +1,7 @@
-package com.expleague.erc.Metrics;
+package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Model;
+import com.expleague.erc.models.Model;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -70,15 +70,15 @@ public class MetricsWriter implements Model.FitListener {
         for (final Event event : trainData) {
             final int userId = event.userId();
             final int itemId = event.itemId();
-            final long pair = event.getPair();
-            final double prDelta = event.getPrDelta();
+            double prDelta = event.getPrDelta();
             if (prDelta >= 0) {
                 final double lambda = applicable.getLambda(userId, itemId);
                 final double prediction = applicable.timeDelta(userId, itemId);
-                final double probabilityLog = Math.log(-Math.exp(-lambda * (prDelta + eps)) +
-                        Math.exp(-lambda * Math.max(0, prDelta - eps)));
-                histDescBuilder.append(pair).append(" ").append(prDelta).append(" ").append(prediction)
-                        .append(" ").append(lambda).append(" ").append(probabilityLog).append("\t");
+                prDelta = Math.max(prDelta, eps);
+                final double pLog =
+                        Math.log(applicable.probabilityInterval(userId, itemId, prDelta - eps, prDelta + eps));
+                histDescBuilder.append(userId).append(" ").append(itemId).append(" ").append(prDelta).append(" ")
+                        .append(prediction).append(" ").append(lambda).append(" ").append(pLog).append("\t");
             }
             applicable.accept(event);
         }

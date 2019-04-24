@@ -1,5 +1,6 @@
 package com.expleague.erc;
 
+import com.expleague.erc.models.Model;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.iterator.TLongIntIterator;
 import gnu.trove.map.*;
@@ -131,18 +132,6 @@ public class MetricsCalculator {
         return errors / count;
     }
 
-//    public double returnTimeLogMae(Model.Applicable model, List<Event> data) {
-//        double errors = 0.;
-//        long count = 0;
-//        for (final Event event : data) {
-//            count++;
-//            final double expectedReturnTime = model.timeDeltaLog(event.userId(), event.itemId());
-//            errors += Math.abs(Math.log(event.getPrDelta()) - expectedReturnTime);
-//            model.accept(event);
-//        }
-//        return errors / count;
-//    }
-
     public double itemRecommendationMae(Model model) {
         long errorsSum = 0;
         long count = 0;
@@ -169,14 +158,6 @@ public class MetricsCalculator {
         return testData.parallelStream()
                 .collect(Collectors.averagingDouble(event -> Math.abs(event.getPrDelta() - meanItemDelta)));
     }
-
-//    public double constantPredictionLogTimeMae() {
-//        final double meanItemDeltaLog = trainData.parallelStream()
-//                .filter(event -> !event.isFinish() && event.getPrDelta() >= 0)
-//                .collect(Collectors.averagingDouble(event -> Math.log(event.getPrDelta())));
-//        return testData.parallelStream()
-//                .collect(Collectors.averagingDouble(event -> Math.abs(Math.log(event.getPrDelta()) - meanItemDeltaLog)));
-//    }
 
     public TLongDoubleMap pairwiseHistorySpu(List<Event> history) {
         final double startTime = history.get(0).getTs();

@@ -1,0 +1,75 @@
+package com.expleague.erc.metrics;
+
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.erc.Event;
+import com.expleague.erc.models.Model;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.TLongDoubleMap;
+import gnu.trove.map.hash.TLongDoubleHashMap;
+import gnu.trove.set.TLongSet;
+import gnu.trove.set.hash.TLongHashSet;
+
+import java.util.List;
+
+import static java.lang.Math.*;
+
+public class LogLikelihood implements Metric {
+    private final double eps;
+
+    public LogLikelihood(double eps) {
+        this.eps = eps;
+    }
+
+    @Override
+    public double calculate(List<Event> events, Model.Applicable applicable) {
+        final double observationEnd = events.get(events.size() - 1).getTs();
+        double logLikelihood = 0.;
+        final TLongSet seenPairs = new TLongHashSet();
+        final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
+        for (final Event event : events) {
+            final int userId = event.userId();
+            final int itemId = event.itemId();
+            final long pairId = event.getPair();
+            if (!seenPairs.contains(pairId)) {
+                seenPairs.add(pairId);
+                applicable.accept(event);
+            } else {
+                final double prDelta = max(event.getPrDelta(), eps);
+                final double p = applicable.probabilityInterval(userId, itemId, prDelta - eps, prDelta + eps);
+                logLikelihood += log(p);
+                applicable.accept(event);
+                lastVisitTimes.put(pairId, event.getTs());
+            }
+        }
+//        for (long pairId : lastVisitTimes.keys()) {
+//            final int userId = Util.extractUserId(pairId);
+//            final int itemId = Util.extractItemId(pairId);
+//            final double tau = observationEnd - lastVisitTimes.get(pairId);
+//            if (tau > 0) {
+//                logLikelihood += log(1 - applicable.probabilityBeforeX(userId, itemId, tau));
+//            }
+//        }
+        return logLikelihood;
+    }
+
+//    TODO: find a better place
+    public static void differentiate(TIntObjectMap<Vec> parameters, TIntObjectMap<Vec> target,
+                                     Model model, LogLikelihood llCalculator,
+                                     List<Event> prepEvents, List<Event> diffEvents, double step) {
+        final int dim = model.getDim();
+        final double initialLL = llCalculator.calculate(diffEvents, model.getApplicable(prepEvents));
+        parameters.forEachEntry((key, embedding) -> {
+            final ArrayVec curDerivative = new ArrayVec(dim);
+            for (int i = 0; i < dim; ++i) {
+                final double oldVal = embedding.get(i);
+                embedding.set(i, oldVal + step);
+                final double curLL = llCalculator.calculate(diffEvents, model.getApplicable(prepEvents));
+                curDerivative.set(i, (curLL - initialLL) / step);
+                embedding.set(i, oldVal);
+            }
+            target.put(key, curDerivative);
+            return true;
+        });
+    }
+}

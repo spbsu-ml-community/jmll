@@ -3,6 +3,7 @@ package com.expleague.erc.lambda;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import gnu.trove.iterator.TIntDoubleIterator;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -73,10 +74,8 @@ public final class UserLambda {
         final double interactionEffect = VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));
 
         // Updating lambda
-//        commonSum = commonSum + otherItemsImportance * interactionEffect;
         commonSum = e * commonSum + otherItemsImportance * interactionEffect;
         additionalSumByItems.put(itemId,
-//                additionalSumByItems.get(itemId) + (1 - otherItemsImportance) * interactionEffect);
                 decay * additionalSumByItems.get(itemId) + (1 - otherItemsImportance) * interactionEffect);
 
         // Updating user derivative
@@ -104,46 +103,38 @@ public final class UserLambda {
     }
 
     public final double getLambda(final int itemId) {
-//        assert userEmbedding != null;
-//        assert itemEmbeddings != null;
-//        assert itemEmbeddings.get(itemId) != null;
-//        System.out.println(userEmbedding.dim());
-//        Vec itemEmbedding = itemEmbeddings.get(itemId);
-//        System.out.println(itemEmbedding.dim());
         double baseLambda = commonSum + VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));
         if (!additionalSumByItems.containsKey(itemId)) {
             return baseLambda;
         }
-//        return  + baseLambda + additionalSumByItems.get(itemId);
+//        return baseLambda + additionalSumByItems.get(itemId);
         return 1e-2 + baseLambda + additionalSumByItems.get(itemId);
     }
 
     public final Vec getLambdaUserDerivative(final int itemId) {
-        Vec completeDerivative = VecTools.copy(commonUserDerivative);
+        final Vec completeDerivative = VecTools.copy(commonUserDerivative);
         VecTools.append(completeDerivative, itemEmbeddings.get(itemId));
         if (userDerivativeByItems.containsKey(itemId)) {
-            Vec completeDerivativeAdd = VecTools.copy(userDerivativeByItems.get(itemId));
-            double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));  // why now exp?
-//            double decay = currentTime - lastTimeOfItems.get(itemId);  // why now exp?
+            final Vec itemSpecificDerivative = VecTools.copy(userDerivativeByItems.get(itemId));
+            final double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));
             VecTools.scale(completeDerivative, decay);
-            VecTools.append(completeDerivative, completeDerivativeAdd);
+            VecTools.append(completeDerivative, itemSpecificDerivative);
         }
         return completeDerivative;
     }
 
     public final TIntObjectMap<Vec> getLambdaItemsDerivative(final int itemId) {
-        TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
-        for (int p : lastTimeOfItems.keys()) {
-            Vec initialDerivative = VecTools.copy(commonItemsDerivative);
-            derivative.put(p, initialDerivative);
+        final TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
+        for(TIntDoubleIterator it = lastTimeOfItems.iterator(); it.hasNext();) {
+            it.advance();
+            derivative.put(it.key(), VecTools.copy(commonItemsDerivative));
         }
         if (itemsDerivativeByItems.containsKey(itemId)) {
-            double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));  // why now exp?
-//            double decay = currentTime - lastTimeOfItems.get(itemId);  // why now exp?
-            Vec derivativeAdd = VecTools.copy(itemsDerivativeByItems.get(itemId));
-            VecTools.scale(derivativeAdd, decay);
-            VecTools.append(derivativeAdd, userEmbedding);
-            VecTools.append(derivative.get(itemId), derivativeAdd);
+            final double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));
+            final Vec itemSpecificDerivative = VecTools.copy(itemsDerivativeByItems.get(itemId));
+            VecTools.scale(itemSpecificDerivative, decay);
+            VecTools.append(itemSpecificDerivative, userEmbedding);
+            VecTools.append(derivative.get(itemId), itemSpecificDerivative);
         }
         return derivative;
     }

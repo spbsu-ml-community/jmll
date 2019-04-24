@@ -1,7 +1,9 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Model;
+import com.expleague.erc.models.Model;
+
+import static java.lang.Math.*;
 
 public class ApplicableMock implements Model.Applicable {
     private final double lambda;
@@ -23,5 +25,10 @@ public class ApplicableMock implements Model.Applicable {
     @Override
     public double timeDelta(int userId, int itemId) {
         return 1 / lambda;
+    }
+
+    @Override
+    public double probabilityBeforeX(int userId, int itemId, double x) {
+        return 1 - exp(-getLambda(userId, itemId) * x);
     }
 }

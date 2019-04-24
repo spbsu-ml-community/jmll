@@ -1,8 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Metrics.MAE;
-import com.expleague.erc.Model;
+import com.expleague.erc.models.Model;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,7 +1,7 @@
-package com.expleague.erc.Metrics;
+package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Model;
+import com.expleague.erc.models.Model;
 import gnu.trove.map.TLongDoubleMap;
 import gnu.trove.map.hash.TLongDoubleHashMap;
 

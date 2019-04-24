@@ -4,8 +4,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
-import com.expleague.erc.Metrics.LogLikelihood;
-import com.expleague.erc.Model;
+import com.expleague.erc.models.Model;
 import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
@@ -31,7 +30,7 @@ public class LogLikelihoodTest {
         );
         final Model.Applicable possibleApplicable1 = new ApplicableMock(.1);
         final Model.Applicable possibleApplicable2 = new ApplicableMock(.01);
-        final LogLikelihood llCalculator = new LogLikelihood(5);
+        final LogLikelihood llCalculator = new LogLikelihood(.5);
         final double calculatedLL1 = llCalculator.calculate(history, possibleApplicable1);
         final double calculatedLL2 = llCalculator.calculate(history, possibleApplicable2);
         Assert.assertTrue(calculatedLL1 > calculatedLL2);
@@ -56,20 +55,19 @@ public class LogLikelihoodTest {
         final TIntObjectMap<Vec> usersEmbeddings = new TIntObjectHashMap<>();
         usersEmbeddings.put(0, new ArrayVec(.16, .18, .2, .22, .24));
         usersEmbeddings.put(1, new ArrayVec(.18, .19, .2, .21, .22));
-        final TIntDoubleMap usersBiases = new TIntDoubleHashMap();
-        usersBiases.put(0, 0);
-        usersBiases.put(1, 0);
+//        final TIntDoubleMap usersBiases = new TIntDoubleHashMap();
+//        usersBiases.put(0, 0);
+//        usersBiases.put(1, 0);
         final TIntObjectMap<Vec> itemsEmbeddings = new TIntObjectHashMap<>();
         itemsEmbeddings.put(0, new ArrayVec(.16, .18, .2, .22, .24));
         itemsEmbeddings.put(1, new ArrayVec(.15, .18, .2, .22, .25));
-        final TIntDoubleMap itemBiases = new TIntDoubleHashMap();
-        itemBiases.put(0, 0);
-        itemBiases.put(1, 0);
+//        final TIntDoubleMap itemBiases = new TIntDoubleHashMap();
+//        itemBiases.put(0, 0);
+//        itemBiases.put(1, 0);
 
         final Model model = new Model(5, 0.1, 5, 0.1,
                 x -> x, x -> 1, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(),
-                usersEmbeddings, itemsEmbeddings, usersBiases, itemBiases);
-        model.initializeEmbeddings(differentiationHistory);
+                usersEmbeddings, itemsEmbeddings);
 
         final LogLikelihood llCalculator = new LogLikelihood(5);
 
