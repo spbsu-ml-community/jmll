@@ -37,7 +37,9 @@ public class LogLikelihood implements Metric {
             } else {
                 final double prDelta = max(event.getPrDelta(), eps);
                 final double p = applicable.probabilityInterval(userId, itemId, prDelta - eps, prDelta + eps);
-                logLikelihood += log(p);
+                if (p > 0) {
+                    logLikelihood += log(p);
+                }
                 applicable.accept(event);
                 lastVisitTimes.put(pairId, event.getTs());
             }

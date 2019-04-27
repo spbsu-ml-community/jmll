@@ -116,7 +116,7 @@ public class ModelTrainingRunner {
             Util.writeMap(modelDirPath.resolve(FILE_ITEM_MAP), itemIdToName);
 
             DoubleUnaryOperator lambdaTransform = new UserLambda.AbsTransform();
-            DoubleUnaryOperator lambdaDerivative = new UserLambda.AbsTransform();
+            DoubleUnaryOperator lambdaDerivative = new UserLambda.AbsDerivativeTransform();
             TIntObjectMap<Vec> userEmbeddings = new TIntObjectHashMap<>();
             TIntObjectMap<Vec> itemEmbeddings = new TIntObjectHashMap<>();
             TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
