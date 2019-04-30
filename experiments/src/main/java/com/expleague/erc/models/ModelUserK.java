@@ -16,6 +16,7 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 
@@ -77,7 +78,8 @@ public class ModelUserK extends Model {
     private static final double INV_GAMMA1P_M1_C11 = -.125049348214267065734535947383309E-05;
     private static final double INV_GAMMA1P_M1_C12 = .113302723198169588237412962033074E-05;
     private static final double INV_GAMMA1P_M1_C13 = -.205633841697760710345015413002057E-06;
-    private static final int MAX_K = 10;
+    private static final long MAX_K = 1L;
+    private static final long MIN_K = 1L;
     private static final double VARIANCE_SHARE = .1;
     private static final double EPS = 1e-14;
 
@@ -111,7 +113,7 @@ public class ModelUserK extends Model {
         final double upBLam = upB * tLam;
         final double lowBLam = lowB * tLam;
         final int k = userKs.get(userId);
-        final double commonPart = tDLam * (pow(upBLam, k - 1) * exp(-upBLam) - pow(lowBLam, k - 1) * exp(-lowBLam)) /
+        final double commonPart = tDLam * (pow(upBLam, k - 1) * exp(-upBLam) * upB - pow(lowBLam, k - 1) * exp(-lowBLam) * lowB) /
                 (lowerGamma(k, upBLam) - lowerGamma(k, lowBLam));
 
         if (!Double.isNaN(commonPart)) {
@@ -186,10 +188,16 @@ public class ModelUserK extends Model {
                         })
                 ))
         );
+        final Map<Integer, Long> eventNumbers = history.stream()
+                .filter(event -> event.getPrDelta() >= 0)
+                .collect(Collectors.groupingBy(Event::userId, Collectors.counting()));
         userMeans.forEachEntry((userId, userMean) -> {
+            if (eventNumbers.get(userId) == 1) {
+                return true;
+            }
             final double userVariance = userVariances.get(userId);
             final double baseLambda = userMean / userVariance;
-            final int userK = max((int)min(1L, round(userMean * baseLambda)), MAX_K);
+            final int userK = (int)min(max(MIN_K, round(userMean * baseLambda)), MAX_K);
             userBaseLambdas.put(userId, baseLambda);
             userKs.put(userId, userK);
             return true;
@@ -197,11 +205,11 @@ public class ModelUserK extends Model {
         final double totalMean = Arrays.stream(userMeans.values()).average().orElse(-1);
         final double totalVariance = Arrays.stream(userVariances.values()).average().orElse(-1);
         final double defaultLambda = totalMean / totalVariance;
-        final int defaultK = max((int)min(1L, round(totalMean * defaultLambda)), MAX_K);
+        final int defaultK = (int)min(max(MIN_K, round(totalMean * defaultLambda)), MAX_K);
         history.stream()
                 .filter(event -> event.getPrDelta() < 0)
                 .mapToInt(Event::userId)
-                .filter(userId -> !userBaseLambdas.containsKey(userId))
+                .filter(userId -> !userKs.containsKey(userId))
                 .forEach(userId -> {
                     userBaseLambdas.put(userId, defaultLambda);
                     userKs.put(userId, defaultK);
