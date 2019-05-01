@@ -1,20 +1,14 @@
 package com.expleague.erc;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.erc.lambda.*;
 import com.expleague.erc.metrics.MetricsWriter;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
-import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
-import com.expleague.erc.lambda.UserLambda;
 import com.expleague.erc.models.Model;
-import com.expleague.erc.models.ModelGamma2;
-import com.expleague.erc.models.ModelUserK;
-import gnu.trove.map.TIntDoubleMap;
-import gnu.trove.map.TIntIntMap;
+import com.expleague.erc.models.ModelPerUser;
 import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
@@ -92,8 +86,6 @@ public class ModelTrainingRunner {
         Path modelDirPath = Paths.get(modelName);
         boolean existingModel = Files.isDirectory(modelDirPath);
 
-//        final MetricsCalculator metricsCalculator =
-//                new MetricsCalculator(dataset.getTrain(), dataset.getTest(), modelDirPath);
         final Model model;
 
         final Path modelPath = modelDirPath.resolve(FILE_MODEL);
@@ -115,51 +107,30 @@ public class ModelTrainingRunner {
             Util.writeMap(modelDirPath.resolve(FILE_USER_MAP), userIdToName);
             Util.writeMap(modelDirPath.resolve(FILE_ITEM_MAP), itemIdToName);
 
-            DoubleUnaryOperator lambdaTransform = new UserLambda.AbsTransform();
-            DoubleUnaryOperator lambdaDerivative = new UserLambda.AbsDerivativeTransform();
+            DoubleUnaryOperator lambdaTransform = new LambdaTransforms.AbsTransform();
+            DoubleUnaryOperator lambdaDerivative = new LambdaTransforms.AbsDerivativeTransform();
             TIntObjectMap<Vec> userEmbeddings = new TIntObjectHashMap<>();
             TIntObjectMap<Vec> itemEmbeddings = new TIntObjectHashMap<>();
-            TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
-            TIntIntMap userKs = new TIntIntHashMap();
-            ModelUserK.calcUserParams(dataset.getTrain(), userBaseLambdas, userKs);
-            ModelUserK.makeInitialEmbeddings(dim, userBaseLambdas, dataset.getTrain(), userEmbeddings, itemEmbeddings);
-            model = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(), userEmbeddings, itemEmbeddings,
-                    userKs, userBaseLambdas);
-//            metricsCalculator.writeSpuPairNames(itemIdToName, userIdToName);
-//            metricsCalculator.writeLambdaPairNames(itemIdToName, userIdToName);
-//            metricsCalculator.writeTargetSpus();
+            Model.makeInitialEmbeddings(dim, dataset.getTrain(), userEmbeddings, itemEmbeddings);
+            LambdaStrategyFactory perUserLambdaStrategyFactory =
+                    new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(dataset.getTrain()));
+            model = new ModelPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+                    perUserLambdaStrategyFactory, userEmbeddings, itemEmbeddings);
+//            TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
+//            TIntIntMap userKs = new TIntIntHashMap();
+//            ModelUserK.calcUserParams(dataset.getTrain(), userBaseLambdas, userKs);
+//            ModelUserK.makeInitialEmbeddings(dim, userBaseLambdas, dataset.getTrain(), userEmbeddings, itemEmbeddings);
+//            model = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+//                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(), userEmbeddings, itemEmbeddings,
+//                    userKs, userBaseLambdas);
+
         }
-
-//        System.out.println("Constant prediction: " + metricsCalculator.constantPredictionTimeMae());
-//        System.out.println("Target mean SPU: " + metricsCalculator.getMeanSpuTarget());
-
-//        try {
-//            final MetricsCalculator.Summary summary = metricsCalculator.calculateSummary(model);
-//            System.out.println(summary);
-//            if (!existingModel) {
-//                summary.writeSpus();
-//            }
-//        } catch (InterruptedException | ExecutionException e) {
-//            e.printStackTrace();
-//        }
 
         final MetricsWriter metricsWriter =
                 new MetricsWriter(dataset.getTrain(), dataset.getTest(), eps, modelDirPath);
         model.fit(dataset.getTrain(), lr, iterations, decay, metricsWriter);
 
         model.write(Files.newOutputStream(modelPath));
-
-//        double startTime = dataset.getTrain().get(0).getTs();
-//        double endTime = dataset.getTest().get(dataset.getTest().size() - 1).getTs();
-//        final TLongDoubleMap firstEvents = new TLongDoubleHashMap();
-//        for (Event event: dataset.getTrain()) {
-//            final long pair = event.getPair();
-//            if (!firstEvents.containsKey(pair)) {
-//                firstEvents.put(pair, event.getTs());
-//            }
-//        }
-//        List<Event> predictedHistory = metricsCalculator.predictSpan(model.getApplicable(), firstEvents, startTime, endTime);
-//        metricsCalculator.writeHistory(modelDirPath.resolve(FILE_PREDICTION), predictedHistory);
     }
+
 }

@@ -7,16 +7,17 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
-public class LookAheadLambdaStrategy implements LambdaStrategy {
+public class PerUserLambdaStrategy implements LambdaStrategy {
     private final TIntDoubleMap prevUserActionTime;
     private final TIntObjectMap<UserLambda> userLambdas;
 
-    public LookAheadLambdaStrategy(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
-                                   final double beta, final double otherProjectImportance) {
+    public PerUserLambdaStrategy(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
+                                 final double beta, final TIntDoubleMap initialValues) {
         prevUserActionTime = new TIntDoubleHashMap();
         userLambdas = new TIntObjectHashMap<>();
         for (final int userId : userEmbeddings.keys()) {
-            userLambdas.put(userId, new UserLambdaItemSpecific(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
+            userLambdas.put(userId, new UserLambdaSingle(userEmbeddings.get(userId), itemEmbeddings, beta,
+                    initialValues.get(userId)));
         }
     }
 
@@ -43,5 +44,19 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
         }
         userLambdas.get(event.userId()).update(event.itemId(), timeDelta);
         prevUserActionTime.put(event.userId(), event.getTs());
+    }
+
+    public static class Factory implements LambdaStrategyFactory {
+        private final TIntDoubleMap initialValues;
+
+        public Factory(TIntDoubleMap initialValues) {
+            this.initialValues = initialValues;
+        }
+
+        @Override
+        public LambdaStrategy get(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
+                                  double beta, double otherProjectImportance) {
+            return new PerUserLambdaStrategy(userEmbeddings, itemEmbeddings, beta, initialValues);
+        }
     }
 }

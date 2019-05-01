@@ -4,11 +4,10 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
+import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
 import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
-import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,8 +27,8 @@ public class LogLikelihoodTest {
                 new Event(0, 0, (1 / actualLambda) * 2),
                 new Event(0, 1, (1 / actualLambda) * 2)
         );
-        final Model.Applicable possibleApplicable1 = new ApplicableMock(.1);
-        final Model.Applicable possibleApplicable2 = new ApplicableMock(.01);
+        final ApplicableModel possibleApplicable1 = new ApplicableMock(.1);
+        final ApplicableModel possibleApplicable2 = new ApplicableMock(.01);
         final LogLikelihood llCalculator = new LogLikelihood(.5);
         final double calculatedLL1 = llCalculator.calculate(history, possibleApplicable1);
         final double calculatedLL2 = llCalculator.calculate(history, possibleApplicable2);

@@ -1,13 +1,13 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.models.Model;
+import com.expleague.erc.models.ApplicableModel;
 
 import java.util.List;
 
 public class MAE implements Metric {
     @Override
-    public double calculate(List<Event> events, Model.Applicable applicable) {
+    public double calculate(List<Event> events, ApplicableModel applicable) {
         double errors = 0.;
         long count = 0;
         for (final Event event : events) {

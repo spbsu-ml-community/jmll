@@ -23,7 +23,7 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
         savedLambdasUserDerivative = new TIntObjectHashMap<>();
         savedLambdasItemDerivative = new TIntObjectHashMap<>();
         for (final int userId : userEmbeddings.keys()) {
-            userLambdas.put(userId, new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
+            userLambdas.put(userId, new UserLambdaItemSpecific(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
             savedLambdas.put(userId, new TIntDoubleHashMap());
             savedLambdasUserDerivative.put(userId, new TIntObjectHashMap<>());
             savedLambdasItemDerivative.put(userId, new TIntObjectHashMap<>());

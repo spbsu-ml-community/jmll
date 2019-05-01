@@ -42,16 +42,14 @@ public class ModelUserK extends Model {
     }
 
     @Override
-    protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, Event event,
+    protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double timeDelta,
                                               TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
-        final int userId = event.userId();
-        final int itemId = event.itemId();
         final double lam = userBaseLambdas.get(userId) + lambdasByItem.getLambda(userId, itemId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);
         final double tLam = lambdaTransform.applyAsDouble(lam);
         final double tDLam = lambdaDerivativeTransform.applyAsDouble(lam);
-        final double tau = max(event.getPrDelta(), eps);
+        final double tau = max(timeDelta, eps);
 
         final double upB = tau + eps;
         final double lowB = tau - eps;
@@ -77,7 +75,7 @@ public class ModelUserK extends Model {
     protected void updateDerivativeLastEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double tau,
                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {}
 
-    private class ApplicableImpl implements Applicable {
+    private class ApplicableImpl implements ApplicableModel {
         private final LambdaStrategy lambdaStrategy;
 
         private ApplicableImpl() {
@@ -106,12 +104,12 @@ public class ModelUserK extends Model {
     }
 
     @Override
-    public Applicable getApplicable() {
+    public ApplicableModel getApplicable() {
         return new ApplicableImpl();
     }
 
     @Override
-    public Applicable getApplicable(List<Event> events) {
+    public ApplicableModel getApplicable(List<Event> events) {
         final ApplicableImpl applicable = new ApplicableImpl();
         applicable.fit(events);
         return applicable;
@@ -141,16 +139,18 @@ public class ModelUserK extends Model {
                 return true;
             }
             final double userVariance = userVariances.get(userId);
-            final double baseLambda = userMean / userVariance;
-            final int userK = (int)min(max(MIN_K, round(userMean * baseLambda)), MAX_K);
+//            final double baseLambda = userMean / userVariance;
+            final int userK = (int)min(max(MIN_K, round(userMean * userMean / userVariance)), MAX_K);
+            final double baseLambda = userK / userMean;
             userBaseLambdas.put(userId, baseLambda);
             userKs.put(userId, userK);
             return true;
         });
         final double totalMean = Arrays.stream(userMeans.values()).average().orElse(-1);
         final double totalVariance = Arrays.stream(userVariances.values()).average().orElse(-1);
-        final double defaultLambda = totalMean / totalVariance;
-        final int defaultK = (int)min(max(MIN_K, round(totalMean * defaultLambda)), MAX_K);
+//        final double defaultLambda = totalMean / totalVariance;
+        final int defaultK = (int)min(max(MIN_K, round(totalMean * totalMean / totalVariance)), MAX_K);
+        final double defaultLambda = defaultK / totalMean;
         history.stream()
                 .filter(event -> event.getPrDelta() < 0)
                 .mapToInt(Event::userId)

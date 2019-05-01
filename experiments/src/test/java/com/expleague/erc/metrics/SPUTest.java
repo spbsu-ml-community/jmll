@@ -1,7 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.models.Model;
+import com.expleague.erc.models.ApplicableModel;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ public class SPUTest {
                 new Event(0, 0, (1 / lambda) * 2),
                 new Event(0, 1, (1 / lambda) * 2)
         );
-        final Model.Applicable applicable = new ApplicableMock(lambda);
+        final ApplicableModel applicable = new ApplicableMock(lambda);
         final double calculatedSPU = new SPU().calculate(history, applicable);
         Assert.assertEquals(0, calculatedSPU, 1e-9);
     }
@@ -34,8 +34,8 @@ public class SPUTest {
                 new Event(0, 0, (1 / actualLambda) * 2),
                 new Event(0, 1, (1 / actualLambda) * 2)
         );
-        final Model.Applicable possibleApplicable1 = new ApplicableMock(2);
-        final Model.Applicable possibleApplicable2 = new ApplicableMock(3);
+        final ApplicableModel possibleApplicable1 = new ApplicableMock(2);
+        final ApplicableModel possibleApplicable2 = new ApplicableMock(3);
         final SPU spuCalculator = new SPU();
         final double calculatedSPU1 = spuCalculator.calculate(history, possibleApplicable1);
         final double calculatedSPU2 = spuCalculator.calculate(history, possibleApplicable2);

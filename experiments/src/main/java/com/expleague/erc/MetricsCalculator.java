@@ -1,5 +1,6 @@
 package com.expleague.erc;
 
+import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.iterator.TLongIntIterator;
@@ -120,7 +121,7 @@ public class MetricsCalculator {
                 .toArray();
     }
 
-    public double returnTimeMae(Model.Applicable model, List<Event> data) {
+    public double returnTimeMae(ApplicableModel model, List<Event> data) {
         double errors = 0.;
         long count = 0;
         for (final Event event : data) {
@@ -136,7 +137,7 @@ public class MetricsCalculator {
         long errorsSum = 0;
         long count = 0;
         int[] allItemIds = model.getItemEmbeddings().keys();
-        Model.Applicable applicable = model.getApplicable(trainData);
+        ApplicableModel applicable = model.getApplicable(trainData);
         for (Event event: testData) {
             int userId = event.userId();
             final double actualLambda = applicable.getLambda(userId, event.itemId());
@@ -192,7 +193,7 @@ public class MetricsCalculator {
 
     private static final int MAX_PREDICTION_LEN = 10000;
 
-    public List<Event> predictSpan(Model.Applicable model, TLongDoubleMap previousActivityTimes,
+    public List<Event> predictSpan(ApplicableModel model, TLongDoubleMap previousActivityTimes,
                                    double spanStartTime, double spanEndTime) {
         final List<Event> generatedEvents = new ArrayList<>();
         final Queue<Event> followingEvents = new ArrayDeque<>();
@@ -285,7 +286,7 @@ public class MetricsCalculator {
         writePairNames(lambdaTrainedPath, itemIdToName, userIdToName);
     }
 
-    private byte[] lambdasBytes(Model.Applicable applicable) {
+    private byte[] lambdasBytes(ApplicableModel applicable) {
         return Arrays.stream(relevantPairsArray)
                 .mapToDouble(pair -> applicable.getLambda(Util.extractUserId(pair), Util.extractItemId(pair)))
                 .mapToObj(String::valueOf)
@@ -294,7 +295,7 @@ public class MetricsCalculator {
     }
 
     public void writeLambdas(Model model) throws IOException {
-        final Model.Applicable applicable = model.getApplicable();
+        final ApplicableModel applicable = model.getApplicable();
         Files.write(lambdaInitialPath, lambdasBytes(applicable), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         applicable.fit(trainData);
         Files.write(lambdaTrainedPath, lambdasBytes(applicable), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
@@ -351,7 +352,7 @@ public class MetricsCalculator {
     public Summary calculateSummary(Model model) throws ExecutionException, InterruptedException {
         final double[] returnTimeMaes = new double[2];
         final ForkJoinTask returnTimeTask = pool.submit(() -> {
-            final Model.Applicable applicable = model.getApplicable();
+            final ApplicableModel applicable = model.getApplicable();
             returnTimeMaes[0] = returnTimeMae(applicable, trainData);
             returnTimeMaes[1] = returnTimeMae(applicable, testData);
         });

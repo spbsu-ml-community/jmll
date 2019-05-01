@@ -3,6 +3,7 @@ package com.expleague.erc.metrics;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
+import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TLongDoubleMap;
@@ -22,7 +23,7 @@ public class LogLikelihood implements Metric {
     }
 
     @Override
-    public double calculate(List<Event> events, Model.Applicable applicable) {
+    public double calculate(List<Event> events, ApplicableModel applicable) {
         final double observationEnd = events.get(events.size() - 1).getTs();
         double logLikelihood = 0.;
         final TLongSet seenPairs = new TLongHashSet();

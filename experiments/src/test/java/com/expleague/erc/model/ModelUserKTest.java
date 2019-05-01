@@ -4,7 +4,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.Event;
 import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
 import com.expleague.erc.metrics.MAE;
-import com.expleague.erc.models.Model;
+import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.ModelUserK;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
@@ -98,7 +98,7 @@ public class ModelUserKTest {
                 Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(),
                 userEmbeddings, itemEmbeddings, userKs, userBaseLambdas);
         model.fit(history, 1e-2, 100, 0.99, m -> {});
-        final Model.Applicable applicable = model.getApplicable();
+        final ApplicableModel applicable = model.getApplicable();
         Assert.assertEquals(10, applicable.timeDelta(1, 0) / applicable.timeDelta(0, 0), 1);
     }
 

@@ -1,7 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.models.Model;
+import com.expleague.erc.models.ApplicableModel;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -12,7 +12,7 @@ public class MAETest {
     @Test
     public void basicTest() {
         final double lambda = 1;
-        final Model.Applicable applicableMock = new ApplicableMock(lambda);
+        final ApplicableModel applicableMock = new ApplicableMock(lambda);
         final List<Event> history = Arrays.asList(
                 new Event(0, 0, 0, -1),
                 new Event(0, 0, 1, 1)
@@ -25,7 +25,7 @@ public class MAETest {
     @Test
     public void complicatedTest() {
         final double lambda = 2;
-        final Model.Applicable applicableMock = new ApplicableMock(lambda);
+        final ApplicableModel applicableMock = new ApplicableMock(lambda);
         final List<Event> history = Arrays.asList(
                 new Event(0, 0, 0, -1),
                 new Event(0, 0, 1, 1),

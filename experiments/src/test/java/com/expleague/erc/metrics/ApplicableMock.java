@@ -1,11 +1,11 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.models.Model;
+import com.expleague.erc.models.ApplicableModel;
 
 import static java.lang.Math.*;
 
-public class ApplicableMock implements Model.Applicable {
+public class ApplicableMock implements ApplicableModel {
     private final double lambda;
 
     public ApplicableMock(double lambda) {

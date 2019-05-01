@@ -216,7 +216,8 @@ public class Model {
                 seenPairs.add(pairId);
                 lambdasByItem.accept(event);
             } else {
-                updateDerivativeInnerEvent(lambdasByItem, event, userDerivatives, itemDerivatives);
+                updateDerivativeInnerEvent(lambdasByItem, event.userId(), event.itemId(), event.getPrDelta(),
+                        userDerivatives, itemDerivatives);
                 lambdasByItem.accept(event);
                 lastVisitTimes.put(pairId, event.getTs());
             }
@@ -229,15 +230,14 @@ public class Model {
         }
     }
 
-    protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, final Event event,
+    protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double timeDelta,
                                               TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
-        final int userId = event.userId();
-        final int itemId = event.itemId();
         final double lam = lambdasByItem.getLambda(userId, itemId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);
         final double tLam = lambdaTransform.applyAsDouble(lam);
-        final double tau = max(event.getPrDelta(), eps);
+        final double tau = max(timeDelta, eps);
+
         final double expPlus = exp(-tLam * (tau + eps));
         final double expMinus = exp(-tLam * (tau - eps));
         final double lamDT = lambdaDerivativeTransform.applyAsDouble(lam);
@@ -335,28 +335,7 @@ public class Model {
         }
     }
 
-    public interface Applicable {
-        void accept(final Event event);
-
-        double getLambda(final int userId, final int itemId);
-
-        double timeDelta(final int userId, final int itemId);
-
-        double probabilityBeforeX(final int userId, final int itemId, final double x);
-
-        default double probabilityInterval(final int userId, final int itemId, final double start, final double end) {
-            return probabilityBeforeX(userId, itemId, end) - probabilityBeforeX(userId, itemId, start);
-        }
-
-        default Applicable fit(final List<Event> history) {
-            for (Event event : history) {
-                accept(event);
-            }
-            return this;
-        }
-    }
-
-    private class ApplicableImpl implements Applicable {
+    private class ApplicableImpl implements ApplicableModel {
         private final LambdaStrategy lambdaStrategy;
 
         private ApplicableImpl() {
@@ -390,15 +369,15 @@ public class Model {
         }
     }
 
-    public Applicable getApplicable(final List<Event> events) {
-        Applicable applicable = new ApplicableImpl();
+    public ApplicableModel getApplicable(final List<Event> events) {
+        ApplicableModel applicable = new ApplicableImpl();
         if (events != null) {
             applicable.fit(events);
         }
         return applicable;
     }
 
-    public Applicable getApplicable() {
+    public ApplicableModel getApplicable() {
         return new ApplicableImpl();
     }
 

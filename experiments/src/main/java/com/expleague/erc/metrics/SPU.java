@@ -1,7 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.models.Model;
+import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.map.TLongDoubleMap;
 import gnu.trove.map.hash.TLongDoubleHashMap;
 
@@ -9,7 +9,7 @@ import java.util.List;
 
 public class SPU implements Metric {
     @Override
-    public double calculate(List<Event> events, Model.Applicable applicable) {
+    public double calculate(List<Event> events, ApplicableModel applicable) {
         final TLongDoubleMap lastEventTimes = new TLongDoubleHashMap();
         final TLongDoubleMap predictedTimeDeltas = new TLongDoubleHashMap();
         double totalDiff = 0.;
