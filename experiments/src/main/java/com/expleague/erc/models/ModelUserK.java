@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
-import static com.expleague.erc.Util.*;
+import static com.expleague.erc.GammaUtils.*;
 
 import static java.lang.Math.*;
 
