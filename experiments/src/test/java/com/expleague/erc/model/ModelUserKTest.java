@@ -21,7 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import static java.lang.Math.*;
 
-import static com.expleague.erc.Util.*;
+import static com.expleague.erc.GammaUtils.*;
 
 public class ModelUserKTest {
     @Test
