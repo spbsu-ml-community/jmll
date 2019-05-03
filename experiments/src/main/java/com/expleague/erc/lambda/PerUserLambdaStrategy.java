@@ -1,20 +1,17 @@
 package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.erc.Event;
 import com.expleague.erc.Session;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 public class PerUserLambdaStrategy implements LambdaStrategy {
-    private final TIntDoubleMap prevUserActionTime;
+    private static final int CHURN_THRESHOLD = 2 * 7 * 24;
     private final TIntObjectMap<UserLambda> userLambdas;
 
     public PerUserLambdaStrategy(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
                                  final double beta, final TIntDoubleMap initialValues) {
-        prevUserActionTime = new TIntDoubleHashMap();
         userLambdas = new TIntObjectHashMap<>();
         for (final int userId : userEmbeddings.keys()) {
             userLambdas.put(userId, new UserLambdaSingle(userEmbeddings.get(userId), itemEmbeddings, beta,
@@ -39,12 +36,11 @@ public class PerUserLambdaStrategy implements LambdaStrategy {
 
     @Override
     public void accept(final Session session) {
-        double timeDelta = 0;
-        if (prevUserActionTime.containsKey(session.userId())) {
-            timeDelta = session.getTs() - prevUserActionTime.get(session.userId());
+        final UserLambda userLambda = userLambdas.get(session.userId());
+        if (session.getDelta() > CHURN_THRESHOLD) {
+            userLambda.reset();
         }
-        userLambdas.get(session.userId()).update(session.itemId(), timeDelta);
-        prevUserActionTime.put(session.userId(), session.getTs());
+        userLambda.update(session.itemId(), session.getDelta());
     }
 
     public static class Factory implements LambdaStrategyFactory {

@@ -18,9 +18,11 @@ public class UserLambdaSingle implements UserLambda {
     private final TIntObjectMap<Vec> itemEmbeddings;
     private final double beta;
     private final int dim;
+    private final double initialLambda;
+
     private double currentTime;
-    private final TIntDoubleMap lastTimeOfItems;
     private double lambda;
+    private final TIntDoubleMap lastTimeOfItems;
     private final Vec userDerivative;
     private final TIntObjectMap<Vec> itemDerivatives;
 
@@ -34,11 +36,22 @@ public class UserLambdaSingle implements UserLambda {
         currentTime = 0.;
         lastTimeOfItems = new TIntDoubleHashMap();
 
-        lambda = initialValue;
+        initialLambda = initialValue;
+        lambda = initialLambda;
         userDerivative = new ArrayVec(dim);
         itemDerivatives = new TIntObjectHashMap<>();
     }
 
+    @Override
+    public void reset() {
+        lambda = initialLambda;
+        currentTime = 0.;
+        lastTimeOfItems.clear();
+        itemDerivatives.clear();
+        VecTools.fill(userDerivative, 0);
+    }
+
+    @Override
     public final void update(final int itemId, double timeDelta) {
         timeDelta = 1.;
         if (!lastTimeOfItems.containsKey(itemId)) {
@@ -67,10 +80,12 @@ public class UserLambdaSingle implements UserLambda {
         currentTime += timeDelta;
     }
 
+    @Override
     public final double getLambda(final int itemId) {
         return lambda;
     }
 
+    @Override
     public final Vec getLambdaUserDerivative(final int itemId) {
         final Vec derivative = VecTools.copy(userDerivative);
         final double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));
@@ -78,6 +93,7 @@ public class UserLambdaSingle implements UserLambda {
         return derivative;
     }
 
+    @Override
     public final TIntObjectMap<Vec> getLambdaItemsDerivative(final int itemId) {
         final TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
         itemDerivatives.forEachEntry((curItemId, itemDerivative) -> {

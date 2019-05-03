@@ -1,12 +1,9 @@
 package com.expleague.erc;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.erc.data.BaseDataReader;
+import com.expleague.erc.data.*;
 import com.expleague.erc.lambda.*;
 import com.expleague.erc.metrics.MetricsWriter;
-import com.expleague.erc.data.DataPreprocessor;
-import com.expleague.erc.data.LastFmDataReader;
-import com.expleague.erc.data.OneTimeDataProcessor;
 import com.expleague.erc.models.Model;
 import com.expleague.erc.models.ModelPerUser;
 import gnu.trove.map.TIntObjectMap;
@@ -129,11 +126,10 @@ public class ModelTrainingRunner {
 
         }
 
-        final MetricsWriter metricsWriter =
-                new MetricsWriter(train, test, eps, modelDirPath);
+        final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
         model.fit(test, lr, iterations, decay, metricsWriter);
 
-        model.write(Files.newOutputStream(modelPath));
+//        model.write(Files.newOutputStream(modelPath));
     }
 
 }

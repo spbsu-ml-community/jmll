@@ -13,11 +13,11 @@ public class Session {
         delta = -1;
     }
 
-    public Session(int userId, int itemId, double ts, double prDelta) {
+    public Session(int userId, int itemId, double ts, double delta) {
         this.userId = userId;
         this.itemId = itemId;
         this.ts = ts;
-        this.delta = prDelta;
+        this.delta = delta;
     }
 
     public Session(Event event) {

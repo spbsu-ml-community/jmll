@@ -87,50 +87,6 @@ public class Model {
         return embedding;
     }
 
-    /*
-        private TIntObjectMap<Vec> initEmbeddings(final TIntSet ids, final double embMean) {
-            final FastRandom randomGenerator = new FastRandom();
-            final TIntObjectMap<Vec> embeddings = new TIntObjectHashMap<>();
-            ids.forEach(itemId -> {
-                embeddings.put(itemId, makeEmbedding(randomGenerator, embMean, dim));
-                return true;
-            });
-            return embeddings;
-        }
-
-        public void initializeEmbeddings(final List<Event> events) {
-            if (dataInitialized) {
-                return;
-            }
-            userIds = new TIntHashSet();
-            itemIds = new TIntHashSet();
-    //        userBiases = new TIntDoubleHashMap();
-    //        itemBiases = new TIntDoubleHashMap();
-            events.stream()
-                    .mapToInt(Event::userId)
-    //                .peek(user -> userBiases.put(user, DEFAULT_BIAS))
-                    .forEach(userIds::add);
-            events.stream()
-                    .mapToInt(Event::itemId)
-    //                .peek(item -> itemBiases.put(item, DEFAULT_BIAS))
-                    .forEach(itemIds::add);
-            userIdsArray = userIds.toArray();
-            itemIdsArray = itemIds.toArray();
-
-            double itemDeltaMean = events.stream()
-                    .filter(event -> event.getDelta() >= 0)
-                    .collect(Collectors.averagingDouble(Event::getDelta));
-            double embMean = sqrt(1 / itemDeltaMean) / dim;
-            System.out.println("Embedding mean = " + embMean);
-            if (userEmbeddings == null) {
-                userEmbeddings = initEmbeddings(userIds, embMean);
-            }
-            if (itemEmbeddings == null) {
-                itemEmbeddings = initEmbeddings(itemIds, embMean);
-            }
-            dataInitialized = true;
-        }
-    */
     public static void makeInitialEmbeddings(int dim, List<Event> history,
                                              TIntObjectMap<Vec> userEmbeddings, TIntObjectMap<Vec> itemEmbeddings) {
         final TIntSet userIds = new TIntHashSet();

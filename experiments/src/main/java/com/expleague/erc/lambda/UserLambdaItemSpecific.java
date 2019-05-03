@@ -14,10 +14,9 @@ import java.lang.Math;
 public final class UserLambdaItemSpecific implements UserLambda {
     private final Vec userEmbedding;
     private final TIntObjectMap<Vec> itemEmbeddings;
-//    private final TIntDoubleMap userBiases;
-//    private final TIntDoubleMap itemBiases;
     private final double beta;
     private final double otherItemsImportance;
+
     private double currentTime;
     private final TIntDoubleMap lastTimeOfItems;
     private double commonSum;
@@ -28,12 +27,9 @@ public final class UserLambdaItemSpecific implements UserLambda {
     private final TIntObjectMap<Vec> itemsDerivativeByItems;
 
     public UserLambdaItemSpecific(final Vec userEmbedding, final TIntObjectMap<Vec> itemsEmbeddings, final double beta,
-//                      final TIntDoubleMap userBiases, final TIntDoubleMap itemBiases,
                                   final double otherItemsImportance) {
         this.userEmbedding = userEmbedding;
         this.itemEmbeddings = itemsEmbeddings;
-//        this.userBiases = userBiases;
-//        this.itemBiases = itemBiases;
         this.beta = beta;
         this.otherItemsImportance = otherItemsImportance;
 
@@ -52,6 +48,19 @@ public final class UserLambdaItemSpecific implements UserLambda {
         itemsDerivativeByItems = new TIntObjectHashMap<>();
     }
 
+    @Override
+    public void reset() {
+        currentTime = 0.;
+        lastTimeOfItems.clear();
+        commonSum = 0.;
+        additionalSumByItems.clear();
+        VecTools.fill(commonUserDerivative, 0.);
+        userDerivativeByItems.clear();
+        VecTools.fill(commonItemsDerivative, 0);
+        itemsDerivativeByItems.clear();
+    }
+
+    @Override
     public final void update(final int itemId, double timeDelta) {
         timeDelta = 1.;
         if (!lastTimeOfItems.containsKey(itemId)) {
@@ -97,6 +106,7 @@ public final class UserLambdaItemSpecific implements UserLambda {
         currentTime += timeDelta;
     }
 
+    @Override
     public final double getLambda(final int itemId) {
         double baseLambda = commonSum + VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));
         if (!additionalSumByItems.containsKey(itemId)) {
@@ -105,6 +115,7 @@ public final class UserLambdaItemSpecific implements UserLambda {
         return baseLambda + additionalSumByItems.get(itemId);
     }
 
+    @Override
     public final Vec getLambdaUserDerivative(final int itemId) {
         final Vec completeDerivative = VecTools.copy(commonUserDerivative);
         VecTools.append(completeDerivative, itemEmbeddings.get(itemId));
@@ -117,6 +128,7 @@ public final class UserLambdaItemSpecific implements UserLambda {
         return completeDerivative;
     }
 
+    @Override
     public final TIntObjectMap<Vec> getLambdaItemsDerivative(final int itemId) {
         final TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
         for(TIntDoubleIterator it = lastTimeOfItems.iterator(); it.hasNext();) {

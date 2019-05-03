@@ -2,8 +2,12 @@ package com.expleague.erc.data;
 
 import com.expleague.erc.Event;
 import com.expleague.erc.Session;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TLongDoubleMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongDoubleHashMap;
 
@@ -13,6 +17,7 @@ import java.util.stream.Collectors;
 
 public abstract class DataPreprocessor {
     private static final double MAX_RATIO = 3.;
+    private static final double MAX_GAP = .5;
 
     public static class TrainTest {
         private List<Event> train;
@@ -54,16 +59,34 @@ public abstract class DataPreprocessor {
         return usersEvents;
     }
 
+//    public static List<Session> groupToSessions(List<Event> events) {
+//        final List<Session> sessions = new ArrayList<>();
+//        final TLongDoubleMap lastTimes = new TLongDoubleHashMap();
+//        for (Event event: events) {
+//            final long pair = event.getPair();
+//            final double curTime = event.getTs();
+//            if (!lastTimes.containsKey(pair) || lastTimes.get(pair) + 0.5 <= curTime) { //TODO !!!!!
+//                sessions.add(new Session(event));
+//            }
+//            lastTimes.put(pair, curTime);
+//        }
+//        return sessions;
+//    }
+
     public static List<Session> groupToSessions(List<Event> events) {
         final List<Session> sessions = new ArrayList<>();
-        final TLongDoubleMap lastTimes = new TLongDoubleHashMap();
-        for (Event event: events) {
-            final long pair = event.getPair();
+        final TIntDoubleMap lastTimes = new TIntDoubleHashMap();
+        final TIntIntMap lastItems = new TIntIntHashMap(64, 0.5f, -1, -1);
+        for (final Event event : events) {
+            final int userId = event.userId();
+            final int itemId = event.itemId();
             final double curTime = event.getTs();
-            if (!lastTimes.containsKey(pair) || lastTimes.get(pair) + 0.5 <= curTime) { //TODO !!!!!
-                sessions.add(new Session(event));
+            final double lastTime = lastTimes.get(userId);
+            if (lastItems.get(userId) != itemId || lastTime + MAX_GAP < curTime) {
+                sessions.add(new Session(userId, itemId, curTime, curTime - lastTime));
             }
-            lastTimes.put(pair, curTime);
+            lastTimes.put(userId, curTime);
+            lastItems.put(userId, itemId);
         }
         return sessions;
     }
