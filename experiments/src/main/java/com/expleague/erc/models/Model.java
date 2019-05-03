@@ -268,7 +268,7 @@ public class Model {
 
         @Override
         public double probabilityBeforeX(int userId, int itemId, double x) {
-            return exp(-getLambda(userId, itemId) * x);
+            return 1 - exp(-getLambda(userId, itemId) * x);
         }
     }
 
