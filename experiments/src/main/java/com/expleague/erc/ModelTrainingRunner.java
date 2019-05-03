@@ -47,28 +47,28 @@ public class ModelTrainingRunner {
         final CommandLineParser parser = new DefaultParser();
         final CommandLine cliOptions = parser.parse(options, args);
 
-        final String dataPath = cliOptions.getOptionValue("ds", "~/data/mlimlab/erc/datasets/lastfm-dataset-1K/userid-timestamp-artid-artname-traid-traname_1M.tsv");
+        final String dataPath = cliOptions.getOptionValue("ds", "../erc/data/lastfm/lastfm-dataset-1K/userid-timestamp-artid-artname-traid-traname.tsv");
         int dim = Integer.parseInt(cliOptions.getOptionValue("dm", "15"));
         double beta = Double.parseDouble(cliOptions.getOptionValue("b", "1e-1"));
         double otherItemImportance = Double.parseDouble(cliOptions.getOptionValue("o", "1e-1"));
-        double eps = Double.parseDouble(cliOptions.getOptionValue("e", "5"));
+        double eps = Double.parseDouble(cliOptions.getOptionValue("e", "0.5"));
         int size = Integer.parseInt(cliOptions.getOptionValue("s", "1000000"));
         int usersNum = Integer.parseInt(cliOptions.getOptionValue("un", "1000"));
         int itemsNum = Integer.parseInt(cliOptions.getOptionValue("in", "1000"));
         double trainRatio = Double.parseDouble(cliOptions.getOptionValue("tr", "0.75"));
         boolean isTop = Boolean.parseBoolean(cliOptions.getOptionValue("t", "true"));
-        int iterations = Integer.parseInt(cliOptions.getOptionValue("it", "15"));
+        int iterations = Integer.parseInt(cliOptions.getOptionValue("it", "35"));
         double lr = Double.parseDouble(cliOptions.getOptionValue("lr", "1e-3"));
         double lrd = Double.parseDouble(cliOptions.getOptionValue("lrd", "1"));
-        String modelName = cliOptions.getOptionValue("mn", null);
+        String modelName = cliOptions.getOptionValue("mn", "experiments/src/main/resources/com/expleague/erc/models/model");
         boolean reset = cliOptions.hasOption("r");
 
         BaseDataReader dataReader = new LastFmDataReader();
         List<Event> history = dataReader.readData(dataPath, size);
         Map<Integer, String> itemIdToName = dataReader.getReversedItemMap();
         Map<Integer, String> userIdToName = dataReader.getReversedUserMap();
-        runModel(history, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop,
-                modelName, itemIdToName, userIdToName, reset);
+        runModel(history, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio,
+                isTop, modelName, itemIdToName, userIdToName, reset);
     }
 
     private static void runModel(final List<Event> history, final int iterations, final double lr, final double decay,

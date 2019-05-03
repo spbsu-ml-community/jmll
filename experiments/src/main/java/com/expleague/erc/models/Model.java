@@ -5,7 +5,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
@@ -97,7 +97,7 @@ public class Model {
         }
 
         final double itemDeltaMean = DataPreprocessor.groupToSessions(history).stream()
-                .mapToDouble(Session::getDelta)
+                .mapToDouble(EventSeq::getDelta)
                 .filter(delta -> delta >= 0)
                 .average().orElse(-1);
         final double embeddingMean = sqrt(1 / itemDeltaMean) / dim;
@@ -115,8 +115,8 @@ public class Model {
     public void logLikelihoodDerivative(final List<Event> events,
                                         final TIntObjectMap<Vec> userDerivatives,
                                         final TIntObjectMap<Vec> itemDerivatives) {
-        final List<Session> sessions = DataPreprocessor.groupToSessions(events);
-        final double observationEnd = events.get(sessions.size() - 1).getTs();
+        final List<EventSeq> eventSeqs = DataPreprocessor.groupToSessions(events);
+        final double observationEnd = events.get(eventSeqs.size() - 1).getTs();
         final TLongSet seenPairs = new TLongHashSet();
         for (final int userId : userIds.toArray()) {
             userDerivatives.put(userId, new ArrayVec(dim));
@@ -127,16 +127,16 @@ public class Model {
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
-        for (final Session session : sessions) {
-            final long pairId = session.getPair();
+        for (final EventSeq eventSeq : eventSeqs) {
+            final long pairId = eventSeq.getPair();
             if (!seenPairs.contains(pairId)) {
                 seenPairs.add(pairId);
-                lambdasByItem.accept(session);
+                lambdasByItem.accept(eventSeq);
             } else {
-                updateDerivativeInnerEvent(lambdasByItem, session.userId(), session.itemId(), session.getDelta(),
+                updateDerivativeInnerEvent(lambdasByItem, eventSeq.userId(), eventSeq.itemId(), eventSeq.getDelta(),
                         userDerivatives, itemDerivatives);
-                lambdasByItem.accept(session);
-                lastVisitTimes.put(pairId, session.getTs());
+                lambdasByItem.accept(eventSeq);
+                lastVisitTimes.put(pairId, eventSeq.getTs());
             }
         }
         for (long pairId : lastVisitTimes.keys()) {
@@ -252,8 +252,8 @@ public class Model {
         }
 
         @Override
-        public void accept(final Session session) {
-            lambdaStrategy.accept(session);
+        public void accept(final EventSeq eventSeq) {
+            lambdaStrategy.accept(eventSeq);
         }
 
         @Override

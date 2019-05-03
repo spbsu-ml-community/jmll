@@ -1,26 +1,26 @@
 package com.expleague.erc;
 
-public class Session {
+public class EventSeq {
     protected final int userId;
     protected final int itemId;
     protected final double ts;
     protected double delta;
 
-    public Session(int userId, int itemId, double ts) {
+    public EventSeq(int userId, int itemId, double ts) {
         this.userId = userId;
         this.itemId = itemId;
         this.ts = ts;
         delta = -1;
     }
 
-    public Session(int userId, int itemId, double ts, double delta) {
+    public EventSeq(int userId, int itemId, double ts, double delta) {
         this.userId = userId;
         this.itemId = itemId;
         this.ts = ts;
         this.delta = delta;
     }
 
-    public Session(Event event) {
+    public EventSeq(Event event) {
         this(event.userId, event.itemId, event.ts, event.prDelta);
     }
 

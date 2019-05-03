@@ -3,7 +3,7 @@ package com.expleague.erc.models;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
@@ -35,25 +35,25 @@ public class ModelGamma2 extends Model {
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
-        for (final Session session : DataPreprocessor.groupToSessions(events)) {
-            final int userId = session.userId();
-            final int itemId = session.itemId();
-            final long pairId = session.getPair();
+        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+            final int userId = eventSeq.userId();
+            final int itemId = eventSeq.itemId();
+            final long pairId = eventSeq.getPair();
             if (!seenPairs.contains(pairId)) {
                 seenPairs.add(pairId);
-                lambdasByItem.accept(session);
+                lambdasByItem.accept(eventSeq);
             } else {
                 final double lam = lambdasByItem.getLambda(userId, itemId);
                 final double tLam = lambdaTransform.applyAsDouble(lam);
-                final double prDelta = max(session.getDelta(), eps);
+                final double prDelta = max(eventSeq.getDelta(), eps);
                 final double upBLam = (prDelta + eps) * tLam;
                 final double lowBLam = (prDelta - eps) * tLam;
                 final double probLog = log(-exp(-upBLam) * (upBLam + 1) + exp(-lowBLam) * (lowBLam + 1));
                 if (Double.isFinite(probLog)) {
                     logLikelihood += probLog;
                 }
-                lambdasByItem.accept(session);
-                lastVisitTimes.put(pairId, session.getTs());
+                lambdasByItem.accept(eventSeq);
+                lastVisitTimes.put(pairId, eventSeq.getTs());
             }
         }
         for (long pairId : lastVisitTimes.keys()) {
@@ -138,8 +138,8 @@ public class ModelGamma2 extends Model {
         }
 
         @Override
-        public void accept(Session session) {
-            lambdaStrategy.accept(session);
+        public void accept(EventSeq eventSeq) {
+            lambdaStrategy.accept(eventSeq);
         }
 
         @Override

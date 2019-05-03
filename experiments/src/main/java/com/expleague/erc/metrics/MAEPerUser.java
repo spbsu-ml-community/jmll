@@ -1,7 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.map.TIntDoubleMap;
@@ -15,17 +15,17 @@ public class MAEPerUser implements Metric {
         double errors = 0.;
         long count = 0;
         final TIntDoubleMap prevTimes = new TIntDoubleHashMap();
-        for (final Session session : DataPreprocessor.groupToSessions(events)) {
-            final int userId = session.userId();
-            final double curTime = session.getTs();
-            final double expectedReturnTime = applicable.timeDelta(userId, session.itemId());
+        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+            final int userId = eventSeq.userId();
+            final double curTime = eventSeq.getTs();
+            final double expectedReturnTime = applicable.timeDelta(userId, eventSeq.itemId());
             final double prevTime = prevTimes.get(userId);
             if (prevTime != prevTimes.getNoEntryValue()) {
                 final double actualReturnTime = curTime - prevTime;
                 count++;
                 errors += Math.abs(actualReturnTime - expectedReturnTime);
             }
-            applicable.accept(session);
+            applicable.accept(eventSeq);
             prevTimes.put(userId, curTime);
         }
         return errors / count;

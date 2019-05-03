@@ -1,13 +1,13 @@
 package com.expleague.erc.models;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.data.DataPreprocessor;
 
 import java.util.List;
 
 public interface ApplicableModel {
-    void accept(final Session event);
+    void accept(final EventSeq event);
 
     double getLambda(final int userId, final int itemId);
 
@@ -20,8 +20,8 @@ public interface ApplicableModel {
     }
 
     default ApplicableModel fit(final List<Event> history) {
-        for (final Session session : DataPreprocessor.groupToSessions(history)) {
-            accept(session);
+        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(history)) {
+            accept(eventSeq);
         }
         return this;
     }

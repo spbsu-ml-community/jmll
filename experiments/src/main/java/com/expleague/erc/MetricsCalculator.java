@@ -125,11 +125,11 @@ public class MetricsCalculator {
     public double returnTimeMae(ApplicableModel model, List<Event> data) {
         double errors = 0.;
         long count = 0;
-        for (final Session session : DataPreprocessor.groupToSessions(data)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(data)) {
             count++;
-            final double expectedReturnTime = model.timeDelta(session.userId(), session.itemId());
-            errors += Math.abs(session.getDelta() - expectedReturnTime);
-            model.accept(session);
+            final double expectedReturnTime = model.timeDelta(eventSeq.userId(), eventSeq.itemId());
+            errors += Math.abs(eventSeq.getDelta() - expectedReturnTime);
+            model.accept(eventSeq);
         }
         return errors / count;
     }
@@ -139,16 +139,16 @@ public class MetricsCalculator {
         long count = 0;
         int[] allItemIds = model.getItemEmbeddings().keys();
         ApplicableModel applicable = model.getApplicable(trainData);
-        for (final Session session : DataPreprocessor.groupToSessions(testData)) {
-            int userId = session.userId();
-            final double actualLambda = applicable.getLambda(userId, session.itemId());
+        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(testData)) {
+            int userId = eventSeq.userId();
+            final double actualLambda = applicable.getLambda(userId, eventSeq.itemId());
             for (int i : allItemIds) {
                 if (applicable.getLambda(userId, i) > actualLambda) {
                     errorsSum++;
                 }
             }
             count++;
-            applicable.accept(session);
+            applicable.accept(eventSeq);
         }
         return (double) errorsSum / count;
     }
@@ -161,24 +161,24 @@ public class MetricsCalculator {
                 .collect(Collectors.averagingDouble(event -> Math.abs(event.getPrDelta() - meanItemDelta)));
     }
 
-    public TLongDoubleMap pairwiseSessionsSpu(List<Session> sessions) {
-        final double startTime = sessions.get(0).getTs();
+    public TLongDoubleMap pairwiseSessionsSpu(List<EventSeq> eventSeqs) {
+        final double startTime = eventSeqs.get(0).getTs();
         final TLongIntMap pairSessions = new TLongIntHashMap();
         final TLongDoubleMap pairDeathTimes = new TLongDoubleHashMap();
         final TLongDoubleMap pairBirthTimes = new TLongDoubleHashMap();
         final TLongDoubleMap pairSpus = new TLongDoubleHashMap();
-        for (Session session : sessions) {
-            final long pair = session.getPair();
+        for (EventSeq eventSeq : eventSeqs) {
+            final long pair = eventSeq.getPair();
             if (relevantPairs.contains(pair)) {
-                pairDeathTimes.put(pair, session.getTs() - startTime);
+                pairDeathTimes.put(pair, eventSeq.getTs() - startTime);
                 if (!pairBirthTimes.containsKey(pair)) {
-//                pairBirthTimes.put(pair, session.getTs() - startTime);
+//                pairBirthTimes.put(pair, eventSeq.getTs() - startTime);
                     pairBirthTimes.put(pair, 0);
                 }
             }
         }
-        for (Session session : sessions) {
-            final long pair = session.getPair();
+        for (EventSeq eventSeq : eventSeqs) {
+            final long pair = eventSeq.getPair();
             if (relevantPairs.contains(pair)) {
                 pairSessions.put(pair, pairSessions.get(pair) + 1);
             }
@@ -194,23 +194,23 @@ public class MetricsCalculator {
 
     private static final int MAX_PREDICTION_LEN = 10000;
 
-    public List<Session> predictSpan(ApplicableModel model, TLongDoubleMap previousActivityTimes,
-                                   double spanStartTime, double spanEndTime) {
-        final List<Session> generatedEvents = new ArrayList<>();
-        final Queue<Session> followingEvents = new ArrayDeque<>();
+    public List<EventSeq> predictSpan(ApplicableModel model, TLongDoubleMap previousActivityTimes,
+                                      double spanStartTime, double spanEndTime) {
+        final List<EventSeq> generatedEvents = new ArrayList<>();
+        final Queue<EventSeq> followingEvents = new ArrayDeque<>();
         for (int itemId : itemIds) {
             for (int userId : itemsUsersArrays.get(itemId)) {
                 final double newEventTime = previousActivityTimes.get(Util.combineIds(userId, itemId)) +
                         model.timeDelta(userId, itemId);
                 if (newEventTime <= spanEndTime) {
-                    followingEvents.add(new Session(userId, itemId, newEventTime));
+                    followingEvents.add(new EventSeq(userId, itemId, newEventTime));
                 }
             }
         }
 //        int predictionLen = 0;
         while (!followingEvents.isEmpty() && generatedEvents.size() < MAX_PREDICTION_LEN) {
 //            ++predictionLen;
-            final Session curEvent = followingEvents.poll();
+            final EventSeq curEvent = followingEvents.poll();
             if (curEvent.getTs() >= spanStartTime) {
                 generatedEvents.add(curEvent);
             }
@@ -219,7 +219,7 @@ public class MetricsCalculator {
             final double newEventTime = curEvent.getTs() + model.timeDelta(curEvent.userId(), curEvent.itemId());
 //            System.out.println(model.timeDelta(curEvent.userId(), curEvent.itemId()));
             if (curEvent.getTs() <= newEventTime && newEventTime <= spanEndTime) {
-                followingEvents.add(new Session(curEvent.userId(), curEvent.itemId(), newEventTime));
+                followingEvents.add(new EventSeq(curEvent.userId(), curEvent.itemId(), newEventTime));
             } else {
                 System.out.println(curEvent.getTs() + " " + spanEndTime + " " + newEventTime);
             }
@@ -360,12 +360,12 @@ public class MetricsCalculator {
         final ForkJoinTask<Double> recommendMaeTask = pool.submit(
                 () -> itemRecommendationMae(model));
         final ForkJoinTask<TLongDoubleMap> spusTestTask = pool.submit(() -> {
-            final List<Session> prediction =
+            final List<EventSeq> prediction =
                     predictSpan(model.getApplicable(trainData), lastTrainEvents, splitTime, endTime);
             return pairwiseSessionsSpu(prediction);
         });
         final ForkJoinTask<TLongDoubleMap> spusTrainTask = pool.submit(() -> {
-            final List<Session> prediction =
+            final List<EventSeq> prediction =
                     predictSpan(model.getApplicable(), beginningTimes, startTime, splitTime);
             return pairwiseSessionsSpu(prediction);
         });

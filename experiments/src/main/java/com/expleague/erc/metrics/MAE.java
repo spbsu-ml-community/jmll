@@ -1,7 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 
@@ -12,14 +12,14 @@ public class MAE implements Metric {
     public double calculate(List<Event> events, ApplicableModel applicable) {
         double errors = 0.;
         long count = 0;
-        for (final Session session : DataPreprocessor.groupToSessions(events)) {
-            final double expectedReturnTime = applicable.timeDelta(session.userId(), session.itemId());
-            final double actualReturnTime = session.getDelta();
+        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+            final double expectedReturnTime = applicable.timeDelta(eventSeq.userId(), eventSeq.itemId());
+            final double actualReturnTime = eventSeq.getDelta();
             if (actualReturnTime > 0) {
                 count++;
                 errors += Math.abs(actualReturnTime - expectedReturnTime);
             }
-            applicable.accept(session);
+            applicable.accept(eventSeq);
         }
         return errors / count;
     }

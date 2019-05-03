@@ -4,7 +4,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.iterator.TIntObjectIterator;
@@ -84,8 +84,8 @@ public class ModelUserK extends Model {
         }
 
         @Override
-        public void accept(final Session session) {
-            lambdaStrategy.accept(session);
+        public void accept(final EventSeq eventSeq) {
+            lambdaStrategy.accept(eventSeq);
         }
 
         @Override

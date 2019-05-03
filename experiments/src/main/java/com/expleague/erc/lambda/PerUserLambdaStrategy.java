@@ -1,7 +1,7 @@
 package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -35,12 +35,12 @@ public class PerUserLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
-    public void accept(final Session session) {
-        final UserLambda userLambda = userLambdas.get(session.userId());
-        if (session.getDelta() > CHURN_THRESHOLD) {
+    public void accept(final EventSeq eventSeq) {
+        final UserLambda userLambda = userLambdas.get(eventSeq.userId());
+        if (eventSeq.getDelta() > CHURN_THRESHOLD) {
             userLambda.reset();
         }
-        userLambda.update(session.itemId(), session.getDelta());
+        userLambda.update(eventSeq.itemId(), eventSeq.getDelta());
     }
 
     public static class Factory implements LambdaStrategyFactory {

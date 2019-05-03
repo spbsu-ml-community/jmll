@@ -3,7 +3,7 @@ package com.expleague.erc.models;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
@@ -44,18 +44,18 @@ public class ModelPerUser extends Model {
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         final TIntDoubleMap userLastVisitTimes = new TIntDoubleHashMap();
-        for (final Session session : DataPreprocessor.groupToSessions(events)) {
-            final long pairId = session.getPair();
-            final int userId = session.userId();
-            final double time = session.getTs();
+        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+            final long pairId = eventSeq.getPair();
+            final int userId = eventSeq.userId();
+            final double time = eventSeq.getTs();
             if (!seenPairs.contains(pairId)) {
                 seenPairs.add(pairId);
-                lambdasByItem.accept(session);
+                lambdasByItem.accept(eventSeq);
             } else {
-                updateDerivativeInnerEvent(lambdasByItem, userId, session.itemId(),
+                updateDerivativeInnerEvent(lambdasByItem, userId, eventSeq.itemId(),
                         time - userLastVisitTimes.get(userId),
                         userDerivatives, itemDerivatives);
-                lambdasByItem.accept(session);
+                lambdasByItem.accept(eventSeq);
                 lastVisitTimes.put(pairId, time);
             }
             userLastVisitTimes.put(userId, time);

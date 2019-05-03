@@ -1,8 +1,7 @@
 package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -62,18 +61,18 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
-    public void accept(final Session session) {
-        int userId = session.userId();
-        int itemId = session.itemId();
+    public void accept(final EventSeq eventSeq) {
+        int userId = eventSeq.userId();
+        int itemId = eventSeq.itemId();
         double timeDelta = 0.;
         if (prevUserActionTime.containsKey(userId)) {
-            timeDelta = session.getTs() - prevUserActionTime.get(userId);
+            timeDelta = eventSeq.getTs() - prevUserActionTime.get(userId);
         }
         userLambdas.get(userId).update(itemId, timeDelta);
         savedLambdas.get(userId).put(itemId, userLambdas.get(userId).getLambda(itemId));
         savedLambdasUserDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaUserDerivative(itemId));
         savedLambdasItemDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaItemsDerivative(itemId));
-        prevUserActionTime.put(userId, session.getTs());
+        prevUserActionTime.put(userId, eventSeq.getTs());
     }
 
     public static class NotLookAheadLambdaStrategyFactory implements LambdaStrategyFactory {
