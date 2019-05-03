@@ -1,6 +1,7 @@
 package com.expleague.erc;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.erc.data.BaseDataReader;
 import com.expleague.erc.lambda.*;
 import com.expleague.erc.metrics.MetricsWriter;
 import com.expleague.erc.data.DataPreprocessor;
@@ -65,23 +66,25 @@ public class ModelTrainingRunner {
         String modelName = cliOptions.getOptionValue("mn", null);
         boolean reset = cliOptions.hasOption("r");
 
-        LastFmDataReader lastFmDataReader = new LastFmDataReader();
-        List<Event> data = lastFmDataReader.readData(dataPath, size);
-        Map<Integer, String> itemIdToName = lastFmDataReader.getReversedItemMap();
-        Map<Integer, String> userIdToName = lastFmDataReader.getReversedUserMap();
-        runModel(data, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop,
+        BaseDataReader dataReader = new LastFmDataReader();
+        List<Event> history = dataReader.readData(dataPath, size);
+        Map<Integer, String> itemIdToName = dataReader.getReversedItemMap();
+        Map<Integer, String> userIdToName = dataReader.getReversedUserMap();
+        runModel(history, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio, isTop,
                 modelName, itemIdToName, userIdToName, reset);
     }
 
-    private static void runModel(final List<Event> data, final int iterations, final double lr, final double decay,
+    private static void runModel(final List<Event> history, final int iterations, final double lr, final double decay,
                                  final int dim, final double beta, final double otherItemImportance, final double eps,
                                  final int usersNum, final int itemsNum, final double trainRatio, final boolean isTop,
                                  final String modelName, final Map<Integer, String> itemIdToName,
                                  final Map<Integer, String> userIdToName, boolean reset) throws IOException, ClassNotFoundException {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
-        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(preprocessor.filterSessions(data), trainRatio);
+        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(history, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
         dataset = preprocessor.filterComparable(dataset);
+        final List<Event> train = dataset.getTrain();
+        final List<Event> test = dataset.getTest();
 
         Path modelDirPath = Paths.get(modelName);
         boolean existingModel = Files.isDirectory(modelDirPath);
@@ -111,9 +114,9 @@ public class ModelTrainingRunner {
             DoubleUnaryOperator lambdaDerivative = new LambdaTransforms.AbsDerivativeTransform();
             TIntObjectMap<Vec> userEmbeddings = new TIntObjectHashMap<>();
             TIntObjectMap<Vec> itemEmbeddings = new TIntObjectHashMap<>();
-            Model.makeInitialEmbeddings(dim, dataset.getTrain(), userEmbeddings, itemEmbeddings);
+            Model.makeInitialEmbeddings(dim, train, userEmbeddings, itemEmbeddings);
             LambdaStrategyFactory perUserLambdaStrategyFactory =
-                    new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(dataset.getTrain()));
+                    new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(train));
             model = new ModelPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     perUserLambdaStrategyFactory, userEmbeddings, itemEmbeddings);
 //            TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
@@ -127,8 +130,8 @@ public class ModelTrainingRunner {
         }
 
         final MetricsWriter metricsWriter =
-                new MetricsWriter(dataset.getTrain(), dataset.getTest(), eps, modelDirPath);
-        model.fit(dataset.getTrain(), lr, iterations, decay, metricsWriter);
+                new MetricsWriter(train, test, eps, modelDirPath);
+        model.fit(test, lr, iterations, decay, metricsWriter);
 
         model.write(Files.newOutputStream(modelPath));
     }

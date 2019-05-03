@@ -1,23 +1,27 @@
 package com.expleague.erc;
 
-public class Event {
+public class Session {
     protected final int userId;
     protected final int itemId;
     protected final double ts;
-    protected double prDelta;
+    protected double delta;
 
-    public Event(int userId, int itemId, double ts) {
+    public Session(int userId, int itemId, double ts) {
         this.userId = userId;
         this.itemId = itemId;
         this.ts = ts;
-        prDelta = -1;
+        delta = -1;
     }
 
-    public Event(int userId, int itemId, double ts, double prDelta) {
+    public Session(int userId, int itemId, double ts, double prDelta) {
         this.userId = userId;
         this.itemId = itemId;
         this.ts = ts;
-        this.prDelta = prDelta;
+        this.delta = prDelta;
+    }
+
+    public Session(Event event) {
+        this(event.userId, event.itemId, event.ts, event.prDelta);
     }
 
     public int userId() {
@@ -32,12 +36,12 @@ public class Event {
         return ts;
     }
 
-    public double getPrDelta() {
-        return prDelta;
+    public double getDelta() {
+        return delta;
     }
 
-    public void setPrDelta(final double prDelta) {
-        this.prDelta = prDelta;
+    public void setDelta(final double delta) {
+        this.delta = delta;
     }
 
     public boolean isFinish() {

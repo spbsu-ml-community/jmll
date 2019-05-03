@@ -1,7 +1,10 @@
 package com.expleague.erc.data;
 
 import com.expleague.erc.Event;
+import com.expleague.erc.Session;
+import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TLongDoubleMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongDoubleHashMap;
 
 import java.util.*;
@@ -10,7 +13,6 @@ import java.util.stream.Collectors;
 
 public abstract class DataPreprocessor {
     private static final double MAX_RATIO = 3.;
-    private static final double MAX_GAP = .5;
 
     public static class TrainTest {
         private List<Event> train;
@@ -40,6 +42,31 @@ public abstract class DataPreprocessor {
     }
 
     public abstract TrainTest splitTrainTest(final List<Event> events, final double train_ratio);
+
+    public static TIntObjectMap<List<Event>> groupByUsers(final List<Event> events) {
+        TIntObjectMap<List<Event>> usersEvents = new TIntObjectHashMap<>();
+        for (final Event event : events) {
+            if (!usersEvents.containsKey(event.userId())) {
+                usersEvents.put(event.userId(), new ArrayList<>());
+            }
+            usersEvents.get(event.userId()).add(event);
+        }
+        return usersEvents;
+    }
+
+    public static List<Session> groupToSessions(List<Event> events) {
+        final List<Session> sessions = new ArrayList<>();
+        final TLongDoubleMap lastTimes = new TLongDoubleHashMap();
+        for (Event event: events) {
+            final long pair = event.getPair();
+            final double curTime = event.getTs();
+            if (!lastTimes.containsKey(pair) || lastTimes.get(pair) + 0.5 <= curTime) { //TODO !!!!!
+                sessions.add(new Session(event));
+            }
+            lastTimes.put(pair, curTime);
+        }
+        return sessions;
+    }
 
     public TrainTest filter(final TrainTest trainTest, final int usersNum, final int itemsNum, final boolean isTop) {
         preFilter(trainTest, usersNum, itemsNum, isTop);
@@ -93,20 +120,6 @@ public abstract class DataPreprocessor {
                 .filter(event -> okPairs.contains(event.getPair()))
                 .collect(Collectors.toList());
         return new TrainTest(newTrain, newTest);
-    }
-
-    public List<Event> filterSessions(List<Event> events) {
-        final List<Event> sessions = new ArrayList<>();
-        final TLongDoubleMap lastTimes = new TLongDoubleHashMap();
-        for (Event event: events) {
-            final long pair = event.getPair();
-            final double curTime = event.getTs();
-            if (!lastTimes.containsKey(pair) || lastTimes.get(pair) + MAX_GAP <= curTime) {
-                sessions.add(event);
-            }
-            lastTimes.put(pair, curTime);
-        }
-        return sessions;
     }
 
     private void preFilter(final TrainTest trainTest, final int usersNum, final int itemsNum, final boolean isTop) {

@@ -2,6 +2,7 @@ package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.Event;
+import com.expleague.erc.Session;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -36,12 +37,12 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
-    public void accept(final Event event) {
+    public void accept(final Session session) {
         double timeDelta = 0;
-        if (prevUserActionTime.containsKey(event.userId())) {
-            timeDelta = event.getTs() - prevUserActionTime.get(event.userId());
+        if (prevUserActionTime.containsKey(session.userId())) {
+            timeDelta = session.getTs() - prevUserActionTime.get(session.userId());
         }
-        userLambdas.get(event.userId()).update(event.itemId(), timeDelta);
-        prevUserActionTime.put(event.userId(), event.getTs());
+        userLambdas.get(session.userId()).update(session.itemId(), timeDelta);
+        prevUserActionTime.put(session.userId(), session.getTs());
     }
 }

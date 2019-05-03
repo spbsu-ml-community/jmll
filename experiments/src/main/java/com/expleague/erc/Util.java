@@ -1,9 +1,14 @@
 package com.expleague.erc;
 
+import gnu.trove.map.TLongDoubleMap;
+import gnu.trove.map.hash.TLongDoubleHashMap;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -15,6 +20,10 @@ public class Util {
 
     public static long combineIds(final int userId, final int itemId) {
         return (long) userId << 32 | itemId;
+    }
+
+    public static long combineIds(final Event event) {
+        return combineIds(event.userId(), event.itemId());
     }
 
     public static int extractItemId(final long idPair) {

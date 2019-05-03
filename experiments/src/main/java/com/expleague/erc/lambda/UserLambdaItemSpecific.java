@@ -26,7 +26,6 @@ public final class UserLambdaItemSpecific implements UserLambda {
     private final TIntObjectMap<Vec> userDerivativeByItems;
     private final Vec commonItemsDerivative;
     private final TIntObjectMap<Vec> itemsDerivativeByItems;
-    private final Vec zeroVec;
 
     public UserLambdaItemSpecific(final Vec userEmbedding, final TIntObjectMap<Vec> itemsEmbeddings, final double beta,
 //                      final TIntDoubleMap userBiases, final TIntDoubleMap itemBiases,
@@ -37,8 +36,6 @@ public final class UserLambdaItemSpecific implements UserLambda {
 //        this.itemBiases = itemBiases;
         this.beta = beta;
         this.otherItemsImportance = otherItemsImportance;
-        zeroVec = new ArrayVec(userEmbedding.dim());
-        VecTools.fill(zeroVec, 0.);
 
         currentTime = 0.;
         lastTimeOfItems = new TIntDoubleHashMap();
@@ -46,11 +43,11 @@ public final class UserLambdaItemSpecific implements UserLambda {
         commonSum = 0;
         additionalSumByItems = new TIntDoubleHashMap();
 
-        commonUserDerivative = VecTools.copy(zeroVec);
+        commonUserDerivative = new ArrayVec(userEmbedding.dim());
         VecTools.fill(commonUserDerivative, 0.);
         userDerivativeByItems = new TIntObjectHashMap<>();
 
-        commonItemsDerivative = VecTools.copy(zeroVec);
+        commonItemsDerivative = new ArrayVec(userEmbedding.dim());
         VecTools.fill(commonItemsDerivative, 0);
         itemsDerivativeByItems = new TIntObjectHashMap<>();
     }
@@ -60,10 +57,10 @@ public final class UserLambdaItemSpecific implements UserLambda {
         if (!lastTimeOfItems.containsKey(itemId)) {
             lastTimeOfItems.put(itemId, currentTime);
             additionalSumByItems.put(itemId, 0.);
-            Vec itemsSpecificItemsDerivative = VecTools.copy(zeroVec);
+            Vec itemsSpecificItemsDerivative = new ArrayVec(userEmbedding.dim());
             VecTools.fill(itemsSpecificItemsDerivative, 0.);
             userDerivativeByItems.put(itemId, itemsSpecificItemsDerivative);
-            Vec itemsSpecificUserDerivative = VecTools.copy(zeroVec);
+            Vec itemsSpecificUserDerivative = new ArrayVec(userEmbedding.dim());
             VecTools.fill(itemsSpecificUserDerivative, 0.);
             itemsDerivativeByItems.put(itemId, itemsSpecificUserDerivative);
         }

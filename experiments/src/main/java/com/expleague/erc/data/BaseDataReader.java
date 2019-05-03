@@ -1,6 +1,10 @@
 package com.expleague.erc.data;
 
 import com.expleague.erc.Event;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -20,21 +24,25 @@ public abstract class BaseDataReader {
                 .limit(size)
                 .map(this::makeEvent)
                 .filter(Objects::nonNull)
+                .sorted(Comparator.comparingDouble(Event::getTs))
                 .collect(Collectors.toList());
-        Map<Integer, Map<Integer, Double>> lastTimeDone = new HashMap<>();
-        events.sort(Comparator.comparingDouble(Event::getTs));
+        makePrDeltas(events);
+        return events;
+    }
+
+    private void makePrDeltas(List<Event> events) {
+        TIntObjectMap<TIntDoubleMap> lastTimeDone = new TIntObjectHashMap<>();
         for (Event event : events) {
             int uid = event.userId();
             int iid = event.itemId();
             if (!lastTimeDone.containsKey(uid)) {
-                lastTimeDone.put(uid, new HashMap<>());
+                lastTimeDone.put(uid, new TIntDoubleHashMap());
             }
             if (lastTimeDone.get(uid).containsKey(iid)) {
                 event.setPrDelta(event.getTs() - lastTimeDone.get(uid).get(iid));
             }
             lastTimeDone.get(uid).put(iid, event.getTs());
         }
-        return events;
     }
 
     protected abstract Event makeEvent(final String line);
