@@ -70,7 +70,7 @@ public class MetricsWriter implements Model.FitListener {
 
     private void saveHist(ApplicableModel applicable) {
         final StringBuilder histDescBuilder = new StringBuilder();
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(trainData)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(trainData)) {
             final int userId = eventSeq.userId();
             final int itemId = eventSeq.itemId();
             double prDelta = eventSeq.getDelta();

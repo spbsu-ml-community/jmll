@@ -16,7 +16,7 @@ public class SPU implements Metric {
         final TLongDoubleMap predictedTimeDeltas = new TLongDoubleHashMap();
         double totalDiff = 0.;
         int count = 0;
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
             final long pair = eventSeq.getPair();
             final double curEventTime = eventSeq.getTs();
             final double predictedTimeDelta = predictedTimeDeltas.get(pair);

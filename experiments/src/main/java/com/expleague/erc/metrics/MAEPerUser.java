@@ -15,7 +15,7 @@ public class MAEPerUser implements Metric {
         double errors = 0.;
         long count = 0;
         final TIntDoubleMap prevTimes = new TIntDoubleHashMap();
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
             final int userId = eventSeq.userId();
             final double curTime = eventSeq.getTs();
             final double expectedReturnTime = applicable.timeDelta(userId, eventSeq.itemId());

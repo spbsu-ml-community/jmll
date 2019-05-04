@@ -30,7 +30,7 @@ public class LogLikelihood implements Metric {
         double logLikelihood = 0.;
         final TLongSet seenPairs = new TLongHashSet();
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
             final int userId = eventSeq.userId();
             final int itemId = eventSeq.itemId();
             final long pairId = eventSeq.getPair();

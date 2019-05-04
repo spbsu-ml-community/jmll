@@ -12,7 +12,7 @@ public class MAE implements Metric {
     public double calculate(List<Event> events, ApplicableModel applicable) {
         double errors = 0.;
         long count = 0;
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
             final double expectedReturnTime = applicable.timeDelta(eventSeq.userId(), eventSeq.itemId());
             final double actualReturnTime = eventSeq.getDelta();
             if (actualReturnTime > 0) {

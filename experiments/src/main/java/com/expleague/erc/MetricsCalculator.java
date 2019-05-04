@@ -60,7 +60,7 @@ public class MetricsCalculator {
         relevantPairsArray = pairsToArray(relevantPairs);
         this.itemIds = itemsUsers.keys();
         itemsUsersArrays = toArrays(itemsUsers);
-        targetPairwiseSPU = pairwiseSessionsSpu(DataPreprocessor.groupToSessions(testData));
+        targetPairwiseSPU = pairwiseSessionsSpu(DataPreprocessor.groupToEventSeqs(testData));
         targetPairwiseSPUMean = Arrays.stream(targetPairwiseSPU.values()).average().orElse(-1);
         spuTrainPath = saveDir.resolve(FILE_SPU_TRAIN);
         spuTestPath = saveDir.resolve(FILE_SPU_TEST);
@@ -125,7 +125,7 @@ public class MetricsCalculator {
     public double returnTimeMae(ApplicableModel model, List<Event> data) {
         double errors = 0.;
         long count = 0;
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(data)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(data)) {
             count++;
             final double expectedReturnTime = model.timeDelta(eventSeq.userId(), eventSeq.itemId());
             errors += Math.abs(eventSeq.getDelta() - expectedReturnTime);
@@ -139,7 +139,7 @@ public class MetricsCalculator {
         long count = 0;
         int[] allItemIds = model.getItemEmbeddings().keys();
         ApplicableModel applicable = model.getApplicable(trainData);
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(testData)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(testData)) {
             int userId = eventSeq.userId();
             final double actualLambda = applicable.getLambda(userId, eventSeq.itemId());
             for (int i : allItemIds) {
@@ -256,7 +256,7 @@ public class MetricsCalculator {
     }
 
     public void writeTargetSpus() throws IOException {
-        writePairwiseSpus(spuTrainPath, pairwiseSessionsSpu(DataPreprocessor.groupToSessions(trainData)), relevantPairsArray);
+        writePairwiseSpus(spuTrainPath, pairwiseSessionsSpu(DataPreprocessor.groupToEventSeqs(trainData)), relevantPairsArray);
         writePairwiseSpus(spuTestPath, targetPairwiseSPU, relevantPairsArray);
     }
 

@@ -96,7 +96,7 @@ public class Model {
             itemIds.add(event.itemId());
         }
 
-        final double itemDeltaMean = DataPreprocessor.groupToSessions(history).stream()
+        final double itemDeltaMean = DataPreprocessor.groupToEventSeqs(history).stream()
                 .mapToDouble(EventSeq::getDelta)
                 .filter(delta -> delta >= 0)
                 .average().orElse(-1);
@@ -115,7 +115,7 @@ public class Model {
     public void logLikelihoodDerivative(final List<Event> events,
                                         final TIntObjectMap<Vec> userDerivatives,
                                         final TIntObjectMap<Vec> itemDerivatives) {
-        final List<EventSeq> eventSeqs = DataPreprocessor.groupToSessions(events);
+        final List<EventSeq> eventSeqs = DataPreprocessor.groupToEventSeqs(events);
         final double observationEnd = events.get(eventSeqs.size() - 1).getTs();
         final TLongSet seenPairs = new TLongHashSet();
         for (final int userId : userIds.toArray()) {

@@ -2,6 +2,7 @@ package com.expleague.erc.data;
 
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
+import com.expleague.erc.Session;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
@@ -57,7 +58,7 @@ public abstract class DataPreprocessor {
         return usersEvents;
     }
 
-//    public static List<EventSeq> groupToSessions(List<Event> events) {
+//    public static List<EventSeq> groupToEventSeqs(List<Event> events) {
 //        final List<EventSeq> sessions = new ArrayList<>();
 //        final TLongDoubleMap lastTimes = new TLongDoubleHashMap();
 //        for (Event event: events) {
@@ -71,7 +72,7 @@ public abstract class DataPreprocessor {
 //        return sessions;
 //    }
 
-    public static List<EventSeq> groupToSessions(List<Event> events) {
+    public static List<EventSeq> groupToEventSeqs(List<Event> events) {
         final List<EventSeq> eventSeqs = new ArrayList<>();
         final TIntDoubleMap lastTimes = new TIntDoubleHashMap();
         final TIntIntMap lastItems = new TIntIntHashMap(64, 0.5f, -1, -1);
@@ -82,14 +83,34 @@ public abstract class DataPreprocessor {
             final double lastTime = lastTimes.get(userId);
             if (!lastItems.containsKey(userId)) {
                 eventSeqs.add(new EventSeq(userId, itemId, curTime, -1));
-            } else
-            if (lastItems.get(userId) != itemId || lastTime + MAX_GAP < curTime) {
+            } else if (lastItems.get(userId) != itemId || lastTime + MAX_GAP < curTime) {
                 eventSeqs.add(new EventSeq(userId, itemId, curTime, curTime - lastTime));
             }
             lastTimes.put(userId, curTime);
             lastItems.put(userId, itemId);
         }
         return eventSeqs;
+    }
+
+    public static List<Session> groupToSessions(List<EventSeq> eventSeqs) {
+        final List<Session> sessions = new ArrayList<>();
+        final TIntDoubleMap lastTimes = new TIntDoubleHashMap();
+        final TIntObjectMap<Session> lastSessions = new TIntObjectHashMap<>();
+        for (final EventSeq eventSeq : eventSeqs) {
+            final int userId = eventSeq.userId();
+            final double curTime = eventSeq.getTs();
+            if (!lastSessions.containsKey(userId)) {
+                lastSessions.put(userId, new Session());
+                lastTimes.put(userId, curTime);
+            }
+            if (lastTimes.get(userId) + MAX_GAP < curTime) {
+                sessions.add(lastSessions.get(userId));
+                lastSessions.put(userId, new Session());
+            }
+            lastSessions.get(userId).add(eventSeq);
+            lastTimes.put(userId, curTime);
+        }
+        return sessions;
     }
 
     public TrainTest filter(final TrainTest trainTest, final int usersNum, final int itemsNum, final boolean isTop) {

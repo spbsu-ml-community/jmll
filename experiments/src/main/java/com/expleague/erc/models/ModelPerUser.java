@@ -44,7 +44,7 @@ public class ModelPerUser extends Model {
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         final TIntDoubleMap userLastVisitTimes = new TIntDoubleHashMap();
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
             final long pairId = eventSeq.getPair();
             final int userId = eventSeq.userId();
             final double time = eventSeq.getTs();

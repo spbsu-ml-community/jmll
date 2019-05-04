@@ -20,7 +20,7 @@ public interface ApplicableModel {
     }
 
     default ApplicableModel fit(final List<Event> history) {
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(history)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(history)) {
             accept(eventSeq);
         }
         return this;

@@ -35,7 +35,7 @@ public class ModelGamma2 extends Model {
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
-        for (final EventSeq eventSeq : DataPreprocessor.groupToSessions(events)) {
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
             final int userId = eventSeq.userId();
             final int itemId = eventSeq.itemId();
             final long pairId = eventSeq.getPair();
