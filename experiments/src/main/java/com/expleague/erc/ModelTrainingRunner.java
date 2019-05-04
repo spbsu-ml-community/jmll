@@ -14,15 +14,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
+import java.util.stream.Collectors;
 
 public class ModelTrainingRunner {
     private static final String FILE_MODEL = "model";
     private static final String FILE_USER_MAP = "users_by_id.txt";
     private static final String FILE_ITEM_MAP = "items_by_id.txt";
     private static final String FILE_PREDICTION = "prediction.txt";
+    private static final String FILE_SESSIONS = "sessions.txt";
     private static Options options = new Options();
 
     static {
@@ -69,6 +72,14 @@ public class ModelTrainingRunner {
         Map<Integer, String> userIdToName = dataReader.getReversedUserMap();
         runModel(history, iterations, lr, lrd, dim, beta, otherItemImportance, eps, usersNum, itemsNum, trainRatio,
                 isTop, modelName, itemIdToName, userIdToName, reset);
+    }
+
+    private static void saveSessions(Path modelDirPath, List<Event> events) throws IOException {
+        final Path sessionsPath = modelDirPath.resolve(FILE_SESSIONS);
+        final String sessionsTest = DataPreprocessor.groupEventsToSessions(events).stream()
+                .map(session -> session.userId() + "\t" + session.getStartTs() + "\t" + session.getDelta())
+                .collect(Collectors.joining("\n", "", "\n"));
+        Files.write(sessionsPath, sessionsTest.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 
     private static void runModel(final List<Event> history, final int iterations, final double lr, final double decay,
@@ -125,6 +136,8 @@ public class ModelTrainingRunner {
 //                    userKs, userBaseLambdas);
 
         }
+
+        saveSessions(modelDirPath, history);
 
         final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
         model.fit(test, lr, iterations, decay, metricsWriter);

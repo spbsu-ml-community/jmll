@@ -1,0 +1,53 @@
+package com.expleague.erc.metrics;
+
+import com.expleague.erc.Event;
+import com.expleague.erc.EventSeq;
+import com.expleague.erc.Session;
+import com.expleague.erc.data.DataPreprocessor;
+import com.expleague.erc.models.ApplicableModel;
+import gnu.trove.iterator.TIntDoubleIterator;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+
+import java.util.List;
+
+import static java.lang.Math.log;
+import static java.lang.Math.max;
+
+public class LogLikelihoodPerUser implements Metric {
+    private final double eps;
+
+    public LogLikelihoodPerUser(double eps) {
+        this.eps = eps;
+    }
+
+    @Override
+    public double calculate(List<Event> events, ApplicableModel applicable) {
+//        final double observationEnd = events.get(events.size() - 1).getTs();
+        double logLikelihood = 0.;
+//        final TIntDoubleMap lastVisitTimes = new TIntDoubleHashMap();
+        for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
+            final double delta = max(session.getDelta(), eps);
+            if (0 < delta && delta < DataPreprocessor.CHURN_THRESHOLD) {
+                final double p = applicable.probabilityInterval(session.userId(), delta - eps, delta + eps);
+                assert 0 <= p && p <= 1;
+                if (p > 0) {
+                    logLikelihood += log(p);
+                }
+            }
+            applicable.accept(session);
+//            List<EventSeq> eventSeqs = session.getEventSeqs();
+//            lastVisitTimes.put(userId, eventSeqs.get(eventSeqs.size() - 1).getStartTs());
+        }
+//        for (TIntDoubleIterator it = lastVisitTimes.iterator(); it.hasNext();) {
+//            it.advance();
+//            final int userId = it.key();
+//            final double lastVisitTime = it.value();
+//            final double tau = observationEnd - lastVisitTime;
+//            if (tau > 0) {
+//                logLikelihood += log(1 - applicable.probabilityBeforeX(userId, tau));
+//            }
+//        }
+        return logLikelihood;
+    }
+}

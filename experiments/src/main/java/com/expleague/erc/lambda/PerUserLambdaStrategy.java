@@ -8,7 +8,7 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 public class PerUserLambdaStrategy implements LambdaStrategy {
-    private final TIntObjectMap<UserLambda> userLambdas;
+    private final TIntObjectMap<UserLambdaSingle> userLambdas;
 
     public PerUserLambdaStrategy(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
                                  final double beta, final TIntDoubleMap initialValues) {
@@ -20,18 +20,33 @@ public class PerUserLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
-    public double getLambda(final int userId, final int itemId) {
-        return userLambdas.get(userId).getLambda(itemId);
+    public double getLambda(final int userId) {
+        return userLambdas.get(userId).getLambda();
+    }
+
+    @Override
+    public double getLambda(int userId, int itemId) {
+        return getLambda(userId);
+    }
+
+    @Override
+    public Vec getLambdaUserDerivative(int userId) {
+        return userLambdas.get(userId).getLambdaUserDerivative();
     }
 
     @Override
     public Vec getLambdaUserDerivative(final int userId, final int itemId) {
-        return userLambdas.get(userId).getLambdaUserDerivative(itemId);
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TIntObjectMap<Vec> getLambdaItemDerivative(int userId) {
+        return userLambdas.get(userId).getLambdaItemsDerivative();
     }
 
     @Override
     public TIntObjectMap<Vec> getLambdaItemDerivative(final int userId, final int itemId) {
-        return userLambdas.get(userId).getLambdaItemsDerivative(itemId);
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -136,7 +136,7 @@ public class Model {
                 updateDerivativeInnerEvent(lambdasByItem, eventSeq.userId(), eventSeq.itemId(), eventSeq.getDelta(),
                         userDerivatives, itemDerivatives);
                 lambdasByItem.accept(eventSeq);
-                lastVisitTimes.put(pairId, eventSeq.getTs());
+                lastVisitTimes.put(pairId, eventSeq.getStartTs());
             }
         }
         for (long pairId : lastVisitTimes.keys()) {
@@ -257,8 +257,23 @@ public class Model {
         }
 
         @Override
+        public double getLambda(int userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public double getLambda(final int userId, final int itemId) {
             return lambdaTransform.applyAsDouble(lambdaStrategy.getLambda(userId, itemId));
+        }
+
+        @Override
+        public double timeDelta(int userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public double probabilityBeforeX(int userId, double x) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

@@ -20,8 +20,9 @@ public class UserLambdaSingle implements UserLambda {
     private final int dim;
     private final double initialLambda;
 
-    private double currentTime;
     private double lambda;
+    private double currentTime;
+    private double lastTime;
     private final TIntDoubleMap lastTimeOfItems;
     private final Vec userDerivative;
     private final TIntObjectMap<Vec> itemDerivatives;
@@ -34,6 +35,7 @@ public class UserLambdaSingle implements UserLambda {
         dim = userEmbedding.dim();
 
         currentTime = 0.;
+        lastTime = 0.;
         lastTimeOfItems = new TIntDoubleHashMap();
 
         initialLambda = initialValue;
@@ -46,6 +48,7 @@ public class UserLambdaSingle implements UserLambda {
     public void reset() {
         lambda = initialLambda;
         currentTime = 0.;
+        lastTime = 0.;
         lastTimeOfItems.clear();
         itemDerivatives.clear();
         VecTools.fill(userDerivative, 0);
@@ -85,25 +88,31 @@ public class UserLambdaSingle implements UserLambda {
         return lambda;
     }
 
+    public final double getLambda() {
+        return lambda;
+    }
+
+    public final Vec getLambdaUserDerivative() {
+        return VecTools.copy(userDerivative);
+    }
+
     @Override
-    public final Vec getLambdaUserDerivative(final int itemId) {
-        final Vec derivative = VecTools.copy(userDerivative);
-        final double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));
-        VecTools.scale(derivative, decay);
+    public Vec getLambdaUserDerivative(int itemId) {
+        throw new UnsupportedOperationException();
+    }
+
+    public final TIntObjectMap<Vec> getLambdaItemsDerivative() {
+        final TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
+        itemDerivatives.forEachEntry((curItemId, itemDerivative) -> {
+            derivative.put(curItemId, VecTools.copy(itemDerivative));
+            return true;
+        });
         return derivative;
     }
 
     @Override
-    public final TIntObjectMap<Vec> getLambdaItemsDerivative(final int itemId) {
-        final TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
-        itemDerivatives.forEachEntry((curItemId, itemDerivative) -> {
-            final Vec curItemDerivative = VecTools.copy(itemDerivative);
-            final double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));
-            VecTools.scale(curItemDerivative, decay);
-            derivative.put(curItemId, curItemDerivative);
-            return true;
-        });
-        return derivative;
+    public TIntObjectMap<Vec> getLambdaItemsDerivative(int itemId) {
+        throw new UnsupportedOperationException();
     }
 
     public static TIntDoubleMap makeUserLambdaInitialValues(List<Event> history) {

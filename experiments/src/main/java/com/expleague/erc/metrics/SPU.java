@@ -18,7 +18,7 @@ public class SPU implements Metric {
         int count = 0;
         for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
             final long pair = eventSeq.getPair();
-            final double curEventTime = eventSeq.getTs();
+            final double curEventTime = eventSeq.getStartTs();
             final double predictedTimeDelta = predictedTimeDeltas.get(pair);
             if (predictedTimeDelta != predictedTimeDeltas.getNoEntryValue()) {
                 final double predictedEventSPU = 1 / predictedTimeDelta;

@@ -18,6 +18,11 @@ public class ApplicableMock implements ApplicableModel {
     }
 
     @Override
+    public double getLambda(int userId) {
+        return lambda;
+    }
+
+    @Override
     public double getLambda(int userId, int itemId) {
         return lambda;
     }
@@ -25,6 +30,16 @@ public class ApplicableMock implements ApplicableModel {
     @Override
     public double timeDelta(int userId, int itemId) {
         return 1 / lambda;
+    }
+
+    @Override
+    public double timeDelta(int userId) {
+        return 1 / lambda;
+    }
+
+    @Override
+    public double probabilityBeforeX(int userId, double x) {
+        return 1 - exp(-getLambda(userId) * x);
     }
 
     @Override

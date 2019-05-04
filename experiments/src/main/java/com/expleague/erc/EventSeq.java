@@ -32,7 +32,7 @@ public class EventSeq {
         return itemId;
     }
 
-    public double getTs() {
+    public double getStartTs() {
         return ts;
     }
 
@@ -42,10 +42,6 @@ public class EventSeq {
 
     public void setDelta(final double delta) {
         this.delta = delta;
-    }
-
-    public boolean isFinish() {
-        return false;
     }
 
     public long getPair() {

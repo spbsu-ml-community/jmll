@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Session {
-    private List<EventSeq> eventSeqs;
+    private final List<EventSeq> eventSeqs;
 
     public Session() {
         eventSeqs = new ArrayList<>();
@@ -23,15 +23,19 @@ public class Session {
         eventSeqs.add(eventSeq);
     }
 
-    public double userId() {
+    public int userId() {
         return eventSeqs.get(0).userId();
     }
 
-    public double startTs() {
-        return eventSeqs.get(0).getTs();
+    public double getStartTs() {
+        return eventSeqs.get(0).getStartTs();
     }
 
-    public double delta() {
+    public double getDelta() {
         return eventSeqs.get(0).getDelta();
+    }
+
+    public List<EventSeq> getEventSeqs() {
+        return eventSeqs;
     }
 }

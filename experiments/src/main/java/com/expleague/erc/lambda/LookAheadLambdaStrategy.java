@@ -26,8 +26,23 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
+    public double getLambda(int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Vec getLambdaUserDerivative(int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Vec getLambdaUserDerivative(final int userId, final int itemId) {
         return userLambdas.get(userId).getLambdaUserDerivative(itemId);
+    }
+
+    @Override
+    public TIntObjectMap<Vec> getLambdaItemDerivative(int userId) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -39,9 +54,9 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
     public void accept(final EventSeq eventSeq) {
         double timeDelta = 0;
         if (prevUserActionTime.containsKey(eventSeq.userId())) {
-            timeDelta = eventSeq.getTs() - prevUserActionTime.get(eventSeq.userId());
+            timeDelta = eventSeq.getStartTs() - prevUserActionTime.get(eventSeq.userId());
         }
         userLambdas.get(eventSeq.userId()).update(eventSeq.itemId(), timeDelta);
-        prevUserActionTime.put(eventSeq.userId(), eventSeq.getTs());
+        prevUserActionTime.put(eventSeq.userId(), eventSeq.getStartTs());
     }
 }

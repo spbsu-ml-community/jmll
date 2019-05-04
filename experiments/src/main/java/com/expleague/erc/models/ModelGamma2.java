@@ -53,7 +53,7 @@ public class ModelGamma2 extends Model {
                     logLikelihood += probLog;
                 }
                 lambdasByItem.accept(eventSeq);
-                lastVisitTimes.put(pairId, eventSeq.getTs());
+                lastVisitTimes.put(pairId, eventSeq.getStartTs());
             }
         }
         for (long pairId : lastVisitTimes.keys()) {
@@ -143,6 +143,11 @@ public class ModelGamma2 extends Model {
         }
 
         @Override
+        public double getLambda(int userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public double getLambda(int userId, int itemId) {
             return lambdaTransform.applyAsDouble(lambdaStrategy.getLambda(userId, itemId));
         }
@@ -153,18 +158,28 @@ public class ModelGamma2 extends Model {
         }
 
         @Override
+        public double timeDelta(int userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public double probabilityBeforeX(int userId, double x) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public double probabilityBeforeX(int userId, int itemId, double x) {
             final double tLam = getLambda(userId, itemId);
             return -exp(-tLam * x) * (tLam * x + 1) + 1;
         }
 
-        @Override
-        public double probabilityInterval(int userId, int itemId, double start, double end) {
-            final double tLam = getLambda(userId, itemId);
-            final double upBLam = end * tLam;
-            final double lowBLam = start * tLam;
-            return -exp(-upBLam) * (upBLam + 1) + exp(-lowBLam) * (lowBLam + 1);
-        }
+//        @Override
+//        public double probabilityInterval(int userId, int itemId, double start, double end) {
+//            final double tLam = getLambda(userId, itemId);
+//            final double upBLam = end * tLam;
+//            final double lowBLam = start * tLam;
+//            return -exp(-upBLam) * (upBLam + 1) + exp(-lowBLam) * (lowBLam + 1);
+//        }
     }
 
     @Override

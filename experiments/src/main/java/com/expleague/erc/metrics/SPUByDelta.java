@@ -1,7 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.map.TIntDoubleMap;
@@ -15,10 +15,10 @@ public class SPUByDelta implements Metric {
         final TIntDoubleMap predictedTimeDeltas = new TIntDoubleHashMap();
         double totalDiff = 0.;
         int count = 0;
-        for (final Session session: DataPreprocessor.groupToSessions(events)) {
-            final int user = session.userId();
+        for (final EventSeq eventSeq: DataPreprocessor.groupToEventSeqs(events)) {
+            final int user = eventSeq.userId();
             final double predictedTimeDelta = predictedTimeDeltas.get(user);
-            final double realEventTimeDelta = session.getDelta();
+            final double realEventTimeDelta = eventSeq.getDelta();
             if (predictedTimeDelta != predictedTimeDeltas.getNoEntryValue() && realEventTimeDelta > 0. &&
                     realEventTimeDelta < DataPreprocessor.CHURN_THRESHOLD) {
                 final double predictedEventSPU = 1 / predictedTimeDelta;
@@ -26,8 +26,8 @@ public class SPUByDelta implements Metric {
                 totalDiff += Math.abs(predictedEventSPU - realEventSPU);
                 count++;
             }
-            predictedTimeDeltas.put(user, applicable.timeDelta(session.userId(), session.itemId()));
-            applicable.accept(session);
+            predictedTimeDeltas.put(user, applicable.timeDelta(eventSeq.userId(), eventSeq.itemId()));
+            applicable.accept(eventSeq);
         }
         return totalDiff / count;
     }

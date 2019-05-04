@@ -16,18 +16,19 @@ public class SPUPerUser implements Metric {
         final TIntDoubleMap predictedTimeDeltas = new TIntDoubleHashMap();
         double totalDiff = 0.;
         int count = 0;
-        for (final Session session: DataPreprocessor.groupToSessions(events)) {
+        for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int user = session.userId();
-            final double curEventTime = session.getTs();
+            final double curEventTime = session.getStartTs();
             final double predictedTimeDelta = predictedTimeDeltas.get(user);
             final double realEventTimeDelta = curEventTime - lastEventTimes.get(user);
-            if (predictedTimeDelta != predictedTimeDeltas.getNoEntryValue() && realEventTimeDelta != 0.) {
+            if (predictedTimeDelta != predictedTimeDeltas.getNoEntryValue() && realEventTimeDelta != 0.
+                    && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD) {
                 final double predictedEventSPU = 1 / predictedTimeDelta;
                 final double realEventSPU = 1 / realEventTimeDelta;
                 totalDiff += Math.abs(predictedEventSPU - realEventSPU);
                 count++;
             }
-            predictedTimeDeltas.put(user, applicable.timeDelta(session.userId(), session.itemId()));
+            predictedTimeDeltas.put(user, applicable.timeDelta(user));
             lastEventTimes.put(user, curEventTime);
             applicable.accept(session);
         }

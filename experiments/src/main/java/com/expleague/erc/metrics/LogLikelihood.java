@@ -40,14 +40,12 @@ public class LogLikelihood implements Metric {
             } else {
                 final double prDelta = max(eventSeq.getDelta(), eps);
                 final double p = applicable.probabilityInterval(userId, itemId, prDelta - eps, prDelta + eps);
-                if (p < 0 && p > 1) {
-                    throw new IllegalStateException("prob is not in [0; 1]");
-                }
+                assert 0 <= p && p <= 1;
                 if (p > 0) {
                     logLikelihood += log(p);
                 }
                 applicable.accept(eventSeq);
-                lastVisitTimes.put(pairId, eventSeq.getTs());
+                lastVisitTimes.put(pairId, eventSeq.getStartTs());
             }
         }
 //        for (long pairId : lastVisitTimes.keys()) {

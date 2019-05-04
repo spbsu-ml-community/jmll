@@ -6,11 +6,9 @@ import com.expleague.erc.Session;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.TLongDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.map.hash.TLongDoubleHashMap;
 
 import java.util.*;
 import java.util.function.Function;
@@ -68,7 +66,7 @@ public abstract class DataPreprocessor {
 //        final TLongDoubleMap lastTimes = new TLongDoubleHashMap();
 //        for (Event event: events) {
 //            final long pair = event.getPair();
-//            final double curTime = event.getTs();
+//            final double curTime = event.getStartTs();
 //            if (!lastTimes.containsKey(pair) || lastTimes.get(pair) + 0.5 <= curTime) { //TODO !!!!!
 //                sessions.add(new EventSeq(event));
 //            }
@@ -104,19 +102,20 @@ public abstract class DataPreprocessor {
         final TIntObjectMap<Session> lastSessions = new TIntObjectHashMap<>();
         for (final EventSeq eventSeq : eventSeqs) {
             final int userId = eventSeq.userId();
-            final double curTime = eventSeq.getTs();
-            if (!lastSessions.containsKey(userId)) {
-                lastSessions.put(userId, new Session());
-                lastTimes.put(userId, curTime);
-            }
-            if (lastTimes.get(userId) + MAX_GAP < curTime) {
-                sessions.add(lastSessions.get(userId));
-                lastSessions.put(userId, new Session());
+            final double curTime = eventSeq.getStartTs();
+            if (!lastSessions.containsKey(userId) || eventSeq.getDelta() > MAX_GAP) {
+                final Session newSession = new Session();
+                lastSessions.put(userId, newSession);
+                sessions.add(newSession);
             }
             lastSessions.get(userId).add(eventSeq);
             lastTimes.put(userId, curTime);
         }
         return sessions;
+    }
+
+    public static List<Session> groupEventsToSessions(List<Event> events) {
+        return groupToSessions(groupToEventSeqs(events));
     }
 
     public TrainTest filter(final TrainTest trainTest, final int usersNum, final int itemsNum, final boolean isTop) {

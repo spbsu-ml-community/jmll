@@ -89,6 +89,11 @@ public class ModelUserK extends Model {
         }
 
         @Override
+        public double getLambda(int userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public double getLambda(int userId, int itemId) {
             return lambdaTransform.applyAsDouble(userBaseLambdas.get(userId) + lambdaStrategy.getLambda(userId, itemId));
         }
@@ -96,6 +101,16 @@ public class ModelUserK extends Model {
         @Override
         public double timeDelta(int userId, int itemId) {
             return userKs.get(userId) / getLambda(userId, itemId);
+        }
+
+        @Override
+        public double timeDelta(int userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public double probabilityBeforeX(int userId, double x) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

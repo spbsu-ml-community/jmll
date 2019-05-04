@@ -41,6 +41,16 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
+    public double getLambda(int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Vec getLambdaUserDerivative(int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Vec getLambdaUserDerivative(final int userId, final int itemId) {
         if (savedLambdasUserDerivative.get(userId).containsKey(itemId)) {
             return savedLambdasUserDerivative.get(userId).get(itemId);
@@ -48,6 +58,11 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
         Vec derivative = userLambdas.get(userId).getLambdaUserDerivative(itemId);
         savedLambdasUserDerivative.get(userId).put(itemId, derivative);
         return derivative;
+    }
+
+    @Override
+    public TIntObjectMap<Vec> getLambdaItemDerivative(int userId) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -66,13 +81,13 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
         int itemId = eventSeq.itemId();
         double timeDelta = 0.;
         if (prevUserActionTime.containsKey(userId)) {
-            timeDelta = eventSeq.getTs() - prevUserActionTime.get(userId);
+            timeDelta = eventSeq.getStartTs() - prevUserActionTime.get(userId);
         }
         userLambdas.get(userId).update(itemId, timeDelta);
         savedLambdas.get(userId).put(itemId, userLambdas.get(userId).getLambda(itemId));
         savedLambdasUserDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaUserDerivative(itemId));
         savedLambdasItemDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaItemsDerivative(itemId));
-        prevUserActionTime.put(userId, eventSeq.getTs());
+        prevUserActionTime.put(userId, eventSeq.getStartTs());
     }
 
     public static class NotLookAheadLambdaStrategyFactory implements LambdaStrategyFactory {

@@ -2,6 +2,7 @@ package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
+import com.expleague.erc.Session;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
@@ -11,9 +12,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+import java.util.stream.Collectors;
 
 public class MetricsWriter implements Model.FitListener {
     private static final String HIST_FILE_NAME = "history.txt";
@@ -21,7 +24,7 @@ public class MetricsWriter implements Model.FitListener {
     private final List<Event> trainData;
     private final List<Event> testData;
     private final double eps;
-    private final Metric mae = new MAE();
+    private final Metric mae = new MAEPerUser();
     private final Metric spu = new SPUPerUser();
     private final Metric ll;
     private final Path histPath;
@@ -30,12 +33,60 @@ public class MetricsWriter implements Model.FitListener {
         this.trainData = trainData;
         this.testData = testData;
         this.eps = eps;
-        ll = new LogLikelihood(eps);
+        ll = new LogLikelihoodPerUser(eps);
         histPath = saveDir.resolve(HIST_FILE_NAME);
     }
 
     @Override
     public void apply(Model model) {
+//        Map<Integer, Double> constants = DataPreprocessor.groupEventsToSessions(trainData).stream()
+//                .filter(session -> 0 < session.getDelta() && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD)
+//                .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(Session::getDelta)));
+//        final double justConstant = DataPreprocessor.groupEventsToSessions(trainData).stream()
+//                .mapToDouble(Session::getDelta)
+//                .filter(delta -> delta > 0)
+//                .filter(delta -> delta < DataPreprocessor.CHURN_THRESHOLD)
+//                .average().orElse(-1);
+//        ApplicableModel constantApplicable = new ApplicableModel() {
+//            @Override
+//            public void accept(EventSeq event) {
+//
+//            }
+//
+//            @Override
+//            public double getLambda(int userId) {
+//                return 0;
+//            }
+//
+//            @Override
+//            public double getLambda(int userId, int itemId) {
+//                return 0;
+//            }
+//
+//            @Override
+//            public double timeDelta(int userId, int itemId) {
+//                return 0;
+//            }
+//
+//            @Override
+//            public double timeDelta(int userId) {
+//                try {
+//                    return constants.get(userId);
+//                } catch (Throwable t) {
+//                    return justConstant;
+//                }
+//            }
+//
+//            @Override
+//            public double probabilityBeforeX(int userId, double x) {
+//                return 0;
+//            }
+//
+//            @Override
+//            public double probabilityBeforeX(int userId, int itemId, double x) {
+//                return 0;
+//            }
+//        };
         final double[] maes = new double[2];
         final double[] lls = new double[2];
         final ForkJoinTask maeTask = ForkJoinPool.commonPool().submit(() -> {
@@ -52,8 +103,8 @@ public class MetricsWriter implements Model.FitListener {
             spu.calculate(trainData, model.getApplicable()));
         final ForkJoinTask<Double> spusTestTask = ForkJoinPool.commonPool().submit(() ->
             spu.calculate(testData, model.getApplicable(trainData)));
-        final ForkJoinTask histSaveTask = ForkJoinPool.commonPool().submit(() ->
-                saveHist(model.getApplicable()));
+//        final ForkJoinTask histSaveTask = ForkJoinPool.commonPool().submit(() ->
+//                saveHist(model.getApplicable()));
 
         try {
             maeTask.join();
@@ -62,7 +113,7 @@ public class MetricsWriter implements Model.FitListener {
             final double spusTest = spusTestTask.get();
             System.out.printf("train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, train_spu: %f, test_spu: %f\n",
                     lls[0], lls[1], maes[0], maes[1], spusTrain, spusTest);
-            histSaveTask.join();
+//            histSaveTask.join();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }

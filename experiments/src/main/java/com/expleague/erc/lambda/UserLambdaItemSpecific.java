@@ -106,6 +106,10 @@ public final class UserLambdaItemSpecific implements UserLambda {
         currentTime += timeDelta;
     }
 
+    public double getLambda() {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public final double getLambda(final int itemId) {
         double baseLambda = commonSum + VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));

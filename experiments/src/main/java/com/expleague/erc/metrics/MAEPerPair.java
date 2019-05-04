@@ -1,7 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.map.TLongDoubleMap;
@@ -15,17 +15,17 @@ public class MAEPerPair implements Metric {
         double errors = 0.;
         long count = 0;
         final TLongDoubleMap prevTimes = new TLongDoubleHashMap();
-        for (final Session session : DataPreprocessor.groupToSessions(events)) {
-            final long pair = session.getPair();
-            final double curTime = session.getTs();
-            final double expectedReturnTime = applicable.timeDelta(session.userId(), session.itemId());
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
+            final long pair = eventSeq.getPair();
+            final double curTime = eventSeq.getStartTs();
+            final double expectedReturnTime = applicable.timeDelta(eventSeq.userId(), eventSeq.itemId());
             final double prevTime = prevTimes.get(pair);
             final double actualReturnTime = curTime - prevTime;
             if (prevTime != prevTimes.getNoEntryValue() && actualReturnTime < DataPreprocessor.CHURN_THRESHOLD) {
                 count++;
                 errors += Math.abs(actualReturnTime - expectedReturnTime);
             }
-            applicable.accept(session);
+            applicable.accept(eventSeq);
             prevTimes.put(pair, curTime);
         }
         return errors / count;

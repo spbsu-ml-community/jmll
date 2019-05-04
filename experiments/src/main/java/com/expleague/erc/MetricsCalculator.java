@@ -162,7 +162,7 @@ public class MetricsCalculator {
     }
 
     public TLongDoubleMap pairwiseSessionsSpu(List<EventSeq> eventSeqs) {
-        final double startTime = eventSeqs.get(0).getTs();
+        final double startTime = eventSeqs.get(0).getStartTs();
         final TLongIntMap pairSessions = new TLongIntHashMap();
         final TLongDoubleMap pairDeathTimes = new TLongDoubleHashMap();
         final TLongDoubleMap pairBirthTimes = new TLongDoubleHashMap();
@@ -170,9 +170,9 @@ public class MetricsCalculator {
         for (EventSeq eventSeq : eventSeqs) {
             final long pair = eventSeq.getPair();
             if (relevantPairs.contains(pair)) {
-                pairDeathTimes.put(pair, eventSeq.getTs() - startTime);
+                pairDeathTimes.put(pair, eventSeq.getStartTs() - startTime);
                 if (!pairBirthTimes.containsKey(pair)) {
-//                pairBirthTimes.put(pair, eventSeq.getTs() - startTime);
+//                pairBirthTimes.put(pair, eventSeq.getStartTs() - startTime);
                     pairBirthTimes.put(pair, 0);
                 }
             }
@@ -211,17 +211,17 @@ public class MetricsCalculator {
         while (!followingEvents.isEmpty() && generatedEvents.size() < MAX_PREDICTION_LEN) {
 //            ++predictionLen;
             final EventSeq curEvent = followingEvents.poll();
-            if (curEvent.getTs() >= spanStartTime) {
+            if (curEvent.getStartTs() >= spanStartTime) {
                 generatedEvents.add(curEvent);
             }
             model.accept(curEvent);
 
-            final double newEventTime = curEvent.getTs() + model.timeDelta(curEvent.userId(), curEvent.itemId());
+            final double newEventTime = curEvent.getStartTs() + model.timeDelta(curEvent.userId(), curEvent.itemId());
 //            System.out.println(model.timeDelta(curEvent.userId(), curEvent.itemId()));
-            if (curEvent.getTs() <= newEventTime && newEventTime <= spanEndTime) {
+            if (curEvent.getStartTs() <= newEventTime && newEventTime <= spanEndTime) {
                 followingEvents.add(new EventSeq(curEvent.userId(), curEvent.itemId(), newEventTime));
             } else {
-                System.out.println(curEvent.getTs() + " " + spanEndTime + " " + newEventTime);
+                System.out.println(curEvent.getStartTs() + " " + spanEndTime + " " + newEventTime);
             }
         }
 //        System.out.println(generatedEvents.size());
