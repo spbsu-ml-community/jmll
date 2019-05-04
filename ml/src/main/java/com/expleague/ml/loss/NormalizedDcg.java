@@ -47,7 +47,7 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
         double dcg = 0;
         for (int i = 0; i < labelsOrder.length; ++i) {
             double targetLabel = targetLabels.get(labelsOrder[i]);
-            dcg += (Math.pow(2., targetLabel) - 1) / Math.log(i + 1);
+            dcg += (Math.pow(2., targetLabel) - 1) / Math.log(i + 2);
         }
         return dcg;
     }
