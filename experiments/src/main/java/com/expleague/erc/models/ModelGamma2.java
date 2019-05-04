@@ -3,7 +3,9 @@ package com.expleague.erc.models;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.erc.Event;
+import com.expleague.erc.Session;
 import com.expleague.erc.Util;
+import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.iterator.TIntObjectIterator;
@@ -26,7 +28,6 @@ public class ModelGamma2 extends Model {
                 usersEmbeddingsPrior, itemsEmbeddingsPrior);
     }
 
-    @Override
     public double logLikelihood(List<Event> events) {
         final double observationEnd = events.get(events.size() - 1).getTs();
         double logLikelihood = 0.;
@@ -34,25 +35,25 @@ public class ModelGamma2 extends Model {
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
-        for (final Event event : events) {
-            final int userId = event.userId();
-            final int itemId = event.itemId();
-            final long pairId = event.getPair();
+        for (final Session session : DataPreprocessor.groupToSessions(events)) {
+            final int userId = session.userId();
+            final int itemId = session.itemId();
+            final long pairId = session.getPair();
             if (!seenPairs.contains(pairId)) {
                 seenPairs.add(pairId);
-                lambdasByItem.accept(event);
+                lambdasByItem.accept(session);
             } else {
                 final double lam = lambdasByItem.getLambda(userId, itemId);
                 final double tLam = lambdaTransform.applyAsDouble(lam);
-                final double prDelta = max(event.getPrDelta(), eps);
+                final double prDelta = max(session.getDelta(), eps);
                 final double upBLam = (prDelta + eps) * tLam;
                 final double lowBLam = (prDelta - eps) * tLam;
                 final double probLog = log(-exp(-upBLam) * (upBLam + 1) + exp(-lowBLam) * (lowBLam + 1));
                 if (Double.isFinite(probLog)) {
                     logLikelihood += probLog;
                 }
-                lambdasByItem.accept(event);
-                lastVisitTimes.put(pairId, event.getTs());
+                lambdasByItem.accept(session);
+                lastVisitTimes.put(pairId, session.getTs());
             }
         }
         for (long pairId : lastVisitTimes.keys()) {
@@ -72,15 +73,14 @@ public class ModelGamma2 extends Model {
     }
 
     @Override
-    protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, Event event, TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
-        final int userId = event.userId();
-        final int itemId = event.itemId();
+    protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double timeDelta,
+                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
         final double lam = lambdasByItem.getLambda(userId, itemId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);
         final double tLam = lambdaTransform.applyAsDouble(lam);
         final double tDLam = lambdaDerivativeTransform.applyAsDouble(lam);
-        final double tau = max(event.getPrDelta(), eps);
+        final double tau = max(timeDelta, eps);
 
         final double upB = tau + eps;
         final double lowB = tau - eps;
@@ -130,7 +130,7 @@ public class ModelGamma2 extends Model {
 //        }
     }
 
-    private class ApplicableImpl implements Applicable {
+    private class ApplicableImpl implements ApplicableModel {
         private final LambdaStrategy lambdaStrategy;
 
         private ApplicableImpl() {
@@ -138,8 +138,8 @@ public class ModelGamma2 extends Model {
         }
 
         @Override
-        public void accept(Event event) {
-            lambdaStrategy.accept(event);
+        public void accept(Session session) {
+            lambdaStrategy.accept(session);
         }
 
         @Override
@@ -168,12 +168,12 @@ public class ModelGamma2 extends Model {
     }
 
     @Override
-    public Applicable getApplicable() {
+    public ApplicableModel getApplicable() {
         return new ApplicableImpl();
     }
 
     @Override
-    public Applicable getApplicable(List<Event> events) {
+    public ApplicableModel getApplicable(List<Event> events) {
         return new ApplicableImpl().fit(events);
     }
 }

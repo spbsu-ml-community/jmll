@@ -62,8 +62,10 @@ public class DataMetrics {
         final List<Event> data = lastFmDataReader.readData(dataPath, dataSize);
         final DataPreprocessor preprocessor = new OneTimeDataProcessor();
 //        final DataPreprocessor preprocessor = new TSRDataProcessor();
-        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(preprocessor.filterSessions(data), trainRatio);
+        DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(data, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
+        final List<Event> train = dataset.getTrain();
+        final List<Event> test = dataset.getTest();
 
         final double splitTime = dataset.getTest().get(0).getTs();
         System.out.println(splitTime);
@@ -77,8 +79,8 @@ public class DataMetrics {
             Files.createDirectory(outDirPath);
         }
         final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), outDirPath);
-        final TLongDoubleMap trainPairSpus = metricsCalculator.pairwiseHistorySpu(dataset.getTrain());
-        final TLongDoubleMap testPairSpus = metricsCalculator.pairwiseHistorySpu(dataset.getTest());
+        final TLongDoubleMap trainPairSpus = metricsCalculator.pairwiseSessionsSpu(DataPreprocessor.groupToSessions(train));
+        final TLongDoubleMap testPairSpus = metricsCalculator.pairwiseSessionsSpu(DataPreprocessor.groupToSessions(test));
         final long [] keys = Arrays.stream(trainPairSpus.keys())
                 .boxed()
                 .sorted(Comparator.comparingInt(Util::extractItemId).thenComparingInt(Util::extractUserId))

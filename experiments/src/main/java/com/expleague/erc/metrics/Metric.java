@@ -1,10 +1,10 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.models.Model;
+import com.expleague.erc.models.ApplicableModel;
 
 import java.util.List;
 
 public interface Metric {
-    double calculate(List<Event> events, Model.Applicable applicable);
+    double calculate(List<Event> events, ApplicableModel applicable);
 }

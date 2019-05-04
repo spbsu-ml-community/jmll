@@ -3,6 +3,9 @@ package com.expleague.erc.metrics;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
+import com.expleague.erc.Session;
+import com.expleague.erc.data.DataPreprocessor;
+import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TLongDoubleMap;
@@ -22,26 +25,26 @@ public class LogLikelihood implements Metric {
     }
 
     @Override
-    public double calculate(List<Event> events, Model.Applicable applicable) {
+    public double calculate(List<Event> events, ApplicableModel applicable) {
         final double observationEnd = events.get(events.size() - 1).getTs();
         double logLikelihood = 0.;
         final TLongSet seenPairs = new TLongHashSet();
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
-        for (final Event event : events) {
-            final int userId = event.userId();
-            final int itemId = event.itemId();
-            final long pairId = event.getPair();
+        for (final Session session : DataPreprocessor.groupToSessions(events)) {
+            final int userId = session.userId();
+            final int itemId = session.itemId();
+            final long pairId = session.getPair();
             if (!seenPairs.contains(pairId)) {
                 seenPairs.add(pairId);
-                applicable.accept(event);
+                applicable.accept(session);
             } else {
-                final double prDelta = max(event.getPrDelta(), eps);
+                final double prDelta = max(session.getDelta(), eps);
                 final double p = applicable.probabilityInterval(userId, itemId, prDelta - eps, prDelta + eps);
                 if (p > 0) {
                     logLikelihood += log(p);
                 }
-                applicable.accept(event);
-                lastVisitTimes.put(pairId, event.getTs());
+                applicable.accept(session);
+                lastVisitTimes.put(pairId, session.getTs());
             }
         }
 //        for (long pairId : lastVisitTimes.keys()) {
