@@ -10,8 +10,10 @@ import com.expleague.ml.meta.GroupedDSItem;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,7 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
     private static final double EPSILON = 1e-9;
     private final DataSet<? extends GroupedDSItem> owner;
     private final Vec target;
-    private final Group[] groups;
+    private final List<Group> groups;
 
     public NormalizedDcg(final Vec target, final DataSet<? extends GroupedDSItem> owner) {
         this.owner = owner;
@@ -38,7 +40,7 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
             groupsMap.get(groupId).add(idx++);
         }
 
-        groups = new Group[groupsMap.size()];
+        groups = new ArrayList<>();
         idx = 0;
         for (Map.Entry<String, TIntList> groupEntry : groupsMap.entrySet()) {
             int[] groupIdsArray = groupEntry.getValue().toArray();
@@ -48,10 +50,10 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
                 continue;
             }
             double groupDcg = groupDcg(target, target, groupIdsArray);
-            groups[idx++] = new Group(groupDcg, groupIdsArray);
+            groups.add(new Group(groupDcg, groupIdsArray));
         }
-        
-        if (idx == 0) {
+
+        if (groups.isEmpty()) {
             throw new IllegalStateException("Received target labels has no different values!");
         }
     }
@@ -110,7 +112,7 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
             summaryNdcg += groupNormalizedDcg(ranks, target, group);
         }
 
-        return summaryNdcg / groups.length;
+        return summaryNdcg / groups.size();
     }
 
     @Override
