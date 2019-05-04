@@ -10,6 +10,7 @@ import com.expleague.ml.meta.GroupedDSItem;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
         int idx = 0;
         for (GroupedDSItem item : owner) {
             String groupId = item.groupId();
-            if (!groupsMap.containsKey(groupId)) {
+            if (!groupId.contains(groupId)) {
                 groupsMap.put(groupId, new TIntArrayList());
             }
             groupsMap.get(groupId).add(idx++);
@@ -42,10 +43,10 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
         }
     }
 
-    private static double dcg(final int[] labelsOrder, final Vec targetLavels) {
+    private static double dcg(final int[] labelsOrder, final Vec targetLabels) {
         double dcg = 0;
         for (int i = 0; i < labelsOrder.length; ++i) {
-            double targetLabel = targetLavels.get(labelsOrder[i]);
+            double targetLabel = targetLabels.get(labelsOrder[i]);
             dcg += (Math.pow(2., targetLabel) - 1) / Math.log(i + 1);
         }
         return dcg;
@@ -57,7 +58,7 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
             invertedGroupRanks[i] = -ranks.get(group[i]);
         }
 
-        final int[] order = ArrayTools.sequence(0, group.length);
+        final int[] order = Arrays.copyOf(group, group.length);
         ArrayTools.parallelSort(invertedGroupRanks, order);
         return dcg(order, targetLabels);
     }
