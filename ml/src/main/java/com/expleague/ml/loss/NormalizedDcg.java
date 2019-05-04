@@ -28,7 +28,7 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
         int idx = 0;
         for (GroupedDSItem item : owner) {
             String groupId = item.groupId();
-            if (!groupId.contains(groupId)) {
+            if (!groupsMap.containsKey(groupId)) {
                 groupsMap.put(groupId, new TIntArrayList());
             }
             groupsMap.get(groupId).add(idx++);
