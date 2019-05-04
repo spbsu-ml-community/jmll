@@ -2,12 +2,12 @@ package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.Session;
+import com.expleague.erc.data.DataPreprocessor;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 public class PerUserLambdaStrategy implements LambdaStrategy {
-    private static final int CHURN_THRESHOLD = 2 * 7 * 24;
     private final TIntObjectMap<UserLambda> userLambdas;
 
     public PerUserLambdaStrategy(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
@@ -37,7 +37,7 @@ public class PerUserLambdaStrategy implements LambdaStrategy {
     @Override
     public void accept(final Session session) {
         final UserLambda userLambda = userLambdas.get(session.userId());
-        if (session.getDelta() > CHURN_THRESHOLD) {
+        if (session.getDelta() > DataPreprocessor.CHURN_THRESHOLD) {
             userLambda.reset();
         }
         userLambda.update(session.itemId(), session.getDelta());

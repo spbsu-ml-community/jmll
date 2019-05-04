@@ -15,7 +15,7 @@ public class MAE implements Metric {
         for (final Session session : DataPreprocessor.groupToSessions(events)) {
             final double expectedReturnTime = applicable.timeDelta(session.userId(), session.itemId());
             final double actualReturnTime = session.getDelta();
-            if (actualReturnTime > 0) {
+            if (actualReturnTime > 0 && actualReturnTime < DataPreprocessor.CHURN_THRESHOLD) {
                 count++;
                 errors += Math.abs(actualReturnTime - expectedReturnTime);
             }

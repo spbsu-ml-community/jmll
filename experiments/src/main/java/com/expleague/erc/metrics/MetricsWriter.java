@@ -22,7 +22,7 @@ public class MetricsWriter implements Model.FitListener {
     private final List<Event> testData;
     private final double eps;
     private final Metric mae = new MAE();
-    private final Metric spu = new SPU();
+    private final Metric spu = new SPUPerUser();
     private final Metric ll;
     private final Path histPath;
 

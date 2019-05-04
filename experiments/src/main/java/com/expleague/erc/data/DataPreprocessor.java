@@ -16,8 +16,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class DataPreprocessor {
+    public static final double CHURN_THRESHOLD = 2 * 7 * 24.;
+
     private static final double MAX_RATIO = 3.;
     private static final double MAX_GAP = .5;
+    private static final int NOTHING_DONE = -1;
 
     public static class TrainTest {
         private List<Event> train;
@@ -60,6 +63,10 @@ public abstract class DataPreprocessor {
     }
 
 //    public static List<Session> groupToSessions(List<Event> events) {
+//        return events.stream().map(Session::new).collect(Collectors.toList());
+//    }
+
+//    public static List<Session> groupToSessions(List<Event> events) {
 //        final List<Session> sessions = new ArrayList<>();
 //        final TLongDoubleMap lastTimes = new TLongDoubleHashMap();
 //        for (Event event: events) {
@@ -76,13 +83,16 @@ public abstract class DataPreprocessor {
     public static List<Session> groupToSessions(List<Event> events) {
         final List<Session> sessions = new ArrayList<>();
         final TIntDoubleMap lastTimes = new TIntDoubleHashMap();
-        final TIntIntMap lastItems = new TIntIntHashMap(64, 0.5f, -1, -1);
+        final TIntIntMap lastItems = new TIntIntHashMap(64, 0.5f, -1, NOTHING_DONE);
         for (final Event event : events) {
             final int userId = event.userId();
             final int itemId = event.itemId();
             final double curTime = event.getTs();
             final double lastTime = lastTimes.get(userId);
-            if (lastItems.get(userId) != itemId || lastTime + MAX_GAP < curTime) {
+            final int lastItem = lastItems.get(userId);
+            if (lastItem == NOTHING_DONE) {
+                sessions.add(new Session(userId, itemId, curTime, -1));
+            } else if (lastItem != itemId || lastTime + MAX_GAP < curTime) {
                 sessions.add(new Session(userId, itemId, curTime, curTime - lastTime));
             }
             lastTimes.put(userId, curTime);

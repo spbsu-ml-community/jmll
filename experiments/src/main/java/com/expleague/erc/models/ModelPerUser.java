@@ -45,6 +45,9 @@ public class ModelPerUser extends Model {
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         final TIntDoubleMap userLastVisitTimes = new TIntDoubleHashMap();
         for (final Session session : DataPreprocessor.groupToSessions(events)) {
+            if (session.getDelta() > DataPreprocessor.CHURN_THRESHOLD) {
+                continue;
+            }
             final long pairId = session.getPair();
             final int userId = session.userId();
             final double time = session.getTs();
