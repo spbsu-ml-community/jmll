@@ -79,8 +79,8 @@ public class DataMetrics {
             Files.createDirectory(outDirPath);
         }
         final MetricsCalculator metricsCalculator = new MetricsCalculator(dataset.getTrain(), dataset.getTest(), outDirPath);
-        final TLongDoubleMap trainPairSpus = metricsCalculator.pairwiseSessionsSpu(DataPreprocessor.groupToSessions(train));
-        final TLongDoubleMap testPairSpus = metricsCalculator.pairwiseSessionsSpu(DataPreprocessor.groupToSessions(test));
+        final TLongDoubleMap trainPairSpus = metricsCalculator.pairwiseSessionsSpu(DataPreprocessor.groupToEventSeqs(train));
+        final TLongDoubleMap testPairSpus = metricsCalculator.pairwiseSessionsSpu(DataPreprocessor.groupToEventSeqs(test));
         final long [] keys = Arrays.stream(trainPairSpus.keys())
                 .boxed()
                 .sorted(Comparator.comparingInt(Util::extractItemId).thenComparingInt(Util::extractUserId))

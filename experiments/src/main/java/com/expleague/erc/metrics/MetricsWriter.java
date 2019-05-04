@@ -1,7 +1,7 @@
 package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
@@ -70,10 +70,10 @@ public class MetricsWriter implements Model.FitListener {
 
     private void saveHist(ApplicableModel applicable) {
         final StringBuilder histDescBuilder = new StringBuilder();
-        for (final Session session : DataPreprocessor.groupToSessions(trainData)) {
-            final int userId = session.userId();
-            final int itemId = session.itemId();
-            double prDelta = session.getDelta();
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(trainData)) {
+            final int userId = eventSeq.userId();
+            final int itemId = eventSeq.itemId();
+            double prDelta = eventSeq.getDelta();
             if (prDelta >= 0) {
                 final double lambda = applicable.getLambda(userId, itemId);
                 final double prediction = applicable.timeDelta(userId, itemId);
@@ -83,7 +83,7 @@ public class MetricsWriter implements Model.FitListener {
                 histDescBuilder.append(userId).append(" ").append(itemId).append(" ").append(prDelta).append(" ")
                         .append(prediction).append(" ").append(lambda).append(" ").append(pLog).append("\t");
             }
-            applicable.accept(session);
+            applicable.accept(eventSeq);
         }
         histDescBuilder.append("\n");
         try {

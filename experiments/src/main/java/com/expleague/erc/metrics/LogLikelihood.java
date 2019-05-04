@@ -3,7 +3,7 @@ package com.expleague.erc.metrics;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
@@ -30,21 +30,24 @@ public class LogLikelihood implements Metric {
         double logLikelihood = 0.;
         final TLongSet seenPairs = new TLongHashSet();
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
-        for (final Session session : DataPreprocessor.groupToSessions(events)) {
-            final int userId = session.userId();
-            final int itemId = session.itemId();
-            final long pairId = session.getPair();
+        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
+            final int userId = eventSeq.userId();
+            final int itemId = eventSeq.itemId();
+            final long pairId = eventSeq.getPair();
             if (!seenPairs.contains(pairId)) {
                 seenPairs.add(pairId);
-                applicable.accept(session);
+                applicable.accept(eventSeq);
             } else {
-                final double prDelta = max(session.getDelta(), eps);
+                final double prDelta = max(eventSeq.getDelta(), eps);
                 final double p = applicable.probabilityInterval(userId, itemId, prDelta - eps, prDelta + eps);
+                if (p < 0 && p > 1) {
+                    throw new IllegalStateException("prob is not in [0; 1]");
+                }
                 if (p > 0) {
                     logLikelihood += log(p);
                 }
-                applicable.accept(session);
-                lastVisitTimes.put(pairId, session.getTs());
+                applicable.accept(eventSeq);
+                lastVisitTimes.put(pairId, eventSeq.getTs());
             }
         }
 //        for (long pairId : lastVisitTimes.keys()) {

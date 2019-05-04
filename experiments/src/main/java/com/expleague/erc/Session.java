@@ -1,54 +1,37 @@
 package com.expleague.erc;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Session {
-    protected final int userId;
-    protected final int itemId;
-    protected final double ts;
-    protected double delta;
+    private List<EventSeq> eventSeqs;
 
-    public Session(int userId, int itemId, double ts) {
-        this.userId = userId;
-        this.itemId = itemId;
-        this.ts = ts;
-        delta = -1;
+    public Session() {
+        eventSeqs = new ArrayList<>();
     }
 
-    public Session(int userId, int itemId, double ts, double delta) {
-        this.userId = userId;
-        this.itemId = itemId;
-        this.ts = ts;
-        this.delta = delta;
+    public Session(final EventSeq eventSeq) {
+        eventSeqs = new ArrayList<>();
+        eventSeqs.add(eventSeq);
     }
 
-    public Session(Event event) {
-        this(event.userId, event.itemId, event.ts, event.prDelta);
+    public Session(List<EventSeq> eventSeqs) {
+        this.eventSeqs = eventSeqs;
     }
 
-    public int userId() {
-        return userId;
+    public void add(final EventSeq eventSeq) {
+        eventSeqs.add(eventSeq);
     }
 
-    public int itemId() {
-        return itemId;
+    public double userId() {
+        return eventSeqs.get(0).userId();
     }
 
-    public double getTs() {
-        return ts;
+    public double startTs() {
+        return eventSeqs.get(0).getTs();
     }
 
-    public double getDelta() {
-        return delta;
-    }
-
-    public void setDelta(final double delta) {
-        this.delta = delta;
-    }
-
-    public boolean isFinish() {
-        return false;
-    }
-
-    public long getPair() {
-        return Util.combineIds(userId, itemId);
+    public double delta() {
+        return eventSeqs.get(0).getDelta();
     }
 }

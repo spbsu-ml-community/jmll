@@ -1,7 +1,7 @@
 package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import gnu.trove.map.TIntObjectMap;
 
 import java.io.Serializable;
@@ -13,5 +13,5 @@ public interface LambdaStrategy extends Serializable {
 
     TIntObjectMap<Vec> getLambdaItemDerivative(final int userId, final int itemId);
 
-    void accept(final Session session);
+    void accept(final EventSeq eventSeq);
 }

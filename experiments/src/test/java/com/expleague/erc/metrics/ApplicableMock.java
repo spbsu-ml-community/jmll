@@ -1,7 +1,6 @@
 package com.expleague.erc.metrics;
 
-import com.expleague.erc.Event;
-import com.expleague.erc.Session;
+import com.expleague.erc.EventSeq;
 import com.expleague.erc.models.ApplicableModel;
 
 import static java.lang.Math.*;
@@ -14,7 +13,7 @@ public class ApplicableMock implements ApplicableModel {
     }
 
     @Override
-    public void accept(final Session session) {
+    public void accept(final EventSeq eventSeq) {
 
     }
 
