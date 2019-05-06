@@ -3,7 +3,7 @@ package com.expleague.erc.model;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.Event;
 import com.expleague.erc.lambda.NotLookAheadLambdaStrategy;
-import com.expleague.erc.metrics.MAE;
+import com.expleague.erc.metrics.MAEPerPair;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.ModelUserK;
 import gnu.trove.map.TIntDoubleMap;
@@ -71,7 +71,7 @@ public class ModelUserKTest {
         model.fit(history, 1e-2, 100, 0.99, m -> {});
         Assert.assertTrue(model.getApplicable().timeDelta(0, 0) > 15);
         Assert.assertTrue(model.getApplicable(history).timeDelta(0, 0) > 15);
-        Assert.assertTrue(new MAE().calculate(history, model.getApplicable()) < 5);
+        Assert.assertTrue(new MAEPerPair().calculate(history, model.getApplicable()) < 5);
     }
 
     @Test

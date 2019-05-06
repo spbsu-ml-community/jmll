@@ -158,7 +158,7 @@ public class ModelGamma2 extends Model {
         }
 
         @Override
-        public double timeDelta(int userId) {
+        public double timeDelta(final int userId, final double time) {
             throw new UnsupportedOperationException();
         }
 

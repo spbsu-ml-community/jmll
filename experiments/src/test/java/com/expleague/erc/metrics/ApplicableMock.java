@@ -13,9 +13,7 @@ public class ApplicableMock implements ApplicableModel {
     }
 
     @Override
-    public void accept(final EventSeq eventSeq) {
-
-    }
+    public void accept(final EventSeq eventSeq) {}
 
     @Override
     public double getLambda(int userId) {
@@ -33,7 +31,7 @@ public class ApplicableMock implements ApplicableModel {
     }
 
     @Override
-    public double timeDelta(int userId) {
+    public double timeDelta(int userId, double time) {
         return 1 / lambda;
     }
 

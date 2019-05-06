@@ -17,7 +17,7 @@ public class MAETest {
                 new Event(0, 0, 0, -1),
                 new Event(0, 0, 1, 1)
         );
-        final double calculatedMAE = new MAE().calculate(history, applicableMock);
+        final double calculatedMAE = new MAEPerPair().calculate(history, applicableMock);
         final double expectedMAE = Math.abs(1 - 1 / lambda);
         Assert.assertEquals(expectedMAE, calculatedMAE, 1e-9);
     }
@@ -34,7 +34,7 @@ public class MAETest {
                 new Event(0, 1, 4, 2),
                 new Event(1, 0, 5, 2)
         );
-        final double calculatedMAE = new MAE().calculate(history, applicableMock);
+        final double calculatedMAE = new MAEPerPair().calculate(history, applicableMock);
         final double expectedMAE = (0.5 + 1.5 + 1.5) / 3;
         Assert.assertEquals(expectedMAE, calculatedMAE, 1e-9);
     }

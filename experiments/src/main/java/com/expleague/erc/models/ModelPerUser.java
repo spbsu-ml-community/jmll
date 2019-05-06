@@ -111,7 +111,7 @@ public class ModelPerUser extends Model {
         }
 
         @Override
-        public double timeDelta(int userId) {
+        public double timeDelta(final int userId, final double time) {
             return 1 / getLambda(userId);
         }
 

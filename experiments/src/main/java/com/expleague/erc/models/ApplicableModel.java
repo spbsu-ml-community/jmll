@@ -20,7 +20,7 @@ public interface ApplicableModel {
 
     double timeDelta(final int userId, final int itemId);
 
-    double timeDelta(final int userId);
+    double timeDelta(final int userId, final double time);
 
     double probabilityBeforeX(final int userId, final double x);
 

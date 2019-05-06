@@ -14,14 +14,15 @@ public class MAEPerUser implements Metric {
     public double calculate(List<Event> events, ApplicableModel applicable) {
         double errors = 0.;
         long count = 0;
-//        final TIntDoubleMap prevTimes = new TIntDoubleHashMap();
+        final TIntDoubleMap prevTimes = new TIntDoubleHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-//            final double curTime = session.getStartTs();
-//            final double prevTime = prevTimes.get(userId);
-//            prevTimes.put(userId, curTime);
+            final int userId = session.userId();
+            final double curTime = session.getStartTs();
+            final double prevTime = prevTimes.get(userId);
+            prevTimes.put(userId, curTime);
             final double actualReturnTime = session.getDelta();
             if (0 < actualReturnTime && actualReturnTime < DataPreprocessor.CHURN_THRESHOLD) {
-                final double expectedReturnTime = applicable.timeDelta(session.userId());
+                final double expectedReturnTime = applicable.timeDelta(userId, prevTime);
                 count++;
                 errors += Math.abs(actualReturnTime - expectedReturnTime);
             }

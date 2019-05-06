@@ -30,16 +30,18 @@ public class ModelDays extends ModelPerUser {
     private static final int DAY_HOURS = 24;
 
     private final TIntIntMap userDayBorders;
+    private final TIntIntMap userDayPeaks;
     private final TIntDoubleMap averageOneDayDelta;
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
                      TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
-                     TIntIntMap userDayBorders, TIntDoubleMap averageOneDayDelta) {
+                     TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap averageOneDayDelta) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 usersEmbeddingsPrior, itemsEmbeddingsPrior);
         this.userDayBorders = userDayBorders;
         this.averageOneDayDelta = averageOneDayDelta;
+        this.userDayPeaks = userDayPeaks;
     }
 
     private double lastDayBorder(double time, int userBorder) {
@@ -98,9 +100,16 @@ public class ModelDays extends ModelPerUser {
         }
 
         @Override
-        public double timeDelta(int userId) {
-            final int daysPrediction = (int)(1 / getLambda(userId));
-            return daysPrediction == 0 ? averageOneDayDelta.get(userId) : daysPrediction * DAY_HOURS;
+        public double timeDelta(final int userId, final double time) {
+            final double rawPrediction = 1 / getLambda(userId);
+            final int daysPrediction = (int) rawPrediction;
+            if (time + rawPrediction < lastDayBorder(time, userDayBorders.get(userId)) + DAY_HOURS) {
+//            if (daysPrediction == 0) {
+                return averageOneDayDelta.get(userId);
+            }
+            final int predictedDay = (int)(time + daysPrediction * DAY_HOURS) / DAY_HOURS;
+            final double predictedTime = predictedDay * DAY_HOURS + userDayPeaks.get(userId);
+            return predictedTime - time;
         }
 
         @Override
@@ -131,7 +140,7 @@ public class ModelDays extends ModelPerUser {
         return new ApplicableImpl();
     }
 
-    public static TIntIntMap calcDayBorders(List<Event> events) {
+    public static void calcDayPoints(final List<Event> events, final TIntIntMap borders, final TIntIntMap peaks) {
         final TIntObjectMap<long[]> counters = new TIntObjectHashMap<>();
         for (final Event event : events) {
             final int userId = event.userId();
@@ -140,20 +149,25 @@ public class ModelDays extends ModelPerUser {
             }
             counters.get(userId)[(int)event.getTs() % DAY_HOURS]++;
         }
-        final TIntIntMap userBorders = new TIntIntHashMap();
         counters.forEachEntry((userId, userCounters) -> {
+            int argMax = -1;
             int argMin = -1;
             long minCounter = Long.MAX_VALUE;
+            long maxCounter = Long.MIN_VALUE;
             for (int i = 0; i < DAY_HOURS; i++) {
                 if (userCounters[i] < minCounter) {
                     minCounter = userCounters[i];
                     argMin = i;
                 }
+                if (userCounters[i] < maxCounter) {
+                    maxCounter = userCounters[i];
+                    argMax = i;
+                }
             }
-            userBorders.put(userId, argMin);
+            borders.put(userId, argMin);
+            peaks.put(userId, argMax);
             return true;
         });
-        return userBorders;
     }
 
     public static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {

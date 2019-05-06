@@ -20,7 +20,8 @@ public class SPUPerUser implements Metric {
             final int user = session.userId();
             final double curEventTime = session.getStartTs();
             final double predictedTimeDelta = predictedTimeDeltas.get(user);
-            final double realEventTimeDelta = curEventTime - lastEventTimes.get(user);
+            final double userLastEventTime = lastEventTimes.get(user);
+            final double realEventTimeDelta = curEventTime - userLastEventTime;
             if (predictedTimeDelta != predictedTimeDeltas.getNoEntryValue() && realEventTimeDelta != 0.
                     && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD) {
                 final double predictedEventSPU = 1 / predictedTimeDelta;
@@ -28,7 +29,7 @@ public class SPUPerUser implements Metric {
                 totalDiff += Math.abs(predictedEventSPU - realEventSPU);
                 count++;
             }
-            predictedTimeDeltas.put(user, applicable.timeDelta(user));
+            predictedTimeDeltas.put(user, applicable.timeDelta(user, userLastEventTime));
             lastEventTimes.put(user, curEventTime);
             applicable.accept(session);
         }

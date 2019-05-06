@@ -9,6 +9,7 @@ import com.expleague.erc.models.ModelDays;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
@@ -46,6 +47,7 @@ public class ModelTrainingRunner {
         options.addOption(Option.builder("t").longOpt("top").desc("Is filter on top items").hasArg().build());
         options.addOption(Option.builder("mn").longOpt("model_name").desc("Name for statistics files").hasArg().build());
         options.addOption(Option.builder("r").longOpt("reset").desc("Wipe the model directory").hasArg(false).build());
+        options.addOption(Option.builder().longOpt("toloka").desc("Read data in Toloka format").hasArg(false).build());
     }
 
     public static void main(String... args) throws ParseException, IOException, ClassNotFoundException {
@@ -67,8 +69,9 @@ public class ModelTrainingRunner {
         double lrd = Double.parseDouble(cliOptions.getOptionValue("lrd", "1"));
         String modelName = cliOptions.getOptionValue("mn", "experiments/src/main/resources/com/expleague/erc/models/model");
         boolean reset = cliOptions.hasOption("r");
+        boolean toloka = cliOptions.hasOption("toloka");
 
-        BaseDataReader dataReader = new LastFmDataReader();
+        BaseDataReader dataReader = toloka ? new TolokaDataReader() : new LastFmDataReader();
         List<Event> history = dataReader.readData(dataPath, size);
         Map<Integer, String> itemIdToName = dataReader.getReversedItemMap();
         Map<Integer, String> userIdToName = dataReader.getReversedUserMap();
@@ -127,10 +130,13 @@ public class ModelTrainingRunner {
             ModelDays.makeInitialEmbeddings(dim, train, userEmbeddings, itemEmbeddings);
             LambdaStrategyFactory perUserLambdaStrategyFactory =
                     new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(train));
-            TIntIntMap userDayBorders = ModelDays.calcDayBorders(history);
+            TIntIntMap userDayBorders = new TIntIntHashMap();
+            TIntIntMap userDayPeaks = new TIntIntHashMap();
+            ModelDays.calcDayPoints(history, userDayBorders, userDayPeaks);
             TIntDoubleMap averageOneDayDelta = ModelDays.calcAverageOneDayDelta(history);
             model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-                    perUserLambdaStrategyFactory, userEmbeddings, itemEmbeddings, userDayBorders, averageOneDayDelta);
+                    perUserLambdaStrategyFactory, userEmbeddings, itemEmbeddings, userDayBorders, userDayPeaks,
+                    averageOneDayDelta);
 //            TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
 //            TIntIntMap userKs = new TIntIntHashMap();
 //            ModelUserK.calcUserParams(dataset.getTrain(), userBaseLambdas, userKs);
