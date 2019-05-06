@@ -124,7 +124,7 @@ public class ModelTrainingRunner {
             DoubleUnaryOperator lambdaDerivative = new LambdaTransforms.AbsDerivativeTransform();
             TIntObjectMap<Vec> userEmbeddings = new TIntObjectHashMap<>();
             TIntObjectMap<Vec> itemEmbeddings = new TIntObjectHashMap<>();
-            Model.makeInitialEmbeddings(dim, train, userEmbeddings, itemEmbeddings);
+            ModelDays.makeInitialEmbeddings(dim, train, userEmbeddings, itemEmbeddings);
             LambdaStrategyFactory perUserLambdaStrategyFactory =
                     new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(train));
             TIntIntMap userDayBorders = ModelDays.calcDayBorders(history);

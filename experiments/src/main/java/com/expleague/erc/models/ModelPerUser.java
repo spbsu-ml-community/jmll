@@ -43,22 +43,22 @@ public class ModelPerUser extends Model {
         for (final int itemId : itemIds.toArray()) {
             itemDerivatives.put(itemId, new ArrayVec(dim));
         }
-        final LambdaStrategy lambdasByItem =
+        final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
 //        final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
 //        final TIntDoubleMap userLastVisitTimes = new TIntDoubleHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final double delta = session.getDelta();
             if (0 < delta && delta < DataPreprocessor.CHURN_THRESHOLD) {
-                updateDerivativeInnerEvent(lambdasByItem, session.userId(), delta, userDerivatives,
+                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), delta, userDerivatives,
                         itemDerivatives);
             }
-            session.getEventSeqs().forEach(lambdasByItem::accept);
+            session.getEventSeqs().forEach(lambdaStrategy::accept);
         }
 //        for (long pairId: lastVisitTimes.keys()) {
 //            final int userId = Util.extractUserId(pairId);
 //            final int itemId = Util.extractItemId(pairId);
-//            updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
+//            updateDerivativeLastEvent(lambdaStrategy, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
 //                    userDerivatives, itemDerivatives);
 //        }
     }

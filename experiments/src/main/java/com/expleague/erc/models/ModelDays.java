@@ -2,6 +2,7 @@ package com.expleague.erc.models;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
@@ -16,11 +17,14 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntLongHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
 
 import static java.lang.Math.exp;
+import static java.lang.Math.sqrt;
 
 public class ModelDays extends ModelPerUser {
     private static final int DAY_HOURS = 24;
@@ -55,17 +59,19 @@ public class ModelDays extends ModelPerUser {
         for (final int itemId : itemIds.toArray()) {
             itemDerivatives.put(itemId, new ArrayVec(dim));
         }
-        final LambdaStrategy lambdasByItem =
+        final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            double pos = lastDayBorder(session.getStartTs(), userDayBorders.get(session.userId()));
-            int daysPassed = 0;
-            while (pos > session.getStartTs() - session.getDelta()) {
-                ++daysPassed;
-                pos -= 1.;
+            if (session.getDelta() < DataPreprocessor.CHURN_THRESHOLD) {
+                double pos = lastDayBorder(session.getStartTs(), userDayBorders.get(session.userId()));
+                int daysPassed = 0;
+                while (pos > session.getStartTs() - session.getDelta()) {
+                    daysPassed++;
+                    pos -= DAY_HOURS;
+                }
+                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), daysPassed, userDerivatives, itemDerivatives);
             }
-            updateDerivativeInnerEvent(lambdasByItem, session.userId(), daysPassed, userDerivatives, itemDerivatives);
-            session.getEventSeqs().forEach(lambdasByItem::accept);
+            session.getEventSeqs().forEach(lambdaStrategy::accept);
         }
     }
 
@@ -93,14 +99,8 @@ public class ModelDays extends ModelPerUser {
 
         @Override
         public double timeDelta(int userId) {
-            final int daysPred = (int)(1 / getLambda(userId) + .5);
-            final double td;
-            if (daysPred == 0) {
-                td = averageOneDayDelta.get(userId);
-            } else {
-                td = daysPred * DAY_HOURS;
-            }
-            return td;
+            final int daysPrediction = (int)(1 / getLambda(userId));
+            return daysPrediction == 0 ? averageOneDayDelta.get(userId) : daysPrediction * DAY_HOURS;
         }
 
         @Override
@@ -176,5 +176,31 @@ public class ModelDays extends ModelPerUser {
             return true;
         });
         return averageDayDelta;
+    }
+
+    public static void makeInitialEmbeddings(int dim, List<Event> history,
+                                             TIntObjectMap<Vec> userEmbeddings, TIntObjectMap<Vec> itemEmbeddings) {
+        final TIntSet userIds = new TIntHashSet();
+        final TIntSet itemIds = new TIntHashSet();
+        for (Event event : history) {
+            userIds.add(event.userId());
+            itemIds.add(event.itemId());
+        }
+
+        final double itemDeltaMean = DataPreprocessor.groupToEventSeqs(history).stream()
+                .mapToDouble(EventSeq::getDelta)
+                .filter(delta -> delta >= 0)
+                .map(x -> x / DAY_HOURS)
+                .average().orElse(-1);
+        final double embeddingMean = sqrt(1 / itemDeltaMean) / dim;
+        final FastRandom randomGenerator = new FastRandom();
+        userIds.forEach(userId -> {
+            userEmbeddings.put(userId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            return true;
+        });
+        itemIds.forEach(itemId -> {
+            itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            return true;
+        });
     }
 }
