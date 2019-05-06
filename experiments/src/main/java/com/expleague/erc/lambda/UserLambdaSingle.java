@@ -22,7 +22,6 @@ public class UserLambdaSingle implements UserLambda {
 
     private double lambda;
     private double currentTime;
-    private double lastTime;
     private final TIntDoubleMap lastTimeOfItems;
     private final Vec userDerivative;
     private final TIntObjectMap<Vec> itemDerivatives;
@@ -35,7 +34,6 @@ public class UserLambdaSingle implements UserLambda {
         dim = userEmbedding.dim();
 
         currentTime = 0.;
-        lastTime = 0.;
         lastTimeOfItems = new TIntDoubleHashMap();
 
         initialLambda = initialValue;
@@ -48,7 +46,6 @@ public class UserLambdaSingle implements UserLambda {
     public void reset() {
         lambda = initialLambda;
         currentTime = 0.;
-        lastTime = 0.;
         lastTimeOfItems.clear();
         itemDerivatives.clear();
         VecTools.fill(userDerivative, 0);

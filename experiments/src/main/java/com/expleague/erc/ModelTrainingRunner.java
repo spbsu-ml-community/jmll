@@ -5,7 +5,9 @@ import com.expleague.erc.data.*;
 import com.expleague.erc.lambda.*;
 import com.expleague.erc.metrics.MetricsWriter;
 import com.expleague.erc.models.Model;
-import com.expleague.erc.models.ModelPerUser;
+import com.expleague.erc.models.ModelDays;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
@@ -125,8 +127,10 @@ public class ModelTrainingRunner {
             Model.makeInitialEmbeddings(dim, train, userEmbeddings, itemEmbeddings);
             LambdaStrategyFactory perUserLambdaStrategyFactory =
                     new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(train));
-            model = new ModelPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-                    perUserLambdaStrategyFactory, userEmbeddings, itemEmbeddings);
+            TIntIntMap userDayBorders = ModelDays.calcDayBorders(history);
+            TIntDoubleMap averageOneDayDelta = ModelDays.calcAverageOneDayDelta(history);
+            model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+                    perUserLambdaStrategyFactory, userEmbeddings, itemEmbeddings, userDayBorders, averageOneDayDelta);
 //            TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
 //            TIntIntMap userKs = new TIntIntHashMap();
 //            ModelUserK.calcUserParams(dataset.getTrain(), userBaseLambdas, userKs);
