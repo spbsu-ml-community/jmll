@@ -133,7 +133,7 @@ public class ModelDays extends ModelPerUser {
 
     public static TIntIntMap calcDayBorders(List<Event> events) {
         final TIntObjectMap<long[]> counters = new TIntObjectHashMap<>();
-        for (Event event: events) {
+        for (final Event event : events) {
             final int userId = event.userId();
             if (!counters.containsKey(userId)) {
                 counters.put(userId, new long[DAY_HOURS]);
@@ -144,7 +144,7 @@ public class ModelDays extends ModelPerUser {
         counters.forEachEntry((userId, userCounters) -> {
             int argMin = -1;
             long minCounter = Long.MAX_VALUE;
-            for (int i = 0; i < DAY_HOURS; ++i) {
+            for (int i = 0; i < DAY_HOURS; i++) {
                 if (userCounters[i] < minCounter) {
                     minCounter = userCounters[i];
                     argMin = i;
@@ -156,25 +156,35 @@ public class ModelDays extends ModelPerUser {
         return userBorders;
     }
 
-    public static TIntDoubleMap calcAverageOneDayDelta(List<Event> events) {
+    public static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
         final TIntIntMap lastDays = new TIntIntHashMap();
-        final TIntLongMap userSessions = new TIntLongHashMap();
-        final TIntIntMap daysActive = new TIntIntHashMap();
-        for (Session session : DataPreprocessor.groupEventsToSessions(events)) {
+        final TIntDoubleMap lastDayTimes = new TIntDoubleHashMap();
+        final TIntDoubleMap userDeltas = new TIntDoubleHashMap();
+        final TIntIntMap userCounts = new TIntIntHashMap();
+        for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int userId = session.userId();
-            userSessions.put(userId, userSessions.get(userId) + 1);
-            final int curDay = ((int)session.getStartTs() / DAY_HOURS) * DAY_HOURS;
-            final int lastDay = lastDays.get(userId);
-            if (lastDay != curDay) {
+            final int curDay = ((int)session.getStartTs() / DAY_HOURS);
+            final double curTime = session.getStartTs() - curDay * DAY_HOURS;
+            if (!lastDays.containsKey(userId)) {
                 lastDays.put(userId, curDay);
-                daysActive.put(userId, daysActive.get(userId) + 1);
+                lastDayTimes.put(userId, curTime);
+                continue;
+            }
+            final int lastDay = lastDays.get(userId);
+            if (lastDay == curDay) {
+                final double delta = curTime - lastDayTimes.get(userId);
+                userDeltas.adjustOrPutValue(userId, delta, delta);
+                userCounts.adjustOrPutValue(userId, 1, 1);
+                lastDayTimes.put(userId, curTime);
+            } else {
+                lastDays.put(userId, curDay);
+                lastDayTimes.put(userId, curTime);
             }
         }
-        final TIntDoubleMap averageDayDelta = new TIntDoubleHashMap();
-        userSessions.forEachEntry((userId, nSessions) -> {
-            averageDayDelta.put(userId, daysActive.get(userId) / ((double) nSessions) * DAY_HOURS);
-            return true;
-        });
-        return averageDayDelta;
+        final TIntDoubleMap result = new TIntDoubleHashMap();
+        for (final int userId : userDeltas.keys()) {
+            result.put(userId, userDeltas.get(userId) / userCounts.get(userId));
+        }
+        return result;
     }
 }
