@@ -50,32 +50,7 @@ public abstract class DataPreprocessor {
 
     public abstract TrainTest splitTrainTest(final List<Event> events, final double train_ratio);
 
-    public static TIntObjectMap<List<Event>> groupByUsers(final List<Event> events) {
-        TIntObjectMap<List<Event>> usersEvents = new TIntObjectHashMap<>();
-        for (final Event event : events) {
-            if (!usersEvents.containsKey(event.userId())) {
-                usersEvents.put(event.userId(), new ArrayList<>());
-            }
-            usersEvents.get(event.userId()).add(event);
-        }
-        return usersEvents;
-    }
-
-//    public static List<EventSeq> groupToEventSeqs(List<Event> events) {
-//        final List<EventSeq> sessions = new ArrayList<>();
-//        final TLongDoubleMap lastTimes = new TLongDoubleHashMap();
-//        for (Event event: events) {
-//            final long pair = event.getPair();
-//            final double curTime = event.getStartTs();
-//            if (!lastTimes.containsKey(pair) || lastTimes.get(pair) + 0.5 <= curTime) { //TODO !!!!!
-//                sessions.add(new EventSeq(event));
-//            }
-//            lastTimes.put(pair, curTime);
-//        }
-//        return sessions;
-//    }
-
-    public static List<EventSeq> groupToEventSeqs(List<Event> events) {
+    public static List<EventSeq> groupToEventSeqs(final List<Event> events) {
         final List<EventSeq> eventSeqs = new ArrayList<>();
         final TIntDoubleMap lastTimes = new TIntDoubleHashMap();
         final TIntIntMap lastItems = new TIntIntHashMap(64, 0.5f, -1, NOTHING_DONE);
@@ -96,7 +71,7 @@ public abstract class DataPreprocessor {
         return eventSeqs;
     }
 
-    public static List<Session> groupToSessions(List<EventSeq> eventSeqs) {
+    public static List<Session> groupToSessions(final List<EventSeq> eventSeqs) {
         final List<Session> sessions = new ArrayList<>();
         final TIntDoubleMap lastTimes = new TIntDoubleHashMap();
         final TIntObjectMap<Session> lastSessions = new TIntObjectHashMap<>();
@@ -114,7 +89,7 @@ public abstract class DataPreprocessor {
         return sessions;
     }
 
-    public static List<Session> groupEventsToSessions(List<Event> events) {
+    public static List<Session> groupEventsToSessions(final List<Event> events) {
         return groupToSessions(groupToEventSeqs(events));
     }
 

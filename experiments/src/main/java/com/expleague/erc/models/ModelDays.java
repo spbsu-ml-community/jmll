@@ -11,11 +11,9 @@ import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TIntLongMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TIntLongHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
@@ -31,15 +29,18 @@ public class ModelDays extends ModelPerUser {
 
     private final TIntIntMap userDayBorders;
     private final TIntIntMap userDayPeaks;
+    private final TIntDoubleMap userDayAvgStarts;
     private final TIntDoubleMap averageOneDayDelta;
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
                      TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
-                     TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap averageOneDayDelta) {
+                     TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap userDayAvgStarts,
+                     TIntDoubleMap averageOneDayDelta) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 usersEmbeddingsPrior, itemsEmbeddingsPrior);
         this.userDayBorders = userDayBorders;
+        this.userDayAvgStarts = userDayAvgStarts;
         this.averageOneDayDelta = averageOneDayDelta;
         this.userDayPeaks = userDayPeaks;
     }
@@ -107,8 +108,9 @@ public class ModelDays extends ModelPerUser {
 //            if (daysPrediction == 0) {
                 return averageOneDayDelta.get(userId);
             }
-            final int predictedDay = (int)(time + daysPrediction * DAY_HOURS) / DAY_HOURS;
-            final double predictedTime = predictedDay * DAY_HOURS + userDayPeaks.get(userId);
+            final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
+//            final double predictedTime = predictedDay * DAY_HOURS + userDayPeaks.get(userId);
+            final double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
             return predictedTime - time;
         }
 
@@ -147,7 +149,7 @@ public class ModelDays extends ModelPerUser {
             if (!counters.containsKey(userId)) {
                 counters.put(userId, new long[DAY_HOURS]);
             }
-            counters.get(userId)[(int)event.getTs() % DAY_HOURS]++;
+            counters.get(userId)[(int) event.getTs() % DAY_HOURS]++;
         }
         counters.forEachEntry((userId, userCounters) -> {
             int argMax = -1;
@@ -170,6 +172,27 @@ public class ModelDays extends ModelPerUser {
         });
     }
 
+    public static TIntDoubleMap calcAvgStarts(final List<Event> events) {
+        final TIntIntMap lastDays = new TIntIntHashMap();
+        TIntDoubleMap starts = new TIntDoubleHashMap();
+        TIntIntMap count = new TIntIntHashMap();
+        for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
+            final int userId = session.userId();
+            final int curDay = ((int) session.getStartTs() / DAY_HOURS);
+            final double curTime = session.getStartTs() - curDay * DAY_HOURS;
+            if (!lastDays.containsKey(userId) || lastDays.get(userId) != curDay) {
+                starts.adjustOrPutValue(userId, curTime, curTime);
+                count.adjustOrPutValue(userId, 1, 1);
+                lastDays.put(userId, curDay);
+            }
+        }
+        TIntDoubleMap avgStarts = new TIntDoubleHashMap();
+        for (final int userId : starts.keys()) {
+            avgStarts.put(userId, starts.get(userId) / count.get(userId));
+        }
+        return avgStarts;
+    }
+
     public static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
         final TIntIntMap lastDays = new TIntIntHashMap();
         final TIntDoubleMap lastDayTimes = new TIntDoubleHashMap();
@@ -177,7 +200,7 @@ public class ModelDays extends ModelPerUser {
         final TIntIntMap userCounts = new TIntIntHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int userId = session.userId();
-            final int curDay = ((int)session.getStartTs() / DAY_HOURS);
+            final int curDay = ((int) session.getStartTs() / DAY_HOURS);
             final double curTime = session.getStartTs() - curDay * DAY_HOURS;
             if (!lastDays.containsKey(userId)) {
                 lastDays.put(userId, curDay);

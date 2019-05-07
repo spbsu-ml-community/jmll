@@ -39,58 +39,61 @@ public class MetricsWriter implements Model.FitListener {
 
     @Override
     public void apply(Model model) {
-//        Map<Integer, Double> constants = DataPreprocessor.groupEventsToSessions(trainData).stream()
-//                .filter(session -> 0 < session.getDelta() && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD)
-//                .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(Session::getDelta)));
-//        final double justConstant = DataPreprocessor.groupEventsToSessions(trainData).stream()
-//                .mapToDouble(Session::getDelta)
-//                .filter(delta -> delta > 0)
-//                .filter(delta -> delta < DataPreprocessor.CHURN_THRESHOLD)
-//                .average().orElse(-1);
-//        ApplicableModel constantApplicable = new ApplicableModel() {
-//            @Override
-//            public void accept(EventSeq event) {
-//
-//            }
-//
-//            @Override
-//            public double getLambda(int userId) {
-//                return 0;
-//            }
-//
-//            @Override
-//            public double getLambda(int userId, int itemId) {
-//                return 0;
-//            }
-//
-//            @Override
-//            public double timeDelta(int userId, int itemId) {
-//                return 0;
-//            }
-//
-//            @Override
-//            public double timeDelta(int userId) {
+        Map<Integer, Double> constants = DataPreprocessor.groupEventsToSessions(trainData).stream()
+                .filter(session -> 0 < session.getDelta() && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD)
+                .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(Session::getDelta)));
+        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
+                .mapToDouble(Session::getDelta)
+                .filter(delta -> delta > 0)
+                .filter(delta -> delta < DataPreprocessor.CHURN_THRESHOLD)
+                .sorted().toArray();
+        final double justConstant = intervals[intervals.length / 2];
+        ApplicableModel constantApplicable = new ApplicableModel() {
+            @Override
+            public void accept(EventSeq event) {
+
+            }
+
+            @Override
+            public double getLambda(int userId) {
+                return 0;
+            }
+
+            @Override
+            public double getLambda(int userId, int itemId) {
+                return 0;
+            }
+
+            @Override
+            public double timeDelta(int userId, int itemId) {
+                return 0;
+            }
+
+            @Override
+            public double timeDelta(final int userId, final double time) {
 //                try {
 //                    return constants.get(userId);
 //                } catch (Throwable t) {
-//                    return justConstant;
+                    return justConstant;
 //                }
-//            }
-//
-//            @Override
-//            public double probabilityBeforeX(int userId, double x) {
-//                return 0;
-//            }
-//
-//            @Override
-//            public double probabilityBeforeX(int userId, int itemId, double x) {
-//                return 0;
-//            }
-//        };
+//                return 10;
+            }
+
+            @Override
+            public double probabilityBeforeX(int userId, double x) {
+                return 0;
+            }
+
+            @Override
+            public double probabilityBeforeX(int userId, int itemId, double x) {
+                return 0;
+            }
+        };
         final double[] maes = new double[2];
         final double[] lls = new double[2];
         final ForkJoinTask maeTask = ForkJoinPool.commonPool().submit(() -> {
             final ApplicableModel applicable = model.getApplicable();
+//            ApplicableModel applicable = constantApplicable;
             maes[0] = mae.calculate(trainData, applicable);
             maes[1] = mae.calculate(testData, applicable);
         });

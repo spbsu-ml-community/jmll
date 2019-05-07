@@ -134,13 +134,11 @@ public class ModelTrainingRunner {
             TIntIntMap userDayPeaks = new TIntIntHashMap();
             ModelDays.calcDayPoints(history, userDayBorders, userDayPeaks);
             TIntDoubleMap averageOneDayDelta = ModelDays.calcAverageOneDayDelta(history);
+            TIntDoubleMap userDayAvgStarts = ModelDays.calcAvgStarts(history);
+
             model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     perUserLambdaStrategyFactory, userEmbeddings, itemEmbeddings, userDayBorders, userDayPeaks,
-                    averageOneDayDelta);
-//            TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
-//            TIntIntMap userKs = new TIntIntHashMap();
-//            ModelUserK.calcUserParams(dataset.getTrain(), userBaseLambdas, userKs);
-//            ModelUserK.makeInitialEmbeddings(dim, userBaseLambdas, dataset.getTrain(), userEmbeddings, itemEmbeddings);
+                    userDayAvgStarts, averageOneDayDelta);
 //            model = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
 //                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(), userEmbeddings, itemEmbeddings,
 //                    userKs, userBaseLambdas);
