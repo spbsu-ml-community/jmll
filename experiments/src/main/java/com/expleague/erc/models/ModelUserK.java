@@ -12,6 +12,7 @@ import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -29,17 +30,97 @@ public class ModelUserK extends Model {
     private static final long MIN_K = 1L;
     private static final double VARIANCE_SHARE = .1;
 
-    private final TIntIntMap userKs;
-    private final TIntDoubleMap userBaseLambdas;
+    private TIntIntMap userKs;
+    private TIntDoubleMap userBaseLambdas;
+
+    public ModelUserK(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
+                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+    }
 
     public ModelUserK(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
                       DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                      TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
-                      TIntIntMap userKs, TIntDoubleMap userBaseLambdas) {
+                      TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 usersEmbeddingsPrior, itemsEmbeddingsPrior);
-        this.userKs = userKs;
-        this.userBaseLambdas = userBaseLambdas;
+    }
+
+    @Override
+    public void initModel(final List<Event> events) {
+        makeInitialEmbeddings(events);
+        userKs = new TIntIntHashMap();
+        userBaseLambdas = new TIntDoubleHashMap();
+        calcUserParams(events, userBaseLambdas, userKs);
+        isInit = true;
+    }
+
+    private static void calcUserParams(List<Event> history, TIntDoubleMap userBaseLambdas, TIntIntMap userKs) {
+        final TIntDoubleMap userMeans = new TIntDoubleHashMap();
+        userMeans.putAll(history.stream()
+                .filter(event -> event.getPrDelta() >= 0)
+                .collect(Collectors.groupingBy(Event::userId, Collectors.averagingDouble(Event::getPrDelta))));
+        final TIntDoubleMap userVariances = new TIntDoubleHashMap();
+        userVariances.putAll(history.stream()
+                .filter(event -> event.getPrDelta() >= 0)
+                .collect(Collectors.groupingBy(
+                        Event::userId,
+                        Collectors.averagingDouble(event -> {
+                            final double diff = event.getPrDelta() - userMeans.get(event.userId());
+                            return diff * diff;
+                        })
+                ))
+        );
+        final Map<Integer, Long> eventNumbers = history.stream()
+                .filter(event -> event.getPrDelta() >= 0)
+                .collect(Collectors.groupingBy(Event::userId, Collectors.counting()));
+        userMeans.forEachEntry((userId, userMean) -> {
+            if (eventNumbers.get(userId) == 1) {
+                return true;
+            }
+            final double userVariance = userVariances.get(userId);
+//            final double baseLambda = userMean / userVariance;
+            final int userK = (int)min(max(MIN_K, round(userMean * userMean / userVariance)), MAX_K);
+            final double baseLambda = userK / userMean;
+            userBaseLambdas.put(userId, baseLambda);
+            userKs.put(userId, userK);
+            return true;
+        });
+        final double totalMean = Arrays.stream(userMeans.values()).average().orElse(-1);
+        final double totalVariance = Arrays.stream(userVariances.values()).average().orElse(-1);
+//        final double defaultLambda = totalMean / totalVariance;
+        final int defaultK = (int)min(max(MIN_K, round(totalMean * totalMean / totalVariance)), MAX_K);
+        final double defaultLambda = defaultK / totalMean;
+        history.stream()
+                .filter(event -> event.getPrDelta() < 0)
+                .mapToInt(Event::userId)
+                .filter(userId -> !userKs.containsKey(userId))
+                .forEach(userId -> {
+                    userBaseLambdas.put(userId, defaultLambda);
+                    userKs.put(userId, defaultK);
+                });
+    }
+
+    @Override
+    protected void makeInitialEmbeddings(final List<Event> history) {
+        final double targetVariance = Arrays.stream(userBaseLambdas.values()).min().orElse(-1) * VARIANCE_SHARE;
+        final double embeddingMean = sqrt(targetVariance) / dim;
+        final FastRandom randomGenerator = new FastRandom();
+        userIds = new TIntHashSet();
+        itemIds = new TIntHashSet();
+        for (Event event: history) {
+            userIds.add(event.userId());
+            itemIds.add(event.itemId());
+        }
+        userIds.forEach(userId -> {
+            userEmbeddings.put(userId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            return true;
+        });
+        itemIds.forEach(itemId -> {
+            itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            return true;
+        });
+        userIdsArray = userIds.toArray();
+        itemIdsArray = itemIds.toArray();
     }
 
     @Override
@@ -131,70 +212,11 @@ public class ModelUserK extends Model {
         return applicable;
     }
 
-    public static void calcUserParams(List<Event> history, TIntDoubleMap userBaseLambdas, TIntIntMap userKs) {
-        final TIntDoubleMap userMeans = new TIntDoubleHashMap();
-        userMeans.putAll(history.stream()
-                .filter(event -> event.getPrDelta() >= 0)
-                .collect(Collectors.groupingBy(Event::userId, Collectors.averagingDouble(Event::getPrDelta))));
-        final TIntDoubleMap userVariances = new TIntDoubleHashMap();
-        userVariances.putAll(history.stream()
-                .filter(event -> event.getPrDelta() >= 0)
-                .collect(Collectors.groupingBy(
-                        Event::userId,
-                        Collectors.averagingDouble(event -> {
-                            final double diff = event.getPrDelta() - userMeans.get(event.userId());
-                            return diff * diff;
-                        })
-                ))
-        );
-        final Map<Integer, Long> eventNumbers = history.stream()
-                .filter(event -> event.getPrDelta() >= 0)
-                .collect(Collectors.groupingBy(Event::userId, Collectors.counting()));
-        userMeans.forEachEntry((userId, userMean) -> {
-            if (eventNumbers.get(userId) == 1) {
-                return true;
-            }
-            final double userVariance = userVariances.get(userId);
-//            final double baseLambda = userMean / userVariance;
-            final int userK = (int)min(max(MIN_K, round(userMean * userMean / userVariance)), MAX_K);
-            final double baseLambda = userK / userMean;
-            userBaseLambdas.put(userId, baseLambda);
-            userKs.put(userId, userK);
-            return true;
-        });
-        final double totalMean = Arrays.stream(userMeans.values()).average().orElse(-1);
-        final double totalVariance = Arrays.stream(userVariances.values()).average().orElse(-1);
-//        final double defaultLambda = totalMean / totalVariance;
-        final int defaultK = (int)min(max(MIN_K, round(totalMean * totalMean / totalVariance)), MAX_K);
-        final double defaultLambda = defaultK / totalMean;
-        history.stream()
-                .filter(event -> event.getPrDelta() < 0)
-                .mapToInt(Event::userId)
-                .filter(userId -> !userKs.containsKey(userId))
-                .forEach(userId -> {
-                    userBaseLambdas.put(userId, defaultLambda);
-                    userKs.put(userId, defaultK);
-                });
+    public TIntIntMap getUserKs() {
+        return userKs;
     }
 
-    public static void makeInitialEmbeddings(int dim, TIntDoubleMap userBaseLambdas, List<Event> history,
-                                             TIntObjectMap<Vec> userEmbeddings, TIntObjectMap<Vec> itemEmbeddings) {
-        final double targetVariance = Arrays.stream(userBaseLambdas.values()).min().orElse(-1) * VARIANCE_SHARE;
-        final double embeddingMean = sqrt(targetVariance) / dim;
-        final FastRandom randomGenerator = new FastRandom();
-        final TIntSet userIds = new TIntHashSet();
-        final TIntSet itemIds = new TIntHashSet();
-        for (Event event: history) {
-            userIds.add(event.userId());
-            itemIds.add(event.itemId());
-        }
-        userIds.forEach(userId -> {
-            userEmbeddings.put(userId, makeEmbedding(randomGenerator, embeddingMean, dim));
-            return true;
-        });
-        itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
-            return true;
-        });
+    public TIntDoubleMap getUserBaseLambdas() {
+        return userBaseLambdas;
     }
 }

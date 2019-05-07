@@ -112,7 +112,7 @@ public class UserLambdaSingle implements UserLambda {
         throw new UnsupportedOperationException();
     }
 
-    public static TIntDoubleMap makeUserLambdaInitialValues(List<Event> history) {
+    public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history) {
         final Map<Integer, Double> meanDeltas = history.stream()
                 .filter(event -> event.getPrDelta() >= 0)
                 .collect(Collectors.groupingBy(Event::userId, Collectors.averagingDouble(Event::getPrDelta)));

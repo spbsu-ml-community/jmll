@@ -6,16 +6,11 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
-import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.iterator.TIntObjectIterator;
-import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.TLongDoubleMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.map.hash.TLongDoubleHashMap;
 
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
@@ -24,6 +19,12 @@ import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
 public class ModelPerUser extends Model {
+
+    public ModelPerUser(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
+                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+    }
+
     public ModelPerUser(int dim, double beta, double eps, double otherItemImportance,
                         DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                         LambdaStrategyFactory lambdaStrategyFactory, TIntObjectMap<Vec> usersEmbeddingsPrior,
@@ -33,14 +34,20 @@ public class ModelPerUser extends Model {
     }
 
     @Override
+    public void initModel(final List<Event> events) {
+        makeInitialEmbeddings(events);
+        isInit = true;
+    }
+
+    @Override
     public void logLikelihoodDerivative(final List<Event> events,
                                         final TIntObjectMap<Vec> userDerivatives,
                                         final TIntObjectMap<Vec> itemDerivatives) {
 //        final double observationEnd = events.get(events.size() - 1).getTs();
-        for (final int userId : userIds.toArray()) {
+        for (final int userId : userIdsArray) {
             userDerivatives.put(userId, new ArrayVec(dim));
         }
-        for (final int itemId : itemIds.toArray()) {
+        for (final int itemId : itemIdsArray) {
             itemDerivatives.put(itemId, new ArrayVec(dim));
         }
         final LambdaStrategy lambdaStrategy =

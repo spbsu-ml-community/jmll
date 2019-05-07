@@ -30,9 +30,6 @@ import java.util.stream.Collectors;
 import static java.lang.Math.*;
 
 public class Model {
-//    private static final int SAVE_PERIOD = 20;
-//    private static final double DEFAULT_BIAS = 1e-2;
-//    private final double SCALE_SHARE = 0.3;
 
     protected final int dim;
     protected final double beta;
@@ -42,13 +39,19 @@ public class Model {
     protected final DoubleUnaryOperator lambdaDerivativeTransform;
     protected final LambdaStrategyFactory lambdaStrategyFactory;
     protected TIntObjectMap<Vec> userEmbeddings;
-    //    private TIntDoubleMap userBiases;
     protected TIntObjectMap<Vec> itemEmbeddings;
-    //    private TIntDoubleMap itemBiases;
     protected TIntSet userIds;
     protected TIntSet itemIds;
-    private int[] userIdsArray;
-    private int[] itemIdsArray;
+    protected int[] userIdsArray;
+    protected int[] itemIdsArray;
+    protected boolean isInit = false;
+
+    public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
+                 final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                 final LambdaStrategyFactory lambdaStrategyFactory) {
+        this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+                null, null);
+    }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
@@ -61,17 +64,34 @@ public class Model {
         this.lambdaTransform = lambdaTransform;
         this.lambdaDerivativeTransform = lambdaDerivativeTransform;
         this.lambdaStrategyFactory = lambdaStrategyFactory;
-        userEmbeddings = usersEmbeddingsPrior;
-//        this.userBiases = userBiases;
-        itemEmbeddings = itemsEmbeddingsPrior;
-//        this.itemBiases = itemBiases;
+        if (usersEmbeddingsPrior != null) {
+            userEmbeddings = usersEmbeddingsPrior;
+        } else {
+            userEmbeddings = new TIntObjectHashMap<>();
+        }
         userIds = userEmbeddings.keySet();
         userIdsArray = userIds.toArray();
+        if (itemsEmbeddingsPrior != null) {
+            itemEmbeddings = itemsEmbeddingsPrior;
+        } else {
+            itemEmbeddings = new TIntObjectHashMap<>();
+        }
         itemIds = itemEmbeddings.keySet();
         itemIdsArray = itemIds.toArray();
     }
 
-    protected static Vec makeEmbedding(final FastRandom randomGenerator, final double embMean, final int dim) {
+    // Init
+
+    public void initModel(final List<Event> events) {
+        makeInitialEmbeddings(events);
+        userIds = userEmbeddings.keySet();
+        userIdsArray = userIds.toArray();
+        itemIds = itemEmbeddings.keySet();
+        itemIdsArray = itemIds.toArray();
+        isInit = true;
+    }
+
+    protected Vec makeEmbedding(final FastRandom randomGenerator, final double embMean, final int dim) {
         Vec embedding = new ArrayVec(dim);
 
         VecTools.fillGaussian(embedding, randomGenerator);
@@ -87,10 +107,11 @@ public class Model {
         return embedding;
     }
 
-    public static void makeInitialEmbeddings(int dim, List<Event> history,
-                                             TIntObjectMap<Vec> userEmbeddings, TIntObjectMap<Vec> itemEmbeddings) {
-        final TIntSet userIds = new TIntHashSet();
-        final TIntSet itemIds = new TIntHashSet();
+    protected void makeInitialEmbeddings(List<Event> history) {
+        userEmbeddings = new TIntObjectHashMap<>();
+        userEmbeddings = new TIntObjectHashMap<>();
+        userIds = new TIntHashSet();
+        itemIds = new TIntHashSet();
         for (Event event : history) {
             userIds.add(event.userId());
             itemIds.add(event.itemId());
@@ -110,7 +131,11 @@ public class Model {
             itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
             return true;
         });
+        userIdsArray = userIds.toArray();
+        itemIdsArray = itemIds.toArray();
     }
+
+    // LogLikelihood
 
     public void logLikelihoodDerivative(final List<Event> events,
                                         final TIntObjectMap<Vec> userDerivatives,
@@ -189,8 +214,11 @@ public class Model {
         }
     }
 
+    // Fit
+
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
                     final double decay, final FitListener listener) {
+        initModel(events);
         optimizeGD(events, learningRate, iterationsNumber, decay, listener);
     }
 
@@ -244,6 +272,8 @@ public class Model {
         }
     }
 
+    // Applicable
+
     private class ApplicableImpl implements ApplicableModel {
         private final LambdaStrategy lambdaStrategy;
 
@@ -288,6 +318,9 @@ public class Model {
     }
 
     public ApplicableModel getApplicable(final List<Event> events) {
+        if (!isInit) {
+            initModel(events);
+        }
         ApplicableModel applicable = new ApplicableImpl();
         if (events != null) {
             applicable.fit(events);
@@ -296,8 +329,13 @@ public class Model {
     }
 
     public ApplicableModel getApplicable() {
+        if (!isInit) {
+            throw new IllegalStateException("Model is not initialized");
+        }
         return new ApplicableImpl();
     }
+
+    // Getters
 
     public TIntObjectMap<Vec> getUserEmbeddings() {
         return userEmbeddings;
@@ -310,6 +348,8 @@ public class Model {
     public int getDim() {
         return dim;
     }
+
+    // Save & Load
 
     private static Map<Integer, double[]> embeddingsToSerializable(final TIntObjectMap<Vec> embeddings) {
         return Arrays.stream(embeddings.keys())

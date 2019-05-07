@@ -125,20 +125,11 @@ public class ModelTrainingRunner {
 
             DoubleUnaryOperator lambdaTransform = new LambdaTransforms.AbsTransform();
             DoubleUnaryOperator lambdaDerivative = new LambdaTransforms.AbsDerivativeTransform();
-            TIntObjectMap<Vec> userEmbeddings = new TIntObjectHashMap<>();
-            TIntObjectMap<Vec> itemEmbeddings = new TIntObjectHashMap<>();
-            ModelDays.makeInitialEmbeddings(dim, train, userEmbeddings, itemEmbeddings);
             LambdaStrategyFactory perUserLambdaStrategyFactory =
                     new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(train));
-            TIntIntMap userDayBorders = new TIntIntHashMap();
-            TIntIntMap userDayPeaks = new TIntIntHashMap();
-            ModelDays.calcDayPoints(history, userDayBorders, userDayPeaks);
-            TIntDoubleMap averageOneDayDelta = ModelDays.calcAverageOneDayDelta(history);
-            TIntDoubleMap userDayAvgStarts = ModelDays.calcAvgStarts(history);
 
             model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-                    perUserLambdaStrategyFactory, userEmbeddings, itemEmbeddings, userDayBorders, userDayPeaks,
-                    userDayAvgStarts, averageOneDayDelta);
+                    perUserLambdaStrategyFactory);
 //            model = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
 //                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(), userEmbeddings, itemEmbeddings,
 //                    userKs, userBaseLambdas);

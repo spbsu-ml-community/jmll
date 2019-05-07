@@ -39,9 +39,11 @@ public class ModelUserKTest {
                 new Event(1, 0, 100, 40)
         );
         history.sort(Comparator.comparingDouble(Event::getTs));
-        final TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
-        final TIntIntMap userKs = new TIntIntHashMap();
-        ModelUserK.calcUserParams(history, userBaseLambdas, userKs);
+        final ModelUserK model = new ModelUserK(3, 0.1, 0.5, 0.1,
+                Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
+        model.initModel(history);
+        final TIntDoubleMap userBaseLambdas = model.getUserBaseLambdas();
+        final TIntIntMap userKs = model.getUserKs();
         Assert.assertEquals(2, userBaseLambdas.size());
         Assert.assertEquals(2, userKs.size());
         Assert.assertEquals(0.0015837, userBaseLambdas.get(0), 1e-6);
@@ -61,13 +63,8 @@ public class ModelUserKTest {
         );
         final TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
         final TIntIntMap userKs = new TIntIntHashMap();
-        ModelUserK.calcUserParams(history, userBaseLambdas, userKs);
-        final TIntObjectMap<Vec> userEmbeddings = new TIntObjectHashMap<>();
-        final TIntObjectMap<Vec> itemEmbeddings = new TIntObjectHashMap<>();
-        ModelUserK.makeInitialEmbeddings(3, userBaseLambdas, history, userEmbeddings, itemEmbeddings);
         final ModelUserK model = new ModelUserK(3, 0.1, 0.5, 0.1,
-                Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(),
-                userEmbeddings, itemEmbeddings, userKs, userBaseLambdas);
+                Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
         model.fit(history, 1e-2, 100, 0.99, m -> {});
         Assert.assertTrue(model.getApplicable().timeDelta(0, 0) > 15);
         Assert.assertTrue(model.getApplicable(history).timeDelta(0, 0) > 15);
@@ -88,15 +85,8 @@ public class ModelUserKTest {
                 new Event(1, 0, 60, 30),
                 new Event(1, 0, 100, 40)
         );
-        final TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
-        final TIntIntMap userKs = new TIntIntHashMap();
-        ModelUserK.calcUserParams(history, userBaseLambdas, userKs);
-        final TIntObjectMap<Vec> userEmbeddings = new TIntObjectHashMap<>();
-        final TIntObjectMap<Vec> itemEmbeddings = new TIntObjectHashMap<>();
-        ModelUserK.makeInitialEmbeddings(3, userBaseLambdas, history, userEmbeddings, itemEmbeddings);
         final ModelUserK model = new ModelUserK(3, 0.1, 0.5, 0.1,
-                Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(),
-                userEmbeddings, itemEmbeddings, userKs, userBaseLambdas);
+                Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
         model.fit(history, 1e-2, 100, 0.99, m -> {});
         final ApplicableModel applicable = model.getApplicable();
         Assert.assertEquals(10, applicable.timeDelta(1, 0) / applicable.timeDelta(0, 0), 1);
@@ -114,22 +104,16 @@ public class ModelUserKTest {
             lastTime += timeDelta;
             history.add(new Event(0, 0, lastTime, timeDelta));
         }
-        final TIntDoubleMap userBaseLambdas = new TIntDoubleHashMap();
-        final TIntIntMap userKs = new TIntIntHashMap();
-        ModelUserK.calcUserParams(history, userBaseLambdas, userKs);
-        Assert.assertEquals(K, userKs.get(0));
-        Assert.assertEquals(1, THETA / userBaseLambdas.get(0), .25);
-
-        final TIntObjectMap<Vec> userEmbeddings = new TIntObjectHashMap<>();
-        final TIntObjectMap<Vec> itemEmbeddings = new TIntObjectHashMap<>();
-        ModelUserK.makeInitialEmbeddings(3, userBaseLambdas, history, userEmbeddings, itemEmbeddings);
         final ModelUserK model = new ModelUserK(3, 0.1, 0.5, 0.1,
-                Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(),
-                userEmbeddings, itemEmbeddings, userKs, userBaseLambdas);
+                Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
 //        System.out.println(model.getApplicable().getLambda(0, 0) + " " + model.getApplicable(history).getLambda(0, 0));
         model.fit(history, 1e-5, 1000, 0.99, m -> {});
 //        System.out.println(model.getApplicable().getLambda(0, 0) + " " + model.getApplicable(history).getLambda(0, 0));
 //        System.out.println(model.getApplicable(history).timeDelta(0, 0));
+        final TIntDoubleMap userBaseLambdas = model.getUserBaseLambdas();
+        final TIntIntMap userKs = model.getUserKs();
+        Assert.assertEquals(K, userKs.get(0));
+        Assert.assertEquals(1, THETA / userBaseLambdas.get(0), .25);
         Assert.assertEquals(1, THETA / model.getApplicable(history).getLambda(0, 0), .1);
     }
 

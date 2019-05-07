@@ -27,10 +27,15 @@ import static java.lang.Math.sqrt;
 public class ModelDays extends ModelPerUser {
     private static final int DAY_HOURS = 24;
 
-    private final TIntIntMap userDayBorders;
-    private final TIntIntMap userDayPeaks;
-    private final TIntDoubleMap userDayAvgStarts;
-    private final TIntDoubleMap averageOneDayDelta;
+    private TIntIntMap userDayBorders;
+    private TIntIntMap userDayPeaks;
+    private TIntDoubleMap userDayAvgStarts;
+    private TIntDoubleMap averageOneDayDelta;
+
+    public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
+                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+    }
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
@@ -45,6 +50,17 @@ public class ModelDays extends ModelPerUser {
         this.userDayPeaks = userDayPeaks;
     }
 
+    @Override
+    public void initModel(final List<Event> events) {
+        makeInitialEmbeddings(events);
+        userDayAvgStarts = calcAvgStarts(events);
+        averageOneDayDelta = calcAverageOneDayDelta(events);
+        userDayBorders = new TIntIntHashMap();
+        userDayPeaks = new TIntIntHashMap();
+        calcDayPoints(events, userDayBorders, userDayPeaks);
+        isInit = true;
+    }
+
     private double lastDayBorder(double time, int userBorder) {
         double lastBorder = ((int) time / DAY_HOURS) * DAY_HOURS + userBorder;
         if (lastBorder > time) {
@@ -56,10 +72,10 @@ public class ModelDays extends ModelPerUser {
     @Override
     public void logLikelihoodDerivative(List<Event> events,
                                         TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
-        for (final int userId : userIds.toArray()) {
+        for (final int userId : userIdsArray) {
             userDerivatives.put(userId, new ArrayVec(dim));
         }
-        for (final int itemId : itemIds.toArray()) {
+        for (final int itemId : itemIdsArray) {
             itemDerivatives.put(itemId, new ArrayVec(dim));
         }
         final LambdaStrategy lambdaStrategy =
@@ -142,7 +158,7 @@ public class ModelDays extends ModelPerUser {
         return new ApplicableImpl();
     }
 
-    public static void calcDayPoints(final List<Event> events, final TIntIntMap borders, final TIntIntMap peaks) {
+    private static void calcDayPoints(final List<Event> events, final TIntIntMap userDayBorders, final TIntIntMap userDayPeaks) {
         final TIntObjectMap<long[]> counters = new TIntObjectHashMap<>();
         for (final Event event : events) {
             final int userId = event.userId();
@@ -166,13 +182,13 @@ public class ModelDays extends ModelPerUser {
                     argMax = i;
                 }
             }
-            borders.put(userId, argMin);
-            peaks.put(userId, argMax);
+            userDayBorders.put(userId, argMin);
+            userDayPeaks.put(userId, argMax);
             return true;
         });
     }
 
-    public static TIntDoubleMap calcAvgStarts(final List<Event> events) {
+    private static TIntDoubleMap calcAvgStarts(final List<Event> events) {
         final TIntIntMap lastDays = new TIntIntHashMap();
         TIntDoubleMap starts = new TIntDoubleHashMap();
         TIntIntMap count = new TIntIntHashMap();
@@ -193,7 +209,7 @@ public class ModelDays extends ModelPerUser {
         return avgStarts;
     }
 
-    public static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
+    private static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
         final TIntIntMap lastDays = new TIntIntHashMap();
         final TIntDoubleMap lastDayTimes = new TIntDoubleHashMap();
         final TIntDoubleMap userDeltas = new TIntDoubleHashMap();
@@ -225,11 +241,11 @@ public class ModelDays extends ModelPerUser {
         return result;
     }
 
-    public static void makeInitialEmbeddings(int dim, List<Event> history,
-                                             TIntObjectMap<Vec> userEmbeddings, TIntObjectMap<Vec> itemEmbeddings) {
-        final TIntSet userIds = new TIntHashSet();
-        final TIntSet itemIds = new TIntHashSet();
-        for (Event event : history) {
+    @Override
+    protected void makeInitialEmbeddings(final List<Event> history) {
+        userIds = new TIntHashSet();
+        itemIds = new TIntHashSet();
+        for (final Event event : history) {
             userIds.add(event.userId());
             itemIds.add(event.itemId());
         }
@@ -249,5 +265,7 @@ public class ModelDays extends ModelPerUser {
             itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
             return true;
         });
+        userIdsArray = userIds.toArray();
+        itemIdsArray = itemIds.toArray();
     }
 }

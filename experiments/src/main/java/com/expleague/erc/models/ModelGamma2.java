@@ -20,6 +20,13 @@ import java.util.function.DoubleUnaryOperator;
 import static java.lang.Math.*;
 
 public class ModelGamma2 extends Model {
+
+    public ModelGamma2(int dim, double beta, double eps, double otherItemImportance,
+                       DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
+                       LambdaStrategyFactory lambdaStrategyFactory) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+    }
+
     public ModelGamma2(int dim, double beta, double eps, double otherItemImportance,
                        DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                        LambdaStrategyFactory lambdaStrategyFactory,
