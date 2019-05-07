@@ -18,7 +18,7 @@ public abstract class DataPreprocessor {
     public static final double CHURN_THRESHOLD = 2 * 7 * 24.;
 
     private static final double MAX_RATIO = 3.;
-    private static final double MAX_GAP = .5;
+    public static final double MAX_GAP = .5;
     private static final int NOTHING_DONE = -1;
 
     public static class TrainTest {

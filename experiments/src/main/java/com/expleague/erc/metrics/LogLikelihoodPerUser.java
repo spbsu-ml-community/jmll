@@ -23,9 +23,7 @@ public class LogLikelihoodPerUser implements Metric {
 
     @Override
     public double calculate(List<Event> events, ApplicableModel applicable) {
-//        final double observationEnd = events.get(events.size() - 1).getTs();
         double logLikelihood = 0.;
-//        final TIntDoubleMap lastVisitTimes = new TIntDoubleHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final double delta = max(session.getDelta(), eps);
             if (0 < delta && delta < DataPreprocessor.CHURN_THRESHOLD) {
@@ -36,18 +34,7 @@ public class LogLikelihoodPerUser implements Metric {
                 }
             }
             applicable.accept(session);
-//            List<EventSeq> eventSeqs = session.getEventSeqs();
-//            lastVisitTimes.put(userId, eventSeqs.get(eventSeqs.size() - 1).getStartTs());
         }
-//        for (TIntDoubleIterator it = lastVisitTimes.iterator(); it.hasNext();) {
-//            it.advance();
-//            final int userId = it.key();
-//            final double lastVisitTime = it.value();
-//            final double tau = observationEnd - lastVisitTime;
-//            if (tau > 0) {
-//                logLikelihood += log(1 - applicable.probabilityBeforeX(userId, tau));
-//            }
-//        }
         return logLikelihood;
     }
 }

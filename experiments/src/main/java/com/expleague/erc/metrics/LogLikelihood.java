@@ -26,7 +26,6 @@ public class LogLikelihood implements Metric {
 
     @Override
     public double calculate(List<Event> events, ApplicableModel applicable) {
-        final double observationEnd = events.get(events.size() - 1).getTs();
         double logLikelihood = 0.;
         final TLongSet seenPairs = new TLongHashSet();
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
@@ -48,14 +47,6 @@ public class LogLikelihood implements Metric {
                 lastVisitTimes.put(pairId, eventSeq.getStartTs());
             }
         }
-//        for (long pairId : lastVisitTimes.keys()) {
-//            final int userId = Util.extractUserId(pairId);
-//            final int itemId = Util.extractItemId(pairId);
-//            final double tau = observationEnd - lastVisitTimes.get(pairId);
-//            if (tau > 0) {
-//                logLikelihood += log(1 - applicable.probabilityBeforeX(userId, itemId, tau));
-//            }
-//        }
         return logLikelihood;
     }
 

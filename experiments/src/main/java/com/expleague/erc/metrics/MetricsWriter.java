@@ -6,6 +6,12 @@ import com.expleague.erc.Session;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,9 +45,23 @@ public class MetricsWriter implements Model.FitListener {
 
     @Override
     public void apply(Model model) {
-        Map<Integer, Double> constants = DataPreprocessor.groupEventsToSessions(trainData).stream()
-                .filter(session -> 0 < session.getDelta() && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD)
-                .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(Session::getDelta)));
+        TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
+        for (final Session session : DataPreprocessor.groupEventsToSessions(trainData)) {
+            final int userId = session.userId();
+            final double delta = session.getDelta();
+            if (delta > DataPreprocessor.MAX_GAP && delta < DataPreprocessor.CHURN_THRESHOLD) {
+                if (!userDeltas.containsKey(userId)) {
+                    userDeltas.put(userId, new TDoubleArrayList());
+                }
+                userDeltas.get(userId).add(delta);
+            }
+        }
+        TIntDoubleMap constants = new TIntDoubleHashMap();
+        userDeltas.forEachEntry((userId, deltas) -> {
+            deltas.sort();
+            constants.put(userId, deltas.get(deltas.size() / 2));
+            return true;
+        });
         final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
                 .mapToDouble(Session::getDelta)
                 .filter(delta -> delta > 0)
@@ -72,9 +92,9 @@ public class MetricsWriter implements Model.FitListener {
             @Override
             public double timeDelta(final int userId, final double time) {
 //                try {
-//                    return constants.get(userId);
+                    return constants.get(userId);
 //                } catch (Throwable t) {
-                    return justConstant;
+//                    return justConstant;
 //                }
 //                return 10;
             }

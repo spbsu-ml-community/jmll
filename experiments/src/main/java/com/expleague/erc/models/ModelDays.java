@@ -177,7 +177,7 @@ public class ModelDays extends ModelPerUser {
                     minCounter = userCounters[i];
                     argMin = i;
                 }
-                if (userCounters[i] < maxCounter) {
+                if (userCounters[i] > maxCounter) {
                     maxCounter = userCounters[i];
                     argMax = i;
                 }

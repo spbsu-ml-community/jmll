@@ -247,7 +247,10 @@ public class Model {
     private void optimizeGD(final List<Event> events, final double learningRate, final int iterationsNumber,
                             final double decay, final FitListener listener) {
         double lr = learningRate / events.size();
-        for (int i = 0; i < iterationsNumber; ++i) {
+        if (listener != null) {
+            listener.apply(this);
+        }
+        for (int i = 0; i < iterationsNumber; i++) {
             stepGD(events, lr);
             lr *= decay;
             if (listener != null) {
