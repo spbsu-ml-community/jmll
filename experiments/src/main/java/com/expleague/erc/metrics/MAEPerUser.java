@@ -2,6 +2,7 @@ package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.map.TIntDoubleMap;
@@ -21,7 +22,7 @@ public class MAEPerUser implements Metric {
             final double prevTime = prevTimes.get(userId);
             prevTimes.put(userId, curTime);
             final double actualReturnTime = session.getDelta();
-            if (0 < actualReturnTime && actualReturnTime < DataPreprocessor.CHURN_THRESHOLD) {
+            if (0 < actualReturnTime && !Util.isDead(actualReturnTime)) {
                 final double expectedReturnTime = applicable.timeDelta(userId, prevTime);
                 count++;
                 errors += Math.abs(actualReturnTime - expectedReturnTime);

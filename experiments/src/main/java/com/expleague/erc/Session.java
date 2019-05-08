@@ -1,5 +1,7 @@
 package com.expleague.erc;
 
+import com.expleague.erc.models.ModelDays;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +36,23 @@ public class Session {
     public double getDelta() {
         return eventSeqs.get(0).getDelta();
     }
+
+    public boolean isStart() {
+        return getDelta() == -1;
+    }
+
+//    public double toDayTs(double time, int userBorder, final int dayLength) {
+//        double lastBorder = ((int) time / dayLength) * dayLength + userBorder;
+//        if (lastBorder > time) {
+//            lastBorder -= dayLength;
+//        }
+//        return lastBorder;
+//    }
+//
+//    public int getDayDelta(final int userBorder, final int dayLength) {
+//        return (int) (toDayTs(getStartTs(), userBorder, dayLength) -
+//                toDayTs(getStartTs() - getDelta(), userBorder, dayLength)) / dayLength;
+//    }
 
     public List<EventSeq> getEventSeqs() {
         return eventSeqs;

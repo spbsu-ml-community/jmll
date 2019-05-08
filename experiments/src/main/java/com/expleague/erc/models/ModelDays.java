@@ -1,21 +1,19 @@
 package com.expleague.erc.models;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TIntLongMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TIntLongHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -64,14 +62,6 @@ public class ModelDays extends ModelPerUser {
         isInit = true;
     }
 
-    private double lastDayBorder(double time, int userBorder) {
-        double lastBorder = ((int) time / DAY_HOURS) * DAY_HOURS + userBorder;
-        if (lastBorder > time) {
-            lastBorder -= DAY_HOURS;
-        }
-        return lastBorder;
-    }
-
     @Override
     public void logLikelihoodDerivative(List<Event> events,
                                         TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
@@ -80,14 +70,8 @@ public class ModelDays extends ModelPerUser {
         final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            if (session.getDelta() < DataPreprocessor.CHURN_THRESHOLD) {
-                double pos = lastDayBorder(session.getStartTs(), userDayBorders.get(session.userId()));
-                int daysPassed = 0;
-                final double previousSessionEnd = session.getStartTs() - session.getDelta();
-                while (pos > previousSessionEnd) {
-                    daysPassed++;
-                    pos -= DAY_HOURS;
-                }
+            if (!Util.isShortSession(session.getDelta()) && !Util.isDead(session.getDelta())) {
+                final int daysPassed = Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId()));
                 updateDerivativeInnerEvent(lambdaStrategy, session.userId(), daysPassed, userDerivatives,
                         itemDerivatives, initialLambdasDerivatives);
             }
@@ -121,12 +105,10 @@ public class ModelDays extends ModelPerUser {
         public double timeDelta(final int userId, final double time) {
             final double rawPrediction = 1 / getLambda(userId);
             final int daysPrediction = (int) rawPrediction;
-            if (time + rawPrediction < lastDayBorder(time, userDayBorders.get(userId)) + DAY_HOURS) {
-//            if (daysPrediction == 0) {
+            if (time + rawPrediction < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
                 return averageOneDayDelta.get(userId);
             }
             final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
-//            final double predictedTime = predictedDay * DAY_HOURS + userDayPeaks.get(userId);
             final double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
             return predictedTime - time;
         }
@@ -159,7 +141,7 @@ public class ModelDays extends ModelPerUser {
         return new ApplicableImpl();
     }
 
-    private static void calcDayPoints(final List<Event> events, final TIntIntMap userDayBorders, final TIntIntMap userDayPeaks) {
+    public static void calcDayPoints(final List<Event> events, final TIntIntMap userDayBorders, final TIntIntMap userDayPeaks) {
         final TIntObjectMap<long[]> counters = new TIntObjectHashMap<>();
         for (final Event event : events) {
             final int userId = event.userId();
@@ -252,7 +234,7 @@ public class ModelDays extends ModelPerUser {
         }
 
         final FastRandom randomGenerator = new FastRandom();
-        final double edge = 0.1;
+        final double edge = 0.0;
         userIds.forEach(userId -> {
             userEmbeddings.put(userId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;
@@ -261,7 +243,5 @@ public class ModelDays extends ModelPerUser {
             itemEmbeddings.put(itemId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;
         });
-        userIdsArray = userIds.toArray();
-        itemIdsArray = itemIds.toArray();
     }
 }

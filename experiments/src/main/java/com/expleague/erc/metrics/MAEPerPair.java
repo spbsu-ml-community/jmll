@@ -2,6 +2,7 @@ package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.map.TLongDoubleMap;
@@ -21,7 +22,7 @@ public class MAEPerPair implements Metric {
             final double expectedReturnTime = applicable.timeDelta(eventSeq.userId(), eventSeq.itemId());
             final double prevTime = prevTimes.get(pair);
             final double actualReturnTime = curTime - prevTime;
-            if (prevTime != prevTimes.getNoEntryValue() && actualReturnTime < DataPreprocessor.CHURN_THRESHOLD) {
+            if (prevTime != prevTimes.getNoEntryValue() && !Util.isDead(actualReturnTime)) {
                 count++;
                 errors += Math.abs(actualReturnTime - expectedReturnTime);
             }

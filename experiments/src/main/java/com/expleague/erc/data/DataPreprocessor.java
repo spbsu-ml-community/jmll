@@ -3,6 +3,7 @@ package com.expleague.erc.data;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
@@ -15,10 +16,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class DataPreprocessor {
-    public static final double CHURN_THRESHOLD = 2 * 7 * 24.;
 
     private static final double MAX_RATIO = 3.;
-    public static final double MAX_GAP = .5;
     private static final int NOTHING_DONE = -1;
 
     public static class TrainTest {
@@ -62,12 +61,13 @@ public abstract class DataPreprocessor {
             final int lastItem = lastItems.get(userId);
             if (lastItem == NOTHING_DONE) {
                 eventSeqs.add(new EventSeq(userId, itemId, curTime, -1));
-            } else if (lastItem != itemId || lastTime + MAX_GAP < curTime) {
+            } else if (lastItem != itemId || lastTime + Util.MAX_GAP < curTime) {
                 eventSeqs.add(new EventSeq(userId, itemId, curTime, curTime - lastTime));
             }
             lastTimes.put(userId, curTime);
             lastItems.put(userId, itemId);
         }
+        eventSeqs.sort(Comparator.comparingDouble(EventSeq::getStartTs));
         return eventSeqs;
     }
 
@@ -78,7 +78,7 @@ public abstract class DataPreprocessor {
         for (final EventSeq eventSeq : eventSeqs) {
             final int userId = eventSeq.userId();
             final double curTime = eventSeq.getStartTs();
-            if (!lastSessions.containsKey(userId) || eventSeq.getDelta() > MAX_GAP) {
+            if (!lastSessions.containsKey(userId) || eventSeq.getDelta() > Util.MAX_GAP) {
                 final Session newSession = new Session();
                 lastSessions.put(userId, newSession);
                 sessions.add(newSession);
@@ -86,6 +86,7 @@ public abstract class DataPreprocessor {
             lastSessions.get(userId).add(eventSeq);
             lastTimes.put(userId, curTime);
         }
+        sessions.sort(Comparator.comparingDouble(Session::getStartTs));
         return sessions;
     }
 

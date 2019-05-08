@@ -8,6 +8,32 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Util {
+    public static final double CHURN_THRESHOLD = 2 * 7 * 24.;
+    public static final double MAX_GAP = .5;
+    private static final int DAY_HOURS = 24;
+
+    public static boolean isDead(final double timeBetweenSessions) {
+        return timeBetweenSessions > CHURN_THRESHOLD;
+    }
+
+    public static boolean isShortSession(final double timeBetweenSessions) {
+        return timeBetweenSessions < MAX_GAP;
+    }
+
+    public static double getDay(final double time, final int dayStart) {
+        double lastBorder = ((int) time / DAY_HOURS) * DAY_HOURS + dayStart;
+        if (lastBorder > time) {
+            lastBorder -= DAY_HOURS;
+        }
+        return lastBorder;
+    }
+
+    public static int getDaysFromPrevSession(final Session session, final int dayStart) {
+        double pos = Util.getDay(session.getStartTs(), dayStart);
+        double prevPos = Util.getDay(session.getStartTs() - session.getDelta(), dayStart);
+        return (int) (pos - prevPos) / DAY_HOURS;
+    }
+
     public static int extractUserId(final long idPair) {
         return (int)(idPair >> 32);
     }

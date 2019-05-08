@@ -2,6 +2,7 @@ package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.map.TIntDoubleMap;
@@ -23,7 +24,7 @@ public class SPUPerUser implements Metric {
             final double userLastEventTime = lastEventTimes.get(user);
             final double realEventTimeDelta = curEventTime - userLastEventTime;
             if (predictedTimeDelta != predictedTimeDeltas.getNoEntryValue() && realEventTimeDelta != 0.
-                    && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD) {
+                    && !Util.isDead(session.getDelta())) {
                 final double predictedEventSPU = 1 / predictedTimeDelta;
                 final double realEventSPU = 1 / realEventTimeDelta;
                 totalDiff += Math.abs(predictedEventSPU - realEventSPU);
