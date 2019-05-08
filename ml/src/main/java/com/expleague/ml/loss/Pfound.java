@@ -69,13 +69,26 @@ public class Pfound extends Func.Stub implements TargetFunc {
     return false;
   }
 
+  /**
+   * Calculates Pfound metric for a single query. See:
+   *
+   * Gulin A.; Karpovich P.; Raskovalov D.; Segalovich I. (2009),
+   * "Yandex at ROMIP'2009: optimization of ranking algorithms by machine learning methods",
+   * Proceedings of ROMIP'2009: 163–168 (in Russian)
+   *
+   * for more details
+   * @param order order of pages determined by predicted ranks
+   * @param labels probabilities of pages to be relevant ot a query
+   * @param pBreak probability of an user to suddenly stop looking for page
+   * @return pfound score
+   */
   private static double pfound(final int[] order, final Vec labels, final double pBreak) {
     double score = 0;
-    double pStay = 1;
+    double pLook = 1;
     for (int ord : order) {
-      double relevance = labels.get(ord);
-      score += pStay * relevance;
-      pStay *= (1 - pBreak) * (1 - relevance);
+      double pRel = labels.get(ord);
+      score += pLook * pRel;
+      pLook *= (1 - pBreak) * (1 - pRel);
     }
 
     return score;
@@ -86,7 +99,7 @@ public class Pfound extends Func.Stub implements TargetFunc {
     int[] order = Arrays.copyOf(group, group.length);
     double[] ranksCopy = new double[group.length];
     for (int i = 0; i < group.length; ++i) {
-      ranksCopy[i] = ranks.get(group[i]);
+      ranksCopy[i] = -ranks.get(group[i]);
     }
     ArrayTools.parallelSort(ranksCopy, order);
 
