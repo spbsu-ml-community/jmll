@@ -3,6 +3,7 @@ package com.expleague.erc.metrics;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.iterator.TIntDoubleIterator;
@@ -26,7 +27,7 @@ public class LogLikelihoodPerUser implements Metric {
         double logLikelihood = 0.;
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final double delta = max(session.getDelta(), eps);
-            if (0 < delta && delta < DataPreprocessor.CHURN_THRESHOLD) {
+            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
                 final double p = applicable.probabilityInterval(session.userId(), delta - eps, delta + eps);
                 assert 0 <= p && p <= 1;
                 if (p > 0) {

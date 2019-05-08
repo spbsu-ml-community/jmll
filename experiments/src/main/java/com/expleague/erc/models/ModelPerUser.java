@@ -2,10 +2,10 @@ package com.expleague.erc.models;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
@@ -52,26 +52,17 @@ public class ModelPerUser extends Model {
                                         final TIntObjectMap<Vec> userDerivatives,
                                         final TIntObjectMap<Vec> itemDerivatives,
                                         final TIntDoubleMap initialLambdasDerivatives) {
-//        final double observationEnd = events.get(events.size() - 1).getTs();
         fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
-//        final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
-//        final TIntDoubleMap userLastVisitTimes = new TIntDoubleHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final double delta = session.getDelta();
-            if (0 < delta && delta < DataPreprocessor.CHURN_THRESHOLD) {
+            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
                 updateDerivativeInnerEvent(lambdaStrategy, session.userId(), delta, userDerivatives,
                         itemDerivatives, initialLambdasDerivatives);
             }
             session.getEventSeqs().forEach(lambdaStrategy::accept);
         }
-//        for (long pairId: lastVisitTimes.keys()) {
-//            final int userId = Util.extractUserId(pairId);
-//            final int itemId = Util.extractItemId(pairId);
-//            updateDerivativeLastEvent(lambdaStrategy, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
-//                    userDerivatives, itemDerivatives);
-//        }
     }
 
     protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, double timeDelta,

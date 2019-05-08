@@ -5,14 +5,19 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
+import com.expleague.erc.models.ModelDays;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -121,21 +126,25 @@ public class UserLambdaSingle implements UserLambda {
     }
 
     public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history) {
+        final TIntIntMap userBorders = new TIntIntHashMap();
+        final TIntIntMap userPeaks = new TIntIntHashMap();
+        ModelDays.calcDayPoints(history, userBorders, userPeaks);
         TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(history)) {
             final int userId = session.userId();
             final double delta = session.getDelta();
-            if (delta > DataPreprocessor.MAX_GAP && delta < DataPreprocessor.CHURN_THRESHOLD) {
+            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
                 if (!userDeltas.containsKey(userId)) {
                     userDeltas.put(userId, new TDoubleArrayList());
                 }
-                userDeltas.get(userId).add(delta);
+                final int daysFromPrevSession = Util.getDaysFromPrevSession(session, userBorders.get(session.userId()));
+                userDeltas.get(userId).add(daysFromPrevSession);
             }
         }
         TIntDoubleMap constants = new TIntDoubleHashMap();
         userDeltas.forEachEntry((userId, deltas) -> {
             deltas.sort();
-            constants.put(userId, deltas.get(deltas.size() / 2));
+            constants.put(userId, 1 / Arrays.stream(deltas.toArray()).average().orElse(1));
             return true;
         });
         return constants;
