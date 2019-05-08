@@ -234,7 +234,7 @@ public class ModelDays extends ModelPerUser {
         }
 
         final FastRandom randomGenerator = new FastRandom();
-        final double edge = 0.0;
+        final double edge = 0.1;
         userIds.forEach(userId -> {
             userEmbeddings.put(userId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;

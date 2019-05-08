@@ -152,12 +152,12 @@ public class UserLambdaSingle implements UserLambda {
 
     public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history, final double lambdaMultiplier) {
         final Map<Integer, Double> meanDeltas = DataPreprocessor.groupEventsToSessions(history).stream()
-                .filter(session -> session.getDelta() >= 0 && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD)
+                .filter(session -> session.getDelta() >= 0 && session.getDelta() < Util.CHURN_THRESHOLD)
                 .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(session ->
                         session.getDelta() * lambdaMultiplier)));
         final double totalMeanDelta = DataPreprocessor.groupEventsToSessions(history).stream()
                 .mapToDouble(Session::getDelta)
-                .filter(x -> x >= 0 && x < DataPreprocessor.CHURN_THRESHOLD)
+                .filter(x -> x >= 0 && x < Util.CHURN_THRESHOLD)
                 .map(delta -> delta * lambdaMultiplier)
                 .average().orElse(-1);
         final TIntDoubleMap initialValues =
