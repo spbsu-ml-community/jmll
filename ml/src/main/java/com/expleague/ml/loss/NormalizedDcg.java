@@ -34,14 +34,11 @@ public class NormalizedDcg extends Func.Stub implements TargetFunc {
         int idx = 0;
         for (GroupedDSItem item : owner) {
             String groupId = item.groupId();
-            if (!groupsMap.containsKey(groupId)) {
-                groupsMap.put(groupId, new TIntArrayList());
-            }
+            groupsMap.putIfAbsent(groupId, new TIntArrayList());
             groupsMap.get(groupId).add(idx++);
         }
 
         groups = new ArrayList<>();
-        idx = 0;
         for (Map.Entry<String, TIntList> groupEntry : groupsMap.entrySet()) {
             int[] groupIdsArray = groupEntry.getValue().toArray();
             if (!hasDifferentLabels(target, groupIdsArray)) {

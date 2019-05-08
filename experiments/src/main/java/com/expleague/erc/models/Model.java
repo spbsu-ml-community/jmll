@@ -84,26 +84,29 @@ public class Model {
 
     public void initModel(final List<Event> events) {
         makeInitialEmbeddings(events);
+        initIds();
+        isInit = true;
+    }
+
+    protected void initIds() {
         userIds = userEmbeddings.keySet();
         userIdsArray = userIds.toArray();
         itemIds = itemEmbeddings.keySet();
         itemIdsArray = itemIds.toArray();
-        isInit = true;
     }
 
-    protected Vec makeEmbedding(final FastRandom randomGenerator, final double embMean, final int dim) {
+    protected Vec fillGaussianEmbedding(final FastRandom randomGenerator, final double embMean, final int dim) {
         Vec embedding = new ArrayVec(dim);
-
         VecTools.fillGaussian(embedding, randomGenerator);
         VecTools.scale(embedding, embMean / 2);
         VecTools.adjust(embedding, embMean);
-        for (int i = 0; i < dim; ++i) {
-            embedding.set(i, abs(embedding.get(i)));
-        }
+        embedding = VecTools.abs(embedding);
+        return embedding;
+    }
 
-//        VecTools.fillUniform(embedding, randomGenerator, embMean * SCALE_SHARE);
-//        VecTools.adjust(embedding, embMean);
-
+    protected Vec fillUniformEmbedding(final FastRandom randomGenerator, final double from, final double to, final int dim) {
+        Vec embedding = new ArrayVec(dim);
+        VecTools.adjust(VecTools.fillUniform(embedding, randomGenerator, (to - from) / 2), (to + from) / 2);
         return embedding;
     }
 
@@ -117,22 +120,16 @@ public class Model {
             itemIds.add(event.itemId());
         }
 
-        final double itemDeltaMean = DataPreprocessor.groupToEventSeqs(history).stream()
-                .mapToDouble(EventSeq::getDelta)
-                .filter(delta -> delta >= 0)
-                .average().orElse(-1);
-        final double embeddingMean = sqrt(1 / itemDeltaMean) / dim;
         final FastRandom randomGenerator = new FastRandom();
+        final double edge = 0.001;
         userIds.forEach(userId -> {
-            userEmbeddings.put(userId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            userEmbeddings.put(userId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;
         });
         itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            itemEmbeddings.put(itemId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;
         });
-        userIdsArray = userIds.toArray();
-        itemIdsArray = itemIds.toArray();
     }
 
     // LogLikelihood
@@ -144,12 +141,7 @@ public class Model {
         final List<EventSeq> eventSeqs = DataPreprocessor.groupToEventSeqs(events);
         final double observationEnd = events.get(eventSeqs.size() - 1).getTs();
         final TLongSet seenPairs = new TLongHashSet();
-        for (final int userId : userIds.toArray()) {
-            userDerivatives.put(userId, new ArrayVec(dim));
-        }
-        for (final int itemId : itemIds.toArray()) {
-            itemDerivatives.put(itemId, new ArrayVec(dim));
-        }
+        fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdasByItem =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
@@ -213,6 +205,15 @@ public class Model {
             final Vec derivative = it.value();
             VecTools.scale(derivative, commonPart);
             VecTools.append(itemDerivatives.get(it.key()), derivative);
+        }
+    }
+
+    protected void fillInitDerivatives(final TIntObjectMap<Vec> userDerivatives, final TIntObjectMap<Vec> itemDerivatives) {
+        for (final int userId : userIdsArray) {
+            userDerivatives.put(userId, new ArrayVec(dim));
+        }
+        for (final int itemId : itemIdsArray) {
+            itemDerivatives.put(itemId, new ArrayVec(dim));
         }
     }
 

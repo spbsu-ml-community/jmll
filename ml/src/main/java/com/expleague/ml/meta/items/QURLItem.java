@@ -1,13 +1,14 @@
 package com.expleague.ml.meta.items;
 
 import com.expleague.ml.meta.DSItem;
+import com.expleague.ml.meta.GroupedDSItem;
 
 /**
  * User: solar
  * Date: 11.07.14
  * Time: 21:25
  */
-public class QURLItem extends FakeItem {
+public class QURLItem extends FakeItem implements GroupedDSItem {
   public int queryId;
   public String url;
   public int groupId;
@@ -24,5 +25,10 @@ public class QURLItem extends FakeItem {
   @Override
   public String id() {
     return url + "@" + queryId;
+  }
+
+  @Override
+  public String groupId() {
+    return Integer.toString(queryId);
   }
 }
