@@ -4,11 +4,20 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
+import com.expleague.erc.Session;
+import com.expleague.erc.Util;
+import com.expleague.erc.data.DataPreprocessor;
+import com.expleague.erc.models.ModelDays;
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,14 +46,16 @@ public class UserLambdaSingle implements UserLambda {
         lastTimeOfItems = new TIntDoubleHashMap();
 
         initialLambda = initialValue;
-        lambda = initialLambda;
+//        lambda = initialLambda;
+        lambda = 0.;
         userDerivative = new ArrayVec(dim);
         itemDerivatives = new TIntObjectHashMap<>();
     }
 
     @Override
     public void reset() {
-        lambda = initialLambda;
+        lambda = 0.;
+//        lambda = initialLambda;
         currentTime = 0.;
         lastTimeOfItems.clear();
         itemDerivatives.clear();
@@ -82,11 +93,13 @@ public class UserLambdaSingle implements UserLambda {
 
     @Override
     public final double getLambda(final int itemId) {
-        return lambda;
+        return initialLambda + lambda;
+//        return lambda;
     }
 
     public final double getLambda() {
-        return lambda;
+        return initialLambda + lambda;
+//        return lambda;
     }
 
     public final Vec getLambdaUserDerivative() {
@@ -113,12 +126,39 @@ public class UserLambdaSingle implements UserLambda {
     }
 
     public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history) {
-        final Map<Integer, Double> meanDeltas = history.stream()
-                .filter(event -> event.getPrDelta() >= 0)
-                .collect(Collectors.groupingBy(Event::userId, Collectors.averagingDouble(Event::getPrDelta)));
-        final double totalMeanDelta = history.stream()
-                .mapToDouble(Event::getPrDelta)
-                .filter(x -> x >= 0)
+        final TIntIntMap userBorders = new TIntIntHashMap();
+        final TIntIntMap userPeaks = new TIntIntHashMap();
+        ModelDays.calcDayPoints(history, userBorders, userPeaks);
+        TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
+        for (final Session session : DataPreprocessor.groupEventsToSessions(history)) {
+            final int userId = session.userId();
+            final double delta = session.getDelta();
+            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
+                if (!userDeltas.containsKey(userId)) {
+                    userDeltas.put(userId, new TDoubleArrayList());
+                }
+                final int daysFromPrevSession = Util.getDaysFromPrevSession(session, userBorders.get(session.userId()));
+                userDeltas.get(userId).add(daysFromPrevSession);
+            }
+        }
+        TIntDoubleMap constants = new TIntDoubleHashMap();
+        userDeltas.forEachEntry((userId, deltas) -> {
+            deltas.sort();
+            constants.put(userId, 1 / Arrays.stream(deltas.toArray()).average().orElse(1));
+            return true;
+        });
+        return constants;
+    }
+
+    public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history, final double lambdaMultiplier) {
+        final Map<Integer, Double> meanDeltas = DataPreprocessor.groupEventsToSessions(history).stream()
+                .filter(session -> session.getDelta() >= 0 && session.getDelta() < Util.CHURN_THRESHOLD)
+                .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(session ->
+                        session.getDelta() * lambdaMultiplier)));
+        final double totalMeanDelta = DataPreprocessor.groupEventsToSessions(history).stream()
+                .mapToDouble(Session::getDelta)
+                .filter(x -> x >= 0 && x < Util.CHURN_THRESHOLD)
+                .map(delta -> delta * lambdaMultiplier)
                 .average().orElse(-1);
         final TIntDoubleMap initialValues =
                 new TIntDoubleHashMap(8, 0.5f, -1, 1 / totalMeanDelta);

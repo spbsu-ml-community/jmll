@@ -1,6 +1,7 @@
 package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.EventSeq;
 import gnu.trove.map.TIntDoubleMap;
@@ -52,7 +53,7 @@ public class PerUserLambdaStrategy implements LambdaStrategy {
     @Override
     public void accept(final EventSeq eventSeq) {
         final UserLambda userLambda = userLambdas.get(eventSeq.userId());
-        if (eventSeq.getDelta() > DataPreprocessor.CHURN_THRESHOLD) {
+        if (Util.isDead(eventSeq.getDelta())) {
             userLambda.reset();
         }
         userLambda.update(eventSeq.itemId(), eventSeq.getDelta());

@@ -1,8 +1,11 @@
 package com.expleague.erc.metrics;
 
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
@@ -43,13 +46,19 @@ public class MetricsWriter implements Model.FitListener {
         histPath = saveDir.resolve(HIST_FILE_NAME);
     }
 
+    private double meanEmbeddingNorm(final TIntObjectMap<Vec> embeddings) {
+        return embeddings.valueCollection().stream()
+                .mapToDouble(VecTools::norm)
+                .average().orElse(-1);
+    }
+
     @Override
     public void apply(Model model) {
         TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(trainData)) {
             final int userId = session.userId();
             final double delta = session.getDelta();
-            if (delta > DataPreprocessor.MAX_GAP && delta < DataPreprocessor.CHURN_THRESHOLD) {
+            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
                 if (!userDeltas.containsKey(userId)) {
                     userDeltas.put(userId, new TDoubleArrayList());
                 }
@@ -64,8 +73,7 @@ public class MetricsWriter implements Model.FitListener {
         });
         final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
                 .mapToDouble(Session::getDelta)
-                .filter(delta -> delta > 0)
-                .filter(delta -> delta < DataPreprocessor.CHURN_THRESHOLD)
+                .filter(delta -> !Util.isShortSession(delta) && !Util.isDead(delta))
                 .sorted().toArray();
         final double justConstant = intervals[intervals.length / 2];
         ApplicableModel constantApplicable = new ApplicableModel() {
@@ -109,13 +117,14 @@ public class MetricsWriter implements Model.FitListener {
                 return 0;
             }
         };
-        final double[] maes = new double[2];
+        final double[] maes = new double[4];
         final double[] lls = new double[2];
         final ForkJoinTask maeTask = ForkJoinPool.commonPool().submit(() -> {
             final ApplicableModel applicable = model.getApplicable();
-//            ApplicableModel applicable = constantApplicable;
             maes[0] = mae.calculate(trainData, applicable);
             maes[1] = mae.calculate(testData, applicable);
+            maes[2] = mae.calculate(trainData, constantApplicable);
+            maes[3] = mae.calculate(testData, constantApplicable);
         });
         final ForkJoinTask llTask = ForkJoinPool.commonPool().submit(() -> {
             final ApplicableModel applicable = model.getApplicable();
@@ -134,8 +143,13 @@ public class MetricsWriter implements Model.FitListener {
             llTask.join();
             final double spusTrain = spusTrainTask.get();
             final double spusTest = spusTestTask.get();
-            System.out.printf("train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, train_spu: %f, test_spu: %f\n",
-                    lls[0], lls[1], maes[0], maes[1], spusTrain, spusTest);
+            System.out.printf("train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, " +
+                            "train_const_mae: %f, test_const_mae: %f, " +
+                            "train_spu: %f, test_spu: %f, " +
+                            "user_norm: %f, item_norm, %f\n",
+                    lls[0], lls[1], maes[0], maes[1], maes[2], maes[3], spusTrain, spusTest,
+                    meanEmbeddingNorm(model.getUserEmbeddings()),
+                    meanEmbeddingNorm(model.getItemEmbeddings()));
 //            histSaveTask.join();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();

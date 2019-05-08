@@ -13,7 +13,6 @@ import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.Arrays;
@@ -48,6 +47,7 @@ public class ModelUserK extends Model {
     @Override
     public void initModel(final List<Event> events) {
         makeInitialEmbeddings(events);
+        initIds();
         userKs = new TIntIntHashMap();
         userBaseLambdas = new TIntDoubleHashMap();
         calcUserParams(events, userBaseLambdas, userKs);
@@ -107,25 +107,24 @@ public class ModelUserK extends Model {
         final FastRandom randomGenerator = new FastRandom();
         userIds = new TIntHashSet();
         itemIds = new TIntHashSet();
-        for (Event event: history) {
+        for (final Event event : history) {
             userIds.add(event.userId());
             itemIds.add(event.itemId());
         }
         userIds.forEach(userId -> {
-            userEmbeddings.put(userId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            userEmbeddings.put(userId, fillGaussianEmbedding(randomGenerator, embeddingMean, dim));
             return true;
         });
         itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            itemEmbeddings.put(itemId, fillGaussianEmbedding(randomGenerator, embeddingMean, dim));
             return true;
         });
-        userIdsArray = userIds.toArray();
-        itemIdsArray = itemIds.toArray();
     }
 
     @Override
     protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double timeDelta,
-                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
+                                              TIntDoubleMap initialLambdasDerivatives) {
         final double lam = userBaseLambdas.get(userId) + lambdasByItem.getLambda(userId, itemId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);

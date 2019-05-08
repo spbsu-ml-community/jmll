@@ -1,11 +1,11 @@
 package com.expleague.erc.models;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
@@ -15,14 +15,12 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
 
 import static java.lang.Math.exp;
-import static java.lang.Math.sqrt;
 
 public class ModelDays extends ModelPerUser {
     private static final int DAY_HOURS = 24;
@@ -33,17 +31,19 @@ public class ModelDays extends ModelPerUser {
     private TIntDoubleMap averageOneDayDelta;
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory) {
-        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
+                     TIntDoubleMap initialLambdas) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+                initialLambdas);
     }
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                     TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
+                     TIntDoubleMap initialLambdas, TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
                      TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap userDayAvgStarts,
                      TIntDoubleMap averageOneDayDelta) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior);
+                initialLambdas, usersEmbeddingsPrior, itemsEmbeddingsPrior);
         this.userDayBorders = userDayBorders;
         this.userDayAvgStarts = userDayAvgStarts;
         this.averageOneDayDelta = averageOneDayDelta;
@@ -53,6 +53,7 @@ public class ModelDays extends ModelPerUser {
     @Override
     public void initModel(final List<Event> events) {
         makeInitialEmbeddings(events);
+        initIds();
         userDayAvgStarts = calcAvgStarts(events);
         averageOneDayDelta = calcAverageOneDayDelta(events);
         userDayBorders = new TIntIntHashMap();
@@ -61,34 +62,18 @@ public class ModelDays extends ModelPerUser {
         isInit = true;
     }
 
-    private double lastDayBorder(double time, int userBorder) {
-        double lastBorder = ((int) time / DAY_HOURS) * DAY_HOURS + userBorder;
-        if (lastBorder > time) {
-            lastBorder -= DAY_HOURS;
-        }
-        return lastBorder;
-    }
-
     @Override
     public void logLikelihoodDerivative(List<Event> events,
-                                        TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
-        for (final int userId : userIdsArray) {
-            userDerivatives.put(userId, new ArrayVec(dim));
-        }
-        for (final int itemId : itemIdsArray) {
-            itemDerivatives.put(itemId, new ArrayVec(dim));
-        }
+                                        TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
+                                        TIntDoubleMap initialLambdasDerivatives) {
+        fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            if (session.getDelta() < DataPreprocessor.CHURN_THRESHOLD) {
-                double pos = lastDayBorder(session.getStartTs(), userDayBorders.get(session.userId()));
-                int daysPassed = 0;
-                while (pos > session.getStartTs() - session.getDelta()) {
-                    daysPassed++;
-                    pos -= DAY_HOURS;
-                }
-                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), daysPassed, userDerivatives, itemDerivatives);
+            if (!Util.isShortSession(session.getDelta()) && !Util.isDead(session.getDelta())) {
+                final int daysPassed = Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId()));
+                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), daysPassed, userDerivatives,
+                        itemDerivatives, initialLambdasDerivatives);
             }
             session.getEventSeqs().forEach(lambdaStrategy::accept);
         }
@@ -120,12 +105,10 @@ public class ModelDays extends ModelPerUser {
         public double timeDelta(final int userId, final double time) {
             final double rawPrediction = 1 / getLambda(userId);
             final int daysPrediction = (int) rawPrediction;
-            if (time + rawPrediction < lastDayBorder(time, userDayBorders.get(userId)) + DAY_HOURS) {
-//            if (daysPrediction == 0) {
+            if (time + rawPrediction < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
                 return averageOneDayDelta.get(userId);
             }
             final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
-//            final double predictedTime = predictedDay * DAY_HOURS + userDayPeaks.get(userId);
             final double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
             return predictedTime - time;
         }
@@ -158,7 +141,7 @@ public class ModelDays extends ModelPerUser {
         return new ApplicableImpl();
     }
 
-    private static void calcDayPoints(final List<Event> events, final TIntIntMap userDayBorders, final TIntIntMap userDayPeaks) {
+    public static void calcDayPoints(final List<Event> events, final TIntIntMap userDayBorders, final TIntIntMap userDayPeaks) {
         final TIntObjectMap<long[]> counters = new TIntObjectHashMap<>();
         for (final Event event : events) {
             final int userId = event.userId();
@@ -250,22 +233,15 @@ public class ModelDays extends ModelPerUser {
             itemIds.add(event.itemId());
         }
 
-        final double itemDeltaMean = DataPreprocessor.groupToEventSeqs(history).stream()
-                .mapToDouble(EventSeq::getDelta)
-                .filter(delta -> delta >= 0)
-                .map(x -> x / DAY_HOURS)
-                .average().orElse(-1);
-        final double embeddingMean = sqrt(1 / itemDeltaMean) / dim;
         final FastRandom randomGenerator = new FastRandom();
+        final double edge = 0.1;
         userIds.forEach(userId -> {
-            userEmbeddings.put(userId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            userEmbeddings.put(userId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;
         });
         itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            itemEmbeddings.put(itemId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;
         });
-        userIdsArray = userIds.toArray();
-        itemIdsArray = itemIds.toArray();
     }
 }

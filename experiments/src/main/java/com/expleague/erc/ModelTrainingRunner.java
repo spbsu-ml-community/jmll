@@ -7,10 +7,6 @@ import com.expleague.erc.metrics.MetricsWriter;
 import com.expleague.erc.models.Model;
 import com.expleague.erc.models.ModelDays;
 import gnu.trove.map.TIntDoubleMap;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -95,7 +91,7 @@ public class ModelTrainingRunner {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(history, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
-        dataset = preprocessor.filterComparable(dataset);
+//        dataset = preprocessor.filterComparable(dataset);
         final List<Event> train = dataset.getTrain();
         final List<Event> test = dataset.getTest();
 
@@ -125,18 +121,16 @@ public class ModelTrainingRunner {
 
             DoubleUnaryOperator lambdaTransform = new LambdaTransforms.AbsTransform();
             DoubleUnaryOperator lambdaDerivative = new LambdaTransforms.AbsDerivativeTransform();
-            LambdaStrategyFactory perUserLambdaStrategyFactory =
-                    new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(train));
+            TIntDoubleMap initialLambdas = UserLambdaSingle.makeUserLambdaInitialValues(train);
+            LambdaStrategyFactory perUserLambdaStrategyFactory = new PerUserLambdaStrategy.Factory(initialLambdas);
 
+//            final Model innerDayModel = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+//                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
             model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-                    perUserLambdaStrategyFactory);
-//            model = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-//                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(), userEmbeddings, itemEmbeddings,
-//                    userKs, userBaseLambdas);
-
+                    perUserLambdaStrategyFactory, initialLambdas);
         }
 
-        saveSessions(modelDirPath, history);
+        saveSessions(modelDirPath, dataset.getTest());
 
         final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
         model.fit(test, lr, iterations, decay, metricsWriter);

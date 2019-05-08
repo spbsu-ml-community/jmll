@@ -2,6 +2,7 @@ package com.expleague.erc.metrics;
 
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
+import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import gnu.trove.map.TIntDoubleMap;
@@ -20,7 +21,7 @@ public class SPUByDelta implements Metric {
             final double predictedTimeDelta = predictedTimeDeltas.get(user);
             final double realEventTimeDelta = eventSeq.getDelta();
             if (predictedTimeDelta != predictedTimeDeltas.getNoEntryValue() && realEventTimeDelta > 0. &&
-                    realEventTimeDelta < DataPreprocessor.CHURN_THRESHOLD) {
+                    !Util.isDead(realEventTimeDelta)) {
                 final double predictedEventSPU = 1 / predictedTimeDelta;
                 final double realEventSPU = 1 / realEventTimeDelta;
                 totalDiff += Math.abs(predictedEventSPU - realEventSPU);
