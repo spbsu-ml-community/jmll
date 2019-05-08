@@ -141,19 +141,19 @@ public class UserLambdaSingle implements UserLambda {
         return constants;
     }
 
-//    public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history, final double lambdaMultiplier) {
-//        final Map<Integer, Double> meanDeltas = DataPreprocessor.groupEventsToSessions(history).stream()
-//                .filter(session -> session.getDelta() >= 0)
-//                .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(session ->
-//                        session.getDelta() * lambdaMultiplier)));
-//        final double totalMeanDelta = DataPreprocessor.groupEventsToSessions(history).stream()
-//                .mapToDouble(Session::getDelta)
-//                .map(delta -> delta * lambdaMultiplier)
-//                .filter(x -> x >= 0)
-//                .average().orElse(-1);
-//        final TIntDoubleMap initialValues =
-//                new TIntDoubleHashMap(8, 0.5f, -1, 1 / totalMeanDelta);
-//        meanDeltas.forEach((userId, meanDelta) -> initialValues.put(userId, 1 / meanDelta));
-//        return initialValues;
-//    }
+    public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history, final double lambdaMultiplier) {
+        final Map<Integer, Double> meanDeltas = DataPreprocessor.groupEventsToSessions(history).stream()
+                .filter(session -> session.getDelta() >= 0 && session.getDelta() < DataPreprocessor.CHURN_THRESHOLD)
+                .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(session ->
+                        session.getDelta() * lambdaMultiplier)));
+        final double totalMeanDelta = DataPreprocessor.groupEventsToSessions(history).stream()
+                .mapToDouble(Session::getDelta)
+                .filter(x -> x >= 0 && x < DataPreprocessor.CHURN_THRESHOLD)
+                .map(delta -> delta * lambdaMultiplier)
+                .average().orElse(-1);
+        final TIntDoubleMap initialValues =
+                new TIntDoubleHashMap(8, 0.5f, -1, 1 / totalMeanDelta);
+        meanDeltas.forEach((userId, meanDelta) -> initialValues.put(userId, 1 / meanDelta));
+        return initialValues;
+    }
 }

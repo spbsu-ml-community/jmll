@@ -91,7 +91,7 @@ public class ModelTrainingRunner {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(history, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
-        dataset = preprocessor.filterComparable(dataset);
+//        dataset = preprocessor.filterComparable(dataset);
         final List<Event> train = dataset.getTrain();
         final List<Event> test = dataset.getTest();
 
@@ -122,8 +122,7 @@ public class ModelTrainingRunner {
             DoubleUnaryOperator lambdaTransform = new LambdaTransforms.AbsTransform();
             DoubleUnaryOperator lambdaDerivative = new LambdaTransforms.AbsDerivativeTransform();
             TIntDoubleMap initialLambdas = UserLambdaSingle.makeUserLambdaInitialValues(train);
-            LambdaStrategyFactory perUserLambdaStrategyFactory =
-                    new PerUserLambdaStrategy.Factory(initialLambdas);
+            LambdaStrategyFactory perUserLambdaStrategyFactory = new PerUserLambdaStrategy.Factory(initialLambdas);
 
 //            final Model innerDayModel = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
 //                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());

@@ -101,12 +101,14 @@ public class Model {
         VecTools.scale(embedding, embMean / 2);
         VecTools.adjust(embedding, embMean);
         embedding = VecTools.abs(embedding);
+        VecTools.normalizeL2(embedding);
         return embedding;
     }
 
     protected Vec fillUniformEmbedding(final FastRandom randomGenerator, final double from, final double to, final int dim) {
         Vec embedding = new ArrayVec(dim);
         VecTools.adjust(VecTools.fillUniform(embedding, randomGenerator, (to - from) / 2), (to + from) / 2);
+        VecTools.normalizeL2(embedding);
         return embedding;
     }
 
@@ -269,12 +271,16 @@ public class Model {
         for (final int userId : userIdsArray) {
             Vec userDerivative = userDerivatives.get(userId);
             VecTools.scale(userDerivative, lr);
-            VecTools.append(userEmbeddings.get(userId), userDerivative);
+            Vec userEmbedding = userEmbeddings.get(userId);
+            VecTools.append(userEmbedding, userDerivative);
+            VecTools.normalizeL2(userEmbedding);
         }
         for (final int itemId : itemIdsArray) {
             Vec itemDerivative = itemDerivatives.get(itemId);
             VecTools.scale(itemDerivative, lr);
-            VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
+            Vec itemEmbedding = itemEmbeddings.get(itemId);
+            VecTools.append(itemEmbedding, itemDerivative);
+            VecTools.normalizeL2(itemEmbedding);
         }
     }
 

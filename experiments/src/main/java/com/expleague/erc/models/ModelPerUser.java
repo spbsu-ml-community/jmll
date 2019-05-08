@@ -110,13 +110,17 @@ public class ModelPerUser extends Model {
         for (final int userId : userIdsArray) {
             Vec userDerivative = userDerivatives.get(userId);
             VecTools.scale(userDerivative, lr);
-            VecTools.append(userEmbeddings.get(userId), userDerivative);
+            Vec userEmbedding = userEmbeddings.get(userId);
+            VecTools.append(userEmbedding, userDerivative);
+            VecTools.normalizeL2(userEmbedding);
             initialLambdas.adjustValue(userId, initialLambdaDerivatives.get(userId) * lr);
         }
         for (final int itemId : itemIdsArray) {
             Vec itemDerivative = itemDerivatives.get(itemId);
             VecTools.scale(itemDerivative, lr);
-            VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
+            Vec itemEmbedding = itemEmbeddings.get(itemId);
+            VecTools.append(itemEmbedding, itemDerivative);
+            VecTools.normalizeL2(itemEmbedding);
         }
     }
 
