@@ -200,6 +200,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
     final int size = acc.size();
     final float[] weights = new float[256];
     IntStream.range(0, 256).forEach(i -> weights[i] = (float)wtype().weight(i > 126 ? -256 + i : i));
+    log.info("Marge with lock size" + rowLocks.length + "and acc size " + size);
 
     LongSeq prevRow = null;
     final LongSeqBuilder updatedRow = new LongSeqBuilder(wordsList.size());
@@ -255,6 +256,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
     }
     finally {
       rowLocks[prevA].unlock();
+      log.info("Unlock merge");
     }
   }
 }
