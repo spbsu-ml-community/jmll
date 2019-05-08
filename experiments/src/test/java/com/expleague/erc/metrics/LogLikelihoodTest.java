@@ -79,7 +79,7 @@ public class LogLikelihoodTest {
                 preparationHistory, differentiationHistory, step);
         LogLikelihood.differentiate(itemsEmbeddings, itemsNumericDerivative, model, llCalculator,
                 preparationHistory, differentiationHistory, step);
-        model.logLikelihoodDerivative(differentiationHistory, usersAnalyticDerivative, itemsAnalyticDerivative);
+        model.logLikelihoodDerivative(differentiationHistory, usersAnalyticDerivative, itemsAnalyticDerivative, null);
 
         final double maxDist = 1.;
         usersEmbeddings.forEachKey(userId -> {

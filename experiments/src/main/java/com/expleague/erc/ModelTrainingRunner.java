@@ -125,18 +125,19 @@ public class ModelTrainingRunner {
 
             DoubleUnaryOperator lambdaTransform = new LambdaTransforms.AbsTransform();
             DoubleUnaryOperator lambdaDerivative = new LambdaTransforms.AbsDerivativeTransform();
+            TIntDoubleMap initialLambdas = UserLambdaSingle.makeUserLambdaInitialValues(train, 1. / 24);
             LambdaStrategyFactory perUserLambdaStrategyFactory =
-                    new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(train));
+                    new PerUserLambdaStrategy.Factory(initialLambdas);
 
             model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-                    perUserLambdaStrategyFactory);
+                    perUserLambdaStrategyFactory, initialLambdas);
 //            model = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
 //                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(), userEmbeddings, itemEmbeddings,
 //                    userKs, userBaseLambdas);
 
         }
 
-        saveSessions(modelDirPath, history);
+        saveSessions(modelDirPath, dataset.getTest());
 
         final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
         model.fit(test, lr, iterations, decay, metricsWriter);

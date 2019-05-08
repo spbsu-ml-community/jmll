@@ -11,9 +11,11 @@ import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.TIntLongMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.map.hash.TIntLongHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
@@ -33,17 +35,19 @@ public class ModelDays extends ModelPerUser {
     private TIntDoubleMap averageOneDayDelta;
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory) {
-        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
+                     TIntDoubleMap initialLambdas) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+                initialLambdas);
     }
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                     TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
+                     TIntDoubleMap initialLambdas, TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
                      TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap userDayAvgStarts,
                      TIntDoubleMap averageOneDayDelta) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior);
+                initialLambdas, usersEmbeddingsPrior, itemsEmbeddingsPrior);
         this.userDayBorders = userDayBorders;
         this.userDayAvgStarts = userDayAvgStarts;
         this.averageOneDayDelta = averageOneDayDelta;
@@ -71,7 +75,8 @@ public class ModelDays extends ModelPerUser {
 
     @Override
     public void logLikelihoodDerivative(List<Event> events,
-                                        TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+                                        TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
+                                        TIntDoubleMap initialLambdasDerivatives) {
         for (final int userId : userIdsArray) {
             userDerivatives.put(userId, new ArrayVec(dim));
         }
@@ -88,7 +93,8 @@ public class ModelDays extends ModelPerUser {
                     daysPassed++;
                     pos -= DAY_HOURS;
                 }
-                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), daysPassed, userDerivatives, itemDerivatives);
+                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), daysPassed, userDerivatives,
+                        itemDerivatives, initialLambdasDerivatives);
             }
             session.getEventSeqs().forEach(lambdaStrategy::accept);
         }
@@ -250,8 +256,8 @@ public class ModelDays extends ModelPerUser {
             itemIds.add(event.itemId());
         }
 
-        final double itemDeltaMean = DataPreprocessor.groupToEventSeqs(history).stream()
-                .mapToDouble(EventSeq::getDelta)
+        final double itemDeltaMean = DataPreprocessor.groupEventsToSessions(history).stream()
+                .mapToDouble(Session::getDelta)
                 .filter(delta -> delta >= 0)
                 .map(x -> x / DAY_HOURS)
                 .average().orElse(-1);
@@ -268,4 +274,25 @@ public class ModelDays extends ModelPerUser {
         userIdsArray = userIds.toArray();
         itemIdsArray = itemIds.toArray();
     }
+
+//    private void makeInitialLambdaBases(final List<Event> events, final TIntDoubleMap lambdaBases) {
+//        final TIntLongMap daysSums = new TIntLongHashMap();
+//        final TIntIntMap sessionCounters = new TIntIntHashMap();
+//        for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
+//            if (session.getDelta() < DataPreprocessor.CHURN_THRESHOLD) {
+//                double pos = lastDayBorder(session.getStartTs(), userDayBorders.get(session.userId()));
+//                int daysPassed = 0;
+//                while (pos > session.getStartTs() - session.getDelta()) {
+//                    daysPassed++;
+//                    pos -= DAY_HOURS;
+//                }
+//                daysSums.adjustOrPutValue(session.userId(), daysPassed, daysPassed);
+//                sessionCounters.adjustOrPutValue(session.userId(), 1, 1);
+//            }
+//        }
+//        daysSums.forEachEntry((userId, daysSum) -> {
+//            lambdaBases.put(userId, sessionCounters.get(userId) / daysSum);
+//            return true;
+//        });
+//    }
 }

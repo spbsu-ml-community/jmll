@@ -4,6 +4,8 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
+import com.expleague.erc.Session;
+import com.expleague.erc.data.DataPreprocessor;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -37,14 +39,16 @@ public class UserLambdaSingle implements UserLambda {
         lastTimeOfItems = new TIntDoubleHashMap();
 
         initialLambda = initialValue;
-        lambda = initialLambda;
+//        lambda = initialLambda;
+        lambda = 0.;
         userDerivative = new ArrayVec(dim);
         itemDerivatives = new TIntObjectHashMap<>();
     }
 
     @Override
     public void reset() {
-        lambda = initialLambda;
+        lambda = 0.;
+//        lambda = initialLambda;
         currentTime = 0.;
         lastTimeOfItems.clear();
         itemDerivatives.clear();
@@ -82,11 +86,13 @@ public class UserLambdaSingle implements UserLambda {
 
     @Override
     public final double getLambda(final int itemId) {
-        return lambda;
+        return initialLambda + lambda;
+//        return lambda;
     }
 
     public final double getLambda() {
-        return lambda;
+        return initialLambda + lambda;
+//        return lambda;
     }
 
     public final Vec getLambdaUserDerivative() {
@@ -112,12 +118,14 @@ public class UserLambdaSingle implements UserLambda {
         throw new UnsupportedOperationException();
     }
 
-    public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history) {
-        final Map<Integer, Double> meanDeltas = history.stream()
-                .filter(event -> event.getPrDelta() >= 0)
-                .collect(Collectors.groupingBy(Event::userId, Collectors.averagingDouble(Event::getPrDelta)));
-        final double totalMeanDelta = history.stream()
-                .mapToDouble(Event::getPrDelta)
+    public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history, final double lambdaMultiplier) {
+        final Map<Integer, Double> meanDeltas = DataPreprocessor.groupEventsToSessions(history).stream()
+                .filter(session -> session.getDelta() >= 0)
+                .collect(Collectors.groupingBy(Session::userId, Collectors.averagingDouble(session ->
+                        session.getDelta() * lambdaMultiplier)));
+        final double totalMeanDelta = DataPreprocessor.groupEventsToSessions(history).stream()
+                .mapToDouble(Session::getDelta)
+                .map(delta -> delta * lambdaMultiplier)
                 .filter(x -> x >= 0)
                 .average().orElse(-1);
         final TIntDoubleMap initialValues =

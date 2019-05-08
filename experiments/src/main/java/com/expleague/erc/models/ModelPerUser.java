@@ -10,7 +10,10 @@ import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
@@ -19,18 +22,22 @@ import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
 public class ModelPerUser extends Model {
+    private final TIntDoubleMap initialLambdas;
 
     public ModelPerUser(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory) {
+                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
+                        TIntDoubleMap initialLambdas) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+        this.initialLambdas = initialLambdas;
     }
 
     public ModelPerUser(int dim, double beta, double eps, double otherItemImportance,
                         DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
-                        LambdaStrategyFactory lambdaStrategyFactory, TIntObjectMap<Vec> usersEmbeddingsPrior,
-                        TIntObjectMap<Vec> itemsEmbeddingsPrior) {
+                        LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
+                        TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 usersEmbeddingsPrior, itemsEmbeddingsPrior);
+        this.initialLambdas = initialLambdas;
     }
 
     @Override
@@ -42,7 +49,8 @@ public class ModelPerUser extends Model {
     @Override
     public void logLikelihoodDerivative(final List<Event> events,
                                         final TIntObjectMap<Vec> userDerivatives,
-                                        final TIntObjectMap<Vec> itemDerivatives) {
+                                        final TIntObjectMap<Vec> itemDerivatives,
+                                        final TIntDoubleMap initialLambdasDerivatives) {
 //        final double observationEnd = events.get(events.size() - 1).getTs();
         for (final int userId : userIdsArray) {
             userDerivatives.put(userId, new ArrayVec(dim));
@@ -58,7 +66,7 @@ public class ModelPerUser extends Model {
             final double delta = session.getDelta();
             if (0 < delta && delta < DataPreprocessor.CHURN_THRESHOLD) {
                 updateDerivativeInnerEvent(lambdaStrategy, session.userId(), delta, userDerivatives,
-                        itemDerivatives);
+                        itemDerivatives, initialLambdasDerivatives);
             }
             session.getEventSeqs().forEach(lambdaStrategy::accept);
         }
@@ -71,7 +79,8 @@ public class ModelPerUser extends Model {
     }
 
     protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, double timeDelta,
-                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
+                                              TIntDoubleMap initialLambdasDerivatives) {
         final double lam = lambdasByItem.getLambda(userId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId);
@@ -92,6 +101,26 @@ public class ModelPerUser extends Model {
                 VecTools.scale(derivative, commonPart);
                 VecTools.append(itemDerivatives.get(it.key()), derivative);
             }
+            initialLambdasDerivatives.adjustOrPutValue(userId, commonPart, commonPart);
+        }
+    }
+
+    @Override
+    protected void stepGD(final List<Event> events, double lr) {
+        final TIntObjectMap<Vec> userDerivatives = new TIntObjectHashMap<>();
+        final TIntObjectMap<Vec> itemDerivatives = new TIntObjectHashMap<>();
+        final TIntDoubleMap initialLambdaDerivatives = new TIntDoubleHashMap();
+        logLikelihoodDerivative(events, userDerivatives, itemDerivatives, initialLambdaDerivatives);
+        for (final int userId : userIdsArray) {
+            Vec userDerivative = userDerivatives.get(userId);
+            VecTools.scale(userDerivative, lr);
+            VecTools.append(userEmbeddings.get(userId), userDerivative);
+            initialLambdas.adjustValue(userId, initialLambdaDerivatives.get(userId) * lr);
+        }
+        for (final int itemId : itemIdsArray) {
+            Vec itemDerivative = itemDerivatives.get(itemId);
+            VecTools.scale(itemDerivative, lr);
+            VecTools.append(itemEmbeddings.get(itemId), itemDerivative);
         }
     }
 

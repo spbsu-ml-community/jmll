@@ -1,5 +1,7 @@
 package com.expleague.erc.metrics;
 
+import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
@@ -41,6 +43,12 @@ public class MetricsWriter implements Model.FitListener {
         this.eps = eps;
         ll = new LogLikelihoodPerUser(eps);
         histPath = saveDir.resolve(HIST_FILE_NAME);
+    }
+
+    private double meanEmbeddingNorm(final TIntObjectMap<Vec> embeddings) {
+        return embeddings.valueCollection().stream()
+                .mapToDouble(VecTools::norm)
+                .average().orElse(-1);
     }
 
     @Override
@@ -134,8 +142,10 @@ public class MetricsWriter implements Model.FitListener {
             llTask.join();
             final double spusTrain = spusTrainTask.get();
             final double spusTest = spusTestTask.get();
-            System.out.printf("train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, train_spu: %f, test_spu: %f\n",
-                    lls[0], lls[1], maes[0], maes[1], spusTrain, spusTest);
+            System.out.printf("train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, train_spu: %f, test_spu: %f," +
+                            " user_norm: %f, item_norm, %f\n",
+                    lls[0], lls[1], maes[0], maes[1], spusTrain, spusTest, meanEmbeddingNorm(model.getUserEmbeddings()),
+                    meanEmbeddingNorm(model.getItemEmbeddings()));
 //            histSaveTask.join();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();

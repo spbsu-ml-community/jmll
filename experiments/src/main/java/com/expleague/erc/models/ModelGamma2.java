@@ -9,6 +9,7 @@ import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TLongDoubleMap;
 import gnu.trove.map.hash.TLongDoubleHashMap;
@@ -81,7 +82,8 @@ public class ModelGamma2 extends Model {
 
     @Override
     protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double timeDelta,
-                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
+                                              TIntDoubleMap initialLambdasDerivatives) {
         final double lam = lambdasByItem.getLambda(userId, itemId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);

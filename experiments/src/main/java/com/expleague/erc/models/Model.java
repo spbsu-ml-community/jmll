@@ -139,7 +139,8 @@ public class Model {
 
     public void logLikelihoodDerivative(final List<Event> events,
                                         final TIntObjectMap<Vec> userDerivatives,
-                                        final TIntObjectMap<Vec> itemDerivatives) {
+                                        final TIntObjectMap<Vec> itemDerivatives,
+                                        final TIntDoubleMap initialLambdasDerivatives) {
         final List<EventSeq> eventSeqs = DataPreprocessor.groupToEventSeqs(events);
         final double observationEnd = events.get(eventSeqs.size() - 1).getTs();
         final TLongSet seenPairs = new TLongHashSet();
@@ -159,7 +160,7 @@ public class Model {
                 lambdasByItem.accept(eventSeq);
             } else {
                 updateDerivativeInnerEvent(lambdasByItem, eventSeq.userId(), eventSeq.itemId(), eventSeq.getDelta(),
-                        userDerivatives, itemDerivatives);
+                        userDerivatives, itemDerivatives, initialLambdasDerivatives);
                 lambdasByItem.accept(eventSeq);
                 lastVisitTimes.put(pairId, eventSeq.getStartTs());
             }
@@ -173,7 +174,8 @@ public class Model {
     }
 
     protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double timeDelta,
-                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
+                                              TIntDoubleMap initialLambdasDerivatives) {
         final double lam = lambdasByItem.getLambda(userId, itemId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);
@@ -259,10 +261,10 @@ public class Model {
         }
     }
 
-    private void stepGD(final List<Event> events, double lr) {
+    protected void stepGD(final List<Event> events, double lr) {
         final TIntObjectMap<Vec> userDerivatives = new TIntObjectHashMap<>();
         final TIntObjectMap<Vec> itemDerivatives = new TIntObjectHashMap<>();
-        logLikelihoodDerivative(events, userDerivatives, itemDerivatives);
+        logLikelihoodDerivative(events, userDerivatives, itemDerivatives, null);
         for (final int userId : userIdsArray) {
             Vec userDerivative = userDerivatives.get(userId);
             VecTools.scale(userDerivative, lr);

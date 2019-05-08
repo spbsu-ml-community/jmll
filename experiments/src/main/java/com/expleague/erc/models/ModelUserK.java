@@ -125,7 +125,8 @@ public class ModelUserK extends Model {
 
     @Override
     protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double timeDelta,
-                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
+                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
+                                              TIntDoubleMap initialLambdasDerivatives) {
         final double lam = userBaseLambdas.get(userId) + lambdasByItem.getLambda(userId, itemId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);
