@@ -4,6 +4,10 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.erc.Event;
+import com.expleague.erc.Session;
+import com.expleague.erc.data.DataPreprocessor;
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -37,14 +41,14 @@ public class UserLambdaSingle implements UserLambda {
         lastTimeOfItems = new TIntDoubleHashMap();
 
         initialLambda = initialValue;
-        lambda = initialLambda;
+        lambda = 0.0;
         userDerivative = new ArrayVec(dim);
         itemDerivatives = new TIntObjectHashMap<>();
     }
 
     @Override
     public void reset() {
-        lambda = initialLambda;
+        lambda = 0.;
         currentTime = 0.;
         lastTimeOfItems.clear();
         itemDerivatives.clear();
@@ -82,11 +86,11 @@ public class UserLambdaSingle implements UserLambda {
 
     @Override
     public final double getLambda(final int itemId) {
-        return lambda;
+        return initialLambda + lambda;
     }
 
     public final double getLambda() {
-        return lambda;
+        return initialLambda + lambda;
     }
 
     public final Vec getLambdaUserDerivative() {
@@ -113,16 +117,23 @@ public class UserLambdaSingle implements UserLambda {
     }
 
     public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history) {
-        final Map<Integer, Double> meanDeltas = history.stream()
-                .filter(event -> event.getPrDelta() >= 0)
-                .collect(Collectors.groupingBy(Event::userId, Collectors.averagingDouble(Event::getPrDelta)));
-        final double totalMeanDelta = history.stream()
-                .mapToDouble(Event::getPrDelta)
-                .filter(x -> x >= 0)
-                .average().orElse(-1);
-        final TIntDoubleMap initialValues =
-                new TIntDoubleHashMap(8, 0.5f, -1, 1 / totalMeanDelta);
-        meanDeltas.forEach((userId, meanDelta) -> initialValues.put(userId, 1 / meanDelta));
-        return initialValues;
+        TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
+        for (final Session session : DataPreprocessor.groupEventsToSessions(history)) {
+            final int userId = session.userId();
+            final double delta = session.getDelta();
+            if (delta > DataPreprocessor.MAX_GAP && delta < DataPreprocessor.CHURN_THRESHOLD) {
+                if (!userDeltas.containsKey(userId)) {
+                    userDeltas.put(userId, new TDoubleArrayList());
+                }
+                userDeltas.get(userId).add(delta);
+            }
+        }
+        TIntDoubleMap constants = new TIntDoubleHashMap();
+        userDeltas.forEachEntry((userId, deltas) -> {
+            deltas.sort();
+            constants.put(userId, deltas.get(deltas.size() / 2));
+            return true;
+        });
+        return constants;
     }
 }

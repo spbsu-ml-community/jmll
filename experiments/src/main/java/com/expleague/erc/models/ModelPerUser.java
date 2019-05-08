@@ -36,6 +36,7 @@ public class ModelPerUser extends Model {
     @Override
     public void initModel(final List<Event> events) {
         makeInitialEmbeddings(events);
+        initIds();
         isInit = true;
     }
 
@@ -43,13 +44,7 @@ public class ModelPerUser extends Model {
     public void logLikelihoodDerivative(final List<Event> events,
                                         final TIntObjectMap<Vec> userDerivatives,
                                         final TIntObjectMap<Vec> itemDerivatives) {
-//        final double observationEnd = events.get(events.size() - 1).getTs();
-        for (final int userId : userIdsArray) {
-            userDerivatives.put(userId, new ArrayVec(dim));
-        }
-        for (final int itemId : itemIdsArray) {
-            itemDerivatives.put(itemId, new ArrayVec(dim));
-        }
+        fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
 //        final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();

@@ -15,14 +15,12 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
 
 import static java.lang.Math.exp;
-import static java.lang.Math.sqrt;
 
 public class ModelDays extends ModelPerUser {
     private static final int DAY_HOURS = 24;
@@ -53,6 +51,7 @@ public class ModelDays extends ModelPerUser {
     @Override
     public void initModel(final List<Event> events) {
         makeInitialEmbeddings(events);
+        initIds();
         userDayAvgStarts = calcAvgStarts(events);
         averageOneDayDelta = calcAverageOneDayDelta(events);
         userDayBorders = new TIntIntHashMap();
@@ -72,19 +71,15 @@ public class ModelDays extends ModelPerUser {
     @Override
     public void logLikelihoodDerivative(List<Event> events,
                                         TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives) {
-        for (final int userId : userIdsArray) {
-            userDerivatives.put(userId, new ArrayVec(dim));
-        }
-        for (final int itemId : itemIdsArray) {
-            itemDerivatives.put(itemId, new ArrayVec(dim));
-        }
+        fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             if (session.getDelta() < DataPreprocessor.CHURN_THRESHOLD) {
                 double pos = lastDayBorder(session.getStartTs(), userDayBorders.get(session.userId()));
                 int daysPassed = 0;
-                while (pos > session.getStartTs() - session.getDelta()) {
+                final double previousSessionEnd = session.getStartTs() - session.getDelta();
+                while (pos > previousSessionEnd) {
                     daysPassed++;
                     pos -= DAY_HOURS;
                 }
@@ -250,22 +245,15 @@ public class ModelDays extends ModelPerUser {
             itemIds.add(event.itemId());
         }
 
-        final double itemDeltaMean = DataPreprocessor.groupToEventSeqs(history).stream()
-                .mapToDouble(EventSeq::getDelta)
-                .filter(delta -> delta >= 0)
-                .map(x -> x / DAY_HOURS)
-                .average().orElse(-1);
-        final double embeddingMean = sqrt(1 / itemDeltaMean) / dim;
         final FastRandom randomGenerator = new FastRandom();
+        final double edge = 0.1;
         userIds.forEach(userId -> {
-            userEmbeddings.put(userId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            userEmbeddings.put(userId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;
         });
         itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, makeEmbedding(randomGenerator, embeddingMean, dim));
+            itemEmbeddings.put(itemId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
             return true;
         });
-        userIdsArray = userIds.toArray();
-        itemIdsArray = itemIds.toArray();
     }
 }

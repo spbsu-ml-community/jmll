@@ -6,11 +6,6 @@ import com.expleague.erc.lambda.*;
 import com.expleague.erc.metrics.MetricsWriter;
 import com.expleague.erc.models.Model;
 import com.expleague.erc.models.ModelDays;
-import gnu.trove.map.TIntDoubleMap;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -128,12 +123,10 @@ public class ModelTrainingRunner {
             LambdaStrategyFactory perUserLambdaStrategyFactory =
                     new PerUserLambdaStrategy.Factory(UserLambdaSingle.makeUserLambdaInitialValues(train));
 
+//            final Model innerDayModel = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+//                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
             model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     perUserLambdaStrategyFactory);
-//            model = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-//                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(), userEmbeddings, itemEmbeddings,
-//                    userKs, userBaseLambdas);
-
         }
 
         saveSessions(modelDirPath, history);
