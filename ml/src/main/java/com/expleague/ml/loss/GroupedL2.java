@@ -19,7 +19,7 @@ public class GroupedL2 extends L2 {
 
   private final Vec groupOffsets;
   public GroupedL2(final Vec target, final DataSet<? extends GroupedDSItem> owner) {
-    this(target, owner, groupMeansOffsets());
+    this(target, owner, negativeGroupMeansOffsets());
   }
 
   //
@@ -27,7 +27,6 @@ public class GroupedL2 extends L2 {
       BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec> offsetFunction) {
     super(target, owner);
     groupOffsets = offsetFunction.apply(target, owner);
-    VecTools.scale(groupOffsets, -1);
   }
 
   public static BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec> randomOffsets(
@@ -64,7 +63,7 @@ public class GroupedL2 extends L2 {
     };
   }
 
-  public static BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec> groupMeansOffsets() {
+  public static BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec> negativeGroupMeansOffsets() {
     return new BiFunction<Vec, DataSet<? extends GroupedDSItem>, Vec>() {
       private Vec lastTarget = null;
       private DataSet<? extends GroupedDSItem> lastDataSet = null;
@@ -99,7 +98,7 @@ public class GroupedL2 extends L2 {
         groups.forEach((groupId, groupIndexes) -> {
           double groupMean = groupSums.get(groupId) / groupIndexes.size();
           groupIndexes.forEach(i -> {
-            lastOffsets.set(i, groupMean);
+            lastOffsets.set(i, -groupMean);
             return true;
           });
         });
@@ -131,8 +130,7 @@ public class GroupedL2 extends L2 {
   public Vec gradient(final Vec x) {
     Vec gradient = VecTools.copy(x);
     VecTools.scale(gradient, -1);
-    VecTools.append(gradient, target);
-    VecTools.append(gradient, groupOffsets);
+    VecTools.append(gradient, target, groupOffsets);
     VecTools.scale(gradient, -2);
     return gradient;
   }
@@ -141,8 +139,7 @@ public class GroupedL2 extends L2 {
   public double value(final Vec point) {
     final Vec temp = VecTools.copy(point);
     VecTools.scale(temp, -1);
-    VecTools.append(temp, target);
-    VecTools.append(groupOffsets);
+    VecTools.append(temp, target, groupOffsets);
     return Math.sqrt(VecTools.sum2(temp) / temp.dim());
   }
 
