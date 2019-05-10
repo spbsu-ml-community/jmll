@@ -167,11 +167,11 @@ public class ModelTrainingRunner {
             constants.put(userId, deltas.get(deltas.size() / 2));
             return true;
         });
-//        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
-//                .mapToDouble(Session::getDelta)
-//                .filter(delta -> !Util.isShortSession(delta) && !Util.isDead(delta))
-//                .sorted().toArray();
-//        final double justConstant = intervals[intervals.length / 2];
+        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
+                .filter(Util::forPrediction)
+                .mapToDouble(Session::getDelta)
+                .sorted().toArray();
+        final double justConstant = intervals[intervals.length / 2];
         final ApplicableModel constantApplicable = new ApplicableModel() {
             @Override
             public void accept(EventSeq event) {
@@ -195,12 +195,8 @@ public class ModelTrainingRunner {
 
             @Override
             public double timeDelta(final int userId, final double time) {
-//                try {
                 return constants.get(userId);
-//                } catch (Throwable t) {
-//                    return justConstant;
-//                }
-//                return 10;
+//                return justConstant;
             }
 
             @Override

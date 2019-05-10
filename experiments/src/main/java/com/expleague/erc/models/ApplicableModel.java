@@ -14,17 +14,29 @@ public interface ApplicableModel {
         session.getEventSeqs().forEach(this::accept);
     }
 
-    double getLambda(final int userId);
+    default double getLambda(final int userId) {
+        throw new UnsupportedOperationException();
+    }
 
-    double getLambda(final int userId, final int itemId);
+    default double getLambda(final int userId, final int itemId) {
+        throw new UnsupportedOperationException();
+    }
 
-    double timeDelta(final int userId, final int itemId);
+    default double timeDelta(final int userId, final int itemId) {
+        throw new UnsupportedOperationException();
+    }
 
-    double timeDelta(final int userId, final double time);
+    default double timeDelta(final int userId, final double time) {
+        throw new UnsupportedOperationException();
+    }
 
-    double probabilityBeforeX(final int userId, final double x);
+    default double probabilityBeforeX(final int userId, final double x) {
+        throw new UnsupportedOperationException();
+    }
 
-    double probabilityBeforeX(final int userId, final int itemId, final double x);
+    default double probabilityBeforeX(final int userId, final int itemId, final double x) {
+        throw new UnsupportedOperationException();
+    }
 
     default double probabilityInterval(final int userId, final double start, final double end) {
         return probabilityBeforeX(userId, end) - probabilityBeforeX(userId, start);

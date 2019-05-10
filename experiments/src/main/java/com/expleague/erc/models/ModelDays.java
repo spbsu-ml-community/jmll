@@ -15,14 +15,13 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
 
 import static java.lang.Math.exp;
 
-public class ModelDays extends ModelPerUser {
+public class ModelDays extends ModelExpPerUser {
     private static final int DAY_HOURS = 24;
 
     private TIntIntMap userDayBorders;
@@ -97,11 +96,6 @@ public class ModelDays extends ModelPerUser {
         }
 
         @Override
-        public double getLambda(final int userId, final int itemId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public double timeDelta(final int userId, final double time) {
             final double rawPrediction = 1 / getLambda(userId);
             final int daysPrediction = (int) rawPrediction;
@@ -114,27 +108,9 @@ public class ModelDays extends ModelPerUser {
         }
 
         @Override
-        public double timeDelta(final int userId, final int itemId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public double probabilityBeforeX(int userId, double x) {
-            return 1 - exp(-getLambda(userId) * x / DAY_HOURS);
+            return 1 - exp(-getLambda(userId) * x);
         }
-
-        @Override
-        public double probabilityBeforeX(int userId, int itemId, double x) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public ApplicableModel getApplicable(final List<Event> events) {
-        ApplicableModel applicable = new ApplicableImpl();
-        if (events != null) {
-            applicable.fit(events);
-        }
-        return applicable;
     }
 
     public ApplicableModel getApplicable() {
@@ -222,26 +198,5 @@ public class ModelDays extends ModelPerUser {
             result.put(userId, userDeltas.get(userId) / userCounts.get(userId));
         }
         return result;
-    }
-
-    @Override
-    protected void makeInitialEmbeddings(final List<Event> history) {
-        userIds = new TIntHashSet();
-        itemIds = new TIntHashSet();
-        for (final Event event : history) {
-            userIds.add(event.userId());
-            itemIds.add(event.itemId());
-        }
-
-        final FastRandom randomGenerator = new FastRandom();
-        final double edge = 0.1;
-        userIds.forEach(userId -> {
-            userEmbeddings.put(userId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
-            return true;
-        });
-        itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
-            return true;
-        });
     }
 }

@@ -16,12 +16,24 @@ public class Util {
         return timeBetweenSessions > CHURN_THRESHOLD;
     }
 
+    public static boolean shorterThan(final double timeBetweenSessions, final double threshold) {
+        return timeBetweenSessions > threshold;
+    }
+
     public static boolean isShortSession(final double timeBetweenSessions) {
         return timeBetweenSessions < MAX_GAP;
     }
 
+    public static boolean longerThan(final double timeBetweenSessions, final double threshold) {
+        return timeBetweenSessions < threshold;
+    }
+
     public static boolean forPrediction(final Session session) {
-        return MAX_GAP < session.getDelta() && session.getDelta() < CHURN_THRESHOLD;
+        return !isShortSession(session.getDelta()) && !isDead(session.getDelta());
+    }
+
+    public static boolean inInterval(final Session session, final double from, final double to) {
+        return longerThan(session.getDelta(), from) && shorterThan(session.getDelta(), to);
     }
 
     public static double getDay(final double time, final int dayStart) {

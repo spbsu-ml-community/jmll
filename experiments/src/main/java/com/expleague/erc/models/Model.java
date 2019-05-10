@@ -50,7 +50,7 @@ public class Model {
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                null, null);
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>());
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
@@ -95,41 +95,39 @@ public class Model {
         itemIdsArray = itemIds.toArray();
     }
 
-    protected Vec fillGaussianEmbedding(final FastRandom randomGenerator, final double embMean, final int dim) {
+    protected static Vec getGaussianEmbedding(final FastRandom randomGenerator, final double embMean, final int dim) {
         Vec embedding = new ArrayVec(dim);
         VecTools.fillGaussian(embedding, randomGenerator);
         VecTools.scale(embedding, embMean / 2);
         VecTools.adjust(embedding, embMean);
         embedding = VecTools.abs(embedding);
-        VecTools.normalizeL2(embedding);
         return embedding;
     }
 
-    protected Vec fillUniformEmbedding(final FastRandom randomGenerator, final double from, final double to, final int dim) {
+    protected static Vec getUniformEmbedding(final FastRandom randomGenerator, final double from, final double to, final int dim) {
         Vec embedding = new ArrayVec(dim);
         VecTools.adjust(VecTools.fillUniform(embedding, randomGenerator, (to - from) / 2), (to + from) / 2);
-        VecTools.normalizeL2(embedding);
         return embedding;
     }
 
     protected void makeInitialEmbeddings(List<Event> history) {
-        userEmbeddings = new TIntObjectHashMap<>();
-        userEmbeddings = new TIntObjectHashMap<>();
         userIds = new TIntHashSet();
         itemIds = new TIntHashSet();
-        for (Event event : history) {
+        for (final Event event : history) {
             userIds.add(event.userId());
             itemIds.add(event.itemId());
         }
 
         final FastRandom randomGenerator = new FastRandom();
-        final double edge = 0.001;
+        final double edge = 0.0;
         userIds.forEach(userId -> {
-            userEmbeddings.put(userId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
+            userEmbeddings.put(userId, getUniformEmbedding(randomGenerator, -edge, edge, dim));
+//            VecTools.normalizeL2(userEmbeddings.get(userId));
             return true;
         });
         itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
+            itemEmbeddings.put(itemId, getUniformEmbedding(randomGenerator, -edge, edge, dim));
+//            VecTools.normalizeL2(itemEmbeddings.get(itemId));
             return true;
         });
     }
@@ -273,14 +271,14 @@ public class Model {
             VecTools.scale(userDerivative, lr);
             Vec userEmbedding = userEmbeddings.get(userId);
             VecTools.append(userEmbedding, userDerivative);
-            VecTools.normalizeL2(userEmbedding);
+//            VecTools.normalizeL2(userEmbedding);
         }
         for (final int itemId : itemIdsArray) {
             Vec itemDerivative = itemDerivatives.get(itemId);
             VecTools.scale(itemDerivative, lr);
             Vec itemEmbedding = itemEmbeddings.get(itemId);
             VecTools.append(itemEmbedding, itemDerivative);
-            VecTools.normalizeL2(itemEmbedding);
+//            VecTools.normalizeL2(itemEmbedding);
         }
     }
 
@@ -299,23 +297,8 @@ public class Model {
         }
 
         @Override
-        public double getLambda(int userId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public double getLambda(final int userId, final int itemId) {
             return lambdaTransform.applyAsDouble(lambdaStrategy.getLambda(userId, itemId));
-        }
-
-        @Override
-        public double timeDelta(final int userId, final double time) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public double probabilityBeforeX(int userId, double x) {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -333,7 +316,7 @@ public class Model {
         if (!isInit) {
             initModel(events);
         }
-        ApplicableModel applicable = new ApplicableImpl();
+        ApplicableModel applicable = getApplicable();
         if (events != null) {
             applicable.fit(events);
         }

@@ -21,20 +21,20 @@ import java.util.function.DoubleUnaryOperator;
 import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
-public class ModelPerUser extends Model {
+public class ModelExpPerUser extends Model {
     private final TIntDoubleMap initialLambdas;
 
-    public ModelPerUser(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                        TIntDoubleMap initialLambdas) {
+    public ModelExpPerUser(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
+                           DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
+                           TIntDoubleMap initialLambdas) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         this.initialLambdas = initialLambdas;
     }
 
-    public ModelPerUser(int dim, double beta, double eps, double otherItemImportance,
-                        DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
-                        LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
-                        TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
+    public ModelExpPerUser(int dim, double beta, double eps, double otherItemImportance,
+                           DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
+                           LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
+                           TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 usersEmbeddingsPrior, itemsEmbeddingsPrior);
         this.initialLambdas = initialLambdas;
@@ -56,9 +56,8 @@ public class ModelPerUser extends Model {
         final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            final double delta = session.getDelta();
-            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
-                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), delta, userDerivatives,
+            if (Util.forPrediction(session)) {
+                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), session.getDelta(), userDerivatives,
                         itemDerivatives, initialLambdasDerivatives);
             }
             session.getEventSeqs().forEach(lambdaStrategy::accept);
@@ -103,7 +102,7 @@ public class ModelPerUser extends Model {
             VecTools.scale(userDerivative, lr);
             Vec userEmbedding = userEmbeddings.get(userId);
             VecTools.append(userEmbedding, userDerivative);
-            VecTools.normalizeL2(userEmbedding);
+//            VecTools.normalizeL2(userEmbedding);
             initialLambdas.adjustValue(userId, initialLambdaDerivatives.get(userId) * lr);
         }
         for (final int itemId : itemIdsArray) {
@@ -111,7 +110,7 @@ public class ModelPerUser extends Model {
             VecTools.scale(itemDerivative, lr);
             Vec itemEmbedding = itemEmbeddings.get(itemId);
             VecTools.append(itemEmbedding, itemDerivative);
-            VecTools.normalizeL2(itemEmbedding);
+//            VecTools.normalizeL2(itemEmbedding);
         }
     }
 
@@ -133,18 +132,8 @@ public class ModelPerUser extends Model {
         }
 
         @Override
-        public double getLambda(final int userId, final int itemId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public double timeDelta(final int userId, final double time) {
             return 1 / getLambda(userId);
-        }
-
-        @Override
-        public double timeDelta(final int userId, final int itemId) {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -156,14 +145,6 @@ public class ModelPerUser extends Model {
         public double probabilityBeforeX(int userId, int itemId, double x) {
             return 1 - exp(-getLambda(userId, itemId) * x);
         }
-    }
-
-    public ApplicableModel getApplicable(final List<Event> events) {
-        ApplicableModel applicable = new ApplicableImpl();
-        if (events != null) {
-            applicable.fit(events);
-        }
-        return applicable;
     }
 
     public ApplicableModel getApplicable() {

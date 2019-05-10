@@ -112,11 +112,11 @@ public class ModelUserK extends Model {
             itemIds.add(event.itemId());
         }
         userIds.forEach(userId -> {
-            userEmbeddings.put(userId, fillGaussianEmbedding(randomGenerator, embeddingMean, dim));
+            userEmbeddings.put(userId, getGaussianEmbedding(randomGenerator, embeddingMean, dim));
             return true;
         });
         itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, fillGaussianEmbedding(randomGenerator, embeddingMean, dim));
+            itemEmbeddings.put(itemId, getGaussianEmbedding(randomGenerator, embeddingMean, dim));
             return true;
         });
     }
