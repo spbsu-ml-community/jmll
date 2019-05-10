@@ -112,7 +112,7 @@ public class ModelTrainingRunner {
 
         final Path modelPath = modelDirPath.resolve(FILE_MODEL);
         if (existingModel && !reset) {
-            model = Model.load(Files.newInputStream(modelPath));
+            model = ModelDays.load(Files.newInputStream(modelPath));
         } else {
             if (!existingModel) {
                 Files.createDirectory(modelDirPath);
@@ -146,7 +146,7 @@ public class ModelTrainingRunner {
         final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
         model.fit(test, lr, iterations, decay, metricsWriter);
 
-//        model.write(Files.newOutputStream(modelPath));
+        model.write(Files.newOutputStream(modelPath));
     }
 
     private static void evaluateConstant(final List<Event> trainData, final List<Event> testData) {

@@ -14,7 +14,6 @@ import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TLongDoubleMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongDoubleHashMap;
 import gnu.trove.set.TIntSet;
@@ -25,11 +24,10 @@ import gnu.trove.set.hash.TLongHashSet;
 import java.io.*;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
-import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
 
-public class Model {
+public class Model implements Serializable {
 
     protected final int dim;
     protected final double beta;
@@ -83,7 +81,16 @@ public class Model {
     // Init
 
     public void initModel(final List<Event> events) {
+        if (isInit) {
+            return;
+        }
         makeInitialEmbeddings(events);
+        initIds();
+        isInit = true;
+    }
+
+    // If the embeddings are already present
+    public void initModel() {
         initIds();
         isInit = true;
     }
@@ -313,9 +320,7 @@ public class Model {
     }
 
     public ApplicableModel getApplicable(final List<Event> events) {
-        if (!isInit) {
-            initModel(events);
-        }
+        initModel(events);
         ApplicableModel applicable = getApplicable();
         if (events != null) {
             applicable.fit(events);
@@ -346,30 +351,6 @@ public class Model {
 
     // Save & Load
 
-    private static Map<Integer, double[]> embeddingsToSerializable(final TIntObjectMap<Vec> embeddings) {
-        return Arrays.stream(embeddings.keys())
-                .boxed()
-                .collect(Collectors.toMap(x -> x, x -> embeddings.get(x).toArray()));
-    }
-
-    private static TIntObjectMap<Vec> embeddingsFromSerializable(final Map<Integer, double[]> serMap) {
-        final TIntObjectMap<Vec> embeddings = new TIntObjectHashMap<>();
-        serMap.forEach((id, embedding) -> embeddings.put(id, new ArrayVec(embedding)));
-        return embeddings;
-    }
-
-    private static Map<Integer, Double> biasesToSerializable(final TIntDoubleMap biases) {
-        return Arrays.stream(biases.keys())
-                .boxed()
-                .collect(Collectors.toMap(x -> x, biases::get));
-    }
-
-    private static TIntDoubleMap biasesFromSerializable(final Map<Integer, Double> serBiases) {
-        final TIntDoubleMap biases = new TIntDoubleHashMap();
-        serBiases.forEach(biases::put);
-        return biases;
-    }
-
     public void write(final OutputStream stream) throws IOException {
         final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
         objectOutputStream.writeInt(dim);
@@ -379,10 +360,9 @@ public class Model {
         objectOutputStream.writeObject(lambdaTransform);
         objectOutputStream.writeObject(lambdaDerivativeTransform);
         objectOutputStream.writeObject(lambdaStrategyFactory);
-        objectOutputStream.writeObject(embeddingsToSerializable(userEmbeddings));
-//        objectOutputStream.writeObject(biasesToSerializable(userBiases));
-        objectOutputStream.writeObject(embeddingsToSerializable(itemEmbeddings));
-//        objectOutputStream.writeObject(biasesToSerializable(itemEmbeddings));
+        objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
+        objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
+        objectOutputStream.close();
     }
 
     public static Model load(final InputStream stream) throws IOException, ClassNotFoundException {
@@ -395,16 +375,13 @@ public class Model {
         final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
         final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
         final TIntObjectMap<Vec> userEmbeddings =
-                embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
-//        final TIntDoubleMap userBiases =
-//                biasesFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+                Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntObjectMap<Vec> itemEmbeddings =
-                embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
-//        final TIntDoubleMap itemBiases =
-//                biasesFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
-        return new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
+                Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        final Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
                 lambdaStrategyFactory, userEmbeddings, itemEmbeddings);
-//                lambdaStrategyFactory, userEmbeddings, itemEmbeddings);
+        model.initModel();
+        return model;
     }
 
     public interface FitListener {

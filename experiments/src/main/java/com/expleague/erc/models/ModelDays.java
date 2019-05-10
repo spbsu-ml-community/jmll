@@ -1,7 +1,6 @@
 package com.expleague.erc.models;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
@@ -16,7 +15,9 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.io.*;
 import java.util.List;
+import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 
 import static java.lang.Math.exp;
@@ -198,5 +199,55 @@ public class ModelDays extends ModelExpPerUser {
             result.put(userId, userDeltas.get(userId) / userCounts.get(userId));
         }
         return result;
+    }
+
+    @Override
+    public void write(OutputStream stream) throws IOException {
+        final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
+        objectOutputStream.writeInt(dim);
+        objectOutputStream.writeDouble(beta);
+        objectOutputStream.writeDouble(eps);
+        objectOutputStream.writeDouble(otherItemImportance);
+        objectOutputStream.writeObject(lambdaTransform);
+        objectOutputStream.writeObject(lambdaDerivativeTransform);
+        objectOutputStream.writeObject(lambdaStrategyFactory);
+        objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
+        objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
+        objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
+        objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayBorders));
+        objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayPeaks));
+        objectOutputStream.writeObject(Util.intDoubleMapToSerializable(userDayAvgStarts));
+        objectOutputStream.writeObject(Util.intDoubleMapToSerializable(averageOneDayDelta));
+        objectOutputStream.close();
+    }
+
+    public static ModelDays load(final InputStream stream) throws IOException, ClassNotFoundException {
+        ObjectInputStream objectInputStream = new ObjectInputStream(stream);
+        final int dim = objectInputStream.readInt();
+        final double beta = objectInputStream.readDouble();
+        final double eps = objectInputStream.readDouble();
+        final double otherItemImportance = objectInputStream.readDouble();
+        final DoubleUnaryOperator lambdaTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
+        final TIntObjectMap<Vec> userEmbeddings =
+                Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        final TIntObjectMap<Vec> itemEmbeddings =
+                Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        final TIntDoubleMap initialLambdas =
+                Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+        final TIntIntMap userDayBorders =
+                Util.intIntMapFromSerializable((Map<Integer, Integer>) objectInputStream.readObject());
+        final TIntIntMap userDayPeaks =
+                Util.intIntMapFromSerializable((Map<Integer, Integer>) objectInputStream.readObject());
+        final TIntDoubleMap userAverageDayStarts =
+                Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+        final TIntDoubleMap averageOneDayDelta =
+                Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+        final ModelDays model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform,
+                lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings,
+                userDayBorders, userDayPeaks, userAverageDayStarts, averageOneDayDelta);
+        model.initModel();
+        return model;
     }
 }
