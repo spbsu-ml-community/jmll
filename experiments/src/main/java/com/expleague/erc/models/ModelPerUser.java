@@ -15,14 +15,16 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.io.*;
 import java.util.List;
+import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
 public class ModelPerUser extends Model {
-    private final TIntDoubleMap initialLambdas;
+    protected final TIntDoubleMap initialLambdas;
 
     public ModelPerUser(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
@@ -56,9 +58,8 @@ public class ModelPerUser extends Model {
         final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            final double delta = session.getDelta();
-            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
-                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), delta, userDerivatives,
+            if (Util.forPrediction(session)) {
+                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), session.getDelta(), userDerivatives,
                         itemDerivatives, initialLambdasDerivatives);
             }
             session.getEventSeqs().forEach(lambdaStrategy::accept);
@@ -103,7 +104,7 @@ public class ModelPerUser extends Model {
             VecTools.scale(userDerivative, lr);
             Vec userEmbedding = userEmbeddings.get(userId);
             VecTools.append(userEmbedding, userDerivative);
-            VecTools.normalizeL2(userEmbedding);
+//            VecTools.normalizeL2(userEmbedding);
             initialLambdas.adjustValue(userId, initialLambdaDerivatives.get(userId) * lr);
         }
         for (final int itemId : itemIdsArray) {
@@ -111,7 +112,7 @@ public class ModelPerUser extends Model {
             VecTools.scale(itemDerivative, lr);
             Vec itemEmbedding = itemEmbeddings.get(itemId);
             VecTools.append(itemEmbedding, itemDerivative);
-            VecTools.normalizeL2(itemEmbedding);
+//            VecTools.normalizeL2(itemEmbedding);
         }
     }
 
@@ -168,5 +169,42 @@ public class ModelPerUser extends Model {
 
     public ApplicableModel getApplicable() {
         return new ApplicableImpl();
+    }
+
+    @Override
+    public void write(final OutputStream stream) throws IOException {
+        final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
+        objectOutputStream.writeInt(dim);
+        objectOutputStream.writeDouble(beta);
+        objectOutputStream.writeDouble(eps);
+        objectOutputStream.writeDouble(otherItemImportance);
+        objectOutputStream.writeObject(lambdaTransform);
+        objectOutputStream.writeObject(lambdaDerivativeTransform);
+        objectOutputStream.writeObject(lambdaStrategyFactory);
+        objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
+        objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
+        objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
+        objectOutputStream.close();
+    }
+
+    public static ModelPerUser load(final InputStream stream) throws IOException, ClassNotFoundException {
+        final ObjectInputStream objectInputStream = new ObjectInputStream(stream);
+        final int dim = objectInputStream.readInt();
+        final double beta = objectInputStream.readDouble();
+        final double eps = objectInputStream.readDouble();
+        final double otherItemImportance = objectInputStream.readDouble();
+        final DoubleUnaryOperator lambdaTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
+        final TIntObjectMap<Vec> userEmbeddings =
+                Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        final TIntObjectMap<Vec> itemEmbeddings =
+                Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        final TIntDoubleMap initialLambdas =
+                Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+        final ModelPerUser model = new ModelPerUser(dim, beta, eps, otherItemImportance, lambdaTransform,
+                lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings);
+        model.initModel();
+        return model;
     }
 }
