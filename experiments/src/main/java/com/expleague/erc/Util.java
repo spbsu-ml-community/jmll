@@ -20,6 +20,10 @@ public class Util {
         return timeBetweenSessions < MAX_GAP;
     }
 
+    public static boolean forPrediction(final Session session) {
+        return MAX_GAP < session.getDelta() && session.getDelta() < CHURN_THRESHOLD;
+    }
+
     public static double getDay(final double time, final int dayStart) {
         double lastBorder = ((int) time / DAY_HOURS) * DAY_HOURS + dayStart;
         if (lastBorder > time) {

@@ -3,7 +3,10 @@ package com.expleague.erc;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
+import com.expleague.erc.models.ModelDays;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TLongDoubleMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -35,6 +38,7 @@ public class DataMetrics {
     private static final String OPT_OUT_DIR_LONG = "out";
     private static final String FILE_TRAIN = "train.txt";
     private static final String FILE_TEST = "test.txt";
+    private static final String FILE_ONE_DAY_DELTAS = "one_day_deltas.txt";
 
     static {
         options.addOption(Option.builder(OPT_DATA_PATH_SHORT).longOpt(OPT_DATA_PATH_LONG).desc("Path to data").hasArg().build());
@@ -91,8 +95,21 @@ public class DataMetrics {
         writeSeq(trainPath, keys, key -> String.valueOf(trainPairSpus.get(key)));
         writeSeq(testPath, keys, key -> String.valueOf(testPairSpus.get(key)));
 
-        Util.writeMap(Paths.get("items.txt"), lastFmDataReader.getReversedItemMap());
-        Util.writeMap(Paths.get("users.txt"), lastFmDataReader.getReversedUserMap());
+//        Util.writeMap(Paths.get("items.txt"), lastFmDataReader.getReversedItemMap());
+//        Util.writeMap(Paths.get("users.txt"), lastFmDataReader.getReversedUserMap());
+        writeOneDayDeltas(outDirPath.resolve(FILE_ONE_DAY_DELTAS), train);
+    }
+
+    private static void writeOneDayDeltas(Path path, List<Event> events) throws IOException {
+        final TIntIntMap userBorders = new TIntIntHashMap();
+        final TIntIntMap userPeaks = new TIntIntHashMap();
+        ModelDays.calcDayPoints(events, userBorders, userPeaks);
+        final String deltasText = DataPreprocessor.groupEventsToSessions(events).stream()
+                .filter(Util::forPrediction)
+                .filter(session -> Util.getDaysFromPrevSession(session, userBorders.get(session.userId())) == 0)
+                .map(session -> session.userId() + "\t" + session.getDelta())
+                .collect(Collectors.joining("\n"));
+        Files.write(path, deltasText.getBytes());
     }
 
     private static void writeSeq(Path filePath, long[] keys, LongFunction<String> keyToValue) throws IOException {

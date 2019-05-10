@@ -16,7 +16,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class DataPreprocessor {
-    public static final double MAX_GAP = 1.;
     private static final int NOTHING_DONE = -1;
 
     public static class TrainTest {

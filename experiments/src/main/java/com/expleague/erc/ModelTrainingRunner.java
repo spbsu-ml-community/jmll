@@ -3,10 +3,18 @@ package com.expleague.erc;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.data.*;
 import com.expleague.erc.lambda.*;
+import com.expleague.erc.metrics.MAEPerUser;
+import com.expleague.erc.metrics.Metric;
 import com.expleague.erc.metrics.MetricsWriter;
+import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
 import com.expleague.erc.models.ModelDays;
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -16,6 +24,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 
@@ -91,7 +102,6 @@ public class ModelTrainingRunner {
         DataPreprocessor preprocessor = new OneTimeDataProcessor();
         DataPreprocessor.TrainTest dataset = preprocessor.splitTrainTest(history, trainRatio);
         dataset = preprocessor.filter(dataset, usersNum, itemsNum, isTop);
-//        dataset = preprocessor.filterComparable(dataset);
         final List<Event> train = dataset.getTrain();
         final List<Event> test = dataset.getTest();
 
@@ -132,10 +142,87 @@ public class ModelTrainingRunner {
 
         saveSessions(modelDirPath, dataset.getTest());
 
+        evaluateConstant(train, test);
         final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
         model.fit(test, lr, iterations, decay, metricsWriter);
 
 //        model.write(Files.newOutputStream(modelPath));
     }
 
+    private static void evaluateConstant(final List<Event> trainData, final List<Event> testData) {
+        final TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
+        for (final Session session : DataPreprocessor.groupEventsToSessions(trainData)) {
+            final int userId = session.userId();
+            final double delta = session.getDelta();
+            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
+                if (!userDeltas.containsKey(userId)) {
+                    userDeltas.put(userId, new TDoubleArrayList());
+                }
+                userDeltas.get(userId).add(delta);
+            }
+        }
+        final TIntDoubleMap constants = new TIntDoubleHashMap();
+        userDeltas.forEachEntry((userId, deltas) -> {
+            deltas.sort();
+            constants.put(userId, deltas.get(deltas.size() / 2));
+            return true;
+        });
+//        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
+//                .mapToDouble(Session::getDelta)
+//                .filter(delta -> !Util.isShortSession(delta) && !Util.isDead(delta))
+//                .sorted().toArray();
+//        final double justConstant = intervals[intervals.length / 2];
+        final ApplicableModel constantApplicable = new ApplicableModel() {
+            @Override
+            public void accept(EventSeq event) {
+
+            }
+
+            @Override
+            public double getLambda(int userId) {
+                return 0;
+            }
+
+            @Override
+            public double getLambda(int userId, int itemId) {
+                return 0;
+            }
+
+            @Override
+            public double timeDelta(int userId, int itemId) {
+                return 0;
+            }
+
+            @Override
+            public double timeDelta(final int userId, final double time) {
+//                try {
+                return constants.get(userId);
+//                } catch (Throwable t) {
+//                    return justConstant;
+//                }
+//                return 10;
+            }
+
+            @Override
+            public double probabilityBeforeX(int userId, double x) {
+                return 0;
+            }
+
+            @Override
+            public double probabilityBeforeX(int userId, int itemId, double x) {
+                return 0;
+            }
+        };
+        final Metric mae = new MAEPerUser();
+        final ForkJoinTask<Double> trainTask = ForkJoinPool.commonPool().submit(() ->
+                mae.calculate(trainData, constantApplicable));
+        final ForkJoinTask<Double> testTask = ForkJoinPool.commonPool().submit(() ->
+                mae.calculate(testData, constantApplicable));
+        try {
+            System.out.printf("train_const_mae: %f, test_const_mae: %f\n", trainTask.get(), testTask.get());
+        } catch (InterruptedException | ExecutionException e) {
+            System.out.println("Constant evaluation failed:");
+            e.printStackTrace();
+        }
+    }
 }

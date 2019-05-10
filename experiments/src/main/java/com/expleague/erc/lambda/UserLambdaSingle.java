@@ -65,6 +65,7 @@ public class UserLambdaSingle implements UserLambda {
     @Override
     public final void update(final int itemId, double timeDelta) {
         timeDelta = 1.;
+        final Vec itemEmbedding = itemEmbeddings.get(itemId);
         if (!lastTimeOfItems.containsKey(itemId)) {
             lastTimeOfItems.put(itemId, currentTime);
             itemDerivatives.put(itemId, new ArrayVec(dim));
@@ -72,20 +73,18 @@ public class UserLambdaSingle implements UserLambda {
 
         // Updating lambda
         final double e = Math.exp(-beta * timeDelta);
-        final double interactionEffect = VecTools.multiply(userEmbedding, itemEmbeddings.get(itemId));
+        final double interactionEffect = VecTools.multiply(userEmbedding, itemEmbedding);
         lambda = e * lambda + interactionEffect;
 
         // Updating user derivative
-        final Vec commonUserDerivativeAdd = VecTools.copy(itemEmbeddings.get(itemId));
         VecTools.scale(userDerivative, e);
-        VecTools.append(userDerivative, commonUserDerivativeAdd);
+        VecTools.append(userDerivative, itemEmbedding);
 
         // Updating item derivative
-        final Vec itemDerivativeDelta = VecTools.copy(userEmbedding);
         final Vec itemDerivative = itemDerivatives.get(itemId);
         final double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(itemId)));
         VecTools.scale(itemDerivative, decay);
-        VecTools.append(itemDerivative, itemDerivativeDelta);
+        VecTools.append(itemDerivative, userEmbedding);
 
         lastTimeOfItems.put(itemId, currentTime);
         currentTime += timeDelta;
@@ -114,7 +113,10 @@ public class UserLambdaSingle implements UserLambda {
     public final TIntObjectMap<Vec> getLambdaItemsDerivative() {
         final TIntObjectMap<Vec> derivative = new TIntObjectHashMap<>();
         itemDerivatives.forEachEntry((curItemId, itemDerivative) -> {
-            derivative.put(curItemId, VecTools.copy(itemDerivative));
+            final Vec curDerivative = VecTools.copy(itemDerivative);
+            final double decay = Math.exp(-beta * (currentTime - lastTimeOfItems.get(curItemId)));
+            VecTools.scale(curDerivative, decay);
+            derivative.put(curItemId, curDerivative);
             return true;
         });
         return derivative;

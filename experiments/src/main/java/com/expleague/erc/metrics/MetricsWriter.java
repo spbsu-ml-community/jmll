@@ -21,11 +21,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
-import java.util.stream.Collectors;
 
 public class MetricsWriter implements Model.FitListener {
     private static final String HIST_FILE_NAME = "history.txt";
@@ -42,7 +40,7 @@ public class MetricsWriter implements Model.FitListener {
         this.trainData = trainData;
         this.testData = testData;
         this.eps = eps;
-        ll = new LogLikelihoodPerUser(eps);
+        ll = new LogLikelihoodDaily(trainData);
         histPath = saveDir.resolve(HIST_FILE_NAME);
     }
 
@@ -54,77 +52,12 @@ public class MetricsWriter implements Model.FitListener {
 
     @Override
     public void apply(Model model) {
-        TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
-        for (final Session session : DataPreprocessor.groupEventsToSessions(trainData)) {
-            final int userId = session.userId();
-            final double delta = session.getDelta();
-            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
-                if (!userDeltas.containsKey(userId)) {
-                    userDeltas.put(userId, new TDoubleArrayList());
-                }
-                userDeltas.get(userId).add(delta);
-            }
-        }
-        TIntDoubleMap constants = new TIntDoubleHashMap();
-        userDeltas.forEachEntry((userId, deltas) -> {
-            deltas.sort();
-            constants.put(userId, deltas.get(deltas.size() / 2));
-            return true;
-        });
-        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
-                .mapToDouble(Session::getDelta)
-                .filter(delta -> !Util.isShortSession(delta) && !Util.isDead(delta))
-                .sorted().toArray();
-        final double justConstant = intervals[intervals.length / 2];
-        ApplicableModel constantApplicable = new ApplicableModel() {
-            @Override
-            public void accept(EventSeq event) {
-
-            }
-
-            @Override
-            public double getLambda(int userId) {
-                return 0;
-            }
-
-            @Override
-            public double getLambda(int userId, int itemId) {
-                return 0;
-            }
-
-            @Override
-            public double timeDelta(int userId, int itemId) {
-                return 0;
-            }
-
-            @Override
-            public double timeDelta(final int userId, final double time) {
-//                try {
-                    return constants.get(userId);
-//                } catch (Throwable t) {
-//                    return justConstant;
-//                }
-//                return 10;
-            }
-
-            @Override
-            public double probabilityBeforeX(int userId, double x) {
-                return 0;
-            }
-
-            @Override
-            public double probabilityBeforeX(int userId, int itemId, double x) {
-                return 0;
-            }
-        };
-        final double[] maes = new double[4];
+        final double[] maes = new double[2];
         final double[] lls = new double[2];
         final ForkJoinTask maeTask = ForkJoinPool.commonPool().submit(() -> {
             final ApplicableModel applicable = model.getApplicable();
             maes[0] = mae.calculate(trainData, applicable);
             maes[1] = mae.calculate(testData, applicable);
-            maes[2] = mae.calculate(trainData, constantApplicable);
-            maes[3] = mae.calculate(testData, constantApplicable);
         });
         final ForkJoinTask llTask = ForkJoinPool.commonPool().submit(() -> {
             final ApplicableModel applicable = model.getApplicable();
@@ -144,10 +77,9 @@ public class MetricsWriter implements Model.FitListener {
             final double spusTrain = spusTrainTask.get();
             final double spusTest = spusTestTask.get();
             System.out.printf("train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, " +
-                            "train_const_mae: %f, test_const_mae: %f, " +
                             "train_spu: %f, test_spu: %f, " +
                             "user_norm: %f, item_norm, %f\n",
-                    lls[0], lls[1], maes[0], maes[1], maes[2], maes[3], spusTrain, spusTest,
+                    lls[0], lls[1], maes[0], maes[1], spusTrain, spusTest,
                     meanEmbeddingNorm(model.getUserEmbeddings()),
                     meanEmbeddingNorm(model.getItemEmbeddings()));
 //            histSaveTask.join();
