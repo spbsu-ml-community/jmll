@@ -44,6 +44,9 @@ public class ModelExpPerUser extends Model {
 
     @Override
     public void initModel(final List<Event> events) {
+        if (isInit) {
+            return;
+        }
         makeInitialEmbeddings(events);
         initIds();
         isInit = true;
@@ -149,6 +152,7 @@ public class ModelExpPerUser extends Model {
         }
     }
 
+    @Override
     public ApplicableModel getApplicable() {
         return new ApplicableImpl();
     }
@@ -184,7 +188,7 @@ public class ModelExpPerUser extends Model {
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntDoubleMap initialLambdas =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
-        final ModelPerUser model = new ModelPerUser(dim, beta, eps, otherItemImportance, lambdaTransform,
+        final ModelExpPerUser model = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings);
         model.initModel();
         return model;

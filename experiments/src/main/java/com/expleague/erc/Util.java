@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class Util {
     public static final double CHURN_THRESHOLD = 2 * 7 * 24.;
     public static final double MAX_GAP = .5;
-    private static final int DAY_HOURS = 24;
+    public static final int DAY_HOURS = 24;
 
     public static boolean isDead(final double timeBetweenSessions) {
         return timeBetweenSessions > CHURN_THRESHOLD;

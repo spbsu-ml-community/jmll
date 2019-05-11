@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 
+import static com.expleague.erc.Util.DAY_HOURS;
 import static java.lang.Math.exp;
 
 public class ModelDays extends ModelExpPerUser {
-    private static final int DAY_HOURS = 24;
 
     private TIntIntMap userDayBorders;
     private TIntIntMap userDayPeaks;
@@ -52,6 +52,9 @@ public class ModelDays extends ModelExpPerUser {
 
     @Override
     public void initModel(final List<Event> events) {
+        if (isInit) {
+            return;
+        }
         makeInitialEmbeddings(events);
         initIds();
         userDayAvgStarts = calcAvgStarts(events);
