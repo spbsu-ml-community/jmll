@@ -31,7 +31,9 @@ public class ModelCombined extends Model {
                          DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                          LambdaStrategyFactory lambdaStrategyFactory) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
-        daysModel = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory, null); // TODO: fix initializing of initLambdas
+        daysModel = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
+                lambdaStrategyFactory, null, // TODO: fix initializing of initLambdas
+                (x, userId) -> Util.getDay(x, userDayBorders.get(userId)), x -> true, x -> x < 14);
         timeModel = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
     }
 

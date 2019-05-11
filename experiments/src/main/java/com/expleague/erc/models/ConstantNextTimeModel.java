@@ -49,6 +49,13 @@ public class ConstantNextTimeModel extends Model {
         }
     }
 
+    @Override
+    public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
+                    final double decay, final FitListener listener) {
+
+    }
+
+    @Override
     public ApplicableModel getApplicable() {
         return new ApplicableImpl();
     }

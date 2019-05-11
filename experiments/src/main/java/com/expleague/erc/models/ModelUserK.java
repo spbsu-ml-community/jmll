@@ -37,12 +37,12 @@ public class ModelUserK extends Model {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
     }
 
-    public ModelUserK(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                      TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
-        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior);
-    }
+//    public ModelUserK(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
+//                      DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
+//                      TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
+//        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+//                usersEmbeddingsPrior, itemsEmbeddingsPrior);
+//    }
 
     @Override
     public void initModel(final List<Event> events) {

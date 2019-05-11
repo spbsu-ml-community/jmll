@@ -6,6 +6,7 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
+import com.expleague.erc.Session;
 import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
@@ -23,7 +24,10 @@ import gnu.trove.set.hash.TLongHashSet;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static java.lang.Math.*;
 
@@ -43,18 +47,40 @@ public class Model implements Serializable {
     protected int[] userIdsArray;
     protected int[] itemIdsArray;
     protected boolean isInit = false;
+    protected final BiFunction<Double, Integer, Double> timeTransform;
+    protected final Predicate<Double> isShort;
+    protected final Predicate<Double> isLong;
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                new TIntObjectHashMap<>(), new TIntObjectHashMap<>());
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(),
+                (x, userId) -> x, x -> x < Util.MAX_GAP, x -> x > Util.CHURN_THRESHOLD);
+    }
+
+    public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
+                 final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                 final LambdaStrategyFactory lambdaStrategyFactory, final BiFunction<Double, Integer, Double> timeTransform,
+                 final Predicate<Double> isShort, final Predicate<Double> isLong) {
+        this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, isShort, isLong);
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
                  final TIntObjectMap<Vec> itemsEmbeddingsPrior) {
+        this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+                usersEmbeddingsPrior, itemsEmbeddingsPrior,
+                (x, userId) -> x, x -> x < Util.MAX_GAP, x -> x > Util.CHURN_THRESHOLD);
+    }
+
+    public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
+                 final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                 final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
+                 final TIntObjectMap<Vec> itemsEmbeddingsPrior, final BiFunction<Double, Integer, Double> timeTransform,
+                 final Predicate<Double> isShort, final Predicate<Double> isLong) {
         this.dim = dim;
         this.beta = beta;
         this.eps = eps;
@@ -76,6 +102,10 @@ public class Model implements Serializable {
         }
         itemIds = itemEmbeddings.keySet();
         itemIdsArray = itemIds.toArray();
+
+        this.timeTransform = timeTransform;
+        this.isShort = isShort;
+        this.isLong = isLong;
     }
 
     // Init
@@ -146,7 +176,8 @@ public class Model implements Serializable {
                                         final TIntObjectMap<Vec> itemDerivatives,
                                         final TIntDoubleMap initialLambdasDerivatives) {
         final List<EventSeq> eventSeqs = DataPreprocessor.groupToEventSeqs(events);
-        final double observationEnd = events.get(eventSeqs.size() - 1).getTs();
+        final Event lastEvent = events.get(eventSeqs.size() - 1);
+        final double observationEnd = timeTransform.apply(lastEvent.getTs(), lastEvent.userId());
         final TLongSet seenPairs = new TLongHashSet();
         fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdasByItem =
@@ -158,23 +189,26 @@ public class Model implements Serializable {
                 seenPairs.add(pairId);
                 lambdasByItem.accept(eventSeq);
             } else {
-                updateDerivativeInnerEvent(lambdasByItem, eventSeq.userId(), eventSeq.itemId(), eventSeq.getDelta(),
+                updateDerivativeInnerEvent(lambdasByItem, eventSeq.userId(), eventSeq.itemId(),
+                        timeTransform.apply(eventSeq.getDelta(), eventSeq.userId()),
                         userDerivatives, itemDerivatives, initialLambdasDerivatives);
                 lambdasByItem.accept(eventSeq);
-                lastVisitTimes.put(pairId, eventSeq.getStartTs());
+                lastVisitTimes.put(pairId, timeTransform.apply(eventSeq.getStartTs(), eventSeq.userId()));
             }
         }
-        for (long pairId : lastVisitTimes.keys()) {
+        for (final long pairId : lastVisitTimes.keys()) {
             final int userId = Util.extractUserId(pairId);
             final int itemId = Util.extractItemId(pairId);
-            updateDerivativeLastEvent(lambdasByItem, userId, itemId, observationEnd - lastVisitTimes.get(pairId),
+            updateDerivativeLastEvent(lambdasByItem, userId, itemId,
+                    timeTransform.apply(observationEnd - lastVisitTimes.get(pairId), userId),
                     userDerivatives, itemDerivatives);
         }
     }
 
-    protected void updateDerivativeInnerEvent(LambdaStrategy lambdasByItem, int userId, int itemId, double timeDelta,
-                                              TIntObjectMap<Vec> userDerivatives, TIntObjectMap<Vec> itemDerivatives,
-                                              TIntDoubleMap initialLambdasDerivatives) {
+    protected void updateDerivativeInnerEvent(final LambdaStrategy lambdasByItem, final int userId, final int itemId,
+                                              final double timeDelta, final TIntObjectMap<Vec> userDerivatives,
+                                              final TIntObjectMap<Vec> itemDerivatives,
+                                              final TIntDoubleMap initialLambdasDerivatives) {
         final double lam = lambdasByItem.getLambda(userId, itemId);
         final Vec lamDU = lambdasByItem.getLambdaUserDerivative(userId, itemId);
         final TIntObjectMap<Vec> lamDI = lambdasByItem.getLambdaItemDerivative(userId, itemId);
@@ -215,7 +249,8 @@ public class Model implements Serializable {
         }
     }
 
-    protected void fillInitDerivatives(final TIntObjectMap<Vec> userDerivatives, final TIntObjectMap<Vec> itemDerivatives) {
+    protected void fillInitDerivatives(final TIntObjectMap<Vec> userDerivatives,
+                                       final TIntObjectMap<Vec> itemDerivatives) {
         for (final int userId : userIdsArray) {
             userDerivatives.put(userId, new ArrayVec(dim));
         }
@@ -243,7 +278,7 @@ public class Model implements Serializable {
             eventsByUser.get(event.userId()).add(event);
         }
 
-        for (int i = 0; i < iterationsNumber; ++i) {
+        for (int i = 0; i < iterationsNumber; i++) {
             for (final List<Event> userEvents : eventsByUser.values()) {
                 stepGD(userEvents, lr);
             }
@@ -349,6 +384,10 @@ public class Model implements Serializable {
         return dim;
     }
 
+    public boolean forPrediction(final Session session) {
+        return !isShort.test(session.getDelta()) && !isLong.test(session.getDelta());
+    }
+
     // Save & Load
 
     public void write(final OutputStream stream) throws IOException {
@@ -362,6 +401,9 @@ public class Model implements Serializable {
         objectOutputStream.writeObject(lambdaStrategyFactory);
         objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
         objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
+        objectOutputStream.writeObject(timeTransform);
+        objectOutputStream.writeObject(isShort);
+        objectOutputStream.writeObject(isLong);
         objectOutputStream.close();
     }
 
@@ -378,8 +420,11 @@ public class Model implements Serializable {
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntObjectMap<Vec> itemEmbeddings =
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
+        final BiFunction<Double, Integer, Double> timeTransform = (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
+        final Predicate<Double> isShort = (Predicate<Double>) objectInputStream.readObject();
+        final Predicate<Double> isLong = (Predicate<Double>) objectInputStream.readObject();
         final Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
-                lambdaStrategyFactory, userEmbeddings, itemEmbeddings);
+                lambdaStrategyFactory, userEmbeddings, itemEmbeddings, timeTransform, isShort, isLong);
         model.initModel();
         return model;
     }

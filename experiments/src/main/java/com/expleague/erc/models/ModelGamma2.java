@@ -28,13 +28,13 @@ public class ModelGamma2 extends Model {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
     }
 
-    public ModelGamma2(int dim, double beta, double eps, double otherItemImportance,
-                       DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
-                       LambdaStrategyFactory lambdaStrategyFactory,
-                       TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
-        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior);
-    }
+//    public ModelGamma2(int dim, double beta, double eps, double otherItemImportance,
+//                       DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
+//                       LambdaStrategyFactory lambdaStrategyFactory,
+//                       TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
+//        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+//                usersEmbeddingsPrior, itemsEmbeddingsPrior);
+//    }
 
     public double logLikelihood(List<Event> events) {
         final double observationEnd = events.get(events.size() - 1).getTs();
