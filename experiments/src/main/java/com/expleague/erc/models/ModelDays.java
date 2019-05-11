@@ -1,7 +1,6 @@
 package com.expleague.erc.models;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.random.FastRandom;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
 import com.expleague.erc.Session;
@@ -15,17 +14,19 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.*;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
+import static com.expleague.erc.Util.DAY_HOURS;
 import static java.lang.Math.*;
 
-public class ModelDays extends ModelPerUser {
-    private static final int DAY_HOURS = 24;
+public class ModelDays extends ModelExpPerUser {
 
     private TIntIntMap userDayBorders;
     private TIntIntMap userDayPeaks;
@@ -39,13 +40,24 @@ public class ModelDays extends ModelPerUser {
                 initialLambdas);
     }
 
-    public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                     TIntDoubleMap initialLambdas, TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
-                     TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap userDayAvgStarts,
-                     TIntDoubleMap averageOneDayDelta) {
+    public ModelDays(final int dim, final double beta, final double eps, final double otherItemImportance,
+                     final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                     final LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
+                     final BiFunction<Double, Integer, Double> timeTransform, final Predicate<Double> isShort,
+                     final Predicate<Double> isLong) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                initialLambdas, usersEmbeddingsPrior, itemsEmbeddingsPrior);
+                initialLambdas, new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, isShort, isLong);
+    }
+
+    public ModelDays(int dim, double beta, double eps, double otherItemImportance,
+                     final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                     final LambdaStrategyFactory lambdaStrategyFactory, final TIntDoubleMap initialLambdas,
+                     final TIntObjectMap<Vec> usersEmbeddingsPrior, final TIntObjectMap<Vec> itemsEmbeddingsPrior,
+                     final TIntIntMap userDayBorders, TIntIntMap userDayPeaks, final TIntDoubleMap userDayAvgStarts,
+                     final TIntDoubleMap averageOneDayDelta, final BiFunction<Double, Integer, Double> timeTransform,
+                     final Predicate<Double> isShort, final Predicate<Double> isLong) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+                initialLambdas, usersEmbeddingsPrior, itemsEmbeddingsPrior, timeTransform, isShort, isLong);
         this.userDayBorders = userDayBorders;
         this.userDayAvgStarts = userDayAvgStarts;
         this.averageOneDayDelta = averageOneDayDelta;
@@ -54,6 +66,9 @@ public class ModelDays extends ModelPerUser {
 
     @Override
     public void initModel(final List<Event> events) {
+        if (isInit) {
+            return;
+        }
         makeInitialEmbeddings(events);
         initIds();
         userDayAvgStarts = calcAvgStarts(events);
@@ -99,11 +114,6 @@ public class ModelDays extends ModelPerUser {
         }
 
         @Override
-        public double getLambda(final int userId, final int itemId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public double timeDelta(final int userId, final double time) {
             final double rawPrediction = 1 / getLambda(userId);
             final long daysPrediction = round(rawPrediction);
@@ -123,27 +133,9 @@ public class ModelDays extends ModelPerUser {
         }
 
         @Override
-        public double timeDelta(final int userId, final int itemId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public double probabilityBeforeX(int userId, double x) {
             return 1 - exp(-getLambda(userId) * x);
         }
-
-        @Override
-        public double probabilityBeforeX(int userId, int itemId, double x) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public ApplicableModel getApplicable(final List<Event> events) {
-        ApplicableModel applicable = new ApplicableImpl();
-        if (events != null) {
-            applicable.fit(events);
-        }
-        return applicable;
     }
 
     public ApplicableModel getApplicable() {
@@ -234,27 +226,6 @@ public class ModelDays extends ModelPerUser {
     }
 
     @Override
-    protected void makeInitialEmbeddings(final List<Event> history) {
-        userIds = new TIntHashSet();
-        itemIds = new TIntHashSet();
-        for (final Event event : history) {
-            userIds.add(event.userId());
-            itemIds.add(event.itemId());
-        }
-
-        final FastRandom randomGenerator = new FastRandom();
-        final double edge = 0.1;
-        userIds.forEach(userId -> {
-            userEmbeddings.put(userId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
-            return true;
-        });
-        itemIds.forEach(itemId -> {
-            itemEmbeddings.put(itemId, fillUniformEmbedding(randomGenerator, -edge, edge, dim));
-            return true;
-        });
-    }
-
-    @Override
     public void write(OutputStream stream) throws IOException {
         final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
         objectOutputStream.writeInt(dim);
@@ -267,6 +238,9 @@ public class ModelDays extends ModelPerUser {
         objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
         objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
+        objectOutputStream.writeObject(timeTransform);
+        objectOutputStream.writeObject(isShort);
+        objectOutputStream.writeObject(isLong);
         objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayBorders));
         objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayPeaks));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(userDayAvgStarts));
@@ -289,6 +263,9 @@ public class ModelDays extends ModelPerUser {
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntDoubleMap initialLambdas =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+        final BiFunction<Double, Integer, Double> timeTransform = (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
+        final Predicate<Double> isShort = (Predicate<Double>) objectInputStream.readObject();
+        final Predicate<Double> isLong = (Predicate<Double>) objectInputStream.readObject();
         final TIntIntMap userDayBorders =
                 Util.intIntMapFromSerializable((Map<Integer, Integer>) objectInputStream.readObject());
         final TIntIntMap userDayPeaks =
@@ -299,7 +276,7 @@ public class ModelDays extends ModelPerUser {
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         final ModelDays model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings,
-                userDayBorders, userDayPeaks, userAverageDayStarts, averageOneDayDelta);
+                userDayBorders, userDayPeaks, userAverageDayStarts, averageOneDayDelta, timeTransform, isShort, isLong);
         model.initModel();
         return model;
     }

@@ -18,32 +18,48 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Predicate;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
-public class ModelPerUser extends Model {
+public class ModelExpPerUser extends Model {
     protected final TIntDoubleMap initialLambdas;
 
-    public ModelPerUser(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                        TIntDoubleMap initialLambdas) {
+    public ModelExpPerUser(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
+                           DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
+                           TIntDoubleMap initialLambdas) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         this.initialLambdas = initialLambdas;
     }
 
-    public ModelPerUser(int dim, double beta, double eps, double otherItemImportance,
-                        DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
-                        LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
-                        TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior) {
+    public ModelExpPerUser(final int dim, final double beta, final double eps, final double otherItemImportance,
+                           final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                           final LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
+                           final BiFunction<Double, Integer, Double> timeTransform, final Predicate<Double> isShort,
+                           final Predicate<Double> isLong) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior);
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, isShort, isLong);
+        this.initialLambdas = initialLambdas;
+    }
+
+    public ModelExpPerUser(int dim, double beta, double eps, double otherItemImportance,
+                           DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
+                           LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
+                           TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
+                           BiFunction<Double, Integer, Double> timeTransform, Predicate<Double> isShort, Predicate<Double> isLong) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
+                usersEmbeddingsPrior, itemsEmbeddingsPrior, timeTransform, isShort, isLong);
         this.initialLambdas = initialLambdas;
     }
 
     @Override
     public void initModel(final List<Event> events) {
+        if (isInit) {
+            return;
+        }
         makeInitialEmbeddings(events);
         initIds();
         isInit = true;
@@ -58,9 +74,10 @@ public class ModelPerUser extends Model {
         final LambdaStrategy lambdaStrategy =
                 lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            if (Util.forPrediction(session)) {
-                updateDerivativeInnerEvent(lambdaStrategy, session.userId(), session.getDelta(), userDerivatives,
-                        itemDerivatives, initialLambdasDerivatives);
+            if (forPrediction(session)) {
+                updateDerivativeInnerEvent(lambdaStrategy, session.userId(),
+                        timeTransform.apply(session.getDelta(), session.userId()),
+                        userDerivatives, itemDerivatives, initialLambdasDerivatives);
             }
             session.getEventSeqs().forEach(lambdaStrategy::accept);
         }
@@ -134,18 +151,8 @@ public class ModelPerUser extends Model {
         }
 
         @Override
-        public double getLambda(final int userId, final int itemId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public double timeDelta(final int userId, final double time) {
             return 1 / getLambda(userId);
-        }
-
-        @Override
-        public double timeDelta(final int userId, final int itemId) {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -159,14 +166,7 @@ public class ModelPerUser extends Model {
         }
     }
 
-    public ApplicableModel getApplicable(final List<Event> events) {
-        ApplicableModel applicable = new ApplicableImpl();
-        if (events != null) {
-            applicable.fit(events);
-        }
-        return applicable;
-    }
-
+    @Override
     public ApplicableModel getApplicable() {
         return new ApplicableImpl();
     }
@@ -184,10 +184,13 @@ public class ModelPerUser extends Model {
         objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
         objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
+        objectOutputStream.writeObject(timeTransform);
+        objectOutputStream.writeObject(isShort);
+        objectOutputStream.writeObject(isLong);
         objectOutputStream.close();
     }
 
-    public static ModelPerUser load(final InputStream stream) throws IOException, ClassNotFoundException {
+    public static ModelExpPerUser load(final InputStream stream) throws IOException, ClassNotFoundException {
         final ObjectInputStream objectInputStream = new ObjectInputStream(stream);
         final int dim = objectInputStream.readInt();
         final double beta = objectInputStream.readDouble();
@@ -202,8 +205,12 @@ public class ModelPerUser extends Model {
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntDoubleMap initialLambdas =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
-        final ModelPerUser model = new ModelPerUser(dim, beta, eps, otherItemImportance, lambdaTransform,
-                lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings);
+        final BiFunction<Double, Integer, Double> timeTransform = (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
+        final Predicate<Double> isShort = (Predicate<Double>) objectInputStream.readObject();
+        final Predicate<Double> isLong = (Predicate<Double>) objectInputStream.readObject();
+        final ModelExpPerUser model = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform,
+                lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings,
+                timeTransform, isShort, isLong);
         model.initModel();
         return model;
     }

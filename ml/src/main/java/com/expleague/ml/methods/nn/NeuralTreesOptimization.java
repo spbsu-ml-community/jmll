@@ -174,9 +174,9 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
 
     final Vec currentWeights = new ArrayVec(loss.blockSize());
     final Vec grad = new ArrayVec(nn.ydim());
-    for (int i = 0; i < ensemble.models.length; i++) {
+    for (int i = 0; i < ensemble.size(); i++) {
       VecTools.fill(grad, 0.);
-      final ScaledVectorFunc model = (ScaledVectorFunc) ensemble.models[i];
+      final ScaledVectorFunc model = (ScaledVectorFunc) ensemble.model(i);
       VecTools.assign(currentWeights, model.weights);
       VecTools.scale(currentWeights, lossGrad);
       ((ProbRegion) model.function).gradientTo(x, grad);
@@ -190,7 +190,7 @@ public class NeuralTreesOptimization implements Optimization<BlockwiseMLLLogit, 
         //        x.adjust(j, -epsilon);
         //      }
 //      }
-      VecTools.scale(grad, ensemble.weights.get(i) * VecTools.sum(currentWeights));
+      VecTools.scale(grad, ensemble.weight(i) * VecTools.sum(currentWeights));
       VecTools.append(ensembleGrad, grad);
     }
 

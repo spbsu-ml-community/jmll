@@ -1,29 +1,28 @@
 package com.expleague.ml.data.tools;
 
 import com.expleague.commons.math.Func;
-import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.metrics.Metric;
 import com.expleague.commons.math.metrics.impl.CosineDVectorMetric;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.IntSeq;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.func.FuncEnsemble;
-import com.expleague.ml.func.FuncJoin;
-import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
-import com.expleague.ml.loss.multiclass.MCMicroF1Score;
-import com.expleague.ml.meta.items.QURLItem;
-import com.expleague.ml.models.multiclass.JoinedBinClassModel;
-import com.expleague.ml.models.multiclass.MCModel;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.text.StringUtils;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.func.Ensemble;
+import com.expleague.ml.func.FuncEnsemble;
+import com.expleague.ml.func.FuncJoin;
 import com.expleague.ml.loss.L2;
+import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
+import com.expleague.ml.loss.multiclass.MCMicroF1Score;
 import com.expleague.ml.loss.multiclass.util.ConfusionMatrix;
+import com.expleague.ml.meta.items.QURLItem;
+import com.expleague.ml.models.multiclass.JoinedBinClassModel;
+import com.expleague.ml.models.multiclass.MCModel;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
@@ -39,7 +38,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
 
@@ -297,14 +296,14 @@ public class MCTools {
       final Func[] joinedModels = new Func[modelsCount];
       final Func[][] transpose = new Func[modelsCount][ensemble.size()];
       for (int iter = 0; iter < ensemble.size(); iter++) {
-        final FuncJoin model = (FuncJoin) ensemble.models[iter];
+        final FuncJoin model = (FuncJoin) ensemble.model(iter);
         final Func[] sourceFunctions = model.dirs();
         for (int c = 0; c < modelsCount; c++) {
           transpose[c][iter] = sourceFunctions[c];
         }
       }
       for (int i = 0; i < joinedModels.length; i++) {
-        joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights);
+        joinedModels[i] = new FuncEnsemble(transpose[i], ensemble.weights());
       }
       return new FuncJoin(joinedModels);
     }
@@ -339,8 +338,8 @@ public class MCTools {
       final Func[] functions = new Func[classesCount];
       for (int c = 0; c < classesCount; c++) {
         functions[c] = new FuncEnsemble<>(
-            Arrays.copyOfRange(perClassModels[c].models, t, Math.min(t + period, ensembleSize), Func[].class),
-            perClassModels[c].weights.sub(0, t)
+            IntStream.range(t, t + period).mapToObj(perClassModels[c]::model).toArray(Func[]::new),
+            perClassModels[c].weights().sub(0, t)
         );
       }
       final FuncJoin deltaFuncJoin = new FuncJoin(functions);

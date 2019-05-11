@@ -55,7 +55,7 @@ public class StochasticGradientDescent implements Optimize<FuncEnsemble> {
     while (iter++ < iterations) {
       indices.shuffle(rand);
       for (int i = 0; i < indices.size(); i++) {
-        VecTools.incscale(x, sumFuncs.models[indices.get(i)].gradient().trans(x), -step);
+        VecTools.incscale(x, sumFuncs.model(indices.get(i)).gradient().trans(x), -step);
       }
       System.out.println(x);
       System.out.println(sumFuncs.value(x) / step / sumFuncs.dim());

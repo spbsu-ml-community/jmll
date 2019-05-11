@@ -10,13 +10,18 @@ import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.meta.*;
+import com.expleague.ml.meta.impl.JsonDataSetMeta;
+import com.expleague.ml.meta.impl.JsonFeatureMeta;
+import com.expleague.ml.meta.impl.JsonTargetMeta;
 import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
 import com.expleague.ml.meta.items.FakeItem;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.function.IntFunction;
+import java.util.stream.Stream;
 
 /**
  * User: solar
@@ -31,7 +36,12 @@ public class FakePool<T extends FakeItem> extends Pool<T> {
   }
 
   protected FakePool(final Mx data, final Seq<?> target, IntFunction<Seq<T>> supplier) {
-    this(new FakeDataSetMeta(), supplier.apply(target.length()), genFakeFeatures(data, target), data);
+    this(
+        new JsonDataSetMeta("features.txt", "/dev/random", new Date(), FakeItem.class, "dsitems"),
+        supplier.apply(target.length()),
+        genFakeFeatures(data, target), data
+    );
+    Stream.of(features()).forEach(f -> f.setOwner(this));
   }
 
   protected FakePool(DataSetMeta meta, Seq<T> items, LinkedHashMap<PoolFeatureMeta, Seq<?>> features, Mx data) {
@@ -43,9 +53,10 @@ public class FakePool<T extends FakeItem> extends Pool<T> {
     final LinkedHashMap<PoolFeatureMeta, Seq<?>> features = new LinkedHashMap<>();
     for (int i = 0; i < data.columns(); i++) {
       final PoolFeatureMeta.ValueType type = VecTools.isSparse(data.col(i), 0.1) ? PoolFeatureMeta.ValueType.SPARSE_VEC : PoolFeatureMeta.ValueType.VEC;
-      features.put(new FakeFeatureMeta(i, type), type == PoolFeatureMeta.ValueType.VEC ? data.col(i) : VecTools.copySparse(data.col(i)));
+      final JsonFeatureMeta meta = new JsonFeatureMeta("Fake-" + i, "Fake feature from features.txt format #" + i, type);
+      features.put(meta, type == PoolFeatureMeta.ValueType.VEC ? data.col(i) : VecTools.copySparse(data.col(i)));
     }
-    features.put(new FakeTargetMeta(FeatureMeta.ValueType.fit(target), 0), target);
+    features.put(new JsonTargetMeta("fake-target", "Target from features.txt format", FeatureMeta.ValueType.fit(target)), target);
     return features;
   }
 
@@ -85,91 +96,6 @@ public class FakePool<T extends FakeItem> extends Pool<T> {
   @Override
   public int hashCode() {
     return Objects.hash(super.hashCode(), data);
-  }
-
-  private static class FakeFeatureMeta implements PoolFeatureMeta {
-    private final int finalI;
-    private final ValueType type;
-    private Pool owner;
-
-    public FakeFeatureMeta(final int finalI, final ValueType type) {
-      this.finalI = finalI;
-      this.type = type;
-    }
-
-    @Override
-    public String id() {
-      return "Fake-" + finalI;
-    }
-
-    @Override
-    public String description() {
-      return "Fake feature from features.txt format #" + finalI;
-    }
-
-    @Override
-    public ValueType type() {
-      return type;
-    }
-
-    @Override
-    public <T extends DSItem> Pool<T> owner() {
-      //noinspection unchecked
-      return (Pool<T>) owner;
-    }
-
-    @Override
-    public void setOwner(Pool<? extends DSItem> owner) {
-      this.owner = owner;
-    }
-
-    @Override
-    public DataSet<FakeItem> associated() {
-      return owner.data();
-    }
-  }
-
-
-  private static class FakeDataSetMeta implements DataSetMeta {
-    protected Date creationDate;
-    private Pool owner;
-
-    public FakeDataSetMeta() {
-      creationDate = new Date(0);
-    }
-
-    @Override
-    public String id() {
-      return "dsitems";
-    }
-
-    @Override
-    public String source() {
-      return "/dev/random";
-    }
-
-    @Override
-    public String author() {
-      return "/dev/null";
-    }
-
-    @Override
-    public Pool owner() {
-      return owner;
-    }
-
-    @Override
-    public void setOwner(Pool pool) {
-      this.owner = pool;
-    }
-
-    @Override
-    public Class<?> type() { return FakeItem.class; }
-
-    @Override
-    public Date created() {
-      return creationDate;
-    }
   }
 
   public static Seq<FakeItem> genItems(final int count) {
