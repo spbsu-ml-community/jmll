@@ -17,7 +17,7 @@ public class BinarizedDataSet {
   public BinarizedDataSet(final DataSet base, final BFGrid grid) {
     this.base = base;
     this.grid = grid;
-    bins = new byte[((VecDataSet) base).xdim()][];
+    bins = new byte[grid.rows()][];
     for (int f = 0; f < bins.length; f++) {
       bins[f] = new byte[base.length()];
     }

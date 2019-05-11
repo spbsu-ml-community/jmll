@@ -15,6 +15,7 @@ import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.multiclass.JoinedBinClassModel;
 
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 /**
  * User: qdeee
@@ -48,9 +49,8 @@ public class MultiClassOneVsRest implements VecOptimization<ClassicMulticlassLos
     if (model instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) model;
       if (ensemble.last() instanceof Func) {
-        return new FuncEnsemble<>(
-            ArrayTools.map(ensemble.models, Func.class, argument -> (Func) argument),
-            ensemble.weights);
+        return new FuncEnsemble<>(IntStream.range(0, ensemble.size()).<Trans>mapToObj(ensemble::model).map(f -> (Func)f).toArray(Func[]::new),
+            ensemble.weights());
       } else {
         throw new IllegalArgumentException("Ensemble doesn't contain a Func");
       }

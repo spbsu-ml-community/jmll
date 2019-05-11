@@ -13,6 +13,10 @@ public class JsonTargetMeta extends JsonFeatureMeta implements PoolTargetMeta {
     super(meta, associated);
   }
 
+  public JsonTargetMeta(String id, String description, ValueType type) {
+    super(id, description, type);
+  }
+
   public JsonTargetMeta() {
   }
 }

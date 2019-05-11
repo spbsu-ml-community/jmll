@@ -673,8 +673,8 @@ public void testElasticNetBenchmark() {
       Vec current = new ArrayVec(_validate.size());
       for (int i = 0; i < _validate.size(); i++) {
         double f = 0;
-        for (int j = 0; j < ans.models.length; j++)
-          f += ans.weights.get(j) * ((Func) ans.models[j]).value(_validate.vecData().data().row(i));
+        for (int j = 0; j < ans.size(); j++)
+          f += ans.weight(j) * ((Func) ans.model(j)).value(_validate.vecData().data().row(i));
         current.set(i, f);
       }
       System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));

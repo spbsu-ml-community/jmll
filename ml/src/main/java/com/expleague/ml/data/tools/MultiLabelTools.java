@@ -43,12 +43,12 @@ public final class MultiLabelTools {
       final int ensembleSize = perLabelModels[0].size();
       final int labelsCount = perLabelModels.length;
 
-      final double step = perLabelModels[0].weights.get(0);
+      final double step = perLabelModels[0].weight(0);
       final List<FuncJoin> weakModels = new ArrayList<>();
       for (int t = 0; t < ensembleSize; t++) {
         final Func[] functions = new Func[labelsCount];
         for (int c = 0; c < labelsCount; c++) {
-          functions[c] = perLabelModels[c].models[t];
+          functions[c] = perLabelModels[c].model(t);
         }
         weakModels.add(new FuncJoin(functions));
         progressPrinter.accept(new Ensemble<>(weakModels, step));

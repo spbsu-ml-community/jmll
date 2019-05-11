@@ -34,8 +34,8 @@ public class DiscontinuousEnsemble<X extends DiscontinuousTrans> extends Ensembl
   @NotNull
   @Override
   public Vec leftTo(Vec x, Vec to) {
-    for (int i = 0; i < models.length; i++) {
-      VecTools.append(to, VecTools.scale(models[i].left(x), weights.get(i)));
+    for (int i = 0; i < size(); i++) {
+      VecTools.append(to, VecTools.scale(model(i).left(x), weight(i)));
     }
     return to;
   }
@@ -43,8 +43,8 @@ public class DiscontinuousEnsemble<X extends DiscontinuousTrans> extends Ensembl
   @NotNull
   @Override
   public Vec rightTo(Vec x, Vec to) {
-    for (int i = 0; i < models.length; i++) {
-      VecTools.append(to, VecTools.scale(models[i].right(x), weights.get(i)));
+    for (int i = 0; i < size(); i++) {
+      VecTools.append(to, VecTools.scale(model(i).right(x), weight(i)));
     }
     return to;
   }

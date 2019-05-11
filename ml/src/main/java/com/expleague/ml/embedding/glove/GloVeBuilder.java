@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static com.expleague.commons.math.vectors.VecTools.append;
 
 public class GloVeBuilder extends CoocBasedBuilder {
   private double xMax = 10;
@@ -48,6 +51,7 @@ public class GloVeBuilder extends CoocBasedBuilder {
     final int vocab_size = dict().size();
     final Mx leftVectors = new VecBasedMx(vocab_size, dim + 1);
     final Mx rightVectors = new VecBasedMx(vocab_size, dim + 1);
+    final Map<CharSeq, Vec> trigramVectors = new HashMap<>();
     final Vec biasLeft = new ArrayVec(vocab_size);
     final Vec biasRight = new ArrayVec(vocab_size);
     for (int i = 0; i < vocab_size; i++) {
@@ -76,7 +80,15 @@ public class GloVeBuilder extends CoocBasedBuilder {
       Interval.start();
       final ScoreCalculator scoreCalculator = new ScoreCalculator(vocab_size);
       IntStream.range(0, vocab_size).parallel().forEach(i -> {
-        final Vec left = leftVectors.row(i);
+        final CharSeq word = dict().get(i);
+        final Vec left = new ArrayVec();
+        final Vec[] leftComponents = new Vec[word.length() - 2];
+        leftComponents[0] = leftVectors.row(i);
+        for (int k = 0; k < word.length() - 3; k++) {
+          leftComponents[k + 1] = trigram(word.sub(k, k + 3), trigramVectors);
+        }
+        Stream.of(leftComponents).forEach(v -> append(left, v));
+
         final Vec softMaxL = softMaxLeft.row(i);
         cooc(i, (j, X_ij) -> {
           final Vec right = rightVectors.row(j);
@@ -114,6 +126,10 @@ public class GloVeBuilder extends CoocBasedBuilder {
     }
 
     return new EmbeddingImpl<>(mapping);
+  }
+
+  private synchronized Vec trigram(CharSeq sub, Map<CharSeq, Vec> trigramVectors) {
+    return trigramVectors.computeIfAbsent(sub, characters -> new ArrayVec(dim));
   }
 
   private double initializeValue() {

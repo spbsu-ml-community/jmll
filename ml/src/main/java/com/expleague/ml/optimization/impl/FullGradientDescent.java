@@ -38,7 +38,7 @@ public class FullGradientDescent implements Optimize<FuncEnsemble<? extends Func
     for (int epoch = 0; epoch < epochCount; epoch++) {
       final Vec grad = IntStream.range(0, sumFuncs.size())
           .parallel()
-          .mapToObj(i -> sumFuncs.models[i].gradient(x))
+          .mapToObj(i -> sumFuncs.model(i).gradient(x))
           .reduce(VecTools::append)
           .get();
       VecTools.incscale(x, grad, -step / sumFuncs.size());
@@ -61,7 +61,7 @@ public class FullGradientDescent implements Optimize<FuncEnsemble<? extends Func
   private double getLoss(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x) {
     return IntStream.range(0, sumFuncs.size())
         .parallel()
-        .mapToDouble(i -> sumFuncs.models[i].value(x))
+        .mapToDouble(i -> sumFuncs.model(i).value(x))
         .sum() / sumFuncs.size();
   }
 }
