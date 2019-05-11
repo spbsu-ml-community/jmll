@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 
-import static java.lang.Math.exp;
+import static java.lang.Math.*;
 
 public class ModelDays extends ModelPerUser {
     private static final int DAY_HOURS = 24;
@@ -106,12 +106,19 @@ public class ModelDays extends ModelPerUser {
         @Override
         public double timeDelta(final int userId, final double time) {
             final double rawPrediction = 1 / getLambda(userId);
-            final int daysPrediction = (int) rawPrediction;
-            if (time + rawPrediction < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
+            final long daysPrediction = round(rawPrediction);
+//            final int daysPrediction = (int) rawPrediction;
+            if (time + rawPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
                 return averageOneDayDelta.get(userId);
             }
             final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
-            final double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
+            double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
+//            if (userDayAvgStarts.get(userId) < userDayBorders.get(userId)) {
+//                predictedTime += DAY_HOURS;
+//            }
+            if (predictedTime < time) {
+                return averageOneDayDelta.get(userId);
+            }
             return predictedTime - time;
         }
 

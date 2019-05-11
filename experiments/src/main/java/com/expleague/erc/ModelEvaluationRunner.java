@@ -67,7 +67,7 @@ public class ModelEvaluationRunner {
             final double prevTime = prevTimes.get(userId);
             prevTimes.put(userId, curTime);
             final double actualReturnTime = session.getDelta();
-            if (0 < actualReturnTime && !Util.isDead(actualReturnTime)) {
+            if (Util.forPrediction(session)) {
                 final double expectedReturnTime = applicable.timeDelta(userId, prevTime);
                 deltas.add(userId + "\t" + actualReturnTime + "\t" + expectedReturnTime);
             }
