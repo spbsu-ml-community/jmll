@@ -59,7 +59,7 @@ public class OnlineDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
       final Vec grad = new ArrayVec(cursor.dim());
       final Vec next = new ArrayVec(cursor.dim());
       final Vec sampledGrad = new ArrayVec(cursor.dim());
-      final FuncC1 model = ensemble.models[nextTaken];
+      final FuncC1 model = ensemble.model(nextTaken);
       double v0 = model.value(cursor);
 
 
@@ -74,7 +74,7 @@ public class OnlineDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
 //          int sample = random.nextSimple(lambdasVec);
           int sample = random.nextInt(taken.size() - 1);
 
-          Vec g = ensemble.models[taken.get(sample)].gradient(cursor);
+          Vec g = ensemble.model(taken.get(sample)).gradient(cursor);
 
           synchronized (sampledGrad) {
             VecTools.incscale(sampledGrad, g, 1. / (samples + 1));

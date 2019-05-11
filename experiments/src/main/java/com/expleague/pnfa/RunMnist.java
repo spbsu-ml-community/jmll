@@ -47,7 +47,6 @@ public class RunMnist {
     options.addOption("boostStep", true, "boostStep");
     options.addOption("dataset", true, "datasetPath");
     options.addOption("checkpointFolder", true, "checkpointFolder");
-
   }
 
 
@@ -134,7 +133,6 @@ public class RunMnist {
 
     BettaParametrization bettaParametrization = new BettaMxParametrization(addToDiag);
     WeightParametrization weightParametrization= new WeightSquareParametrization(bettaParametrization);
-
 
     PNFARegressor<Integer, WeightedL2> pnfa = new PNFARegressor<>(
         Integer.parseInt(command.getOptionValue("stateCount")),

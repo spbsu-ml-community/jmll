@@ -78,7 +78,7 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
         }
         long start = System.nanoTime();
         final Vec gradVec = stream
-            .mapToObj(j -> sumFuncs.models[permutation.get(j)].gradient(finalX))
+            .mapToObj(j -> sumFuncs.model(permutation.get(j)).gradient(finalX))
             .reduce(VecTools::append).get();
         final double[] grad = gradVec.toArray();
 
@@ -128,6 +128,6 @@ public class AdamDescent implements Optimize<FuncEnsemble<? extends FuncC1>> {
   }
 
   private double getLoss(FuncEnsemble<? extends FuncC1> sumFuncs, Vec x) {
-    return Arrays.stream(sumFuncs.models).parallel().mapToDouble(func -> func.value(x)).sum() / sumFuncs.size();
+    return IntStream.range(0, sumFuncs.size()).mapToObj(sumFuncs::model).parallel().mapToDouble(func -> func.value(x)).sum() / sumFuncs.size();
   }
 }

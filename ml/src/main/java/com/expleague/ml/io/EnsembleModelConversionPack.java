@@ -32,9 +32,9 @@ public class EnsembleModelConversionPack implements ConversionPack<Ensemble, Cha
       builder.append(from.size());
       builder.append("\n\n");
       for (int i = 0; i < from.size(); i++) {
-        final Trans model = from.models[i];
-        builder.append(from.models[i].getClass().getCanonicalName()).append(" ");
-        builder.append(from.weights.get(i)).append("\n");
+        final Trans model = from.model(i);
+        builder.append(from.model(i).getClass().getCanonicalName()).append(" ");
+        builder.append(from.weight(i)).append("\n");
         builder.append(repository.convert(model, CharSequence.class));
         builder.append("\n\n");
       }

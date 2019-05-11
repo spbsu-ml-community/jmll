@@ -6,6 +6,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.util.ArrayTools;
+import com.expleague.ml.BlockwiseFuncC1;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,8 +17,8 @@ import java.util.List;
  * Time: 15:56
  */
 public class Ensemble<F extends Trans> extends Trans.Stub {
-  public final F[] models;
-  public final Vec weights;
+  private final Trans[] models;
+  private final Vec weights;
 
   public Ensemble(final F[] models, final Vec weights) {
     this.models = models;
@@ -29,7 +30,8 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
   }
 
   public F last() {
-    return models[size() - 1];
+    //noinspection unchecked
+    return (F)models[size() - 1];
   }
 
   public int size() {
@@ -88,5 +90,18 @@ public class Ensemble<F extends Trans> extends Trans.Stub {
     int result = Arrays.hashCode(models);
     result = 31 * result + weights.hashCode();
     return result;
+  }
+
+  public F model(int i) {
+    //noinspection unchecked
+    return (F) models[i];
+  }
+
+  public double weight(int i) {
+    return weights.get(i);
+  }
+
+  public Vec weights() {
+    return weights;
   }
 }

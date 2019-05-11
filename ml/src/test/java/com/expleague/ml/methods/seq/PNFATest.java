@@ -40,7 +40,7 @@ public class PNFATest {
 
     @Override
     public Vec optimize(FuncEnsemble<? extends FuncC1> func, RegularizerFunc reg, Vec x0) {
-      PNFAItemVecRegression model = (PNFAItemVecRegression) func.models[0];
+      PNFAItemVecRegression model = (PNFAItemVecRegression) func.model(0);
 
       final double value = model.trans(x0).get(0);
       final Vec grad = model.gradient(x0);

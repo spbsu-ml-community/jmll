@@ -5,6 +5,7 @@ import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.PoolFeatureMeta;
 import com.expleague.ml.data.set.DataSet;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -21,6 +22,8 @@ public class JsonFeatureMeta extends FeatureMeta.Stub implements PoolFeatureMeta
   private ValueType type;
   @JsonProperty
   private String associated;
+
+  @JsonIgnore
   private transient Pool owner;
 
   public JsonFeatureMeta(FeatureMeta meta, String associated) {
@@ -28,6 +31,12 @@ public class JsonFeatureMeta extends FeatureMeta.Stub implements PoolFeatureMeta
     this.description = meta.description();
     this.type = meta.type();
     this.associated = associated;
+  }
+
+  public JsonFeatureMeta(String id, String description, ValueType type) {
+    this.id = id;
+    this.description = description;
+    this.type = type;
   }
 
   public JsonFeatureMeta() {
@@ -57,6 +66,7 @@ public class JsonFeatureMeta extends FeatureMeta.Stub implements PoolFeatureMeta
   @Override
   public void setOwner(Pool<? extends DSItem> result) {
     this.owner = result;
+    this.associated = result.meta().id();
   }
 
   @Override

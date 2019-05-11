@@ -52,7 +52,7 @@ public class BFGridImpl implements BFGrid {
 
   @Override
   public void binarizeTo(final Vec x, final byte[] folds) {
-    for (int i = 0; i < x.dim(); i++) {
+    for (int i = 0; i < rows.length; i++) {
       folds[i] = (byte) rows[i].bin(x.get(i));
     }
   }

@@ -2,6 +2,7 @@ package com.expleague.exp.multiclass.spoc;
 
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.MathTools;
+import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -32,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 /**
  * User: qdeee
@@ -105,10 +107,7 @@ public class RunnerECOC {
       final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<>(grid, 5), iters, step);
       final Ensemble ensemble = boosting.fit(learn, llLogit);
       //noinspection unchecked
-      return new FuncEnsemble(
-          ArrayTools.map(ensemble.models, Func.class, argument -> (Func) argument),
-          ensemble.weights
-      );
+      return new FuncEnsemble(IntStream.range(0, ensemble.size()).<Trans>mapToObj(ensemble::model).map(f -> (Func)f).toArray(Func[]::new), ensemble.weights());
     };
   }
 

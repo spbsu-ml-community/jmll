@@ -139,12 +139,13 @@ public class InterpretModel extends AbstractMode {
       throw new IllegalArgumentException("Provided ensemble is empty");
 
     final ArrayList<ObliviousTree> trees = new ArrayList<>();
-    for(final Trans component: ensemble.models) {
+    for (int i = 0; i < ensemble.size(); i++) {
+      final Trans component = ensemble.model(i);
       if (!(component instanceof ObliviousTree))
         throw new IllegalArgumentException("This component type is not supported: " + component.getClass());
       trees.add((ObliviousTree) component);
     }
-    final Ensemble<ObliviousTree> otEnsamble = new Ensemble<>(trees.toArray(new ObliviousTree[trees.size()]), ensemble.weights);
+    final Ensemble<ObliviousTree> otEnsamble = new Ensemble<>(trees.toArray(new ObliviousTree[trees.size()]), ensemble.weights());
     final ModelTools.CompiledOTEnsemble compile = ModelTools.compile(otEnsamble);
     final List<ModelTools.CompiledOTEnsemble.Entry> entries = new ArrayList<>(compile.getEntries());
     TObjectIntMap<ModelTools.CompiledOTEnsemble.Entry> entryCount = new TObjectIntHashMap<>();

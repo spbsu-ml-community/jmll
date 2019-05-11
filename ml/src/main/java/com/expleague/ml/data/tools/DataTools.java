@@ -39,6 +39,8 @@ import com.expleague.ml.meta.items.FakeItem;
 import com.expleague.ml.meta.items.QURLItem;
 import com.expleague.ml.models.MultiClassModel;
 import com.expleague.ml.models.ObliviousTree;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -241,6 +243,7 @@ public class DataTools {
     final BFGrid grid = grid(result);
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(SerializationFeature.INDENT_OUTPUT, false);
+    mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
 //    mapper.configure(SerializationFeature.CLOSE_CLOSEABLE, false);
     try {
       writer.append("Model 2.0\n");
@@ -329,20 +332,20 @@ public class DataTools {
     if (result instanceof Ensemble) {
       //noinspection unchecked
       final Ensemble<Trans> ensemble = (Ensemble) result;
-      if (ensemble.models.length == 0)
+      if (ensemble.size() == 0)
         return;
-      if (ensemble.models[0] instanceof ObliviousTreeDynamicBin) {
+      if (ensemble.model(0) instanceof ObliviousTreeDynamicBin) {
         final DynamicGrid grid = dynamicGrid(ensemble);
         final DynamicBinModelBuilder builder = new DynamicBinModelBuilder(Objects.requireNonNull(grid));
-        for (int i = 0; i < ensemble.models.length; ++i) {
-          builder.append((ObliviousTreeDynamicBin) ensemble.models[i], ensemble.weights.at(i));
+        for (int i = 0; i < ensemble.size(); ++i) {
+          builder.append((ObliviousTreeDynamicBin) ensemble.model(i), ensemble.weight(i));
         }
         builder.build().toFile(file);
-      } else if (ensemble.models[0] instanceof ObliviousTree) {
+      } else if (ensemble.model(0) instanceof ObliviousTree) {
         final BFGrid grid = grid(ensemble);
         final BinModelBuilder builder = new BinModelBuilder(Objects.requireNonNull(grid));
-        for (int i = 0; i < ensemble.models.length; ++i) {
-          builder.append((ObliviousTree) ensemble.models[i], ensemble.weights.at(i));
+        for (int i = 0; i < ensemble.size(); ++i) {
+          builder.append((ObliviousTree) ensemble.model(i), ensemble.weight(i));
         }
         builder.build().toFile(file);
       }
@@ -399,8 +402,8 @@ public class DataTools {
     }
     else if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
-      for (final Trans dir : ensemble.models) {
-        final BFGrid grid = grid(dir);
+      for (int i = 0; i < ensemble.size(); i++) {
+        final BFGrid grid = grid(ensemble.model(i));
         if (grid != null)
           return grid;
       }

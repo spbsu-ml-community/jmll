@@ -24,8 +24,8 @@ public class FuncEnsemble<X extends Func> extends Ensemble<X> implements Func{
     double result = 0.;
     double weightTotal = 0;
     for (int i = 0; i < size(); i++) {
-      double weight = weights.get(i);
-      result += models[i].value(x) * weight;
+      double weight = weight(i);
+      result += model(i).value(x) * weight;
       weightTotal += weight;
     }
     return result / weightTotal;
