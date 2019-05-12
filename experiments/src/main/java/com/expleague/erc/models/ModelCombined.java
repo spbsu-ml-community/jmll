@@ -13,7 +13,9 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.DoubleUnaryOperator;
 
 import static com.expleague.erc.Util.DAY_HOURS;
@@ -27,13 +29,26 @@ public class ModelCombined extends Model {
     private Model daysModel;
     private Model timeModel;
 
+    public static class TimeExtractor implements BiFunction<Double, Integer, Double>, Serializable {
+        private final TIntIntMap userDayBorders;
+
+        public TimeExtractor(TIntIntMap userDayBorders) {
+            this.userDayBorders = userDayBorders;
+        }
+
+        @Override
+        public Double apply(Double delta, Integer userId) {
+            return Util.getDay(delta, userDayBorders.get(userId));
+        }
+    }
+
     public ModelCombined(int dim, double beta, double eps, double otherItemImportance,
                          DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                          LambdaStrategyFactory lambdaStrategyFactory) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         daysModel = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
                 lambdaStrategyFactory, null, // TODO: fix initializing of initLambdas
-                (x, userId) -> Util.getDay(x, userDayBorders.get(userId)), x -> true, x -> x < 14);
+                new TimeExtractor(userDayBorders), Double.NEGATIVE_INFINITY, Util.CHURN_THRESHOLD_DAYS);
         timeModel = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
     }
 

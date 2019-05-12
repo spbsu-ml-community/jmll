@@ -6,6 +6,7 @@ import com.expleague.erc.lambda.*;
 import com.expleague.erc.metrics.MAEPerUser;
 import com.expleague.erc.metrics.Metric;
 import com.expleague.erc.metrics.MetricsWriter;
+import com.expleague.erc.metrics.SPUPerUser;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
 import com.expleague.erc.models.ModelDays;
@@ -24,6 +25,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
@@ -36,6 +38,7 @@ public class ModelTrainingRunner {
     private static final String FILE_ITEM_MAP = "items_by_id.txt";
     private static final String FILE_PREDICTION = "prediction.txt";
     private static final String FILE_SESSIONS = "sessions.txt";
+    private static final String FILE_ITEM_EMBEDDINGS = "item_embeddings.txt";
     private static Options options = new Options();
 
     static {
@@ -147,6 +150,7 @@ public class ModelTrainingRunner {
         model.fit(test, lr, iterations, decay, metricsWriter);
 
         model.write(Files.newOutputStream(modelPath));
+        writeEmbeddings(model, modelDirPath);
     }
 
     private static void evaluateConstant(final List<Event> trainData, final List<Event> testData) {
@@ -167,11 +171,11 @@ public class ModelTrainingRunner {
             constants.put(userId, deltas.get(deltas.size() / 2));
             return true;
         });
-        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
-                .filter(Util::forPrediction)
-                .mapToDouble(Session::getDelta)
-                .sorted().toArray();
-        final double justConstant = intervals[intervals.length / 2];
+//        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
+//                .filter(Util::forPrediction)
+//                .mapToDouble(Session::getDelta)
+//                .sorted().toArray();
+//        final double justConstant = intervals[intervals.length / 2];
         final ApplicableModel constantApplicable = new ApplicableModel() {
             @Override
             public void accept(EventSeq event) {
@@ -210,15 +214,43 @@ public class ModelTrainingRunner {
             }
         };
         final Metric mae = new MAEPerUser();
-        final ForkJoinTask<Double> trainTask = ForkJoinPool.commonPool().submit(() ->
+        final Metric spu = new SPUPerUser();
+        final ForkJoinTask<Double> trainMAETask = ForkJoinPool.commonPool().submit(() ->
                 mae.calculate(trainData, constantApplicable));
-        final ForkJoinTask<Double> testTask = ForkJoinPool.commonPool().submit(() ->
+        final ForkJoinTask<Double> testMAETask = ForkJoinPool.commonPool().submit(() ->
                 mae.calculate(testData, constantApplicable));
+        final ForkJoinTask<Double> trainSPUTask = ForkJoinPool.commonPool().submit(() ->
+                spu.calculate(trainData, constantApplicable));
+        final ForkJoinTask<Double> testSPUTask = ForkJoinPool.commonPool().submit(() ->
+                spu.calculate(testData, constantApplicable));
         try {
-            System.out.printf("train_const_mae: %f, test_const_mae: %f\n", trainTask.get(), testTask.get());
+            System.out.printf(
+                    "train_const_mae: %f, test_const_mae: %f, test_const_spu: %f, train_const_spu: %f\n",
+                    trainMAETask.get(), testMAETask.get(), trainSPUTask.get(), testSPUTask.get());
         } catch (InterruptedException | ExecutionException e) {
             System.out.println("Constant evaluation failed:");
             e.printStackTrace();
         }
+    }
+
+    private static void writeEmbeddings(Model model, Path modelDirPath) throws IOException {
+        final TIntObjectMap<Vec> itemEmbeddings = model.getItemEmbeddings();
+        final String embeddingsStr = Files.lines(modelDirPath.resolve(FILE_ITEM_MAP))
+                .map(line -> {
+                    final String[] desc = line.split("\t");
+                    final int number = Integer.parseInt(desc[0]);
+                    final String name = desc[1];
+                    final Vec embedding = itemEmbeddings.get(number);
+                    if (embedding == null) {
+                        return null;
+                    }
+                    return name + "\t" + embedding.stream()
+                            .mapToObj(String::valueOf)
+                            .collect(Collectors.joining(" "));
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("\n"));
+
+        Files.write(modelDirPath.resolve(FILE_ITEM_EMBEDDINGS), embeddingsStr.getBytes());
     }
 }

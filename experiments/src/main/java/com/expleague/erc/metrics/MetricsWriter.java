@@ -40,7 +40,7 @@ public class MetricsWriter implements Model.FitListener {
         this.trainData = trainData;
         this.testData = testData;
         this.eps = eps;
-        ll = new LogLikelihoodDaily(trainData, eps);
+        ll = new LogLikelihoodDaily(trainData);
         histPath = saveDir.resolve(HIST_FILE_NAME);
     }
 

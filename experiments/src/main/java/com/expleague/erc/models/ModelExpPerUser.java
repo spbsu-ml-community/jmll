@@ -38,10 +38,10 @@ public class ModelExpPerUser extends Model {
     public ModelExpPerUser(final int dim, final double beta, final double eps, final double otherItemImportance,
                            final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                            final LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
-                           final BiFunction<Double, Integer, Double> timeTransform, final Predicate<Double> isShort,
-                           final Predicate<Double> isLong) {
+                           final BiFunction<Double, Integer, Double> timeTransform, final double lowerRangeBorder,
+                           final double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, isShort, isLong);
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, lowerRangeBorder, higherRangeBorder);
         this.initialLambdas = initialLambdas;
     }
 
@@ -49,9 +49,10 @@ public class ModelExpPerUser extends Model {
                            DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                            LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
                            TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
-                           BiFunction<Double, Integer, Double> timeTransform, Predicate<Double> isShort, Predicate<Double> isLong) {
+                           BiFunction<Double, Integer, Double> timeTransform,
+                           double lowerRangeBorder, double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior, timeTransform, isShort, isLong);
+                usersEmbeddingsPrior, itemsEmbeddingsPrior, timeTransform, lowerRangeBorder, higherRangeBorder);
         this.initialLambdas = initialLambdas;
     }
 
@@ -185,8 +186,8 @@ public class ModelExpPerUser extends Model {
         objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
         objectOutputStream.writeObject(timeTransform);
-        objectOutputStream.writeObject(isShort);
-        objectOutputStream.writeObject(isLong);
+        objectOutputStream.writeDouble(lowerRangeBorder);
+        objectOutputStream.writeDouble(higherRangeBorder);
         objectOutputStream.close();
     }
 
@@ -206,11 +207,11 @@ public class ModelExpPerUser extends Model {
         final TIntDoubleMap initialLambdas =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         final BiFunction<Double, Integer, Double> timeTransform = (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
-        final Predicate<Double> isShort = (Predicate<Double>) objectInputStream.readObject();
-        final Predicate<Double> isLong = (Predicate<Double>) objectInputStream.readObject();
+        final double lowerRangeBorder = objectInputStream.readDouble();
+        final double higherRangeBorder = objectInputStream.readDouble();
         final ModelExpPerUser model = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings,
-                timeTransform, isShort, isLong);
+                timeTransform, lowerRangeBorder, higherRangeBorder);
         model.initModel();
         return model;
     }

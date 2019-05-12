@@ -48,23 +48,23 @@ public class Model implements Serializable {
     protected int[] itemIdsArray;
     protected boolean isInit = false;
     protected final BiFunction<Double, Integer, Double> timeTransform;
-    protected final Predicate<Double> isShort;
-    protected final Predicate<Double> isLong;
+    protected final double lowerRangeBorder;
+    protected final double higherRangeBorder;
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 new TIntObjectHashMap<>(), new TIntObjectHashMap<>(),
-                (x, userId) -> x, x -> x < Util.MAX_GAP, x -> x > Util.CHURN_THRESHOLD);
+                new Util.GetDelta(), Util.MAX_GAP, Util.CHURN_THRESHOLD);
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory, final BiFunction<Double, Integer, Double> timeTransform,
-                 final Predicate<Double> isShort, final Predicate<Double> isLong) {
+                 final double lowerRangeBorder, final double higherRangeBorder) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, isShort, isLong);
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, lowerRangeBorder, higherRangeBorder);
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
@@ -73,14 +73,14 @@ public class Model implements Serializable {
                  final TIntObjectMap<Vec> itemsEmbeddingsPrior) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 usersEmbeddingsPrior, itemsEmbeddingsPrior,
-                (x, userId) -> x, x -> x < Util.MAX_GAP, x -> x > Util.CHURN_THRESHOLD);
+                new Util.GetDelta(), Util.MAX_GAP, Util.CHURN_THRESHOLD);
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
                  final TIntObjectMap<Vec> itemsEmbeddingsPrior, final BiFunction<Double, Integer, Double> timeTransform,
-                 final Predicate<Double> isShort, final Predicate<Double> isLong) {
+                 final double lowerRangeBorder, final double higherRangeBorder) {
         this.dim = dim;
         this.beta = beta;
         this.eps = eps;
@@ -104,8 +104,8 @@ public class Model implements Serializable {
         itemIdsArray = itemIds.toArray();
 
         this.timeTransform = timeTransform;
-        this.isShort = isShort;
-        this.isLong = isLong;
+        this.lowerRangeBorder = lowerRangeBorder;
+        this.higherRangeBorder = higherRangeBorder;
     }
 
     // Init
@@ -156,7 +156,7 @@ public class Model implements Serializable {
         }
 
         final FastRandom randomGenerator = new FastRandom();
-        final double edge = 0.0;
+        final double edge = 0.1;
         userIds.forEach(userId -> {
             userEmbeddings.put(userId, getUniformEmbedding(randomGenerator, -edge, edge, dim));
 //            VecTools.normalizeL2(userEmbeddings.get(userId));
@@ -385,7 +385,7 @@ public class Model implements Serializable {
     }
 
     public boolean forPrediction(final Session session) {
-        return !isShort.test(session.getDelta()) && !isLong.test(session.getDelta());
+        return lowerRangeBorder < session.getDelta() && session.getDelta() < higherRangeBorder;
     }
 
     // Save & Load
@@ -402,8 +402,8 @@ public class Model implements Serializable {
         objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
         objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
         objectOutputStream.writeObject(timeTransform);
-        objectOutputStream.writeObject(isShort);
-        objectOutputStream.writeObject(isLong);
+        objectOutputStream.writeDouble(lowerRangeBorder);
+        objectOutputStream.writeDouble(higherRangeBorder);
         objectOutputStream.close();
     }
 
@@ -420,11 +420,12 @@ public class Model implements Serializable {
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntObjectMap<Vec> itemEmbeddings =
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
-        final BiFunction<Double, Integer, Double> timeTransform = (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
-        final Predicate<Double> isShort = (Predicate<Double>) objectInputStream.readObject();
-        final Predicate<Double> isLong = (Predicate<Double>) objectInputStream.readObject();
+        final BiFunction<Double, Integer, Double> timeTransform =
+                (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
+        final double lowerRangeBorder = objectInputStream.readDouble();
+        final double higherRangeBorder = objectInputStream.readDouble();
         final Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
-                lambdaStrategyFactory, userEmbeddings, itemEmbeddings, timeTransform, isShort, isLong);
+                lambdaStrategyFactory, userEmbeddings, itemEmbeddings, timeTransform, lowerRangeBorder, higherRangeBorder);
         model.initModel();
         return model;
     }

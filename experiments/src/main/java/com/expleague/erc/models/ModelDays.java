@@ -8,6 +8,7 @@ import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
+import com.expleague.erc.lambda.PerUserLambdaStrategy;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
@@ -43,10 +44,11 @@ public class ModelDays extends ModelExpPerUser {
     public ModelDays(final int dim, final double beta, final double eps, final double otherItemImportance,
                      final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                      final LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
-                     final BiFunction<Double, Integer, Double> timeTransform, final Predicate<Double> isShort,
-                     final Predicate<Double> isLong) {
+                     final BiFunction<Double, Integer, Double> timeTransform, final double lowerRangeBorder,
+                     final double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                initialLambdas, new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, isShort, isLong);
+                initialLambdas, new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform,
+                lowerRangeBorder, higherRangeBorder);
     }
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance,
@@ -55,9 +57,10 @@ public class ModelDays extends ModelExpPerUser {
                      final TIntObjectMap<Vec> usersEmbeddingsPrior, final TIntObjectMap<Vec> itemsEmbeddingsPrior,
                      final TIntIntMap userDayBorders, TIntIntMap userDayPeaks, final TIntDoubleMap userDayAvgStarts,
                      final TIntDoubleMap averageOneDayDelta, final BiFunction<Double, Integer, Double> timeTransform,
-                     final Predicate<Double> isShort, final Predicate<Double> isLong) {
+                     final double lowerRangeBorder, final double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                initialLambdas, usersEmbeddingsPrior, itemsEmbeddingsPrior, timeTransform, isShort, isLong);
+                initialLambdas, usersEmbeddingsPrior, itemsEmbeddingsPrior, timeTransform,
+                lowerRangeBorder, higherRangeBorder);
         this.userDayBorders = userDayBorders;
         this.userDayAvgStarts = userDayAvgStarts;
         this.averageOneDayDelta = averageOneDayDelta;
@@ -116,8 +119,8 @@ public class ModelDays extends ModelExpPerUser {
         @Override
         public double timeDelta(final int userId, final double time) {
             final double rawPrediction = 1 / getLambda(userId);
-            final long daysPrediction = round(rawPrediction);
-//            final int daysPrediction = (int) rawPrediction;
+//            final long daysPrediction = round(rawPrediction);
+            final int daysPrediction = (int) rawPrediction;
             if (time + rawPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
                 return averageOneDayDelta.get(userId);
             }
@@ -234,13 +237,12 @@ public class ModelDays extends ModelExpPerUser {
         objectOutputStream.writeDouble(otherItemImportance);
         objectOutputStream.writeObject(lambdaTransform);
         objectOutputStream.writeObject(lambdaDerivativeTransform);
-        objectOutputStream.writeObject(lambdaStrategyFactory);
         objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
         objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
         objectOutputStream.writeObject(timeTransform);
-        objectOutputStream.writeObject(isShort);
-        objectOutputStream.writeObject(isLong);
+        objectOutputStream.writeDouble(lowerRangeBorder);
+        objectOutputStream.writeDouble(higherRangeBorder);
         objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayBorders));
         objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayPeaks));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(userDayAvgStarts));
@@ -256,16 +258,16 @@ public class ModelDays extends ModelExpPerUser {
         final double otherItemImportance = objectInputStream.readDouble();
         final DoubleUnaryOperator lambdaTransform = (DoubleUnaryOperator) objectInputStream.readObject();
         final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
-        final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
         final TIntObjectMap<Vec> userEmbeddings =
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntObjectMap<Vec> itemEmbeddings =
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntDoubleMap initialLambdas =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
+        final LambdaStrategyFactory lambdaStrategyFactory = new PerUserLambdaStrategy.Factory(initialLambdas);
         final BiFunction<Double, Integer, Double> timeTransform = (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
-        final Predicate<Double> isShort = (Predicate<Double>) objectInputStream.readObject();
-        final Predicate<Double> isLong = (Predicate<Double>) objectInputStream.readObject();
+        final double lowerRangeBorder = objectInputStream.readDouble();
+        final double higherRangeBorder = objectInputStream.readDouble();
         final TIntIntMap userDayBorders =
                 Util.intIntMapFromSerializable((Map<Integer, Integer>) objectInputStream.readObject());
         final TIntIntMap userDayPeaks =
@@ -276,7 +278,8 @@ public class ModelDays extends ModelExpPerUser {
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         final ModelDays model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings,
-                userDayBorders, userDayPeaks, userAverageDayStarts, averageOneDayDelta, timeTransform, isShort, isLong);
+                userDayBorders, userDayPeaks, userAverageDayStarts, averageOneDayDelta, timeTransform,
+                lowerRangeBorder, higherRangeBorder);
         model.initModel();
         return model;
     }

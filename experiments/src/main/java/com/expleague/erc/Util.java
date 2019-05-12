@@ -2,6 +2,7 @@ package com.expleague.erc;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.erc.models.Model;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
@@ -10,41 +11,33 @@ import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Util {
-    public static final double CHURN_THRESHOLD = 2 * 7 * 24.;
     public static final double MAX_GAP = .5;
     public static final int DAY_HOURS = 24;
+    public static final int CHURN_THRESHOLD_DAYS = 2 * 7;
+    public static final double CHURN_THRESHOLD = CHURN_THRESHOLD_DAYS * DAY_HOURS;
 
     public static boolean isDead(final double timeBetweenSessions) {
         return timeBetweenSessions > CHURN_THRESHOLD;
-    }
-
-    public static boolean shorterThan(final double timeBetweenSessions, final double threshold) {
-        return timeBetweenSessions > threshold;
     }
 
     public static boolean isShortSession(final double timeBetweenSessions) {
         return timeBetweenSessions < MAX_GAP;
     }
 
-    public static boolean longerThan(final double timeBetweenSessions, final double threshold) {
-        return timeBetweenSessions < threshold;
-    }
-
     public static boolean forPrediction(final Session session) {
         return !isShortSession(session.getDelta()) && !isDead(session.getDelta());
-    }
-
-    public static boolean inInterval(final Session session, final double from, final double to) {
-        return longerThan(session.getDelta(), from) && shorterThan(session.getDelta(), to);
     }
 
     public static double getDay(final double time, final int dayStart) {
@@ -112,5 +105,12 @@ public class Util {
         final TIntIntMap map = new TIntIntHashMap();
         serializable.forEach(map::put);
         return map;
+    }
+
+    public static class GetDelta implements BiFunction<Double, Integer, Double>, Serializable {
+        @Override
+        public Double apply(Double delta, Integer userId) {
+            return delta;
+        }
     }
 }

@@ -16,10 +16,8 @@ import static java.lang.Math.min;
 
 public class LogLikelihoodDaily implements Metric {
     private final TIntIntMap userDayBorders;
-    private final double eps;
 
-    public LogLikelihoodDaily(List<Event> events, double eps) {
-        this.eps = eps;
+    public LogLikelihoodDaily(List<Event> events) {
         userDayBorders = new TIntIntHashMap();
         ModelDays.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
     }
@@ -30,8 +28,7 @@ public class LogLikelihoodDaily implements Metric {
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             if (Util.forPrediction(session)) {
                 final int daysPassed = Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId()));
-                final double tau = min(daysPassed, eps);
-                final double p = applicable.probabilityInterval(session.userId(), tau - eps, tau + eps);
+                final double p = applicable.probabilityInterval(session.userId(), daysPassed, daysPassed + 1);
                 assert 0 <= p && p <= 1;
                 if (p > 0) {
                     logLikelihood += log(p);
