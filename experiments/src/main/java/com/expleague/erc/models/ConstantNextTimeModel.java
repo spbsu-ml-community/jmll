@@ -27,21 +27,17 @@ public class ConstantNextTimeModel extends Model {
 
     @Override
     public void initModel(final List<Event> events) {
-        makeInitialEmbeddings(events);
-        initIds();
-        averageOneDayDelta = calcAverageOneDayDelta(events);
-        isInit = true;
+        if (!isInit) {
+            averageOneDayDelta = calcAverageOneDayDelta(events);
+            isInit = true;
+        }
     }
 
     private class ApplicableImpl implements ApplicableModel {
-        private ApplicableImpl() {
-
-        }
+        private ApplicableImpl() {}
 
         @Override
-        public void accept(final EventSeq eventSeq) {
-
-        }
+        public void accept(final EventSeq eventSeq) {}
 
         @Override
         public double timeDelta(final int userId, final double time) {
@@ -51,9 +47,7 @@ public class ConstantNextTimeModel extends Model {
 
     @Override
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
-                    final double decay, final FitListener listener) {
-
-    }
+                    final double decay, final FitListener listener) {}
 
     @Override
     public ApplicableModel getApplicable() {

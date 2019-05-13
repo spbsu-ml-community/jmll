@@ -1,9 +1,6 @@
 package com.expleague.erc.models;
 
-import com.expleague.erc.Event;
-import com.expleague.erc.EventSeq;
-import com.expleague.erc.Session;
-import com.expleague.erc.Util;
+import com.expleague.erc.*;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.map.TIntDoubleMap;
@@ -15,7 +12,6 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.function.DoubleUnaryOperator;
 
 import static com.expleague.erc.Util.DAY_HOURS;
@@ -29,26 +25,26 @@ public class ModelCombined extends Model {
     private Model daysModel;
     private Model timeModel;
 
-    public static class TimeExtractor implements BiFunction<Double, Integer, Double>, Serializable {
+    public static class DayExtractor implements TimeTransformer, Serializable {
         private final TIntIntMap userDayBorders;
 
-        public TimeExtractor(TIntIntMap userDayBorders) {
+        public DayExtractor(TIntIntMap userDayBorders) {
             this.userDayBorders = userDayBorders;
         }
 
         @Override
-        public Double apply(Double delta, Integer userId) {
-            return Util.getDay(delta, userDayBorders.get(userId));
+        public double apply(double delta, double time, int userId) {
+            return Util.getDaysFromPrevSession(delta, time, userDayBorders.get(userId));
         }
     }
 
     public ModelCombined(int dim, double beta, double eps, double otherItemImportance,
                          DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
-                         LambdaStrategyFactory lambdaStrategyFactory) {
+                         LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         daysModel = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
-                lambdaStrategyFactory, null, // TODO: fix initializing of initLambdas
-                new TimeExtractor(userDayBorders), Double.NEGATIVE_INFINITY, Util.CHURN_THRESHOLD_DAYS);
+                lambdaStrategyFactory, initialLambdas, // TODO: fix initializing of initLambdas
+                new DayExtractor(userDayBorders), Double.NEGATIVE_INFINITY, Util.CHURN_THRESHOLD_DAYS);
         timeModel = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
     }
 

@@ -1,10 +1,7 @@
 package com.expleague.erc.models;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.erc.Event;
-import com.expleague.erc.EventSeq;
-import com.expleague.erc.Session;
-import com.expleague.erc.Util;
+import com.expleague.erc.*;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
@@ -19,10 +16,7 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static com.expleague.erc.Util.DAY_HOURS;
 import static java.lang.Math.*;
@@ -44,7 +38,7 @@ public class ModelDays extends ModelExpPerUser {
     public ModelDays(final int dim, final double beta, final double eps, final double otherItemImportance,
                      final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                      final LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
-                     final BiFunction<Double, Integer, Double> timeTransform, final double lowerRangeBorder,
+                     final TimeTransformer timeTransform, final double lowerRangeBorder,
                      final double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 initialLambdas, new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform,
@@ -56,7 +50,7 @@ public class ModelDays extends ModelExpPerUser {
                      final LambdaStrategyFactory lambdaStrategyFactory, final TIntDoubleMap initialLambdas,
                      final TIntObjectMap<Vec> usersEmbeddingsPrior, final TIntObjectMap<Vec> itemsEmbeddingsPrior,
                      final TIntIntMap userDayBorders, TIntIntMap userDayPeaks, final TIntDoubleMap userDayAvgStarts,
-                     final TIntDoubleMap averageOneDayDelta, final BiFunction<Double, Integer, Double> timeTransform,
+                     final TIntDoubleMap averageOneDayDelta, final TimeTransformer timeTransform,
                      final double lowerRangeBorder, final double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 initialLambdas, usersEmbeddingsPrior, itemsEmbeddingsPrior, timeTransform,
@@ -265,7 +259,7 @@ public class ModelDays extends ModelExpPerUser {
         final TIntDoubleMap initialLambdas =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         final LambdaStrategyFactory lambdaStrategyFactory = new PerUserLambdaStrategy.Factory(initialLambdas);
-        final BiFunction<Double, Integer, Double> timeTransform = (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
+        final TimeTransformer timeTransform = (TimeTransformer) objectInputStream.readObject();
         final double lowerRangeBorder = objectInputStream.readDouble();
         final double higherRangeBorder = objectInputStream.readDouble();
         final TIntIntMap userDayBorders =

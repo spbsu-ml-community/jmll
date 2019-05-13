@@ -2,7 +2,6 @@ package com.expleague.erc;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.erc.models.Model;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
@@ -17,9 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Util {
@@ -49,8 +46,12 @@ public class Util {
     }
 
     public static int getDaysFromPrevSession(final Session session, final int dayStart) {
-        double pos = Util.getDay(session.getStartTs(), dayStart);
-        double prevPos = Util.getDay(session.getStartTs() - session.getDelta(), dayStart);
+        return getDaysFromPrevSession(session.getDelta(), session.getStartTs(), dayStart);
+    }
+
+    public static int getDaysFromPrevSession(final double delta, final double time, final int dayStart) {
+        double pos = Util.getDay(time, dayStart);
+        double prevPos = Util.getDay(time - delta, dayStart);
         return (int) (pos - prevPos) / DAY_HOURS;
     }
 
@@ -107,9 +108,9 @@ public class Util {
         return map;
     }
 
-    public static class GetDelta implements BiFunction<Double, Integer, Double>, Serializable {
+    public static class GetDelta implements TimeTransformer, Serializable {
         @Override
-        public Double apply(Double delta, Integer userId) {
+        public double apply(double delta, double time, int userId) {
             return delta;
         }
     }

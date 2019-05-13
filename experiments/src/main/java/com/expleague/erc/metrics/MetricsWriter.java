@@ -31,7 +31,7 @@ public class MetricsWriter implements Model.FitListener {
     private final List<Event> trainData;
     private final List<Event> testData;
     private final double eps;
-    private final Metric mae = new MAEPerUser();
+    private final Metric mae;
     private final Metric spu = new SPUPerUser();
     private final Metric ll;
     private final Path histPath;
@@ -41,6 +41,8 @@ public class MetricsWriter implements Model.FitListener {
         this.testData = testData;
         this.eps = eps;
         ll = new LogLikelihoodDaily(trainData);
+        mae = new MAEDaily(trainData);
+//        mae = new MAEPerUser();
         histPath = saveDir.resolve(HIST_FILE_NAME);
     }
 

@@ -3,18 +3,18 @@ package com.expleague.erc;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.data.*;
 import com.expleague.erc.lambda.*;
-import com.expleague.erc.metrics.MAEPerUser;
-import com.expleague.erc.metrics.Metric;
-import com.expleague.erc.metrics.MetricsWriter;
-import com.expleague.erc.metrics.SPUPerUser;
+import com.expleague.erc.metrics.*;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
+import com.expleague.erc.models.ModelCombined;
 import com.expleague.erc.models.ModelDays;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
@@ -137,9 +137,9 @@ public class ModelTrainingRunner {
             TIntDoubleMap initialLambdas = UserLambdaSingle.makeUserLambdaInitialValues(train);
             LambdaStrategyFactory perUserLambdaStrategyFactory = new PerUserLambdaStrategy.Factory(initialLambdas);
 
-//            final Model innerDayModel = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-//                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
-            model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+//            model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+//                    perUserLambdaStrategyFactory, initialLambdas);
+            model = new ModelCombined(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     perUserLambdaStrategyFactory, initialLambdas);
         }
 
@@ -154,6 +154,8 @@ public class ModelTrainingRunner {
     }
 
     private static void evaluateConstant(final List<Event> trainData, final List<Event> testData) {
+        final TIntIntMap userDayBorders = new TIntIntHashMap();
+        ModelDays.calcDayPoints(trainData, userDayBorders, new TIntIntHashMap());
         final TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(trainData)) {
             final int userId = session.userId();
@@ -163,6 +165,7 @@ public class ModelTrainingRunner {
                     userDeltas.put(userId, new TDoubleArrayList());
                 }
                 userDeltas.get(userId).add(delta);
+                userDeltas.get(userId).add(Util.getDaysFromPrevSession(session, userDayBorders.get(userId)));
             }
         }
         final TIntDoubleMap constants = new TIntDoubleHashMap();
@@ -178,9 +181,7 @@ public class ModelTrainingRunner {
 //        final double justConstant = intervals[intervals.length / 2];
         final ApplicableModel constantApplicable = new ApplicableModel() {
             @Override
-            public void accept(EventSeq event) {
-
-            }
+            public void accept(EventSeq event) {}
 
             @Override
             public double getLambda(int userId) {
@@ -213,7 +214,8 @@ public class ModelTrainingRunner {
                 return 0;
             }
         };
-        final Metric mae = new MAEPerUser();
+        final Metric mae = new MAEDaily(trainData);
+//        final Metric mae = new MAEPerUser();
         final Metric spu = new SPUPerUser();
         final ForkJoinTask<Double> trainMAETask = ForkJoinPool.commonPool().submit(() ->
                 mae.calculate(trainData, constantApplicable));

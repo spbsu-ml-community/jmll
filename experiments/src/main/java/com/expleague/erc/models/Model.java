@@ -4,10 +4,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
-import com.expleague.erc.Event;
-import com.expleague.erc.EventSeq;
-import com.expleague.erc.Session;
-import com.expleague.erc.Util;
+import com.expleague.erc.*;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
@@ -24,10 +21,7 @@ import gnu.trove.set.hash.TLongHashSet;
 
 import java.io.*;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static java.lang.Math.*;
 
@@ -47,7 +41,7 @@ public class Model implements Serializable {
     protected int[] userIdsArray;
     protected int[] itemIdsArray;
     protected boolean isInit = false;
-    protected final BiFunction<Double, Integer, Double> timeTransform;
+    protected final TimeTransformer timeTransform;
     protected final double lowerRangeBorder;
     protected final double higherRangeBorder;
 
@@ -61,7 +55,7 @@ public class Model implements Serializable {
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
-                 final LambdaStrategyFactory lambdaStrategyFactory, final BiFunction<Double, Integer, Double> timeTransform,
+                 final LambdaStrategyFactory lambdaStrategyFactory, final TimeTransformer timeTransform,
                  final double lowerRangeBorder, final double higherRangeBorder) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
                 new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, lowerRangeBorder, higherRangeBorder);
@@ -79,7 +73,7 @@ public class Model implements Serializable {
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
-                 final TIntObjectMap<Vec> itemsEmbeddingsPrior, final BiFunction<Double, Integer, Double> timeTransform,
+                 final TIntObjectMap<Vec> itemsEmbeddingsPrior, final TimeTransformer timeTransform,
                  final double lowerRangeBorder, final double higherRangeBorder) {
         this.dim = dim;
         this.beta = beta;
@@ -176,8 +170,7 @@ public class Model implements Serializable {
                                         final TIntObjectMap<Vec> itemDerivatives,
                                         final TIntDoubleMap initialLambdasDerivatives) {
         final List<EventSeq> eventSeqs = DataPreprocessor.groupToEventSeqs(events);
-        final Event lastEvent = events.get(eventSeqs.size() - 1);
-        final double observationEnd = timeTransform.apply(lastEvent.getTs(), lastEvent.userId());
+        final double observationEnd = events.get(events.size() - 1).getTs();
         final TLongSet seenPairs = new TLongHashSet();
         fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdasByItem =
@@ -190,17 +183,17 @@ public class Model implements Serializable {
                 lambdasByItem.accept(eventSeq);
             } else {
                 updateDerivativeInnerEvent(lambdasByItem, eventSeq.userId(), eventSeq.itemId(),
-                        timeTransform.apply(eventSeq.getDelta(), eventSeq.userId()),
+                        timeTransform.apply(eventSeq.getDelta(), eventSeq.getStartTs(), eventSeq.userId()),
                         userDerivatives, itemDerivatives, initialLambdasDerivatives);
                 lambdasByItem.accept(eventSeq);
-                lastVisitTimes.put(pairId, timeTransform.apply(eventSeq.getStartTs(), eventSeq.userId()));
+                lastVisitTimes.put(pairId, eventSeq.getStartTs());
             }
         }
         for (final long pairId : lastVisitTimes.keys()) {
             final int userId = Util.extractUserId(pairId);
             final int itemId = Util.extractItemId(pairId);
             updateDerivativeLastEvent(lambdasByItem, userId, itemId,
-                    timeTransform.apply(observationEnd - lastVisitTimes.get(pairId), userId),
+                    timeTransform.apply(observationEnd - lastVisitTimes.get(pairId), observationEnd, userId),
                     userDerivatives, itemDerivatives);
         }
     }
@@ -385,7 +378,8 @@ public class Model implements Serializable {
     }
 
     public boolean forPrediction(final Session session) {
-        return lowerRangeBorder < session.getDelta() && session.getDelta() < higherRangeBorder;
+        final double delta = timeTransform.apply(session);
+        return lowerRangeBorder <= delta && delta <= higherRangeBorder;
     }
 
     // Save & Load
@@ -420,8 +414,7 @@ public class Model implements Serializable {
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntObjectMap<Vec> itemEmbeddings =
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
-        final BiFunction<Double, Integer, Double> timeTransform =
-                (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
+        final TimeTransformer timeTransform = (TimeTransformer) objectInputStream.readObject();
         final double lowerRangeBorder = objectInputStream.readDouble();
         final double higherRangeBorder = objectInputStream.readDouble();
         final Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
