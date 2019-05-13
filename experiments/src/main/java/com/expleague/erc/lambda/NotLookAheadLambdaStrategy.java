@@ -92,7 +92,8 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
 
     public static class NotLookAheadLambdaStrategyFactory implements LambdaStrategyFactory {
         @Override
-        public LambdaStrategy get(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings, double beta, double otherProjectImportance) {
+        public LambdaStrategy get(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
+                                  final TIntDoubleMap initialLambdas, double beta, double otherProjectImportance) {
             return new NotLookAheadLambdaStrategy(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
         }
     }

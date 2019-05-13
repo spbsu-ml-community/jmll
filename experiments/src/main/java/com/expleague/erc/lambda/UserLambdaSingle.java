@@ -7,7 +7,7 @@ import com.expleague.erc.Event;
 import com.expleague.erc.Session;
 import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
-import com.expleague.erc.models.ModelDays;
+import com.expleague.erc.models.ModelCombined;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
@@ -19,8 +19,6 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class UserLambdaSingle implements UserLambda {
     private final Vec userEmbedding;
@@ -35,8 +33,8 @@ public class UserLambdaSingle implements UserLambda {
     private final Vec userDerivative;
     private final TIntObjectMap<Vec> itemDerivatives;
 
-    public UserLambdaSingle(final Vec userEmbedding, final TIntObjectMap<Vec> itemsEmbeddings, final double beta,
-                            final double initialValue) {
+    public UserLambdaSingle(final Vec userEmbedding, final TIntObjectMap<Vec> itemsEmbeddings,
+                            final double initialValue, final double beta) {
         this.userEmbedding = userEmbedding;
         this.itemEmbeddings = itemsEmbeddings;
         this.beta = beta;
@@ -128,7 +126,7 @@ public class UserLambdaSingle implements UserLambda {
     public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history) {
         final TIntIntMap userBorders = new TIntIntHashMap();
         final TIntIntMap userPeaks = new TIntIntHashMap();
-        ModelDays.calcDayPoints(history, userBorders, userPeaks);
+        ModelCombined.calcDayPoints(history, userBorders, userPeaks);
         TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(history)) {
             final int userId = session.userId();

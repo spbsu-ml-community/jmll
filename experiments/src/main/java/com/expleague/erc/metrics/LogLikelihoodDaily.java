@@ -5,21 +5,20 @@ import com.expleague.erc.Session;
 import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
-import com.expleague.erc.models.ModelDays;
+import com.expleague.erc.models.ModelCombined;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 
 import java.util.List;
 
 import static java.lang.Math.log;
-import static java.lang.Math.min;
 
 public class LogLikelihoodDaily implements Metric {
     private final TIntIntMap userDayBorders;
 
     public LogLikelihoodDaily(List<Event> events) {
         userDayBorders = new TIntIntHashMap();
-        ModelDays.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
+        ModelCombined.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
     }
 
     @Override

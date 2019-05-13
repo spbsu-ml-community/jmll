@@ -21,6 +21,7 @@ import java.util.function.DoubleUnaryOperator;
 import static com.expleague.erc.Util.DAY_HOURS;
 import static java.lang.Math.*;
 
+@Deprecated
 public class ModelDays extends ModelExpPerUser {
 
     private TIntIntMap userDayBorders;
@@ -29,10 +30,8 @@ public class ModelDays extends ModelExpPerUser {
     private TIntDoubleMap averageOneDayDelta;
 
     public ModelDays(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                     TIntDoubleMap initialLambdas) {
-        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                initialLambdas);
+                     DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
     }
 
     public ModelDays(final int dim, final double beta, final double eps, final double otherItemImportance,
@@ -82,7 +81,7 @@ public class ModelDays extends ModelExpPerUser {
                                         TIntDoubleMap initialLambdasDerivatives) {
         fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdaStrategy =
-                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             if (!Util.isShortSession(session.getDelta()) && !Util.isDead(session.getDelta())) {
                 final int daysPassed = Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId()));
@@ -97,7 +96,7 @@ public class ModelDays extends ModelExpPerUser {
         private final LambdaStrategy lambdaStrategy;
 
         private ApplicableImpl() {
-            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas, beta, otherItemImportance);
         }
 
         @Override
@@ -258,7 +257,7 @@ public class ModelDays extends ModelExpPerUser {
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntDoubleMap initialLambdas =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
-        final LambdaStrategyFactory lambdaStrategyFactory = new PerUserLambdaStrategy.Factory(initialLambdas);
+        final LambdaStrategyFactory lambdaStrategyFactory = new PerUserLambdaStrategy.Factory();
         final TimeTransformer timeTransform = (TimeTransformer) objectInputStream.readObject();
         final double lowerRangeBorder = objectInputStream.readDouble();
         final double higherRangeBorder = objectInputStream.readDouble();

@@ -3,6 +3,7 @@ package com.expleague.erc;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.data.LastFmDataReader;
 import com.expleague.erc.data.OneTimeDataProcessor;
+import com.expleague.erc.models.ModelCombined;
 import com.expleague.erc.models.ModelDays;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TLongDoubleMap;
@@ -103,7 +104,7 @@ public class DataMetrics {
     private static void writeOneDayDeltas(Path path, List<Event> events) throws IOException {
         final TIntIntMap userBorders = new TIntIntHashMap();
         final TIntIntMap userPeaks = new TIntIntHashMap();
-        ModelDays.calcDayPoints(events, userBorders, userPeaks);
+        ModelCombined.calcDayPoints(events, userBorders, userPeaks);
         final String deltasText = DataPreprocessor.groupEventsToSessions(events).stream()
                 .filter(Util::forPrediction)
                 .filter(session -> Util.getDaysFromPrevSession(session, userBorders.get(session.userId())) == 0)

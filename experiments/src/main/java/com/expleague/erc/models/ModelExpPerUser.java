@@ -6,6 +6,7 @@ import com.expleague.erc.*;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.lambda.LambdaStrategy;
 import com.expleague.erc.lambda.LambdaStrategyFactory;
+import com.expleague.erc.lambda.UserLambdaSingle;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
@@ -21,23 +22,21 @@ import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
 public class ModelExpPerUser extends Model {
-    protected final TIntDoubleMap initialLambdas;
 
-    public ModelExpPerUser(int dim, double beta, double eps, double otherItemImportance, DoubleUnaryOperator lambdaTransform,
-                           DoubleUnaryOperator lambdaDerivativeTransform, LambdaStrategyFactory lambdaStrategyFactory,
-                           TIntDoubleMap initialLambdas) {
+    public ModelExpPerUser(int dim, double beta, double eps, double otherItemImportance,
+                           final DoubleUnaryOperator lambdaTransform,
+                           final DoubleUnaryOperator lambdaDerivativeTransform,
+                           final LambdaStrategyFactory lambdaStrategyFactory) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
-        this.initialLambdas = initialLambdas;
     }
 
     public ModelExpPerUser(final int dim, final double beta, final double eps, final double otherItemImportance,
                            final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
-                           final LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap initialLambdas,
+                           final LambdaStrategyFactory lambdaStrategyFactory,
                            final TimeTransformer timeTransform, final double lowerRangeBorder,
                            final double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, lowerRangeBorder, higherRangeBorder);
-        this.initialLambdas = initialLambdas;
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), null, timeTransform, lowerRangeBorder, higherRangeBorder);
     }
 
     public ModelExpPerUser(int dim, double beta, double eps, double otherItemImportance,
@@ -46,8 +45,7 @@ public class ModelExpPerUser extends Model {
                            TIntObjectMap<Vec> usersEmbeddingsPrior, TIntObjectMap<Vec> itemsEmbeddingsPrior,
                            TimeTransformer timeTransform, double lowerRangeBorder, double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior, timeTransform, lowerRangeBorder, higherRangeBorder);
-        this.initialLambdas = initialLambdas;
+                usersEmbeddingsPrior, itemsEmbeddingsPrior, initialLambdas, timeTransform, lowerRangeBorder, higherRangeBorder);
     }
 
     @Override
@@ -56,8 +54,13 @@ public class ModelExpPerUser extends Model {
             return;
         }
         makeInitialEmbeddings(events);
+        makeInitialLambdas(events);
         initIds();
         isInit = true;
+    }
+
+    protected void makeInitialLambdas(final List<Event> events) {
+        initialLambdas = UserLambdaSingle.makeUserLambdaInitialValues(events);
     }
 
     @Override
@@ -67,7 +70,7 @@ public class ModelExpPerUser extends Model {
                                         final TIntDoubleMap initialLambdasDerivatives) {
         fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdaStrategy =
-                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas, beta, otherItemImportance);
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             if (forPrediction(session)) {
                 updateDerivativeInnerEvent(lambdaStrategy, session.userId(), timeTransform.apply(session),
@@ -131,7 +134,8 @@ public class ModelExpPerUser extends Model {
         private final LambdaStrategy lambdaStrategy;
 
         private ApplicableImpl() {
-            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas,
+                    beta, otherItemImportance);
         }
 
         @Override

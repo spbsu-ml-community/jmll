@@ -41,7 +41,7 @@ public class ModelGamma2 extends Model {
         double logLikelihood = 0.;
         final TLongSet seenPairs = new TLongHashSet();
         final LambdaStrategy lambdasByItem =
-                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(events)) {
             final int userId = eventSeq.userId();
@@ -143,7 +143,8 @@ public class ModelGamma2 extends Model {
         private final LambdaStrategy lambdaStrategy;
 
         private ApplicableImpl() {
-            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas,
+                    beta, otherItemImportance);
         }
 
         @Override

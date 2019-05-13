@@ -160,7 +160,8 @@ public class ModelUserK extends Model {
         private final LambdaStrategy lambdaStrategy;
 
         private ApplicableImpl() {
-            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas,
+                    beta, otherItemImportance);
         }
 
         @Override

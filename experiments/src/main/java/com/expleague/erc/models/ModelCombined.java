@@ -100,7 +100,9 @@ public class ModelCombined extends Model {
         return new ApplicableImpl(daysModel.getApplicable(), timeModel.getApplicable());
     }
 
-    public static void calcDayPoints(final List<Event> events, final TIntIntMap userDayBorders, final TIntIntMap userDayPeaks) {
+    public static void calcDayPoints(final List<Event> events,
+                                     final TIntIntMap userDayBorders,
+                                     final TIntIntMap userDayPeaks) {
         final TIntObjectMap<long[]> counters = new TIntObjectHashMap<>();
         for (final Event event : events) {
             final int userId = event.userId();

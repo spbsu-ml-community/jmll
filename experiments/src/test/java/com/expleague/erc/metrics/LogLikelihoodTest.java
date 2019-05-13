@@ -67,7 +67,7 @@ public class LogLikelihoodTest {
 
         final Model model = new Model(5, 0.1, 5, 0.1,
                 x -> x, x -> 1, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory(),
-                usersEmbeddings, itemsEmbeddings);
+                usersEmbeddings, itemsEmbeddings, null);
 
         final LogLikelihood llCalculator = new LogLikelihood(5);
 

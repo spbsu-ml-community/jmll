@@ -134,13 +134,14 @@ public class ModelTrainingRunner {
 
             DoubleUnaryOperator lambdaTransform = new LambdaTransforms.AbsTransform();
             DoubleUnaryOperator lambdaDerivative = new LambdaTransforms.AbsDerivativeTransform();
-            TIntDoubleMap initialLambdas = UserLambdaSingle.makeUserLambdaInitialValues(train);
-            LambdaStrategyFactory perUserLambdaStrategyFactory = new PerUserLambdaStrategy.Factory(initialLambdas);
+            LambdaStrategyFactory perUserLambdaStrategyFactory = new PerUserLambdaStrategy.Factory();
 
+//            final Model innerDayModel = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+//                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
 //            model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
 //                    perUserLambdaStrategyFactory, initialLambdas);
             model = new ModelCombined(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-                    perUserLambdaStrategyFactory, initialLambdas);
+                    perUserLambdaStrategyFactory);
         }
 
         saveSessions(modelDirPath, dataset.getTest());
@@ -217,18 +218,18 @@ public class ModelTrainingRunner {
         final Metric mae = new MAEDaily(trainData);
 //        final Metric mae = new MAEPerUser();
         final Metric spu = new SPUPerUser();
-        final ForkJoinTask<Double> trainMAETask = ForkJoinPool.commonPool().submit(() ->
+        final ForkJoinTask<Double> trainMaeTask = ForkJoinPool.commonPool().submit(() ->
                 mae.calculate(trainData, constantApplicable));
-        final ForkJoinTask<Double> testMAETask = ForkJoinPool.commonPool().submit(() ->
+        final ForkJoinTask<Double> testMaeTask = ForkJoinPool.commonPool().submit(() ->
                 mae.calculate(testData, constantApplicable));
-        final ForkJoinTask<Double> trainSPUTask = ForkJoinPool.commonPool().submit(() ->
+        final ForkJoinTask<Double> trainSpuTask = ForkJoinPool.commonPool().submit(() ->
                 spu.calculate(trainData, constantApplicable));
-        final ForkJoinTask<Double> testSPUTask = ForkJoinPool.commonPool().submit(() ->
+        final ForkJoinTask<Double> testSpuTask = ForkJoinPool.commonPool().submit(() ->
                 spu.calculate(testData, constantApplicable));
         try {
             System.out.printf(
                     "train_const_mae: %f, test_const_mae: %f, test_const_spu: %f, train_const_spu: %f\n",
-                    trainMAETask.get(), testMAETask.get(), trainSPUTask.get(), testSPUTask.get());
+                    trainMaeTask.get(), testMaeTask.get(), trainSpuTask.get(), testSpuTask.get());
         } catch (InterruptedException | ExecutionException e) {
             System.out.println("Constant evaluation failed:");
             e.printStackTrace();
