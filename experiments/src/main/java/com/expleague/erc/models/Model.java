@@ -59,7 +59,8 @@ public class Model implements Serializable {
                  final LambdaStrategyFactory lambdaStrategyFactory, final TimeTransformer timeTransform,
                  final double lowerRangeBorder, final double higherRangeBorder) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), null, timeTransform, lowerRangeBorder, higherRangeBorder);
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), null, timeTransform,
+                lowerRangeBorder, higherRangeBorder);
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
@@ -67,15 +68,15 @@ public class Model implements Serializable {
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
                  final TIntObjectMap<Vec> itemsEmbeddingsPrior, final TIntDoubleMap initialLambdas) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior, initialLambdas,
-                new Util.GetDelta(), Util.MAX_GAP, Util.CHURN_THRESHOLD);
+                usersEmbeddingsPrior, itemsEmbeddingsPrior, initialLambdas, new Util.GetDelta(),
+                Util.MAX_GAP, Util.CHURN_THRESHOLD);
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
-                 final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior, final TIntDoubleMap initialLambdas,
-                 final TIntObjectMap<Vec> itemsEmbeddingsPrior, final TimeTransformer timeTransform,
-                 final double lowerRangeBorder, final double higherRangeBorder) {
+                 final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
+                 final TIntObjectMap<Vec> itemsEmbeddingsPrior, final TIntDoubleMap initialLambdas,
+                 final TimeTransformer timeTransform, final double lowerRangeBorder, final double higherRangeBorder) {
         this.dim = dim;
         this.beta = beta;
         this.eps = eps;

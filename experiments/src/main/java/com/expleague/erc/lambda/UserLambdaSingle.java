@@ -33,8 +33,8 @@ public class UserLambdaSingle implements UserLambda {
     private final Vec userDerivative;
     private final TIntObjectMap<Vec> itemDerivatives;
 
-    public UserLambdaSingle(final Vec userEmbedding, final TIntObjectMap<Vec> itemsEmbeddings,
-                            final double initialValue, final double beta) {
+    public UserLambdaSingle(final Vec userEmbedding, final TIntObjectMap<Vec> itemsEmbeddings, final double beta,
+                            final double initialValue) {
         this.userEmbedding = userEmbedding;
         this.itemEmbeddings = itemsEmbeddings;
         this.beta = beta;

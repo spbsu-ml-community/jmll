@@ -150,7 +150,7 @@ public class ModelTrainingRunner {
         final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
         model.fit(test, lr, iterations, decay, metricsWriter);
 
-        model.write(Files.newOutputStream(modelPath));
+//        model.write(Files.newOutputStream(modelPath));
         writeEmbeddings(model, modelDirPath);
     }
 

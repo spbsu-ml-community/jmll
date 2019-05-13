@@ -21,9 +21,7 @@ import java.util.function.DoubleUnaryOperator;
 import static com.expleague.erc.Util.DAY_HOURS;
 import static java.lang.Math.*;
 
-@Deprecated
 public class ModelDays extends ModelExpPerUser {
-
     private TIntIntMap userDayBorders;
     private TIntIntMap userDayPeaks;
     private TIntDoubleMap userDayAvgStarts;
