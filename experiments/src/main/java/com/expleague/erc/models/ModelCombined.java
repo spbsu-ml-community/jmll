@@ -43,13 +43,14 @@ public class ModelCombined extends Model {
     }
 
     public ModelCombined(int dim, double beta, double eps, double otherItemImportance,
-                         DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
-                         LambdaStrategyFactory lambdaStrategyFactory) {
+                         final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
+                         final LambdaStrategyFactory lambdaStrategyFactory) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         daysModel = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
-                lambdaStrategyFactory, null, // TODO: fix initializing of initLambdas
-                new TimeExtractor(userDayBorders), Double.NEGATIVE_INFINITY, Util.CHURN_THRESHOLD_DAYS);
-        timeModel = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+                lambdaStrategyFactory, new TimeExtractor(userDayBorders),
+                Double.NEGATIVE_INFINITY, Util.CHURN_THRESHOLD_DAYS);
+        timeModel = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform,
+                lambdaDerivativeTransform, lambdaStrategyFactory);
     }
 
     @Override
@@ -104,7 +105,9 @@ public class ModelCombined extends Model {
         return new ApplicableImpl(daysModel.getApplicable(), timeModel.getApplicable());
     }
 
-    public static void calcDayPoints(final List<Event> events, final TIntIntMap userDayBorders, final TIntIntMap userDayPeaks) {
+    public static void calcDayPoints(final List<Event> events,
+                                     final TIntIntMap userDayBorders,
+                                     final TIntIntMap userDayPeaks) {
         final TIntObjectMap<long[]> counters = new TIntObjectHashMap<>();
         for (final Event event : events) {
             final int userId = event.userId();

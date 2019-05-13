@@ -59,15 +59,9 @@ public class PerUserLambdaStrategy implements LambdaStrategy {
     }
 
     public static class Factory implements LambdaStrategyFactory {
-        private final TIntDoubleMap initialValues;
-
-        public Factory(TIntDoubleMap initialValues) {
-            this.initialValues = initialValues;
-        }
-
         @Override
         public LambdaStrategy get(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
-                                  double beta, double otherProjectImportance) {
+                                  final TIntDoubleMap initialValues, double beta, double otherProjectImportance) {
             return new PerUserLambdaStrategy(userEmbeddings, itemEmbeddings, beta, initialValues);
         }
     }

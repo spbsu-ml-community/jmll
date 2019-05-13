@@ -42,6 +42,7 @@ public class Model implements Serializable {
     protected final LambdaStrategyFactory lambdaStrategyFactory;
     protected TIntObjectMap<Vec> userEmbeddings;
     protected TIntObjectMap<Vec> itemEmbeddings;
+    protected TIntDoubleMap initialLambdas;
     protected TIntSet userIds;
     protected TIntSet itemIds;
     protected int[] userIdsArray;
@@ -55,7 +56,7 @@ public class Model implements Serializable {
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(),
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), null,
                 new Util.GetDelta(), Util.MAX_GAP, Util.CHURN_THRESHOLD);
     }
 
@@ -64,22 +65,23 @@ public class Model implements Serializable {
                  final LambdaStrategyFactory lambdaStrategyFactory, final BiFunction<Double, Integer, Double> timeTransform,
                  final double lowerRangeBorder, final double higherRangeBorder) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), timeTransform, lowerRangeBorder, higherRangeBorder);
+                new TIntObjectHashMap<>(), new TIntObjectHashMap<>(), null, timeTransform, lowerRangeBorder, higherRangeBorder);
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
-                 final TIntObjectMap<Vec> itemsEmbeddingsPrior) {
+                 final TIntObjectMap<Vec> itemsEmbeddingsPrior, final TIntDoubleMap initialLambdas) {
         this(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
-                usersEmbeddingsPrior, itemsEmbeddingsPrior,
+                usersEmbeddingsPrior, itemsEmbeddingsPrior, initialLambdas,
                 new Util.GetDelta(), Util.MAX_GAP, Util.CHURN_THRESHOLD);
     }
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                  final LambdaStrategyFactory lambdaStrategyFactory, final TIntObjectMap<Vec> usersEmbeddingsPrior,
-                 final TIntObjectMap<Vec> itemsEmbeddingsPrior, final BiFunction<Double, Integer, Double> timeTransform,
+                 final TIntObjectMap<Vec> itemsEmbeddingsPrior, final TIntDoubleMap initialLambdas,
+                 final BiFunction<Double, Integer, Double> timeTransform,
                  final double lowerRangeBorder, final double higherRangeBorder) {
         this.dim = dim;
         this.beta = beta;
@@ -102,6 +104,7 @@ public class Model implements Serializable {
         }
         itemIds = itemEmbeddings.keySet();
         itemIdsArray = itemIds.toArray();
+        this.initialLambdas = initialLambdas;
 
         this.timeTransform = timeTransform;
         this.lowerRangeBorder = lowerRangeBorder;
@@ -181,7 +184,7 @@ public class Model implements Serializable {
         final TLongSet seenPairs = new TLongHashSet();
         fillInitDerivatives(userDerivatives, itemDerivatives);
         final LambdaStrategy lambdasByItem =
-                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+                lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas, beta, otherItemImportance);
         final TLongDoubleMap lastVisitTimes = new TLongDoubleHashMap();
         for (final EventSeq eventSeq : eventSeqs) {
             final long pairId = eventSeq.getPair();
@@ -330,7 +333,7 @@ public class Model implements Serializable {
         private final LambdaStrategy lambdaStrategy;
 
         private ApplicableImpl() {
-            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, beta, otherItemImportance);
+            lambdaStrategy = lambdaStrategyFactory.get(userEmbeddings, itemEmbeddings, initialLambdas, beta, otherItemImportance);
         }
 
         @Override
@@ -401,6 +404,7 @@ public class Model implements Serializable {
         objectOutputStream.writeObject(lambdaStrategyFactory);
         objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
         objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
+        objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
         objectOutputStream.writeObject(timeTransform);
         objectOutputStream.writeDouble(lowerRangeBorder);
         objectOutputStream.writeDouble(higherRangeBorder);
@@ -422,10 +426,13 @@ public class Model implements Serializable {
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final BiFunction<Double, Integer, Double> timeTransform =
                 (BiFunction<Double, Integer, Double>) objectInputStream.readObject();
+        final TIntDoubleMap initialLambdas =
+                Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         final double lowerRangeBorder = objectInputStream.readDouble();
         final double higherRangeBorder = objectInputStream.readDouble();
         final Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
-                lambdaStrategyFactory, userEmbeddings, itemEmbeddings, timeTransform, lowerRangeBorder, higherRangeBorder);
+                lambdaStrategyFactory, userEmbeddings, itemEmbeddings, initialLambdas,
+                timeTransform, lowerRangeBorder, higherRangeBorder);
         model.initModel();
         return model;
     }
