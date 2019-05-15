@@ -24,7 +24,6 @@ import static java.lang.Math.exp;
 import static java.lang.Math.max;
 
 public class ModelExpPerUser extends Model {
-
     public ModelExpPerUser(int dim, double beta, double eps, double otherItemImportance,
                            final DoubleUnaryOperator lambdaTransform,
                            final DoubleUnaryOperator lambdaDerivativeTransform,

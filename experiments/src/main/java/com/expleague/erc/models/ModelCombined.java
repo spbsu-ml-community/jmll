@@ -84,9 +84,33 @@ public class ModelCombined extends Model {
 
     @Override
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
-                    final double decay, final FitListener listener) {
-        daysModel.fit(events, learningRate, iterationsNumber, decay, listener);
-        timeModel.fit(events, learningRate, iterationsNumber, decay, listener);
+                    final double decay) {
+//        daysModel.fit(events, learningRate, iterationsNumber, decay, listener);
+//        timeModel.fit(events, learningRate, iterationsNumber, decay, listener);
+        initModel(events);
+        daysModel.initModel(events);
+        timeModel.initModel(events);
+        double lr = learningRate;
+        if (fitListener != null) {
+            fitListener.apply(this);
+        }
+        for (int i = 0; i < iterationsNumber; i++) {
+            daysModel.fit(events, lr, 1, decay);
+            timeModel.fit(events, lr, 1, decay);
+            lr *= decay;
+            if (fitListener != null) {
+                fitListener.apply(this);
+            }
+            System.out.println();
+        }
+    }
+
+    public void setDaysFitListener(FitListener listener) {
+        daysModel.setFitListener(listener);
+    }
+
+    public void setTimeFitListener(FitListener listener) {
+        timeModel.setFitListener(listener);
     }
 
     private class ApplicableImpl implements ApplicableModel {

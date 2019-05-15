@@ -65,7 +65,7 @@ public class ModelUserKTest {
         final TIntIntMap userKs = new TIntIntHashMap();
         final ModelUserK model = new ModelUserK(3, 0.1, 0.5, 0.1,
                 Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
-        model.fit(history, 1e-2, 100, 0.99, m -> {});
+        model.fit(history, 1e-2, 100, 0.99);
         Assert.assertTrue(model.getApplicable().timeDelta(0, 0) > 15);
         Assert.assertTrue(model.getApplicable(history).timeDelta(0, 0) > 15);
         Assert.assertTrue(new MAEPerPair().calculate(history, model.getApplicable()) < 5);
@@ -87,7 +87,7 @@ public class ModelUserKTest {
         );
         final ModelUserK model = new ModelUserK(3, 0.1, 0.5, 0.1,
                 Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
-        model.fit(history, 1e-2, 100, 0.99, m -> {});
+        model.fit(history, 1e-2, 100, 0.99);
         final ApplicableModel applicable = model.getApplicable();
         Assert.assertEquals(10, applicable.timeDelta(1, 0) / applicable.timeDelta(0, 0), 1);
     }
@@ -107,7 +107,7 @@ public class ModelUserKTest {
         final ModelUserK model = new ModelUserK(3, 0.1, 0.5, 0.1,
                 Math::abs, Math::signum, new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
 //        System.out.println(model.getApplicable().getLambda(0, 0) + " " + model.getApplicable(history).getLambda(0, 0));
-        model.fit(history, 1e-5, 1000, 0.99, m -> {});
+        model.fit(history, 1e-5, 1000, 0.99);
 //        System.out.println(model.getApplicable().getLambda(0, 0) + " " + model.getApplicable(history).getLambda(0, 0));
 //        System.out.println(model.getApplicable(history).timeDelta(0, 0));
         final TIntDoubleMap userBaseLambdas = model.getUserBaseLambdas();

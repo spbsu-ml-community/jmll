@@ -111,7 +111,7 @@ public class ModelTrainingRunner {
         Path modelDirPath = Paths.get(modelName);
         boolean existingModel = Files.isDirectory(modelDirPath);
 
-        final Model model;
+        final ModelCombined model;
 
         final Path modelPath = modelDirPath.resolve(FILE_MODEL);
         if (existingModel && !reset) {
@@ -147,8 +147,13 @@ public class ModelTrainingRunner {
         saveSessions(modelDirPath, dataset.getTest());
 
         evaluateConstant(train, test);
-        final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
-        model.fit(test, lr, iterations, decay, metricsWriter);
+        final MetricsWriter combinedWriter =
+                new MetricsWriter(train, test, null, new MAEPerUser(), new SPUPerUser(), false);
+        final MetricsWriter dailyWriter = new MetricsWriter(train, test, new LogLikelihoodDaily(train),
+                new MAEDaily(train), null, true);
+        model.setFitListener(combinedWriter);
+        model.setDaysFitListener(dailyWriter);
+        model.fit(train, lr, iterations, decay);
 
         model.save(modelPath);
         writeEmbeddings(model, modelDirPath);
@@ -176,14 +181,12 @@ public class ModelTrainingRunner {
         });
         final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
                 .filter(Util::forPrediction)
-                .mapToDouble(Session::getDelta)
+                .mapToDouble(session -> Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId())))
                 .sorted().toArray();
         final double justConstant = intervals[intervals.length / 2];
         final ApplicableModel constantApplicable = new ApplicableModel() {
             @Override
-            public void accept(EventSeq event) {
-
-            }
+            public void accept(EventSeq event) {}
 
             @Override
             public double getLambda(int userId) {
@@ -231,12 +234,10 @@ public class ModelTrainingRunner {
         final ForkJoinTask<Double> testSpuTask = ForkJoinPool.commonPool().submit(() ->
                 spu.calculate(testData, constantApplicable));
         try {
-            System.out.printf(
-                    "train_const_mae: %f, test_const_mae: %f, train_const_spu: %f, test_const_spu: %f\n",
+            System.out.printf("train_const_mae: %f, test_const_mae: %f, train_const_spu: %f, test_const_spu: %f\n",
                     trainMaeTask.get(), testMaeTask.get(), trainSpuTask.get(), testSpuTask.get());
         } catch (InterruptedException | ExecutionException e) {
-            System.out.println("Constant evaluation failed:");
-            e.printStackTrace();
+            System.out.println("Constant evaluation failed: " + e.getMessage());
         }
     }
 

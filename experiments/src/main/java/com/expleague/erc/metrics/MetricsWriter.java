@@ -3,16 +3,10 @@ package com.expleague.erc.metrics;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.erc.Event;
-import com.expleague.erc.EventSeq;
-import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
 import gnu.trove.map.TIntObjectMap;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -23,22 +17,19 @@ public class MetricsWriter implements Model.FitListener {
 
     private final List<Event> trainData;
     private final List<Event> testData;
-    private final double eps;
+    private final Metric ll;
     private final Metric mae;
     private final Metric spu;
-    private final Metric ll;
-    private final Path histPath;
+    private final boolean printEmbeddingsNorm;
+    private final ForkJoinPool pool = ForkJoinPool.commonPool();
 
-    public MetricsWriter(List<Event> trainData, List<Event> testData, double eps, Path saveDir) {
+    public MetricsWriter(List<Event> trainData, List<Event> testData, Metric ll, Metric mae, Metric spu, boolean norm) {
         this.trainData = trainData;
         this.testData = testData;
-        this.eps = eps;
-        ll = new LogLikelihoodDaily(trainData);
-        mae = new MAEDaily(trainData);
-//        mae = new MAEPerUser();
-//        spu = new SPUDaily(trainData);
-        spu = new SPUPerUser();
-        histPath = saveDir.resolve(HIST_FILE_NAME);
+        this.ll = ll;
+        this.mae = mae;
+        this.spu = spu;
+        this.printEmbeddingsNorm = norm;
     }
 
     private double meanEmbeddingNorm(final TIntObjectMap<Vec> embeddings) {
@@ -51,62 +42,45 @@ public class MetricsWriter implements Model.FitListener {
     public void apply(Model model) {
         final double[] maes = new double[2];
         final double[] lls = new double[2];
-        final ForkJoinTask maeTask = ForkJoinPool.commonPool().submit(() -> {
-            final ApplicableModel applicable = model.getApplicable();
-            maes[0] = mae.calculate(trainData, applicable);
-            maes[1] = mae.calculate(testData, applicable);
-        });
-        final ForkJoinTask llTask = ForkJoinPool.commonPool().submit(() -> {
-            final ApplicableModel applicable = model.getApplicable();
-            lls[0] = ll.calculate(trainData, applicable);
-            lls[1] = ll.calculate(testData, applicable);
-        });
-        final ForkJoinTask<Double> spusTrainTask = ForkJoinPool.commonPool().submit(() ->
-            spu.calculate(trainData, model.getApplicable()));
-        final ForkJoinTask<Double> spusTestTask = ForkJoinPool.commonPool().submit(() ->
-            spu.calculate(testData, model.getApplicable(trainData)));
-//        final ForkJoinTask histSaveTask = ForkJoinPool.commonPool().submit(() ->
-//                saveHist(model.getApplicable()));
+        ForkJoinTask maeTask = null, llTask = null;
+        if (ll != null) {
+            llTask = pool.submit(() -> {
+                final ApplicableModel applicable = model.getApplicable();
+                lls[0] = ll.calculate(trainData, applicable);
+                lls[1] = ll.calculate(testData, applicable);
+            });
+        }
+        if (mae != null) {
+            maeTask = pool.submit(() -> {
+                final ApplicableModel applicable = model.getApplicable();
+                maes[0] = mae.calculate(trainData, applicable);
+                maes[1] = mae.calculate(testData, applicable);
+            });
+        }
+        ForkJoinTask<Double> spusTrainTask = null, spusTestTask = null;
+        if (spu != null) {
+            spusTrainTask = pool.submit(() -> spu.calculate(trainData, model.getApplicable()));
+            spusTestTask = pool.submit(() -> spu.calculate(testData, model.getApplicable(trainData)));
+        }
 
         try {
-            maeTask.join();
-            llTask.join();
-            final double spusTrain = spusTrainTask.get();
-            final double spusTest = spusTestTask.get();
-            System.out.printf("train_ll: %f, test_ll: %f, train_mae: %f, test_mae: %f, " +
-                            "train_spu: %f, test_spu: %f, " +
-                            "user_norm: %f, item_norm, %f\n",
-                    lls[0], lls[1], maes[0], maes[1], spusTrain, spusTest,
-                    meanEmbeddingNorm(model.getUserEmbeddings()),
-                    meanEmbeddingNorm(model.getItemEmbeddings()));
-//            histSaveTask.join();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveHist(ApplicableModel applicable) {
-        final StringBuilder histDescBuilder = new StringBuilder();
-        for (final EventSeq eventSeq : DataPreprocessor.groupToEventSeqs(trainData)) {
-            final int userId = eventSeq.userId();
-            final int itemId = eventSeq.itemId();
-            double prDelta = eventSeq.getDelta();
-            if (prDelta >= 0) {
-                final double lambda = applicable.getLambda(userId, itemId);
-                final double prediction = applicable.timeDelta(userId, itemId);
-                prDelta = Math.max(prDelta, eps);
-                final double pLog =
-                        Math.log(applicable.probabilityInterval(userId, itemId, prDelta - eps, prDelta + eps));
-                histDescBuilder.append(userId).append(" ").append(itemId).append(" ").append(prDelta).append(" ")
-                        .append(prediction).append(" ").append(lambda).append(" ").append(pLog).append("\t");
+            if (ll != null) {
+                llTask.join();
+                System.out.printf("train_ll: %f, test_ll: %f, ", lls[0], lls[1]);
             }
-            applicable.accept(eventSeq);
-        }
-        histDescBuilder.append("\n");
-        try {
-            Files.write(histPath, histDescBuilder.toString().getBytes(), StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND);
-        } catch (IOException e) {
+            if (mae != null) {
+                maeTask.join();
+                System.out.printf("train_mae: %f, test_mae: %f, ", maes[0], maes[1]);
+            }
+            if (spu != null) {
+                System.out.printf("train_spu: %f, test_spu: %f, ", spusTrainTask.get(), spusTestTask.get());
+            }
+            if (printEmbeddingsNorm) {
+                System.out.printf("user_norm: %f, item_norm: %f",
+                        meanEmbeddingNorm(model.getUserEmbeddings()), meanEmbeddingNorm(model.getItemEmbeddings()));
+            }
+            System.out.println();
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
     }

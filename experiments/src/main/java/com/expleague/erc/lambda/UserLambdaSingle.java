@@ -17,10 +17,10 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class UserLambdaSingle implements UserLambda {
+    private static final double EPS = 1e-4;
     private final Vec userEmbedding;
     private final TIntObjectMap<Vec> itemEmbeddings;
     private final double beta;
@@ -127,7 +127,7 @@ public class UserLambdaSingle implements UserLambda {
         final TIntIntMap userBorders = new TIntIntHashMap();
         final TIntIntMap userPeaks = new TIntIntHashMap();
         ModelCombined.calcDayPoints(history, userBorders, userPeaks);
-        TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
+        final TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(history)) {
             final int userId = session.userId();
             if (!userDeltas.containsKey(userId)) {
@@ -140,9 +140,9 @@ public class UserLambdaSingle implements UserLambda {
         }
         final double[] intervals = DataPreprocessor.groupEventsToSessions(history).stream()
                 .filter(Util::forPrediction)
-                .mapToDouble(Session::getDelta)
+                .mapToDouble(session -> Util.getDaysFromPrevSession(session, userBorders.get(session.userId())))
                 .sorted().toArray();
-        final double commonConst = intervals[intervals.length / 2];
+        final double commonConst = Math.max(intervals[intervals.length / 2], EPS);
         TIntDoubleMap constants = new TIntDoubleHashMap();
         userDeltas.forEachEntry((userId, deltas) -> {
             deltas.sort();
@@ -153,7 +153,7 @@ public class UserLambdaSingle implements UserLambda {
             } else {
                 del = dels[dels.length / 2];
                 if (del == 0) {
-                    del = 0.01;
+                    del = EPS;
                 }
             }
             constants.put(userId, 1 / del);

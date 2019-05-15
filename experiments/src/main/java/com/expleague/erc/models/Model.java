@@ -28,7 +28,6 @@ import java.util.function.DoubleUnaryOperator;
 import static java.lang.Math.*;
 
 public class Model implements Serializable {
-
     protected final int dim;
     protected final double beta;
     protected final double eps;
@@ -47,6 +46,7 @@ public class Model implements Serializable {
     protected final TimeTransformer timeTransform;
     protected final double lowerRangeBorder;
     protected final double higherRangeBorder;
+    protected FitListener fitListener;
 
     public Model(final int dim, final double beta, final double eps, final double otherItemImportance,
                  final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
@@ -140,7 +140,8 @@ public class Model implements Serializable {
         return embedding;
     }
 
-    protected static Vec getUniformEmbedding(final FastRandom randomGenerator, final double from, final double to, final int dim) {
+    protected static Vec getUniformEmbedding(final FastRandom randomGenerator, final double from, final double to,
+                                             final int dim) {
         Vec embedding = new ArrayVec(dim);
         VecTools.adjust(VecTools.fillUniform(embedding, randomGenerator, (to - from) / 2), (to + from) / 2);
         return embedding;
@@ -260,9 +261,9 @@ public class Model implements Serializable {
     // Fit
 
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
-                    final double decay, final FitListener listener) {
+                    final double decay) {
         initModel(events);
-        optimizeGD(events, learningRate, iterationsNumber, decay, listener);
+        optimizeGD(events, learningRate, iterationsNumber, decay);
     }
 
     private void optimizeSGD(final List<Event> events, final double learningRate, final int iterationsNumber,
@@ -288,16 +289,16 @@ public class Model implements Serializable {
     }
 
     private void optimizeGD(final List<Event> events, final double learningRate, final int iterationsNumber,
-                            final double decay, final FitListener listener) {
+                            final double decay) {
         double lr = learningRate / events.size();
-        if (listener != null) {
-            listener.apply(this);
-        }
+//        if (listener != null) {
+//            listener.apply(this);
+//        }
         for (int i = 0; i < iterationsNumber; i++) {
             stepGD(events, lr);
             lr *= decay;
-            if (listener != null) {
-                listener.apply(this);
+            if (fitListener != null) {
+                fitListener.apply(this);
             }
         }
     }
@@ -322,7 +323,10 @@ public class Model implements Serializable {
         }
     }
 
-    // Applicable
+    public void setFitListener(FitListener fitListener) {
+        this.fitListener = fitListener;
+    }
+// Applicable
 
     private class ApplicableImpl implements ApplicableModel {
         private final LambdaStrategy lambdaStrategy;
