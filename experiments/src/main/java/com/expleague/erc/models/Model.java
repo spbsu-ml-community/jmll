@@ -153,7 +153,7 @@ public class Model implements Serializable {
         }
 
         final FastRandom randomGenerator = new FastRandom();
-        final double edge = 0.1;
+        final double edge = 0.;
         userIds.forEach(userId -> {
             userEmbeddings.put(userId, getUniformEmbedding(randomGenerator, -edge, edge, dim));
 //            VecTools.normalizeL2(userEmbeddings.get(userId));

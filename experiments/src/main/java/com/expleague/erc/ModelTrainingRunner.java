@@ -139,7 +139,7 @@ public class ModelTrainingRunner {
 //            final Model innerDayModel = new ModelUserK(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
 //                    new NotLookAheadLambdaStrategy.NotLookAheadLambdaStrategyFactory());
 //            model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
-//                    perUserLambdaStrategyFactory, initialLambdas);
+//                    perUserLambdaStrategyFactory);
             model = new ModelCombined(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     perUserLambdaStrategyFactory);
         }
@@ -156,7 +156,7 @@ public class ModelTrainingRunner {
 
     private static void evaluateConstant(final List<Event> trainData, final List<Event> testData) {
         final TIntIntMap userDayBorders = new TIntIntHashMap();
-        ModelDays.calcDayPoints(trainData, userDayBorders, new TIntIntHashMap());
+        ModelCombined.calcDayPoints(trainData, userDayBorders, new TIntIntHashMap());
         final TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(trainData)) {
             final int userId = session.userId();
@@ -165,7 +165,7 @@ public class ModelTrainingRunner {
                 if (!userDeltas.containsKey(userId)) {
                     userDeltas.put(userId, new TDoubleArrayList());
                 }
-                userDeltas.get(userId).add(delta);
+//                userDeltas.get(userId).add(delta);
                 userDeltas.get(userId).add(Util.getDaysFromPrevSession(session, userDayBorders.get(userId)));
             }
         }
@@ -175,14 +175,16 @@ public class ModelTrainingRunner {
             constants.put(userId, deltas.get(deltas.size() / 2));
             return true;
         });
-//        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
-//                .filter(Util::forPrediction)
-//                .mapToDouble(Session::getDelta)
-//                .sorted().toArray();
-//        final double justConstant = intervals[intervals.length / 2];
+        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
+                .filter(Util::forPrediction)
+                .mapToDouble(Session::getDelta)
+                .sorted().toArray();
+        final double justConstant = intervals[intervals.length / 2];
         final ApplicableModel constantApplicable = new ApplicableModel() {
             @Override
-            public void accept(EventSeq event) {}
+            public void accept(EventSeq event) {
+
+            }
 
             @Override
             public double getLambda(int userId) {
@@ -201,8 +203,11 @@ public class ModelTrainingRunner {
 
             @Override
             public double timeDelta(final int userId, final double time) {
-                return constants.get(userId);
-//                return justConstant;
+                if (constants.containsKey(userId)) {
+                    return constants.get(userId);
+                } else {
+                    return justConstant;
+                }
             }
 
             @Override
@@ -228,7 +233,7 @@ public class ModelTrainingRunner {
                 spu.calculate(testData, constantApplicable));
         try {
             System.out.printf(
-                    "train_const_mae: %f, test_const_mae: %f, test_const_spu: %f, train_const_spu: %f\n",
+                    "train_const_mae: %f, test_const_mae: %f, train_const_spu: %f, test_const_spu: %f\n",
                     trainMaeTask.get(), testMaeTask.get(), trainSpuTask.get(), testSpuTask.get());
         } catch (InterruptedException | ExecutionException e) {
             System.out.println("Constant evaluation failed:");

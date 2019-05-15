@@ -130,18 +130,33 @@ public class UserLambdaSingle implements UserLambda {
         TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(history)) {
             final int userId = session.userId();
+            if (!userDeltas.containsKey(userId)) {
+                userDeltas.put(userId, new TDoubleArrayList());
+            }
             if (Util.forPrediction(session)) {
-                if (!userDeltas.containsKey(userId)) {
-                    userDeltas.put(userId, new TDoubleArrayList());
-                }
                 final int daysFromPrevSession = Util.getDaysFromPrevSession(session, userBorders.get(session.userId()));
                 userDeltas.get(userId).add(daysFromPrevSession);
             }
         }
+        final double[] intervals = DataPreprocessor.groupEventsToSessions(history).stream()
+                .filter(Util::forPrediction)
+                .mapToDouble(Session::getDelta)
+                .sorted().toArray();
+        final double commonConst = intervals[intervals.length / 2];
         TIntDoubleMap constants = new TIntDoubleHashMap();
         userDeltas.forEachEntry((userId, deltas) -> {
             deltas.sort();
-            constants.put(userId, 1 / Arrays.stream(deltas.toArray()).average().orElse(1));
+            double[] dels = deltas.toArray();
+            double del;
+            if (dels.length == 0) {
+                del = commonConst;
+            } else {
+                del = dels[dels.length / 2];
+                if (del == 0) {
+                    del = 0.01;
+                }
+            }
+            constants.put(userId, 1 / del);
             return true;
         });
         return constants;

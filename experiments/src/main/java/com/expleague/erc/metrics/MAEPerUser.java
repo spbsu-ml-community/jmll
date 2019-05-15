@@ -24,6 +24,9 @@ public class MAEPerUser implements Metric {
             final double actualReturnTime = session.getDelta();
             if (0 < actualReturnTime && !Util.isDead(actualReturnTime)) {
                 final double expectedReturnTime = applicable.timeDelta(userId, prevTime);
+                if (Double.isInfinite(Math.abs(actualReturnTime - expectedReturnTime))) {
+                    continue;
+                }
                 count++;
                 errors += Math.abs(actualReturnTime - expectedReturnTime);
             }
