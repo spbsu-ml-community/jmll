@@ -45,7 +45,7 @@ public class ModelCombined extends Model {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         userDayBorders = new TIntIntHashMap();
         userDayPeaks = new TIntIntHashMap();
-        daysModel = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
+        daysModel = new ModelExpPerUser(dim, beta, eps / 10, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
                 lambdaStrategyFactory, new DayExtractor(userDayBorders), Double.NEGATIVE_INFINITY, Util.CHURN_THRESHOLD_DAYS);
         timeModel = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory);
