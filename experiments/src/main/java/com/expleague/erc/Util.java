@@ -89,6 +89,9 @@ public class Util {
     }
 
     public static Map<Integer, Double> intDoubleMapToSerializable(final TIntDoubleMap map) {
+        if (map == null) {
+            return null;
+        }
         return Arrays.stream(map.keys()).boxed().collect(Collectors.toMap(Function.identity(), map::get));
     }
 

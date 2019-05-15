@@ -4,17 +4,10 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.erc.Event;
 import com.expleague.erc.EventSeq;
-import com.expleague.erc.Session;
-import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
 import com.expleague.erc.models.Model;
-import gnu.trove.list.TDoubleList;
-import gnu.trove.list.array.TDoubleArrayList;
-import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +25,7 @@ public class MetricsWriter implements Model.FitListener {
     private final List<Event> testData;
     private final double eps;
     private final Metric mae;
-    private final Metric spu = new SPUPerUser();
+    private final Metric spu;
     private final Metric ll;
     private final Path histPath;
 
@@ -43,6 +36,8 @@ public class MetricsWriter implements Model.FitListener {
         ll = new LogLikelihoodDaily(trainData);
         mae = new MAEDaily(trainData);
 //        mae = new MAEPerUser();
+//        spu = new SPUDaily(trainData);
+        spu = new SPUPerUser();
         histPath = saveDir.resolve(HIST_FILE_NAME);
     }
 

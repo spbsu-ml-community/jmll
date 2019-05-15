@@ -14,6 +14,8 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
@@ -170,8 +172,7 @@ public class ModelExpPerUser extends Model {
     }
 
     @Override
-    public void write(final OutputStream stream) throws IOException {
-        final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
+    protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeInt(dim);
         objectOutputStream.writeDouble(beta);
         objectOutputStream.writeDouble(eps);
@@ -185,11 +186,16 @@ public class ModelExpPerUser extends Model {
         objectOutputStream.writeObject(timeTransform);
         objectOutputStream.writeDouble(lowerRangeBorder);
         objectOutputStream.writeDouble(higherRangeBorder);
-        objectOutputStream.close();
     }
 
-    public static ModelExpPerUser load(final InputStream stream) throws IOException, ClassNotFoundException {
-        final ObjectInputStream objectInputStream = new ObjectInputStream(stream);
+    public static ModelExpPerUser load(final Path path) throws IOException, ClassNotFoundException {
+        final ObjectInputStream objectInputStream = new ObjectInputStream(Files.newInputStream(path));
+        final ModelExpPerUser model = read(objectInputStream);
+        objectInputStream.close();
+        return model;
+    }
+
+    public static ModelExpPerUser read(final ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
         final int dim = objectInputStream.readInt();
         final double beta = objectInputStream.readDouble();
         final double eps = objectInputStream.readDouble();

@@ -14,6 +14,8 @@ import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
@@ -220,8 +222,7 @@ public class ModelDays extends ModelExpPerUser {
     }
 
     @Override
-    public void write(OutputStream stream) throws IOException {
-        final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
+    protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeInt(dim);
         objectOutputStream.writeDouble(beta);
         objectOutputStream.writeDouble(eps);
@@ -238,11 +239,16 @@ public class ModelDays extends ModelExpPerUser {
         objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayPeaks));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(userDayAvgStarts));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(averageOneDayDelta));
-        objectOutputStream.close();
     }
 
-    public static ModelDays load(final InputStream stream) throws IOException, ClassNotFoundException {
-        ObjectInputStream objectInputStream = new ObjectInputStream(stream);
+    public static ModelDays load(final Path path) throws IOException, ClassNotFoundException {
+        final ObjectInputStream objectInputStream = new ObjectInputStream(Files.newInputStream(path));
+        final ModelDays model = read(objectInputStream);
+        objectInputStream.close();
+        return model;
+    }
+
+    public static ModelDays read(final ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
         final int dim = objectInputStream.readInt();
         final double beta = objectInputStream.readDouble();
         final double eps = objectInputStream.readDouble();

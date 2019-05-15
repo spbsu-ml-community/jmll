@@ -10,16 +10,17 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
-import java.io.Serializable;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
 
 import static com.expleague.erc.Util.DAY_HOURS;
 
 public class ModelCombined extends Model {
-
-    private TIntIntMap userDayBorders = new TIntIntHashMap();
-    private TIntIntMap userDayPeaks = new TIntIntHashMap();
+    private final TIntIntMap userDayBorders;
+    private final TIntIntMap userDayPeaks;
     private TIntDoubleMap userDayAvgStarts;
 
     private Model daysModel;
@@ -42,10 +43,24 @@ public class ModelCombined extends Model {
                          DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                          LambdaStrategyFactory lambdaStrategyFactory) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+        userDayBorders = new TIntIntHashMap();
+        userDayPeaks = new TIntIntHashMap();
         daysModel = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
                 lambdaStrategyFactory, new DayExtractor(userDayBorders), Double.NEGATIVE_INFINITY, Util.CHURN_THRESHOLD_DAYS);
         timeModel = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory);
+    }
+
+    private ModelCombined(int dim, double beta, double eps, double otherItemImportance,
+                          DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
+                          LambdaStrategyFactory lambdaStrategyFactory, Model daysModel, Model timeModel,
+                          TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap userDayAvgStarts) {
+        super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+        this.daysModel = daysModel;
+        this.timeModel = timeModel;
+        this.userDayBorders = userDayBorders;
+        this.userDayPeaks = userDayPeaks;
+        this.userDayAvgStarts = userDayAvgStarts;
     }
 
     @Override
@@ -58,6 +73,12 @@ public class ModelCombined extends Model {
         initIds();
         userDayAvgStarts = calcAvgStarts(events);
         calcDayPoints(events, userDayBorders, userDayPeaks);
+        isInit = true;
+    }
+
+    @Override
+    public void initModel() {
+        initIds();
         isInit = true;
     }
 
@@ -151,5 +172,54 @@ public class ModelCombined extends Model {
             avgStarts.put(userId, starts.get(userId) / count.get(userId));
         }
         return avgStarts;
+    }
+
+
+    @Override
+    protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
+        objectOutputStream.writeInt(dim);
+        objectOutputStream.writeDouble(beta);
+        objectOutputStream.writeDouble(eps);
+        objectOutputStream.writeDouble(otherItemImportance);
+        objectOutputStream.writeObject(lambdaTransform);
+        objectOutputStream.writeObject(lambdaDerivativeTransform);
+        objectOutputStream.writeObject(lambdaStrategyFactory);
+
+        objectOutputStream.writeObject(userDayBorders);
+        objectOutputStream.writeObject(userDayPeaks);
+        objectOutputStream.writeObject(userDayAvgStarts);
+
+        daysModel.write(objectOutputStream);
+        timeModel.write(objectOutputStream);
+    }
+
+    public static ModelCombined load(final Path path) throws IOException, ClassNotFoundException {
+        final ObjectInputStream objectInputStream = new ObjectInputStream(Files.newInputStream(path));
+        final ModelCombined model = read(objectInputStream);
+        objectInputStream.close();
+        return model;
+    }
+
+    public static ModelCombined read(final ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
+        final int dim = objectInputStream.readInt();
+        final double beta = objectInputStream.readDouble();
+        final double eps = objectInputStream.readDouble();
+        final double otherItemImportance = objectInputStream.readDouble();
+        final DoubleUnaryOperator lambdaTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
+        final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
+
+        final TIntIntMap userDayBorders = (TIntIntMap) objectInputStream.readObject();
+        final TIntIntMap userDayPeaks = (TIntIntMap) objectInputStream.readObject();
+        final TIntDoubleMap userDayAvgStarts = (TIntDoubleMap) objectInputStream.readObject();
+
+        final Model daysModel = ModelExpPerUser.read(objectInputStream);
+        final Model timeModel = ConstantNextTimeModel.read(objectInputStream);
+
+        final ModelCombined model =
+                new ModelCombined(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
+                        lambdaStrategyFactory, daysModel, timeModel, userDayBorders, userDayPeaks, userDayAvgStarts);
+        model.initModel();
+        return model;
     }
 }

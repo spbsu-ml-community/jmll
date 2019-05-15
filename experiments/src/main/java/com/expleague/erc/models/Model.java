@@ -20,6 +20,8 @@ import gnu.trove.set.hash.TIntHashSet;
 import gnu.trove.set.hash.TLongHashSet;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
 
@@ -386,9 +388,13 @@ public class Model implements Serializable {
     }
 
     // Save & Load
+    public void save(Path path) throws IOException {
+        final ObjectOutputStream objectOutputStream = new ObjectOutputStream(Files.newOutputStream(path));
+        write(objectOutputStream);
+        objectOutputStream.close();
+    }
 
-    public void write(final OutputStream stream) throws IOException {
-        final ObjectOutputStream objectOutputStream = new ObjectOutputStream(stream);
+    protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeInt(dim);
         objectOutputStream.writeDouble(beta);
         objectOutputStream.writeDouble(eps);
@@ -402,11 +408,16 @@ public class Model implements Serializable {
         objectOutputStream.writeObject(timeTransform);
         objectOutputStream.writeDouble(lowerRangeBorder);
         objectOutputStream.writeDouble(higherRangeBorder);
-        objectOutputStream.close();
     }
 
-    public static Model load(final InputStream stream) throws IOException, ClassNotFoundException {
-        final ObjectInputStream objectInputStream = new ObjectInputStream(stream);
+    public static Model load(final Path path) throws IOException, ClassNotFoundException {
+        final ObjectInputStream objectInputStream = new ObjectInputStream(Files.newInputStream(path));
+        final Model model = read(objectInputStream);
+        objectInputStream.close();
+        return model;
+    }
+
+    public static Model read(final ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
         final int dim = objectInputStream.readInt();
         final double beta = objectInputStream.readDouble();
         final double eps = objectInputStream.readDouble();

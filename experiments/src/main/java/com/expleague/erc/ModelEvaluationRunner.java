@@ -55,7 +55,7 @@ public class ModelEvaluationRunner {
         final String operation = cliOptions.getOptionValue("o");
 
         final Path modelDirPath = Paths.get(modelName);
-        final ModelDays model = ModelDays.load(Files.newInputStream(modelDirPath.resolve(FILE_MODEL)));
+        final ModelDays model = ModelDays.load(modelDirPath.resolve(FILE_MODEL));
 
         switch (operation) {
             case "deltas": {

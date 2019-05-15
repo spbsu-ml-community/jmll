@@ -115,7 +115,7 @@ public class ModelTrainingRunner {
 
         final Path modelPath = modelDirPath.resolve(FILE_MODEL);
         if (existingModel && !reset) {
-            model = ModelDays.load(Files.newInputStream(modelPath));
+            model = ModelCombined.load(modelPath);
         } else {
             if (!existingModel) {
                 Files.createDirectory(modelDirPath);
@@ -150,7 +150,7 @@ public class ModelTrainingRunner {
         final MetricsWriter metricsWriter = new MetricsWriter(train, test, eps, modelDirPath);
         model.fit(test, lr, iterations, decay, metricsWriter);
 
-//        model.write(Files.newOutputStream(modelPath));
+        model.save(modelPath);
         writeEmbeddings(model, modelDirPath);
     }
 
@@ -160,12 +160,11 @@ public class ModelTrainingRunner {
         final TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(trainData)) {
             final int userId = session.userId();
-            final double delta = session.getDelta();
-            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
+            if (Util.forPrediction(session)) {
                 if (!userDeltas.containsKey(userId)) {
                     userDeltas.put(userId, new TDoubleArrayList());
                 }
-                userDeltas.get(userId).add(delta);
+//                userDeltas.get(userId).add(delta);
                 userDeltas.get(userId).add(Util.getDaysFromPrevSession(session, userDayBorders.get(userId)));
             }
         }
