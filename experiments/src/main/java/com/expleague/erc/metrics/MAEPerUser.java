@@ -22,13 +22,12 @@ public class MAEPerUser implements Metric {
             final double prevTime = prevTimes.get(userId);
             prevTimes.put(userId, curTime);
             final double actualReturnTime = session.getDelta();
-            if (0 < actualReturnTime && !Util.isDead(actualReturnTime)) {
+            if (Util.forPrediction(session)) {
                 final double expectedReturnTime = applicable.timeDelta(userId, prevTime);
-                if (Double.isInfinite(Math.abs(actualReturnTime - expectedReturnTime))) {
-                    continue;
+                if (!Double.isInfinite(Math.abs(actualReturnTime - expectedReturnTime))) {
+                    count++;
+                    errors += Math.abs(actualReturnTime - expectedReturnTime);
                 }
-                count++;
-                errors += Math.abs(actualReturnTime - expectedReturnTime);
             }
             applicable.accept(session);
         }

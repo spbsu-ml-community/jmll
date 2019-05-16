@@ -6,15 +6,18 @@ import com.expleague.erc.lambda.LambdaStrategyFactory;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.TLongDoubleMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TLongDoubleHashMap;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.DoubleUnaryOperator;
+import java.util.stream.Collectors;
 
 import static com.expleague.erc.Util.DAY_HOURS;
 
@@ -22,6 +25,7 @@ public class ModelCombined extends Model {
     private final TIntIntMap userDayBorders;
     private final TIntIntMap userDayPeaks;
     private TIntDoubleMap userDayAvgStarts;
+    private TLongDoubleMap userDayAverageDeltas;
 
     private Model daysModel;
     private Model timeModel;
@@ -73,6 +77,7 @@ public class ModelCombined extends Model {
         initIds();
         userDayAvgStarts = calcAvgStarts(events);
         calcDayPoints(events, userDayBorders, userDayPeaks);
+        calcDayAverages(events);
         isInit = true;
     }
 
@@ -85,8 +90,6 @@ public class ModelCombined extends Model {
     @Override
     public void fit(final List<Event> events, final double learningRate, final int iterationsNumber,
                     final double decay) {
-//        daysModel.fit(events, learningRate, iterationsNumber, decay, listener);
-//        timeModel.fit(events, learningRate, iterationsNumber, decay, listener);
         initModel(events);
         daysModel.initModel(events);
         timeModel.initModel(events);
@@ -130,12 +133,21 @@ public class ModelCombined extends Model {
 
         @Override
         public double timeDelta(final int userId, final double time) {
-            final double dayPrediction = daysApplicable.timeDelta(userId, time);
-            if (time + dayPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
+            final double rawPrediction = daysApplicable.timeDelta(userId, time);
+            final int daysPrediction = (int) rawPrediction;
+            if (daysPrediction == 0) {
+//            if (time + rawPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
                 return timeApplicable.timeDelta(userId, time);
             }
-            final int predictedDay = (int) (time + (int) dayPrediction * DAY_HOURS) / DAY_HOURS;
-            final double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
+            long userDay = combine(userId, daysPrediction);
+            if (userDayAverageDeltas.containsKey(userDay)) {
+                return userDayAverageDeltas.get(userDay);
+            }
+            final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
+            double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
+            if (predictedTime < time) {
+                return timeApplicable.timeDelta(userId, time);
+            }
             return predictedTime - time;
         }
     }
@@ -198,6 +210,29 @@ public class ModelCombined extends Model {
         return avgStarts;
     }
 
+    private static long combine(int user, int day) {
+        return ((long) day) << 32 | user;
+    }
+
+    private static int getUser(long userDay) {
+        return (int) userDay;
+    }
+
+    private static int getDay(long userDay) {
+        return (int) (userDay >> 32);
+    }
+
+    private long sessionUserDays(Session session) {
+        return combine(session.userId(), Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId())));
+    }
+
+    private void calcDayAverages(List<Event> events) {
+        userDayAverageDeltas = new TLongDoubleHashMap();
+        DataPreprocessor.groupEventsToSessions(events).stream()
+                .filter(Util::forPrediction)
+                .collect(Collectors.groupingBy(this::sessionUserDays, Collectors.averagingDouble(Session::getDelta)))
+                .forEach(userDayAverageDeltas::put);
+    }
 
     @Override
     protected void write(final ObjectOutputStream objectOutputStream) throws IOException {

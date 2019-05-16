@@ -31,12 +31,11 @@ public class MAEDaily implements Metric {
             if (Util.forPrediction(session)) {
                 final double actualReturnTime =
                         Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId()));
-                final double expectedReturnTime = applicable.timeDelta(userId, prevTimes.get(userId));
-                if (Double.isInfinite(Math.abs(actualReturnTime - expectedReturnTime))) {
-                    continue;
+                final double expectedReturnTime = (int)applicable.timeDelta(userId, prevTimes.get(userId));
+                if (!Double.isInfinite(Math.abs(actualReturnTime - expectedReturnTime))) {
+                    count++;
+                    errors += Math.abs(actualReturnTime - expectedReturnTime);
                 }
-                count++;
-                errors += Math.abs(actualReturnTime - expectedReturnTime);
             }
             prevTimes.put(userId, session.getStartTs());
             applicable.accept(session);

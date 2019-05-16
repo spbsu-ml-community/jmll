@@ -20,7 +20,8 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 import java.util.List;
 
 public class UserLambdaSingle implements UserLambda {
-    private static final double EPS = 1e-4;
+    private static final double EPS = 0.2;
+
     private final Vec userEmbedding;
     private final TIntObjectMap<Vec> itemEmbeddings;
     private final double beta;

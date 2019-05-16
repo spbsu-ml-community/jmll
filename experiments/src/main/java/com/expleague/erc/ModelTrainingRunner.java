@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
 public class ModelTrainingRunner {
@@ -159,18 +160,15 @@ public class ModelTrainingRunner {
         writeEmbeddings(model, modelDirPath);
     }
 
-    private static void evaluateConstant(final List<Event> trainData, final List<Event> testData) {
-        final TIntIntMap userDayBorders = new TIntIntHashMap();
-        ModelCombined.calcDayPoints(trainData, userDayBorders, new TIntIntHashMap());
+    private static TIntDoubleMap calcConstants(List<Event> data, ToDoubleFunction<Session> getTime) {
         final TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
-        for (final Session session : DataPreprocessor.groupEventsToSessions(trainData)) {
+        for (final Session session : DataPreprocessor.groupEventsToSessions(data)) {
             final int userId = session.userId();
             if (Util.forPrediction(session)) {
                 if (!userDeltas.containsKey(userId)) {
                     userDeltas.put(userId, new TDoubleArrayList());
                 }
-//                userDeltas.get(userId).add(delta);
-                userDeltas.get(userId).add(Util.getDaysFromPrevSession(session, userDayBorders.get(userId)));
+                userDeltas.get(userId).add(getTime.applyAsDouble(session));
             }
         }
         final TIntDoubleMap constants = new TIntDoubleHashMap();
@@ -179,63 +177,75 @@ public class ModelTrainingRunner {
             constants.put(userId, deltas.get(deltas.size() / 2));
             return true;
         });
-        final double[] intervals = DataPreprocessor.groupEventsToSessions(trainData).stream()
+        return constants;
+    }
+
+    private static double calcDefaultConstant(List<Event> data, ToDoubleFunction<Session> getTime) {
+        final double[] intervals = DataPreprocessor.groupEventsToSessions(data).stream()
                 .filter(Util::forPrediction)
-                .mapToDouble(session -> Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId())))
+                .mapToDouble(getTime)
                 .sorted().toArray();
-        final double justConstant = intervals[intervals.length / 2];
-        final ApplicableModel constantApplicable = new ApplicableModel() {
-            @Override
-            public void accept(EventSeq event) {}
+        return intervals[intervals.length / 2];
+    }
 
-            @Override
-            public double getLambda(int userId) {
-                return 0;
-            }
+    private static class ConstantApplicable implements ApplicableModel {
+        private final TIntDoubleMap constants;
+        private final double defaultConstant;
 
-            @Override
-            public double getLambda(int userId, int itemId) {
-                return 0;
-            }
+        private ConstantApplicable(TIntDoubleMap constants, double justConstant) {
+            this.constants = constants;
+            this.defaultConstant = justConstant;
+        }
 
-            @Override
-            public double timeDelta(int userId, int itemId) {
-                return 0;
-            }
+        @Override
+        public void accept(EventSeq event) {}
 
-            @Override
-            public double timeDelta(final int userId, final double time) {
-                if (constants.containsKey(userId)) {
-                    return constants.get(userId);
-                } else {
-                    return justConstant;
-                }
+        @Override
+        public double timeDelta(final int userId, final double time) {
+            if (constants.containsKey(userId)) {
+                return constants.get(userId);
+            } else {
+                return defaultConstant;
             }
+        }
+    }
 
-            @Override
-            public double probabilityBeforeX(int userId, double x) {
-                return 0;
-            }
+    private static void evaluateConstant(final List<Event> trainData, final List<Event> testData) {
+        final TIntIntMap userDayBorders = new TIntIntHashMap();
+        ModelCombined.calcDayPoints(trainData, userDayBorders, new TIntIntHashMap());
 
-            @Override
-            public double probabilityBeforeX(int userId, int itemId, double x) {
-                return 0;
-            }
-        };
-        final Metric mae = new MAEDaily(trainData);
-//        final Metric mae = new MAEPerUser();
+        final TIntDoubleMap dayConstants = calcConstants(trainData,
+                session -> Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId())));
+        final double dayDefaultConstant = calcDefaultConstant(trainData,
+                session -> Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId())));
+        final TIntDoubleMap hourConstants = calcConstants(trainData, Session::getDelta);
+        final double hourDefaultConstant = calcDefaultConstant(trainData, Session::getDelta);
+
+        final ApplicableModel dayApplicable = new ConstantApplicable(dayConstants, dayDefaultConstant);
+        final ApplicableModel hourApplicable = new ConstantApplicable(hourConstants, hourDefaultConstant);
+
+        final Metric maeDays = new MAEDaily(trainData);
+        final Metric maeHours = new MAEPerUser();
         final Metric spu = new SPUPerUser();
-        final ForkJoinTask<Double> trainMaeTask = ForkJoinPool.commonPool().submit(() ->
-                mae.calculate(trainData, constantApplicable));
-        final ForkJoinTask<Double> testMaeTask = ForkJoinPool.commonPool().submit(() ->
-                mae.calculate(testData, constantApplicable));
+
+        final ForkJoinTask<Double> trainMaeDaysTask = ForkJoinPool.commonPool().submit(() ->
+                maeDays.calculate(trainData, dayApplicable));
+        final ForkJoinTask<Double> testMaeDaysTask = ForkJoinPool.commonPool().submit(() ->
+                maeDays.calculate(testData, dayApplicable));
+        final ForkJoinTask<Double> trainMaeHoursTask = ForkJoinPool.commonPool().submit(() ->
+                maeHours.calculate(trainData, hourApplicable));
+        final ForkJoinTask<Double> testMaeHoursTask = ForkJoinPool.commonPool().submit(() ->
+                maeHours.calculate(testData, hourApplicable));
         final ForkJoinTask<Double> trainSpuTask = ForkJoinPool.commonPool().submit(() ->
-                spu.calculate(trainData, constantApplicable));
+                spu.calculate(trainData, hourApplicable));
         final ForkJoinTask<Double> testSpuTask = ForkJoinPool.commonPool().submit(() ->
-                spu.calculate(testData, constantApplicable));
+                spu.calculate(testData, hourApplicable));
+
         try {
-            System.out.printf("train_const_mae: %f, test_const_mae: %f, train_const_spu: %f, test_const_spu: %f\n",
-                    trainMaeTask.get(), testMaeTask.get(), trainSpuTask.get(), testSpuTask.get());
+            System.out.printf("train_const_mae: %f, test_const_mae: %f\n",
+                    trainMaeDaysTask.get(), testMaeDaysTask.get());
+            System.out.printf("train_const_mae: %f, test_const_mae: %f, train_const_spu: %f, test_const_spu: %f\n\n",
+                    trainMaeHoursTask.get(), testMaeHoursTask.get(), trainSpuTask.get(), testSpuTask.get());
         } catch (InterruptedException | ExecutionException e) {
             System.out.println("Constant evaluation failed: " + e.getMessage());
         }

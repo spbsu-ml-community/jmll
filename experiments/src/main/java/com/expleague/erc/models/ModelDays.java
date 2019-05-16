@@ -66,6 +66,7 @@ public class ModelDays extends ModelExpPerUser {
             return;
         }
         makeInitialEmbeddings(events);
+        makeInitialLambdas(events);
         initIds();
         userDayAvgStarts = calcAvgStarts(events);
         averageOneDayDelta = calcAverageOneDayDelta(events);
