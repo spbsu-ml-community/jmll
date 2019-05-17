@@ -58,13 +58,15 @@ public class ModelCombined extends Model {
     private ModelCombined(int dim, double beta, double eps, double otherItemImportance,
                           DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                           LambdaStrategyFactory lambdaStrategyFactory, Model daysModel, Model timeModel,
-                          TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap userDayAvgStarts) {
+                          TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap userDayAvgStarts,
+                          TLongDoubleMap userDayAverageDeltas) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         this.daysModel = daysModel;
         this.timeModel = timeModel;
         this.userDayBorders = userDayBorders;
         this.userDayPeaks = userDayPeaks;
         this.userDayAvgStarts = userDayAvgStarts;
+        this.userDayAverageDeltas = userDayAverageDeltas;
     }
 
     @Override
@@ -93,14 +95,13 @@ public class ModelCombined extends Model {
         initModel(events);
         daysModel.initModel(events);
         timeModel.initModel(events);
-        double lr = learningRate;
         if (fitListener != null) {
             fitListener.apply(this);
         }
         for (int i = 0; i < iterationsNumber; i++) {
-            daysModel.fit(events, lr, 1, decay);
-            timeModel.fit(events, lr, 1, decay);
-            lr *= decay;
+            double lr = learningRate / Math.log(2 + i);
+            daysModel.fit(events, lr, 1, 1);
+            timeModel.fit(events, lr, 1, 1);
             if (fitListener != null) {
                 fitListener.apply(this);
             }
@@ -247,6 +248,7 @@ public class ModelCombined extends Model {
         objectOutputStream.writeObject(userDayBorders);
         objectOutputStream.writeObject(userDayPeaks);
         objectOutputStream.writeObject(userDayAvgStarts);
+        objectOutputStream.writeObject(userDayAverageDeltas);
 
         daysModel.write(objectOutputStream);
         timeModel.write(objectOutputStream);
@@ -271,13 +273,14 @@ public class ModelCombined extends Model {
         final TIntIntMap userDayBorders = (TIntIntMap) objectInputStream.readObject();
         final TIntIntMap userDayPeaks = (TIntIntMap) objectInputStream.readObject();
         final TIntDoubleMap userDayAvgStarts = (TIntDoubleMap) objectInputStream.readObject();
+        final TLongDoubleMap userDayAverageDeltas = (TLongDoubleMap) objectInputStream.readObject();
 
         final Model daysModel = ModelExpPerUser.read(objectInputStream);
         final Model timeModel = ConstantNextTimeModel.read(objectInputStream);
 
-        final ModelCombined model =
-                new ModelCombined(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
-                        lambdaStrategyFactory, daysModel, timeModel, userDayBorders, userDayPeaks, userDayAvgStarts);
+        final ModelCombined model = new ModelCombined(dim, beta, eps, otherItemImportance, lambdaTransform,
+                lambdaDerivativeTransform, lambdaStrategyFactory, daysModel, timeModel, userDayBorders, userDayPeaks,
+                userDayAvgStarts, userDayAverageDeltas);
         model.initModel();
         return model;
     }
