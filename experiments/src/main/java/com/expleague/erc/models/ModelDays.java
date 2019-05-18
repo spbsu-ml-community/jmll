@@ -68,11 +68,11 @@ public class ModelDays extends ModelExpPerUser {
         makeInitialEmbeddings(events);
         makeInitialLambdas(events);
         initIds();
-        userDayAvgStarts = calcAvgStarts(events);
-        averageOneDayDelta = calcAverageOneDayDelta(events);
+        userDayAvgStarts = ModelCombined.calcAvgStarts(events);
+        averageOneDayDelta = ConstantNextTimeModel.calcAverageOneDayDelta(events);
         userDayBorders = new TIntIntHashMap();
         userDayPeaks = new TIntIntHashMap();
-        calcDayPoints(events, userDayBorders, userDayPeaks);
+        ModelCombined.calcDayPoints(events, userDayBorders, userDayPeaks);
         isInit = true;
     }
 
@@ -139,103 +139,12 @@ public class ModelDays extends ModelExpPerUser {
         return new ApplicableImpl();
     }
 
-    public static void calcDayPoints(final List<Event> events, final TIntIntMap userDayBorders, final TIntIntMap userDayPeaks) {
-        final TIntObjectMap<long[]> counters = new TIntObjectHashMap<>();
-        for (final Event event : events) {
-            final int userId = event.userId();
-            if (!counters.containsKey(userId)) {
-                counters.put(userId, new long[DAY_HOURS]);
-            }
-            counters.get(userId)[(int) event.getTs() % DAY_HOURS]++;
-        }
-        counters.forEachEntry((userId, userCounters) -> {
-            int argMax = -1;
-            int argMin = -1;
-            long minCounter = Long.MAX_VALUE;
-            long maxCounter = Long.MIN_VALUE;
-            for (int i = 0; i < DAY_HOURS; i++) {
-                if (userCounters[i] < minCounter) {
-                    minCounter = userCounters[i];
-                    argMin = i;
-                }
-                if (userCounters[i] > maxCounter) {
-                    maxCounter = userCounters[i];
-                    argMax = i;
-                }
-            }
-            userDayBorders.put(userId, argMin);
-            userDayPeaks.put(userId, argMax);
-            return true;
-        });
-    }
-
-    private static TIntDoubleMap calcAvgStarts(final List<Event> events) {
-        final TIntIntMap lastDays = new TIntIntHashMap();
-        TIntDoubleMap starts = new TIntDoubleHashMap();
-        TIntIntMap count = new TIntIntHashMap();
-        for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            final int userId = session.userId();
-            final int curDay = ((int) session.getStartTs() / DAY_HOURS);
-            final double curTime = session.getStartTs() - curDay * DAY_HOURS;
-            if (!lastDays.containsKey(userId) || lastDays.get(userId) != curDay) {
-                starts.adjustOrPutValue(userId, curTime, curTime);
-                count.adjustOrPutValue(userId, 1, 1);
-                lastDays.put(userId, curDay);
-            }
-        }
-        TIntDoubleMap avgStarts = new TIntDoubleHashMap();
-        for (final int userId : starts.keys()) {
-            avgStarts.put(userId, starts.get(userId) / count.get(userId));
-        }
-        return avgStarts;
-    }
-
-    private static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
-        final TIntIntMap lastDays = new TIntIntHashMap();
-        final TIntDoubleMap lastDayTimes = new TIntDoubleHashMap();
-        final TIntDoubleMap userDeltas = new TIntDoubleHashMap();
-        final TIntIntMap userCounts = new TIntIntHashMap();
-        for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            final int userId = session.userId();
-            final int curDay = ((int) session.getStartTs() / DAY_HOURS);
-            final double curTime = session.getStartTs() - curDay * DAY_HOURS;
-            if (!lastDays.containsKey(userId)) {
-                lastDays.put(userId, curDay);
-                lastDayTimes.put(userId, curTime);
-                continue;
-            }
-            final int lastDay = lastDays.get(userId);
-            if (lastDay == curDay) {
-                final double delta = curTime - lastDayTimes.get(userId);
-                userDeltas.adjustOrPutValue(userId, delta, delta);
-                userCounts.adjustOrPutValue(userId, 1, 1);
-                lastDayTimes.put(userId, curTime);
-            } else {
-                lastDays.put(userId, curDay);
-                lastDayTimes.put(userId, curTime);
-            }
-        }
-        final TIntDoubleMap result = new TIntDoubleHashMap();
-        for (final int userId : userDeltas.keys()) {
-            result.put(userId, userDeltas.get(userId) / userCounts.get(userId));
-        }
-        return result;
-    }
-
     @Override
     protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
-        objectOutputStream.writeInt(dim);
-        objectOutputStream.writeDouble(beta);
-        objectOutputStream.writeDouble(eps);
-        objectOutputStream.writeDouble(otherItemImportance);
-        objectOutputStream.writeObject(lambdaTransform);
-        objectOutputStream.writeObject(lambdaDerivativeTransform);
-        objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
-        objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
-        objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
-        objectOutputStream.writeObject(timeTransform);
-        objectOutputStream.writeDouble(lowerRangeBorder);
-        objectOutputStream.writeDouble(higherRangeBorder);
+        writeBase(objectOutputStream);
+        writeLearnedParams(objectOutputStream);
+        writeTimeParams(objectOutputStream);
+
         objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayBorders));
         objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayPeaks));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(userDayAvgStarts));

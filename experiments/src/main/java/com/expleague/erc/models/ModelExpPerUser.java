@@ -172,19 +172,9 @@ public class ModelExpPerUser extends Model {
 
     @Override
     protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
-        objectOutputStream.writeInt(dim);
-        objectOutputStream.writeDouble(beta);
-        objectOutputStream.writeDouble(eps);
-        objectOutputStream.writeDouble(otherItemImportance);
-        objectOutputStream.writeObject(lambdaTransform);
-        objectOutputStream.writeObject(lambdaDerivativeTransform);
-        objectOutputStream.writeObject(lambdaStrategyFactory);
-        objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
-        objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
-        objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
-        objectOutputStream.writeObject(timeTransform);
-        objectOutputStream.writeDouble(lowerRangeBorder);
-        objectOutputStream.writeDouble(higherRangeBorder);
+        writeBase(objectOutputStream);
+        writeLearnedParams(objectOutputStream);
+        writeTimeParams(objectOutputStream);
     }
 
     public static ModelExpPerUser load(final Path path) throws IOException, ClassNotFoundException {

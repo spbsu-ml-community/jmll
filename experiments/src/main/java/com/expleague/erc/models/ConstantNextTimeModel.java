@@ -66,7 +66,7 @@ public class ConstantNextTimeModel extends Model {
         return new ApplicableImpl();
     }
 
-    private static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
+    public static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
         final TIntIntMap lastDays = new TIntIntHashMap();
         final TIntDoubleMap lastDayTimes = new TIntDoubleHashMap();
         final TIntDoubleMap userDeltas = new TIntDoubleHashMap();
@@ -99,13 +99,7 @@ public class ConstantNextTimeModel extends Model {
     }
 
     protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
-        objectOutputStream.writeInt(dim);
-        objectOutputStream.writeDouble(beta);
-        objectOutputStream.writeDouble(eps);
-        objectOutputStream.writeDouble(otherItemImportance);
-        objectOutputStream.writeObject(lambdaTransform);
-        objectOutputStream.writeObject(lambdaDerivativeTransform);
-        objectOutputStream.writeObject(lambdaStrategyFactory);
+        writeBase(objectOutputStream);
         objectOutputStream.writeObject(averageOneDayDelta);
     }
 
