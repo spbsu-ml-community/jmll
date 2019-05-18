@@ -31,4 +31,8 @@ public class QURLItem extends FakeItem implements GroupedDSItem {
   public String groupId() {
     return Integer.toString(queryId);
   }
+
+  public String subgroupId() {
+    return Integer.toString(groupId);
+  }
 }
