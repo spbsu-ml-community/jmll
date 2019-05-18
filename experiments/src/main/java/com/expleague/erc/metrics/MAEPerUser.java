@@ -18,17 +18,12 @@ public class MAEPerUser implements Metric {
         final TIntDoubleMap prevTimes = new TIntDoubleHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int userId = session.userId();
-            final double curTime = session.getStartTs();
-            final double prevTime = prevTimes.get(userId);
-            prevTimes.put(userId, curTime);
-            final double actualReturnTime = session.getDelta();
             if (Util.forPrediction(session)) {
-                final double expectedReturnTime = applicable.timeDelta(userId, prevTime);
-                if (!Double.isInfinite(Math.abs(actualReturnTime - expectedReturnTime))) {
-                    count++;
-                    errors += Math.abs(actualReturnTime - expectedReturnTime);
-                }
+                final double expectedReturnTime = applicable.timeDelta(userId, prevTimes.get(userId));
+                count++;
+                errors += Math.abs(session.getDelta() - expectedReturnTime);
             }
+            prevTimes.put(userId, session.getStartTs());
             applicable.accept(session);
         }
         return errors / count;

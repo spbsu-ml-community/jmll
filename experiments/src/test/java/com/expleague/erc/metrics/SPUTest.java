@@ -11,7 +11,7 @@ import java.util.List;
 public class SPUTest {
     @Test
     public void accurateTest() {
-        final double lambda = 2;
+        final double lambda = 1;
         final List<Event> history = Arrays.asList(
                 new Event(0, 0, (1 / lambda) * 0),
                 new Event(0, 0, (1 / lambda) * 1),

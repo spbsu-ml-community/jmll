@@ -16,6 +16,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Random;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 
@@ -77,8 +78,8 @@ public class ModelCombined extends Model {
         daysModel.makeInitialEmbeddings(events);
         timeModel.makeInitialEmbeddings(events);
         initIds();
-        userDayAvgStarts = calcAvgStarts(events);
         calcDayPoints(events, userDayBorders, userDayPeaks);
+        userDayAvgStarts = calcAvgStarts(events, userDayBorders);
         calcDayAverages(events);
         isInit = true;
     }
@@ -98,10 +99,15 @@ public class ModelCombined extends Model {
         if (fitListener != null) {
             fitListener.apply(this);
         }
+//        final Random random = new Random();
+//        final int batchSize = events.size() / 20;
         for (int i = 0; i < iterationsNumber; i++) {
+//            final int start = Math.abs(random.nextInt()) % (events.size() - batchSize);
             double lr = learningRate / Math.log(2 + i);
             daysModel.fit(events, lr, 1, 1);
             timeModel.fit(events, lr, 1, 1);
+//            daysModel.fit(events.subList(start, start + batchSize), lr, 1, 1);
+//            timeModel.fit(events.subList(start, start + batchSize), lr, 1, 1);
             if (fitListener != null) {
                 fitListener.apply(this);
             }
@@ -134,18 +140,19 @@ public class ModelCombined extends Model {
 
         @Override
         public double timeDelta(final int userId, final double time) {
-            final double rawPrediction = daysApplicable.timeDelta(userId, time);
-            final int daysPrediction = (int) rawPrediction;
-            if (daysPrediction == 0) {
-//            if (time + rawPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
+            final double rawDaysPrediction = daysApplicable.timeDelta(userId, time);
+            final int daysPrediction = (int) rawDaysPrediction;
+//            if (daysPrediction == 0) {
+            if (time + rawDaysPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
                 return timeApplicable.timeDelta(userId, time);
             }
-            long userDay = combine(userId, daysPrediction);
+            final long userDay = combine(userId, daysPrediction);
             if (userDayAverageDeltas.containsKey(userDay)) {
                 return userDayAverageDeltas.get(userDay);
             }
-            final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
-            double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
+            final double predictedDay = Util.getDay(time, userDayBorders.get(userId)) + daysPrediction * DAY_HOURS -
+                    DAY_HOURS;
+            final double predictedTime = predictedDay + userDayAvgStarts.get(userId);
             if (predictedTime < time) {
                 return timeApplicable.timeDelta(userId, time);
             }
@@ -190,21 +197,21 @@ public class ModelCombined extends Model {
         });
     }
 
-    private static TIntDoubleMap calcAvgStarts(final List<Event> events) {
-        final TIntIntMap lastDays = new TIntIntHashMap();
-        TIntDoubleMap starts = new TIntDoubleHashMap();
-        TIntIntMap count = new TIntIntHashMap();
+    private static TIntDoubleMap calcAvgStarts(final List<Event> events, final TIntIntMap userBorders) {
+        final TIntDoubleMap lastDays = new TIntDoubleHashMap();
+        final TIntDoubleMap starts = new TIntDoubleHashMap();
+        final TIntIntMap count = new TIntIntHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int userId = session.userId();
-            final int curDay = ((int) session.getStartTs() / DAY_HOURS);
-            final double curTime = session.getStartTs() - curDay * DAY_HOURS;
-            if (!lastDays.containsKey(userId) || lastDays.get(userId) != curDay) {
-                starts.adjustOrPutValue(userId, curTime, curTime);
+            final double dayStart = Util.getDay(session.getStartTs(), userBorders.get(userId));
+            final double dayTime = session.getStartTs() - dayStart;
+            if (!lastDays.containsKey(userId) || lastDays.get(userId) != dayStart) {
+                starts.adjustOrPutValue(userId, dayTime, dayTime);
                 count.adjustOrPutValue(userId, 1, 1);
-                lastDays.put(userId, curDay);
+                lastDays.put(userId, dayStart);
             }
         }
-        TIntDoubleMap avgStarts = new TIntDoubleHashMap();
+        final TIntDoubleMap avgStarts = new TIntDoubleHashMap();
         for (final int userId : starts.keys()) {
             avgStarts.put(userId, starts.get(userId) / count.get(userId));
         }

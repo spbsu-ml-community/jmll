@@ -4,10 +4,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.erc.data.*;
 import com.expleague.erc.lambda.*;
 import com.expleague.erc.metrics.*;
-import com.expleague.erc.models.ApplicableModel;
-import com.expleague.erc.models.Model;
-import com.expleague.erc.models.ModelCombined;
-import com.expleague.erc.models.ModelDays;
+import com.expleague.erc.models.*;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.map.TIntDoubleMap;
@@ -143,6 +140,8 @@ public class ModelTrainingRunner {
 //                    perUserLambdaStrategyFactory);
             model = new ModelCombined(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
                     perUserLambdaStrategyFactory);
+//            model = new ModelExpPerUser(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivative,
+//                    new PerUserLambdaStrategy.Factory(), new Util.GetDelta(), Double.NEGATIVE_INFINITY, DAY_HOURS);
         }
 
         saveSessions(modelDirPath, dataset.getTest());
@@ -242,9 +241,10 @@ public class ModelTrainingRunner {
                 spu.calculate(testData, hourApplicable));
 
         try {
-            System.out.printf("train_const_mae: %f, test_const_mae: %f\n",
+            System.out.printf("train_const_days_mae: %f, test_const_days_mae: %f\n",
                     trainMaeDaysTask.get(), testMaeDaysTask.get());
-            System.out.printf("train_const_mae: %f, test_const_mae: %f, train_const_spu: %f, test_const_spu: %f\n\n",
+            System.out.printf("train_const_hours_mae: %f, test_const_hours_mae: %f, train_const_hours_spu: %f, " +
+                            "test_const_hours_spu: %f\n\n",
                     trainMaeHoursTask.get(), testMaeHoursTask.get(), trainSpuTask.get(), testSpuTask.get());
         } catch (InterruptedException | ExecutionException e) {
             System.out.println("Constant evaluation failed: " + e.getMessage());

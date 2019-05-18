@@ -20,11 +20,12 @@ public class MAEPerPair implements Metric {
             final long pair = eventSeq.getPair();
             final double curTime = eventSeq.getStartTs();
             final double expectedReturnTime = applicable.timeDelta(eventSeq.userId(), eventSeq.itemId());
-            final double prevTime = prevTimes.get(pair);
-            final double actualReturnTime = curTime - prevTime;
-            if (prevTime != prevTimes.getNoEntryValue() && !Util.isDead(actualReturnTime)) {
-                count++;
-                errors += Math.abs(actualReturnTime - expectedReturnTime);
+            if (prevTimes.containsKey(pair)) {
+                final double actualReturnTime = curTime - prevTimes.get(pair);
+                if (!Util.isDead(actualReturnTime)) {
+                    count++;
+                    errors += Math.abs(actualReturnTime - expectedReturnTime);
+                }
             }
             applicable.accept(eventSeq);
             prevTimes.put(pair, curTime);
