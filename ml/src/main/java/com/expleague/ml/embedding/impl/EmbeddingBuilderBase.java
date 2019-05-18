@@ -7,9 +7,7 @@ import com.expleague.commons.seq.CharSeqTools;
 import com.expleague.ml.embedding.Embedding;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.TObjectDoubleMap;
 import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectDoubleHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +33,7 @@ import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq> {
   protected static final Logger log = LoggerFactory.getLogger(EmbeddingBuilderBase.class.getName());
   protected Path path;
@@ -50,6 +49,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   protected TDoubleArrayList wordsPrior = new TDoubleArrayList();
   protected TObjectIntMap<CharSeq> wordsIndex = new TObjectIntHashMap<>(50_000, 0.6f, -1);
   private boolean dictReady;
+  private int progressLines = 1000;
 
   @Override
   public Embedding.Builder<CharSeq> file(Path path) {
@@ -81,6 +81,11 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
   public Embedding.Builder<CharSeq> minWordCount(int count) {
     this.minCount = count;
     return this;
+  }
+
+  @SuppressWarnings("unused")
+  public void progressLines(int lines) {
+    this.progressLines = lines;
   }
 
   protected abstract Embedding<CharSeq> fit();
@@ -143,7 +148,6 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     }
   }
 
-  @SuppressWarnings("WeakerAccess")
   @NotNull
   protected LongStream positionsStream() throws IOException {
     LongStream coocStream;
@@ -155,7 +159,7 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
 
       @Override
       public synchronized void accept(CharSeq l) {
-        if ((++line) % 10000 == 0) {
+        if ((++line) % progressLines == 0) {
           CoocBasedBuilder.log.info(line + " lines processed for " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time) + "s");
           time = System.nanoTime();
         }

@@ -1,10 +1,7 @@
 package com.expleague.ml.embedding.impl;
 
 import com.expleague.commons.func.IntDoubleConsumer;
-import com.expleague.commons.seq.CharSeq;
-import com.expleague.commons.seq.CharSeqTools;
-import com.expleague.commons.seq.LongSeq;
-import com.expleague.commons.seq.LongSeqBuilder;
+import com.expleague.commons.seq.*;
 import com.expleague.ml.embedding.Embedding;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TDoubleArrayList;
@@ -36,8 +33,13 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
   protected static final Logger log = LoggerFactory.getLogger(CoocBasedBuilder.class.getName());
   private static final int CAPACITY = 50_000_000;
 
-  private List<LongSeq> cooc;
+  private List<Seq> cooc;
   private boolean coocReady = false;
+  private int denseCount = 1000;
+
+  public void denseCount(int count) {
+    this.denseCount = count;
+  }
 
   protected abstract Embedding<CharSeq> fit();
 
@@ -46,9 +48,19 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
   }
 
   protected void cooc(int i, IntDoubleConsumer consumer) {
-    cooc.get(i).stream().forEach(packed ->
-        consumer.accept((int)(packed >>> 32), Float.intBitsToFloat((int)(packed & 0xFFFFFFFFL)))
-    );
+    final Seq seq = cooc.get(i);
+    if (seq instanceof LongSeq) {
+      ((LongSeq) seq).stream().forEach(packed -> consumer.accept((int) (packed >>> 32), Float.intBitsToFloat((int) (packed & 0xFFFFFFFFL))));
+    }
+    else if (seq instanceof FloatSeq) {
+      final FloatSeq floatSeq = (FloatSeq) seq;
+      IntStream.range(0, seq.length()).forEach(idx -> {
+        final float v = floatSeq.floatAt(idx);
+        if (v != 0)
+          consumer.accept(idx, v);
+      });
+    }
+    else throw new IllegalStateException();
   }
 
   protected int index(CharSequence word) {
@@ -56,7 +68,22 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
   }
 
   protected LongSeq cooc(int i) {
-    return cooc.get(i);
+    final Seq seq = cooc.get(i);
+    if (seq instanceof LongSeq)
+      return (LongSeq)seq;
+    else if (seq instanceof FloatSeq) {
+      LongSeqBuilder builder = new LongSeqBuilder(seq.length());
+      final FloatSeq floatSeq = (FloatSeq) seq;
+      IntStream.range(0, seq.length()).forEach(idx -> {
+        final float v = floatSeq.floatAt(idx);
+        if (v != 0)
+          builder.append(((long) idx) << 32 | Float.floatToIntBits(v));
+      });
+      final LongSeq result = builder.build();
+      cooc.set(i, result);
+      return result;
+    }
+    else throw new IllegalStateException();
   }
 
   protected synchronized void cooc(int i, LongSeq set) {
@@ -82,13 +109,11 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
     final int vocab_size = dict().size();
     wordsProbabsLeft.fill(0, vocab_size, 0d);
     wordsProbabsRight.fill(0, vocab_size, 0d);
-    IntStream.range(0, vocab_size).forEach(i -> {
-      cooc(i, (j, X_ij) -> {
-        wordsProbabsLeft.set(i, wordsProbabsLeft.get(i) + X_ij);
-        wordsProbabsRight.set(j, wordsProbabsRight.get(j) + X_ij);
-        X_sum[0] = X_sum[0] + X_ij;
-      });
-    });
+    IntStream.range(0, vocab_size).forEach(i -> cooc(i, (j, X_ij) -> {
+      wordsProbabsLeft.set(i, wordsProbabsLeft.get(i) + X_ij);
+      wordsProbabsRight.set(j, wordsProbabsRight.get(j) + X_ij);
+      X_sum[0] = X_sum[0] + X_ij;
+    }));
     return X_sum[0];
   }
 
@@ -148,7 +173,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
       final long startTime = System.nanoTime();
       final Lock[] rowLocks = IntStream.range(0, wordsList.size()).mapToObj(i -> new ReentrantLock()).toArray(Lock[]::new);
       final List<TLongList> accumulators = new ArrayList<>();
-      cooc = IntStream.range(0, wordsList.size()).mapToObj(i -> LongSeq.empty()).collect(Collectors.toList());
+      cooc = IntStream.range(0, wordsList.size()).mapToObj(i -> i < denseCount ? new FloatSeq(dict().size()) : LongSeq.empty()).collect(Collectors.toList());
 
       try (final LongStream stream = positionsStream()) {
         stream.parallel()/*.peek(p -> {
@@ -179,7 +204,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
       try (Writer coocWriter = new OutputStreamWriter(new GZIPOutputStream(Files.newOutputStream(coocOut)))) {
         log.info("Writing cooccurrences to: " + coocOut);
         for (int i = 0; i < this.cooc.size(); i++) {
-          final LongSeq row = this.cooc.get(i);
+          final LongSeq row = cooc(i);
           final StringBuilder builder = new StringBuilder();
           builder.append(dict().get(i)).append('\t');
           row.stream().forEach(packed -> {
@@ -200,9 +225,8 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
     final int size = acc.size();
     final float[] weights = new float[256];
     IntStream.range(0, 256).forEach(i -> weights[i] = (float)wtype().weight(i > 126 ? -256 + i : i));
-    log.info("Marge with lock size " + rowLocks.length + " and acc size " + size);
 
-    LongSeq prevRow = null;
+    Seq prevRow = null;
     final LongSeqBuilder updatedRow = new LongSeqBuilder(wordsList.size());
     int prevA = -1;
     int pos = 0; // insertion point
@@ -222,8 +246,12 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
 
         if (a != prevA) {
           if (prevA >= 0) {
-            updatedRow.addAll(prevRow.sub(pos, prevLength));
-            cooc.set(prevA, updatedRow.build(prevRow.data(), 0.2, 100));
+            //noinspection Duplicates
+            if (prevRow instanceof LongSeq) {
+              final LongSeq longSeqRow = (LongSeq) prevRow;
+              updatedRow.addAll(longSeqRow.sub(pos, prevLength));
+              cooc.set(prevA, updatedRow.build(longSeqRow.data(), 0.2, 100));
+            }
             rowLocks[prevA].unlock();
           }
           prevA = a;
@@ -232,31 +260,39 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
           pos = 0;
           rowLocks[a].lock();
         }
-        long prevPacked;
-        while (pos < prevLength) { // merging previous version of the cooc row with current data
-          prevPacked = prevRow.longAt(pos);
-          int prevB = (int)(prevPacked >>> 32);
-          if (prevB >= b) {
-            if (prevB == b) { // second entry matches with the merged one
-              weight += Float.intBitsToFloat((int) (prevPacked & 0xFFFFFFFFL));
-              pos++;
-            }
-            break;
-          }
 
-          updatedRow.append(prevPacked);
-          pos++;
+        assert prevRow != null;
+        if (prevRow.elementType() == long.class) {
+          long prevPacked;
+          while (pos < prevLength) { // merging previous version of the cooc row with current data
+            prevPacked = ((LongSeq)prevRow).longAt(pos);
+            int prevB = (int) (prevPacked >>> 32);
+            if (prevB >= b) {
+              if (prevB == b) { // second entry matches with the merged one
+                weight += Float.intBitsToFloat((int) (prevPacked & 0xFFFFFFFFL));
+                pos++;
+              }
+              break;
+            }
+
+            updatedRow.append(prevPacked);
+            pos++;
+          }
+          final long repacked = (((long)b) << 32) | Float.floatToIntBits(weight);
+          updatedRow.append(repacked);
         }
-        final long repacked = (((long)b) << 32) | Float.floatToIntBits(weight);
-        updatedRow.append(repacked);
+        else //noinspection ConstantConditions
+          ((FloatSeq) prevRow).adjust(b, weight);
       }
-      //noinspection ConstantConditions
-      updatedRow.addAll(prevRow.sub(pos, prevLength));
-      cooc.set(prevA, updatedRow.build(prevRow.data(), 0.2, 100));
+      //noinspection Duplicates
+      if (prevRow instanceof LongSeq) {
+        final LongSeq longSeqRow = (LongSeq) prevRow;
+        updatedRow.addAll(longSeqRow.sub(pos, prevLength));
+        cooc.set(prevA, updatedRow.build(longSeqRow.data(), 0.2, 100));
+      }
     }
     finally {
       rowLocks[prevA].unlock();
-      log.info("Unlock merge");
     }
   }
 }
