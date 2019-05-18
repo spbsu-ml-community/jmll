@@ -5,7 +5,7 @@ import com.expleague.erc.Session;
 import com.expleague.erc.Util;
 import com.expleague.erc.data.DataPreprocessor;
 import com.expleague.erc.models.ApplicableModel;
-import com.expleague.erc.models.ModelDays;
+import com.expleague.erc.models.ModelCombined;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -18,7 +18,7 @@ public class MAEDaily implements Metric {
 
     public MAEDaily(List<Event> events) {
         userDayBorders = new TIntIntHashMap();
-        ModelDays.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
+        ModelCombined.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
     }
 
     @Override

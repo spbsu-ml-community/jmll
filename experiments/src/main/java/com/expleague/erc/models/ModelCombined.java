@@ -140,23 +140,33 @@ public class ModelCombined extends Model {
 
         @Override
         public double timeDelta(final int userId, final double time) {
-            final double rawDaysPrediction = daysApplicable.timeDelta(userId, time);
-            final int daysPrediction = (int) rawDaysPrediction;
+            return expectedTime(userId, time);
+//            final double rawPrediction = daysApplicable.timeDelta(userId, time);
+//            final int daysPrediction = (int) rawPrediction;
 //            if (daysPrediction == 0) {
-            if (time + rawDaysPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
-                return timeApplicable.timeDelta(userId, time);
+////            if (time + rawPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
+//                return timeApplicable.timeDelta(userId, time);
+//            }
+//            long userDay = combine(userId, daysPrediction);
+//            if (userDayAverageDeltas.containsKey(userDay)) {
+//                return userDayAverageDeltas.get(userDay);
+//            }
+//            final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
+//            double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
+//            if (predictedTime < time) {
+//                return timeApplicable.timeDelta(userId, time);
+//            }
+//            return predictedTime - time;
+        }
+
+        private double expectedTime(final int userId, final double time) {
+            double accumTime = timeApplicable.timeDelta(userId, time) * daysApplicable.probabilityInterval(userId, 0, 1);
+            int maxDays = 14;
+            for (int i = 1; i < maxDays; i++) {
+                final long userDay = combine(userId, i);
+                accumTime += userDayAverageDeltas.get(userDay) * daysApplicable.probabilityInterval(userId, i, i + 1);
             }
-            final long userDay = combine(userId, daysPrediction);
-            if (userDayAverageDeltas.containsKey(userDay)) {
-                return userDayAverageDeltas.get(userDay);
-            }
-            final double predictedDay = Util.getDay(time, userDayBorders.get(userId)) + daysPrediction * DAY_HOURS -
-                    DAY_HOURS;
-            final double predictedTime = predictedDay + userDayAvgStarts.get(userId);
-            if (predictedTime < time) {
-                return timeApplicable.timeDelta(userId, time);
-            }
-            return predictedTime - time;
+            return accumTime;
         }
     }
 
@@ -197,7 +207,7 @@ public class ModelCombined extends Model {
         });
     }
 
-    private static TIntDoubleMap calcAvgStarts(final List<Event> events, final TIntIntMap userBorders) {
+    public static TIntDoubleMap calcAvgStarts(final List<Event> events, final TIntIntMap userBorders) {
         final TIntDoubleMap lastDays = new TIntDoubleHashMap();
         final TIntDoubleMap starts = new TIntDoubleHashMap();
         final TIntIntMap count = new TIntIntHashMap();
@@ -244,13 +254,7 @@ public class ModelCombined extends Model {
 
     @Override
     protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
-        objectOutputStream.writeInt(dim);
-        objectOutputStream.writeDouble(beta);
-        objectOutputStream.writeDouble(eps);
-        objectOutputStream.writeDouble(otherItemImportance);
-        objectOutputStream.writeObject(lambdaTransform);
-        objectOutputStream.writeObject(lambdaDerivativeTransform);
-        objectOutputStream.writeObject(lambdaStrategyFactory);
+        writeBase(objectOutputStream);
 
         objectOutputStream.writeObject(userDayBorders);
         objectOutputStream.writeObject(userDayPeaks);

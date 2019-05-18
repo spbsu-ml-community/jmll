@@ -6,6 +6,7 @@ import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.TargetFunc;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.meta.GroupedDSItem;
+import com.expleague.ml.meta.items.QURLItem;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
@@ -16,38 +17,44 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Pfound extends Func.Stub implements TargetFunc {
+public class PfoundSbg extends Func.Stub implements TargetFunc {
   private static final double DEFAULT_BREAK_PROBABILITY = 0.15;
   private static final double EPSILON = 1e-9;
-  private static final Logger LOG = LoggerFactory.getLogger(Pfound.class);
+  private static final Logger LOG = LoggerFactory.getLogger(PfoundSbg.class);
 
   private final DataSet<? extends GroupedDSItem> owner;
   private final Vec target;
   private final double pBreak;
-  private final List<int[]> groups;
+  private final List<Group> groups;
 
-  public Pfound(final Vec target, final DataSet<? extends GroupedDSItem> owner, final double pBreak) {
+
+  public PfoundSbg(final Vec target, final DataSet<? extends QURLItem> owner, final double pBreak) {
     this.owner = owner;
     this.target = target;
     this.pBreak = pBreak;
 
-    Map<String, TIntList> groupsMap = new HashMap<>();
+    Map<String, Map<String, TIntList>> subgroupsMap = new HashMap<>();
+
     int idx = 0;
-    for (GroupedDSItem item : owner) {
+    for (QURLItem item : owner) {
       String groupId = item.groupId();
-      groupsMap.putIfAbsent(groupId, new TIntArrayList());
-      groupsMap.get(groupId).add(idx++);
+      String subgroupId = item.subgroupId();
+
+      subgroupsMap.putIfAbsent(groupId, new HashMap<>());
+      Map<String, TIntList> sbg = subgroupsMap.get(groupId);
+      sbg.putIfAbsent(subgroupId, new TIntArrayList());
+      sbg.get(subgroupId).add(idx++);
     }
 
+    LOG.info(String.format("Groups found: %d\nOverall elements: %d", subgroupsMap.size(), idx));
     groups = new ArrayList<>();
-    for (Map.Entry<String, TIntList> groupEntry : groupsMap.entrySet()) {
-      int[] groupIdsArray = groupEntry.getValue().toArray();
-      if (!hasDifferentLabels(target, groupIdsArray)) {
-        LOG.warn(String.format("In the group with id [ %s ] all labels are the same!",
-            groupEntry.getKey()));
-//        continue;
+    for (Map<String, TIntList> sbg : subgroupsMap.values()) {
+      int[][] subgroups = new int[sbg.size()][];
+      idx = 0;
+      for (TIntList ids : sbg.values()) {
+        subgroups[idx++] = ids.toArray();
       }
-      groups.add(groupEntry.getValue().toArray());
+      groups.add(new Group(subgroups));
     }
 
     if (groups.isEmpty()) {
@@ -55,7 +62,7 @@ public class Pfound extends Func.Stub implements TargetFunc {
     }
   }
 
-  public Pfound(final Vec target, final DataSet<? extends GroupedDSItem> owner) {
+  public PfoundSbg(final Vec target, final DataSet<? extends QURLItem> owner) {
     this(target, owner, DEFAULT_BREAK_PROBABILITY);
   }
 
@@ -76,6 +83,9 @@ public class Pfound extends Func.Stub implements TargetFunc {
    * "Yandex at ROMIP'2009: optimization of ranking algorithms by machine learning methods",
    * Proceedings of ROMIP'2009: 163–168 (in Russian)
    *
+   * for the open version of the metric. In current version subgroups also are taken
+   * into account
+   *
    * for more details
    * @param order order of pages determined by predicted ranks
    * @param labels probabilities of pages to be relevant ot a query
@@ -94,12 +104,25 @@ public class Pfound extends Func.Stub implements TargetFunc {
     return score;
   }
 
-  private static double groupScore(final Vec ranks, final Vec labels, final int[] group,
+  private static int argMax(int[] args, Vec values) {
+    int argMax = args[0];
+    for (int i : args) {
+      if (values.get(i) > values.get(argMax)) {
+        argMax = i;
+      }
+    }
+    return argMax;
+  }
+
+  private static double groupScore(final Vec ranks, final Vec labels, final Group group,
       final double pBreak) {
-    int[] order = Arrays.copyOf(group, group.length);
-    double[] ranksCopy = new double[group.length];
-    for (int i = 0; i < group.length; ++i) {
-      ranksCopy[i] = -ranks.get(group[i]);
+    int[] order = new int[group.subgroupsCount()];
+    for (int i = 0; i < order.length; ++i) {
+      order[i] = argMax(group.subgroupIds[i], ranks);
+    }
+    double[] ranksCopy = new double[order.length];
+    for (int i = 0; i < order.length; ++i) {
+      ranksCopy[i] = -ranks.get(order[i]);
     }
     ArrayTools.parallelSort(ranksCopy, order);
 
@@ -114,7 +137,7 @@ public class Pfound extends Func.Stub implements TargetFunc {
   @Override
   public double value(Vec ranks) {
     double pfoundSum = 0;
-    for (int[] group : groups) {
+    for (Group group : groups) {
       pfoundSum += groupScore(ranks, target, group, pBreak);
     }
     return pfoundSum / groups.size();
@@ -123,5 +146,17 @@ public class Pfound extends Func.Stub implements TargetFunc {
   @Override
   public int dim() {
     return target.dim();
+  }
+
+  private static final class Group {
+    final int[][] subgroupIds;
+
+    public Group(int[][] subgroupIds) {
+      this.subgroupIds = subgroupIds;
+    }
+
+    int subgroupsCount() {
+      return subgroupIds.length;
+    }
   }
 }

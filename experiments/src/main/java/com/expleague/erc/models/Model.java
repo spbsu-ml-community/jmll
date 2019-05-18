@@ -399,6 +399,12 @@ public class Model implements Serializable {
     }
 
     protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
+        writeBase(objectOutputStream);
+        writeLearnedParams(objectOutputStream);
+        writeTimeParams(objectOutputStream);
+    }
+
+    protected void writeBase(final ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeInt(dim);
         objectOutputStream.writeDouble(beta);
         objectOutputStream.writeDouble(eps);
@@ -406,9 +412,15 @@ public class Model implements Serializable {
         objectOutputStream.writeObject(lambdaTransform);
         objectOutputStream.writeObject(lambdaDerivativeTransform);
         objectOutputStream.writeObject(lambdaStrategyFactory);
+    }
+
+    protected void writeLearnedParams(final ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeObject(Util.embeddingsToSerializable(userEmbeddings));
         objectOutputStream.writeObject(Util.embeddingsToSerializable(itemEmbeddings));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(initialLambdas));
+    }
+
+    protected void writeTimeParams(final ObjectOutputStream objectOutputStream) throws IOException {
         objectOutputStream.writeObject(timeTransform);
         objectOutputStream.writeDouble(lowerRangeBorder);
         objectOutputStream.writeDouble(higherRangeBorder);
@@ -429,15 +441,17 @@ public class Model implements Serializable {
         final DoubleUnaryOperator lambdaTransform = (DoubleUnaryOperator) objectInputStream.readObject();
         final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
         final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
+        final TimeTransformer timeTransform = (TimeTransformer) objectInputStream.readObject();
+        final double lowerRangeBorder = objectInputStream.readDouble();
+        final double higherRangeBorder = objectInputStream.readDouble();
+
         final TIntObjectMap<Vec> userEmbeddings =
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
         final TIntObjectMap<Vec> itemEmbeddings =
                 Util.embeddingsFromSerializable((Map<Integer, double[]>) objectInputStream.readObject());
-        final TimeTransformer timeTransform = (TimeTransformer) objectInputStream.readObject();
         final TIntDoubleMap initialLambdas =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
-        final double lowerRangeBorder = objectInputStream.readDouble();
-        final double higherRangeBorder = objectInputStream.readDouble();
+
         final Model model = new Model(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
                 lambdaStrategyFactory, userEmbeddings, itemEmbeddings, initialLambdas,
                 timeTransform, lowerRangeBorder, higherRangeBorder);
