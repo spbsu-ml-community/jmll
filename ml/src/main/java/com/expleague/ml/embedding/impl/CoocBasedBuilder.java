@@ -31,14 +31,22 @@ import java.util.zip.GZIPOutputStream;
 
 public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
   protected static final Logger log = LoggerFactory.getLogger(CoocBasedBuilder.class.getName());
-  private static final int CAPACITY = 50_000_000;
+  private int accumulatorCapacity = 50_000_000;
 
   private List<Seq> cooc;
   private boolean coocReady = false;
   private int denseCount = 1000;
 
-  public void denseCount(int count) {
+  public <T extends CoocBasedBuilder> T denseCount(int count) {
     this.denseCount = count;
+    //noinspection unchecked
+    return (T) this;
+  }
+
+  public <T extends CoocBasedBuilder> T accumulatorCapacity(int capacity) {
+    this.accumulatorCapacity = capacity;
+    //noinspection unchecked
+    return (T)this;
   }
 
   protected abstract Embedding<CharSeq> fit();
@@ -176,23 +184,23 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
       cooc = IntStream.range(0, wordsList.size()).mapToObj(i -> i < denseCount ? new FloatSeq(dict().size()) : LongSeq.empty()).collect(Collectors.toList());
 
       try (final LongStream stream = positionsStream()) {
-        stream.parallel()/*.peek(p -> {
+        stream/*.parallel()*//*.peek(p -> {
           System.out.println(dict().get(unpackA(p)) + "->" + dict().get(unpackB(p)) + "=" + unpackDist(p));
         })*/.mapToObj(new LongFunction<TLongList>() {
-          volatile TLongList accumulator;
+          volatile TLongList accumulator = new TLongArrayList(accumulatorCapacity + Runtime.getRuntime().availableProcessors());
 
           @Override
           public TLongList apply(long value) {
-            if (accumulator == null || accumulator.size() >= CAPACITY) {
+            accumulator.add(value);
+            if (accumulator.size() >= accumulatorCapacity) {
               synchronized (this) {
-                if (accumulator == null || accumulator.size() >= CAPACITY) {
+                if (accumulator.size() >= accumulatorCapacity) {
                   final TLongList accumulator = this.accumulator;
-                  accumulators.add(this.accumulator = new TLongArrayList(CAPACITY));
+                  accumulators.add(this.accumulator = new TLongArrayList(accumulatorCapacity));
                   return accumulator;
                 }
               }
             }
-            accumulator.add(value);
             return null;
           }
         }).filter(Objects::nonNull).peek(accumulators::remove).peek(TLongList::sort).forEach(acc -> merge(rowLocks, (TLongArrayList) acc));
@@ -207,8 +215,12 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
           final LongSeq row = cooc(i);
           final StringBuilder builder = new StringBuilder();
           builder.append(dict().get(i)).append('\t');
+          final int[] prev = new int[]{-1};
           row.stream().forEach(packed -> {
             final int wordId = (int)(packed >>> 32);
+            if (wordId <= prev[0])
+              throw new IllegalStateException();
+            prev[0] = wordId;
             builder.append(wordId).append(':').append(dict().get(wordId)).append(':').append(CharSeqTools.ppDouble(Float.intBitsToFloat(((int)(packed & 0xFFFFFFFFL))))).append(' ');
           });
           coocWriter.append(builder, 0, builder.length() - 1).append('\n');
@@ -254,11 +266,11 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
             }
             rowLocks[prevA].unlock();
           }
+          rowLocks[a].lock();
           prevA = a;
           prevRow = cooc.get(a);
           prevLength = prevRow.length();
           pos = 0;
-          rowLocks[a].lock();
         }
 
         assert prevRow != null;

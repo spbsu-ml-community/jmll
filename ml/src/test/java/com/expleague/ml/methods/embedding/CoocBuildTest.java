@@ -17,7 +17,41 @@ import java.util.stream.Collectors;
 public class CoocBuildTest {
   @Test
   public void testSymmetric() throws IOException {
+    Path tempFile = prepareFile();
     EmbeddingBuilderBasePublicMorozov morozov = new EmbeddingBuilderBasePublicMorozov();
+    morozov.window(Embedding.WindowType.FIXED, 2, 2).minWordCount(1).file(tempFile).build();
+    checkCooc(tempFile, morozov);
+    Files.delete(tempFile);
+  }
+
+  @Test
+  public void testSymmetricSmallAccum() throws IOException {
+    Path tempFile = prepareFile();
+    EmbeddingBuilderBasePublicMorozov morozov = new EmbeddingBuilderBasePublicMorozov();
+    morozov.accumulatorCapacity(5).window(Embedding.WindowType.FIXED, 2, 2).minWordCount(1).file(tempFile).build();
+    checkCooc(tempFile, morozov);
+    Files.delete(tempFile);
+  }
+
+  @Test
+  public void testSymmetricSmallAccumNoDense() throws IOException {
+    Path tempFile = prepareFile();
+    EmbeddingBuilderBasePublicMorozov morozov = new EmbeddingBuilderBasePublicMorozov();
+    morozov.accumulatorCapacity(20).denseCount(0).window(Embedding.WindowType.FIXED, 3, 3).minWordCount(1).file(tempFile).build();
+    checkCooc(tempFile, morozov);
+    Files.delete(tempFile);
+  }
+
+  private void checkCooc(Path tempFile, EmbeddingBuilderBasePublicMorozov morozov) throws IOException {
+    Assert.assertEquals(27, morozov.dict().size());
+    final LongSeq grayCooc = morozov.cooc(morozov.index("серый"));
+    Assert.assertEquals(3, grayCooc.length());
+    Assert.assertEquals("один:8.0 другой:8.0 белый:8.0", coocToString(morozov, grayCooc));
+    final LongSeq gusiCooc = morozov.cooc(morozov.index("гуси"));
+    Assert.assertEquals("гуси:4.0 мои:4.0 выходили:1.0 пропали:1.0 мыли:1.0 ой:1.0 лапки:1.0", coocToString(morozov, gusiCooc));
+  }
+
+  private Path prepareFile() throws IOException {
     Path tempFile = Files.createTempFile("embedding", "test.txt");
     Files.write(tempFile, Arrays.asList(
         "Жили у бабуси",
@@ -45,15 +79,7 @@ public class CoocBuildTest {
         "Один - серый, другой - белый,",
         "Кланялись бабусе!")
     );
-    morozov.window(Embedding.WindowType.FIXED, 2, 2).minWordCount(1).file(tempFile).build();
-
-    Assert.assertEquals(27, morozov.dict().size());
-    final LongSeq grayCooc = morozov.cooc(morozov.index("серый"));
-    Assert.assertEquals(3, grayCooc.length());
-    Assert.assertEquals("один:8.0 другой:8.0 белый:8.0", coocToString(morozov, grayCooc));
-    final LongSeq gusiCooc = morozov.cooc(morozov.index("гуси"));
-    Assert.assertEquals("гуси:4.0 мои:4.0 выходили:1.0 пропали:1.0 мыли:1.0 ой:1.0 лапки:1.0", coocToString(morozov, gusiCooc));
-    Files.delete(tempFile);
+    return tempFile;
   }
 
   private String coocToString(EmbeddingBuilderBasePublicMorozov morozov, LongSeq grayCooc) {
