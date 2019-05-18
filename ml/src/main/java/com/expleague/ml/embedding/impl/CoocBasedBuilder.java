@@ -184,7 +184,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
       cooc = IntStream.range(0, wordsList.size()).mapToObj(i -> i < denseCount ? new FloatSeq(dict().size()) : LongSeq.empty()).collect(Collectors.toList());
 
       try (final LongStream stream = positionsStream()) {
-        stream/*.parallel()*//*.peek(p -> {
+        stream.parallel()/*.peek(p -> {
           System.out.println(dict().get(unpackA(p)) + "->" + dict().get(unpackB(p)) + "=" + unpackDist(p));
         })*/.mapToObj(new LongFunction<TLongList>() {
           volatile TLongList accumulator = new TLongArrayList(accumulatorCapacity + Runtime.getRuntime().availableProcessors());
