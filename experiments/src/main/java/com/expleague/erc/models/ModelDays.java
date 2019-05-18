@@ -68,11 +68,11 @@ public class ModelDays extends ModelExpPerUser {
         makeInitialEmbeddings(events);
         makeInitialLambdas(events);
         initIds();
-        userDayAvgStarts = ModelCombined.calcAvgStarts(events);
         averageOneDayDelta = ConstantNextTimeModel.calcAverageOneDayDelta(events);
         userDayBorders = new TIntIntHashMap();
         userDayPeaks = new TIntIntHashMap();
         ModelCombined.calcDayPoints(events, userDayBorders, userDayPeaks);
+        userDayAvgStarts = ModelCombined.calcAvgStarts(events, userDayBorders);
         isInit = true;
     }
 

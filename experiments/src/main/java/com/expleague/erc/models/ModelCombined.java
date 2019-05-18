@@ -138,35 +138,42 @@ public class ModelCombined extends Model {
             timeApplicable.accept(eventSeq);
         }
 
+        /**
+         * Calculates the estimated exact time before the next session that is expected to happen in a given number of days
+         * @param userId the user for whom the prediction is being made
+         * @param time time when the prediction is made
+         * @param daysStep the number of days to jump
+         * @return the exact expected time to the next session
+         */
+        private double daysPredictionToExact(int userId, double time, int daysStep) {
+            final long userDay = combine(userId, daysStep);
+            if (userDayAverageDeltas.containsKey(userDay)) {
+                return userDayAverageDeltas.get(userDay);
+            }
+            final int predictedDay = (int) (time + daysStep * DAY_HOURS) / DAY_HOURS;
+            final double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
+            return predictedTime - time;
+        }
+
         @Override
         public double timeDelta(final int userId, final double time) {
             return expectedTime(userId, time);
-//            final double rawPrediction = daysApplicable.timeDelta(userId, time);
-//            final int daysPrediction = (int) rawPrediction;
+//            final int daysPrediction = (int) daysApplicable.timeDelta(userId, time);
 //            if (daysPrediction == 0) {
-////            if (time + rawPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
 //                return timeApplicable.timeDelta(userId, time);
 //            }
-//            long userDay = combine(userId, daysPrediction);
-//            if (userDayAverageDeltas.containsKey(userDay)) {
-//                return userDayAverageDeltas.get(userDay);
-//            }
-//            final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
-//            double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
-//            if (predictedTime < time) {
-//                return timeApplicable.timeDelta(userId, time);
-//            }
-//            return predictedTime - time;
+//            return daysPredictionToExact(userId, time, daysPrediction);
         }
 
         private double expectedTime(final int userId, final double time) {
-            double accumTime = timeApplicable.timeDelta(userId, time) * daysApplicable.probabilityInterval(userId, 0, 1);
-            int maxDays = 14;
-            for (int i = 1; i < maxDays; i++) {
-                final long userDay = combine(userId, i);
-                accumTime += userDayAverageDeltas.get(userDay) * daysApplicable.probabilityInterval(userId, i, i + 1);
+            double timeExpectation = timeApplicable.timeDelta(userId, time) *
+                    daysApplicable.probabilityInterval(userId, 0, 1);
+            for (int i = 1; i < Util.CHURN_THRESHOLD_DAYS; i++) {
+                timeExpectation += daysPredictionToExact(userId, time, i) *
+                        daysApplicable.probabilityInterval(userId, i, i + 1);
             }
-            return accumTime;
+            timeExpectation /= daysApplicable.probabilityBeforeX(userId, Util.CHURN_THRESHOLD_DAYS);
+            return timeExpectation;
         }
     }
 
