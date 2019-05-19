@@ -19,25 +19,30 @@ import java.util.function.DoubleUnaryOperator;
 import static com.expleague.erc.Util.DAY_HOURS;
 
 public class ConstantNextTimeModel extends Model {
+    private TIntIntMap userDayBorders;
     private TIntDoubleMap averageOneDayDelta;
 
     public ConstantNextTimeModel(int dim, double beta, double eps, double otherItemImportance,
                                  DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                                  LambdaStrategyFactory lambdaStrategyFactory) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
+        userDayBorders = new TIntIntHashMap();
     }
 
     private ConstantNextTimeModel(int dim, double beta, double eps, double otherItemImportance,
                                   DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
-                                  LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap averageOneDayDelta) {
+                                  LambdaStrategyFactory lambdaStrategyFactory, TIntDoubleMap averageOneDayDelta,
+                                  TIntIntMap userDayBorders) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         this.averageOneDayDelta = averageOneDayDelta;
+        this.userDayBorders = userDayBorders;
     }
 
     @Override
     public void initModel(final List<Event> events) {
         if (!isInit) {
-            averageOneDayDelta = calcAverageOneDayDelta(events);
+            userDayBorders = ModelCombined.findMinHourInDay(events);
+            averageOneDayDelta = calcAverageOneDayDelta(events, userDayBorders);
             isInit = true;
         }
     }
@@ -66,22 +71,21 @@ public class ConstantNextTimeModel extends Model {
         return new ApplicableImpl();
     }
 
-    public static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
+    public static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events, final TIntIntMap userDayBorders) {
         final TIntIntMap lastDays = new TIntIntHashMap();
         final TIntDoubleMap lastDayTimes = new TIntDoubleHashMap();
         final TIntDoubleMap userDeltas = new TIntDoubleHashMap();
         final TIntIntMap userCounts = new TIntIntHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int userId = session.userId();
-            final int curDay = ((int) session.getStartTs() / DAY_HOURS);
+            final int curDay = Util.getDayInHours(session.getStartTs(), userDayBorders.get(session.userId())) / DAY_HOURS;
             final double curTime = session.getStartTs() - curDay * DAY_HOURS;
             if (!lastDays.containsKey(userId)) {
                 lastDays.put(userId, curDay);
                 lastDayTimes.put(userId, curTime);
                 continue;
             }
-            final int lastDay = lastDays.get(userId);
-            if (lastDay == curDay) {
+            if (curDay == lastDays.get(userId)) {
                 final double delta = curTime - lastDayTimes.get(userId);
                 userDeltas.adjustOrPutValue(userId, delta, delta);
                 userCounts.adjustOrPutValue(userId, 1, 1);
@@ -101,6 +105,7 @@ public class ConstantNextTimeModel extends Model {
     protected void write(final ObjectOutputStream objectOutputStream) throws IOException {
         writeBase(objectOutputStream);
         objectOutputStream.writeObject(averageOneDayDelta);
+        objectOutputStream.writeObject(userDayBorders);
     }
 
     public static ConstantNextTimeModel load(final Path path) throws IOException, ClassNotFoundException {
@@ -119,8 +124,9 @@ public class ConstantNextTimeModel extends Model {
         final DoubleUnaryOperator lambdaDerivativeTransform = (DoubleUnaryOperator) objectInputStream.readObject();
         final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
         final TIntDoubleMap averageOneDayDelta = (TIntDoubleMap) objectInputStream.readObject();
+        final TIntIntMap userDayBorders = (TIntIntMap) objectInputStream.readObject();
         final ConstantNextTimeModel model = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
-                lambdaStrategyFactory, averageOneDayDelta);
+                lambdaStrategyFactory, averageOneDayDelta, userDayBorders);
         model.initModel();
         return model;
     }

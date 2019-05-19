@@ -9,7 +9,6 @@ import com.expleague.erc.lambda.PerUserLambdaStrategy;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -25,7 +24,6 @@ import static java.lang.Math.*;
 
 public class ModelDays extends ModelExpPerUser {
     private TIntIntMap userDayBorders;
-    private TIntIntMap userDayPeaks;
     private TIntDoubleMap userDayAvgStarts;
     private TIntDoubleMap averageOneDayDelta;
 
@@ -48,7 +46,7 @@ public class ModelDays extends ModelExpPerUser {
                      final DoubleUnaryOperator lambdaTransform, final DoubleUnaryOperator lambdaDerivativeTransform,
                      final LambdaStrategyFactory lambdaStrategyFactory, final TIntDoubleMap initialLambdas,
                      final TIntObjectMap<Vec> usersEmbeddingsPrior, final TIntObjectMap<Vec> itemsEmbeddingsPrior,
-                     final TIntIntMap userDayBorders, TIntIntMap userDayPeaks, final TIntDoubleMap userDayAvgStarts,
+                     final TIntIntMap userDayBorders, final TIntDoubleMap userDayAvgStarts,
                      final TIntDoubleMap averageOneDayDelta, final TimeTransformer timeTransform,
                      final double lowerRangeBorder, final double higherRangeBorder) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory,
@@ -57,7 +55,6 @@ public class ModelDays extends ModelExpPerUser {
         this.userDayBorders = userDayBorders;
         this.userDayAvgStarts = userDayAvgStarts;
         this.averageOneDayDelta = averageOneDayDelta;
-        this.userDayPeaks = userDayPeaks;
     }
 
     @Override
@@ -68,10 +65,8 @@ public class ModelDays extends ModelExpPerUser {
         makeInitialEmbeddings(events);
         makeInitialLambdas(events);
         initIds();
-        averageOneDayDelta = ConstantNextTimeModel.calcAverageOneDayDelta(events);
-        userDayBorders = new TIntIntHashMap();
-        userDayPeaks = new TIntIntHashMap();
-        ModelCombined.calcDayPoints(events, userDayBorders, userDayPeaks);
+        userDayBorders = ModelCombined.findMinHourInDay(events);
+        averageOneDayDelta = ConstantNextTimeModel.calcAverageOneDayDelta(events, userDayBorders);
         userDayAvgStarts = ModelCombined.calcAvgStarts(events, userDayBorders);
         isInit = true;
     }
@@ -115,7 +110,7 @@ public class ModelDays extends ModelExpPerUser {
             final double rawPrediction = 1 / getLambda(userId);
 //            final long daysPrediction = round(rawPrediction);
             final int daysPrediction = (int) rawPrediction;
-            if (time + rawPrediction * DAY_HOURS < Util.getDay(time, userDayBorders.get(userId)) + DAY_HOURS) {
+            if (time + rawPrediction * DAY_HOURS < Util.getDayInHours(time, userDayBorders.get(userId)) + DAY_HOURS) {
                 return averageOneDayDelta.get(userId);
             }
             final int predictedDay = (int) (time + daysPrediction * DAY_HOURS) / DAY_HOURS;
@@ -146,7 +141,6 @@ public class ModelDays extends ModelExpPerUser {
         writeTimeParams(objectOutputStream);
 
         objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayBorders));
-        objectOutputStream.writeObject(Util.intIntMapToSerializable(userDayPeaks));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(userDayAvgStarts));
         objectOutputStream.writeObject(Util.intDoubleMapToSerializable(averageOneDayDelta));
     }
@@ -177,15 +171,13 @@ public class ModelDays extends ModelExpPerUser {
         final double higherRangeBorder = objectInputStream.readDouble();
         final TIntIntMap userDayBorders =
                 Util.intIntMapFromSerializable((Map<Integer, Integer>) objectInputStream.readObject());
-        final TIntIntMap userDayPeaks =
-                Util.intIntMapFromSerializable((Map<Integer, Integer>) objectInputStream.readObject());
         final TIntDoubleMap userAverageDayStarts =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         final TIntDoubleMap averageOneDayDelta =
                 Util.intDoubleMapFromSerializable((Map<Integer, Double>) objectInputStream.readObject());
         final ModelDays model = new ModelDays(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory, initialLambdas, userEmbeddings, itemEmbeddings,
-                userDayBorders, userDayPeaks, userAverageDayStarts, averageOneDayDelta, timeTransform,
+                userDayBorders, userAverageDayStarts, averageOneDayDelta, timeTransform,
                 lowerRangeBorder, higherRangeBorder);
         model.initModel();
         return model;

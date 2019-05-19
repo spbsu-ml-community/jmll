@@ -11,7 +11,6 @@ import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.cli.*;
 
@@ -210,8 +209,7 @@ public class ModelTrainingRunner {
     }
 
     private static void evaluateConstant(final List<Event> trainData, final List<Event> testData) {
-        final TIntIntMap userDayBorders = new TIntIntHashMap();
-        ModelCombined.calcDayPoints(trainData, userDayBorders, new TIntIntHashMap());
+        final TIntIntMap userDayBorders = ModelCombined.findMinHourInDay(trainData);
 
         final TIntDoubleMap dayConstants = calcConstants(trainData,
                 session -> Util.getDaysFromPrevSession(session, userDayBorders.get(session.userId())));

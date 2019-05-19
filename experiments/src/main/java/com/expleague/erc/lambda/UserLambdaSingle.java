@@ -125,9 +125,7 @@ public class UserLambdaSingle implements UserLambda {
     }
 
     public static TIntDoubleMap makeUserLambdaInitialValues(final List<Event> history) {
-        final TIntIntMap userBorders = new TIntIntHashMap();
-        final TIntIntMap userPeaks = new TIntIntHashMap();
-        ModelCombined.calcDayPoints(history, userBorders, userPeaks);
+        final TIntIntMap userBorders = ModelCombined.findMinHourInDay(history);
         final TIntObjectMap<TDoubleList> userDeltas = new TIntObjectHashMap<>();
         for (final Session session : DataPreprocessor.groupEventsToSessions(history)) {
             final int userId = session.userId();
