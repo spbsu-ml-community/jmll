@@ -120,7 +120,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     }
 
     for (int t = 0; t < iterationsCount; t++) {
-      if ((t + 1) % 100 == 0)
+      if ((t + 1) % 20 == 0)
         System.out.println("Iteration " + (t + 1));
 
       final Pair<Vec, Vec> factorize = this.factorize.factorize(cursor);
@@ -179,7 +179,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           }
         }
 
-        if ((t + 1) % 100 == 0) {
+        if ((t + 1) % 20 == 0) {
           double matches = 0;
           for (int i = 0; i < valid.length(); ++i) {
             double[] score = validScore.row(i).toArray();

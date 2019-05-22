@@ -242,7 +242,7 @@ public class FMCBoostingMain {
 
       Trans ensemble = null;
       if (train == null && model != null) {
-        ensemble = DataTools.readModel(new FileInputStream(new File(model)));
+        ensemble = DataTools.deprecatedReadModel(new FileInputStream(new File(model)));
       }
 
       if (train == null && test == null) {
