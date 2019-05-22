@@ -190,21 +190,27 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
           volatile TLongList accumulator = new TLongArrayList(accumulatorCapacity + Runtime.getRuntime().availableProcessors());
 
           @Override
-          public TLongList apply(long value) {
+          public synchronized TLongList apply(long value) {
             accumulator.add(value);
             if (accumulator.size() >= accumulatorCapacity) {
-              synchronized (this) {
                 if (accumulator.size() >= accumulatorCapacity) {
                   final TLongList accumulator = this.accumulator;
-                  accumulators.add(this.accumulator = new TLongArrayList(accumulatorCapacity));
+                  synchronized (accumulators) {
+                    accumulators.add(this.accumulator = new TLongArrayList(accumulatorCapacity));
+                  }
                   return accumulator;
                 }
-              }
             }
             return null;
           }
-        }).filter(Objects::nonNull).peek(accumulators::remove).peek(TLongList::sort).forEach(acc -> merge(rowLocks, (TLongArrayList) acc));
-        accumulators.parallelStream().peek(TLongList::sort).forEach(acc -> merge(rowLocks, (TLongArrayList) acc));
+        }).filter(Objects::nonNull).forEach(acc -> {
+          synchronized (accumulators) {
+            accumulators.remove(acc);
+          }
+          merge(rowLocks, (TLongArrayList) acc);
+        });
+
+        accumulators.parallelStream().forEach(acc -> merge(rowLocks, (TLongArrayList) acc));
       }
       log.info("Generated for " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime) + "s");
 
@@ -216,10 +222,11 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
           final StringBuilder builder = new StringBuilder();
           builder.append(dict().get(i)).append('\t');
           final int[] prev = new int[]{-1};
+          final int finalI = i;
           row.stream().forEach(packed -> {
             final int wordId = (int)(packed >>> 32);
             if (wordId <= prev[0])
-              throw new IllegalStateException();
+              throw new IllegalStateException(String.format("Ids in cooc for [%d] (%s) are not sorted: %d > %d", finalI, dict().get(finalI), prev[0], wordId));
             prev[0] = wordId;
             builder.append(wordId).append(':').append(dict().get(wordId)).append(':').append(CharSeqTools.ppDouble(Float.intBitsToFloat(((int)(packed & 0xFFFFFFFFL))))).append(' ');
           });
@@ -234,6 +241,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
   }
 
   private void merge(Lock[] rowLocks, TLongArrayList acc) {
+    acc.sort();
     final int size = acc.size();
     final float[] weights = new float[256];
     IntStream.range(0, 256).forEach(i -> weights[i] = (float)wtype().weight(i > 126 ? -256 + i : i));
@@ -263,6 +271,15 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
               final LongSeq longSeqRow = (LongSeq) prevRow;
               updatedRow.addAll(longSeqRow.sub(pos, prevLength));
               cooc.set(prevA, updatedRow.build(longSeqRow.data(), 0.2, 100));
+              int[] prev = {-1};
+              final int prevAFinal = prevA;
+              ((LongSeq) cooc.get(prevA)).forEach(x -> {
+                int wordId = (int) (x >>> 32);
+                if (wordId <= prev[0]) {
+                  throw new IllegalStateException(String.format("Ids in cooc for [%d] (%s) are not sorted: %d > %d", prevAFinal, dict().get(prevAFinal), prev[0], wordId));
+                }
+                prev[0] = wordId;
+              });
             }
             rowLocks[prevA].unlock();
           }
