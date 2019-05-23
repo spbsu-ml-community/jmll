@@ -149,19 +149,9 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
             factorize.first.adjust(j, -weakModel.value(this.bds, j));
           });
 
-//          for (int j = 0; j < learn.length(); ++j) {
-//            factorize.first.adjust(j, -weakModel.value(this.bds, j));
-//          }
-        }
-
-        // System.out.println(String.format("Vector norm: %.3f", VecTools.norm(factorize.first)));
         weakModels.add(weakModel);
         ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
       }
-
-//      if (!silent) {
-//        Interval.stopAndPrint("Fitting greedy oblivious tree");
-//      }
 
       // Update valid score
       if (valid != null) {
@@ -210,23 +200,6 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           break;
         }
       }
-
-      /*
-      // Debug calculations
-      Vec u_pred = new ArrayVec(learn.length());
-      for (int i = 0; i < learn.length(); ++i) {
-        u_pred.set(i, weakModel.apply(learn.data().row(i)).get(0));
-      }
-
-      final Vec diff = VecTools.subtract(u_pred, factorize.first);
-      final double mae = VecTools.norm1(diff) / diff.dim();
-
-      for (int i = 0; i < diff.dim(); ++i) {
-        diff.set(i, diff.get(i) / factorize.first.get(i));
-      }
-      final double mape = Math.round(100.0 * VecTools.norm1(diff) / diff.dim());
-      System.out.println("Tree MAE: " + mae);
-      System.out.println("Tree MAPE: " + mape + "%");*/
 
       invoke(new Ensemble<>(ensamble, -step));
     }
@@ -360,11 +333,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(((ObliviousTree) weakModels.get(size - 1)).grid());
       }
 
-      // long timeStart = System.currentTimeMillis();
       updateBuffer();
-      // System.out.println("updateBuffer: " + (System.currentTimeMillis() - timeStart) + " (ms)");
 
-      // timeStart = System.currentTimeMillis();
       IntStream.range(0, cursor.rows()).parallel().forEach(i -> {
         final Vec vec = cursor.row(i);
         final int pointClass = target.label(i);
@@ -394,7 +364,6 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           }
         }
       });
-      // System.out.println("Cursor update: " + (System.currentTimeMillis() - timeStart) + " (ms)");
 
       this.size = size;
     }
