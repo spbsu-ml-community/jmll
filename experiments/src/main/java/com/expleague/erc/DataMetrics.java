@@ -102,9 +102,7 @@ public class DataMetrics {
     }
 
     private static void writeOneDayDeltas(Path path, List<Event> events) throws IOException {
-        final TIntIntMap userBorders = new TIntIntHashMap();
-        final TIntIntMap userPeaks = new TIntIntHashMap();
-        ModelCombined.calcDayPoints(events, userBorders, userPeaks);
+        final TIntIntMap userBorders = ModelCombined.findMinHourInDay(events);
         final String deltasText = DataPreprocessor.groupEventsToSessions(events).stream()
                 .filter(Util::forPrediction)
                 .filter(session -> Util.getDaysFromPrevSession(session, userBorders.get(session.userId())) == 0)

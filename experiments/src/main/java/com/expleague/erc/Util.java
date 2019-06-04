@@ -37,8 +37,8 @@ public class Util {
         return !isShortSession(session.getDelta()) && !isDead(session.getDelta());
     }
 
-    public static double getDay(final double time, final int dayStart) {
-        double lastBorder = ((int) time / DAY_HOURS) * DAY_HOURS + dayStart;
+    public static int getDayInHours(final double time, final int dayStart) {
+        int lastBorder = ((int) time / DAY_HOURS) * DAY_HOURS + dayStart;
         if (lastBorder > time) {
             lastBorder -= DAY_HOURS;
         }
@@ -50,9 +50,9 @@ public class Util {
     }
 
     public static int getDaysFromPrevSession(final double delta, final double time, final int dayStart) {
-        final double pos = Util.getDay(time, dayStart);
-        final double prevPos = Util.getDay(time - delta, dayStart);
-        return (int) (pos - prevPos) / DAY_HOURS;
+        final int currentDay = Util.getDayInHours(time, dayStart);
+        final int prevDay = Util.getDayInHours(time - delta, dayStart);
+        return (currentDay - prevDay) / DAY_HOURS;
     }
 
     public static int extractUserId(final long idPair) {

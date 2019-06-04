@@ -16,15 +16,14 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Random;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.Collectors;
 
 import static com.expleague.erc.Util.DAY_HOURS;
 
 public class ModelCombined extends Model {
-    private final TIntIntMap userDayBorders;
-    private final TIntIntMap userDayPeaks;
+    private static final int MAX_DAYS = 15;
+    private TIntIntMap userDayBorders;
     private TIntDoubleMap userDayAvgStarts;
     private TLongDoubleMap userDayAverageDeltas;
 
@@ -49,8 +48,7 @@ public class ModelCombined extends Model {
                          LambdaStrategyFactory lambdaStrategyFactory) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         userDayBorders = new TIntIntHashMap();
-        userDayPeaks = new TIntIntHashMap();
-        daysModel = new ModelExpPerUser(dim, beta, eps / 10, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
+        daysModel = new ModelExpPerUser(dim, beta, eps / 24, otherItemImportance, lambdaTransform, lambdaDerivativeTransform,
                 lambdaStrategyFactory, new DayExtractor(userDayBorders), Double.NEGATIVE_INFINITY, Util.CHURN_THRESHOLD_DAYS);
         timeModel = new ConstantNextTimeModel(dim, beta, eps, otherItemImportance, lambdaTransform,
                 lambdaDerivativeTransform, lambdaStrategyFactory);
@@ -59,13 +57,12 @@ public class ModelCombined extends Model {
     private ModelCombined(int dim, double beta, double eps, double otherItemImportance,
                           DoubleUnaryOperator lambdaTransform, DoubleUnaryOperator lambdaDerivativeTransform,
                           LambdaStrategyFactory lambdaStrategyFactory, Model daysModel, Model timeModel,
-                          TIntIntMap userDayBorders, TIntIntMap userDayPeaks, TIntDoubleMap userDayAvgStarts,
+                          TIntIntMap userDayBorders, TIntDoubleMap userDayAvgStarts,
                           TLongDoubleMap userDayAverageDeltas) {
         super(dim, beta, eps, otherItemImportance, lambdaTransform, lambdaDerivativeTransform, lambdaStrategyFactory);
         this.daysModel = daysModel;
         this.timeModel = timeModel;
         this.userDayBorders = userDayBorders;
-        this.userDayPeaks = userDayPeaks;
         this.userDayAvgStarts = userDayAvgStarts;
         this.userDayAverageDeltas = userDayAverageDeltas;
     }
@@ -78,7 +75,7 @@ public class ModelCombined extends Model {
         daysModel.makeInitialEmbeddings(events);
         timeModel.makeInitialEmbeddings(events);
         initIds();
-        calcDayPoints(events, userDayBorders, userDayPeaks);
+        userDayBorders = findMinHourInDay(events);
         userDayAvgStarts = calcAvgStarts(events, userDayBorders);
         calcDayAverages(events);
         isInit = true;
@@ -88,6 +85,31 @@ public class ModelCombined extends Model {
     public void initModel() {
         initIds();
         isInit = true;
+    }
+
+    public static TIntIntMap findMinHourInDay(final List<Event> events) {
+        final TIntIntMap userDayBorders =  new TIntIntHashMap();
+        final TIntObjectMap<int[]> counters = new TIntObjectHashMap<>();
+        for (final Event event : events) {
+            final int userId = event.userId();
+            if (!counters.containsKey(userId)) {
+                counters.put(userId, new int[DAY_HOURS]);
+            }
+            counters.get(userId)[(int) event.getTs() % DAY_HOURS]++;
+        }
+        counters.forEachEntry((userId, userCounters) -> {
+            int argMin = -1;
+            int minCounter = Integer.MAX_VALUE;
+            for (int i = 0; i < DAY_HOURS; i++) {
+                if (userCounters[i] < minCounter) {
+                    minCounter = userCounters[i];
+                    argMin = i;
+                }
+            }
+            userDayBorders.put(userId, argMin);
+            return true;
+        });
+        return userDayBorders;
     }
 
     @Override
@@ -150,8 +172,8 @@ public class ModelCombined extends Model {
             if (userDayAverageDeltas.containsKey(userDay)) {
                 return userDayAverageDeltas.get(userDay);
             }
-            final int predictedDay = (int) (time + daysStep * DAY_HOURS) / DAY_HOURS;
-            final double predictedTime = predictedDay * DAY_HOURS + userDayAvgStarts.get(userId);
+            final int predictedDay = Util.getDayInHours(time + daysStep * DAY_HOURS, userDayBorders.get(userId));
+            final double predictedTime = predictedDay + userDayAvgStarts.get(userId);
             return predictedTime - time;
         }
 
@@ -168,11 +190,11 @@ public class ModelCombined extends Model {
         private double expectedTime(final int userId, final double time) {
             double timeExpectation = timeApplicable.timeDelta(userId, time) *
                     daysApplicable.probabilityInterval(userId, 0, 1);
-            for (int i = 1; i < Util.CHURN_THRESHOLD_DAYS; i++) {
+            for (int i = 1; i < MAX_DAYS; i++) {
                 timeExpectation += daysPredictionToExact(userId, time, i) *
                         daysApplicable.probabilityInterval(userId, i, i + 1);
             }
-            timeExpectation /= daysApplicable.probabilityBeforeX(userId, Util.CHURN_THRESHOLD_DAYS);
+            timeExpectation /= daysApplicable.probabilityBeforeX(userId, MAX_DAYS);
             return timeExpectation;
         }
     }
@@ -220,7 +242,7 @@ public class ModelCombined extends Model {
         final TIntIntMap count = new TIntIntHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int userId = session.userId();
-            final double dayStart = Util.getDay(session.getStartTs(), userBorders.get(userId));
+            final double dayStart = Util.getDayInHours(session.getStartTs(), userBorders.get(userId));
             final double dayTime = session.getStartTs() - dayStart;
             if (!lastDays.containsKey(userId) || lastDays.get(userId) != dayStart) {
                 starts.adjustOrPutValue(userId, dayTime, dayTime);
@@ -264,7 +286,6 @@ public class ModelCombined extends Model {
         writeBase(objectOutputStream);
 
         objectOutputStream.writeObject(userDayBorders);
-        objectOutputStream.writeObject(userDayPeaks);
         objectOutputStream.writeObject(userDayAvgStarts);
         objectOutputStream.writeObject(userDayAverageDeltas);
 
@@ -289,7 +310,6 @@ public class ModelCombined extends Model {
         final LambdaStrategyFactory lambdaStrategyFactory = (LambdaStrategyFactory) objectInputStream.readObject();
 
         final TIntIntMap userDayBorders = (TIntIntMap) objectInputStream.readObject();
-        final TIntIntMap userDayPeaks = (TIntIntMap) objectInputStream.readObject();
         final TIntDoubleMap userDayAvgStarts = (TIntDoubleMap) objectInputStream.readObject();
         final TLongDoubleMap userDayAverageDeltas = (TLongDoubleMap) objectInputStream.readObject();
 
@@ -297,7 +317,7 @@ public class ModelCombined extends Model {
         final Model timeModel = ConstantNextTimeModel.read(objectInputStream);
 
         final ModelCombined model = new ModelCombined(dim, beta, eps, otherItemImportance, lambdaTransform,
-                lambdaDerivativeTransform, lambdaStrategyFactory, daysModel, timeModel, userDayBorders, userDayPeaks,
+                lambdaDerivativeTransform, lambdaStrategyFactory, daysModel, timeModel, userDayBorders,
                 userDayAvgStarts, userDayAverageDeltas);
         model.initModel();
         return model;

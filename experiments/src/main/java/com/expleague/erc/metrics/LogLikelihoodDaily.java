@@ -17,8 +17,7 @@ public class LogLikelihoodDaily implements Metric {
     private final TIntIntMap userDayBorders;
 
     public LogLikelihoodDaily(List<Event> events) {
-        userDayBorders = new TIntIntHashMap();
-        ModelCombined.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
+        userDayBorders = ModelCombined.findMinHourInDay(events);
     }
 
     @Override

@@ -328,6 +328,40 @@ public class DataTools {
     return model;
   }
 
+  @Deprecated
+  public static <T extends Function> T deprecatedReadModel(final InputStream inputStream, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+    final LineNumberReader modelReader = new LineNumberReader(new InputStreamReader(inputStream));
+    final String line = modelReader.readLine();
+    final CharSequence[] parts = CharSeqTools.split(line, '\t');
+    //noinspection unchecked
+    final Class<? extends Function> modelClazz = (Class<? extends Function>) Class.forName(parts[0].toString());
+    //noinspection unchecked
+    return (T) serializationRepository.read(StreamTools.readReader(modelReader), modelClazz);
+  }
+
+  @Deprecated
+  public static <T extends Function> T deprecatedReadModel(final String fileName, final ModelsSerializationRepository serializationRepository) throws IOException, ClassNotFoundException {
+    return deprecatedReadModel(new FileInputStream(fileName), serializationRepository);
+  }
+
+  @Deprecated
+  public static <T extends Function> T deprecatedReadModel(final InputStream modelInputStream, final InputStream gridInputStream) throws IOException, ClassNotFoundException {
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository();
+    final BFGrid grid = repository.read(StreamTools.readStream(gridInputStream), BFGridImpl.class);
+    final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
+    return deprecatedReadModel(modelInputStream, customizedRepository);
+  }
+
+  @Deprecated
+  public static <T extends Function> T deprecatedReadModel(final InputStream modelInputStream) throws IOException, ClassNotFoundException {
+    final ModelsSerializationRepository repository = new ModelsSerializationRepository();
+    final BFGridConstructor grid = new BFGridConstructor();
+    final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
+    T model = deprecatedReadModel(modelInputStream, customizedRepository);
+    grid.build();
+    return model;
+  }
+
   public static void writeBinModel(final Function result, final File file) {
     if (result instanceof Ensemble) {
       //noinspection unchecked

@@ -70,13 +70,13 @@ public class ConstantNextTimeModel extends Model {
         final TIntIntMap userDayBorders = new TIntIntHashMap();
         ModelCombined.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
 
-        final TIntDoubleMap lastDays = new TIntDoubleHashMap();
+        final TIntIntMap lastDays = new TIntIntHashMap();
         final TIntDoubleMap lastDayTimes = new TIntDoubleHashMap();
         final TIntDoubleMap userDeltas = new TIntDoubleHashMap();
         final TIntIntMap userCounts = new TIntIntHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int userId = session.userId();
-            final double curDay = Util.getDay(session.getStartTs(), userDayBorders.get(userId));
+            final int curDay = Util.getDayInHours(session.getStartTs(), userDayBorders.get(userId)) / DAY_HOURS;
             final double curTime = session.getStartTs() - curDay * DAY_HOURS;
             if (lastDays.containsKey(userId) && lastDays.get(userId) == curDay) {
                 final double delta = curTime - lastDayTimes.get(userId);

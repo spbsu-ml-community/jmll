@@ -149,29 +149,17 @@ public class FMCBoostingMain {
     final BlockwiseMLLLogit validTarget = valid != null ? valid.target(BlockwiseMLLLogit.class) : null;
     boosting.setEarlyStopping(validVecDataSet, validTarget, earlyStoppingRounds);
 
-//    final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(train, test);
-//    boosting.addListener(multiclassProgressPrinter);
-
     long startTime = System.currentTimeMillis();
     final Ensemble ensemble = boosting.fit(trainVecDataSet, trainTarget);
     System.out.println(" training: " + (System.currentTimeMillis() - startTime) + "(ms)");
 
     final Trans joined = ensemble.last() instanceof FuncJoin ? MCTools.joinBoostingResult(ensemble) : ensemble;
-//    final MultiClassModel multiclassModel = new MultiClassModel(joined);
-//    final String learnResult = MCTools.evalModel(multiclassModel, train, "[LEARN] ", false);
-//    System.out.println(learnResult);
 
     return joined;
   }
 
   private static Vec eval(final Trans ensemble, final Pool<?> test, final String comment) {
     final MultiClassModel multiclassModel = new MultiClassModel(ensemble);
-
-//    Interval.start();
-//    final String testResult = MCTools.evalModel(multiclassModel, test, comment + " ", false);
-//    System.out.println(testResult);
-//    Interval.stopAndPrint(" evaluation on " + comment);
-
     return multiclassModel.bestClassAll(test.vecData().data(), true);
   }
 
@@ -185,8 +173,6 @@ public class FMCBoostingMain {
   public static void main(String[] args) throws Exception {
     CommandLineParser parser = new DefaultParser();
     try {
-      // System.out.println("CPU count: " + Runtime.getRuntime().availableProcessors());
-
       CommandLine cmd = parser.parse(options, args);
 
       final String model = cmd.getOptionValue("model", null);
@@ -242,7 +228,7 @@ public class FMCBoostingMain {
 
       Trans ensemble = null;
       if (train == null && model != null) {
-        ensemble = DataTools.readModel(new FileInputStream(new File(model)));
+        ensemble = DataTools.deprecatedReadModel(new FileInputStream(new File(model)));
       }
 
       if (train == null && test == null) {

@@ -17,8 +17,7 @@ public class MAEDaily implements Metric {
     private final TIntIntMap userDayBorders;
 
     public MAEDaily(List<Event> events) {
-        userDayBorders = new TIntIntHashMap();
-        ModelCombined.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
+        userDayBorders = ModelCombined.findMinHourInDay(events);
     }
 
     @Override
