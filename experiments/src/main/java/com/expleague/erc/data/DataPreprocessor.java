@@ -70,18 +70,15 @@ public abstract class DataPreprocessor {
 
     public static List<Session> groupToSessions(final List<EventSeq> eventSeqs) {
         final List<Session> sessions = new ArrayList<>();
-        final TIntDoubleMap lastTimes = new TIntDoubleHashMap();
         final TIntObjectMap<Session> lastSessions = new TIntObjectHashMap<>();
         for (final EventSeq eventSeq : eventSeqs) {
             final int userId = eventSeq.userId();
-            final double curTime = eventSeq.getStartTs();
             if (!lastSessions.containsKey(userId) || eventSeq.getDelta() > Util.MAX_GAP) {
                 final Session newSession = new Session();
                 lastSessions.put(userId, newSession);
                 sessions.add(newSession);
             }
             lastSessions.get(userId).add(eventSeq);
-            lastTimes.put(userId, curTime);
         }
         return sessions;
     }

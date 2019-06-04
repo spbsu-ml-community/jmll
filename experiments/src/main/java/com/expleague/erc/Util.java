@@ -50,8 +50,8 @@ public class Util {
     }
 
     public static int getDaysFromPrevSession(final double delta, final double time, final int dayStart) {
-        double pos = Util.getDay(time, dayStart);
-        double prevPos = Util.getDay(time - delta, dayStart);
+        final double pos = Util.getDay(time, dayStart);
+        final double prevPos = Util.getDay(time - delta, dayStart);
         return (int) (pos - prevPos) / DAY_HOURS;
     }
 

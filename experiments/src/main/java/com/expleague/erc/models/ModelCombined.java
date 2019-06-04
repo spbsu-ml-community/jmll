@@ -157,12 +157,12 @@ public class ModelCombined extends Model {
 
         @Override
         public double timeDelta(final int userId, final double time) {
-            return expectedTime(userId, time);
-//            final int daysPrediction = (int) daysApplicable.timeDelta(userId, time);
-//            if (daysPrediction == 0) {
-//                return timeApplicable.timeDelta(userId, time);
-//            }
-//            return daysPredictionToExact(userId, time, daysPrediction);
+//            return expectedTime(userId, time);
+            final int daysPrediction = (int) daysApplicable.timeDelta(userId, time);
+            if (daysPrediction == 0) {
+                return timeApplicable.timeDelta(userId, time);
+            }
+            return daysPredictionToExact(userId, time, daysPrediction);
         }
 
         private double expectedTime(final int userId, final double time) {

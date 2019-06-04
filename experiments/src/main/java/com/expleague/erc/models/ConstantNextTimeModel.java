@@ -67,29 +67,24 @@ public class ConstantNextTimeModel extends Model {
     }
 
     public static TIntDoubleMap calcAverageOneDayDelta(final List<Event> events) {
-        final TIntIntMap lastDays = new TIntIntHashMap();
+        final TIntIntMap userDayBorders = new TIntIntHashMap();
+        ModelCombined.calcDayPoints(events, userDayBorders, new TIntIntHashMap());
+
+        final TIntDoubleMap lastDays = new TIntDoubleHashMap();
         final TIntDoubleMap lastDayTimes = new TIntDoubleHashMap();
         final TIntDoubleMap userDeltas = new TIntDoubleHashMap();
         final TIntIntMap userCounts = new TIntIntHashMap();
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
             final int userId = session.userId();
-            final int curDay = ((int) session.getStartTs() / DAY_HOURS);
+            final double curDay = Util.getDay(session.getStartTs(), userDayBorders.get(userId));
             final double curTime = session.getStartTs() - curDay * DAY_HOURS;
-            if (!lastDays.containsKey(userId)) {
-                lastDays.put(userId, curDay);
-                lastDayTimes.put(userId, curTime);
-                continue;
-            }
-            final int lastDay = lastDays.get(userId);
-            if (lastDay == curDay) {
+            if (lastDays.containsKey(userId) && lastDays.get(userId) == curDay) {
                 final double delta = curTime - lastDayTimes.get(userId);
                 userDeltas.adjustOrPutValue(userId, delta, delta);
                 userCounts.adjustOrPutValue(userId, 1, 1);
-                lastDayTimes.put(userId, curTime);
-            } else {
-                lastDays.put(userId, curDay);
-                lastDayTimes.put(userId, curTime);
             }
+            lastDays.put(userId, curDay);
+            lastDayTimes.put(userId, curTime);
         }
         final TIntDoubleMap result = new TIntDoubleHashMap();
         for (final int userId : userDeltas.keys()) {

@@ -26,8 +26,8 @@ public class LogLikelihoodPerUser implements Metric {
     public double calculate(List<Event> events, ApplicableModel applicable) {
         double logLikelihood = 0.;
         for (final Session session : DataPreprocessor.groupEventsToSessions(events)) {
-            final double delta = max(session.getDelta(), eps);
-            if (!Util.isShortSession(delta) && !Util.isDead(delta)) {
+            if (Util.forPrediction(session)) {
+                final double delta = max(session.getDelta(), eps);
                 final double p = applicable.probabilityInterval(session.userId(), delta - eps, delta + eps);
                 assert 0 <= p && p <= 1;
                 if (p > 0) {
