@@ -49,6 +49,8 @@ public class WordAnalogiesMetric extends QualityMetric {
       List<String> results = new ArrayList<>();
       final int[] counts = {0, 0, 0}; // 0 for total, 1 for top1, 2 for top5
       countMetric(results, counts);
+      System.out.println(String.format("Number of top1 is %d out of %d (%d%%)",
+          counts[1], counts[0], 100 * counts[1] / counts[0]));
 
       fout.println(String.format("Number of top1 is %d out of %d (%d%%)",
           counts[1], counts[0], 100 * counts[1] / counts[0]));

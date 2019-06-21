@@ -5,6 +5,7 @@ import com.expleague.ml.Metric;
 import com.expleague.ml.embedding.decomp.DecompBuilder;
 import com.expleague.ml.embedding.decomp.MultiDecompBuilder;
 import com.expleague.ml.embedding.glove.GloVeBuilder;
+import com.expleague.ml.embedding.glove.NgramGloveBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import com.expleague.ml.embedding.kmeans.ClusterBasedSymmetricBuilder;
 import com.expleague.ml.embedding.kmeans.HierarchicalClusterBasedSymmetricBuilder;
@@ -34,7 +35,7 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
   enum Type {
     GLOVE(GloVeBuilder.class),
     DECOMP(DecompBuilder.class),
-    MULTI_DECOMP(MultiDecompBuilder.class),
+    NGRAM_GLOVE(NgramGloveBuilder.class),
     KMEANS_SKIP(ClusterBasedSymmetricBuilder.class),
     HIERARCH_CLUSTER(HierarchicalClusterBasedSymmetricBuilder.class),
     ;

@@ -90,7 +90,7 @@ public abstract class QualityMetric {
     int[] order = ArrayTools.sequence(0, embedding.vocabSize());
     TIntSet exceptIds = new TIntHashSet();
     exceptWords.forEach(word -> exceptIds.add(embedding.getIndex(word)));
-    double[] weights = IntStream.of(order).mapToDouble(idx -> {
+    double[] weights = IntStream.of(order).parallel().mapToDouble(idx -> {
       if (exceptIds.contains(idx))
         return Double.MAX_VALUE;
       return -VecTools.cosine(embedding.apply(embedding.getObj(idx)), vector);

@@ -85,6 +85,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
     IntStream.range(0, vocab_size).forEach(i -> {
       cooc(i, (j, X_ij) -> {
         wordsProbabsLeft.set(i, wordsProbabsLeft.get(i) + X_ij);
+        //wordsProbabsLeft.set(j, wordsProbabsLeft.get(j) + X_ij);
         wordsProbabsRight.set(j, wordsProbabsRight.get(j) + X_ij);
         X_sum[0] = X_sum[0] + X_ij;
       });
@@ -100,6 +101,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
       log.info("==== Dictionary phase ====");
       long time = System.nanoTime();
       acquireDictionary();
+      log.info("Dictionary size is " + dict().size());
       log.info("==== " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time) + "s ====");
       log.info("==== Cooccurrences phase ====");
       time = System.nanoTime();
@@ -119,7 +121,7 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
     }
   }
 
-  private void acquireCooccurrences() throws IOException {
+  protected void acquireCooccurrences() throws IOException {
     final Path coocPath = Paths.get(this.path.getParent().toString(), strip(this.path.getFileName()) + "." + wtype().name().toLowerCase() + "-" + wleft() + "-" + wright() + "-" + minCount() + ".cooc");
     try {
       final LongSeq[] cooc = new LongSeq[wordsList.size()];

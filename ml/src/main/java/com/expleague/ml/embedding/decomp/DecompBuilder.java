@@ -29,6 +29,7 @@ public class DecompBuilder extends CoocBasedBuilder {
   private int symDim = 50;
   private int skewDim = 10;
   private FastRandom rng = new FastRandom();
+  private boolean regularization = false;
 
   public DecompBuilder xMax(int xMax) {
     this.xMax = xMax;
@@ -55,6 +56,11 @@ public class DecompBuilder extends CoocBasedBuilder {
     return this;
   }
 
+  public DecompBuilder regularization(boolean flag) {
+    regularization = flag;
+    return this;
+  }
+
   private double weightingFunc(double x) {
     return x < xMax ? Math.pow((x / xMax), alpha) : 1;
   }
@@ -64,9 +70,9 @@ public class DecompBuilder extends CoocBasedBuilder {
     final int vocab_size = dict().size();
     final Mx symDecomp = new VecBasedMx(vocab_size, symDim);
     final Mx skewsymDecomp = new VecBasedMx(vocab_size, skewDim);
-    //final Vec bias = new ArrayVec(vocab_size);
+    final Vec bias = new ArrayVec(vocab_size);
     for (int i = 0; i < vocab_size; i++) {
-      //bias.set(i, initializeValue(symDim));
+      bias.set(i, initializeValue(symDim));
       for (int j = 0; j < symDim; j++) {
         symDecomp.set(i, j, initializeValue(symDim));
       }
@@ -81,10 +87,10 @@ public class DecompBuilder extends CoocBasedBuilder {
 
     final Mx softMaxSym = new VecBasedMx(symDecomp.rows(), symDecomp.columns());
     final Mx softMaxSkewsym = new VecBasedMx(skewsymDecomp.rows(), skewsymDecomp.columns());
-    //final Vec softMaxBias = new ArrayVec(bias.dim());
+    final Vec softMaxBias = new ArrayVec(bias.dim());
     VecTools.fill(softMaxSym, 1);
     VecTools.fill(softMaxSkewsym, 1);
-    //VecTools.fill(softMaxBias, 1);
+    VecTools.fill(softMaxBias, 1);
 
     final TIntArrayList order = new TIntArrayList(IntStream.range(0, vocab_size).toArray());
     rng = new FastRandom();
@@ -102,29 +108,31 @@ public class DecompBuilder extends CoocBasedBuilder {
           final Vec skew_j = skewsymDecomp.row(j);
           final Vec softMaxSym_j = softMaxSym.row(j);
           final Vec softMaxSkew_j = softMaxSkewsym.row(j);
-          //final double b_i = bias.get(i);
-          //final double b_j = bias.get(j);
+          final double b_i = bias.get(i);
+          final double b_j = bias.get(j);
 
           double asum = VecTools.multiply(sym_i, sym_j);
           double bsum = VecTools.multiply(skew_i, skew_j);
           final int sign = i > j ? -1 : 1;
-          //final double diff = b_i + b_j + asum + sign * bsum - minfo;
-          final double logMutualInfo = Math.log(X_ij) - Math.log(wordsProbabsLeft.get(i)) - Math.log(wordsProbabsRight.get(j)) + Math.log(X_sum);
-          final double diff = asum + sign * bsum - logMutualInfo;
+          final double diff = b_i + b_j + asum + sign * bsum - Math.log(X_ij);
+          //final double logMutualInfo = Math.log(X_ij) - Math.log(wordsProbabsLeft.get(i)) - Math.log(wordsProbabsRight.get(j)) + Math.log(X_sum);
+          //final double diff = asum + sign * bsum - logMutualInfo;
           final double weight = weightingFunc(X_ij);
           final double biasStep = weight * diff;
           scoreCalculator.adjust(i, j, weight, 0.5 * weight * MathTools.sqr(diff));
 
           update(sym_i, softMaxSym_i, sym_j, softMaxSym_j, diff * weight);
           update(skew_i, softMaxSkew_i, skew_j, softMaxSkew_j, diff * weight * sign);
-          //bias.adjust(i, -step() * biasStep / Math.sqrt(softMaxBias.get(i)));
-          //softMaxBias.adjust(i, biasStep * biasStep);
-          //bias.adjust(j, -step() * biasStep / Math.sqrt(softMaxBias.get(j)));
-          //softMaxBias.adjust(j, biasStep * biasStep);
+          bias.adjust(i, -step() * biasStep / Math.sqrt(softMaxBias.get(i)));
+          softMaxBias.adjust(i, biasStep * biasStep);
+          bias.adjust(j, -step() * biasStep / Math.sqrt(softMaxBias.get(j)));
+          softMaxBias.adjust(j, biasStep * biasStep);
         });
       });
 
-      project(skewsymDecomp);
+      if (regularization) {
+        project(skewsymDecomp);
+      }
       log.info("Iteration: " + iter + ", score: " + scoreCalculator.gloveScore() + ", time: " + Interval.time());
 //      Interval.stopAndPrint("Iteration: " + iter + ", score: " + scoreCalculator.gloveScore());
     }

@@ -123,6 +123,8 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
     final double score = Double.isFinite(correctW) ? weight * Math.log(correctW / denom) : 0;
     this.score = this.score * G + score;
 
+    final Vec old_top_centroid_i = centroids.row(0);
+    final int top_centroid_i = oldPath_i.get(0);
     for (int k = 0; k < centroids.rows(); k++) { // gradient for cluster_i
       final double clusterGrad = Double.isFinite(weights.get(k)) ? -weights.get(k) * sizes.get(k) / denom : -1.;
       clusters.incscale(oldPath_i, k, v_i, step(), weight * clusterGrad);
@@ -147,8 +149,17 @@ public class HierarchicalClusterBasedSymmetricBuilder extends EmbeddingBuilderBa
     //
     { // updating clusters alignment
       TIntArrayList newPath_i = clusters.append(i, v_i);
-      VecTools.incscale(v_i, clusters.getClusters(i).row(0), -1);
-      VecTools.assign(residuals.row(i), v_i);
+      final Vec new_top_cetroid_i = clusters.getClusters(i).row(0);
+      for (int id = 0; id < dict().size(); id++) {
+        if (clusters.getPath(id, new TIntArrayList()).get(0) == top_centroid_i) {
+          Vec vec = new ArrayVec(dim);
+          VecTools.append(VecTools.assign(vec, old_top_centroid_i), residuals.row(id));
+          VecTools.incscale(vec, new_top_cetroid_i, -1);
+          VecTools.assign(residuals.row(id), vec);
+        }
+      }
+      //VecTools.incscale(v_i, clusters.getClusters(i).row(0), -1);
+      //VecTools.assign(residuals.row(i), v_i);
       if (!newPath_i.equals(oldPath_i))
         transfers++;
 
