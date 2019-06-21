@@ -98,6 +98,14 @@ public class NgramGloveBuilder extends TrigramBasedBuilder {
         final Vec softMaxL = softMaxLeft.row(i);
         final Vec left = VecTools.copy(leftWord);
 
+        /*final Vec left = new ArrayVec();
+        final Vec[] leftComponents = new Vec[word.length() - 2];
+        leftComponents[0] = leftVectors.row(i);
+        for (int k = 0; k < word.length() - 3; k++) {
+          leftComponents[k + 1] = trigram(word.sub(k, k + 3), trigramVectors);
+        }
+        Stream.of(leftComponents).forEach(v -> append(left, v));*/
+
         cooc(i, (j, X_ij) -> {
           final Vec right = rightVectors.row(j);
           final Vec softMaxR = softMaxRight.row(j);

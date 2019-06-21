@@ -44,10 +44,11 @@ import java.util.stream.Stream;
 import static java.lang.Math.exp;
 
 /**
- * Experts League
- * Created by solar on 05.05.17.
+ * Experts League Created by solar on 05.05.17.
  */
-public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOptimization<BlockwiseMLLLogit> {
+public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements
+    VecOptimization<BlockwiseMLLLogit> {
+
   protected final VecOptimization<StatBasedLoss> weak;
   private final Class<? extends L2> factory;
   private final Factorization factorize;
@@ -65,27 +66,35 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   private double bestAccuracy;
   private int earlyStoppingRounds = 0;
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step, final boolean lazyCursor) {
+  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+      final int iterationsCount, final double step, final boolean lazyCursor) {
     this(factorize, weak, SatL2.class, iterationsCount, step, lazyCursor, 1, false);
   }
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step) {
+  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+      final int iterationsCount, final double step) {
     this(factorize, weak, SatL2.class, iterationsCount, step, false, 1, false);
   }
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final int iterationsCount, final double step, final int ensembleSize) {
+  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+      final int iterationsCount, final double step, final int ensembleSize) {
     this(factorize, weak, SatL2.class, iterationsCount, step, false, ensembleSize, false);
   }
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, final int ensembleSize, final boolean isGbdt) {
+  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+      final Class<? extends L2> factory, final int iterationsCount, final double step,
+      final int ensembleSize, final boolean isGbdt) {
     this(factorize, weak, factory, iterationsCount, step, false, ensembleSize, isGbdt);
   }
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step) {
+  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+      final Class<? extends L2> factory, final int iterationsCount, final double step) {
     this(factorize, weak, factory, iterationsCount, step, false, 1, false);
   }
 
-  public FMCBoosting(Factorization factorize, final VecOptimization<StatBasedLoss> weak, final Class<? extends L2> factory, final int iterationsCount, final double step, final boolean lazyCursor, final int ensembleSize, final boolean isGbdt) {
+  public FMCBoosting(Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+      final Class<? extends L2> factory, final int iterationsCount, final double step,
+      final boolean lazyCursor, final int ensembleSize, final boolean isGbdt) {
     this.factorize = factorize;
     this.weak = weak;
     this.factory = factory;
@@ -112,7 +121,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     }
 
     Vec validClass = null;
-    final MCMacroF1Score f1MacroScore = valid != null ? new MCMacroF1Score(validTarget.labels(), valid) : null;
+    final MCMacroF1Score f1MacroScore =
+        valid != null ? new MCMacroF1Score(validTarget.labels(), valid) : null;
 
     VecBasedMx validScore = null;
     if (valid != null) {
@@ -120,8 +130,9 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     }
 
     for (int t = 0; t < iterationsCount; t++) {
-      if ((t + 1) % 100 == 0)
+      if ((t + 1) % 20 == 0) {
         System.out.println("Iteration " + (t + 1));
+      }
 
       final Pair<Vec, Vec> factorize = this.factorize.factorize(cursor);
 
@@ -137,8 +148,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       }
 
       for (int i = 0; i < ensembleSize; ++i) {
-        final ObliviousTree weakModel = (ObliviousTree) weak.fit(learn, DataTools.bootstrap(globalLoss, rfRnd));
-        // final ObliviousTree weakModel = (ObliviousTree) weak.fit(learn, globalLoss);
+        final ObliviousTree weakModel = (ObliviousTree) weak
+            .fit(learn, DataTools.bootstrap(globalLoss, rfRnd));
 
         if (bds == null) {
           bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weakModel.grid());
@@ -148,20 +159,11 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           IntStream.range(0, learn.length()).parallel().forEach(j -> {
             factorize.first.adjust(j, -weakModel.value(this.bds, j));
           });
-
-//          for (int j = 0; j < learn.length(); ++j) {
-//            factorize.first.adjust(j, -weakModel.value(this.bds, j));
-//          }
         }
 
-        // System.out.println(String.format("Vector norm: %.3f", VecTools.norm(factorize.first)));
         weakModels.add(weakModel);
         ensamble.add(new ScaledVectorFunc(weakModel, factorize.second));
       }
-
-//      if (!silent) {
-//        Interval.stopAndPrint("Fitting greedy oblivious tree");
-//      }
 
       // Update valid score
       if (valid != null) {
@@ -179,7 +181,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           }
         }
 
-        if ((t + 1) % 100 == 0) {
+        if ((t + 1) % 20 == 0) {
           double matches = 0;
           for (int i = 0; i < valid.length(); ++i) {
             double[] score = validScore.row(i).toArray();
@@ -205,35 +207,18 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
         }
 
         if (earlyStoppingRounds > 0 && t + 1 - bestIterCount == earlyStoppingRounds) {
-          // Early stopping
           System.out.println("Early stopping!");
           break;
         }
       }
-
-      /*
-      // Debug calculations
-      Vec u_pred = new ArrayVec(learn.length());
-      for (int i = 0; i < learn.length(); ++i) {
-        u_pred.set(i, weakModel.apply(learn.data().row(i)).get(0));
-      }
-
-      final Vec diff = VecTools.subtract(u_pred, factorize.first);
-      final double mae = VecTools.norm1(diff) / diff.dim();
-
-      for (int i = 0; i < diff.dim(); ++i) {
-        diff.set(i, diff.get(i) / factorize.first.get(i));
-      }
-      final double mape = Math.round(100.0 * VecTools.norm1(diff) / diff.dim());
-      System.out.println("Tree MAE: " + mae);
-      System.out.println("Tree MAPE: " + mape + "%");*/
 
       invoke(new Ensemble<>(ensamble, -step));
     }
 
     if (valid != null) {
       try {
-        final String result = DoubleStream.of(validScores).mapToObj(Double::toString).collect(Collectors.joining(","));
+        final String result = DoubleStream.of(validScores).mapToObj(Double::toString)
+            .collect(Collectors.joining(","));
         final PrintStream out = new PrintStream(new FileOutputStream(new File("valid_scores.txt")));
         out.println(result);
         out.close();
@@ -249,13 +234,15 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     return new Ensemble<>(ensamble, -step);
   }
 
-  public void setEarlyStopping(final VecDataSet valid, final BlockwiseMLLLogit validTarget, final int earlyStoppingRounds) {
+  public void setEarlyStopping(final VecDataSet valid, final BlockwiseMLLLogit validTarget,
+      final int earlyStoppingRounds) {
     this.valid = valid;
     this.validTarget = validTarget;
     this.earlyStoppingRounds = earlyStoppingRounds;
   }
 
-  private BiConsumer<Integer, Vec> getLastWeakLearner(final Vec b, final ObliviousTree weakModel, BlockwiseMLLLogit target) {
+  private BiConsumer<Integer, Vec> getLastWeakLearner(final Vec b, final ObliviousTree weakModel,
+      BlockwiseMLLLogit target) {
     final int classesCount = target.classesCount();
     return (i, vec) -> {
       final int pointClass = target.label(i);
@@ -285,6 +272,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   }
 
   private class GradientCursor extends Seq.Stub<Vec> {
+
     private final Mx cursor;
     private final VecDataSet learn;
     private final List<Func> weakModels;
@@ -296,7 +284,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
     private BinarizedDataSet bds;
     private int size = 0;
 
-    public GradientCursor(VecDataSet learn, List<Func> weakModels, Vec[] b, BlockwiseMLLLogit target, BinarizedDataSet bds) {
+    public GradientCursor(VecDataSet learn, List<Func> weakModels, Vec[] b,
+        BlockwiseMLLLogit target, BinarizedDataSet bds) {
       this.cursor = new VecBasedMx(learn.data().rows(), target.classesCount() - 1);
       this.learn = learn;
       this.weakModels = weakModels;
@@ -332,8 +321,9 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           int leaf = 0;
           for (int depth = 0; depth < features.size(); depth++) {
             leaf <<= 1;
-            if (features.get(depth).value(bds.bins(features.get(depth).findex())[index]))
+            if (features.get(depth).value(bds.bins(features.get(depth).findex())[index])) {
               leaf++;
+            }
           }
           leafIndex[tree][index] = leaf;
         }
@@ -357,7 +347,8 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       final int classesCount = target.classesCount();
 
       if (bds == null) {
-        bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(((ObliviousTree) weakModels.get(size - 1)).grid());
+        bds = learn.cache().cache(Binarize.class, VecDataSet.class)
+            .binarize(((ObliviousTree) weakModels.get(size - 1)).grid());
       }
 
       // long timeStart = System.currentTimeMillis();
@@ -394,7 +385,6 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
           }
         }
       });
-      // System.out.println("Cursor update: " + (System.currentTimeMillis() - timeStart) + " (ms)");
 
       this.size = size;
     }
@@ -440,13 +430,15 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
   }
 
   private class LazyGradientCursor extends Seq.Stub<Vec> {
+
     private final VecDataSet learn;
     private final List<Func> weakModels;
     private final BlockwiseMLLLogit target;
     private final Vec[] b;
     private BinarizedDataSet bds;
 
-    public LazyGradientCursor(VecDataSet learn, List<Func> weakModels, Vec[] b, BlockwiseMLLLogit target, BinarizedDataSet bds) {
+    public LazyGradientCursor(VecDataSet learn, List<Func> weakModels, Vec[] b,
+        BlockwiseMLLLogit target, BinarizedDataSet bds) {
       this.learn = learn;
       this.weakModels = weakModels;
       this.target = target;
@@ -464,8 +456,10 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       final double step = -FMCBoosting.this.step;
       if (size > 0 && weakModels.get(0) instanceof ObliviousTree) {
         final ObliviousTree obliviousTree = (ObliviousTree) weakModels.get(0);
-        if (bds == null)
-          bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(obliviousTree.grid());
+        if (bds == null) {
+          bds = learn.cache().cache(Binarize.class, VecDataSet.class)
+              .binarize(obliviousTree.grid());
+        }
         final BinarizedDataSet bds = this.bds;
         for (int j = 0; j < size; j++) {
           final ObliviousTree tree = (ObliviousTree) weakModels.get(j);
@@ -485,10 +479,11 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> implements VecOpt
       }
       final int pointClass = target.label(i);
       for (int c = 0; c < classesCount - 1; c++) {
-        if (pointClass == c)
+        if (pointClass == c) {
           result.adjust(c, -(1. + sum - exp(H_t.get(c))) / (1. + sum));
-        else
+        } else {
           result.adjust(c, exp(H_t.get(c)) / (1. + sum));
+        }
       }
       return result;
     }

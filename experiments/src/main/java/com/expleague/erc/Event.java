@@ -1,10 +1,10 @@
 package com.expleague.erc;
 
-public final class Event {
-    private final int userId;
-    private final int itemId;
-    private final double ts;
-    private double prDelta;
+public class Event {
+    protected final int userId;
+    protected final int itemId;
+    protected final double ts;
+    protected double prDelta;
 
     public Event(int userId, int itemId, double ts) {
         this.userId = userId;

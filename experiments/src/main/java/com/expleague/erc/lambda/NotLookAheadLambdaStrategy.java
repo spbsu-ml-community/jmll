@@ -1,7 +1,7 @@
 package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.erc.Event;
+import com.expleague.erc.EventSeq;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -23,7 +23,7 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
         savedLambdasUserDerivative = new TIntObjectHashMap<>();
         savedLambdasItemDerivative = new TIntObjectHashMap<>();
         for (final int userId : userEmbeddings.keys()) {
-            userLambdas.put(userId, new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
+            userLambdas.put(userId, new UserLambdaItemSpecific(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
             savedLambdas.put(userId, new TIntDoubleHashMap());
             savedLambdasUserDerivative.put(userId, new TIntObjectHashMap<>());
             savedLambdasItemDerivative.put(userId, new TIntObjectHashMap<>());
@@ -41,6 +41,16 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
+    public double getLambda(int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Vec getLambdaUserDerivative(int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Vec getLambdaUserDerivative(final int userId, final int itemId) {
         if (savedLambdasUserDerivative.get(userId).containsKey(itemId)) {
             return savedLambdasUserDerivative.get(userId).get(itemId);
@@ -48,6 +58,11 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
         Vec derivative = userLambdas.get(userId).getLambdaUserDerivative(itemId);
         savedLambdasUserDerivative.get(userId).put(itemId, derivative);
         return derivative;
+    }
+
+    @Override
+    public TIntObjectMap<Vec> getLambdaItemDerivative(int userId) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -61,23 +76,24 @@ public class NotLookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
-    public void accept(final Event event) {
-        int userId = event.userId();
-        int itemId = event.itemId();
+    public void accept(final EventSeq eventSeq) {
+        int userId = eventSeq.userId();
+        int itemId = eventSeq.itemId();
         double timeDelta = 0.;
         if (prevUserActionTime.containsKey(userId)) {
-            timeDelta = event.getTs() - prevUserActionTime.get(userId);
+            timeDelta = eventSeq.getStartTs() - prevUserActionTime.get(userId);
         }
         userLambdas.get(userId).update(itemId, timeDelta);
         savedLambdas.get(userId).put(itemId, userLambdas.get(userId).getLambda(itemId));
         savedLambdasUserDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaUserDerivative(itemId));
         savedLambdasItemDerivative.get(userId).put(itemId, userLambdas.get(userId).getLambdaItemsDerivative(itemId));
-        prevUserActionTime.put(userId, event.getTs());
+        prevUserActionTime.put(userId, eventSeq.getStartTs());
     }
 
     public static class NotLookAheadLambdaStrategyFactory implements LambdaStrategyFactory {
         @Override
-        public LambdaStrategy get(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings, double beta, double otherProjectImportance) {
+        public LambdaStrategy get(final TIntObjectMap<Vec> userEmbeddings, final TIntObjectMap<Vec> itemEmbeddings,
+                                  final TIntDoubleMap initialLambdas, double beta, double otherProjectImportance) {
             return new NotLookAheadLambdaStrategy(userEmbeddings, itemEmbeddings, beta, otherProjectImportance);
         }
     }

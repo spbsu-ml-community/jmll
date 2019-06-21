@@ -1,7 +1,7 @@
 package com.expleague.erc.lambda;
 
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.erc.Event;
+import com.expleague.erc.EventSeq;
 import gnu.trove.map.TIntDoubleMap;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntDoubleHashMap;
@@ -16,7 +16,7 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
         prevUserActionTime = new TIntDoubleHashMap();
         userLambdas = new TIntObjectHashMap<>();
         for (final int userId : userEmbeddings.keys()) {
-            userLambdas.put(userId, new UserLambda(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
+            userLambdas.put(userId, new UserLambdaItemSpecific(userEmbeddings.get(userId), itemEmbeddings, beta, otherProjectImportance));
         }
     }
 
@@ -26,8 +26,23 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
+    public double getLambda(int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Vec getLambdaUserDerivative(int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Vec getLambdaUserDerivative(final int userId, final int itemId) {
         return userLambdas.get(userId).getLambdaUserDerivative(itemId);
+    }
+
+    @Override
+    public TIntObjectMap<Vec> getLambdaItemDerivative(int userId) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -36,12 +51,12 @@ public class LookAheadLambdaStrategy implements LambdaStrategy {
     }
 
     @Override
-    public void accept(final Event event) {
+    public void accept(final EventSeq eventSeq) {
         double timeDelta = 0;
-        if (prevUserActionTime.containsKey(event.userId())) {
-            timeDelta = event.getTs() - prevUserActionTime.get(event.userId());
+        if (prevUserActionTime.containsKey(eventSeq.userId())) {
+            timeDelta = eventSeq.getStartTs() - prevUserActionTime.get(eventSeq.userId());
         }
-        userLambdas.get(event.userId()).update(event.itemId(), timeDelta);
-        prevUserActionTime.put(event.userId(), event.getTs());
+        userLambdas.get(eventSeq.userId()).update(eventSeq.itemId(), timeDelta);
+        prevUserActionTime.put(eventSeq.userId(), eventSeq.getStartTs());
     }
 }

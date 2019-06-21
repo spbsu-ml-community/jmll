@@ -9,6 +9,7 @@ import com.expleague.ml.embedding.glove.NgramGloveBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import com.expleague.ml.embedding.kmeans.ClusterBasedSymmetricBuilder;
 import com.expleague.ml.embedding.kmeans.HierarchicalClusterBasedSymmetricBuilder;
+import com.expleague.ml.embedding.kmeans.SoftMaxSymmetricBuilder;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Writer;
@@ -38,6 +39,7 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
     NGRAM_GLOVE(NgramGloveBuilder.class),
     KMEANS_SKIP(ClusterBasedSymmetricBuilder.class),
     HIERARCH_CLUSTER(HierarchicalClusterBasedSymmetricBuilder.class),
+    SOFTMAX_SYMMETRIC(SoftMaxSymmetricBuilder.class),
     ;
 
     private final Class<? extends Builder> builderClass;

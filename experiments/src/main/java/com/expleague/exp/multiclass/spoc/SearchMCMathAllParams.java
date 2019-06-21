@@ -3,6 +3,7 @@ package com.expleague.exp.multiclass.spoc;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.MathTools;
+import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
@@ -40,6 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.*;
+import java.util.stream.IntStream;
 
 /**
  * User: qdeee
@@ -180,7 +182,7 @@ public class SearchMCMathAllParams {
         final GradientBoosting<LLLogit> boosting = new GradientBoosting<>(new GreedyObliviousTree<>(grid, 5), SatL2.class, iters, step);
         final Ensemble ensemble = boosting.fit(learn, llLogit);
         //noinspection unchecked
-        return new FuncEnsemble(ArrayTools.map(ensemble.models, Func.class, Func.class::cast), ensemble.weights);
+        return new FuncEnsemble(IntStream.range(0, ensemble.size()).<Trans>mapToObj(ensemble::model).map(f -> (Func)f).toArray(Func[]::new), ensemble.weights());
       };
 
       final CodingMatrixLearning codingMatrixLearning = new CodingMatrixLearning(classCount, 5, lac, lar, la1, mls);

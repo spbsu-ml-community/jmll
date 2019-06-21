@@ -6,6 +6,7 @@ import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.util.Pair;
 import com.expleague.ml.Vectorization;
+import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.impl.BinaryFeatureImpl;
@@ -115,11 +116,11 @@ public final class ModelTools {
   }
 
   public static CompiledOTEnsemble compile(final Ensemble<ObliviousTree> ensemble) {
-    final BFGrid grid = ensemble.size() > 0 ? ensemble.models[0].grid() : null;
+    final BFGrid grid = DataTools.grid(ensemble);
     final TObjectDoubleHashMap<ConditionEntry> scores = new TObjectDoubleHashMap<>();
 
     for (int treeIndex = 0; treeIndex < ensemble.size(); treeIndex++) {
-      final ObliviousTree tree = ensemble.models[treeIndex];
+      final ObliviousTree tree = ensemble.model(treeIndex);
 
       final List<BFGrid.Feature> features = tree.features();
       final double[] values = tree.values();
@@ -158,7 +159,7 @@ public final class ModelTools {
             }
           }
 
-          final double addedValue = ensemble.weights.get(treeIndex) * value;
+          final double addedValue = ensemble.weight(treeIndex) * value;
           scores.adjustOrPutValue(new ConditionEntry(conditions.toArray()), addedValue, addedValue);
         }
       }
@@ -195,12 +196,4 @@ public final class ModelTools {
     return new CompiledOTEnsemble(entries, grid);
   }
 
-  @NotNull
-  public static Ensemble<ObliviousTree> castEnsembleItems(@NotNull final Ensemble<Trans> model) {
-    final ObliviousTree[] trees = new ObliviousTree[model.models.length];
-    for (int i = 0; i < model.models.length; i++) {
-      trees[i] = (ObliviousTree) model.models[i];
-    }
-    return new Ensemble<>(trees, model.weights);
-  }
 }
