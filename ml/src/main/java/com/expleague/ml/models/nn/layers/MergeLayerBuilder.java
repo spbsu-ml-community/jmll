@@ -4,7 +4,6 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.ml.models.nn.NeuralSpider;
 import com.expleague.ml.models.nn.NeuralSpider.ForwardNode;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -117,7 +116,7 @@ public class MergeLayerBuilder implements LayerBuilder {
 
     @Override
     public Seq<ForwardNode> forwardFlow() {
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException();
     }
 
     @Override

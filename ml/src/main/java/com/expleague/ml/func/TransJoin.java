@@ -9,7 +9,6 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.util.ArrayTools;
 import org.jetbrains.annotations.Nullable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -78,7 +77,7 @@ public class TransJoin extends Trans.Stub {
       @Nullable
       @Override
       public Trans gradient() {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
       }
 
       @Override

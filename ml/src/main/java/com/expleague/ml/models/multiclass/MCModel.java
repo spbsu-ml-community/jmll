@@ -1,9 +1,8 @@
 package com.expleague.ml.models.multiclass;
 
+import com.expleague.commons.math.Func;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
-import com.expleague.commons.math.Func;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * User: qdeee
@@ -30,7 +29,7 @@ public interface MCModel extends Func {
 
     @Override
     public Vec bestClassAll(final Mx x, boolean parallel) {
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException();
     }
   }
 }

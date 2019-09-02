@@ -1,11 +1,10 @@
 package com.expleague.ml;
 
-import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
+import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import org.jetbrains.annotations.Nullable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * User: solar
@@ -53,7 +52,7 @@ public class CompositeTrans<F extends Trans, G extends Trans> extends Trans.Stub
       @Nullable
       @Override
       public Trans gradient() {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
       }
 
       @Override

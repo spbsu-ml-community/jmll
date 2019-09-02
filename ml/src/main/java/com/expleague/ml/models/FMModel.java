@@ -1,11 +1,10 @@
 package com.expleague.ml.models;
 
+import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecIterator;
 import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
-import com.expleague.commons.math.FuncC1;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * User: qdeee
@@ -44,7 +43,7 @@ public class FMModel extends FuncC1.Stub {
 
   @Override
   public Vec gradient(final Vec x) {
-    throw new NotImplementedException();
+    throw new UnsupportedOperationException();
   }
 
   @Override

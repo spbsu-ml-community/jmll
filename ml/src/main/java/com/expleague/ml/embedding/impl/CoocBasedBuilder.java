@@ -191,20 +191,20 @@ public abstract class CoocBasedBuilder extends EmbeddingBuilderBase {
         stream.parallel()/*.peek(p -> {
           System.out.println(dict().get(unpackA(p)) + "->" + dict().get(unpackB(p)) + "=" + unpackDist(p));
         })*/.mapToObj(new LongFunction<TLongList>() {
-          volatile TLongList accumulator = new TLongArrayList(accumulatorCapacity + Runtime.getRuntime().availableProcessors());
+          volatile TLongList accumulator;
 
           @Override
           public synchronized TLongList apply(long value) {
-            accumulator.add(value);
-            if (accumulator.size() >= accumulatorCapacity) {
-                if (accumulator.size() >= accumulatorCapacity) {
+            if (accumulator == null || accumulator.size() >= accumulatorCapacity) {
+              synchronized (accumulators) {
+                if (accumulator == null || accumulator.size() >= accumulatorCapacity) {
                   final TLongList accumulator = this.accumulator;
-                  synchronized (accumulators) {
-                    accumulators.add(this.accumulator = new TLongArrayList(accumulatorCapacity));
-                  }
+                  accumulators.add(this.accumulator = new TLongArrayList(accumulatorCapacity + Runtime.getRuntime().availableProcessors()));
                   return accumulator;
                 }
+              }
             }
+            accumulator.add(value);
             return null;
           }
         }).filter(Objects::nonNull).forEach(acc -> {
