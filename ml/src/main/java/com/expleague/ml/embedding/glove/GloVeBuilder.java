@@ -32,7 +32,7 @@ public class GloVeBuilder extends CoocBasedBuilder {
     return this;
   }
 
-  public GloVeBuilder alpha(double alpha) {
+  public GloVeBuilder alpha(double alpha) {L
     this.alpha = alpha;
     return this;
   }
@@ -76,23 +76,37 @@ public class GloVeBuilder extends CoocBasedBuilder {
     VecTools.fill(softBiasLeft, 1.);
     VecTools.fill(softBiasRight, 1.);
 
+
+    Mx leftBiasPaths = new VecBasedMx(vocab_size, T() + 1);
+    Mx rightBiasPaths = new VecBasedMx(vocab_size, T() + 1);
+    for (int i = 0; i < vocab_size; i++) {
+      leftBiasPaths.set(i, 0, biasLeft.get(i));
+      rightBiasPaths.set(i, 0, biasRight.get(i));
+    }
+
+    /*for (int i = 0; i < 50; i++) {
+      System.out.println("Word: " + dict().get(i));
+      System.out.println("Freq left:  " + wordsProbabsLeft.get(i) + "  Freq right:  " + wordsProbabsRight.get(i));
+      System.out.println("probabs left: " + wordsProbabsLeft.get(i) / X_sum + "  Log(probabs right): " + Math.log(wordsProbabsRight.get(i) / X_sum));
+    };*/
+
     for (int iter = 0; iter < T(); iter++) {
       Interval.start();
       final ScoreCalculator scoreCalculator = new ScoreCalculator(vocab_size);
+      int finalIter = iter;
       IntStream.range(0, vocab_size).parallel().forEach(i -> {
-        final CharSeq word = dict().get(i);
+        final CharSeq word_i = dict().get(i);
         final Vec left = leftVectors.row(i);
-
         final Vec softMaxL = softMaxLeft.row(i);
         cooc(i, (j, X_ij) -> {
+          final CharSeq word_j = dict().get(j);
           final Vec right = rightVectors.row(j);
           final Vec softMaxR = softMaxRight.row(j);
           final double asum = VecTools.multiply(left, right);
-          //final double logMutualInfo = Math.log(X_ij) - Math.log(wordsProbabsLeft.get(i)) - Math.log(wordsProbabsRight.get(j)) + Math.log(X_sum);
-          final double diff = biasLeft.get(i) + biasRight.get(j) + asum - Math.log(X_ij);
-          //final double diff = asum - logMutualInfo;
+          final double logMutualInfo = Math.log(X_ij) - Math.log(wordsProbabsLeft.get(i)) - Math.log(wordsProbabsRight.get(j)) + Math.log(X_sum);
+          //final double diff = biasLeft.get(i) + biasRight.get(j) + asum - Math.log(X_ij);
+          final double diff = asum - logMutualInfo;
           final double weight = weightingFunc(X_ij);
-          //final double weight = 1.;
           final double fdiff = step() * diff * weight;
           scoreCalculator.adjust(i, j, weight, 0.5 * weight * MathTools.sqr(diff));
           IntStream.range(0, dim).forEach(id -> {
@@ -104,13 +118,17 @@ public class GloVeBuilder extends CoocBasedBuilder {
             softMaxR.adjust(id, dR * dR);
           });
 
-          biasLeft.adjust(i, -fdiff / Math.sqrt(softBiasLeft.get(i)));
+          /*biasLeft.adjust(i, -fdiff / Math.sqrt(softBiasLeft.get(i)));
           biasRight.adjust(j, -fdiff / Math.sqrt(softBiasRight.get(j)));
           softBiasLeft.adjust(i, MathTools.sqr(fdiff));
-          softBiasRight.adjust(j, MathTools.sqr(fdiff));
+          softBiasRight.adjust(j, MathTools.sqr(fdiff));*/
+
         });
       });
-
+      IntStream.range(0, vocab_size).parallel().forEach(i -> {
+        leftBiasPaths.set(i, finalIter + 1, biasLeft.get(i));
+        rightBiasPaths.set(i, finalIter + 1, biasRight.get(i));
+      });
       Interval.stopAndPrint("Iteration " + iter + ", score: " + scoreCalculator.gloveScore());
     }
 
@@ -120,17 +138,27 @@ public class GloVeBuilder extends CoocBasedBuilder {
       mapping.put(word, VecTools.sum(leftVectors.row(i), rightVectors.row(i)));
     }
 
-    /*System.out.println("FINISHED TRAINING");
+    System.out.println("FINISHED TRAINING");
     System.out.println("------biases------");
-    IntStream.range(0, vocab_size).parallel().forEach(i -> {
+    /*IntStream.range(0, vocab_size).parallel().forEach(i -> {
       cooc(i, (j, X_ij) -> {
         final double biased = biasLeft.get(i) + biasRight.get(j) - Math.log(X_ij);
         double probabs = Math.log(wordsProbabsLeft.get(i)) + Math.log(wordsProbabsRight.get(j)) - Math.log(X_ij) - Math.log(X_sum);
-        probabs = probabs * weightingFunc(X_ij) / X_sum;
+        //probabs = probabs * weightingFunc(X_ij) / X_sum;
         System.out.println("Biased part " + biased + ", probabs part " + probabs);
       });
-    });
-    System.out.println("------------------");*/
+    });*/
+
+    /*for (int i = 0; i < 50; i++) {
+      System.out.println("Word: " + dict().get(i));
+      System.out.println("Freq left:  " + wordsProbabsLeft.get(i) + "  Freq right:  " + wordsProbabsRight.get(i));
+      System.out.println("Log(probabs left): " + Math.log(wordsProbabsLeft.get(i) / X_sum) + "  Log(probabs right): " + Math.log(wordsProbabsRight.get(i) / X_sum));
+    };
+    /*for (int i = 0; i < 50; i++) {
+      CharSeq word = dict().get(i);
+      System.out.println("Word: " + word + "\nleft biases: " + leftBiasPaths.row(i).toString() + "\nright biases: "  + rightBiasPaths.row(i).toString() + "\n");
+    }*/
+    System.out.println("------------------");
 
     return new EmbeddingImpl<>(mapping);
   }

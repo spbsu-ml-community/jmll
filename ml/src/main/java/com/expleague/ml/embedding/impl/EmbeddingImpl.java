@@ -22,6 +22,7 @@ public class EmbeddingImpl<T> implements Embedding<T> {
   private final Map<T, Vec> mapping;
   private final List<T> vocab;
   private final TObjectIntMap<T> invVocab = new TObjectIntHashMap<>();
+  private final int dim;
 
   public EmbeddingImpl(Map<T, Vec> mapping) {
     this.mapping = mapping;
@@ -29,6 +30,7 @@ public class EmbeddingImpl<T> implements Embedding<T> {
     for (int i = 0; i < vocab.size(); i++) {
       invVocab.put(vocab.get(i), i);
     }
+    this.dim = mapping.get(vocab.get(0)).dim();
   }
 
   public boolean inVocab(T obj) {
@@ -46,6 +48,8 @@ public class EmbeddingImpl<T> implements Embedding<T> {
   public T getObj(int i) {
     return vocab.get(i);
   }
+
+  public int getDim() { return dim; }
 
   @Override
   public double distance(T a, T b) {

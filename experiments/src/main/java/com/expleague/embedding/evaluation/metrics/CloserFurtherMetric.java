@@ -1,6 +1,5 @@
 package com.expleague.embedding.evaluation.metrics;
 
-import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.embedding.evaluation.QualityMetric;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
@@ -20,7 +19,7 @@ public class CloserFurtherMetric extends QualityMetric {
 
   @Override
   protected void check(List<String> wordsLine, int lineNumber) throws IOException {
-    if (wordsLine.size() != 3) throw new IOException("There should be three words in each line." +
+    if (wordsLine.size() != 3) throw new IOException("There should be three metrics in each line." +
         String.format(" Error occurred in line number %d.", lineNumber + 1));
   }
 
@@ -39,11 +38,11 @@ public class CloserFurtherMetric extends QualityMetric {
         throw new IOException("Couldn't find the file to write the closer-further metrics results to");
       }
 
-      List<String> result = new ArrayList<>(words_size);
+      List<String> result = new ArrayList<>(metricsNumber);
       int success = countMetric(result);
-      fout.println(String.format("%d successes out of %d", success, words_size));
+      fout.println(String.format("%d successes out of %d", success, metricsNumber));
       fout.println();
-      for (int i = 0; i < words_size; i++) {
+      for (int i = 0; i < metricsNumber; i++) {
         fout.println(result.get(i));
       }
       fout.close();
@@ -52,17 +51,17 @@ public class CloserFurtherMetric extends QualityMetric {
 
   private int countMetric(List<String> result) {
     int success = 0;
-    for (int i = 0; i < words_size; i++) {
-      if (isWordsListInVocab(words.get(i))) {
-        final CharSeq w1 = words.get(i).get(0);
-        final CharSeq w2 = words.get(i).get(1);
-        final CharSeq w3 = words.get(i).get(2);
+    for (int i = 0; i < metricsNumber; i++) {
+      if (isWordsListInVocab(metrics.get(i))) {
+        final CharSeq w1 = metrics.get(i).get(0);
+        final CharSeq w2 = metrics.get(i).get(1);
+        final CharSeq w3 = metrics.get(i).get(2);
         final boolean suc = embedding.distance(w1, w2) > embedding.distance(w1, w3);
         result.add(resultToString(suc, w1, w2, w3));
         if (suc) success++;
       } else {
         List<CharSeq> excludes = new ArrayList<>();
-        for (CharSeq word : words.get(i)) {
+        for (CharSeq word : metrics.get(i)) {
           if (!embedding.inVocab(word))
             excludes.add(word);
         }

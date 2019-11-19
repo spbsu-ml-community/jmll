@@ -17,9 +17,9 @@ import java.util.stream.IntStream;
 
 public abstract class QualityMetric {
   protected final EmbeddingImpl<CharSeq> embedding;
-  protected List<List<CharSeq>> words = new ArrayList<>();
+  protected List<List<CharSeq>> metrics = new ArrayList<>();
   protected List<String> files = new ArrayList<>();
-  protected int words_size = 0;
+  protected int metricsNumber = 0;
 
   public QualityMetric(EmbeddingImpl<CharSeq> embedding) {
     this.embedding = embedding;
@@ -52,24 +52,24 @@ public abstract class QualityMetric {
   }
 
   protected String readMetricsFile(String input) throws IOException {
-    words = new ArrayList<>();
+    metrics = new ArrayList<>();
     File file = new File(input);
     BufferedReader fin;
     try {
       fin = new BufferedReader(new FileReader(file));
     } catch (IOException e) {
-      throw new IOException("Couldn't find the file to readMetricsFile words from: " + file);
+      throw new IOException("Couldn't find the file to readMetricsFile metrics from: " + file);
     }
     try {
-      words_size = Integer.parseInt(fin.readLine());
-      for (int i = 0; i < words_size; i++) {
+      metricsNumber = Integer.parseInt(fin.readLine());
+      for (int i = 0; i < metricsNumber; i++) {
         List<String> line = Arrays.asList(fin.readLine().split(" "));
         check(line, i);
         List<CharSeq> leline = new ArrayList<>();
         for (String word: line) {
           leline.add(CharSeq.copy(normalizeWord(word)));
         }
-        words.add(leline);
+        metrics.add(leline);
       }
       fin.close();
     } catch (IOException e) {

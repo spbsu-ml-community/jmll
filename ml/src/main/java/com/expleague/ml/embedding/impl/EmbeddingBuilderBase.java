@@ -203,6 +203,27 @@ public abstract class EmbeddingBuilderBase implements Embedding.Builder<CharSeq>
     return coocStream;
   }
 
+  @NotNull
+  protected IntStream wordsIndexesStream() throws IOException {
+    IntStream idxStream;
+    final CharSeq newLine = CharSeq.create("777newline777");
+    wordsIndex.put(newLine, Integer.MAX_VALUE);
+    idxStream = source().peek(new Consumer<CharSeq>() {
+      long line = 0;
+      long time = System.nanoTime();
+
+      @Override
+      public synchronized void accept(CharSeq l) {
+        if ((++line) % progressLines == 0) {
+          CoocBasedBuilder.log.info(line + " lines processed for " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time) + "s");
+          time = System.nanoTime();
+        }
+      }
+    }).map(line -> (CharSeq) CharSeqTools.concat(line, " ", newLine)).flatMap(CharSeqTools::words).map(this::normalize).mapToInt(wordsIndex::get).filter(idx -> idx >= 0)
+        .onClose(() -> wordsIndex.remove(newLine));
+    return idxStream;
+  }
+
   protected int unpackA(long next) {
     return (int)(next >>> 36);
   }

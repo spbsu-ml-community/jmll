@@ -10,8 +10,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -22,12 +20,12 @@ public class WordAnalogiesMetric extends QualityMetric {
 
   public WordAnalogiesMetric(EmbeddingImpl<CharSeq> embedding) {
     super(embedding);
-    vector_size = embedding.apply(CharSeq.copy("red")).dim();
+    vector_size = embedding.getDim();
   }
 
   @Override
   protected void check(List<String> wordsLine, int lineNumber) throws IOException {
-    if (wordsLine.size() != 4) throw new IOException("There should be four words in each line." +
+    if (wordsLine.size() != 4) throw new IOException("There should be four metrics in each line." +
         String.format(" Error occurred in line number %d.", lineNumber + 1));
   }
 
@@ -43,12 +41,17 @@ public class WordAnalogiesMetric extends QualityMetric {
       try {
         fout = new PrintStream(file);
       } catch (FileNotFoundException e) {
-        throw new IOException("Couldn't find the file to write the words analogies metrics results to");
+        throw new IOException("Couldn't find the file to write the metrics analogies metrics results to");
       }
 
       List<String> results = new ArrayList<>();
       final int[] counts = {0, 0, 0}; // 0 for total, 1 for top1, 2 for top5
       countMetric(results, counts);
+      if (counts[0] == 0) {
+        fout.println("THERE WERE NO SUCH WORDS IN VOCABULARY!");
+        fout.close();
+        continue;
+      }
       System.out.println(String.format("Number of top1 is %d out of %d (%d%%)",
           counts[1], counts[0], 100 * counts[1] / counts[0]));
 
@@ -56,20 +59,20 @@ public class WordAnalogiesMetric extends QualityMetric {
           counts[1], counts[0], 100 * counts[1] / counts[0]));
       fout.println(String.format("Number of top5 is %d out of %d (%d%%)",
           counts[2], counts[0], 100 * counts[2] / counts[0]));
-      for (int i = 0; i < words_size; i++) {
-        fout.println(String.format("%s\t->\t%s", words.get(i).get(3), results.get(i)));
+      for (int i = 0; i < metricsNumber; i++) {
+        fout.println(String.format("%s\t->\t%s", metrics.get(i).get(3), results.get(i)));
       }
       fout.close();
     }
   }
 
   private void countMetric(List<String> results, final int[] counts) {
-    IntStream.range(0, words_size).forEach(i -> {
+    IntStream.range(0, metricsNumber).forEach(i -> {
       Vec predicted = new ArrayVec(vector_size);
-      if (isWordsListInVocab(words.get(i))) {
-        final Vec v1 = embedding.apply(words.get(i).get(0));
-        final Vec v2 = embedding.apply(words.get(i).get(1));
-        final Vec v3 = embedding.apply(words.get(i).get(2));
+      if (isWordsListInVocab(metrics.get(i))) {
+        final Vec v1 = embedding.apply(metrics.get(i).get(0));
+        final Vec v2 = embedding.apply(metrics.get(i).get(1));
+        final Vec v3 = embedding.apply(metrics.get(i).get(2));
         IntStream.range(0, vector_size).forEach(j -> {
           predicted.set(j, v2.get(j));
           predicted.adjust(j, -v1.get(j));
@@ -77,14 +80,14 @@ public class WordAnalogiesMetric extends QualityMetric {
         });
 
 
-        List<CharSeq> result = getClosestWordsExcept(predicted, 5, words.get(i).subList(0, 3));
+        List<CharSeq> result = getClosestWordsExcept(predicted, 5, metrics.get(i).subList(0, 3));
         results.add(String.join(", ", result));
-        if (result.contains(words.get(i).get(3))) counts[2]++;
-        if (words.get(i).get(3).equals(result.get(0))) counts[1]++;
+        if (result.contains(metrics.get(i).get(3))) counts[2]++;
+        if (metrics.get(i).get(3).equals(result.get(0))) counts[1]++;
         counts[0]++;
       } else {
         List<CharSeq> excludes = new ArrayList<>();
-        for (CharSeq word : words.get(i)) {
+        for (CharSeq word : metrics.get(i)) {
           if (!embedding.inVocab(word))
             excludes.add(word);
         }
