@@ -9,6 +9,7 @@ import static com.expleague.ml.cli.JMLLCLI.*;
 import static com.expleague.ml.cli.builders.data.ReaderFactory.createCatBoostPoolReader;
 import static com.expleague.ml.cli.builders.data.ReaderFactory.createFeatureTxtReader;
 import static com.expleague.ml.cli.builders.data.ReaderFactory.createJsonReader;
+import static com.expleague.ml.cli.builders.data.ReaderFactory.createLetorReader;
 
 /**
  * Created by noxoomo on 15/10/2017.
@@ -23,9 +24,12 @@ public class CliPoolReaderHelper {
           toCharChecked(command.getOptionValue(DELIMITER, "\t")),
           command.hasOption(HAS_HEADER)));
     }
-    else {
-      final boolean isJson = command.hasOption(JSON_FORMAT);
-      builder.setReader(isJson ? createJsonReader() : createFeatureTxtReader());
+    else if (command.hasOption(JSON_FORMAT)) {
+      builder.setReader(createJsonReader());
+    } else if (command.hasOption(LETOR_FORMAT)) {
+      builder.setReader(createLetorReader());
+    } else {
+      builder.setReader(createFeatureTxtReader());
     }
     return builder;
   }

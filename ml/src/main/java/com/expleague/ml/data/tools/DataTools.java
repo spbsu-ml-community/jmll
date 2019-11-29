@@ -65,7 +65,6 @@ import com.expleague.ml.models.ObliviousMultiClassTree;
 import com.expleague.ml.models.multilabel.MultiLabelBinarizedModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
-import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.linked.TDoubleLinkedList;
 import gnu.trove.list.linked.TIntLinkedList;
@@ -73,6 +72,11 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
+import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +89,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -100,6 +103,103 @@ public class DataTools {
   public static final SerializationRepository<CharSequence> SERIALIZATION = new SerializationRepository<>(
       new TypeConvertersCollection(MathTools.CONVERSION, DataTools.class, "com.expleague.ml.io"), CharSequence.class);
 
+
+  public static Pool<QURLItem> loadLetor(final String fileName) throws IOException {
+    return DataTools.loadLetor(Paths.get(fileName));
+  }
+
+  private static class LetorLine {
+    private static final Pattern LETOR_DOC_ID_PATTERN =
+        Pattern.compile("docid\\s*=\\s*([A-Z0-9-]+)");
+    private static final Pattern QUERY_ID_PATTERN =
+        Pattern.compile("qid:(\\d+)");
+    final String urlId;
+    final int queryId;
+    final double label;
+    final double[] features;
+
+    private LetorLine(String urlId, int queryId, double label, double[] features) {
+      this.urlId = urlId;
+      this.queryId = queryId;
+      this.label = label;
+      this.features = features;
+    }
+
+    private static String docId(String line) {
+      Matcher m = LETOR_DOC_ID_PATTERN.matcher(line);
+      if (!m.find()) {
+        return "";
+      }
+      return m.group(1);
+    }
+
+    private static int queryId(String line) {
+      Matcher m = QUERY_ID_PATTERN.matcher(line);
+      if (!m.find()) {
+        throw new RuntimeException(String.format("Line %s does not contain query id!", line));
+      }
+
+      return Integer.parseInt(m.group(1));
+    }
+
+    private static double[] toFeatures(String line) {
+      return Stream.of(line.split("\\s"))
+          .map(t -> t.split(":")[1])
+          .mapToDouble(Double::parseDouble)
+          .toArray();
+    }
+
+    /**
+     * Expected line format:
+     * 2 qid:10032 1:0.056537 ... 45:0.000000 46:0.076923 #docid = GX029-35-5894638 ...
+     * @param line
+     * @return
+     */
+    static LetorLine parseLine(String line) {
+
+      String[] tokens = line.split("#")[0].split("\\s", 3);
+      return new LetorLine(docId(line),
+          queryId(line),
+          Double.parseDouble(tokens[0]),
+          toFeatures(tokens[2])
+      );
+    }
+  }
+
+  public static Pool<QURLItem> loadLetor(final Path file) throws IOException {
+    final int defaultSize = 15211;
+    final int defaultFeaturesCount = 46;
+    final List<QURLItem> items = new ArrayList<>(2 * defaultSize);
+    final VecBuilder target = new VecBuilder(2 * defaultSize);
+    final VecBuilder data = new VecBuilder(2 * defaultSize * defaultFeaturesCount);
+
+    long linesCount;
+    try (BufferedReader reader = Files.newBufferedReader(file)) {
+      linesCount = reader.lines()
+          .map(LetorLine::parseLine)
+          .peek(l -> items.add(new QURLItem(l.queryId, l.urlId, 0)))
+          .peek(l -> target.add(l.label))
+          .peek(l -> DoubleStream.of(l.features).forEach(data::append))
+          .count();
+      log.info(String.format(
+          "Successfully read [ %d ] lines from LETOR dataset from the path [ %s ]",
+          linesCount, file.toAbsolutePath().toString()));
+    }
+
+    if (linesCount == 0) {
+      throw new RuntimeException(
+          String.format("Failed to read LETOR dataset from the path [ %s ]. Probably file is empty",
+              file.toAbsolutePath().toString())
+      );
+    }
+
+    // TODO: check features count!
+    return new FeaturesTxtPool(
+        new ArraySeq<>(items.toArray(new QURLItem[0])),
+        new VecBasedMx(defaultFeaturesCount, data.build()),
+        target.build()
+    );
+  }
 
   public static Pool<QURLItem> loadFromFeaturesTxt(final String file) throws IOException {
     return loadFromFeaturesTxt(file, file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
@@ -128,6 +228,7 @@ public class DataTools {
         }
       }
     });
+
     return new FeaturesTxtPool(
         new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
         new VecBasedMx(featuresCount[0], data.build()),
