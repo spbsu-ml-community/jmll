@@ -32,7 +32,7 @@ public class GloVeBuilder extends CoocBasedBuilder {
     return this;
   }
 
-  public GloVeBuilder alpha(double alpha) {L
+  public GloVeBuilder alpha(double alpha) {
     this.alpha = alpha;
     return this;
   }
