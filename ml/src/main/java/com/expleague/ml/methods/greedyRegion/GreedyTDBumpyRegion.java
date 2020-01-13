@@ -13,7 +13,8 @@ import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.impl.BinaryFeatureImpl;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
+import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
@@ -28,14 +29,13 @@ import java.util.List;
  */
 
 
-public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyTDBumpyRegion<Loss extends AdditiveLoss> extends VecOptimization.Stub<Loss> {
   protected final BFGrid grid;
   final double lambda;
   public GreedyTDBumpyRegion(final BFGrid grid, double lambda) {
     this.grid = grid;
     this.lambda = lambda;
   }
-
 
   class BasisRegression {
     final TDoubleArrayList means = new TDoubleArrayList();
@@ -53,7 +53,7 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
     public BasisRegression(Loss loss, AdditiveStatistics targetStat) {
       this.loss = loss;
       this.targetStat = targetStat;
-      final double w = AdditiveStatisticsExtractors.weight(targetStat);
+      final double w = L2.weight(targetStat);
       final double sum = AdditiveStatisticsExtractors.sum(targetStat);
       final double sum2 = AdditiveStatisticsExtractors.sum2(targetStat);
       this.bias = sum / w;
@@ -62,10 +62,10 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
 
 
     double score(final double sum, final double weight) {
-      final double factorBias = weight / AdditiveStatisticsExtractors.weight(targetStat);
+      final double factorBias = weight / L2.weight(targetStat);
       final double factorSd = Math.sqrt(factorBias * (1 - factorBias));
 
-      if (weight < 5 || weight > (AdditiveStatisticsExtractors.weight(targetStat) - 5)) {
+      if (weight < 5 || weight > (L2.weight(targetStat) - 5)) {
         return Double.POSITIVE_INFINITY;
       }
 
@@ -85,15 +85,15 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
 
       cor.set(m, m, 1.0 + calcRegularization(weight));
       {
-        double scale = 1.0 / (targetSd * factorSd) / AdditiveStatisticsExtractors.weight(targetStat);
-        targetCor.set(m, (sum - factorBias * AdditiveStatisticsExtractors.sum(targetStat) - bias * weight + AdditiveStatisticsExtractors.weight(targetStat) * bias * factorBias) * scale);
+        double scale = 1.0 / (targetSd * factorSd) / L2.weight(targetStat);
+        targetCor.set(m, (sum - factorBias * AdditiveStatisticsExtractors.sum(targetStat) - bias * weight + L2.weight(targetStat) * bias * factorBias) * scale);
       }
 
       for (int i = 0; i < m; ++i) {
-        final double scale = 1.0 / sd.get(i) / factorSd / AdditiveStatisticsExtractors.weight(targetStat);
+        final double scale = 1.0 / sd.get(i) / factorSd / L2.weight(targetStat);
         final double fMean = means.get(i);
         final double fWeight = weights.get(i);
-        final double rho = scale * (weight - fWeight * factorBias - weight * fMean + AdditiveStatisticsExtractors.weight(targetStat) * factorBias * fMean);
+        final double rho = scale * (weight - fWeight * factorBias - weight * fMean + L2.weight(targetStat) * factorBias * fMean);
         cor.set(i, m, rho);
         cor.set(m, i, rho);
       }
@@ -131,26 +131,26 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
     void add(AdditiveStatistics inside) {
       final int m = means.size();
       final double factorSum = AdditiveStatisticsExtractors.sum(inside);
-      final double factorWeight = AdditiveStatisticsExtractors.weight(inside);
+      final double factorWeight = L2.weight(inside);
       prior.add(calcRegularization(factorWeight));
       sums.add(AdditiveStatisticsExtractors.sum(inside));
-      final double factorBias = factorWeight / AdditiveStatisticsExtractors.weight(targetStat);
+      final double factorBias = factorWeight / L2.weight(targetStat);
       final double factorSd = Math.sqrt(factorBias * (1 - factorBias));
       means.add(factorBias);
       weights.add(factorWeight);
       sd.add(factorSd);
 
       {
-        double scale = 1.0 / (targetSd * factorSd) / AdditiveStatisticsExtractors.weight(targetStat);
-        targetCorrelations.add((factorSum - factorBias * AdditiveStatisticsExtractors.sum(targetStat) - bias * factorWeight + AdditiveStatisticsExtractors.weight(targetStat) * bias * factorBias) * scale);
+        double scale = 1.0 / (targetSd * factorSd) / L2.weight(targetStat);
+        targetCorrelations.add((factorSum - factorBias * AdditiveStatisticsExtractors.sum(targetStat) - bias * factorWeight + L2.weight(targetStat) * bias * factorBias) * scale);
       }
 
       TDoubleArrayList newCor = new TDoubleArrayList();
       for (int i = 0; i < m; ++i) {
-        final double scale = 1.0 / sd.get(i) / factorSd / AdditiveStatisticsExtractors.weight(targetStat);
+        final double scale = 1.0 / sd.get(i) / factorSd / L2.weight(targetStat);
         final double fMean = means.get(i);
         final double fWeight = weights.get(i);
-        final double rho = scale * (factorWeight - fWeight * factorBias - factorWeight * fMean + AdditiveStatisticsExtractors.weight(targetStat) * factorBias * fMean);
+        final double rho = scale * (factorWeight - fWeight * factorBias - factorWeight * fMean + L2.weight(targetStat) * factorBias * fMean);
         newCor.add(rho);
       }
       correlations.add(newCor);
@@ -158,7 +158,7 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
 
     double calcRegularization(double weight) {
       final int k = correlations.size() + 1;
-      double totalWeight = AdditiveStatisticsExtractors.weight(targetStat);
+      double totalWeight = L2.weight(targetStat);
       double p = (weight  + 0.5) / (totalWeight + 1);
       double entropy = -(p * Math.log(p) + (1 - p) * Math.log(1 - p));
       return lambda;// * Math.log(k);//   / entropy;
@@ -204,17 +204,17 @@ public class GreedyTDBumpyRegion<Loss extends StatBasedLoss> extends VecOptimiza
     final double[] scores = new double[grid.size()];
     final AdditiveStatistics[] stats = new AdditiveStatistics[grid.size()];
 
-    BasisRegression estimator = new BasisRegression(loss, ((AdditiveStatistics) loss.statsFactory().create()).append(current.total()));
+    BasisRegression estimator = new BasisRegression(loss, ((AdditiveStatistics) loss.statsFactory().apply(0)).append(current.total()));
 
     while (conditions.size() < 6) {
       current.visitAllSplits((bf, left, right) -> {
         if (usedBF[bf.index()]) {
           scores[bf.index()] = Double.POSITIVE_INFINITY;
         } else {
-          final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+          final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
           in.append(right);
           stats[bf.index()] = in;
-          scores[bf.index()] = estimator.score(AdditiveStatisticsExtractors.sum(in), AdditiveStatisticsExtractors.weight(in));
+          scores[bf.index()] = estimator.score(AdditiveStatisticsExtractors.sum(in), L2.weight(in));
         }
       });
 

@@ -10,6 +10,7 @@ import com.expleague.ml.loss.L2;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.BitSet;
+import java.util.function.IntFunction;
 
 /**
  * Created by noxoomo on 30/11/14.
@@ -26,11 +27,10 @@ public class CherryOptimizationSubset {
 
   boolean isMinimumOutside;
 
-  public CherryOptimizationSubset(final BinarizedDataSet bds, final Factory<AdditiveStatistics> statFactory, final CNF.Clause clause, final int[] points, final double cardinality) {
+  public CherryOptimizationSubset(final BinarizedDataSet bds, final IntFunction<AdditiveStatistics> statFactory, final CNF.Clause clause, final int[] points, final double cardinality) {
     initialCardinality = cardinality;
     final TIntArrayList inside = new TIntArrayList(points.length);
     final TIntArrayList outside = new TIntArrayList(points.length);
-    stat = statFactory.create();
     for (int i = 0; i < points.length; i++) {
       if (clause.contains(bds, points[i])) {
         stat.append(points[i], 1);
@@ -159,7 +159,7 @@ public class CherryOptimizationSubset {
     for (int i : pointsInside)
       inside.append(i, 1);
     assert (Math.abs(AdditiveStatisticsExtractors.sum(inside) - AdditiveStatisticsExtractors.sum(stat)) < 1e-9);
-    assert (AdditiveStatisticsExtractors.weight(inside) == AdditiveStatisticsExtractors.weight(stat));
+    assert (L2.weight(inside) == L2.weight(stat));
   }
 
 

@@ -10,7 +10,7 @@ import com.expleague.ml.dynamicGrid.AggregateDynamic;
 import com.expleague.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
 import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.expleague.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.methods.VecOptimization;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -22,7 +22,7 @@ import java.util.ListIterator;
 /**
  * Created by noxoomo on 22/07/14.
  */
-public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyObliviousTreeDynamic2<Loss extends AdditiveLoss> extends VecOptimization.Stub<Loss> {
   private final int depth;
   private final DynamicGrid grid;
   private boolean growGrid = true;
@@ -184,14 +184,11 @@ public class GreedyObliviousTreeDynamic2<Loss extends StatBasedLoss> extends Vec
       }
     }
 
-//            updated = false;
     final double[] values = new double[leaves.size()];
     for (int i = 0; i < values.length; i++) {
-      values[i] = loss.bestIncrement(leaves.get(i).total());
+      int lastFeature = conditions.get(conditions.size() - 1).fIndex();
+      values[i] = loss.bestIncrement(leaves.get(i).total(lastFeature));
     }
-//    for (Feature bf : conditions) {
-//      bf.use();
-//    }
     return new ObliviousTreeDynamicBin(conditions, values);
   }
 

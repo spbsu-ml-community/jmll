@@ -5,10 +5,10 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.methods.VecOptimization;
 
-public class MultiMethodOptimization<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss>  {
+public class MultiMethodOptimization<Loss extends AdditiveLoss> extends VecOptimization.Stub<Loss>  {
   private final VecOptimization<Loss>[] learners;
   private final FastRandom random;
 

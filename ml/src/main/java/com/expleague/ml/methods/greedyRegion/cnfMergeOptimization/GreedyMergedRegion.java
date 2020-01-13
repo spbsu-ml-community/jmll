@@ -4,8 +4,7 @@ import com.expleague.commons.math.MathTools;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.BFGrid;
-import com.expleague.ml.impl.BFRowImpl;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.CNF;
@@ -29,7 +28,7 @@ import static java.lang.Math.log;
  * Date: 30/11/14
  * Time: 15:31
  */
-public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> extends VecOptimization.Stub<Loss> {
+public class GreedyMergedRegion<Loss extends AdditiveLoss<AdditiveStatistics>> extends VecOptimization.Stub<Loss> {
   public static final double CARDINALITY_FACTOR = 2;
   protected final BFGrid grid;
   private final double lambda;
@@ -51,7 +50,6 @@ public class GreedyMergedRegion<Loss extends StatBasedLoss<AdditiveStatistics>> 
     int[] points = loss instanceof WeightedLoss ? ((WeightedLoss) loss).points(): ArrayTools.sequence(0, learn.length());
     final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
     CherryOptimizationSubset last = new CherryOptimizationSubset(bds, loss.statsFactory(), new CNF.Clause(grid), points, 0);
-    final double totalPower = last.power();
     final RegularizedLoss<CherryOptimizationSubset> regLoss = new RegularizedLoss<CherryOptimizationSubset>() {
       @Override
       public double target(CherryOptimizationSubset subset) {

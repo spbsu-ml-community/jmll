@@ -1,25 +1,23 @@
 package com.expleague.ml.methods.trees;
 
+import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.ml.BFGrid;
-import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.impl.BinaryFeatureImpl;
-import com.expleague.ml.methods.linearRegressionExperiments.MultipleValidationRidgeRegression;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
+import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.Pair;
 import com.expleague.commons.util.ThreadTools;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
-import com.expleague.commons.math.Trans;
 import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
+import com.expleague.ml.methods.linearRegressionExperiments.MultipleValidationRidgeRegression;
 import com.expleague.ml.models.TransObliviousTree;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -33,7 +31,7 @@ import static com.expleague.commons.math.vectors.VecTools.adjust;
  * User: noxoomo
  */
 
-public class GreedyObliviousTreeValidationRidgeLeaves<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyObliviousTreeValidationRidgeLeaves<Loss extends L2> extends VecOptimization.Stub<Loss> {
   private final GreedyObliviousTree<WeightedLoss<Loss>> base;
   private final FastRandom rand;
 

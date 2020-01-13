@@ -3,7 +3,7 @@ package com.expleague.ml.dynamicGrid.trees;
 import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.ml.dynamicGrid.impl.BinarizedDynamicDataSet;
 import com.expleague.ml.dynamicGrid.interfaces.BinaryFeature;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.dynamicGrid.AggregateDynamic;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -12,11 +12,11 @@ import gnu.trove.list.array.TIntArrayList;
 public class BFDynamicOptimizationSubset {
   private final BinarizedDynamicDataSet bds;
   public int[] points;
-  private final StatBasedLoss<AdditiveStatistics> oracle;
+  private final AdditiveLoss<AdditiveStatistics> oracle;
   private final AggregateDynamic aggregate;
 
 
-  public BFDynamicOptimizationSubset(final BinarizedDynamicDataSet bds, final StatBasedLoss oracle, final int[] points) {
+  public BFDynamicOptimizationSubset(final BinarizedDynamicDataSet bds, final AdditiveLoss oracle, final int[] points) {
     this.bds = bds;
     this.points = points;
     this.oracle = oracle;
@@ -52,14 +52,13 @@ public class BFDynamicOptimizationSubset {
 
   public <T extends AdditiveStatistics> void visitSplit(final BinaryFeature bf, final AggregateDynamic.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf);
-    final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
+    final T right = (T) oracle.statsFactory().apply(bf.fIndex()).append(aggregate.total(bf.fIndex())).remove(left);
     visitor.accept(bf, left, right);
   }
 
-  public AdditiveStatistics total() {
-    return aggregate.total();
+  public AdditiveStatistics total(int findex) {
+    return aggregate.total(findex);
   }
-
 
   public void rebuild(final int... features) {
     this.aggregate.rebuild(features);

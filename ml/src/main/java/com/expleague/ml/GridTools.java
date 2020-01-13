@@ -152,7 +152,7 @@ public class GridTools {
       double[] params = new double[]{0, 0, 0};
       aggregate.visitND(c, order.length, x, (k, N_k, D_k, P_k, S_k) -> {
         final int index = order[k];
-        final double y_k = loss.target().get(index);
+        final double y_k = loss.base().target().get(index);
         final double w_k = loss.weight(index) * N_k / D_k;
 
         params[0] += w_k * y_k * y_k;
@@ -168,11 +168,11 @@ public class GridTools {
     @Override
     public double gradient(double x) {
       final double[] params = new double[]{0};
-      final WeightedLoss.Stat stat = (WeightedLoss.Stat) aggregate.total();
+      final WeightedLoss.Stat stat = (WeightedLoss.Stat) aggregate.total(-1);
       final L2.Stat l2Stat = (L2.Stat)stat.inside;
       aggregate.visitND(c, order.length, x, (k, N_k, D_k, P_k, S_k) -> {
         final int index = order[k];
-        final double y_k = loss.target().get(index);
+        final double y_k = loss.base().target().get(index);
         final double w_k = loss.weight(index) * N_k / D_k;
 
         final double dLdw = y_k * y_k - 2 * (y_k * l2Stat.sum * l2Stat.weight - l2Stat.sum * l2Stat.sum) / l2Stat.weight / l2Stat.weight / l2Stat.weight;

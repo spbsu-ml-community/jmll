@@ -5,9 +5,12 @@ import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.impl.BinarizedDataSet;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
+import com.expleague.ml.models.Region;
 import gnu.trove.list.array.TIntArrayList;
+
+import java.util.Arrays;
 
 
 /**
@@ -17,27 +20,28 @@ import gnu.trove.list.array.TIntArrayList;
  */
 @SuppressWarnings({"unchecked", "unused"})
 
-public class BFWeakConditionsOptimizationRegion {
+public class BFWeakConditionsOptimizationRegion extends Region {
   protected final BinarizedDataSet bds;
   protected int[] points;
   protected int[] failedCount;
-  protected final StatBasedLoss<AdditiveStatistics> oracle;
+  protected final AdditiveLoss<AdditiveStatistics> oracle;
   protected final Aggregate aggregate;
   protected final int maxFailed;
   public AdditiveStatistics nonCriticalTotal;
   public final AdditiveStatistics excluded;
   protected final int[] failedBorders;
 
-  public BFWeakConditionsOptimizationRegion(final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points, final BFGrid.Feature[] features, final boolean[] masks, final int maxFailed) {
+  public BFWeakConditionsOptimizationRegion(final BinarizedDataSet bds, final AdditiveLoss oracle, final int[] points, final BFGrid.Feature[] features, final boolean[] masks, final int maxFailed) {
+    super(Arrays.asList(features), masks, Double.NaN, Double.NaN,0, Double.NaN, maxFailed);
     this.bds = bds;
-    this.excluded = (AdditiveStatistics) oracle.statsFactory().create();
+    this.excluded = (AdditiveStatistics) oracle.statsFactory().apply(0);
     this.points = points;
     this.failedCount = new int[points.length];
     final byte[][] bins = new byte[features.length][];
     for (int f = 0; f < features.length; ++f)
       bins[f] = bds.bins(features[f].findex());
 
-    this.nonCriticalTotal = (AdditiveStatistics) oracle.statsFactory().create();
+    this.nonCriticalTotal = (AdditiveStatistics) oracle.statsFactory().apply(0);
     final TIntArrayList maxFailedPoints = new TIntArrayList();
     for (int i = 0; i < points.length; ++i) {
       final int index = points[i];
@@ -59,7 +63,8 @@ public class BFWeakConditionsOptimizationRegion {
 
     this.oracle = oracle;
     this.maxFailed = maxFailed;
-    this.aggregate = new Aggregate(bds, oracle.statsFactory(), maxFailedPoints.toArray());
+    this.aggregate = new Aggregate(bds, oracle.statsFactory());
+    aggregate.append(maxFailedPoints.toArray());
     this.failedBorders = new int[maxFailed + 1];
     ArrayTools.parallelSort(failedCount, points);
     failedBorders[maxFailed] = points.length;
@@ -92,13 +97,12 @@ public class BFWeakConditionsOptimizationRegion {
       return right;
   }
 
-
   public BFOptimizationSubset split(final BFGrid.Feature feature, final boolean mask) {
     final TIntArrayList out = new TIntArrayList(points.length);
     final byte[] bins = bds.bins(feature.findex());
     final TIntArrayList newCriticalPoints = new TIntArrayList();
-    final AdditiveStatistics newCritical = oracle.statsFactory().create();
-    final AdditiveStatistics test = oracle.statsFactory().create();
+    final AdditiveStatistics newCritical = oracle.statsFactory().apply(feature.findex());
+    final AdditiveStatistics test = oracle.statsFactory().apply(feature.findex());
 
     for (int i = 0; i < failedBorders[maxFailed]; ++i) {
       final int index = points[i];
@@ -134,11 +138,11 @@ public class BFWeakConditionsOptimizationRegion {
 
   public <T extends AdditiveStatistics> void visitSplit(final BFGrid.Feature bf, final Aggregate.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf.index());
-    final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
+    final T right = (T) oracle.statsFactory().apply(bf.findex()).append(aggregate.total(-1)).remove(left);
     visitor.accept(bf, left, right);
   }
 
   public AdditiveStatistics total() {
-    return aggregate.total().append(nonCriticalTotal);
+    return aggregate.total(-1).append(nonCriticalTotal);
   }
 }

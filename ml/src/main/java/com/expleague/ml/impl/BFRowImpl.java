@@ -68,7 +68,7 @@ public class BFRowImpl implements BFGrid.Row {
 
   @Override
   public boolean ordered() {
-    return isOneHot;
+    return !isOneHot;
   }
 
   @Override

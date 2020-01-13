@@ -5,21 +5,27 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ThreadTools;
 import com.expleague.commons.math.Trans;
+import com.expleague.ml.Binarize;
+import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.BFGrid;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
+import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.MTA;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.Region;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.IntStream;
 
-
-public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class RegionForest<Loss extends AdditiveLoss> extends VecOptimization.Stub<Loss> {
   public enum MeanMethod {
     MTAConst, Stein, Naive, MTAMinMax
   }
@@ -70,17 +76,14 @@ public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.St
   }
 
   public Trans fitMTA(final VecDataSet learn, final Loss globalLoss) {
-    final GreedyTDRegion.RegionStats[] regions = new GreedyTDRegion.RegionStats[weakCount];
+    final Region[] regions = new Region[weakCount];
     final Trans[] weakModels = new Trans[weakCount];
     final CountDownLatch latch = new CountDownLatch(weakCount);
     for (int i = 0; i < weakCount; ++i) {
       final int index = i;
-      pool.execute(new Runnable() {
-        @Override
-        public void run() {
-          regions[index] = weak.findRegion(learn, DataTools.bootstrap(globalLoss, rnd));
-          latch.countDown();
-        }
+      pool.execute(() -> {
+        regions[index] = weak.findRegion(learn, DataTools.bootstrap(globalLoss, rnd));
+        latch.countDown();
       });
     }
 
@@ -91,8 +94,15 @@ public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.St
     }
 
     final double[][] samples = new double[weakCount][];
+    final BinarizedDataSet bds = learn.cache().cache(Binarize.class, VecDataSet.class).binarize(weak.grid());
+    final L2 base = (L2)(globalLoss instanceof WeightedLoss ? ((WeightedLoss) globalLoss).base() : globalLoss);
     for (int i = 0; i < weakCount; ++i) {
-      samples[i] = regions[i].inside.toArray();
+      final Region region = regions[i];
+      samples[i] = globalLoss.nzComponents()
+          .map(idx -> region.contains(bds, idx) ? idx : -1)
+          .filter(idx -> idx >= 0)
+          .mapToDouble(idx -> base.target().get(idx))
+          .toArray();
     }
     final MTA mta = new MTA(samples);
     final double[] means;
@@ -115,7 +125,7 @@ public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.St
       }
     }
     for (int i = 0; i < weakCount; ++i) {
-      weakModels[i] = new Region(regions[i].conditions, regions[i].mask, means[i], 0, 0, 0, regions[i].maxFailed);
+      weakModels[i] = new Region(Arrays.asList(regions[i].features), regions[i].mask, means[i], 0, 0, 0, regions[i].maxFailed);
     }
     return new Ensemble(weakModels, VecTools.fill(new ArrayVec(weakModels.length), 1.0 / weakCount));
   }
@@ -125,12 +135,9 @@ public class RegionForest<Loss extends StatBasedLoss> extends VecOptimization.St
     final CountDownLatch latch = new CountDownLatch(weakCount);
     for (int i = 0; i < weakCount; ++i) {
       final int index = i;
-      pool.execute(new Runnable() {
-        @Override
-        public void run() {
-          weakModels[index] = weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
-          latch.countDown();
-        }
+      pool.execute(() -> {
+        weakModels[index] = weak.fit(learn, DataTools.bootstrap(globalLoss, rnd));
+        latch.countDown();
       });
     }
 

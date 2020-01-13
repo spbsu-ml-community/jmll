@@ -1,7 +1,6 @@
 package com.expleague.ml.methods.greedyRegion;
 
 import com.expleague.commons.func.AdditiveStatistics;
-import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.Pair;
@@ -9,23 +8,22 @@ import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
 import com.expleague.ml.models.Region;
-import gnu.trove.list.array.TDoubleArrayList;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.expleague.ml.loss.L2.weight;
 import static com.expleague.ml.methods.greedyRegion.AdditiveStatisticsExtractors.sum;
-import static com.expleague.ml.methods.greedyRegion.AdditiveStatisticsExtractors.weight;
 
 /**
  * User: solar
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptimization<Loss> {
+public class GreedyTDRegion<Loss extends AdditiveLoss> extends RegionBasedOptimization<Loss> {
   protected final BFGrid grid;
   private final FastRandom rand = new FastRandom();
   private final double alpha;
@@ -118,7 +116,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
         } else {
           final double leftScore;
           {
-            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
             in.append(current.nonCriticalTotal);
             in.append(left);
             leftScore = loss.score(in);
@@ -126,7 +124,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
 
           final double rightScore;
           {
-            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
             in.append(current.nonCriticalTotal);
             in.append(right);
             rightScore = loss.score(in);
@@ -165,26 +163,12 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
       masks[i] = mask.get(i);
     }
 
-//
-    final Region region = new Region(conditions, masks, 1, 0, -1, currentScore, conditions.size() > maxFailed ? maxFailed : 0);
-    final Vec target = loss.target();
-    double sum = 0;
-    double weight = 0;
-
-    for (int i = 0; i < bds.original().length(); ++i) {
-      if (region.contains(bds, i)) {
-        final double samplWeight = 1.0;// current.size() > 10 ? rand.nextPoisson(1.0) : 1.0;
-        weight += samplWeight;
-        sum += target.get(i) * samplWeight;
-      }
-    }
-
-    final double value = weight > 1 ? sum / weight : loss.bestIncrement(current.total());
-    return new Region(conditions, masks, value, 0, -1, currentScore, conditions.size() > 1 ? maxFailed : 0);
+    //noinspection unchecked
+    return new Region(conditions, masks, loss.bestIncrement(current.total()), 0, -1, currentScore, conditions.size() > 1 ? maxFailed : 0);
   }
 
 
-  public RegionStats findRegion(final VecDataSet learn, final Loss loss) {
+  public Region findRegion(final VecDataSet learn, final Loss loss) {
     final List<BFGrid.Feature> conditions = new ArrayList<>(100);
     final boolean[] usedBF = new boolean[grid.size()];
     final List<Boolean> mask = new ArrayList<>();
@@ -204,12 +188,10 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
 
     while (true) {
       current.visitAllSplits((bf, left, right) -> {
-        if (usedBF[bf.index()]) {
-          scores[bf.index()] = Double.POSITIVE_INFINITY;
-        } else {
+        if (!usedBF[bf.index()]) {
           final double leftScore;
           {
-            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
             in.append(current.nonCriticalTotal);
             in.append(left);
             leftScore = loss.score(in);
@@ -217,7 +199,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
 
           final double rightScore;
           {
-            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
             in.append(current.nonCriticalTotal);
             in.append(right);
             rightScore = loss.score(in);
@@ -225,6 +207,7 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
           scores[bf.index()] = leftScore > rightScore ? rightScore : leftScore;
           isRight[bf.index()] = leftScore > rightScore;
         }
+        else scores[bf.index()] = Double.POSITIVE_INFINITY;
       });
 
       final int bestSplit = ArrayTools.min(scores);
@@ -254,35 +237,11 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
       masks[i] = mask.get(i);
     }
 
-//
-    final Region region = new Region(conditions, masks, 1, 0, -1, currentScore, conditions.size() > maxFailed ? maxFailed : 0);
-    final Vec target = loss.target();
-    final TDoubleArrayList sample = new TDoubleArrayList();
-
-    for (int i = 0; i < bds.original().length(); ++i) {
-      if (region.contains(bds, i)) {
-        sample.add(target.get(i));
-      }
-    }
-    if (sample.size() == 0) {
-      sample.add(0);
-    }
-    return new RegionStats(conditions, masks, sample, conditions.size() > 1 ? maxFailed : 0);
+    return current;
   }
 
-
-  class RegionStats {
-    final List<BFGrid.Feature> conditions;
-    final boolean[] mask;
-    final TDoubleArrayList inside;
-    final int maxFailed;
-
-    RegionStats(final List<BFGrid.Feature> conditions, final boolean[] mask, final TDoubleArrayList inside, final int maxFailed) {
-      this.conditions = conditions;
-      this.mask = mask;
-      this.inside = inside;
-      this.maxFailed = maxFailed;
-    }
+  protected BFGrid grid() {
+    return grid;
   }
 
   public double score(final AdditiveStatistics stats) {
@@ -290,6 +249,4 @@ public class GreedyTDRegion<Loss extends StatBasedLoss> extends RegionBasedOptim
     final double weight = weight(stats);
     return weight > 2 ? (-sum * sum / weight) * weight * (weight - 2) / (weight * weight - 3 * weight + 1) * (1 + 2 * Math.log(weight + 1)) : 0;
   }
-
-
 }

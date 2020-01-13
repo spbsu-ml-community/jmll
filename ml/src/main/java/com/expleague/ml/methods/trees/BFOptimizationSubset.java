@@ -4,7 +4,7 @@ import com.expleague.commons.func.AdditiveStatistics;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.impl.BinarizedDataSet;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import gnu.trove.list.array.TIntArrayList;
 
 
@@ -17,14 +17,15 @@ import gnu.trove.list.array.TIntArrayList;
 public class BFOptimizationSubset {
   private final BinarizedDataSet bds;
   private int[] points;
-  private final StatBasedLoss<AdditiveStatistics> oracle;
+  private final AdditiveLoss<AdditiveStatistics> oracle;
   public final Aggregate aggregate;
 
-  public BFOptimizationSubset(final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points) {
+  public BFOptimizationSubset(final BinarizedDataSet bds, final AdditiveLoss oracle, final int[] points) {
     this.bds = bds;
     this.points = points;
     this.oracle = oracle;
-    this.aggregate = new Aggregate(bds, oracle.statsFactory(), points);
+    this.aggregate = new Aggregate(bds, oracle.statsFactory());
+    aggregate.append(points);
   }
 
   public BFOptimizationSubset split(final BFGrid.Feature feature) {
@@ -55,12 +56,12 @@ public class BFOptimizationSubset {
 
   public <T extends AdditiveStatistics> void visitSplit(final BFGrid.Feature bf, final Aggregate.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf.index());
-    final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
+    final T right = (T) oracle.statsFactory().apply(bf.findex()).append(aggregate.total(-1)).remove(left);
     visitor.accept(bf, left, right);
   }
 
   public AdditiveStatistics total() {
-    return aggregate.total();
+    return aggregate.total(-1);
   }
 
   public int[] getPoints() {

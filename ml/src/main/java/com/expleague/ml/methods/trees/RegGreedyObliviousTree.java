@@ -6,7 +6,7 @@ import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.ObliviousTree;
@@ -14,7 +14,7 @@ import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;
 
-public class RegGreedyObliviousTree<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class RegGreedyObliviousTree<Loss extends AdditiveLoss> extends VecOptimization.Stub<Loss> {
   private final int depth;
   public final BFGrid grid;
   private final double lambda;

@@ -5,7 +5,7 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.methods.BootstrapOptimization;
 import com.expleague.ml.methods.VecOptimization;
-import com.expleague.ml.methods.greedyRegion.cherry.GreedyTDCherryRegion;
+import com.expleague.ml.methods.greedyRegion.GreedyTDCherryRegion;
 
 /**
  * User: qdeee

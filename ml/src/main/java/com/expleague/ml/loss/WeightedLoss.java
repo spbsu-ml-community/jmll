@@ -1,67 +1,73 @@
 package com.expleague.ml.loss;
 
-import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.func.AdditiveStatistics;
-import com.expleague.commons.func.Factory;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
 import com.expleague.ml.data.set.DataSet;
 import gnu.trove.list.array.TIntArrayList;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
+
 /**
  * User: solar
  * Date: 26.11.13
  * Time: 9:54
  */
-public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub implements StatBasedLoss<WeightedLoss.Stat> {
-  private final BasedOn metric;
+public class WeightedLoss<BasedOn extends AdditiveLoss> extends Func.Stub implements AdditiveLoss<WeightedLoss.Stat> {
+  private final BasedOn baseLoss;
   private final int[] weights;
 
-  public WeightedLoss(final BasedOn metric, final int[] weights) {
-    this.metric = metric;
+  public WeightedLoss(final BasedOn baseLoss, final int[] weights) {
+    this.baseLoss = baseLoss;
     this.weights = weights;
   }
 
   @Override
-  public Factory<Stat> statsFactory() {
-    return () -> new Stat(weights, (AdditiveStatistics) metric.statsFactory().create());
+  public IntFunction<Stat> statsFactory() {
+    return (findex) -> new Stat(weights, (AdditiveStatistics) baseLoss.statsFactory().apply(findex));
   }
 
   @Override
-  public Vec target() {
-    return metric.target();
+  public int components() {
+    return weights.length;
+  }
+
+  @Override
+  public IntStream nzComponents() {
+    return IntStream.range(0, components()).filter(i -> weights[i] != 0);
+  }
+
+  @Override
+  public double value(int component, double x) {
+    return weights[component] != 0 ? baseLoss.value(component, x) * weights[component] : 0;
   }
 
   @Override
   public double bestIncrement(final Stat comb) {
-    return metric.bestIncrement(comb.inside);
+    return baseLoss.bestIncrement(comb.inside);
   }
 
   @Override
   public double score(final Stat comb) {
-    return metric.score(comb.inside);
+    return baseLoss.score(comb.inside);
   }
 
   @Override
   public double value(final Stat comb) {
-    return metric.value(comb.inside);
+    return baseLoss.value(comb.inside);
   }
 
   @Override
   public int dim() {
-    return metric.xdim();
+    return baseLoss.xdim();
   }
 
   @Nullable
   @Override
   public Trans gradient() {
-    return metric.gradient();
-  }
-
-  @Override
-  public double value(final Vec x) {
-    return metric.trans(x).get(0);
+    return baseLoss.gradient();
   }
 
   public double weight(final int index) {
@@ -69,12 +75,12 @@ public class WeightedLoss<BasedOn extends StatBasedLoss> extends Func.Stub imple
   }
 
   public BasedOn base() {
-    return metric;
+    return baseLoss;
   }
 
   @Override
   public DataSet<?> owner() {
-    return metric.owner();
+    return baseLoss.owner();
   }
 
   public int[] points() {

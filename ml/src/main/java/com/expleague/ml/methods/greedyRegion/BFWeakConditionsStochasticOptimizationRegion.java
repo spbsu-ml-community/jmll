@@ -6,8 +6,7 @@ import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.impl.BinaryFeatureImpl;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
 import com.expleague.commons.util.ArrayTools;
 import gnu.trove.list.array.TIntArrayList;
@@ -25,7 +24,7 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
   double beta = 0.5;
 
   public BFWeakConditionsStochasticOptimizationRegion(
-      final BinarizedDataSet bds, final StatBasedLoss oracle, final int[] points, final BFGrid.Feature[] features, final boolean[] masks, final int maxFailed) {
+      final BinarizedDataSet bds, final AdditiveLoss oracle, final int[] points, final BFGrid.Feature[] features, final boolean[] masks, final int maxFailed) {
     super(bds, oracle, points, features, masks, maxFailed);
   }
 
@@ -34,7 +33,7 @@ public class BFWeakConditionsStochasticOptimizationRegion extends BFWeakConditio
     final TIntArrayList out = new TIntArrayList(points.length);
     final byte[] bins = bds.bins(feature.findex());
     final TIntArrayList newCriticalPoints = new TIntArrayList();
-    final AdditiveStatistics newCritical = oracle.statsFactory().create();
+    final AdditiveStatistics newCritical = oracle.statsFactory().apply(feature.findex());
 
     final int nonCriticalEnd = maxFailed > 0 ? failedBorders[maxFailed - 1] : 0;
     for (int i = 0; i < nonCriticalEnd; ++i) {

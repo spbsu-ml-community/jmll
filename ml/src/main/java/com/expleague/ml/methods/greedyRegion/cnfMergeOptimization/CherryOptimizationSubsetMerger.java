@@ -7,22 +7,23 @@ import com.expleague.ml.models.CNF;
 import com.expleague.commons.util.ArrayTools;
 import gnu.trove.list.array.TIntArrayList;
 
+import java.util.function.IntFunction;
+
 /**
  * Created by noxoomo on 30/11/14.
  */
 public class CherryOptimizationSubsetMerger implements MergeOptimization<CherryOptimizationSubset> {
-  private final Factory<AdditiveStatistics> factory;
+  private final IntFunction<AdditiveStatistics> factory;
 
-  public CherryOptimizationSubsetMerger(final Factory<AdditiveStatistics> factory) {
+  public CherryOptimizationSubsetMerger(final IntFunction<AdditiveStatistics> factory) {
     this.factory =  factory;
   }
-
 
   @Override
   public CherryOptimizationSubset merge(CherryOptimizationSubset first, CherryOptimizationSubset second) {
     final CNF.Clause clause = new CNF.Clause(first.bds.grid(), ArrayTools.concat(first.clause.conditions, second.clause.conditions));
 
-    final AdditiveStatistics stat = factory.create();
+    final AdditiveStatistics stat = factory.apply(0); // TODO: remove this trash
     if (first.minimumIndices.length < second.minimumIndices.length) {
       final CherryOptimizationSubset tmp = first;
       first = second;

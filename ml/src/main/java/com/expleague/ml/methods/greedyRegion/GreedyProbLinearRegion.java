@@ -131,7 +131,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   }
 
   private double mean(int[] points, final WeightedLoss<? extends L2> curLoss) {
-    final Vec target = curLoss.target();
+    final Vec target = curLoss.base().target();
     double sum = 0.;
     int count = 0;
     for (int i = 0; i < points.length; i++) {
@@ -165,7 +165,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
   private double score(BinarizedDataSet bds, int[] points, WeightedLoss<? extends L2> loss,
                        boolean isRight, double lambda1, double lambda2, BinaryFeatureImpl bf) {
     Lock lock = new ReentrantLock();
-    L2.Stat updatedStat = new L2.Stat(loss.target());
+    L2.Stat updatedStat = new L2.Stat(loss.base().target());
     IntStream.of(points).parallel().forEach(idx -> {
       double probRight = probRight(x_i(bds, idx, bf.findex) - bf.condition, lambda1, lambda2);
       //noinspection StatementWithEmptyBody
@@ -332,7 +332,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       final double lambda1 = x.get(0);
       final double lambda2 = x.get(1);
       Lock lock = new ReentrantLock();
-      L2.Stat updatedStat = new L2.Stat(loss.target());
+      L2.Stat updatedStat = new L2.Stat(loss.base().target());
       IntStream.of(points).parallel().forEach(idx -> {
         double probRight = probRight(x_i(bds, idx, bf.findex()) - bf.condition(), lambda1, lambda2);
         //noinspection StatementWithEmptyBody
@@ -354,7 +354,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
         final double diffX = x_i(bds, idx, bf.findex()) - bf.condition();
         final double probRight = probRight(diffX, lambda1, lambda2);
         final double w_i = probRight * loss.weight(idx);
-        final double y_i = loss.target().get(idx);
+        final double y_i = loss.base().target().get(idx);
         sumWAcc.accumulate(w_i);
         sumYAcc.accumulate(w_i * y_i);
       });
@@ -367,7 +367,7 @@ public class GreedyProbLinearRegion<Loss extends WeightedLoss<? extends L2>> ext
       IntStream.of(points).parallel().forEach(idx -> {
         final double diffX = x_i(bds, idx, bf.findex()) - bf.condition();
         final double probRight = probRight(diffX, lambda1, lambda2);
-        final double y_i = loss.target().get(idx);
+        final double y_i = loss.base().target().get(idx);
         double dTdw_i = - (sumY * sumY - 2 * y_i * sumW * sumY);
         if (diffX >= 0)
           sumLambda1.accumulate(diffX * probRight * (1 - probRight) * dTdw_i);

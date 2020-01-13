@@ -10,7 +10,7 @@ import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.methods.linearRegressionExperiments.WeakLeastAngle;
@@ -24,7 +24,7 @@ import java.util.TreeSet;
  * User: noxoomo
  */
 
-public class GreedyObliviousTreeWithWeakLearner<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyObliviousTreeWithWeakLearner<Loss extends L2> extends VecOptimization.Stub<Loss> {
   private final GreedyObliviousTree<WeightedLoss<Loss>> base;
   private final FastRandom rand;
 
@@ -34,8 +34,6 @@ public class GreedyObliviousTreeWithWeakLearner<Loss extends StatBasedLoss> exte
     this.base = base;
     this.rand = rand;
   }
-
-
 
   private int[] learnPoints(WeightedLoss loss) {
     return loss.points();
@@ -66,7 +64,6 @@ public class GreedyObliviousTreeWithWeakLearner<Loss extends StatBasedLoss> exte
     Vec predictions = result[0].transAll(ds.data()).col(0);
     for (int i = 0; i < predictions.dim(); ++i)
       newTarget.adjust(i, -predictions.get(i));
-
 
     final int[] features = new int[uniqueFeatures.size()];
     {

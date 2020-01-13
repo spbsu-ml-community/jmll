@@ -6,7 +6,8 @@ import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
+import com.expleague.ml.loss.L2;
 import com.expleague.ml.methods.trees.BFOptimizationSubset;
 import com.expleague.ml.models.Region;
 
@@ -18,7 +19,7 @@ import java.util.List;
  * Date: 15.11.12
  * Time: 15:19
  */
-public class GreedyTDIterativeRegion<Loss extends StatBasedLoss> extends RegionBasedOptimization<Loss> {
+public class GreedyTDIterativeRegion<Loss extends AdditiveLoss> extends RegionBasedOptimization<Loss> {
   protected final BFGrid grid;
   private final double alpha;
   private final double beta;
@@ -63,9 +64,9 @@ public class GreedyTDIterativeRegion<Loss extends StatBasedLoss> extends RegionB
 //            new BFWeakConditionsStochasticOptimizationRegion(bds, loss, ArrayTools.sequence(0, learn.length()), init.first, init.second, maxFailed);
 //    current.alpha = alpha;
 //    current.beta = beta;
-    AdditiveStatistics currentInside = (AdditiveStatistics) loss.statsFactory().create();
-    AdditiveStatistics currentCritical = (AdditiveStatistics) loss.statsFactory().create();
-    AdditiveStatistics currentOutside = (AdditiveStatistics) loss.statsFactory().create();
+    AdditiveStatistics currentInside = (AdditiveStatistics) loss.statsFactory().apply(0);
+    AdditiveStatistics currentCritical = (AdditiveStatistics) loss.statsFactory().apply(0);
+    AdditiveStatistics currentOutside = (AdditiveStatistics) loss.statsFactory().apply(0);
     currentInside.append(current.total());
     currentOutside.append(current.excluded);
     currentCritical.append(currentInside);
@@ -75,7 +76,7 @@ public class GreedyTDIterativeRegion<Loss extends StatBasedLoss> extends RegionB
 //    double reg = (1 + 2*(Math.log(weight(currentInside) + 1) + Math.log(weight(currentOutside) + 1)));
 //    reg /= (2 + 2*(maxFailed + conditions.size()));
 //    double currentScore = loss.score(currentInside) * reg;
-    double currentScore = loss.score(currentInside) * (1 +  Math.log(AdditiveStatisticsExtractors.weight(currentInside) + 1) + (conditions.size() + maxFailed) * Math.log(alpha));
+    double currentScore = loss.score(currentInside) * (1 +  Math.log(L2.weight(currentInside) + 1) + (conditions.size() + maxFailed) * Math.log(alpha));
     while (true) {
       current.visitAllSplits((bf, left, right) -> {
         if (usedBF[bf.index()]) {
@@ -83,13 +84,13 @@ public class GreedyTDIterativeRegion<Loss extends StatBasedLoss> extends RegionB
         } else {
           final double leftScore;
           {
-            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
             in.append(current.nonCriticalTotal);
             in.append(left);
-            final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
             out.append(current.excluded);
             out.append(right);
-            double reg = 1 + (Math.log(AdditiveStatisticsExtractors.weight(in) + 1)) + (conditions.size() + maxFailed + 1) * Math.log(alpha);
+            double reg = 1 + (Math.log(L2.weight(in) + 1)) + (conditions.size() + maxFailed + 1) * Math.log(alpha);
 //              reg /= (1 + maxFailed);
 //              / Math.log(2 + maxFailed + conditions.size())
 //              leftScore = (loss.score(in) + loss.score(out)) / Math.log(2 + maxFailed + conditions.size());
@@ -99,17 +100,17 @@ public class GreedyTDIterativeRegion<Loss extends StatBasedLoss> extends RegionB
 
           final double rightScore;
           {
-            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics in = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
             in.append(current.nonCriticalTotal);
             in.append(right);
-            final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().create();
+            final AdditiveStatistics out = (AdditiveStatistics) loss.statsFactory().apply(bf.findex());
             out.append(current.excluded);
             out.append(left);
 //              reg /= (1 + 0.5maxFailed);
 //              / Math.log(2 + maxFailed + conditions.size())
 //              rightScore = (loss.score(in) + loss.score(out)) / Math.log(2 + maxFailed + conditions.size());
 //              rightScore = (loss.score(in)) * reg;
-            double reg = 1 +  (Math.log(AdditiveStatisticsExtractors.weight(in) + 1)) + (conditions.size() + maxFailed + 1) * Math.log(alpha);
+            double reg = 1 +  (Math.log(L2.weight(in) + 1)) + (conditions.size() + maxFailed + 1) * Math.log(alpha);
             rightScore = loss.score(in) * reg;
           }
           scores[bf.index()] = leftScore > rightScore ? rightScore : leftScore;
@@ -137,9 +138,9 @@ public class GreedyTDIterativeRegion<Loss extends StatBasedLoss> extends RegionB
       usedBF[bestSplitBF.index()] = true;
       mask.add(bestSplitMask);
       currentScore = scores[bestSplit];
-      currentInside = (AdditiveStatistics) loss.statsFactory().create();
+      currentInside = (AdditiveStatistics) loss.statsFactory().apply(bestSplitBF.findex());
       currentInside.append(current.total());
-      currentOutside = (AdditiveStatistics) loss.statsFactory().create();
+      currentOutside = (AdditiveStatistics) loss.statsFactory().apply(bestSplitBF.findex());
       currentOutside.append(current.excluded);
     }
 

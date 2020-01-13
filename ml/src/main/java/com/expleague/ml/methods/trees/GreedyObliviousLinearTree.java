@@ -21,11 +21,11 @@ import java.util.ListIterator;
  * Date: 30.11.12
  * Time: 17:01
  */
-public class GreedyObliviousTree<Loss extends AdditiveLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyObliviousLinearTree<Loss extends AdditiveLoss> extends VecOptimization.Stub<Loss> {
   private final int depth;
   public final BFGrid grid;
 
-  public GreedyObliviousTree(final BFGrid grid, final int depth) {
+  public GreedyObliviousLinearTree(final BFGrid grid, final int depth) {
     this.grid = grid;
     this.depth = depth;
   }

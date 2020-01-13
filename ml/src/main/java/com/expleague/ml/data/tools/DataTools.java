@@ -38,7 +38,7 @@ import com.expleague.ml.impl.BFGridConstructor;
 import com.expleague.ml.impl.BFGridImpl;
 import com.expleague.ml.io.ModelsSerializationRepository;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
@@ -640,7 +640,7 @@ public class DataTools {
     return result;
   }
 
-  public static <LocalLoss extends StatBasedLoss> WeightedLoss<LocalLoss> bootstrap(final LocalLoss loss, final FastRandom rnd) {
+  public static <LocalLoss extends AdditiveLoss> WeightedLoss<LocalLoss> bootstrap(final LocalLoss loss, final FastRandom rnd) {
     final int[] poissonWeights = new int[loss.xdim()];
     for (int i = 0; i < loss.xdim(); i++) {
       poissonWeights[i] = rnd.nextPoisson(1.);

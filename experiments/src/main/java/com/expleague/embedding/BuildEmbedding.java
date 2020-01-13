@@ -8,26 +8,24 @@ import com.expleague.embedding.evaluation.metrics.WordAnalogiesMetric;
 import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.LM.LWMatrixMultBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
+import com.expleague.ml.embedding.glove.GloVeBuilder;
 
-import java.io.*;
-import java.nio.file.Files;
+import java.io.IOException;
 import java.nio.file.Paths;
 
 public class BuildEmbedding {
   public static void main(String[] args) throws IOException {
 
+    GloVeBuilder decomp_builder = (GloVeBuilder)  Embedding.builder(Embedding.Type.GLOVE);
     String file = args[0];
-    String embeddingFile = StreamTools.stripExtension(file) + ".lwmm";
-    String resultFile = "/home/katyakos/diploma/proj6_spbau/data/tests/hobbit/results_lwmm";
-    String metricFile = "/home/katyakos/diploma/proj6_spbau/data/tests/hobbit/all_metrics_files.txt";
-
-    LWMatrixMultBuilder builder = (LWMatrixMultBuilder) Embedding.builder(Embedding.Type.LIGHT_WEIGHT_MATRIX_MULT);
-    final Embedding result = builder
-        .dim(10)
+    final Embedding result = decomp_builder
+//        .dimSym(40)
+//        .dimSkew(10)
+        .dim(40)
         .minWordCount(1)
-        .iterations(15)
-        .step(0.05)
-        .window(Embedding.WindowType.LINEAR, 5, 5)
+        .iterations(25)
+        .step(0.01)
+        .window(Embedding.WindowType.LINEAR, 15, 15)
         .file(Paths.get(file))
         .build();
     try (Writer to = Files.newBufferedWriter(Paths.get(embeddingFile))) {

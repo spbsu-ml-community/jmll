@@ -17,7 +17,7 @@ import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.loss.multiclass.util.ConfusionMatrix;
 import com.expleague.ml.meta.FeatureMeta;
@@ -64,7 +64,7 @@ public class FMCBoostingTest extends TestCase {
         FastRandom rng = new FastRandom(0);
         final FMCBoosting boosting = new FMCBoosting(
                 new StochasticALS(rng, 100, 2000, new StochasticALS.Cache(600, 0.01, rng)),
-                new GreedyObliviousTree<StatBasedLoss>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                new GreedyObliviousTree<AdditiveLoss>(GridTools.medianGrid(learn.vecData(), 32), 5),
                 L2.class,
                 2500,
                 5

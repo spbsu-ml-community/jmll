@@ -10,18 +10,44 @@ import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.TargetFunc;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.IntFunction;
+
 /**
  * User: solar
  * Date: 21.12.2010
  * Time: 22:37:55
  */
-public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.Stat>, TargetFunc {
+public class L2 extends FuncC1.Stub implements AdditiveLoss<L2.Stat>, TargetFunc {
   public final Vec target;
   private final DataSet<?> owner;
 
   public L2(final Vec target, final DataSet<?> owner) {
     this.target = target;
     this.owner = owner;
+  }
+
+  public static double weight(final AdditiveStatistics stats) {
+    if (stats instanceof WeightedLoss.Stat)
+      return ((Stat) ((WeightedLoss.Stat) stats).inside).weight;
+    if (stats instanceof Stat)
+      return ((Stat) stats).weight;
+    throw new IllegalArgumentException();
+  }
+
+  public static double sum(final AdditiveStatistics stats) {
+    if (stats instanceof WeightedLoss.Stat)
+      return ((Stat) ((WeightedLoss.Stat) stats).inside).sum;
+    if (stats instanceof Stat)
+      return ((Stat) stats).sum;
+    throw new IllegalArgumentException();
+  }
+
+  public static double sum2(final AdditiveStatistics stats) {
+    if (stats instanceof WeightedLoss.Stat)
+      return ((Stat) ((WeightedLoss.Stat) stats).inside).sum2;
+    if (stats instanceof Stat)
+      return ((Stat) stats).sum2;
+    throw new IllegalArgumentException();
   }
 
   @NotNull
@@ -48,11 +74,20 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.Stat>, TargetFun
   }
 
   @Override
-  public Factory<Stat> statsFactory() {
-    return () -> new Stat(target);
+  public IntFunction<Stat> statsFactory() {
+    return (findex) -> new Stat(target);
   }
 
   @Override
+  public int components() {
+    return target.dim();
+  }
+
+  @Override
+  public double value(int component, double x) {
+    return MathTools.sqr(target.get(component) - x);
+  }
+
   public Vec target() {
     return target;
   }
@@ -64,7 +99,7 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.Stat>, TargetFun
 
   @Override
   public double score(final Stat stats) {
-    return stats.weight > MathTools.EPSILON ? (- stats.sum * stats.sum / stats.weight)/* + 5 * stats.weight2*/: 0/*+ 5 * stats.weight2*/;
+    return stats.weight > MathTools.EPSILON ? (-stats.sum * stats.sum / stats.weight)/* + 5 * stats.weight2*/ : 0/*+ 5 * stats.weight2*/;
   }
 
   @Override
@@ -174,6 +209,4 @@ public class L2 extends FuncC1.Stub implements StatBasedLoss<L2.Stat>, TargetFun
       return this;
     }
   }
-
-
 }

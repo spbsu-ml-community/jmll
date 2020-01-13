@@ -13,7 +13,7 @@ import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.MultipleVecOptimization;
 import com.expleague.ml.methods.VecOptimization;
@@ -31,7 +31,7 @@ import static com.expleague.commons.math.vectors.VecTools.adjust;
  * User: noxoomo
  */
 
-public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyObliviousTreeWithVecOptimizationLeaves<Loss extends L2> extends VecOptimization.Stub<Loss> {
   private final GreedyObliviousTree<WeightedLoss<Loss>> base;
   private final FastRandom rand;
   private final MultipleVecOptimization<L2> leafLearner;

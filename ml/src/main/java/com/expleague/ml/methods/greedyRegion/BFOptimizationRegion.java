@@ -7,7 +7,7 @@ import com.expleague.ml.data.Aggregate;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.impl.BinaryFeatureImpl;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -21,18 +21,18 @@ import gnu.trove.list.array.TIntArrayList;
 public class BFOptimizationRegion {
   protected final BinarizedDataSet bds;
   protected int[] pointsInside;
-  protected final StatBasedLoss<AdditiveStatistics> oracle;
+  protected final AdditiveLoss<?> oracle;
   protected Aggregate aggregate;
 
   public BFOptimizationRegion(final BinarizedDataSet bds,
-                              final StatBasedLoss oracle,
+                              final AdditiveLoss<?> oracle,
                               final int[] points) {
     this.bds = bds;
     this.pointsInside = points;
     this.oracle = oracle;
-    this.aggregate = new Aggregate(bds, oracle.statsFactory(), points);
+    this.aggregate = new Aggregate(bds, oracle.statsFactory());
+    this.aggregate.append(points);
   }
-
 
   public void split(final BFGrid.Feature feature, final boolean mask) {
     final byte[] bins = bds.bins(feature.findex());
@@ -50,10 +50,10 @@ public class BFOptimizationRegion {
     }
     pointsInside = newInside.toArray();
     if (newInside.size() < newOutside.size()) {
-      aggregate = new Aggregate(bds, oracle.statsFactory(), pointsInside);
-    } else {
-      aggregate.remove(new Aggregate(bds, oracle.statsFactory(), newOutside.toArray()));
+      aggregate = new Aggregate(bds, oracle.statsFactory());
+      aggregate.append(pointsInside);
     }
+    else aggregate.remove(newOutside.toArray());
   }
 
   int size() {
@@ -66,12 +66,12 @@ public class BFOptimizationRegion {
 
   public <T extends AdditiveStatistics> void visitSplit(final BinaryFeatureImpl bf, final Aggregate.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
-    final T right = (T) oracle.statsFactory().create().append(aggregate.total()).remove(left);
+    final T right = (T) oracle.statsFactory().apply(bf.findex).append(aggregate.total(-1)).remove(left);
     visitor.accept(bf, left, right);
   }
 
   public AdditiveStatistics total() {
-    return aggregate.total();
+    return aggregate.total(-1);
   }
 
   public static class PermutationWeightedFunc extends AnalyticFunc.Stub {
@@ -92,7 +92,7 @@ public class BFOptimizationRegion {
       double[] params = new double[]{0, 0, 0};
       aggregate.visitND(c, order.length, x, (k, N_k, D_k, P_k, S_k) -> {
         final int index = order[k];
-        final double y_k = loss.target().get(index);
+        final double y_k = loss.base().target().get(index);
         final double w_k = loss.weight(index) * N_k / D_k;
 
         params[0] += w_k * y_k * y_k;
@@ -108,11 +108,11 @@ public class BFOptimizationRegion {
     @Override
     public double gradient(double x) {
       final double[] params = new double[]{0};
-      final WeightedLoss.Stat stat = (WeightedLoss.Stat) aggregate.total();
+      final WeightedLoss.Stat stat = (WeightedLoss.Stat) aggregate.total(-1);
       final L2.Stat l2Stat = (L2.Stat)stat.inside;
       aggregate.visitND(c, order.length, x, (k, N_k, D_k, P_k, S_k) -> {
         final int index = order[k];
-        final double y_k = loss.target().get(index);
+        final double y_k = loss.base().target().get(index);
         final double w_k = loss.weight(index) * N_k / D_k;
 
         final double dLdw = y_k * y_k - 2 * (y_k * l2Stat.sum * l2Stat.weight - l2Stat.sum * l2Stat.sum) / l2Stat.weight / l2Stat.weight / l2Stat.weight;

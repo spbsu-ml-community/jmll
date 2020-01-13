@@ -8,14 +8,13 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
-import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.Binarize;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.StatBasedLoss;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.WeightedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.LinearRegion;
@@ -27,7 +26,7 @@ import java.util.List;
 /**
  * User: nooxoomo
  */
-public class GreedyTDLinearRegion<Loss extends StatBasedLoss> extends VecOptimization.Stub<Loss> {
+public class GreedyTDLinearRegion<Loss extends AdditiveLoss> extends VecOptimization.Stub<Loss> {
   protected final BFGrid grid;
   private final int depth;
   private final double lambda;
