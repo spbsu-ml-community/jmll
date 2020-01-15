@@ -2,9 +2,10 @@ package com.expleague.ml.embedding;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.Metric;
+import com.expleague.ml.embedding.LM.LWMatrixMultBuilder;
 import com.expleague.ml.embedding.decomp.DecompBuilder;
-import com.expleague.ml.embedding.decomp.MultiDecompBuilder;
 import com.expleague.ml.embedding.glove.GloVeBuilder;
+import com.expleague.ml.embedding.glove.GloVeUnbiasedBuilder;
 import com.expleague.ml.embedding.glove.NgramGloveBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import com.expleague.ml.embedding.kmeans.ClusterBasedSymmetricBuilder;
@@ -40,6 +41,7 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
     KMEANS_SKIP(ClusterBasedSymmetricBuilder.class),
     HIERARCH_CLUSTER(HierarchicalClusterBasedSymmetricBuilder.class),
     SOFTMAX_SYMMETRIC(SoftMaxSymmetricBuilder.class),
+    LIGHT_WEIGHT_MATRIX_MULT(LWMatrixMultBuilder.class)
     ;
 
     private final Class<? extends Builder> builderClass;
