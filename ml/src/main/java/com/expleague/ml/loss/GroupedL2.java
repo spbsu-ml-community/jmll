@@ -146,7 +146,7 @@ public class GroupedL2 extends L2 {
     };
   }
 
-  private static Vec groupMeans(int[][] groups, Vec vec) {
+  private static Vec negativeGroupMeans(int[][] groups, Vec vec) {
     Vec groupMeans = VecTools.copy(vec);
     for (int[] group : groups) {
       double mean = 0;
@@ -159,6 +159,8 @@ public class GroupedL2 extends L2 {
         groupMeans.set(i, mean);
       }
     }
+
+    VecTools.scale(groupMeans, -1);
     return groupMeans;
   }
 
@@ -168,7 +170,7 @@ public class GroupedL2 extends L2 {
     Vec gradient = VecTools.copy(x);
     VecTools.scale(gradient, -1);
     VecTools.append(gradient, target);
-    VecTools.append(gradient, groupMeans(groups, gradient));
+    VecTools.append(gradient, negativeGroupMeans(groups, gradient));
     VecTools.scale(gradient, -2);
     return gradient;
   }
@@ -178,7 +180,7 @@ public class GroupedL2 extends L2 {
     final Vec temp = VecTools.copy(point);
     VecTools.scale(temp, -1);
     VecTools.append(temp, target);
-    VecTools.append(temp, groupMeans(groups, temp));
+    VecTools.append(temp, negativeGroupMeans(groups, temp));
     return Math.sqrt(VecTools.sum2(temp) / temp.dim());
   }
 }

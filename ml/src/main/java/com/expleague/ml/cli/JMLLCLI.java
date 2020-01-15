@@ -19,6 +19,7 @@ public class JMLLCLI {
 
   public static final String LEARN_OPTION = "f";
   public static final String JSON_FORMAT = "j";
+  public static final String LETOR_FORMAT = "letor";
   public static final String CD_FILE = "cd";
   public static final String DELIMITER = "delimiter";
   public static final String HAS_HEADER = "hasHeader";
@@ -54,6 +55,7 @@ public class JMLLCLI {
     options.addOption(OptionBuilder.withLongOpt("learn").withDescription("features.txt format file used as learn").hasArg().create(LEARN_OPTION));
     options.addOption(OptionBuilder.withLongOpt("cd").withDescription("features.cd file (catboost pool format)").hasArg().create(CD_FILE));
     options.addOption(OptionBuilder.withLongOpt("json-format").withDescription("alternative format for features.txt").hasArg(false).create(JSON_FORMAT));
+    options.addOption(OptionBuilder.withLongOpt("letor-format").withDescription("LETOR input format").hasArg(false).create(LETOR_FORMAT));
     options.addOption(OptionBuilder.withLongOpt("test").withDescription("test part in features.txt format").hasArg().create(TEST_OPTION));
     options.addOption(OptionBuilder.withLongOpt("cross-validation").withDescription("k folds CV").hasArg().create(CROSS_VALIDATION_OPTION));
 

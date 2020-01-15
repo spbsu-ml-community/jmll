@@ -3,6 +3,7 @@ package com.expleague.ml.cli.builders.data;
 
 import com.expleague.ml.cli.builders.data.impl.CatBoostPoolReader;
 import com.expleague.ml.cli.builders.data.impl.PoolReaderFeatureTxt;
+import com.expleague.ml.cli.builders.data.impl.PoolReaderLetor;
 import com.expleague.ml.data.tools.CatBoostPoolDescription;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.cli.builders.data.impl.PoolReaderJson;
@@ -21,6 +22,10 @@ public class ReaderFactory {
 
   public static PoolReader createFeatureTxtReader() {
     return new PoolReaderFeatureTxt();
+  }
+
+  public static PoolReader createLetorReader() {
+    return new PoolReaderLetor();
   }
 
   public static PoolReader createCatBoostPoolReader(final String cdFile,

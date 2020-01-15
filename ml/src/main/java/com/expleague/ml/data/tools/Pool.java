@@ -339,7 +339,7 @@ public class Pool<I extends DSItem> {
   public TargetFunc targetByName(String metricName) {
     final String loss;
     String name = null;
-    if (metricName.contains("(")) { // has taget name
+    if (metricName.contains("(")) { // has target name
       final int nameIndex = metricName.indexOf("(") + 1;
       loss = metricName.substring(0, nameIndex);
       name = metricName.substring(nameIndex + 1, metricName.length() - 1);
