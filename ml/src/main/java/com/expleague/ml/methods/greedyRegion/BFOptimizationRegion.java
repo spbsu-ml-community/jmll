@@ -66,12 +66,12 @@ public class BFOptimizationRegion {
 
   public <T extends AdditiveStatistics> void visitSplit(final BinaryFeatureImpl bf, final Aggregate.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf.bfIndex);
-    final T right = (T) oracle.statsFactory().apply(bf.findex).append(aggregate.total(-1)).remove(left);
+    final T right = (T) oracle.statsFactory().apply(bf.findex()).append(aggregate.total(bf.findex())).remove(left);
     visitor.accept(bf, left, right);
   }
 
-  public AdditiveStatistics total() {
-    return aggregate.total(-1);
+  public AdditiveStatistics total(int findex) {
+    return aggregate.total(findex);
   }
 
   public static class PermutationWeightedFunc extends AnalyticFunc.Stub {

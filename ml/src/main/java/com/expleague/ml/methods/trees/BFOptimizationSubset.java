@@ -56,12 +56,12 @@ public class BFOptimizationSubset {
 
   public <T extends AdditiveStatistics> void visitSplit(final BFGrid.Feature bf, final Aggregate.SplitVisitor<T> visitor) {
     final T left = (T) aggregate.combinatorForFeature(bf.index());
-    final T right = (T) oracle.statsFactory().apply(bf.findex()).append(aggregate.total(-1)).remove(left);
+    final T right = (T) oracle.statsFactory().apply(bf.findex()).append(aggregate.total(bf.findex())).remove(left);
     visitor.accept(bf, left, right);
   }
 
   public AdditiveStatistics total() {
-    return aggregate.total(-1);
+    return aggregate.total(0);
   }
 
   public int[] getPoints() {

@@ -89,7 +89,8 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
           break;
       }
       betas = cache.betas();
-      if (VecTools.distance(betas, prev) < tolerance) {
+      double cos = VecTools.multiply(betas, prev) / VecTools.norm(betas) / VecTools.norm(prev);
+      if (!Double.isNaN(cos) && cos > 1 - tolerance) {
         break;
       }
     }

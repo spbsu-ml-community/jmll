@@ -143,6 +143,6 @@ public class BFWeakConditionsOptimizationRegion extends Region {
   }
 
   public AdditiveStatistics total() {
-    return aggregate.total(-1).append(nonCriticalTotal);
+    return aggregate.total(0).append(nonCriticalTotal);
   }
 }

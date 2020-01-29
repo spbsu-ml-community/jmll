@@ -41,9 +41,7 @@ public class Aggregate {
     nonEmptyRow = neRow;
     this.bins = new AdditiveStatistics[binsSize];
     for (int i = 0, idx = 0; i < grid.rows(); ++i) {
-      starts[i] = binsSize;
-      binsSize += grid.row(i).size() + 1;
-      for (int b = 0; b < grid.row(i).size(); b++, idx++) {
+      for (int b = 0; b < grid.row(i).size() + 1; b++, idx++) {
         bins[idx] = factory.apply(i);
       }
     }
@@ -64,7 +62,8 @@ public class Aggregate {
   public AdditiveStatistics total(int findex) {
     final AdditiveStatistics myTotal = factory.apply(findex);
     final int offset = starts[findex];
-    for (int b = 0; b <= nonEmptyRow.size(); b++) {
+    int fSize = grid.row(findex).size();
+    for (int b = 0; b <= fSize; b++) {
       myTotal.append(bins[offset + b]);
     }
     return myTotal;
@@ -157,9 +156,9 @@ public class Aggregate {
     for (int findex = 0; findex < grid.rows(); findex++) {
       final int finalFIndex = findex;
       final BFGrid.Row row = grid.row(findex);
+      final int offset = starts[row.findex()];
       exec.execute(() -> {
         final byte[] bin = bds.bins(finalFIndex);
-        final int offset = starts[row.findex()];
         if (!row.empty()) {
 //            for (int i : indices) {
 //              bins[offset + bin[i]].append(i, 1);

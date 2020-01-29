@@ -62,7 +62,7 @@ public class GreedyTDLinearRegion<Loss extends AdditiveLoss> extends VecOptimiza
 
     final BFOptimizationRegion current  = new BFOptimizationRegion(bds, loss, points);
     {
-      AdditiveStatistics statistics = current.total();
+      AdditiveStatistics statistics = current.total(0);
       sums.add(sum(statistics));
       final double totalWeight = weight(statistics);
       weights.add(totalWeight);
@@ -138,7 +138,7 @@ public class GreedyTDLinearRegion<Loss extends AdditiveLoss> extends VecOptimiza
       if (level < (depth - 1)) {
         current.split(bestSplitBF, bestSplitMask);
 
-        final AdditiveStatistics total = current.total();
+        final AdditiveStatistics total = current.total(0);
         sums.add(sum(total));
         final double weight = weight(total);
         weights.add(weight);
