@@ -5,7 +5,6 @@ import com.expleague.ml.Metric;
 import com.expleague.ml.embedding.LM.LWMatrixMultBuilder;
 import com.expleague.ml.embedding.decomp.DecompBuilder;
 import com.expleague.ml.embedding.glove.GloVeBuilder;
-import com.expleague.ml.embedding.glove.GloVeUnbiasedBuilder;
 import com.expleague.ml.embedding.glove.NgramGloveBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import com.expleague.ml.embedding.kmeans.ClusterBasedSymmetricBuilder;

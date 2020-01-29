@@ -75,13 +75,11 @@ public class FMCBoostingTest extends TestCase {
 
 
     private void fitModel(final FMCBoosting boosting) throws IOException {
-        final VecDataSet vecDataSet = learn.vecData();
-        final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
         final FMCBProgressPrinter progressPrinter = new FMCBProgressPrinter(learn, test, logDirAbsolutePath);
         boosting.addListener(progressPrinter);
 
         long startTime = System.currentTimeMillis();
-        final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+        final Ensemble ensemble = boosting.fit(learn);
         System.setOut(progressPrinter.getEvaluationOutput());
 
 //    Interval.setStart(startTime);

@@ -12,7 +12,7 @@ import com.expleague.ml.methods.multiclass.gradfac.FMCBoosting;
  * User: qdeee
  * Date: 18.05.17
  */
-public class FMCBoostingBuilder implements Factory<VecOptimization> {
+public class FMCBoostingBuilder implements Factory<FMCBoosting> {
   private final Factory<VecOptimization> defaultWeakBuilder = new BootstrapOptimizationBuilder();
 
   public static FastRandom defaultRandom;
@@ -45,7 +45,7 @@ public class FMCBoostingBuilder implements Factory<VecOptimization> {
   }
 
   @Override
-  public VecOptimization create() {
+  public FMCBoosting create() {
     if (weak == null) {
       weak = defaultWeakBuilder.create();
     }

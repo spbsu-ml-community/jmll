@@ -1,10 +1,12 @@
 package com.expleague.fmcb;
 
 import com.expleague.commons.math.Trans;
+import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;
+import com.expleague.commons.math.vectors.VecTools;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.ml.GridTools;
-import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.MCTools;
 import com.expleague.ml.data.tools.Pool;
@@ -13,14 +15,17 @@ import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
-import com.expleague.ml.loss.blockwise.BlockwiseMLLLogit;
 import com.expleague.ml.methods.multiclass.gradfac.FMCBoosting;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.MultiClassModel;
 import org.apache.commons.cli.*;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.zip.GZIPInputStream;
 
 public class FMCBoostingMain {
@@ -83,13 +88,13 @@ public class FMCBoostingMain {
             .argName("DEPTH")
             .type(Integer.class)
             .build());
-    options.addOption(Option.builder()
-            .longOpt("early_stopping_rounds")
-            .desc("Early stopping rounds")
-            .hasArg()
-            .argName("EARLY_STOPPING_ROUNDS")
-            .type(Integer.class)
-            .build());
+//    options.addOption(Option.builder()
+//            .longOpt("early_stopping_rounds")
+//            .desc("Early stopping rounds")
+//            .hasArg()
+//            .argName("EARLY_STOPPING_ROUNDS")
+//            .type(Integer.class)
+//            .build());
     options.addOption(Option.builder()
             .longOpt("ensemble_size")
             .desc("Ensemble size")
@@ -127,6 +132,13 @@ public class FMCBoostingMain {
             .type(String.class)
             .build());
     options.addOption(Option.builder()
+            .longOpt("valid_pred")
+            .desc("Path to the file with predictions on valid dataset")
+            .hasArg()
+            .argName("VALID_PRED")
+            .type(String.class)
+            .build());
+    options.addOption(Option.builder()
             .longOpt("test_pred")
             .desc("Path to the file with predictions on test dataset")
             .hasArg()
@@ -140,27 +152,66 @@ public class FMCBoostingMain {
             .argName("IS_GBDT")
             .type(Boolean.class)
             .build());
+    options.addOption(Option.builder()
+            .longOpt("format")
+            .desc("Dataset format")
+            .hasArg()
+            .argName("FORMAT")
+            .type(String.class)
+            .build());
   }
 
-  private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> valid, final Pool<?> test, final int earlyStoppingRounds) {
-    final VecDataSet trainVecDataSet = train.vecData();
-    final BlockwiseMLLLogit trainTarget = train.target(BlockwiseMLLLogit.class);
-    final VecDataSet validVecDataSet = valid != null ? valid.vecData() : null;
-    final BlockwiseMLLLogit validTarget = valid != null ? valid.target(BlockwiseMLLLogit.class) : null;
-    boosting.setEarlyStopping(validVecDataSet, validTarget, earlyStoppingRounds);
+  private static Trans fit(final FMCBoosting boosting, final Pool<?> train, final Pool<?> valid) {
+    final boolean isMultiLabel = train.tcount() > 1;
+    FMCBoosting.Metric metric = isMultiLabel ? new FMCBoosting.Metric.Precision(5) : new FMCBoosting.Metric.Accuracy();
+
+    final List<Consumer<Trans>> evaluators = new ArrayList<>();
+
+    evaluators.add(new Consumer<Trans>() {
+      private static final int INTERVAL = 100;
+      int iteration;
+
+      @Override
+      public void accept(Trans trans) {
+        if (++iteration % INTERVAL == 0) {
+          System.out.println("\nIteration #" + iteration);
+        }
+      }
+    });
+
+    evaluators.add(new FMCBoosting.Evaluator("Train", train, metric));
+
+    if (valid != null) {
+      evaluators.add(new FMCBoosting.Evaluator("Valid", valid, metric));
+    }
+
+    // Add listeners
+    evaluators.forEach(boosting::addListener);
 
     long startTime = System.currentTimeMillis();
-    final Ensemble ensemble = boosting.fit(trainVecDataSet, trainTarget);
-    System.out.println(" training: " + (System.currentTimeMillis() - startTime) + "(ms)");
+    final Ensemble ensemble = boosting.fit(train);
+    System.out.println("\nTraining time: " + (System.currentTimeMillis() - startTime) + "(ms)");
 
     final Trans joined = ensemble.last() instanceof FuncJoin ? MCTools.joinBoostingResult(ensemble) : ensemble;
 
     return joined;
   }
 
-  private static Vec eval(final Trans ensemble, final Pool<?> test, final String comment) {
+  private static Vec predictClass(final Trans ensemble, final Pool<?> pool) {
     final MultiClassModel multiclassModel = new MultiClassModel(ensemble);
-    return multiclassModel.bestClassAll(test.vecData().data(), true);
+    return multiclassModel.bestClassAll(pool.vecData().data(), true);
+  }
+
+  private static Mx predictScores(final Trans ensemble, final Pool<?> pool) {
+    final Mx prediction = ensemble.transAll(pool.vecData().data(), true);
+    final Mx score = new VecBasedMx(prediction.rows(), prediction.columns() + 1);
+
+    // Copy scores
+    for (int i = 0; i < prediction.columns(); ++i) {
+      VecTools.assign(score.col(i), prediction.col(i));
+    }
+
+    return score;
   }
 
   private static void saveIntVec(final Vec data, final String path) throws Exception {
@@ -168,6 +219,42 @@ public class FMCBoostingMain {
     final PrintStream out = new PrintStream(new FileOutputStream(new File(path)));
     out.println(result);
     out.close();
+  }
+
+  private static void saveMx(final Mx data, final String path) throws Exception {
+    final PrintStream out = new PrintStream(new FileOutputStream(new File(path)));
+
+    for (int i = 0; i < data.rows(); ++i) {
+      final DoubleStream values = data.row(i).stream();
+      final String row = values.mapToObj(Double::toString).collect(Collectors.joining(","));
+      out.println(row);
+    }
+
+    out.close();
+  }
+
+  private static Pool<?> loadPool(String fileName, String format) throws IOException {
+    final FileInputStream file = new FileInputStream(fileName);
+    final InputStream in = fileName.endsWith("gz") ? new GZIPInputStream(file) : file;
+    InputStreamReader reader = new InputStreamReader(in);
+
+    if (format.equals("xml")) {
+      return DataTools.loadFromXMLFormat(fileName, reader);
+    }
+
+    return DataTools.loadFromFeaturesTxt(fileName, reader);
+  }
+
+  private static void evaluateAndSave(final Trans ensemble, final Pool<?> pool, final String path) throws Exception {
+    final boolean isMultiLabel = pool.tcount() > 1;
+
+    if (isMultiLabel) {
+      final Mx scores = predictScores(ensemble, pool);
+      saveMx(scores, path);
+    } else {
+      final Vec pred = predictClass(ensemble, pool);
+      saveIntVec(pred, path);
+    }
   }
 
   public static void main(String[] args) throws Exception {
@@ -194,37 +281,19 @@ public class FMCBoostingMain {
       final double lambda = Double.parseDouble(cmd.getOptionValue("lambda", "0"));
       final int maxIter = Integer.parseInt(cmd.getOptionValue("max_iter", "1000"));
       final int depth = Integer.parseInt(cmd.getOptionValue("depth", "5"));
-      final int earlyStoppingRounds = Integer.parseInt(cmd.getOptionValue("early_stopping_rounds", "0"));
+      // final int earlyStoppingRounds = Integer.parseInt(cmd.getOptionValue("early_stopping_rounds", "0"));
       final int binFactor = Integer.parseInt(cmd.getOptionValue("n_bins", "32"));
       final String trainPredPath = cmd.getOptionValue("train_pred", null);
+      final String validPredPath = cmd.getOptionValue("valid_pred", null);
       final String testPredPath = cmd.getOptionValue("test_pred", null);
       final int ensembleSize = Integer.parseInt(cmd.getOptionValue("ensemble_size", "5"));
       final boolean isGbdt = Boolean.parseBoolean(cmd.getOptionValue("is_gbdt", "true"));
+      final String format = cmd.getOptionValue("format", "txt");
       final FastRandom rng = new FastRandom(0);
 
-      Pool<?> train = null;
-      if (trainPath != null) {
-        final FileInputStream file = new FileInputStream(trainPath);
-        final InputStream in = trainPath.endsWith("gz") ? new GZIPInputStream(file) : file;
-        InputStreamReader trainReader = new InputStreamReader(in);
-        train = DataTools.loadFromFeaturesTxt(trainPath, trainReader);
-      }
-
-      Pool<?> valid = null;
-      if (validPath != null) {
-        final FileInputStream file = new FileInputStream(validPath);
-        final InputStream in = trainPath.endsWith("gz") ? new GZIPInputStream(file) : file;
-        InputStreamReader validReader = new InputStreamReader(in);
-        valid = DataTools.loadFromFeaturesTxt(validPath, validReader);
-      }
-
-      Pool<?> test = null;
-      if (testPath != null) {
-        final FileInputStream file = new FileInputStream(testPath);
-        final InputStream in = testPath.endsWith("gz") ? new GZIPInputStream(file) : file;
-        final InputStreamReader testReader = new InputStreamReader(in);
-        test = DataTools.loadFromFeaturesTxt(testPath, testReader);
-      }
+      Pool<?> train = trainPath != null ? loadPool(trainPath, format) : null;
+      Pool<?> valid = validPath != null ? loadPool(validPath, format) : null;
+      Pool<?> test = testPath != null ? loadPool(testPath, format) : null;
 
       Trans ensemble = null;
       if (train == null && model != null) {
@@ -250,21 +319,23 @@ public class FMCBoostingMain {
                 isGbdt
         );
 
-        ensemble = fit(boosting, train, valid, test, earlyStoppingRounds);
+        ensemble = fit(boosting, train, valid);
 
         if (model != null) {
           DataTools.writeModel(ensemble, new FileOutputStream(new File(model)));
         }
       }
 
-      if (test != null && testPredPath != null) {
-        final Vec pred = eval(ensemble, test, "test");
-        saveIntVec(pred, testPredPath);
+      if (train != null && trainPredPath != null) {
+        evaluateAndSave(ensemble, train, trainPredPath);
       }
 
-      if (train != null && trainPredPath != null) {
-        final Vec pred = eval(ensemble, train, "train");
-        saveIntVec(pred, trainPredPath);
+      if (valid != null && validPredPath != null) {
+        evaluateAndSave(ensemble, valid, validPredPath);
+      }
+
+      if (test != null && testPredPath != null) {
+        evaluateAndSave(ensemble, test, testPredPath);
       }
     } catch (Exception e) {
       throw e;

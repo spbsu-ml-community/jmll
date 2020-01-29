@@ -2,7 +2,6 @@ package com.expleague.exp.multiclass;
 
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
@@ -53,7 +52,7 @@ public class GradFacTest extends TestCase {
     if (learn == null || test == null) {
       final Pool<?> pool = TestResourceLoader.loadPool("multiclass/ds_letter/letter.tsv.gz");
       pool.addTarget(TargetMeta.create("letter", "", FeatureMeta.ValueType.INTS),
-          VecTools.toIntSeq(pool.target(L2.class).target)
+              VecTools.toIntSeq(pool.target(L2.class).target)
       );
       final int[][] idxs = DataTools.splitAtRandom(pool.size(), new FastRandom(100500), 0.9, 0.1);
       learn = pool.sub(idxs[0]);
@@ -95,11 +94,11 @@ public class GradFacTest extends TestCase {
     @Override
     public String toString() {
       return "ParameterCollector{" +
-          "lambda=" + lambda +
-          ", alpha=" + alpha +
-          ", l2=" + l2 +
-          ", l1=" + l1 +
-          '}';
+              "lambda=" + lambda +
+              ", alpha=" + alpha +
+              ", l2=" + l2 +
+              ", l1=" + l1 +
+              '}';
     }
   }
 
@@ -163,28 +162,28 @@ public class GradFacTest extends TestCase {
 
   public void testGradFacBaseline() throws Exception {
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
-        new GradFacMulticlass(
-            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-            new ALS(20),
-            LogL2.class
-        ),
-        L2.class,
-        10000,
-        14
+            new GradFacMulticlass(
+                    new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                    new ALS(20),
+                    LogL2.class
+            ),
+            L2.class,
+            10000,
+            14
     );
     fitModel(boosting);
   }
 
   public void testGradFacSALS() throws Exception {
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
-        new GradFacMulticlass(
-            new GreedyObliviousTree<>(GridTools.medianGrid(learn.vecData(), 32), 5),
-            new StochasticALS(new FastRandom(0), 100),
-            LogL2.class
-        ),
-        L2.class,
-        10000,
-        5
+            new GradFacMulticlass(
+                    new GreedyObliviousTree<>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                    new StochasticALS(new FastRandom(0), 100),
+                    LogL2.class
+            ),
+            L2.class,
+            10000,
+            5
     );
     fitModel(boosting);
   }
@@ -231,46 +230,46 @@ public class GradFacTest extends TestCase {
 
   public void testGradFacElasticNet() throws Exception {
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
-        new GradFacMulticlass(
-            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-            new ElasticNetFactorization(1, 1., 1., 1.),
-            SatL2.class
-        ),
-        L2.class,
-        20000,
-        7
+            new GradFacMulticlass(
+                    new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                    new ElasticNetFactorization(1, 1., 1., 1.),
+                    SatL2.class
+            ),
+            L2.class,
+            20000,
+            7
     );
     fitModel(boosting);
   }
 
   public void testGradFacElasticNetColumnsBootstrap() throws Exception {
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
-        new MultiClassColumnBootstrapOptimization(
-            new GradFacMulticlass(
-                new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-                new ElasticNetFactorization(20, 1e-2, 0.95, 0.15 * 1e-6),
-                LogL2.class,
-                true
+            new MultiClassColumnBootstrapOptimization(
+                    new GradFacMulticlass(
+                            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                            new ElasticNetFactorization(20, 1e-2, 0.95, 0.15 * 1e-6),
+                            LogL2.class,
+                            true
+                    ),
+                    new FastRandom(100500),
+                    1.
             ),
-            new FastRandom(100500),
-            1.
-        ),
-        L2.class,
-        5000,
-        7
+            L2.class,
+            5000,
+            7
     );
     fitModel(boosting);
   }
 
   public void testBaseline() throws Exception {
     final GradientBoosting<BlockwiseMLLLogit> boosting = new GradientBoosting<>(
-        new MultiClass(
-            new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
-            LogL2.class
-        ),
-        L2.class,
-        2000,
-        7
+            new MultiClass(
+                    new GreedyObliviousTree<L2>(GridTools.medianGrid(learn.vecData(), 32), 5),
+                    LogL2.class
+            ),
+            L2.class,
+            2000,
+            7
     );
     fitModel(boosting);
   }
@@ -289,8 +288,7 @@ public class GradFacTest extends TestCase {
     if (ensemble.last() instanceof FuncJoin) {
       final FuncJoin joined = MCTools.joinBoostingResult(ensemble);
       multiclassModel = new MultiClassModel(joined);
-    }
-    else
+    } else
       multiclassModel = new MultiClassModel(ensemble);
 
     Interval.start();
@@ -301,12 +299,10 @@ public class GradFacTest extends TestCase {
   }
 
   private void fitModel(final FMCBoosting boosting) {
-    final VecDataSet vecDataSet = learn.vecData();
-    final BlockwiseMLLLogit globalLoss = learn.target(BlockwiseMLLLogit.class);
     final MulticlassProgressPrinter multiclassProgressPrinter = new MulticlassProgressPrinter(learn, test);
     boosting.addListener(multiclassProgressPrinter);
 
-    final Ensemble ensemble = boosting.fit(vecDataSet, globalLoss);
+    final Ensemble ensemble = boosting.fit(learn);
     final Trans joined = ensemble.last() instanceof FuncJoin ? MCTools.joinBoostingResult(ensemble) : ensemble;
     final MultiClassModel multiclassModel = new MultiClassModel(joined);
     final String learnResult = MCTools.evalModel(multiclassModel, learn, "[LEARN] ", false);
