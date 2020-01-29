@@ -8,37 +8,51 @@ import com.expleague.commons.math.Func;
 import com.expleague.commons.math.MathTools;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.*;
+import com.expleague.commons.math.vectors.impl.idxtrans.RowsPermutation;
 import com.expleague.commons.math.vectors.impl.mx.MxByRowsBuilder;
+import com.expleague.commons.math.vectors.impl.mx.SparseMx;
+import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.math.vectors.impl.vectors.IndexTransVec;
+import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
 import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.*;
 import com.expleague.commons.system.RuntimeUtils;
 import com.expleague.commons.text.StringUtils;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.commons.util.JSONTools;
-import com.expleague.ml.impl.BFGridConstructor;
-import com.expleague.ml.impl.BFGridImpl;
+import com.expleague.commons.util.Pair;
+import com.expleague.ml.BFGrid;
 import com.expleague.ml.CompositeTrans;
+import com.expleague.ml.TargetFunc;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.data.set.VecDataSet;
 import com.expleague.ml.data.set.impl.VecDataSetImpl;
+import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
 import com.expleague.ml.dynamicGrid.models.ObliviousTreeDynamicBin;
+import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
-import com.expleague.ml.BFGrid;
+import com.expleague.ml.func.TransJoin;
+import com.expleague.ml.impl.BFGridConstructor;
+import com.expleague.ml.impl.BFGridImpl;
 import com.expleague.ml.io.ModelsSerializationRepository;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.loss.WeightedLoss;
+import com.expleague.ml.meta.DSItem;
 import com.expleague.ml.meta.FeatureMeta;
 import com.expleague.ml.meta.GroupedDSItem;
 import com.expleague.ml.meta.PoolFeatureMeta;
+import com.expleague.ml.meta.impl.JsonDataSetMeta;
 import com.expleague.ml.meta.impl.JsonFeatureMeta;
 import com.expleague.ml.meta.impl.JsonTargetMeta;
 import com.expleague.ml.meta.items.FakeItem;
 import com.expleague.ml.meta.items.QURLItem;
 import com.expleague.ml.models.MultiClassModel;
+import com.expleague.ml.models.ObliviousMultiClassTree;
 import com.expleague.ml.models.ObliviousTree;
+import com.expleague.ml.models.multilabel.MultiLabelBinarizedModel;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -50,19 +64,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import com.expleague.commons.math.vectors.impl.idxtrans.RowsPermutation;
-import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.commons.math.vectors.impl.vectors.SparseVec;
-import com.expleague.commons.util.ArrayTools;
-import com.expleague.commons.util.Pair;
-import com.expleague.ml.TargetFunc;
-import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
-import com.expleague.ml.func.Ensemble;
-import com.expleague.ml.func.TransJoin;
-import com.expleague.ml.meta.DSItem;
-import com.expleague.ml.meta.impl.JsonDataSetMeta;
-import com.expleague.ml.models.ObliviousMultiClassTree;
-import com.expleague.ml.models.multilabel.MultiLabelBinarizedModel;
 import gnu.trove.list.TDoubleList;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
@@ -72,23 +73,23 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
-import java.nio.file.Paths;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -201,6 +202,67 @@ public class DataTools {
     );
   }
 
+  public static Pool<FakeItem> loadFromXMLFormat(final String file) throws IOException {
+    return loadFromXMLFormat(file, file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
+  }
+
+  public static Pool<FakeItem> loadFromXMLFormat(final String fileName, final Reader in) throws IOException {
+    final List<SparseVec> target = new ArrayList<>();
+    final List<SparseVec> data = new ArrayList<>();
+
+    CharSeqTools.processLines(in, new Consumer<CharSequence>() {
+      int lineIndex = 0;
+      int numSamples;
+      int numFeatures;
+      int numLabels;
+
+      @Override
+      public void accept(CharSequence arg) {
+        arg = CharSeqTools.trim(arg);
+        final CharSequence[] parts = CharSeqTools.split(arg, ' ');
+
+        if (lineIndex == 0) {
+          numSamples = CharSeqTools.parseInt(parts[0]);
+          numFeatures = CharSeqTools.parseInt(parts[1]);
+          numLabels = CharSeqTools.parseInt(parts[2]);
+        } else {
+          final int indexOfСolon = CharSeqTools.indexOf(parts[0], ":");
+          final boolean hasLabels = indexOfСolon == -1;
+
+          // Parse labels
+          final SparseVec targets = new SparseVec(numLabels);
+
+          if (hasLabels) {
+            final CharSequence[] labels = CharSeqTools.split(parts[0], ',');
+            for (int i = 0; i < labels.length; ++i) {
+              final int index = CharSeqTools.parseInt(labels[i]);
+              targets.set(index, 1.0);
+            }
+          }
+
+          // Parse features
+          SparseVec features = new SparseVec(numFeatures);
+          for (int i = hasLabels ? 1 : 0; i < parts.length; ++i) {
+            CharSequence[] feature = CharSeqTools.split(parts[i], ':');
+            final int index = CharSeqTools.parseInt(feature[0]);
+            final double value = CharSeqTools.parseDouble(feature[1]);
+            features.set(index, value);
+          }
+
+          target.add(targets);
+          data.add(features);
+        }
+
+        ++lineIndex;
+      }
+    });
+
+    return FakePool.create(
+            new SparseMx(data.toArray(new SparseVec[0])),
+            new SparseMx(target.toArray(new SparseVec[0]))
+    );
+  }
+
   public static Pool<QURLItem> loadFromFeaturesTxt(final String file) throws IOException {
     return loadFromFeaturesTxt(file, file.endsWith(".gz") ? new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) : new FileReader(file));
   }
@@ -230,9 +292,9 @@ public class DataTools {
     });
 
     return new FeaturesTxtPool(
-        new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
-        new VecBasedMx(featuresCount[0], data.build()),
-        target.build()
+            new ArraySeq<>(items.toArray(new QURLItem[items.size()])),
+            new VecBasedMx(featuresCount[0], data.build()),
+            target.build()
     );
   }
 
@@ -332,10 +394,9 @@ public class DataTools {
   }
 
   public static void writeModel(final Function<?, Vec> result, FeatureMeta[] features, Path to) {
-    try (BufferedWriter writer = Files.newBufferedWriter(to)){
+    try (BufferedWriter writer = Files.newBufferedWriter(to)) {
       writeModel(result, features, writer);
-    }
-    catch (IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -352,8 +413,7 @@ public class DataTools {
       writer.append('\n');
       writer.append(result.getClass().getCanonicalName()).append("\t").append(Boolean.toString(grid != null)).append("\n");
       writer.append(SERIALIZATION.write(result));
-    }
-    catch (IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -380,12 +440,11 @@ public class DataTools {
         //noinspection unchecked
         final Class<? extends Function> modelClazz = (Class<? extends Function>) Class.forName(properties[0].toString());
         //noinspection unchecked
-        model = (T)customizedRepository.read(chopper.rest(), modelClazz);
+        model = (T) customizedRepository.read(chopper.rest(), modelClazz);
         grid.build();
       }
       return Pair.create(model, meta);
-    }
-    catch (IOException | ClassNotFoundException e) {
+    } catch (IOException | ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
   }
@@ -395,9 +454,8 @@ public class DataTools {
     try {
       Pair<Function, FeatureMeta[]> pair = readModel(new CharSeqReader(CharSeq.create(modelCS)));
       //noinspection unchecked
-      return (T)pair.getFirst();
-    }
-    catch (RuntimeException ignored) { // trying modern deserialization first
+      return (T) pair.getFirst();
+    } catch (RuntimeException ignored) { // trying modern deserialization first
       ignored.printStackTrace();
     }
     final LineNumberReader modelReader = new LineNumberReader(new CharSeqReader(modelCS));
@@ -491,8 +549,7 @@ public class DataTools {
     try {
       final Trans trans = readModel(modelInputStream, repository);
       return Pair.create(true, "Valid model : " + trans.getClass().getSimpleName());
-    }
-    catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException e) {
       return Pair.create(false, "Invalid model : " + e.getCause());
     }
   }
@@ -501,58 +558,50 @@ public class DataTools {
     return validateModel(new FileInputStream(filePath), repository);
   }
 
-  public static DynamicGrid dynamicGrid(final Function<?,Vec> result) {
+  public static DynamicGrid dynamicGrid(final Function<?, Vec> result) {
     if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
       return dynamicGrid(ensemble.last());
-    }
-    else if (result instanceof ObliviousTreeDynamicBin) {
+    } else if (result instanceof ObliviousTreeDynamicBin) {
       return ((ObliviousTreeDynamicBin) result).grid();
     }
     return null;
   }
 
-  public static BFGrid grid(final Function<?,Vec> result) {
+  public static BFGrid grid(final Function<?, Vec> result) {
     if (result instanceof CompositeTrans) {
       final CompositeTrans composite = (CompositeTrans) result;
       BFGrid grid = grid(composite.f);
       grid = grid == null ? grid(composite.g) : grid;
       return grid;
-    }
-    else if (result instanceof FuncJoin) {
+    } else if (result instanceof FuncJoin) {
       final FuncJoin join = (FuncJoin) result;
       for (final Func dir : join.dirs()) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    }
-    else if (result instanceof TransJoin) {
+    } else if (result instanceof TransJoin) {
       final TransJoin join = (TransJoin) result;
       for (final Trans dir : join.dirs) {
         final BFGrid grid = grid(dir);
         if (grid != null)
           return grid;
       }
-    }
-    else if (result instanceof Ensemble) {
+    } else if (result instanceof Ensemble) {
       final Ensemble ensemble = (Ensemble) result;
       for (int i = 0; i < ensemble.size(); i++) {
         final BFGrid grid = grid(ensemble.model(i));
         if (grid != null)
           return grid;
       }
-    }
-    else if (result instanceof MultiClassModel) {
+    } else if (result instanceof MultiClassModel) {
       return grid(((MultiClassModel) result).getInternModel());
-    }
-    else if (result instanceof MultiLabelBinarizedModel) {
+    } else if (result instanceof MultiLabelBinarizedModel) {
       return grid(((MultiLabelBinarizedModel) result).getInternModel());
-    }
-    else if (result instanceof ObliviousTree) {
+    } else if (result instanceof ObliviousTree) {
       return ((ObliviousTree) result).grid();
-    }
-    else if (result instanceof ObliviousMultiClassTree) {
+    } else if (result instanceof ObliviousMultiClassTree) {
       return ((ObliviousMultiClassTree) result).binaryClassifier().grid();
     }
     return null;
@@ -603,8 +652,7 @@ public class DataTools {
     try {
       //noinspection unchecked
       return (Class<? extends TargetFunc>) Class.forName("com.expleague.ml.loss." + name);
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       throw new RuntimeException("Unable to create requested target: " + name, e);
     }
   }
@@ -692,7 +740,7 @@ public class DataTools {
       out.append("items").append('\t');
       final ObjectMapper mapper = new ObjectMapper(jsonFactory);
       final AnnotationIntrospector introspector =
-          new JaxbAnnotationIntrospector(mapper.getTypeFactory());
+              new JaxbAnnotationIntrospector(mapper.getTypeFactory());
       {
         mapper.setAnnotationIntrospector(introspector);
         generator.writeStartObject();
@@ -781,24 +829,23 @@ public class DataTools {
             final JsonFeatureMeta fmeta = parser.readValueAs(JsonFeatureMeta.class);
             final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
             builder.newFeature(fmeta, SERIALIZATION.read(
-                chopper.chop('\n'),
-                vecClass));
+                    chopper.chop('\n'),
+                    vecClass));
             break;
           }
           case "target": {
             final JsonTargetMeta fmeta = parser.readValueAs(JsonTargetMeta.class);
             final Class<? extends Seq<?>> vecClass = fmeta.type().clazz();
             builder.newTarget(fmeta, SERIALIZATION.read(
-                chopper.chop('\n'),
-                vecClass));
+                    chopper.chop('\n'),
+                    vecClass));
             break;
           }
         }
       }
       //noinspection unchecked
       return (Pool<T>) builder.create();
-    }
-    catch (RuntimeException e) {
+    } catch (RuntimeException e) {
       if (e.getCause() instanceof IOException) {
         throw (IOException) e.getCause();
       }
@@ -812,8 +859,8 @@ public class DataTools {
 
   public static Reader gzipOrFileReader(final File file) throws IOException {
     return file.getName().endsWith(".gz") ?
-        new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) :
-        new FileReader(file);
+            new InputStreamReader(new GZIPInputStream(new FileInputStream(file))) :
+            new FileReader(file);
   }
 
   public static Pool<? extends DSItem> loadFromFile(final File file) throws IOException {
@@ -824,16 +871,16 @@ public class DataTools {
 
   public static <S extends Seq<?>> Pair<VecDataSet, S> createSubset(final VecDataSet sourceDS, final S sourceTarget, final int[] idxs) {
     final VecDataSet subSet = new VecDataSetImpl(
-        new VecBasedMx(
-            sourceDS.xdim(),
-            new IndexTransVec(sourceDS.data(),
-                new RowsPermutation(
-                    idxs,
-                    sourceDS.xdim()
-                )
-            )
-        ),
-        sourceDS
+            new VecBasedMx(
+                    sourceDS.xdim(),
+                    new IndexTransVec(sourceDS.data(),
+                            new RowsPermutation(
+                                    idxs,
+                                    sourceDS.xdim()
+                            )
+                    )
+            ),
+            sourceDS
     );
     final S subTarget = (S) ArrayTools.cut((Seq<?>) sourceTarget, idxs);
     return Pair.create(subSet, subTarget);
@@ -843,15 +890,15 @@ public class DataTools {
     final VecDataSet vecDataSet = pool.vecData();
 
     final StringBuilder builder = new StringBuilder()
-        .append("Pool size = ").append(pool.size())
-        .append("\n")
-        .append("VecDS features count = ").append(vecDataSet.xdim())
-        .append("\n");
+            .append("Pool size = ").append(pool.size())
+            .append("\n")
+            .append("VecDS features count = ").append(vecDataSet.xdim())
+            .append("\n");
     for (int i = 0; i < pool.fcount(); i++) {
       builder
-          .append("\n")
-          .append("feature #").append(i)
-          .append(": type = ").append(pool.fmeta(i).type());
+              .append("\n")
+              .append("feature #").append(i)
+              .append(": type = ").append(pool.fmeta(i).type());
     }
     return builder.toString();
   }
@@ -913,9 +960,9 @@ public class DataTools {
       final VecIterator vecIterator = data.row(i).nonZeroes();
       while (vecIterator.advance()) {
         out.append("\t")
-            .append(String.valueOf(vecIterator.index()))
-            .append(":")
-            .append(String.valueOf(vecIterator.value()));
+                .append(String.valueOf(vecIterator.index()))
+                .append(":")
+                .append(String.valueOf(vecIterator.value()));
       }
       out.append("\n");
     }
