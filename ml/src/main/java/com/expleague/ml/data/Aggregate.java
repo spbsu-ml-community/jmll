@@ -223,10 +223,10 @@ public class Aggregate {
             final AdditiveStatistics bin2 = binsLocal[offset + binLocal[idx2]];
             final AdditiveStatistics bin3 = binsLocal[offset + binLocal[idx3]];
             final AdditiveStatistics bin4 = binsLocal[offset + binLocal[idx4]];
-            bin1.append(idx1, weights[i]);
-            bin2.append(idx2, weights[i + 1]);
-            bin3.append(idx3, weights[i + 2]);
-            bin4.append(idx4, weights[i + 3]);
+            bin1.append(idx1, weights[idx1]);
+            bin2.append(idx2, weights[idx2]);
+            bin3.append(idx3, weights[idx3]);
+            bin4.append(idx4, weights[idx4]);
           }
           for (int i = 4 * (indicesLocal.length / 4); i < indicesLocal.length; i++) {
             binsLocal[offset + bin[indicesLocal[i]]].append(indicesLocal[i], weights[i]);

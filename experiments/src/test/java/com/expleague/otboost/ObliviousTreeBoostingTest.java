@@ -11,6 +11,7 @@ import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.loss.*;
 import com.expleague.ml.methods.*;
 import com.expleague.ml.methods.greedyRegion.*;
+import com.expleague.ml.methods.trees.GreedyObliviousLinearTree;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.ObliviousTree;
 
@@ -50,12 +51,10 @@ public class ObliviousTreeBoostingTest extends GridTest {
       final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", _learn.vecData(), _learn.target(L2.class));
       final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", _validate.vecData(), _validate.target(L2.class));
       final Consumer<Trans> modelPrinter = new ModelPrinter();
-      final Consumer<Trans> qualityCalcer = new QualityCalcer();
       boosting.addListener(counter);
       boosting.addListener(learnListener);
       boosting.addListener(validateListener);
-      boosting.addListener(qualityCalcer);
-//      boosting.addListener(modelPrinter);
+      boosting.addListener(modelPrinter);
       final Ensemble ans = boosting.fit(_learn.vecData(), loss);
       Vec current = new ArrayVec(_validate.size());
       for (int i = 0; i < _validate.size(); i++) {
@@ -70,8 +69,20 @@ public class ObliviousTreeBoostingTest extends GridTest {
 
   public void testOTBoost() {
     final GradientBoosting<SatL2> boosting = new GradientBoosting<SatL2>(
-        new BootstrapOptimization<>(new GreedyObliviousTree<>(GridTools.medianGrid(learn.vecData(), 32), 6), rng),
+        new BootstrapOptimization<>(
+            new GreedyObliviousTree<>(GridTools.medianGrid(learn.vecData(), 32), 6),
+        rng),
         L2Reg.class, 2000, 0.005
+    );
+    new addBoostingListeners<>(boosting, learn.target(SatL2.class), learn, validate);
+  }
+
+  public void testOTLinearBoost() {
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<>(
+        new BootstrapOptimization<>(
+            new GreedyObliviousLinearTree<>(GridTools.medianGrid(learn.vecData(), 32), 6),
+          rng),
+        L2Reg.class, 2000, 0.003
     );
     new addBoostingListeners<>(boosting, learn.target(SatL2.class), learn, validate);
   }

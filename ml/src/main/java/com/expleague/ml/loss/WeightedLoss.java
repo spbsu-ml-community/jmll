@@ -8,6 +8,7 @@ import gnu.trove.list.array.TIntArrayList;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.IntFunction;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 /**
@@ -72,6 +73,10 @@ public class WeightedLoss<BasedOn extends AdditiveLoss> extends Func.Stub implem
 
   public double weight(final int index) {
     return weights[index];
+  }
+
+  public double[] weights() {
+    return IntStream.of(weights).mapToDouble(w -> (double)w).toArray();
   }
 
   public BasedOn base() {
