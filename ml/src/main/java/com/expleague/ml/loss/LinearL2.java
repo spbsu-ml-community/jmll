@@ -73,7 +73,7 @@ public class LinearL2 extends FuncC1.Stub implements AdditiveLoss<LinearL2.Stat>
     final Vec xy_covar = VecTools.copy(stats.xy.sub(0, wHat.dim()));
     VecTools.incscale(xy_covar, stats.sumX.sub(0, wHat.dim()), -stats.sum / weight);
     VecTools.scale(xy_covar, 1. / weight);
-    final double reg = (1 + 0.001 * Math.log(weight + 1));
+    final double reg = 1;//(1 + 0.001 * Math.log(weight + 1));
     final double scoreFromLinear = weight * VecTools.multiply(wHat, xy_covar);
     final double scoreFromConst = stats.sum * stats.sum / weight;
     final double targetValue = scoreFromConst + scoreFromLinear - lambda * VecTools.l2(wHat);

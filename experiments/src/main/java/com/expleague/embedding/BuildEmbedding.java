@@ -1,13 +1,7 @@
 package com.expleague.embedding;
 
-import com.expleague.commons.io.StreamTools;
-import com.expleague.commons.seq.CharSeq;
-import com.expleague.embedding.evaluation.metrics.CloserFurtherMetric;
-import com.expleague.embedding.evaluation.metrics.SentenceGenerationMetric;
-import com.expleague.embedding.evaluation.metrics.WordAnalogiesMetric;
 import com.expleague.ml.embedding.Embedding;
-import com.expleague.ml.embedding.LM.LWMatrixMultBuilder;
-import com.expleague.ml.embedding.impl.EmbeddingImpl;
+import com.expleague.ml.embedding.decomp.DecompBuilder;
 import com.expleague.ml.embedding.glove.GloVeBuilder;
 
 import java.io.IOException;
@@ -28,18 +22,6 @@ public class BuildEmbedding {
         .window(Embedding.WindowType.LINEAR, 15, 15)
         .file(Paths.get(file))
         .build();
-    try (Writer to = Files.newBufferedWriter(Paths.get(embeddingFile))) {
-      Embedding.write(result, to);
-    }
-
-    try (Reader from = Files.newBufferedReader(Paths.get(embeddingFile))) {
-      final EmbeddingImpl embedding = EmbeddingImpl.read(from, CharSeq.class);
-      CloserFurtherMetric metric = new CloserFurtherMetric(embedding);
-      if (!Files.exists(Paths.get(resultFile)))
-        Files.createDirectory(Paths.get(resultFile));
-      metric.measure(metricFile, resultFile);
-    }
-
 
     /*NgramGloveBuilder glove_builder = (NgramGloveBuilder) Embedding.builder(Embedding.Type.NGRAM_GLOVE);
     String file = args[0];
