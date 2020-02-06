@@ -4,7 +4,6 @@ import com.expleague.commons.func.impl.WeakListenerHolderImpl;
 import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.RowsVecArrayMx;
@@ -23,9 +22,9 @@ import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.factorization.Factorization;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.ScaledVectorFunc;
+import com.expleague.ml.loss.AdditiveLoss;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.SatL2;
-import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.methods.VecOptimization;
 import com.expleague.ml.models.ObliviousTree;
 
@@ -41,7 +40,7 @@ import java.util.stream.Stream;
  * Experts League Created by solar on 05.05.17.
  */
 public class FMCBoosting extends WeakListenerHolderImpl<Trans> {
-  protected final VecOptimization<StatBasedLoss> weak;
+  protected final VecOptimization<AdditiveLoss> weak;
   private final Class<? extends L2> factory;
   private final Factorization factorize;
   private final int iterationsCount;
@@ -51,22 +50,22 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> {
   private BinarizedDataSet bds = null;
   private final FastRandom rfRnd = new FastRandom(13);
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+  public FMCBoosting(final Factorization factorize, final VecOptimization<AdditiveLoss> weak,
                      final int iterationsCount, final double step) {
     this(factorize, weak, SatL2.class, iterationsCount, step, 1, false);
   }
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+  public FMCBoosting(final Factorization factorize, final VecOptimization<AdditiveLoss> weak,
                      final int iterationsCount, final double step, final int ensembleSize) {
     this(factorize, weak, SatL2.class, iterationsCount, step, ensembleSize, false);
   }
 
-  public FMCBoosting(final Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+  public FMCBoosting(final Factorization factorize, final VecOptimization<AdditiveLoss> weak,
                      final Class<? extends L2> factory, final int iterationsCount, final double step) {
     this(factorize, weak, factory, iterationsCount, step, 1, false);
   }
 
-  public FMCBoosting(Factorization factorize, final VecOptimization<StatBasedLoss> weak,
+  public FMCBoosting(Factorization factorize, final VecOptimization<AdditiveLoss> weak,
                      final Class<? extends L2> factory, final int iterationsCount, final double step,
                      final int ensembleSize, final boolean isGbdt) {
     this.factorize = factorize;
@@ -314,7 +313,7 @@ public class FMCBoosting extends WeakListenerHolderImpl<Trans> {
     @Override
     public void accept(Trans trans) {
       Mx update = trans.transAll(data);
-      MxTools.adjust(score, update);
+      VecTools.append(score, update);
 
       if (++iteration % INTERVAL == 0) {
         for (Metric metric : metrics) {

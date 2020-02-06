@@ -14,7 +14,6 @@ import com.expleague.ml.factorization.impl.StochasticALS;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.func.FuncJoin;
 import com.expleague.ml.loss.L2;
-import com.expleague.ml.loss.StatBasedLoss;
 import com.expleague.ml.methods.multiclass.gradfac.FMCBoosting;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.MultiClassModel;
@@ -311,7 +310,7 @@ public class FMCBoostingMain {
       if (train != null) {
         final FMCBoosting boosting = new FMCBoosting(
                 new StochasticALS(rng, gamma, maxIter, lambda, 0.0, null),
-                new GreedyObliviousTree<StatBasedLoss>(GridTools.medianGrid(train.vecData(), binFactor), depth),
+                new GreedyObliviousTree<>(GridTools.medianGrid(train.vecData(), binFactor), depth),
                 L2.class,
                 iterCount,
                 step,
