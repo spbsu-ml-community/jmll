@@ -28,10 +28,10 @@ public class DictTools {
     //              .replaceAll("['\"<>()\\[\\]{};+\n\r]", " ")
     //              .replaceAll("\\s+", " ");
     //      System.out.println(result);
-    return s.toLowerCase().replaceAll("[^\\pL\\pN]", "");
+    return s.toLowerCase().replaceAll("[^\\pL\\pN ]", "");
   }
 
-  private static <T extends Comparable<T>> void buildDictionary(final Path dir, int bits, final int dictSize, final int iterNum) throws IOException {
+  public static <T extends Comparable<T>> void buildDictionary(final Path dir, int bits, final int dictSize, final int iterNum) throws IOException {
     final Set<T> allCharacters = new HashSet<>();
     final List<Seq<T>> content = new ArrayList<>();
     DictTools.<T>getDirContentStream(dir, bits).forEach(content::add);

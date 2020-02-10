@@ -63,6 +63,11 @@ public class EmbeddingImpl<T> implements Embedding<T> {
     return mapping.get(t);
   }
 
+  @Override
+  public int dim() {
+    return dim;
+  }
+
   public void write(Writer to) {
     mapping.forEach((word, vec) -> {
       try {

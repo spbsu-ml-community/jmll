@@ -70,10 +70,10 @@ public interface FeatureSet<T extends DSItem> extends Consumer<T> {
 
     private void init(FeatureMeta[] metas) {
       this.metas = metas;
-      metaIndex = new TObjectIntHashMap<>(metas.length * 2, 0.7f, -1);
+      this.metaIndex = new TObjectIntHashMap<>(metas.length * 2, 0.7f, -1);
       IntStream.range(0, metas.length).forEach(idx -> metaIndex.put(metas[idx], idx));
-      current = new ArrayVec(metas.length);
-      assigned = new BitSet(metas.length);
+      this.current = new ArrayVec(metas.length);
+      this.assigned = new BitSet(metas.length);
     }
 
     protected void set(FeatureMeta meta, double value) {

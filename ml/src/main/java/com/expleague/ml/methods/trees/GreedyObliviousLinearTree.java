@@ -78,7 +78,7 @@ public class GreedyObliviousLinearTree<Loss extends AdditiveLoss> extends VecOpt
       based.clear();
 
       conditions.add(bestSplitBF);
-//      final int[] projection = conditions.stream().filter(bf -> bf.row().size() > 2).mapToInt(BFGrid.Feature::findex).sorted().distinct().toArray();
+//      final int[] projection = conditions.stream()./*filter(bf -> bf.row().size() > 2).*/mapToInt(BFGrid.Feature::findex).sorted().distinct().toArray();
 
       final List<TIntArrayList> next = new ArrayList<>(leaves.size() * 2);
 //      System.out.println();

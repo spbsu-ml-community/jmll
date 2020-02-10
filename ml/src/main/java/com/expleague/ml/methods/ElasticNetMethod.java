@@ -36,17 +36,17 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
 
   @Override
   public Trans fit(final VecDataSet ds, final L2 loss) {
-    double intercept  = 0;
+    double intercept = 0;
     Vec target = loss.target;
-    for (int i=0; i < target.dim();++i) {
+    for (int i = 0; i < target.dim(); ++i) {
       intercept += target.get(i);
     }
     intercept /= target.dim();
     Vec localTarget = copy(target);
-    adjust(localTarget,-intercept);
+    adjust(localTarget, -intercept);
     final ElasticNetCache cache = new ElasticNetCache(ds.data(), localTarget, alpha, lambda);
     Trans result = fit(cache);
-    return new ShifftedTrans(result,intercept);
+    return new ShifftedTrans(result, intercept);
   }
 
   public Trans fit(final VecDataSet ds, final L2 loss, final Vec init) {
@@ -57,10 +57,10 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
   public final List<Linear> fit(final Mx data, final Vec target, int nlambda) {
     final ElasticNetCache cache = new ElasticNetCache(data, target, alpha, lambda);
     double lambdaMax = Double.NEGATIVE_INFINITY;
-    for (int i=0; i < data.columns();++i) {
+    for (int i = 0; i < data.columns(); ++i) {
       lambdaMax = Math.max(Math.abs(cache.targetProduct(i)), lambdaMax);
     }
-    lambdaMax *= 1.0  / (alpha *  data.rows());
+    lambdaMax *= 1.0 / (alpha * data.rows());
     double lambdaMin = 0.0; //lambdaMax * lambdaEps;
     double step = (lambdaMax - lambdaMin) / nlambda;
     List<Linear> path = new ArrayList<>(nlambda);
@@ -119,7 +119,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       this.target = target;
       this.betas = init;
       this.dim = 0;
-      isFeaturesProductCached = new boolean[betas.dim()*betas.dim()];
+      isFeaturesProductCached = new boolean[betas.dim() * betas.dim()];
       isTargetCached = new boolean[betas.dim()];
       featureProducts = new double[betas.dim() * betas.dim()];
       targetProducts = new double[betas.dim()];
@@ -135,8 +135,8 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       this(data, target, new ArrayVec(data.columns()), alpha, lambda);
     }
 
-    public ElasticNetCache(final Mx data, final Vec target,int dim, double alpha, double lambda) {
-      this(data, target, new ArrayVec(data.columns()),dim, alpha, lambda);
+    public ElasticNetCache(final Mx data, final Vec target, int dim, double alpha, double lambda) {
+      this(data, target, new ArrayVec(data.columns()), dim, alpha, lambda);
     }
 
 
@@ -155,16 +155,16 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
         double res = targetProduct(i);
         for (int j = 0; j < i; ++j) {
           final double beta = betas.get(j);
-          res -= beta != 0 ? beta * featureProduct(j,i) : 0;
+          res -= beta != 0 ? beta * featureProduct(j, i) : 0;
         }
         for (int j = i + 1; j < dim; ++j) {
           final double beta = betas.get(j);
-          res -= beta !=0 ? beta * featureProduct(i, j) : 0;
+          res -= beta != 0 ? beta * featureProduct(i, j) : 0;
         }
         gradient[i] = res;
       }
-      for (int i=0; i < oldDim;++i)  {
-        for (int j=oldDim; j < dim;++j) {
+      for (int i = 0; i < oldDim; ++i) {
+        for (int j = oldDim; j < dim; ++j) {
           final double beta = betas.get(j);
           gradient[i] -= beta != 0 ? beta * featureProduct(i, j) : 0;
         }
@@ -176,22 +176,21 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
     }
 
 
-
     private double dot(Mx data, int i, int j) {
       final int rows = data.rows();
-      final int length = 4*(rows / 4);
+      final int length = 4 * (rows / 4);
       double result = 0;
       final double[] cache = new double[4];
-      for (int k=0; k < length; k+=4) {
-        final double l1 = data.get(k,i);
-        final double l2 = data.get(k+1,i);
-        final double l3 = data.get(k+2,i);
-        final double l4 = data.get(k+3,i);
+      for (int k = 0; k < length; k += 4) {
+        final double l1 = data.get(k, i);
+        final double l2 = data.get(k + 1, i);
+        final double l3 = data.get(k + 2, i);
+        final double l4 = data.get(k + 3, i);
 
-        final double r1 = data.get(k,j);
-        final double r2 = data.get(k+1,j);
-        final double r3 = data.get(k+2,j);
-        final double r4 = data.get(k+3,j);
+        final double r1 = data.get(k, j);
+        final double r2 = data.get(k + 1, j);
+        final double r3 = data.get(k + 2, j);
+        final double r4 = data.get(k + 3, j);
 
         cache[0] = l1 * r1;
         cache[1] = l2 * r2;
@@ -202,27 +201,28 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
         cache[0] += cache[1];
         result += cache[0];
       }
-      for (int k=length; k < rows;++k) {
-        result += data.get(k,i) * data.get(k,j);
+      for (int k = length; k < rows; ++k) {
+        result += data.get(k, i) * data.get(k, j);
       }
       return result;
     }
-//jvm vectorization http://hg.openjdk.java.net/hsx/hotspot-comp/hotspot/rev/006050192a5a
+
+    //jvm vectorization http://hg.openjdk.java.net/hsx/hotspot-comp/hotspot/rev/006050192a5a
     private double targetDot(Mx data, int i, Vec target) {
       final int rows = data.rows();
-      final int length = 4*(rows / 4);
+      final int length = 4 * (rows / 4);
       double result = 0;
       final double[] cache = new double[4];
-      for (int k=0; k < length; k+=4) {
-        final double l1 = data.get(k,i);
-        final double l2 = data.get(k+1,i);
-        final double l3 = data.get(k+2,i);
-        final double l4 = data.get(k+3,i);
+      for (int k = 0; k < length; k += 4) {
+        final double l1 = data.get(k, i);
+        final double l2 = data.get(k + 1, i);
+        final double l3 = data.get(k + 2, i);
+        final double l4 = data.get(k + 3, i);
 
         final double r1 = target.get(k);
-        final double r2 = target.get(k+1);
-        final double r3 = target.get(k+2);
-        final double r4 = target.get(k+3);
+        final double r2 = target.get(k + 1);
+        final double r3 = target.get(k + 2);
+        final double r4 = target.get(k + 3);
 
         cache[0] = l1 * r1;
         cache[1] = l2 * r2;
@@ -233,8 +233,8 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
         cache[0] += cache[1];
         result += cache[0];
       }
-      for (int k=length; k < rows;++k) {
-        result += data.get(k,i) * target.get(k);
+      for (int k = length; k < rows; ++k) {
+        result += data.get(k, i) * target.get(k);
       }
       return result;
     }
@@ -243,11 +243,11 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       if (i > j) {
         return featureProduct(j, i);
       }
-      if (!isFeaturesProductCached[i*betas.dim() + j]) {
-        featureProducts[i*betas.dim() + j] = dot(data, i, j);
-        isFeaturesProductCached[i*betas.dim() + j] = true;
+      if (!isFeaturesProductCached[i * betas.dim() + j]) {
+        featureProducts[i * betas.dim() + j] = dot(data, i, j);
+        isFeaturesProductCached[i * betas.dim() + j] = true;
       }
-      return featureProducts[i*betas.dim() + j];
+      return featureProducts[i * betas.dim() + j];
     }
 
     private double targetProduct(int k) {
@@ -278,7 +278,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
       return false;
     }
 
-    private void update(final int k,final double newBeta) {
+    private void update(final int k, final double newBeta) {
       final double beta = betas.get(k);
       final double diff = newBeta - beta;
       {
@@ -287,22 +287,22 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
         for (int i = 0; i < length; i += 4) {
           final int ind = i;
           final int localK = k;
-          final double dot1 = diff * featureProduct(ind,localK);
-          final double dot2 = diff * featureProduct(ind + 1,localK);
-          final double dot3 = diff * featureProduct(ind + 2,localK);
-          final double dot4 = diff * featureProduct(ind + 3,localK);
+          final double dot1 = diff * featureProduct(ind, localK);
+          final double dot2 = diff * featureProduct(ind + 1, localK);
+          final double dot3 = diff * featureProduct(ind + 2, localK);
+          final double dot4 = diff * featureProduct(ind + 3, localK);
           gradientLocal[ind] -= dot1;
           gradientLocal[ind + 1] -= dot2;
           gradientLocal[ind + 2] -= dot3;
           gradientLocal[ind + 3] -= dot4;
         }
         for (int i = length; i < k; ++i) {
-          gradientLocal[i] -= diff * featureProduct(i,k);
+          gradientLocal[i] -= diff * featureProduct(i, k);
         }
       }
 
       {
-        final int offset = k +1;
+        final int offset = k + 1;
         final int size = dim - offset;
         final int end = 4 * (size / 4) + offset;
         final double[] gradientLocal = gradient;
@@ -319,7 +319,7 @@ public class ElasticNetMethod extends VecOptimization.Stub<L2> {
           gradientLocal[ind + 3] -= dot4;
         }
         for (int i = end; i < dim; ++i) {
-          gradientLocal[i] -= diff * featureProduct(k,i);
+          gradientLocal[i] -= diff * featureProduct(k, i);
         }
       }
       betas.set(k, newBeta);

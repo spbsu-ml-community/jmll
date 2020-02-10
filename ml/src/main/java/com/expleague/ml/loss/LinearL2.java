@@ -19,7 +19,7 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 public class LinearL2 extends FuncC1.Stub implements AdditiveLoss<LinearL2.Stat>, TargetFunc {
-  private final double lambda = 1;//1e-3;
+  private final double lambda = 0.5;//1e-3;
   private final Mx subX;
   private final VecDataSet vds;
   private Vec target;
@@ -27,7 +27,7 @@ public class LinearL2 extends FuncC1.Stub implements AdditiveLoss<LinearL2.Stat>
 
   public LinearL2(VecDataSet vds, BFGrid.Feature[] used, Vec target) {
     this.target = target;
-    this.workingSet = Arrays.stream(used).filter(bf -> bf.row().size() > 2).mapToInt(BFGrid.Feature::findex).sorted().distinct().toArray();
+    this.workingSet = Arrays.stream(used)/*.filter(bf -> bf.row().size() > 2)*/.mapToInt(BFGrid.Feature::findex).sorted().distinct().toArray();
     final Mx subX = new VecBasedMx(vds.length(), workingSet.length);
     for (int i = 0; i < vds.length(); i++) {
       final Vec row = vds.data().row(i);
@@ -73,7 +73,7 @@ public class LinearL2 extends FuncC1.Stub implements AdditiveLoss<LinearL2.Stat>
     final Vec xy_covar = VecTools.copy(stats.xy.sub(0, wHat.dim()));
     VecTools.incscale(xy_covar, stats.sumX.sub(0, wHat.dim()), -stats.sum / weight);
     VecTools.scale(xy_covar, 1. / weight);
-    final double reg = 1;//(1 + 0.001 * Math.log(weight + 1));
+    final double reg = 1 + 0.005 * Math.log(weight + 1);
     final double scoreFromLinear = weight * VecTools.multiply(wHat, xy_covar);
     final double scoreFromConst = stats.sum * stats.sum / weight;
     final double targetValue = scoreFromConst + scoreFromLinear - lambda * VecTools.l2(wHat);

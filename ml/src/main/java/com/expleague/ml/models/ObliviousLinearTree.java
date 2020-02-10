@@ -32,7 +32,7 @@ public class ObliviousLinearTree extends BinOptimizedModel.Stub implements BinMo
     this.basedOn = basedOn;
     this.features = features.toArray(new BFGrid.Feature[features.size()]);
     this.weights = weights;
-    this.projection = features.stream().filter(bf -> bf.row().size() > 2).mapToInt(BFGrid.Feature::findex).sorted().distinct().toArray();
+    this.projection = features.stream()/*.filter(bf -> bf.row().size() > 2)*/.mapToInt(BFGrid.Feature::findex).sorted().distinct().toArray();
   }
 
   @Override

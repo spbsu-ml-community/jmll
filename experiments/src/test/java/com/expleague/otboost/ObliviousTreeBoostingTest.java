@@ -82,7 +82,7 @@ public class ObliviousTreeBoostingTest extends GridTest {
         new BootstrapOptimization<>(
             new GreedyObliviousLinearTree<>(GridTools.medianGrid(learn.vecData(), 32), 6),
           rng),
-        L2Reg.class, 2000, 0.003
+        L2.class, 2000, 0.002
     );
     new addBoostingListeners<>(boosting, learn.target(SatL2.class), learn, validate);
   }

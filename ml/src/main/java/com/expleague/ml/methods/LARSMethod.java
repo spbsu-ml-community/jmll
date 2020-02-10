@@ -21,7 +21,7 @@ import java.util.List;
  * Time: 18:04
  */
 public class LARSMethod extends VecOptimization.Stub<L2> {
-  private class Direction {
+  private static class Direction {
     double sign;
     int index;
     private Direction(final double sign, final int index) {

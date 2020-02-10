@@ -12,15 +12,22 @@ public class ScoreCalcer implements ProgressHandler {
   final Vec current;
   private final VecDataSet ds;
   private final TargetFunc target;
+  private final boolean minimize;
 
   public ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target) {
+    this(message, ds, target, true);
+  }
+
+  public ScoreCalcer(final String message, final VecDataSet ds, final TargetFunc target, boolean minimize) {
     this.message = message;
     this.ds = ds;
     this.target = target;
     current = new ArrayVec(ds.length());
+    best = minimize ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+    this.minimize = minimize;
   }
 
-  double min = 1e10;
+  double best;
 
   @Override
   public void accept(final Trans partial) {
@@ -41,7 +48,7 @@ public class ScoreCalcer implements ProgressHandler {
     }
     final double value = target.value(current);
     System.out.print(message + value);
-    min = Math.min(value, min);
-    System.out.print(" best = " + min);
+    best = minimize ? Math.min(value, best) : Math.max(value, best);
+    System.out.print(" best = " + best);
   }
 }
