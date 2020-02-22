@@ -16,7 +16,7 @@ import java.util.Set;
 
 
 public class GridBuilder implements Factory<BFGrid> {
-  private BFGrid cooked;
+  private BFGridImpl cooked;
   private VecDataSet ds;
   private Set<Integer> catFeatureIds = new HashSet<>();
   private Set<Integer> ignoredColumns = new HashSet<>();
@@ -32,7 +32,10 @@ public class GridBuilder implements Factory<BFGrid> {
   }
 
   public void setGrid(final BFGrid cooked) {
-    this.cooked = cooked;
+    this.cooked = (BFGridImpl) cooked;
+    if (ds != null) {
+      this.cooked.setMetaProvider(findex -> ds.fmeta(findex));
+    }
   }
 
   public void setBinsCount(final int binsCount) {
@@ -58,7 +61,7 @@ public class GridBuilder implements Factory<BFGrid> {
   @Override
   public BFGrid create() {
     if (cooked == null) {
-      cooked = build();
+      cooked = (BFGridImpl) build();
     }
     return cooked;
   }
@@ -80,7 +83,7 @@ public class GridBuilder implements Factory<BFGrid> {
         addFloatFeature(f);
       }
     }
-    return new BFGridImpl(rows);
+    return new BFGridImpl(rows, findex -> ds.fmeta(findex));
   }
 
   private void addCatFeature(final int f) {
