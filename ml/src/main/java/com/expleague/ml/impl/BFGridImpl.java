@@ -2,8 +2,11 @@ package com.expleague.ml.impl;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.impl.fake.FakeFeatureMeta;
 
 import java.util.Arrays;
+import java.util.function.IntFunction;
 
 /**
  * User: solar
@@ -12,12 +15,18 @@ import java.util.Arrays;
  */
 public class BFGridImpl implements BFGrid {
   final BFRowImpl[] rows;
+  private IntFunction<FeatureMeta> metaProvider;
   final BinaryFeatureImpl[] features;
   final int bfCount;
   final BFRowImpl leastNonEmptyRow;
 
   public BFGridImpl(final BFRowImpl[] rows) {
+    this(rows, findex -> new FakeFeatureMeta(findex, FeatureMeta.ValueType.VEC));
+    Arrays.stream(rows).forEach(row -> row.setOwner(this));
+  }
+  public BFGridImpl(final BFRowImpl[] rows, IntFunction<FeatureMeta> metaProvider) {
     this.rows = rows;
+    this.metaProvider = metaProvider;
     for (final BFRowImpl row : rows) {
       row.setOwner(this);
     }
@@ -86,5 +95,13 @@ public class BFGridImpl implements BFGrid {
   @Override
   public String toString() {
     return CONVERTER.convertTo(this).toString();
+  }
+
+  public FeatureMeta meta(int findex) {
+    return metaProvider.apply(findex);
+  }
+
+  public void setMetaProvider(IntFunction<FeatureMeta> metaProvider) {
+    this.metaProvider = metaProvider;
   }
 }

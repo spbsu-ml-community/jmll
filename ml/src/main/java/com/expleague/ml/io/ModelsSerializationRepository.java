@@ -71,15 +71,4 @@ public class ModelsSerializationRepository extends SerializationRepository<CharS
     repository.grid = grid;
     return repository;
   }
-
-  public ModelsSerializationRepository customizeGrid(final DynamicGrid grid) {
-    final ModelsSerializationRepository repository = new ModelsSerializationRepository(base.customize(typeConverter -> {
-      if (typeConverter instanceof DynamicGridEnabled)
-        ((DynamicGridEnabled) typeConverter).setGrid(dynamicGrid);
-      return true;
-    }));
-    repository.dynamicGrid = dynamicGrid;
-    return repository;
-  }
-
 }

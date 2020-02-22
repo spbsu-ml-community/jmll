@@ -434,7 +434,7 @@ public class DataTools {
       T model;
       {
         final ModelsSerializationRepository repository = new ModelsSerializationRepository();
-        final BFGridConstructor grid = new BFGridConstructor();
+        final BFGridConstructor grid = new BFGridConstructor(findex -> meta[findex]);
         final ModelsSerializationRepository customizedRepository = repository.customizeGrid(grid);
         final CharSequence[] properties = CharSeqTools.split(Objects.requireNonNull(chopper.chop('\n')), '\t');
         //noinspection unchecked

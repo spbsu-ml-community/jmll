@@ -1,11 +1,12 @@
 package com.expleague.ml.impl;
 
 import com.expleague.ml.BFGrid;
+import com.expleague.ml.meta.FeatureMeta;
 
 import java.util.Arrays;
 
 public class BFRowImpl implements BFGrid.Row {
-  private BFGrid owner;
+  private BFGridImpl owner;
   public final int bfStart;
   public final int bfEnd;
   public final int origFIndex;
@@ -13,11 +14,11 @@ public class BFRowImpl implements BFGrid.Row {
   public final BinaryFeatureImpl[] bfs;
   public final boolean isOneHot;
 
-  public BFRowImpl(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders) {
+  public BFRowImpl(final BFGridImpl owner, final int bfStart, final int origFIndex, final double[] borders) {
     this(owner,bfStart,origFIndex,borders,new int[borders.length], false);
   }
   // TODO: why do we need bsStart?
-  public BFRowImpl(final BFGrid owner, final int bfStart, final int origFIndex, final double[] borders, final int[] sizes, final boolean isOneHot) {
+  public BFRowImpl(final BFGridImpl owner, final int bfStart, final int origFIndex, final double[] borders, final int[] sizes, final boolean isOneHot) {
     this.owner = owner;
     this.bfStart = bfStart;
     this.bfEnd = bfStart + borders.length;
@@ -115,7 +116,12 @@ public class BFRowImpl implements BFGrid.Row {
     return owner;
   }
 
-  void setOwner(final BFGrid owner) {
+  @Override
+  public FeatureMeta fmeta() {
+    return owner.meta(findex());
+  }
+
+  void setOwner(final BFGridImpl owner) {
     this.owner = owner;
   }
 }

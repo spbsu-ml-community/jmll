@@ -14,6 +14,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.TDoubleSet;
 import gnu.trove.set.hash.TDoubleHashSet;
 import gnu.trove.set.hash.TIntHashSet;
+import gnu.trove.set.hash.TLongHashSet;
 
 import java.util.Arrays;
 
@@ -25,39 +26,36 @@ import java.util.Arrays;
 public class GridTools {
 
   // TODO: ask questions
-  public static TIntArrayList greedyLogSumBorders(final double[] sortedFeature,
-                                                  final int binFactor) {
+  public static TIntArrayList greedyLogSumBorders(final double[] sortedFeature, final int binFactor) {
     final TIntArrayList borders = new TIntArrayList();
-    borders.add(sortedFeature.length);
 
-    while (borders.size() < binFactor + 1) {
+    while (borders.size() < binFactor - 1) {
       double bestScore = 0;
       int bestSplit = -1;
-      for (int i = 0; i < borders.size(); i++) {
+      for (int i = 0; i < borders.size() + 1; i++) {
         final int start = i > 0 ? borders.get(i - 1) : 0;
-        final int end = borders.get(i);
+        final int end = i < borders.size() ? borders.get(i) : sortedFeature.length;
         final double median = sortedFeature[start + (end - start) / 2];
-        // fixme WHY? We already know the index of the median, don't we?
-        // should not be 'split = start + (end - start) / 2' ?
-        int split = Math.abs(Arrays.binarySearch(sortedFeature, start, end, median));
+        int split = start + (end - start) / 2;
 
-        // fixme should not be split more than start? 'split > start'
-        while (split > 0 && Math.abs(sortedFeature[split] - median) < 1e-9) // look for first less then median value
+        while (split >= start && Math.abs(sortedFeature[split] - median) < 1e-12) // look for first less then median value
           split--;
-        if (Math.abs(sortedFeature[split] - median) > 1e-9) split++;
-        // fixme probably Math.log((end - split) * (split - start)) would be faster?
-        final double scoreLeft = Math.log(end - split) + Math.log(split - start);
-        if (split > 0 && scoreLeft > bestScore) {
-          bestScore = scoreLeft;
-          bestSplit = split;
+        if (split >= start) {
+          final double scoreLeft = Math.log(end - split) + Math.log(split - start);
+          if (scoreLeft > bestScore) {
+            bestScore = scoreLeft;
+            bestSplit = split;
+          }
         }
-        while (++split < end && Math.abs(sortedFeature[split] - median) < 1e-9)
-          ; // first after elements with such value
-        // fixme same as previous
-        final double scoreRight = Math.log(end - split) + Math.log(split - start);
-        if (split < end && scoreRight > bestScore) {
-          bestScore = scoreRight;
-          bestSplit = split;
+        //noinspection StatementWithEmptyBody
+        while (++split < end && Math.abs(sortedFeature[split] - median) < 1e-12); // first after elements with such value
+        if (split < end) {
+          split--; // last value with median
+          final double scoreRight = Math.log(end - split) + Math.log(split - start);
+          if (scoreRight > bestScore) {
+            bestScore = scoreRight;
+            bestSplit = split;
+          }
         }
       }
 
@@ -91,18 +89,17 @@ public class GridTools {
   public static BFGrid medianGrid(final VecDataSet ds, final int binFactor) {
     final int dim = ds.xdim();
     final BFRowImpl[] rows = new BFRowImpl[dim];
-    final TIntHashSet known = new TIntHashSet();
+    final TLongHashSet known = new TLongHashSet();
     int bfCount = 0;
 
     final double[] feature = new double[ds.length()];
     for (int f = 0; f < dim; f++) {
       final ArrayPermutation permutation = new ArrayPermutation(ds.order(f));
       final int[] order = permutation.direct();
-      final int[] reverse = permutation.reverse();
+      final int[] reverse = permutation.direct();
       boolean haveDifferentElements = false;
-      for (int i = 1; i < order.length; i++)
-        if (order[i] != order[0])
-          haveDifferentElements = true;
+      for (int i = 1; i < order.length && !haveDifferentElements; i++)
+          haveDifferentElements = order[i] != order[0];
       if (!haveDifferentElements)
         continue;
       for (int i = 0; i < feature.length; i++)
@@ -112,26 +109,26 @@ public class GridTools {
       final TIntArrayList sizes = new TIntArrayList();
       { // drop existing
         int size = borders.size();
-        final int[] crcs = new int[size];
-        for (int i = 0; i < ds.length(); i++) { // unordered index
-          final int orderedIndex = reverse[i]; // TODO: why is it reversed?
-          for (int b = 0; b < size && orderedIndex >= borders.get(b); b++) {
+        final long[] crcs = new long[borders.size()];
+        for (int i = 0; i < ds.length(); i++) { // unordered index to provide the same order of hashing
+          final int orderedIndex = reverse[i]; // index of the point in the ordered by feature list
+          for (int b = 0; b < size && orderedIndex > borders.get(b); b++) {
             crcs[b] = (crcs[b] * 31) + (i + 1);
           }
         }
-        for (int b = 0; b < size - 1; b++) {
+        for (int b = 0; b < size; b++) {
           if (known.contains(crcs[b]))
             continue;
           known.add(crcs[b]);
           int borderValue = borders.get(b);
-          dborders.add((feature[borderValue - 1] + feature[borderValue]) / 2.);
+          dborders.add(feature[borderValue]);
           sizes.add(borderValue);
         }
       }
       rows[f] = new BFRowImpl(bfCount, f, dborders.toArray(), sizes.toArray());
       bfCount += dborders.size();
     }
-    return new BFGridImpl(rows);
+    return new BFGridImpl(rows, ds::fmeta);
   }
 
   public static class PermutationWeightedFunc extends AnalyticFunc.Stub {

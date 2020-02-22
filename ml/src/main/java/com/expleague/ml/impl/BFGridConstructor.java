@@ -3,10 +3,12 @@ package com.expleague.ml.impl;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.BFGrid;
 import com.expleague.ml.data.impl.BinarizedDataSet;
+import com.expleague.ml.meta.FeatureMeta;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntFunction;
 
 public class BFGridConstructor implements BFGrid {
   private BFGridImpl delegate;
@@ -31,6 +33,17 @@ public class BFGridConstructor implements BFGrid {
     return build().rows();
   }
 
+  private final List<List<ConstructorFeature>> features = new ArrayList<>();
+  private final IntFunction<FeatureMeta> metaProvider;
+
+  public BFGridConstructor() {
+    this(null);
+  }
+
+  public BFGridConstructor(IntFunction<FeatureMeta> metaProvider) {
+    this.metaProvider = metaProvider;
+  }
+
   @Nullable
   public BFGrid build() {
     if (delegate == null && features.size() > 0) {
@@ -41,17 +54,16 @@ public class BFGridConstructor implements BFGrid {
         final List<ConstructorFeature> row = this.features.get(f);
         final double[] borders = row.stream().mapToDouble(Feature::condition).toArray();
         bfindex += row.size();
-        rows[f] = new BFRowImpl(this, bfStart, f, borders);
+        rows[f] = new BFRowImpl(null, bfStart, f, borders);
         for (int b = 0; b < row.size(); b++) {
           row.get(b).binaryFeature = rows[f].bf(b);
         }
       }
-      delegate = new BFGridImpl(rows);
+      delegate = metaProvider != null ? new BFGridImpl(rows, metaProvider) : new BFGridImpl(rows);
     }
     return delegate;
   }
 
-  List<List<ConstructorFeature>> features = new ArrayList<>();
   public Feature condition(int findex, double condition) {
     while (findex >= features.size()) {
       features.add(new ArrayList<>());

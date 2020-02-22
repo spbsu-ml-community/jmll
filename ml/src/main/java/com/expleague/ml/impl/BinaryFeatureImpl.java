@@ -102,6 +102,6 @@ public class BinaryFeatureImpl implements BFGrid.Feature {
 
   @Override
   public String toString() {
-    return String.format(oneHot ? "f[%d] = %g" : "f[%d] > %g", findex, condition);
+    return String.format(oneHot ? "f[%d: %s] = %g" : "f[%d: %s] > %g", findex, bfRow.fmeta().id(), condition);
   }
 }

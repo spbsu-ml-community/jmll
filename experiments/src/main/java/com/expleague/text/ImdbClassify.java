@@ -8,6 +8,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.*;
 import com.expleague.ml.GridTools;
+import com.expleague.ml.ModelPrinter;
 import com.expleague.ml.ProgressHandler;
 import com.expleague.ml.ScoreCalcer;
 import com.expleague.ml.data.tools.DataTools;
@@ -199,7 +200,7 @@ public class ImdbClassify {
     if (linear) {
       boosting = new GradientBoosting<>(
           new BootstrapOptimization<>(
-              new GreedyObliviousLinearTree<>(GridTools.medianGrid(train.vecData(), 2), 6),
+              new GreedyObliviousLinearTree<>(GridTools.medianGrid(train.vecData(), 4), 6),
               rng
           ),
           L2.class, 2000, 1
@@ -224,11 +225,11 @@ public class ImdbClassify {
     };
     final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", train.vecData(), train.target(LLLogit.class), false);
     final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", test.vecData(), test.target(AccuracyLogit.class), false);
-//    final Consumer<Trans> modelPrinter = new ModelPrinter();
+    final Consumer<Trans> modelPrinter = new ModelPrinter();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
-//    boosting.addListener(modelPrinter);
+    boosting.addListener(modelPrinter);
     final Ensemble ans = boosting.fit(train.vecData(), train.target(LLLogit.class));
 
     System.out.println();

@@ -19,7 +19,7 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 public class LinearL2 extends FuncC1.Stub implements AdditiveLoss<LinearL2.Stat>, TargetFunc {
-  private final double lambda = 0.5;//1e-3;
+  private final double lambda = 1e-1;
   private final Mx subX;
   private final VecDataSet vds;
   private Vec target;

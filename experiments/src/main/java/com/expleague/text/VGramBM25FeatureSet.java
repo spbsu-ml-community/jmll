@@ -46,7 +46,7 @@ public class VGramBM25FeatureSet extends FeatureSet.Stub<TextItem> {
     while (iter.advance()) {
       final double x = iter.value();
       final double bm25 = x / (x + 2. + docLength / 300.);
-      iter.setValue(bm25 * (Math.log(freqs.get(iter.index()) + 2.)));
+      iter.setValue(bm25 * (1./Math.log(freqs.get(iter.index()) + 2.)));
     }
     return to;
   }

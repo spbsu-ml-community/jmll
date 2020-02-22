@@ -5,6 +5,7 @@ import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.data.impl.BinarizedDataSet;
 import com.expleague.ml.impl.BFRowImpl;
 import com.expleague.ml.io.BFGridStringConverter;
+import com.expleague.ml.meta.FeatureMeta;
 
 public interface BFGrid {
   Converter<BFGrid, CharSequence> CONVERTER = new BFGridStringConverter();
@@ -30,6 +31,8 @@ public interface BFGrid {
     boolean empty();
 
     BFGrid grid();
+
+    FeatureMeta fmeta();
   }
 
   interface Feature {
