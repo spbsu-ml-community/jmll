@@ -60,9 +60,10 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
   }
 
   @Override
-  public Vec gradient(Vec in) {
+  public Vec gradientTo(Vec in, Vec to) {
     unfold(in);
-    Mx grads = new VecBasedMx(dimX, dim() / dimX);
+    Mx grads = to instanceof Mx ? (Mx)to : new VecBasedMx(dim() / dimX, to);
+    VecTools.scale(grads, 0);
     fillContextGrad(grads);
     fillImageGrad(grads);
 
@@ -97,11 +98,11 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
 
   public double getProbability(Mx C, int image_idx) {
     final Vec im = imageVectors.row(image_idx);
-    final double uCu = VecTools.multiply(im, MxTools.multiply(C, im));
+    final double uCu = MxTools.quadraticForm(C, im);
     double softSum = 0d;
     for (int i = 0; i < dimX; i++) {
       final Vec img = imageVectors.row(i);
-      final double e = Math.exp(-VecTools.multiply(img, MxTools.multiply(C, img)) + uCu);
+      final double e = Math.exp(-MxTools.quadraticForm(C, img) + uCu);
       /*if (e == POSITIVE_INFINITY) {
         return MIN_PROBAB;
       }*/
@@ -117,10 +118,10 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
 
   protected double getImageDerivativeTerm(final Vec im, final Mx C) {
     double softSum = 0d;
-    final double uCu = VecTools.multiply(im, MxTools.multiply(C, im));
+    final double uCu = MxTools.quadraticForm(C, im);
     for (int i = 0; i < dimX; i++) {
       final Vec img = imageVectors.row(i);
-      final double e = Math.exp(-VecTools.multiply(img, MxTools.multiply(C, img)) + uCu);
+      final double e = Math.exp(-MxTools.quadraticForm(C, img) + uCu);
       /*if (e == POSITIVE_INFINITY) {
         return 1d - MIN_PROBAB;
       }*/
@@ -168,15 +169,15 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
 
 
   private double getContextDerivativeTerm(final Vec im, final Mx C, final Mx dC) {
-    double result = VecTools.multiply(im, MxTools.multiply(dC, im));
+    double result = MxTools.quadraticForm(dC, im);
 
     for (int i = 0; i < dimX; i++) {
       double softSum = 0d;
       final Vec u = imageVectors.row(i);
-      double uCu = VecTools.multiply(u, MxTools.multiply(C, u));
+      double uCu = MxTools.quadraticForm(C, u);
       for (int j = 0; j < dimX; j++) {
         final Vec img = imageVectors.row(j);
-        final double e = Math.exp(-VecTools.multiply(img, MxTools.multiply(C, img)) + uCu);
+        final double e = Math.exp(-MxTools.quadraticForm(C, img) + uCu);
         /*if (e == POSITIVE_INFINITY) {
           uCu = MIN_PROBAB;
           softSum = 1d;
@@ -185,7 +186,7 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
         softSum += e;
       }
       //result += -uCu / softSum;
-      result += -VecTools.multiply(u, MxTools.multiply(dC, u)) / softSum;
+      result += -MxTools.quadraticForm(dC, u) / softSum;
     }
 
     return result;

@@ -46,7 +46,7 @@ public class GradientDescent implements Optimize<FuncC1> {
         x2.set(i, x1.get(i) - grad.get(i) * step);
       }
       x1 = VecTools.copy(reg.project(x2));
-      grad = func.gradient().trans(x1);
+      func.gradientTo(x1, grad);
       distance = VecTools.norm(grad);
       if (iter % 1000 == 0) {
         final long newTime = System.nanoTime();
