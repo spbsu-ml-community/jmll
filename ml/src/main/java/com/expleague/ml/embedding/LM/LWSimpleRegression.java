@@ -53,7 +53,7 @@ class LWSimpleRegression extends LWMatrixRegression {
 
   @Override
   public Vec L(Vec at) {
-    return VecTools.fill(super.L(at), 1000.);
+    return VecTools.fill(super.L(at), 10.);
   }
 
   @Override

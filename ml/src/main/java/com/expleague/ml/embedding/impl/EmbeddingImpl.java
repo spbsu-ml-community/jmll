@@ -24,6 +24,11 @@ public class EmbeddingImpl<T> implements Embedding<T> {
   private final TObjectIntMap<T> invVocab = new TObjectIntHashMap<>();
   private final int dim;
 
+  @Override
+  public int dim() {
+    return dim;
+  }
+
   public EmbeddingImpl(Map<T, Vec> mapping) {
     this.mapping = mapping;
     this.vocab = new ArrayList<>(mapping.keySet());

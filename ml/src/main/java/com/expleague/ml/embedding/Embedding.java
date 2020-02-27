@@ -23,6 +23,8 @@ public interface Embedding<T> extends Function<T, Vec>, Metric<T> {
   @Nullable
   Vec apply(T to);
 
+  int dim();
+
   interface Builder<T> {
     Builder<T> file(Path path);
     Builder<T> minWordCount(int count);
