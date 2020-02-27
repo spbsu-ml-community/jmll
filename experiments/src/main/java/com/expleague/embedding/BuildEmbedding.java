@@ -1,27 +1,47 @@
 package com.expleague.embedding;
 
+import com.expleague.commons.io.StreamTools;
+import com.expleague.commons.seq.CharSeq;
+import com.expleague.embedding.evaluation.metrics.CloserFurtherMetric;
+import com.expleague.embedding.evaluation.metrics.SentenceGenerationMetric;
+import com.expleague.embedding.evaluation.metrics.WordAnalogiesMetric;
 import com.expleague.ml.embedding.Embedding;
-import com.expleague.ml.embedding.decomp.DecompBuilder;
-import com.expleague.ml.embedding.glove.GloVeBuilder;
+import com.expleague.ml.embedding.LM.LWMatrixMultBuilder;
+import com.expleague.ml.embedding.impl.EmbeddingImpl;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class BuildEmbedding {
   public static void main(String[] args) throws IOException {
 
-    GloVeBuilder decomp_builder = (GloVeBuilder)  Embedding.builder(Embedding.Type.GLOVE);
     String file = args[0];
-    final Embedding result = decomp_builder
-//        .dimSym(40)
-//        .dimSkew(10)
-        .dim(40)
+    String embeddingFile = StreamTools.stripExtension(file) + ".lwmm";
+    String resultFile = "/home/katyakos/diploma/proj6_spbau/data/tests/hobbit/results_lwmm";
+    String metricFile = "/home/katyakos/diploma/proj6_spbau/data/tests/hobbit/all_metrics_files.txt";
+
+    LWMatrixMultBuilder builder = (LWMatrixMultBuilder) Embedding.builder(Embedding.Type.LIGHT_WEIGHT_MATRIX_MULT);
+    final Embedding result = builder
+        .dim(10)
         .minWordCount(1)
-        .iterations(25)
-        .step(0.01)
-        .window(Embedding.WindowType.LINEAR, 15, 15)
+        .iterations(15)
+        .step(0.05)
+        .window(Embedding.WindowType.LINEAR, 5, 5)
         .file(Paths.get(file))
         .build();
+    try (Writer to = Files.newBufferedWriter(Paths.get(embeddingFile))) {
+      Embedding.write(result, to);
+    }
+
+    try (Reader from = Files.newBufferedReader(Paths.get(embeddingFile))) {
+      final EmbeddingImpl embedding = EmbeddingImpl.read(from, CharSeq.class);
+      CloserFurtherMetric metric = new CloserFurtherMetric(embedding);
+      if (!Files.exists(Paths.get(resultFile)))
+        Files.createDirectory(Paths.get(resultFile));
+      metric.measure(metricFile, resultFile);
+    }
+
 
     /*NgramGloveBuilder glove_builder = (NgramGloveBuilder) Embedding.builder(Embedding.Type.NGRAM_GLOVE);
     String file = args[0];

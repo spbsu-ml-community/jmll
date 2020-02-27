@@ -11,41 +11,89 @@ import com.expleague.ml.embedding.decomp.DecompBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.stream.IntStream;
+
 public abstract class LWMatrixRegression extends FuncC1.Stub {
   protected static final Logger log = LoggerFactory.getLogger(DecompBuilder.class.getName());
   protected Mx imageVectors;
   protected Mx C0;
-  protected int dimX, dimY;
-  protected int dimTotal;
+  protected final int dimX, dimY;
+  protected final int windowLeft, windowRight;
+  protected final static int NO_WINDOW = -1;
+
   protected IntSeq text;
 
-  public LWMatrixRegression(final int dimx, final int dimy, IntSeq text) {
+  public LWMatrixRegression(IntSeq text, final int dimx, final int dimy) {
+    this(text, dimx, dimy, NO_WINDOW, NO_WINDOW);
+  }
+
+  public LWMatrixRegression(IntSeq text, final int dimx, final int dimy, final int windowLeft, final int windowRight) {
     this.text = text;
     this.dimX = dimx;
     this.dimY = dimy;
+    this.windowLeft = windowLeft;
+    this.windowRight = windowRight;
     this.C0 = C0();
     imageVectors = new VecBasedMx(dimX, dimY);
     for (int i = 0; i < dimX; i++) {
       for (int j = 0; j < dimY; j++) {
         imageVectors.set(i, j, initializeValue(dimY));
       }
-      //VecTools.normalizeL2(imageVectors.row(i));
     }
   }
 
-
   public double value() {
+    return value(text.toArray());
+  }
+
+  public double value(int[] sentenceIndexes) {
     double probab = 1d;
     Mx C = VecTools.copy(C0);
-    for (int t = 0; t < text.length(); t++) {
-      final int idx = text.at(t);
+    Mx tmp = new VecBasedMx(dimY, dimY);
+    for (int idx : sentenceIndexes) {
       probab *= getProbability(C, idx);
-      C = MxTools.multiply(C, getContextMat(idx));
+      getContextMat(idx, tmp);
+      C = MxTools.multiply(C, tmp);
     }
     //System.out.println(imageVectors.toString());
     return probab;
   }
 
+  @Override
+  public Vec gradient(Vec in) {
+    unfold(in);
+    Mx grads = new VecBasedMx(dimX, dim() / dimX);
+    fillContextGrad(grads);
+    fillImageGrad(grads);
+
+    return grads;
+  }
+
+  protected void fillImageGrad(final Mx to) {
+    Mx C = VecTools.copy(C0);
+    final Mx context = new VecBasedMx(dimY, dimY);
+    final int shift = dim() / dimX - dimY;
+    for (int pos = 0; pos < text.length(); pos++) {
+      final int idx = text.at(pos);
+      final Vec im = imageVectors.row(idx);
+      final double derivativeTerm = getImageDerivativeTerm(im, C);
+
+      Mx finalC = C;
+      IntStream.range(0, dimY).parallel().forEach(j -> {
+        to.adjust(idx, shift + j, getImageDerivative(im, finalC, derivativeTerm, j));
+      });
+      getContextMat(idx, context);
+      C = MxTools.multiply(C, context);
+    }
+  }
+
+  protected abstract void fillContextGrad(final Mx to);
+
+  protected abstract void unfold(Vec in);
+
+  public abstract void getContextMat(int idx, final Mx to);
+
+  public abstract Mx getParameters();
 
   public double getProbability(Mx C, int image_idx) {
     final Vec im = imageVectors.row(image_idx);
@@ -62,8 +110,9 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
     return 1d / softSum;
   }
 
-
-  public abstract Mx getContextMat(int idx);
+  public Mx getImageVectors() {
+    return imageVectors;
+  }
 
 
   protected double getImageDerivativeTerm(final Vec im, final Mx C) {
@@ -91,13 +140,14 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
   protected double getContextDerivative(Mx dContext_pos, int pos) {
     Mx C = VecTools.copy(C0);
     Mx dC = VecTools.copy(C0);
+    final Mx context = new VecBasedMx(dimY, dimY);
     double diff = 0;
 
-    //for (int t = Math.max(0, pos - window_left); t < Math.min(text.length(), pos + window_right + 1); t++) {
-    for (int t = 0; t < text.length(); t++) {
+    for (int t = Math.max(0, pos - windowLeft); t < Math.min(text.length(), pos + windowRight + 1); t++) {
+    //for (int t = 0; t < text.length(); t++) {
       final int idx = text.at(t);
       final Vec im = imageVectors.row(idx);
-      final Mx context = getContextMat(idx);
+      getContextMat(idx, context);
       if (t < pos) {
         C = MxTools.multiply(C, context);
       } else if (t == pos) {
@@ -153,7 +203,7 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
   }
 
   protected double initializeValue(int dim) {
-    return (Math.random() - 0.5) / dim / 100.;
+    return (Math.random() - 0.5) / dim;
   }
 
 }

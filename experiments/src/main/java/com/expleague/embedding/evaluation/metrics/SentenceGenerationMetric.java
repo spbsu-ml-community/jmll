@@ -22,15 +22,16 @@ import java.util.stream.IntStream;
 public class SentenceGenerationMetric {
   static private LWMatrixMultBuilder embedding;
   public static LWMatrixRegression model;
-  final static private int dim = 3;
+  final static private int dim = 10;
   static private Mx C0;
 
   public static void main(String[] args) throws IOException {
-    String file = "/home/katyakos/diploma/proj6_spbau/data/tests/sentences/all_metrics_files.txt";
+    String file = "/home/katyakos/Kuralenok_projects/proj6_spbau/data/tests/sentences/all_metrics_files.txt";
 
     embedding = (LWMatrixMultBuilder) Embedding.builder(Embedding.Type.LIGHT_WEIGHT_MATRIX_MULT);
     embedding
         .dim(dim)
+        .dimDecomp(0)
         .minWordCount(1)
         .iterations(10000)
         .step(0.001)
@@ -55,7 +56,7 @@ public class SentenceGenerationMetric {
   private static void measure(List<CharSeq> sentenceWords) {
     final List<CharSeq> wordsList = embedding.getVocab();
     final TObjectIntMap<CharSeq>  wordToIndex = embedding.getWords();
-    final int vocabSize = wordsList.size();
+    final int[] vocabIndexes = wordToIndex.values();
     final int sentSize = sentenceWords.size();
     final int firstWord = wordToIndex.get(sentenceWords.get(0));
 
@@ -66,25 +67,26 @@ public class SentenceGenerationMetric {
     int[] resultIdx = new int[sentenceWords.size()];
     //resultIdx[0] = firstWord;
 
+    final Mx contextMat = new VecBasedMx(dim, dim);
     for (int t = 0; t < sentSize; t++) {
-      int[] order = ArrayTools.sequence(0, vocabSize);
       final Mx Ctmp = VecTools.copy(C);
-      double[] weights = IntStream.of(order).parallel().mapToDouble(idx -> -model.getProbability(Ctmp, idx)).toArray();
-      ArrayTools.parallelSort(weights, order);
+      double[] weights = IntStream.of(vocabIndexes).parallel().mapToDouble(idx -> -model.getProbability(Ctmp, idx)).toArray();
+      ArrayTools.parallelSort(weights, vocabIndexes);
       for (int i = 0; i < weights.length; i++) {
-        System.out.print(wordsList.get(order[i]) + " : " + weights[i] + " ");
+        System.out.print(wordsList.get(vocabIndexes[i]) + " : " + weights[i] + " ");
       }
       System.out.println();
-      final int newWord = order[0];
-
-      C = MxTools.multiply(C, model.getContextMat(newWord));
+      final int newWord = vocabIndexes[0];
+      model.getContextMat(newWord, contextMat);
+      C = MxTools.multiply(C, contextMat);
       result.append(wordsList.get(newWord)).append(" ");
       resultIdx[t] = newWord;
     }
 
     System.out.println("Original sentence is:\t" + String.valueOf(sentenceWords));
+    System.out.println("Original sentece probability is:\t" + model.value());
     System.out.println("Generated sentence is:\t" + result.toString());
-    System.out.println("Probability is:\t" + textProbab(resultIdx, C0));
+    System.out.println("Probability is:\t" + model.value(resultIdx));
     /*resultIdx = new int[]{0, 1, 2};
     System.out.println("Probability is:\t" + textProbab(resultIdx, C0));
     resultIdx = new int[]{1, 2, 0};
@@ -98,20 +100,6 @@ public class SentenceGenerationMetric {
     resultIdx = new int[]{0, 2, 2};
     System.out.println("Probability is:\t" + textProbab(resultIdx, C0));*/
 
-  }
-
-  private static double textProbab(int[] indexes, Mx C0) {
-    double probab = 1d;
-    Mx C = VecTools.copy(C0);
-
-    //for (int t = Math.max(0, pos - window_left); t < Math.min(text.length(), pos + window_right + 1); t++) {
-    for (int t = 0; t < indexes.length; t++) {
-      final int idx = indexes[t];
-      probab *= model.getProbability(C, idx);
-      final Mx context = model.getContextMat(idx);
-      C = MxTools.multiply(C, context);
-    }
-    return probab;
   }
 
   private static List<String> readMetricsNames(String fileName) throws IOException {

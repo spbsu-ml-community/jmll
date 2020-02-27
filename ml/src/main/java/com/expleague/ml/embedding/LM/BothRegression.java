@@ -1,7 +1,6 @@
 package com.expleague.ml.embedding.LM;
 
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
@@ -11,29 +10,54 @@ import com.expleague.ml.func.RegularizerFunc;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.stream.IntStream.range;
-
 class BothRegression extends LWMatrixRegression {
+  private List<Mx> contextSymVectors, contextSkewVectors;
   private List<Mx> contextMatrices;
-  private Mx contextSymVectors, contextSkewVectors;
   private LWSimpleRegression simpleRegression;
-  private LWSksRegresseion sksRegression;
+  private LWSksRegression sksRegression;
 
-  public BothRegression(int dimx, int dimy, IntSeq text) {
-    super(dimx, dimy, text);
+
+  public BothRegression(IntSeq text, int dimx, int dimy, int dimDecomp) {
+    super(text, dimx, dimy);
+
     contextMatrices = new ArrayList<>(dimX);
-    contextSymVectors = new VecBasedMx(dimX, dimY);
-    contextSkewVectors = new VecBasedMx(dimX, dimY);
     for (int i = 0; i < dimX; i++) {
-      contextMatrices.add(new VecBasedMx(dimY, dimY));
+      Mx mat = new VecBasedMx(dimY, dimY);
+      for (int j = 0; j < dimY; j++) {
+        for (int k = 0; k < dimY; k++) {
+          mat.set(j, k, initializeValue(dimY));
+        }
+      }
+      //VecTools.normalizeL2(mat);
+      contextMatrices.add(mat);
+    }
+    contextSymVectors = new ArrayList<>(dimX);
+    contextSkewVectors = new ArrayList<>(dimX);
+    for (int k = 0; k < dimX; k++) {
+      Mx matS = new VecBasedMx(dimDecomp, dimY);
+      Mx matK = new VecBasedMx(dimDecomp, dimY);
+      for (int i = 0; i < dimDecomp; i++) {
+        for (int j = 0; j < dimY; j++) {
+          matS.set(i, j, initializeValue(dimY));
+          matK.set(i, j, initializeValue(dimY));
+        }
+      }
+      //VecTools.normalizeL2(contextSymVectors.row(i));
+      //VecTools.normalizeL2(contextSkewVectors.row(i));
+      contextSymVectors.add(matS);
+      contextSkewVectors.add(matK);
     }
 
-    simpleRegression = new LWSimpleRegression(dimx, dimy, text);
-    sksRegression = new LWSksRegresseion(dimx, dimy, text);
+    simpleRegression = new LWSimpleRegression(text, dimx, dimy);
+    sksRegression = new LWSksRegression(text, dimx, dimy, dimDecomp);
   }
 
   @Override
-  public Mx getContextMat(int idx) {
+  public void getContextMat(int idx, final Mx to) {
+  }
+
+  @Override
+  public Mx getParameters() {
     return null;
   }
 
@@ -46,27 +70,27 @@ class BothRegression extends LWMatrixRegression {
 
   @Override
   public int dim() {
-    return dimX * (dimY * dimY + 2 * dimY + dimY);
+    return simpleRegression.dim() + sksRegression.dim() - dimX * dimY; // Тк image вектора посчитал дважды
   }
 
   @Override
   public Vec L(Vec at) {
-    return VecTools.fill(super.L(at), 10);
+    return VecTools.fill(super.L(at), 1.);
   }
 
   @Override
   public Vec gradient(Vec in) {
     unfold(in);
-    Mx gradsSimple = (VecBasedMx) simpleRegression.gradient(LWSimpleRegression.fold(contextMatrices, imageVectors));
-    Mx gradsSks = (VecBasedMx) sksRegression.gradient(LWSksRegresseion.fold(contextSymVectors, contextSkewVectors, imageVectors));
+    //Mx gradsSimple = (VecBasedMx) simpleRegression.gradient(LWSimpleRegression.fold(contextMatrices, imageVectors));
+    //Mx gradsSks = (VecBasedMx) sksRegression.gradient(LWSksRegression.fold(contextSymVectors, contextSkewVectors, imageVectors));
     Mx res = new VecBasedMx(dimX, dimY * dimY + 2 * dimY + dimY);
     int shift = dimY * dimY;
     for (int i = 0; i < dimX; i++) {
       for (int j = 0; j < dimY * dimY; j++) {
-        res.set(i, j, gradsSimple.get(i, j));
+        //res.set(i, j, gradsSimple.get(i, j));
       }
       for (int j = 0; j < dimY * 3; j++) {
-        res.set(i, j + shift, gradsSks.get(i, j));
+        //res.set(i, j + shift, gradsSks.get(i, j));
       }
     }
 
@@ -75,7 +99,13 @@ class BothRegression extends LWMatrixRegression {
     return res;
   }
 
-  private void unfold(Vec in) {
+  @Override
+  protected void fillContextGrad(Mx to) {
+
+  }
+
+  @Override
+  protected void unfold(Vec in) {
     Mx matrices = in instanceof Mx ? (Mx)in : new VecBasedMx(dimY * dimY + 2 * dimY + dimY, in);
     int shiftSym = dimY * dimY;
     int shiftSkew = shiftSym + dimY;
@@ -87,8 +117,8 @@ class BothRegression extends LWMatrixRegression {
       }
       contextMatrices.set(i, mat);
       for (int j = 0; j < dimY; j++) {
-        contextSymVectors.set(i, j, matrices.get(i, j + shiftSym));
-        contextSkewVectors.set(i, j, matrices.get(i, j + shiftSkew));
+        //contextSymVectors.set(i, j, matrices.get(i, j + shiftSym));
+        //contextSkewVectors.set(i, j, matrices.get(i, j + shiftSkew));
         imageVectors.set(i, j, matrices.get(i, j + shiftIm));
       }
     }
