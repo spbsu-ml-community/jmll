@@ -34,7 +34,7 @@ public class VGramBuilder {
             System.err.println(i + "-th iter end");
 
             System.err.println("writing dict to " + vgramFile);
-            try (Writer writer = new OutputStreamWriter(Files.newOutputStream(vgramFile), StandardCharsets.UTF_16)) {
+            try (Writer writer = new OutputStreamWriter(Files.newOutputStream(vgramFile), StandardCharsets.UTF_8)) {
                 de.print(writer);
             } catch (IOException e) {
                 e.printStackTrace();
