@@ -215,6 +215,44 @@
       </build>
     </profile>
     <profile>
+      <id>build-vgram-jar</id>
+      <activation>
+        <property>
+          <name>vgram.jar.build</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>2.4</version>
+            <configuration>
+              <archive>
+                <manifest>
+                  <mainClass>com.expleague.text.VGramBuilder</mainClass>
+                </manifest>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+              <finalName>vgram</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+            </configuration>
+            <executions>
+              <execution>
+                <id>exp-jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>build-glove-jar</id>
       <activation>
         <property>
