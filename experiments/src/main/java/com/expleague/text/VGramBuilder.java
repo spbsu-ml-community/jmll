@@ -49,6 +49,7 @@ public class VGramBuilder {
         List<CharSeq> dataset = Files.readAllLines(datasetPath)
                 .stream()
                 .map(String::toLowerCase)
+                .map(str -> str.replaceAll("ё", "е"))
                 .map(str -> str.replaceAll("[^а-я -]", " "))
                 .map(str -> str.replaceAll("\\s+", " "))
                 .filter(str -> str.length() >= 5)
