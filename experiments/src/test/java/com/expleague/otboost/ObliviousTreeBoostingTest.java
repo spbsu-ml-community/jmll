@@ -4,22 +4,31 @@ import com.expleague.commons.math.Func;
 import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
+import com.expleague.commons.math.vectors.impl.vectors.VecBuilder;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.*;
+import com.expleague.ml.data.tools.DataTools;
+import com.expleague.ml.data.tools.FeatureSet;
 import com.expleague.ml.data.tools.Pool;
+import com.expleague.ml.data.tools.PoolFSBuilder;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.loss.*;
+import com.expleague.ml.meta.FeatureMeta;
+import com.expleague.ml.meta.impl.FeatureMetaImpl;
+import com.expleague.ml.meta.impl.JsonDataSetMeta;
+import com.expleague.ml.meta.impl.TargetMetaImpl;
+import com.expleague.ml.meta.items.FakeItem;
 import com.expleague.ml.methods.*;
-import com.expleague.ml.methods.greedyRegion.*;
 import com.expleague.ml.methods.trees.GreedyObliviousLinearTree;
 import com.expleague.ml.methods.trees.GreedyObliviousTree;
 import com.expleague.ml.models.ObliviousTree;
 
-import java.util.Random;
+import java.util.Date;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
-import static com.expleague.commons.math.MathTools.sqr;
 import static com.expleague.commons.math.vectors.VecTools.copy;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
@@ -30,7 +39,6 @@ import static java.lang.Math.log;
  *
  * Time: 15:50
  */
-@SuppressWarnings("RedundantArrayCreation")
 public class ObliviousTreeBoostingTest extends GridTest {
   private FastRandom rng;
 
@@ -176,6 +184,111 @@ public class ObliviousTreeBoostingTest extends GridTest {
 //    boosting.addListener(learnScore);
 //    boosting.addListener(testScore);
     boosting.fit(learn.vecData(), learn.target(LLLogit.class));
+  }
+
+  public void testLinearModelVsObliviousTrees() {
+    final FastRandom rng = new FastRandom(100500);
+    final RandGaussianFeatureSet randfs = new RandGaussianFeatureSet(rng, 5);
+    final JsonDataSetMeta meta = new JsonDataSetMeta("rng", "solar", new Date(), FakeItem.class, "noid");
+    PoolFSBuilder<FakeItem> builder = new PoolFSBuilder<>(meta, FeatureSet.join(randfs, new LinearTarget(randfs, rng)));
+    for (int i = 0; i < 100000; i++) {
+      builder.accept(new FakeItem(i));
+      builder.advance();
+    }
+    final Pool<FakeItem> itemPool = builder.create();
+    final List<Pool<FakeItem>> split = DataTools.splitDataSet(itemPool, rng, 0.5, 0.5);
+    final Pool<FakeItem> train = split.get(0);
+    final Pool<FakeItem> validate = split.get(1);
+
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+        new BootstrapOptimization<>(
+            new GreedyObliviousTree<>(GridTools.medianGrid(train.vecData(), 32), 6),
+            rng),
+        L2Reg.class, 100000, 0.01
+    );
+    new addBoostingListeners<>(boosting, train.target(L2.class), train, validate);
+  }
+
+  public static void main(String[] args) {
+//  public void testLinearModelVsLinearTrees() {
+    final FastRandom rng = new FastRandom(100500);
+    final RandGaussianFeatureSet randfs = new RandGaussianFeatureSet(rng, 10);
+    final JsonDataSetMeta meta = new JsonDataSetMeta("rng", "solar", new Date(), FakeItem.class, "noid");
+    final LinearTarget target = new LinearTarget(randfs, rng);
+    PoolFSBuilder<FakeItem> builder = new PoolFSBuilder<>(meta, FeatureSet.join(randfs, target));
+    for (int i = 0; i < 100000; i++) {
+      builder.accept(new FakeItem(i));
+      builder.advance();
+    }
+    final Pool<FakeItem> itemPool = builder.create();
+    final List<Pool<FakeItem>> split = DataTools.splitDataSet(itemPool, rng, 0.5, 0.5);
+    final Pool<FakeItem> train = split.get(0);
+    final Pool<FakeItem> validate = split.get(1);
+    System.out.println(target.w);
+    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+        new BootstrapOptimization<>(
+            new GreedyObliviousLinearTree<>(GridTools.medianGrid(train.vecData(), 32), 6),
+            rng),
+        L2Reg.class, 2000, 0.01
+    );
+    new addBoostingListeners<>(boosting, train.target(L2.class), train, validate);
+  }
+
+  public static class RandGaussianFeatureSet extends FeatureSet.Stub<FakeItem> {
+    private final FastRandom rng;
+    private final int dim;
+
+    public RandGaussianFeatureSet(FastRandom rng, int dim) {
+      super(IntStream.range(0, dim)
+          .mapToObj(i -> new FeatureMetaImpl("rand-gaussian-" + i, "Random gaussian feature #" + i, FeatureMeta.ValueType.VEC))
+          .toArray(FeatureMeta[]::new)
+      );
+      this.rng = rng;
+      this.dim = dim;
+      this.lastDraw = new ArrayVec(this.dim);
+    }
+
+    @Override
+    public void accept(FakeItem item) {
+      super.accept(item);
+    }
+
+    private final Vec lastDraw;
+    @Override
+    public Vec advanceTo(Vec to) {
+      IntStream.range(0, dim).forEach(i -> {
+        final double v = rng.nextGaussian();
+        to.set(i, v);
+        lastDraw.set(i, v);
+      });
+      return to;
+    }
+
+    public Vec lastDraw() {
+      return lastDraw;
+    }
+
+    public int dim() {
+      return dim;
+    }
+  }
+
+  public static class LinearTarget extends FeatureSet.Stub<FakeItem> {
+    private final Vec w;
+    private final RandGaussianFeatureSet randfs;
+
+    public LinearTarget(RandGaussianFeatureSet randfs, FastRandom rng) {
+      super(new TargetMetaImpl("linear-target", "Synthetic linear target", FeatureMeta.ValueType.VEC));
+      this.randfs = randfs;
+      this.w = new ArrayVec(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+//      this.w = IntStream.range(0, randfs.dim()).mapToDouble(i -> rng.nextGaussian()).collect(VecBuilder::new, VecBuilder::append, VecBuilder::addAll).build();
+    }
+
+    @Override
+    public Vec advanceTo(Vec to) {
+      to.set(0, VecTools.multiply(w, randfs.lastDraw()));
+      return to;
+    }
   }
 }
 

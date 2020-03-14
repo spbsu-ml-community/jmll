@@ -70,7 +70,7 @@ public class GreedyObliviousLinearTree<Loss extends AdditiveLoss> extends VecOpt
       });
 
       final int bestSplit = ArrayTools.min(scores);
-      if (bestSplit < 0 || scores[bestSplit] >= currentScore)
+      if (bestSplit < 0 || scores[bestSplit] >= currentScore - 1e-9)
         break;
       final BFGrid.Feature bestSplitBF = grid.bf(bestSplit);
 
