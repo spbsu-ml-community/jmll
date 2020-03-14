@@ -5,6 +5,7 @@ import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.*;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
+import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.*;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.func.Ensemble;
@@ -45,16 +46,19 @@ public class ObliviousTreeBoostingTest extends GridTest {
         int index = 0;
         @Override
         public void accept(final Trans partial) {
-          System.out.print("\n" + index++);
+          System.out.print("\n" + index++ + "(" + Interval.time() + "ms)");
         }
       };
-      final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", _learn.vecData(), _learn.target(L2.class));
-      final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", _validate.vecData(), _validate.target(L2.class));
+      final Consumer intervalFuse = ignore -> Interval.start();
+      final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", _learn.vecData(), _learn.target(L2.class), true, 1);
+      final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", _validate.vecData(), _validate.target(L2.class), true, 1);
       final Consumer<Trans> modelPrinter = new ModelPrinter();
       boosting.addListener(counter);
       boosting.addListener(learnListener);
       boosting.addListener(validateListener);
       boosting.addListener(modelPrinter);
+      boosting.addListener(intervalFuse);
+      Interval.start();
       final Ensemble ans = boosting.fit(_learn.vecData(), loss);
       Vec current = new ArrayVec(_validate.size());
       for (int i = 0; i < _validate.size(); i++) {
@@ -64,6 +68,7 @@ public class ObliviousTreeBoostingTest extends GridTest {
         current.set(i, f);
       }
       System.out.println("\n + Final loss = " + VecTools.distance(current, _validate.target(L2.class).target) / Math.sqrt(_validate.size()));
+      Interval.start();
     }
   }
 
@@ -82,7 +87,7 @@ public class ObliviousTreeBoostingTest extends GridTest {
         new BootstrapOptimization<>(
             new GreedyObliviousLinearTree<>(GridTools.medianGrid(learn.vecData(), 32), 6),
           rng),
-        L2.class, 2000, 0.002
+        L2.class, 2000, 0.003
     );
     new addBoostingListeners<>(boosting, learn.target(SatL2.class), learn, validate);
   }

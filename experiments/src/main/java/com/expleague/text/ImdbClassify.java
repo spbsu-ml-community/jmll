@@ -7,6 +7,7 @@ import com.expleague.commons.math.Trans;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.*;
+import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.GridTools;
 import com.expleague.ml.ModelPrinter;
 import com.expleague.ml.ProgressHandler;
@@ -200,10 +201,10 @@ public class ImdbClassify {
     if (linear) {
       boosting = new GradientBoosting<>(
           new BootstrapOptimization<>(
-              new GreedyObliviousLinearTree<>(GridTools.medianGrid(train.vecData(), 4), 6),
+              new GreedyObliviousLinearTree<>(GridTools.medianGrid(train.vecData(), 2), 6),
               rng
           ),
-          L2.class, 2000, 1
+          L2.class, 2000, 1.5
       );
     }
     else {
@@ -220,16 +221,19 @@ public class ImdbClassify {
       int index = 0;
       @Override
       public void accept(final Trans partial) {
-        System.out.print("\n" + index++);
+        System.out.print("\n" + index++ + "(" + Interval.time() + "ms)");
       }
     };
-    final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", train.vecData(), train.target(LLLogit.class), false);
-    final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", test.vecData(), test.target(AccuracyLogit.class), false);
+    final Consumer intervalFuse = ignore -> Interval.start();
+    final ScoreCalcer learnListener = new ScoreCalcer(/*"\tlearn:\t"*/"\t", train.vecData(), train.target(LLLogit.class), false, 10);
+    final ScoreCalcer validateListener = new ScoreCalcer(/*"\ttest:\t"*/"\t", test.vecData(), test.target(AccuracyLogit.class), false, 10);
     final Consumer<Trans> modelPrinter = new ModelPrinter();
     boosting.addListener(counter);
     boosting.addListener(learnListener);
     boosting.addListener(validateListener);
     boosting.addListener(modelPrinter);
+    boosting.addListener(intervalFuse);
+    Interval.start();
     final Ensemble ans = boosting.fit(train.vecData(), train.target(LLLogit.class));
 
     System.out.println();
