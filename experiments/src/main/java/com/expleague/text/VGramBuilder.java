@@ -43,10 +43,6 @@ public class VGramBuilder {
         iterationsOption.setType(Integer.class);
         options.addOption(iterationsOption);
 
-        Option filterOption = new Option("f", "filter", false, "filter dataset symbols");
-        filterOption.setRequired(false);
-        options.addOption(filterOption);
-
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
         CommandLine cmd = null;
@@ -64,11 +60,10 @@ public class VGramBuilder {
         final String alphabetPath = cmd.getOptionValue("alphabet-path");
         final int vgrams = Integer.parseInt(cmd.getOptionValue("vgrams-count", "15000"));
         final int iterations = Integer.parseInt(cmd.getOptionValue("iterations", "50"));
-        final boolean filter = cmd.hasOption("filter");
 
-        final List<CharSeq> dataset = readDataset(Paths.get(datasetPath), filter);
-        final Path vgramFile = Paths.get(vgramDictionaryPath);
         final List<Character> alphabet = readAlphabet(Paths.get(alphabetPath));
+        final List<CharSeq> dataset = readDataset(Paths.get(datasetPath), alphabet);
+        final Path vgramFile = Paths.get(vgramDictionaryPath);
 
         DictExpansion<Character> de = new DictExpansion<>(alphabet, vgrams, System.err);
         for (int i = 0; i < iterations; i++) {
@@ -88,20 +83,24 @@ public class VGramBuilder {
         System.err.println("END");
     }
 
-    private static List<CharSeq> readDataset(final Path datasetPath, boolean filterDataset) throws IOException {
+    private static List<CharSeq> readDataset(final Path datasetPath, final List<Character> alphabet) throws IOException {
         long start = System.nanoTime();
-        Stream<String> datasetStream = Files
+
+        StringBuilder regex = new StringBuilder();
+
+        regex.append("[^");
+        for (char c : alphabet)
+            regex.append('\\').append(c);
+        regex.append("]");
+
+        System.err.println("Regex: " + regex.toString());
+
+        List<CharSeq> dataset = Files
                 .readAllLines(datasetPath)
                 .stream()
-                .map(String::toLowerCase);
-
-        if (filterDataset) {
-            datasetStream = datasetStream
-                    .map(str -> str.replaceAll("ё", "е"))
-                    .map(str -> str.replaceAll("[^а-я -]", " "));
-        }
-
-        List<CharSeq> dataset = datasetStream
+                .map(String::toLowerCase)
+                .map(str -> str.replaceAll("ё", "е"))
+                .map(str -> str.replaceAll(regex.toString(), " "))
                 .map(str -> str.replaceAll("\\s+", " "))
                 .filter(str -> str.length() >= 5)
                 .map(str -> new CharSeqArray(str.toCharArray()))
