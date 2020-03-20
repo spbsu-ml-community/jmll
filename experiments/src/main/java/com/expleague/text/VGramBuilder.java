@@ -1,8 +1,9 @@
 package com.expleague.text;
 
 import com.expleague.commons.io.codec.seq.DictExpansion;
-import com.expleague.commons.seq.CharSeq;
-import com.expleague.commons.seq.CharSeqArray;
+import com.expleague.commons.io.codec.seq.ListDictionary;
+import com.expleague.commons.seq.*;
+import gnu.trove.list.array.TIntArrayList;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -78,7 +79,13 @@ public class VGramBuilder {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+//            System.err.println("writing final frequences to " + vgramFile);
+//            countFrequences(vgramFile, dataset);
         }
+
+        System.err.println("writing final frequences to " + vgramFile);
+        countFrequences(vgramFile, dataset);
 
         System.err.println("END");
     }
@@ -88,10 +95,19 @@ public class VGramBuilder {
 
         StringBuilder regex = new StringBuilder();
 
+        boolean dash = false;
         regex.append("[^");
-        for (char c : alphabet)
-            regex.append('\\').append(c);
-        regex.append("]");
+        for (char c : alphabet) {
+            if (c == '-') {
+                dash = true;
+            } else {
+                regex.append(c);
+            }
+        }
+        if (dash) {
+            regex.append('-');
+        }
+        regex.append(']');
 
         System.err.println("Regex: " + regex.toString());
 
@@ -116,5 +132,46 @@ public class VGramBuilder {
                 .map(s -> s.charAt(0))
                 .sorted()
                 .collect(Collectors.toList());
+    }
+
+    private static void countFrequences(final Path vgramFile, final List<CharSeq> dataset) throws IOException {
+        // noinspection unchecked
+        final ListDictionary<Character> dict = (ListDictionary<Character>) new ListDictionary(
+                CharSeqTools.lines(Files.newBufferedReader(vgramFile))
+                        .map(line -> CharSeq.create(CharSeqTools.split(line, '\t')[0]))
+                        .filter(str -> str.length() > 0)
+                        .<Seq<Character>>toArray(Seq[]::new)
+        );
+
+        final TIntArrayList freqs = new TIntArrayList();
+        freqs.fill(0, dict.size(), 0);
+        int[] stat = new int[]{0};
+        dataset.stream().map(seq -> {
+            if (stat[0] > 10000) {
+                try {
+                    return dict.parse(seq, freqs, stat[0]);
+                }
+                catch (RuntimeException re) {
+                    if (!re.getMessage().equals(ListDictionary.DICTIONARY_INDEX_IS_CORRUPTED))
+                        throw re;
+                }
+            }
+            return dict.parse(seq);
+        }).flatMapToInt(IntSeq::stream).filter(idx -> idx >= 0).forEach(idx -> {
+            stat[0]++;
+            freqs.set(idx, freqs.get(idx) + 1);
+        });
+
+        try (Writer writer = new OutputStreamWriter(Files.newOutputStream(vgramFile), StandardCharsets.UTF_8)) {
+            for (int i = 0; i < dict.size(); i++) {
+                final Seq<Character> seq = dict.get(i);
+                writer.append(seq.toString());
+                writer.append('\t');
+                writer.append(CharSeqTools.itoa(freqs.get(i)));
+                writer.append("\n\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
