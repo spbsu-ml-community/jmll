@@ -2,15 +2,14 @@ package com.expleague.embedding.evaluation.metrics;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.MxTools;
-import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.util.ArrayTools;
+import com.expleague.commons.util.logging.Interval;
 import com.expleague.ml.embedding.Embedding;
-import com.expleague.ml.embedding.LM.LWMatrixMultBuilder;
-import com.expleague.ml.embedding.LM.LWMatrixRegression;
+import com.expleague.ml.embedding.lm.LWMatrixMultBuilder;
+import com.expleague.ml.embedding.lm.LWMatrixRegression;
 import gnu.trove.map.TObjectIntMap;
 
 import java.io.*;
@@ -26,15 +25,16 @@ public class SentenceGenerationMetric {
   static private Mx C0;
 
   public static void main(String[] args) throws IOException {
-    String file = "/home/katyakos/Kuralenok_projects/proj6_spbau/data/tests/sentences/all_metrics_files.txt";
+    String file = "/Users/solar/data/text/sentences/all_metrics_files.txt";
 
+    Interval.start();
     embedding = (LWMatrixMultBuilder) Embedding.builder(Embedding.Type.LIGHT_WEIGHT_MATRIX_MULT);
     embedding
-        .dim(dim)
+        .dim(10)
         .dimDecomp(0)
         .minWordCount(1)
-        .iterations(10000)
-        .step(0.001)
+        .iterations(100000)
+        .step(1e-3)
         .window(Embedding.WindowType.EXP, 10, 10);
 
     List<String> files = readMetricsNames(file);
@@ -47,6 +47,8 @@ public class SentenceGenerationMetric {
       C0 = model.C0();
       measure(sentence);
     }
+
+    Interval.stopAndPrint();
   }
 
   private static CharSeq normalizeWord(String input) {

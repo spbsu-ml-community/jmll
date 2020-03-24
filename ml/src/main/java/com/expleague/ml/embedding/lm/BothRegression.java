@@ -1,4 +1,4 @@
-package com.expleague.ml.embedding.LM;
+package com.expleague.ml.embedding.lm;
 
 import com.expleague.commons.math.vectors.Mx;
 import com.expleague.commons.math.vectors.Vec;

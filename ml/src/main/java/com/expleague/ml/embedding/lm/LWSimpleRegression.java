@@ -1,11 +1,9 @@
-package com.expleague.ml.embedding.LM;
+package com.expleague.ml.embedding.lm;
 
 import com.expleague.commons.math.vectors.Mx;
-import com.expleague.commons.math.vectors.MxTools;
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.mx.VecBasedMx;
-import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.IntSeq;
 import com.expleague.ml.func.RegularizerFunc;
 

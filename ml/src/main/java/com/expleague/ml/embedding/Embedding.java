@@ -2,7 +2,7 @@ package com.expleague.ml.embedding;
 
 import com.expleague.commons.math.vectors.Vec;
 import com.expleague.ml.Metric;
-import com.expleague.ml.embedding.LM.LWMatrixMultBuilder;
+import com.expleague.ml.embedding.lm.LWMatrixMultBuilder;
 import com.expleague.ml.embedding.decomp.DecompBuilder;
 import com.expleague.ml.embedding.glove.GloVeBuilder;
 import com.expleague.ml.embedding.glove.NgramGloveBuilder;

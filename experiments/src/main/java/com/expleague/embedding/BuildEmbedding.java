@@ -3,10 +3,8 @@ package com.expleague.embedding;
 import com.expleague.commons.io.StreamTools;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.embedding.evaluation.metrics.CloserFurtherMetric;
-import com.expleague.embedding.evaluation.metrics.SentenceGenerationMetric;
-import com.expleague.embedding.evaluation.metrics.WordAnalogiesMetric;
 import com.expleague.ml.embedding.Embedding;
-import com.expleague.ml.embedding.LM.LWMatrixMultBuilder;
+import com.expleague.ml.embedding.lm.LWMatrixMultBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 
 import java.io.*;

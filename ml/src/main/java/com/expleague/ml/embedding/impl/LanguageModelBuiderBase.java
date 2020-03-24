@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 public abstract class LanguageModelBuiderBase  extends EmbeddingBuilderBase {
   protected static final Logger log = LoggerFactory.getLogger(CoocBasedBuilder.class.getName());
 
-  private List<Seq> text;
+  private List<IntSeq> text;
   private boolean textReady = false;
 
   protected abstract Embedding<CharSeq> fit();
@@ -29,12 +29,12 @@ public abstract class LanguageModelBuiderBase  extends EmbeddingBuilderBase {
     return text.size();
   }
 
+  protected List<IntSeq> parsedTexts() {
+    return text;
+  }
+
   protected void text(int i, IntConsumer consumer) {
-    final Seq seq = text.get(i);
-    if (seq instanceof IntSeq) {
-      ((IntSeq) seq).stream().forEach(consumer);
-    }
-    else throw new IllegalStateException();
+    text.get(i).stream().forEach(consumer);
   }
 
   protected int index(CharSequence word) {
@@ -42,10 +42,7 @@ public abstract class LanguageModelBuiderBase  extends EmbeddingBuilderBase {
   }
 
   protected IntSeq text(int i) {
-    final Seq seq = text.get(i);
-    if (seq instanceof IntSeq)
-      return (IntSeq)seq;
-    else throw new IllegalStateException();
+    return text.get(i);
   }
 
   protected synchronized void text(int i, IntSeq set) {

@@ -1,4 +1,4 @@
-package com.expleague.ml.embedding.LM;
+package com.expleague.ml.embedding.lm;
 
 import com.expleague.commons.math.FuncC1;
 import com.expleague.commons.math.vectors.Mx;
@@ -194,13 +194,8 @@ public abstract class LWMatrixRegression extends FuncC1.Stub {
 
 
   public Mx C0() {
-    final Mx mat = new VecBasedMx(dimY, dimY);
     // Как там единичную матрицу задать функцией?
-    VecTools.fill(mat, 0d);
-    for (int i = 0; i < dimY; i++) {
-      mat.set(i, i, 1d);
-    }
-    return mat;
+    return MxTools.E(dimY);
   }
 
   protected double initializeValue(int dim) {
