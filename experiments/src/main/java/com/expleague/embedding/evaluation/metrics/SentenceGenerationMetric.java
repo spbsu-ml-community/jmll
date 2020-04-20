@@ -34,7 +34,7 @@ public class SentenceGenerationMetric {
         .dimDecomp(0)
         .minWordCount(1)
         .iterations(100000)
-        .step(1e-3)
+        .step(1e-4)
         .window(Embedding.WindowType.EXP, 10, 10);
 
     List<String> files = readMetricsNames(file);
@@ -43,7 +43,7 @@ public class SentenceGenerationMetric {
       System.out.println("Started working with " + fileName);
 
       embedding.file(Paths.get(fileName)).build();
-      model = embedding.model;
+//      model = embedding.model;
       C0 = model.C0();
       measure(sentence);
     }

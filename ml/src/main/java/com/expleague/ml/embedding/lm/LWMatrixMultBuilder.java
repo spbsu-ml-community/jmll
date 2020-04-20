@@ -31,7 +31,6 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
   private int dimDecomp = 0;
   private FastRandom rng = new FastRandom();
   private boolean regularization = false;
-  public LWMatrixRegression model;
 
   public LWMatrixMultBuilder xMax(int xMax) {
     this.xMax = xMax;
@@ -115,15 +114,15 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
       });
     }
 
-    final Mx imageVectors = model.getImageVectors();
-    final Map<CharSeq, Vec> mapping = new HashMap<>();
-    for (int i = 0; i < wordsList.size(); i++) {
-      final CharSeq word = dict().get(i);
-      mapping.put(word, imageVectors.row(i));
-      System.out.println(imageVectors.row(i));
-    }
-
-    return new EmbeddingImpl<>(mapping);
+//    final Mx imageVectors = model.getImageVectors();
+//    final Map<CharSeq, Vec> mapping = new HashMap<>();
+//    for (int i = 0; i < wordsList.size(); i++) {
+//      final CharSeq word = dict().get(i);
+//      mapping.put(word, imageVectors.row(i));
+//      System.out.println(imageVectors.row(i));
+//    }
+//
+    return null;//new EmbeddingImpl<>(mapping);
   }
 
   static long it = 0;
@@ -213,7 +212,7 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
           final int start = i * (dim * (dim + 1)) + dim * dim;
           final Vec image = parametersOrig.sub(start, dim);
           VecTools.incscale(image, this.image[i], step);
-//          VecTools.normalizeL2(image);
+          VecTools.normalizeL2(image);
         }
       }
     }
