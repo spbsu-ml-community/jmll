@@ -29,9 +29,10 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
   private double alpha = 0.75;
   private int dim = 10;
   private int dimDecomp = 0;
+  private boolean isDecomposed = false;
   private FastRandom rng = new FastRandom();
   private boolean regularization = false;
-  public LWMatrixRegression model;
+  private LWMatrixRegression model;
 
   public LWMatrixMultBuilder xMax(int xMax) {
     this.xMax = xMax;
@@ -48,8 +49,8 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
     return this;
   }
 
-  public LWMatrixMultBuilder dimDecomp(int dim) {
-    this.dimDecomp = dim;
+  public LWMatrixMultBuilder isDecomposed(boolean flag) {
+    this.isDecomposed = flag;
     return this;
   }
 
@@ -76,7 +77,12 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
     final Vec theta = new ArrayVec(dim * (dim + 1) * wordsList.size() + dim * dim);
     { // parameter initialization
       VecTools.fillGaussian(theta, rng);
-      final State initState = new State(theta, wordsList.size());
+      /*for (int i = 0; i < wordsList.size(); i++) {
+        final int start = i * (dim * (dim + 1));
+        final Mx context = new VecBasedMx(dim, theta.sub(start, dim * dim));
+        VecTools.fill(context, 0d);
+      }*/
+      final State initState = new State(theta, wordsList.size(), dim, isDecomposed);
       for (int i = 0; i < wordsList.size(); i++) {
         VecTools.normalizeL2(initState.image(i));
         final Mx context = initState.context(i);
@@ -88,7 +94,7 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
     }
 
     final Vec freqs = new ArrayVec(wordsList.size());
-    final List<IntSeq> train = parsedTexts().subList(0, 100);
+    final List<IntSeq> train = parsedTexts().subList(0, Math.min(10, parsedTexts().size()));
     train.stream().flatMapToInt(IntSeq::stream).forEach(idx -> freqs.adjust(idx, 1));
     final NCETarget target = new NCETarget(rng, freqs);
     for (int iter = 0; iter < T(); iter++, it++) {
@@ -115,12 +121,10 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
       });
     }
 
-    final Mx imageVectors = model.getImageVectors();
     final Map<CharSeq, Vec> mapping = new HashMap<>();
     for (int i = 0; i < wordsList.size(); i++) {
       final CharSeq word = dict().get(i);
-      mapping.put(word, imageVectors.row(i));
-      System.out.println(imageVectors.row(i));
+      mapping.put(word, theta.sub(i * (dim * (dim + 1)) + dim * dim, dim));
     }
 
     return new EmbeddingImpl<>(mapping);
@@ -128,26 +132,28 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
 
   static long it = 0;
   private State fitSeq(IntSeq seq, Vec params, NCETarget target, boolean debug) {
-    final State state = new State(params, dict().size());
+    final State state = new State(params, dict().size(), dim, isDecomposed);
     double perplexity = 0;
     seq.stream().forEach(state::contextPrime);
     final List<Mx> parentContexts = new ArrayList<>();
     Mx currentContext = state.initialContext();
     Mx[] dUArr = new Mx[]{new VecBasedMx(dim, dim), new VecBasedMx(dim, dim)};
-    if (debug)
+    if (debug && (it % 1000 == 0 || it == T() - 1))
       System.out.println("probs at iteration " + it);
     for (int t = 0; t < seq.length(); t++) {
       Mx dU = dUArr[t % 2];
       final int word = seq.intAt(t);
       if (debug) { // debug
-//        System.out.print(wordsList.get(word) + "\t");
           final double logNom = MxTools.quadraticForm(currentContext, state.image(word));
           double denom = 0;
           for (int k = 0; k < wordsList.size(); k++) {
             if (target.p_n(k) > 0)
               denom += Math.exp(MxTools.quadraticForm(currentContext, state.image(k)));
           }
-//          System.out.println(Math.exp(logNom - Math.log(denom)));
+          if (it % 1000 == 0 || it == T() - 1) {
+            System.out.print(wordsList.get(word) + "\t");
+            System.out.println(Math.exp(logNom - Math.log(denom)));
+          }
           perplexity += -(logNom - Math.log(denom)) / seq.length();
       }
       target.step(currentContext, word, dU, state);
@@ -175,7 +181,7 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
       parentContexts.add(currentContext);
       currentContext = MxTools.multiply(currentContext, context);
     }
-    if (debug) {
+    if (debug && (it % 1000 == 0 || it == T() - 1)) {
       System.out.println("Perplexity: " + Math.exp(perplexity));
       System.out.println();
     }
@@ -188,13 +194,15 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
 
     private final Vec parametersOrig;
     private final int dim;
+    private final boolean isDecomposed;
 
-    State(Vec parametersOrig, int dictSize) {
+    State(Vec parametersOrig, int dictSize, int dim, boolean isDecomposed) {
       this.parametersOrig = parametersOrig;
       this.context = new Mx[dictSize];
       this.image = new Vec[dictSize];
       //noinspection IntegerDivisionInFloatingPointContext
-      this.dim = (int)Math.ceil((-1 + Math.sqrt(1 + 4 * (parametersOrig.dim() / dictSize))) / 2);
+      this.dim = dim;//(int)Math.ceil((-1 + Math.sqrt(1 + 4 * (parametersOrig.dim() / dictSize))) / 2);
+      this.isDecomposed = isDecomposed;
     }
 
     public void commit(Vec parametersOrig, double step) {
@@ -212,8 +220,15 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
         {
           final int start = i * (dim * (dim + 1)) + dim * dim;
           final Vec image = parametersOrig.sub(start, dim);
-          VecTools.incscale(image, this.image[i], step);
-//          VecTools.normalizeL2(image);
+          if (isDecomposed) {
+            final Vec imageDer = VecTools.scale(MxTools.multiply(this.context[i], image), 2);
+            VecTools.incscale(imageDer, this.image[i], 1.);
+            VecTools.incscale(image, imageDer, step);
+          } else {
+            VecTools.incscale(image, this.image[i], step);
+          }
+
+          VecTools.normalizeL2(image);
         }
       }
     }
