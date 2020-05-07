@@ -156,10 +156,16 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
           }
           perplexity += -(logNom - Math.log(denom)) / seq.length();
       }
+
+      if (Math.random() < 0.8){
+        continue;
+      }
+
       target.step(currentContext, word, dU, state);
       double dUF = 1;
       // TODO: append step by initialContext
-      for (int bp = t - 1; bp >= 0 && dUF > 1e-3; bp--) { // back propagation of the context error
+      //for (int bp = t - 1; bp >= 0 && dUF > 1e-3; bp--) { // back propagation of the context error
+      for (int bp = t - 1; bp > t - 2 && dUF > 1e-3 && bp >= 0; bp--) {
         final Mx dUPrev = dUArr[bp % 2];
         final int bpWord = seq.intAt(bp);
         final Mx wordContext = state.context(bpWord);
@@ -179,7 +185,8 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
       }
       final Mx context = state.context(word);
       parentContexts.add(currentContext);
-      currentContext = MxTools.multiply(currentContext, context);
+      //currentContext = MxTools.multiply(currentContext, context);
+      currentContext = context;
     }
     if (debug && (it % 1000 == 0 || it == T() - 1)) {
       System.out.println("Perplexity: " + Math.exp(perplexity));
@@ -221,7 +228,8 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
           final int start = i * (dim * (dim + 1)) + dim * dim;
           final Vec image = parametersOrig.sub(start, dim);
           if (isDecomposed) {
-            final Vec imageDer = VecTools.scale(MxTools.multiply(this.context[i], image), 2);
+            final Vec imageDer = VecTools.append(MxTools.multiply(this.context[i], image), MxTools.multiply(MxTools.transpose(this.context[i]), image));
+            //final Vec imageDer = VecTools.scale(MxTools.multiply(this.context[i], image), 2);
             VecTools.incscale(imageDer, this.image[i], 1.);
             VecTools.incscale(image, imageDer, step);
           } else {
@@ -235,7 +243,12 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
 
     public Mx context(int i) {
       final int start = i * (dim * (dim + 1));
-      return new VecBasedMx(dim, parametersOrig.sub(start, dim * dim));
+      if (isDecomposed) {
+        final Mx sym = VecTools.outer(image(i), image(i));
+        return VecTools.append(sym, parametersOrig.sub(start, dim * dim));
+      } else {
+        return new VecBasedMx(dim, parametersOrig.sub(start, dim * dim));
+      }
     }
 
     public Vec image(int i) {
