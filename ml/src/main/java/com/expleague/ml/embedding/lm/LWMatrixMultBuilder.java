@@ -157,31 +157,29 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
           perplexity += -(logNom - Math.log(denom)) / seq.length();
       }
 
-      if (Math.random() < 0.8){
-        continue;
-      }
-
-      target.step(currentContext, word, dU, state);
-      double dUF = 1;
-      // TODO: append step by initialContext
-      //for (int bp = t - 1; bp >= 0 && dUF > 1e-3; bp--) { // back propagation of the context error
-      for (int bp = t - 1; bp > t - 2 && dUF > 1e-3 && bp >= 0; bp--) {
-        final Mx dUPrev = dUArr[bp % 2];
-        final int bpWord = seq.intAt(bp);
-        final Mx wordContext = state.context(bpWord);
-        final Mx contextPrime = state.contextPrime(bpWord);
-        final Mx parentContext = parentContexts.get(bp);
-        dUF = 0.;
-        for (int i = 0; i < dU.rows(); i++) {
-          for (int j = 0; j < dU.columns(); j++) {
-            final double dUPrev_ij = VecTools.multiply(dU.row(i), wordContext.row(j));
-            dUPrev.set(i, j, dUPrev_ij);
-            dUF += dUPrev_ij * dUPrev_ij;
-            contextPrime.set(i, j, VecTools.multiply(dU.col(j), parentContext.col(i)));
+      if (Math.random() < 0.2) {
+        target.step(currentContext, word, dU, state);
+        double dUF = 1;
+        // TODO: append step by initialContext
+        //for (int bp = t - 1; bp >= 0 && dUF > 1e-3; bp--) { // back propagation of the context error
+        for (int bp = t - 1; bp > t - 2 && dUF > 1e-3 && bp >= 0; bp--) {
+          final Mx dUPrev = dUArr[bp % 2];
+          final int bpWord = seq.intAt(bp);
+          final Mx wordContext = state.context(bpWord);
+          final Mx contextPrime = state.contextPrime(bpWord);
+          final Mx parentContext = parentContexts.get(bp);
+          dUF = 0.;
+          for (int i = 0; i < dU.rows(); i++) {
+            for (int j = 0; j < dU.columns(); j++) {
+              final double dUPrev_ij = VecTools.multiply(dU.row(i), wordContext.row(j));
+              dUPrev.set(i, j, dUPrev_ij);
+              dUF += dUPrev_ij * dUPrev_ij;
+              contextPrime.set(i, j, VecTools.multiply(dU.col(j), parentContext.col(i)));
+            }
           }
+          dUF = Math.sqrt(dUF) / dim;
+          dU = dUPrev;
         }
-        dUF = Math.sqrt(dUF) / dim;
-        dU = dUPrev;
       }
       final Mx context = state.context(word);
       parentContexts.add(currentContext);
@@ -220,10 +218,14 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
           final int start = i * (dim * (dim + 1));
           final Mx context = new VecBasedMx(dim, parametersOrig.sub(start, dim * dim));
           VecTools.incscale(context, this.context[i], step);
+          //frobenius norm regularization -2lambda
+          //initialize skew with zeros
           IntStream.range(0, dim).forEach(j -> VecTools.normalizeL2(context.row(j)));
 //          final double mev = Math.abs(MxTools.mainEigenValue(context));//, VecTools.maxMod(context));
 //          VecTools.scale(context, MAX_EIGEN_VALUE / (mev + 1e-6));
         }
+        if (image[i] == null)
+          continue;
         {
           final int start = i * (dim * (dim + 1)) + dim * dim;
           final Vec image = parametersOrig.sub(start, dim);
