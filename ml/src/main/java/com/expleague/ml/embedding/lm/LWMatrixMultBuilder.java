@@ -9,16 +9,24 @@ import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.random.FastRandom;
 import com.expleague.commons.seq.CharSeq;
 import com.expleague.commons.seq.IntSeq;
+import com.expleague.commons.util.ArrayTools;
 import com.expleague.ml.embedding.Embedding;
 import com.expleague.ml.embedding.decomp.DecompBuilder;
 import com.expleague.ml.embedding.impl.EmbeddingImpl;
 import com.expleague.ml.embedding.impl.LanguageModelBuiderBase;
+import gnu.trove.list.TDoubleList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TDoubleArrayList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TIntLongHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
@@ -77,24 +85,12 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
     final Vec theta = new ArrayVec(dim * (dim + 1) * wordsList.size() + dim * dim);
     { // parameter initialization
       VecTools.fillGaussian(theta, rng);
-      /*for (int i = 0; i < wordsList.size(); i++) {
-        final int start = i * (dim * (dim + 1));
-        final Mx context = new VecBasedMx(dim, theta.sub(start, dim * dim));
-        VecTools.fill(context, 0d);
-      }*/
       final State initState = new State(theta, wordsList.size(), dim, isDecomposed);
-      for (int i = 0; i < wordsList.size(); i++) {
-        VecTools.normalizeL2(initState.image(i));
-        final Mx context = initState.context(i);
-//        VecTools.assign(context, MxTools.E(dim));
-        IntStream.range(0, dim).forEach(j -> VecTools.normalizeL2(context.row(j)));
-//        VecTools.scale(context, MAX_EIGEN_VALUE / (MxTools.mainEigenValue(context) + 1e-6));
-      }
-      VecTools.assign(initState.initialContext(), MxTools.E(dim));
+      initState.initializeParams();
     }
 
     final Vec freqs = new ArrayVec(wordsList.size());
-    final List<IntSeq> train = parsedTexts().subList(0, Math.min(10, parsedTexts().size()));
+    final List<IntSeq> train = parsedTexts().subList(0, Math.min(5, parsedTexts().size()));
     train.stream().flatMapToInt(IntSeq::stream).forEach(idx -> freqs.adjust(idx, 1));
     final NCETarget target = new NCETarget(rng, freqs);
     for (int iter = 0; iter < T(); iter++, it++) {
@@ -102,12 +98,6 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
       Collections.shuffle(nextIter);
       if (((it + 1) % 1) == 0) {
         final State state = fitSeq(train.get(0), theta, target, true);
-//        for (int i = 0; i < wordsList.size(); i++){
-//          if (state.image[i] != null) {
-//            System.out.println(state.context[i]);
-//            System.out.println(state.image[i]);
-//          }
-//        }
       }
       nextIter.parallelStream().forEach(text -> {
         final Vec copy;
@@ -116,7 +106,7 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
         }
         final State state = fitSeq(text, copy, target, false);
         synchronized (theta) {
-          state.commit(theta, step());
+          state.commit(theta, step() / text.length());
         }
       });
     }
@@ -133,6 +123,8 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
   static long it = 0;
   private State fitSeq(IntSeq seq, Vec params, NCETarget target, boolean debug) {
     final State state = new State(params, dict().size(), dim, isDecomposed);
+    DecimalFormat df = new DecimalFormat("#.####");
+    df.setRoundingMode(RoundingMode.CEILING);
     double perplexity = 0;
     seq.stream().forEach(state::contextPrime);
     final List<Mx> parentContexts = new ArrayList<>();
@@ -144,25 +136,46 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
       Mx dU = dUArr[t % 2];
       final int word = seq.intAt(t);
       if (debug) { // debug
-          final double logNom = MxTools.quadraticForm(currentContext, state.image(word));
-          double denom = 0;
+        double wordLognom = MxTools.quadraticForm(currentContext, state.image(word));
+        double denom = 0d;
+        int counter = 0;
+        for (int k = 0; k < wordsList.size(); k++) {
+          if (target.p_n(k) > 0) {
+            denom += Math.exp(MxTools.quadraticForm(currentContext, state.image(k)));
+            counter ++;
+          }
+        }
+        denom = Math.log(denom);
+        if (it % 1000 == 0 || it == T() - 1) {
+          double[] weights = new double[counter];
+          int[] indexes = new int[counter];
+          int sz = 0;
           for (int k = 0; k < wordsList.size(); k++) {
-            if (target.p_n(k) > 0)
-              denom += Math.exp(MxTools.quadraticForm(currentContext, state.image(k)));
+            if (target.p_n(k) > 0) {
+              weights[sz] = -Math.exp(MxTools.quadraticForm(currentContext, state.image(k)) - denom);
+              indexes[sz] = k;
+              sz ++;
+            }
           }
-          if (it % 1000 == 0 || it == T() - 1) {
-            System.out.print(wordsList.get(word) + "\t");
-            System.out.println(Math.exp(logNom - Math.log(denom)));
+          ArrayTools.parallelSort(weights, indexes);
+          StringBuilder stringBuilder = new StringBuilder();
+          stringBuilder.append(wordsList.get(word)).append(":")
+                  .append(df.format(Math.exp(wordLognom - denom))).append("\t->\t");
+          for (int k  = 0; k < 5; k++) {
+            stringBuilder.append(wordsList.get(indexes[k])).append(":")
+                    .append(df.format(-weights[k])).append(", ");
           }
-          perplexity += -(logNom - Math.log(denom)) / seq.length();
+          System.out.println(stringBuilder.toString());
+        }
+        perplexity += -(wordLognom - denom) / seq.length();
       }
 
       if (Math.random() < 0.2) {
         target.step(currentContext, word, dU, state);
         double dUF = 1;
         // TODO: append step by initialContext
-        //for (int bp = t - 1; bp >= 0 && dUF > 1e-3; bp--) { // back propagation of the context error
-        for (int bp = t - 1; bp > t - 2 && dUF > 1e-3 && bp >= 0; bp--) {
+        for (int bp = t - 1; bp >= 0 && dUF > 1e-3; bp--) { // back propagation of the context error
+        //for (int bp = t - 1; bp > t - 2 && dUF > 1e-3 && bp >= 0; bp--) {
           final Mx dUPrev = dUArr[bp % 2];
           final int bpWord = seq.intAt(bp);
           final Mx wordContext = state.context(bpWord);
@@ -183,8 +196,8 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
       }
       final Mx context = state.context(word);
       parentContexts.add(currentContext);
-      //currentContext = MxTools.multiply(currentContext, context);
-      currentContext = context;
+      currentContext = MxTools.multiply(currentContext, context);
+      //currentContext = context;
     }
     if (debug && (it % 1000 == 0 || it == T() - 1)) {
       System.out.println("Perplexity: " + Math.exp(perplexity));
@@ -198,47 +211,69 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
     private final Vec[] image;
 
     private final Vec parametersOrig;
-    private final int dim;
+    private final int dim, dictSize;
     private final boolean isDecomposed;
 
     State(Vec parametersOrig, int dictSize, int dim, boolean isDecomposed) {
       this.parametersOrig = parametersOrig;
+      this.dictSize = dictSize;
       this.context = new Mx[dictSize];
       this.image = new Vec[dictSize];
       //noinspection IntegerDivisionInFloatingPointContext
-      this.dim = dim;//(int)Math.ceil((-1 + Math.sqrt(1 + 4 * (parametersOrig.dim() / dictSize))) / 2);
+      this.dim = dim;
       this.isDecomposed = isDecomposed;
     }
 
+    public void initializeParams() {
+      Mx L = new VecBasedMx(dim, dim);
+      Mx Q = new VecBasedMx(dim, dim);
+      for (int i = 0; i < dictSize; i++) {
+        int start = i * (dim * (dim + 1)) + dim * dim;
+        //normalizeVec(parametersOrig.sub(start, dim));
+        start = i * (dim * (dim + 1));
+        final Mx context = new VecBasedMx(dim, parametersOrig.sub(start, dim * dim));
+        //IntStream.range(0, dim).forEach(j -> normalizeVec(context.row(j)));
+        IntStream.range(0, dim).forEach(j -> normalizeMx(context, L, Q));
+//        VecTools.scale(context, MAX_EIGEN_VALUE / (MxTools.mainEigenValue(context) + 1e-6));
+      }
+      Mx initContext = new VecBasedMx(dim, parametersOrig.sub(parametersOrig.length() - dim * dim, dim * dim));
+      VecTools.assign(initContext, MxTools.E(dim));
+    }
+
+    private void normalizeVec(Vec vec) {
+      VecTools.normalizeL2(vec);
+    }
+
+    private void normalizeMx(Mx mx, Mx L, Mx Q) {
+      MxTools.householderLQ(mx, L, Q);
+      VecTools.assign(mx, Q);
+    }
+
     public void commit(Vec parametersOrig, double step) {
-      for (int i = 0; i < context.length; i++) {
-        if (context[i] == null)
+      Mx L = new VecBasedMx(dim, dim);
+      Mx Q = new VecBasedMx(dim, dim);
+      for (int i = 0; i < this.context.length; i++) {
+        if (this.context[i] == null || this.image[i] == null)
           continue;
         {
           final int start = i * (dim * (dim + 1));
           final Mx context = new VecBasedMx(dim, parametersOrig.sub(start, dim * dim));
           VecTools.incscale(context, this.context[i], step);
-          //frobenius norm regularization -2lambda
-          //initialize skew with zeros
-          IntStream.range(0, dim).forEach(j -> VecTools.normalizeL2(context.row(j)));
+          //IntStream.range(0, dim).forEach(j -> normalizeVec(context.row(j)));
+          IntStream.range(0, dim).forEach(j -> normalizeMx(context, L, Q));
 //          final double mev = Math.abs(MxTools.mainEigenValue(context));//, VecTools.maxMod(context));
 //          VecTools.scale(context, MAX_EIGEN_VALUE / (mev + 1e-6));
         }
-        if (image[i] == null)
-          continue;
         {
           final int start = i * (dim * (dim + 1)) + dim * dim;
           final Vec image = parametersOrig.sub(start, dim);
-          if (isDecomposed) {
+          if (isDecomposed && context[i] != null) {
             final Vec imageDer = VecTools.append(MxTools.multiply(this.context[i], image), MxTools.multiply(MxTools.transpose(this.context[i]), image));
-            //final Vec imageDer = VecTools.scale(MxTools.multiply(this.context[i], image), 2);
-            VecTools.incscale(imageDer, this.image[i], 1.);
             VecTools.incscale(image, imageDer, step);
           } else {
             VecTools.incscale(image, this.image[i], step);
           }
-
-          VecTools.normalizeL2(image);
+          //normalizeVec(image);
         }
       }
     }
@@ -286,34 +321,74 @@ public class LWMatrixMultBuilder extends LanguageModelBuiderBase {
     }
 
     public void step(Mx context, int xidx, Mx contextDer, State state) {
-      int yidx;
+      //int yidx;
+      int y_num = 1;
+      TIntList yidxs = new TIntArrayList(y_num);
       //noinspection StatementWithEmptyBody
-      while ((yidx = nextP_n()) == xidx);
+      //while ((yidx = nextP_n()) == xidx);
+      for (int k = 0; k < y_num; k++) {
+        int yidx = xidx;
+        boolean flag = true;
+        while (flag) {
+          flag = false;
+          while ((yidx = nextP_n()) == xidx) ;
+          while (yidxs.contains(yidx)) {
+            yidx = nextP_n();
+            flag = true;
+          }
+        }
+        yidxs.add(yidx);
+
+      }
+
       final double G_x = G(context, state, xidx);
-      final double G_y = G(context, state, yidx);
+      //final double G_y = G(context, state, yidx);
+      final double[] G_ys = new double[y_num];
+      for (int k = 0; k < y_num; k++) {
+        G_ys[k] = G(context, state, yidxs.get(k));
+      }
+
       final double sigmaG_x = 1. / (1. + Math.exp(-G_x));
-      final double sigmaG_y = 1. / (1. + Math.exp(-G_y));
+      //final double sigmaG_y = 1. / (1. + Math.exp(-G_y));
+      final double[] sigmaG_ys = new double[y_num];
+      for (int k = 0; k < y_num; k++) {
+        sigmaG_ys[k] = 1. / (1. + Math.exp(-G_ys[k]));
+      }
 
       final Vec ximage = state.image(xidx);
-      final Vec yimage = state.image(yidx);
+      //final Vec yimage = state.image(yidx);
+      final Vec[] yimages = new Vec[y_num];
+      for (int k = 0; k < y_num; k++) {
+        yimages[k] = state.image(yidxs.get(k));
+      }
+
 
       { // x, y image derivative
         final Vec ximagePrime = state.imagePrime(xidx);
-        final Vec yimagePrime = state.imagePrime(yidx);
+        //final Vec yimagePrime = state.imagePrime(yidx);
+        final Vec[] yimagePrimes = new Vec[y_num];
+        for (int i = 0; i < y_num; i++) {
+          yimagePrimes[i] = state.imagePrime(yidxs.get(i));
+        }
+
         for (int i = 0; i < ximage.dim(); i++) {
           for (int j = 0; j < ximage.dim(); j++) {
             final double contextW = context.get(i, j) + context.get(j, i);
-//            if (contextW > 10)
-//              System.out.println();
             ximagePrime.adjust(i, (1 - sigmaG_x) * ximage.get(j) * contextW);
-            yimagePrime.adjust(i, -sigmaG_y * yimage.get(j) * contextW);
+            //yimagePrime.adjust(i, -sigmaG_y * yimage.get(j) * contextW);
+            for (int k = 0; k < y_num; k++) {
+              yimagePrimes[k].adjust(i, -sigmaG_ys[k] * yimages[k].get(j) * contextW);
+            }
           }
         }
       }
       { // contextDer
         VecTools.scale(contextDer, 0.);
         VecTools.incscale(contextDer, VecTools.outer(ximage, ximage), 1 - sigmaG_x);
-        VecTools.incscale(contextDer, VecTools.outer(yimage, yimage), -sigmaG_y);
+        //VecTools.incscale(contextDer, VecTools.outer(yimage, yimage), -sigmaG_y);
+        for (int k = 0; k < y_num; k++) {
+          VecTools.incscale(contextDer, VecTools.outer(yimages[k], yimages[k]), -sigmaG_ys[k]);
+        }
       }
     }
 
