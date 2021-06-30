@@ -16,7 +16,7 @@ public class BuildEmbedding {
 
     String file = args[0];
     String embeddingFile = StreamTools.stripExtension(file) + ".lwmm";
-    String resultFile = "/home/katyakos/diploma/proj6_spbau/data/tests/hobbit/results_lwmm";
+    String resultFile = "/Users/solar/data/text/sentences/shot.txt";
     String metricFile = "/home/katyakos/diploma/proj6_spbau/data/tests/hobbit/all_metrics_files.txt";
 
     LWMatrixMultBuilder builder = (LWMatrixMultBuilder) Embedding.builder(Embedding.Type.LIGHT_WEIGHT_MATRIX_MULT);
