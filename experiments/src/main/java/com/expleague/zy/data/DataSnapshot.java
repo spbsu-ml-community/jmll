@@ -1,10 +1,10 @@
-package com.expleague.data;
+package com.expleague.zy.data;
 
-import java.util.UUID;
 import java.util.stream.Stream;
 
 public interface DataSnapshot extends Stream<DataPage> {
   DataStream root();
-  UUID[] pages();
   long size();
+
+  Comparable version();
 }

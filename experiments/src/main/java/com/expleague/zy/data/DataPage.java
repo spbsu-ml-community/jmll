@@ -1,4 +1,4 @@
-package com.expleague.data;
+package com.expleague.zy.data;
 
 import java.net.URI;
 import java.util.List;

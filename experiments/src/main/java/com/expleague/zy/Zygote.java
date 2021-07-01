@@ -1,13 +1,15 @@
-package com.expleague.data.graph;
+package com.expleague.zy;
 
 import java.net.URI;
 
 public interface Zygote {
   Operation operation();
+  URI resolve(Slot slot);
+
   ResourceBindings[] bindings();
 
   interface ResourceBindings {
-    Operation.Socket socket();
+    Slot socket();
     URI resource();
   }
 }
