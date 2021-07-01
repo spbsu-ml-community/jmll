@@ -5,5 +5,5 @@ import com.expleague.zy.data.DataEntity;
 public interface Operation extends Runnable {
   Slot[] slots();
 
-  DataEntity[] entities(Zygote instance);
+  default DataEntity[] entities(Zygote instance) {return new DataEntity[0];}
 }

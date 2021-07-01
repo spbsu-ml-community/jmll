@@ -9,7 +9,7 @@ public interface KafkaTopic extends Slot {
   }
 
   @Override
-  default Type type() {
-    return Type.DataPage;
+  default Media type() {
+    return Media.DataPage;
   }
 }

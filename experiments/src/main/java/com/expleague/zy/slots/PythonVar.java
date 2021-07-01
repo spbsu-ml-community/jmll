@@ -10,7 +10,7 @@ public interface PythonVar extends Slot {
     return Access.ReadWrite;
   }
 
-  default Type type() {
-    return Type.PythonVar;
+  default Media type() {
+    return Media.PythonVar;
   }
 }

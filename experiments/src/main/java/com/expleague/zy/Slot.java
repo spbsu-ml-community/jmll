@@ -1,5 +1,8 @@
 package com.expleague.zy;
 
+import com.expleague.zy.data.DataSchema;
+
+import javax.annotation.Nullable;
 import java.net.URI;
 
 public interface Slot {
@@ -8,12 +11,12 @@ public interface Slot {
   Operation body();
   String name();
   Access access();
-  Type type();
+  Media type();
+  @Nullable
+  DataSchema data();
 
-  enum Type {
-    DataPage(com.expleague.zy.data.DataPage.class),
+  enum Media {
     PythonVar(Object.class),
-
     Properties(java.util.Properties.class),
     String(java.lang.String.class),
     Integer(java.lang.Integer.class),
@@ -26,7 +29,7 @@ public interface Slot {
     public Class of() {
       return type;
     }
-    Type(Class type) {
+    Media(Class type) {
 
       this.type = type;
     }
