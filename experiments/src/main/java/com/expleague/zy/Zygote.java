@@ -7,9 +7,16 @@ public interface Zygote {
   URI resolve(Slot slot);
 
   ResourceBindings[] bindings();
+  ReproducibilityLevel rl();
 
   interface ResourceBindings {
     Slot socket();
     URI resource();
+  }
+
+  enum ReproducibilityLevel {
+    ByteLevel,
+    StatLevel,
+    SratLevel
   }
 }

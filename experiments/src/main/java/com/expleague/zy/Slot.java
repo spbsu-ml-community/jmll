@@ -10,10 +10,9 @@ public interface Slot {
 
   Operation body();
   String name();
-  Access access();
-  Media type();
+  Media media();
   @Nullable
-  DataSchema data();
+  DataSchema contentType();
 
   enum Media {
     PythonVar(Object.class),
@@ -21,7 +20,7 @@ public interface Slot {
     String(java.lang.String.class),
     Integer(java.lang.Integer.class),
     File(java.nio.file.Path.class),
-
+    Pipe(java.nio.file.Path.class),
     ;
 
     private final Class type;
@@ -33,13 +32,5 @@ public interface Slot {
 
       this.type = type;
     }
-  }
-
-  enum Access {
-    ReadSeq,
-    ReadAcc,
-    ReadWrite,
-    WriteAcc,
-    WriteSeq
   }
 }

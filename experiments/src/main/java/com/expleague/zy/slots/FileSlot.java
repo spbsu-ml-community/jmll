@@ -8,7 +8,7 @@ public interface FileSlot extends Slot {
   Path mount();
 
   @Override
-  default Media type() {
+  default Media media() {
     return Media.File;
   }
 }
