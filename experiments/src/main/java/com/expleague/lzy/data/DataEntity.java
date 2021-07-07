@@ -1,7 +1,7 @@
-package com.expleague.zy.data;
+package com.expleague.lzy.data;
 
-import com.expleague.zy.Slot;
-import com.expleague.zy.Zygote;
+import com.expleague.lzy.Slot;
+import com.expleague.lzy.Zygote;
 
 import java.net.URI;
 

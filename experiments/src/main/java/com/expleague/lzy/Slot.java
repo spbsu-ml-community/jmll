@@ -1,6 +1,6 @@
-package com.expleague.zy;
+package com.expleague.lzy;
 
-import com.expleague.zy.data.DataSchema;
+import com.expleague.lzy.data.DataSchema;
 
 import javax.annotation.Nullable;
 import java.net.URI;

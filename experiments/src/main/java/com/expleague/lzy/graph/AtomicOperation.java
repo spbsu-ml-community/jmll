@@ -1,6 +1,6 @@
-package com.expleague.zy.graph;
+package com.expleague.lzy.graph;
 
-import com.expleague.zy.Operation;
+import com.expleague.lzy.Operation;
 
 import java.util.Properties;
 

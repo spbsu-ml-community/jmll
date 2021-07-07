@@ -1,6 +1,6 @@
-package com.expleague.zy;
+package com.expleague.lzy;
 
-import com.expleague.zy.data.DataEntity;
+import com.expleague.lzy.data.DataEntity;
 
 public interface Operation extends Runnable {
   Slot[] input();

@@ -1,7 +1,7 @@
-package com.expleague.zy.slots;
+package com.expleague.lzy.slots;
 
-import com.expleague.zy.Slot;
-import com.expleague.zy.data.DataSchema;
+import com.expleague.lzy.Slot;
+import com.expleague.lzy.data.DataSchema;
 
 import javax.annotation.Nonnull;
 

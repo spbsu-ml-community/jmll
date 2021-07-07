@@ -1,6 +1,6 @@
-package com.expleague.zy.slots;
+package com.expleague.lzy.slots;
 
-import com.expleague.zy.Slot;
+import com.expleague.lzy.Slot;
 
 public interface PythonVar extends Slot {
   String name();

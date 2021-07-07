@@ -1,7 +1,7 @@
-package com.expleague.zy.graph;
+package com.expleague.lzy.graph;
 
-import com.expleague.zy.Slot;
-import com.expleague.zy.Operation;
+import com.expleague.lzy.Slot;
+import com.expleague.lzy.Operation;
 
 public interface Graph extends Operation {
   Slot[] allSockets();
