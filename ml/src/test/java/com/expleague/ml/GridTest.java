@@ -17,6 +17,7 @@ import com.expleague.ml.testUtils.TestResourceLoader;
 import org.junit.Assert;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 /**
@@ -184,7 +185,9 @@ public class GridTest extends FileTestCase {
     final VecDataSet ds = learn.vecData();
     final BFGrid grid = GridTools.medianGrid(ds, 32);
     final L2 target = learn.target(L2.class);
-    WeightedLoss<L2> wloss = new WeightedLoss<>(target, IntStream.range(0, target.dim()).map(idx -> 1).toArray());
+    final float[] weights = new float[target.dim()];
+    Arrays.fill(weights, 1);
+    WeightedLoss<L2> wloss = new WeightedLoss<>(target, weights);
     BinarizedDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 
     GreedyProbLinearRegion.ScoreFromLambda scoreFromLambda = new GreedyProbLinearRegion.ScoreFromLambda(bds, IntStream.range(0, learn.size()).toArray(), wloss, true, grid.bf(10));
@@ -207,7 +210,9 @@ public class GridTest extends FileTestCase {
     final VecDataSet ds = learn.vecData();
     final BFGrid grid = GridTools.medianGrid(ds, 32);
     final L2 target = learn.target(L2.class);
-    WeightedLoss<L2> wloss = new WeightedLoss<>(target, IntStream.range(0, target.dim()).map(idx -> 1).toArray());
+    final float[] weights = new float[target.dim()];
+    Arrays.fill(weights, 1);
+    WeightedLoss<L2> wloss = new WeightedLoss<>(target, weights);
     BinarizedDataSet bds = ds.cache().cache(Binarize.class, VecDataSet.class).binarize(grid);
 
     GreedyProbLinearRegion.ScoreFromLambda scoreFromLambda = new GreedyProbLinearRegion.ScoreFromLambda(bds, IntStream.range(0, learn.size()).toArray(), wloss, true, grid.bf(10));

@@ -8,7 +8,6 @@ import gnu.trove.list.array.TIntArrayList;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.IntFunction;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 /**
@@ -18,9 +17,9 @@ import java.util.stream.IntStream;
  */
 public class WeightedLoss<BasedOn extends AdditiveLoss> extends Func.Stub implements AdditiveLoss<WeightedLoss.Stat> {
   private final BasedOn baseLoss;
-  private final int[] weights;
+  private final float[] weights;
 
-  public WeightedLoss(final BasedOn baseLoss, final int[] weights) {
+  public WeightedLoss(final BasedOn baseLoss, final float[] weights) {
     this.baseLoss = baseLoss;
     this.weights = weights;
   }
@@ -76,7 +75,7 @@ public class WeightedLoss<BasedOn extends AdditiveLoss> extends Func.Stub implem
   }
 
   public double[] weights() {
-    return IntStream.of(weights).mapToDouble(w -> (double)w).toArray();
+    return IntStream.range(0, weights.length).mapToDouble(idx -> weights[idx]).toArray();
   }
 
   public BasedOn base() {
@@ -108,16 +107,16 @@ public class WeightedLoss<BasedOn extends AdditiveLoss> extends Func.Stub implem
 
   public static class Stat implements AdditiveStatistics {
     public AdditiveStatistics inside;
-    private final int[] weights;
+    private final float[] weights;
 
-    public Stat(final int[] weights, final AdditiveStatistics inside) {
+    public Stat(final float[] weights, final AdditiveStatistics inside) {
       this.weights = weights;
       this.inside = inside;
     }
 
     @Override
     public Stat append(final int index, final int times) {
-      final int count = weights[index];
+      final float count = weights[index];
       inside.append(index, count * times);
       return this;
     }
@@ -130,7 +129,7 @@ public class WeightedLoss<BasedOn extends AdditiveLoss> extends Func.Stub implem
 
     @Override
     public Stat remove(final int index, final int times) {
-      final int count = weights[index];
+      final float count = weights[index];
       inside.remove(index, count * times);
       return this;
     }
@@ -143,14 +142,14 @@ public class WeightedLoss<BasedOn extends AdditiveLoss> extends Func.Stub implem
 
     @Override
     public Stat append(int index, double weight) {
-      final int count = weights[index];
+      final float count = weights[index];
       inside.append(index,weight*count);
       return this;
     }
 
     @Override
     public Stat remove(int index, double weight) {
-      final int count = weights[index];
+      final float count = weights[index];
       inside.remove(index,weight*count);
       return this;
     }

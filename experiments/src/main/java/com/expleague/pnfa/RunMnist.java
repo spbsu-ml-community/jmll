@@ -170,7 +170,7 @@ public class RunMnist {
       }
     };
 
-    GradientSeqBoosting<Integer, L2> boosting =
+    GradientSeqBoosting<Integer, WeightedL2> boosting =
         new GradientSeqBoosting<>(new BootstrapSeqOptimization<>(pnfa, new FastRandom(123), 1), 30, 0.1);
     Consumer<Function<Seq<Integer>,Vec>> listener = model -> {
       System.out.println("Train accuracy: " + getAccuracy(model, trainData, trainLabels));

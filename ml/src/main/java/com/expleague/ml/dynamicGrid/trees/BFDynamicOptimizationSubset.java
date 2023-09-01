@@ -62,6 +62,5 @@ public class BFDynamicOptimizationSubset {
 
   public void rebuild(final int... features) {
     this.aggregate.rebuild(features);
-
   }
 }

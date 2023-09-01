@@ -12,6 +12,11 @@ import com.expleague.ml.data.tools.DataTools;
 import com.expleague.ml.data.tools.FeatureSet;
 import com.expleague.ml.data.tools.Pool;
 import com.expleague.ml.data.tools.PoolFSBuilder;
+import com.expleague.ml.dynamicGrid.impl.BFDynamicGrid;
+import com.expleague.ml.dynamicGrid.interfaces.DynamicGrid;
+import com.expleague.ml.dynamicGrid.interfaces.DynamicRow;
+import com.expleague.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic;
+import com.expleague.ml.dynamicGrid.trees.GreedyObliviousTreeDynamic2;
 import com.expleague.ml.func.Ensemble;
 import com.expleague.ml.loss.*;
 import com.expleague.ml.meta.FeatureMeta;
@@ -88,6 +93,25 @@ public class ObliviousTreeBoostingTest extends GridTest {
         L2Reg.class, 2000, 0.005
     );
     new addBoostingListeners<>(boosting, learn.target(SatL2.class), learn, validate);
+  }
+
+  public void testDynamicOTBoost() {
+    final GreedyObliviousTreeDynamic2<WeightedLoss<? extends L2>> gbdotDynamic = new GreedyObliviousTreeDynamic2<>(learn.vecData(), 6);
+    final GradientBoosting<SatL2> boosting = new GradientBoosting<>(
+            new BootstrapOptimization<>(gbdotDynamic, rng),
+            L2Reg.class, 2000, 0.005
+    );
+    new addBoostingListeners<>(boosting, learn.target(SatL2.class), learn, validate);
+    final DynamicGrid grid = gbdotDynamic.grid();
+    for (int f = 0; f < grid.rows(); f++) {
+      final DynamicRow row = grid.row(f);
+      final StringBuilder rowRepresentation = new StringBuilder();
+      rowRepresentation.append(f).append("(").append(row.size()).append(")");
+      for (int b = 0; b < row.size(); b++) {
+        rowRepresentation.append(" ").append(row.bf(b));
+      }
+      System.out.println(rowRepresentation);
+    }
   }
 
   public void testOTLinearBoost() {

@@ -66,7 +66,6 @@ public class BinarizedDynamicDataSet {
     }
   }
 
-
   public DataSet original() {
     return base;
   }
@@ -83,7 +82,6 @@ public class BinarizedDynamicDataSet {
     queue.add(bf);
   }
 
-
   public boolean acceptQueue(final List<BFDynamicOptimizationSubset> leaves) {
     if (queue.size() > 0) {
       final int[] origFIndexes = new int[queue.size()];
@@ -98,10 +96,7 @@ public class BinarizedDynamicDataSet {
       for (final BinaryFeature feature : queue)
         updateBins(feature.fIndex());
       queue.clear();
-//            java 8 parallel version
-//            leaves.parallelStream().forEach((leave) -> leave.rebuild(origFIndexes));
-      for (final BFDynamicOptimizationSubset leave : leaves)
-        leave.rebuild(origFIndexes);
+      leaves.parallelStream().forEach((leave) -> leave.rebuild(origFIndexes));
 
       return true;
     }

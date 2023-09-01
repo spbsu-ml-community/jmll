@@ -196,6 +196,10 @@ public class GreedyObliviousTreeDynamic2<Loss extends AdditiveLoss> extends VecO
   public int[] hist() {
     return grid.hist();
   }
+
+  public DynamicGrid grid() {
+    return grid;
+  }
 }
 
 

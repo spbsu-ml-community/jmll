@@ -54,7 +54,7 @@ public class DiffTreeTest {
     final Vec target = new ArrayVec(y);
     final Vec valTarget = new ArrayVec(yVal);
 
-    final GradientBoosting<L2> boosting = new GradientBoosting<>(
+    final GradientBoosting<WeightedL2> boosting = new GradientBoosting<>(
         new BootstrapOptimization<>(new GreedyObliviousTree<>
             (GridTools.medianGrid(learn, 64), 6), rng),
         L2.class, 150, 0.05);

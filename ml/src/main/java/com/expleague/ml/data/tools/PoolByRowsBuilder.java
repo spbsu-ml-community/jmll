@@ -8,10 +8,7 @@ import com.expleague.commons.seq.*;
 import com.expleague.commons.util.Holder;
 import com.expleague.ml.Vectorization;
 import com.expleague.ml.data.set.DataSet;
-import com.expleague.ml.meta.DSItem;
-import com.expleague.ml.meta.FeatureMeta;
-import com.expleague.ml.meta.PoolFeatureMeta;
-import com.expleague.ml.meta.TargetMeta;
+import com.expleague.ml.meta.*;
 import com.expleague.ml.meta.impl.*;
 import com.expleague.ml.meta.impl.fake.FakeFeatureMeta;
 import com.expleague.ml.meta.impl.fake.FakeTargetMeta;
@@ -41,7 +38,6 @@ public class PoolByRowsBuilder<Item extends DSItem> implements Factory<Pool<Item
     meta.id = "Unknown pool";
   }
 
-  @Override
   public Pool<Item> create() {
     //noinspection unchecked
     return create((Class<Item>)meta.type());
@@ -52,17 +48,16 @@ public class PoolByRowsBuilder<Item extends DSItem> implements Factory<Pool<Item
     final LinkedHashMap<PoolFeatureMeta, Seq<?>> features = new LinkedHashMap<>();
     @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
     final Item[] items = this.items.toArray((Item[])Array.newInstance(clazz, this.items.size()));
-    final Pool<Item> result = new Pool<>(meta, new ArraySeq<>(items), features);
-    final DataSet<Item> ds = result.data();
+
     final Holder<DataSet<?>> dataSet = Holder.create(null);
     for (int i = 0; i < featureMetas.size(); i++) {
       final FeatureMeta meta = featureMetas.get(i);
-      features.put(new JsonFeatureMeta(meta, ds.meta().id()), featureBuilders.get(i).build());
+      features.put(new JsonFeatureMeta(meta, this.meta.id()), featureBuilders.get(i).build());
       featureBuilders.set(i, createBuilderByMeta(meta)); // cleanup
     }
     for (int i = 0; i < targetMetas.size(); i++) {
       final TargetMeta meta = targetMetas.get(i);
-      features.put(new JsonTargetMeta(meta, ds.meta().id()), targetBuilders.get(i).build());
+      features.put(new JsonTargetMeta(meta, this.meta.id()), targetBuilders.get(i).build());
       targetBuilders.set(i, createBuilderByMeta(meta)); // cleanup
     }
 
@@ -75,7 +70,7 @@ public class PoolByRowsBuilder<Item extends DSItem> implements Factory<Pool<Item
       itemIds.add(toString());
     }
     this.items.clear();
-    return result;
+    return new Pool<>(meta, new ArraySeq<>(items), features);
   }
 
   public void setMeta(final JsonDataSetMeta meta) {

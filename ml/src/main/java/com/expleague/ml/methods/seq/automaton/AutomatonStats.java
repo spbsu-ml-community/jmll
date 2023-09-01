@@ -5,6 +5,7 @@ import com.expleague.commons.math.vectors.VecTools;
 import com.expleague.commons.math.vectors.impl.vectors.ArrayVec;
 import com.expleague.commons.seq.Seq;
 import com.expleague.commons.seq.regexp.Alphabet;
+import com.expleague.ml.TargetFunc;
 import com.expleague.ml.data.set.DataSet;
 import com.expleague.ml.loss.L2;
 import com.expleague.ml.loss.WeightedL2;
@@ -44,18 +45,19 @@ public class AutomatonStats<T> {
     stateWeight = new TDoubleArrayList(other.stateWeight);
   }
 
-  public AutomatonStats(Alphabet<T> alphabet, DataSet<Seq<T>> dataSet, L2 loss) {
+  public AutomatonStats(Alphabet<T> alphabet, DataSet<Seq<T>> dataSet, TargetFunc loss) {
     automaton = new DFA<T>(alphabet);
     this.dataSet = dataSet;
-    if (loss instanceof WeightedL2) {
-      final WeightedL2 weightedLoss = (WeightedL2) loss;
+    if (loss instanceof final WeightedL2 weightedLoss) {
       this.weights = weightedLoss.getWeights();
       this.target = weightedLoss.target();
-    } else {
-      this.target = VecTools.copy(loss.target());
+    } else if (loss instanceof L2) {
+      this.target = VecTools.copy(((L2) loss).target());
       this.weights = new ArrayVec(target.length());
       VecTools.fill(this.weights, 1);
       VecTools.scale(this.target, this.weights);
+    } else {
+      throw new IllegalArgumentException();
     }
 
     this.alphabet = alphabet;

@@ -43,7 +43,7 @@ public class BootstrapSeqOptimization<T, Loss extends L2> extends WeakListenerHo
         poissonWeights[i * ydim + j] = w;
       }
     }
-    return new WeightedL2(loss.target, loss.owner(), new ArrayVec(poissonWeights));
+    return new WeightedL2(loss.owner(), loss.target, new ArrayVec(poissonWeights));
   }
 }
 
