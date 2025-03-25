@@ -127,17 +127,18 @@ public final class ModelTools {
 
       for (int b = 0; b < tree.values().length; b++) {
         final Set<BFGrid.Feature> currentSet = new HashSet<>();
-
-        double value = 0;
-        final int bitsB = MathTools.bits(b);
-        for (int a = 0; a < values.length; a++) {
-          final int bitsA = MathTools.bits(a);
-          if (MathTools.bits(a & b) >= bitsA)
-            value += (((bitsA + bitsB) & 1) > 0 ? -1 : 1) * values[a];
-        }
         for (int f = 0; f < features.size(); f++) {
           if ((b >> f & 1) != 0) {
             currentSet.add(features.get(features.size() - f - 1));
+          }
+        }
+
+        double value = 0;
+        for (int a = 0; a < values.length; a++) {
+          final int bitsA = MathTools.bits(a);
+          if (MathTools.bits(a & b) >= bitsA) {
+            final int sign = (MathTools.bits(~a & b) & 1) > 0 ? -1 : 1;
+            value += sign * values[a];
           }
         }
 
@@ -147,20 +148,21 @@ public final class ModelTools {
             conditions.add(aCurrentSet.index());
           }
           conditions.sort();
-          if (grid != null) { // minimize
-            final TIntIterator iterator = conditions.iterator();
-            BFGrid.Feature prev = null;
-            while (iterator.hasNext()) {
-              final BFGrid.Feature next = grid.bf(iterator.next());
-              if (prev != null && prev.findex() == next.findex()) {
-                iterator.remove();
+          final TIntArrayList minimizedConditions;
+          if (grid != null && !conditions.isEmpty()) { // minimize
+            minimizedConditions = new TIntArrayList(conditions.size());
+            for (int i = 0; i < conditions.size() - 1; i++) {
+              final BFGrid.Feature current = grid.bf(conditions.get(i));
+              if (current.findex() != grid.bf(conditions.get(i + 1)).findex()) {
+                minimizedConditions.add(conditions.get(i));
               }
-              prev = next;
             }
+            minimizedConditions.add(conditions.get(conditions.size() - 1));
           }
+          else minimizedConditions = conditions;
 
           final double addedValue = ensemble.weight(treeIndex) * value;
-          scores.adjustOrPutValue(new ConditionEntry(conditions.toArray()), addedValue, addedValue);
+          scores.adjustOrPutValue(new ConditionEntry(minimizedConditions.toArray()), addedValue, addedValue);
         }
       }
     }
