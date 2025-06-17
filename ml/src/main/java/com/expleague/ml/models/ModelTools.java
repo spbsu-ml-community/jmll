@@ -27,175 +27,209 @@ import java.util.stream.Stream;
  * Time: 8:31
  */
 public final class ModelTools {
-  private ModelTools() {
-  }
-
-  public static class CompiledOTEnsemble extends Func.Stub {
-    public static class Entry {
-      private final int[] bfIndices;
-      private final double value;
-
-      public Entry(final int[] bfIndices, final double value) {
-        this.bfIndices = bfIndices;
-        this.value = value;
-      }
-
-      public int[] getBfIndices() {
-        return bfIndices;
-      }
-
-      public double getValue() {
-        return value;
-      }
+    private ModelTools() {
     }
 
-    private final List<Entry> entries;
-    private final BFGrid grid;
+    public static class CompiledOTEnsemble extends Func.Stub {
+        private final double scale;
+        private final double bias;
 
-    public CompiledOTEnsemble(final List<Entry> entries, final BFGrid grid) {
-      this.entries = entries;
-      this.grid = grid;
-    }
+        public static class Entry {
+            private final int[] bfIndices;
+            private final double value;
 
-    @Override
-    public double value(final Vec x) {
-      if (grid == null)
-        return 0.;
-
-      final byte[] binary = new byte[grid.rows()];
-      grid.binarizeTo(x, binary);
-      double result = 0.;
-      for (final Entry entry : entries) {
-        final int[] bfIndices = entry.getBfIndices();
-        double increment = entry.getValue();
-        for (int j = 0; j < bfIndices.length; j++) {
-          if (!grid.bf(bfIndices[j]).value(binary)) {
-            increment = 0;
-            break;
-          }
-        }
-        result += increment;
-      }
-      return result;
-    }
-
-    @Override
-    public int dim() {
-      return grid.rows();
-    }
-
-    public List<Entry> getEntries() {
-      return Collections.unmodifiableList(entries);
-    }
-
-    public BFGrid getGrid() {
-      return grid;
-    }
-  }
-
-  private static class ConditionEntry{
-    public final int[] features;
-
-    private ConditionEntry(final int[] features) {
-      this.features = features;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      final ConditionEntry that = (ConditionEntry) o;
-      return Arrays.equals(features, that.features);
-    }
-
-    @Override
-    public int hashCode() {
-      return Arrays.hashCode(features);
-    }
-  }
-
-  public static CompiledOTEnsemble compile(final Ensemble<ObliviousTree> ensemble) {
-    final BFGrid grid = DataTools.grid(ensemble);
-    final TObjectDoubleHashMap<ConditionEntry> scores = new TObjectDoubleHashMap<>();
-
-    for (int treeIndex = 0; treeIndex < ensemble.size(); treeIndex++) {
-      final ObliviousTree tree = ensemble.model(treeIndex);
-
-      final List<BFGrid.Feature> features = tree.features();
-      final double[] values = tree.values();
-
-      for (int b = 0; b < tree.values().length; b++) {
-        final Set<BFGrid.Feature> currentSet = new HashSet<>();
-        for (int f = 0; f < features.size(); f++) {
-          if ((b >> f & 1) != 0) {
-            currentSet.add(features.get(features.size() - f - 1));
-          }
-        }
-
-        double value = 0;
-        for (int a = 0; a < values.length; a++) {
-          final int bitsA = MathTools.bits(a);
-          if (MathTools.bits(a & b) >= bitsA) {
-            final int sign = (MathTools.bits(~a & b) & 1) > 0 ? -1 : 1;
-            value += sign * values[a];
-          }
-        }
-
-        if (value != 0.) {
-          final TIntArrayList conditions = new TIntArrayList(currentSet.size());
-          for (BFGrid.Feature aCurrentSet : currentSet) {
-            conditions.add(aCurrentSet.index());
-          }
-          conditions.sort();
-          final TIntArrayList minimizedConditions;
-          if (grid != null && !conditions.isEmpty()) { // minimize
-            minimizedConditions = new TIntArrayList(conditions.size());
-            for (int i = 0; i < conditions.size() - 1; i++) {
-              final BFGrid.Feature current = grid.bf(conditions.get(i));
-              if (current.findex() != grid.bf(conditions.get(i + 1)).findex()) {
-                minimizedConditions.add(conditions.get(i));
-              }
+            public Entry(final int[] bfIndices, final double value) {
+                this.bfIndices = bfIndices;
+                this.value = value;
             }
-            minimizedConditions.add(conditions.get(conditions.size() - 1));
-          }
-          else minimizedConditions = conditions;
 
-          final double addedValue = ensemble.weight(treeIndex) * value;
-          scores.adjustOrPutValue(new ConditionEntry(minimizedConditions.toArray()), addedValue, addedValue);
+            public int[] getBfIndices() {
+                return bfIndices;
+            }
+
+            public double getValue() {
+                return value;
+            }
         }
-      }
+
+        private final List<Entry> entries;
+        private final BFGrid grid;
+
+        public CompiledOTEnsemble(final List<Entry> entries, final BFGrid grid, double scale, double bias) {
+            this.entries = entries;
+            this.grid = grid;
+            this.scale = scale;
+            this.bias = bias;
+        }
+
+        public CompiledOTEnsemble(final List<Entry> entries, final BFGrid grid) {
+            this.entries = entries;
+            this.grid = grid;
+            this.scale = 1.0;
+            this.bias = 0.0;
+        }
+
+        @Override
+        public double value(final Vec x) {
+            if (grid == null) {
+                return 0.;
+            }
+
+            final byte[] binary = new byte[grid.rows()];
+            grid.binarizeTo(x, binary);
+            double result = 0.;
+            for (final Entry entry : entries) {
+                final int[] bfIndices = entry.getBfIndices();
+                double increment = entry.getValue();
+                for (int j = 0; j < bfIndices.length; j++) {
+                    // Тут просто проиходит проверка что бин больше заданного, то есть что условие выполняется
+                    if (!grid.bf(bfIndices[j]).value(binary)) {
+                        increment = 0;
+                        break;
+                    }
+                }
+                result += increment;
+            }
+            return result * scale + bias;
+        }
+
+        @Override
+        public int dim() {
+            return grid.rows();
+        }
+
+        public List<Entry> getEntries() {
+            return Collections.unmodifiableList(entries);
+        }
+
+        public BFGrid getGrid() {
+            return grid;
+        }
+
+        public double scale() {
+            return scale;
+        }
+
+        public double bias() {
+            return bias;
+        }
     }
 
-    final List<Pair<ConditionEntry, Double>> sortedScores = new ArrayList<>();
-    scores.forEachEntry((entry, value) -> {
-      if (Math.abs(value) > 0)
-        sortedScores.add(Pair.create(entry, value));
-      return true;
-    });
-    sortedScores.sort((o1, o2) -> {
-      if (o1.first.features.length > o2.first.features.length)
-        return 1;
-      if (o1.first.features.length == o2.first.features.length) {
-        int index = 0;
-        while (o1.first.features[index] == o2.first.features[index])
-          index++;
-        return Integer.compare(o1.first.features[index], o2.first.features[index]);
-      }
-      return -1;
-    });
+    private static class ConditionEntry {
+        public final int[] features;
 
-    final List<CompiledOTEnsemble.Entry> entries = new ArrayList<>(scores.size());
+        private ConditionEntry(final int[] features) {
+            this.features = features;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            final ConditionEntry that = (ConditionEntry) o;
+            return Arrays.equals(features, that.features);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(features);
+        }
+    }
+
+    public static CompiledOTEnsemble compile(final Ensemble<ObliviousTree> ensemble) {
+        return compile(ensemble, 1.0, 0.0);
+    }
+
+    public static CompiledOTEnsemble compile(final Ensemble<ObliviousTree> ensemble, double scale, double bias) {
+        final BFGrid grid = DataTools.grid(ensemble);
+        final TObjectDoubleHashMap<ConditionEntry> scores = new TObjectDoubleHashMap<>();
+
+        for (int treeIndex = 0; treeIndex < ensemble.size(); treeIndex++) {
+            final ObliviousTree tree = ensemble.model(treeIndex);
+
+            final List<BFGrid.Feature> features = tree.features();
+            final double[] values = tree.values();
+
+            for (int b = 0; b < tree.values().length; b++) {
+                final Set<BFGrid.Feature> currentSet = new HashSet<>();
+                for (int f = 0; f < features.size(); f++) {
+                    if ((b >> f & 1) != 0) {
+                        currentSet.add(features.get(features.size() - f - 1));
+                    }
+                }
+
+                double value = 0;
+                for (int a = 0; a < values.length; a++) {
+                    final int bitsA = MathTools.bits(a);
+                    if (MathTools.bits(a & b) >= bitsA) {
+                        final int sign = (MathTools.bits(~a & b) & 1) > 0 ? -1 : 1;
+                        value += sign * values[a];
+                    }
+                }
+
+                if (value != 0.) {
+                    final TIntArrayList conditions = new TIntArrayList(currentSet.size());
+                    for (BFGrid.Feature aCurrentSet : currentSet) {
+                        conditions.add(aCurrentSet.index());
+                    }
+                    conditions.sort();
+                    final TIntArrayList minimizedConditions;
+                    if (grid != null && !conditions.isEmpty()) { // minimize
+                        minimizedConditions = new TIntArrayList(conditions.size());
+                        for (int i = 0; i < conditions.size() - 1; i++) {
+                            final BFGrid.Feature current = grid.bf(conditions.get(i));
+                            if (current.findex() != grid.bf(conditions.get(i + 1)).findex()) {
+                                minimizedConditions.add(conditions.get(i));
+                            }
+                        }
+                        minimizedConditions.add(conditions.get(conditions.size() - 1));
+                    } else {
+                        minimizedConditions = conditions;
+                    }
+
+                    final double addedValue = ensemble.weight(treeIndex) * value;
+                    scores.adjustOrPutValue(new ConditionEntry(minimizedConditions.toArray()), addedValue, addedValue);
+                }
+            }
+        }
+
+        final List<Pair<ConditionEntry, Double>> sortedScores = new ArrayList<>();
+        scores.forEachEntry((entry, value) -> {
+            if (Math.abs(value) > 0) {
+                sortedScores.add(Pair.create(entry, value));
+            }
+            return true;
+        });
+        sortedScores.sort((o1, o2) -> {
+            if (o1.first.features.length > o2.first.features.length) {
+                return 1;
+            }
+            if (o1.first.features.length == o2.first.features.length) {
+                int index = 0;
+                while (o1.first.features[index] == o2.first.features[index]) {
+                    index++;
+                }
+                return Integer.compare(o1.first.features[index], o2.first.features[index]);
+            }
+            return -1;
+        });
+
+        final List<CompiledOTEnsemble.Entry> entries = new ArrayList<>(scores.size());
 //    final int[] freqs = new int[grid.size()];
 //
-    for (final Pair<ConditionEntry, Double> score : sortedScores) {
-      entries.add(new CompiledOTEnsemble.Entry(score.first.features, score.second));
+        for (final Pair<ConditionEntry, Double> score : sortedScores) {
+            entries.add(new CompiledOTEnsemble.Entry(score.first.features, score.second));
 //      for (int i = 0; i < score.first.features.length; i++) {
 //        freqs[score.first.features[i]]++;
 //      }
-    }
+        }
 
-    return new CompiledOTEnsemble(entries, grid);
-  }
+        return new CompiledOTEnsemble(entries, grid, scale, bias);
+    }
 
 }

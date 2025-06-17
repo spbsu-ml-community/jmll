@@ -71,6 +71,7 @@ public class ObliviousTree extends BinOptimizedModel.Stub implements BinModelWit
     return builder.toString();
   }
 
+  // TODO: В этом коде была ошибка странная, я ее пофиксил
   public int bin(final Vec x) {
     int index = 0;
     for (int i = 0; i < features.length; i++) {
